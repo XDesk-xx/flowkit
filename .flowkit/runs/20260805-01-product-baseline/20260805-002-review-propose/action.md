@@ -27,7 +27,7 @@ Base 是批准后的 Explore 边界；Head 是 Propose artifacts 与 author Run 
 - `openspec/changes/product-positioning/specs/flowkit-product-positioning/spec.md`
 - `openspec/changes/product-positioning/tasks.md`
 - `openspec/changes/product-positioning/verification.md`
-- `.flowkit/runs/20260805-001-propose/`
+- `.flowkit/runs/20260805-01-product-baseline/20260805-001-propose/`
 
 ## Review questions
 

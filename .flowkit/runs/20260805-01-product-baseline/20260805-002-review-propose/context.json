@@ -18,11 +18,11 @@
     "openspec/changes/product-positioning/specs/flowkit-product-positioning/spec.md",
     "openspec/changes/product-positioning/tasks.md",
     "openspec/changes/product-positioning/verification.md",
-    ".flowkit/runs/20260805-001-propose/action.md",
-    ".flowkit/runs/20260805-001-propose/context.json",
-    ".flowkit/runs/20260805-001-propose/result.json"
+    ".flowkit/runs/20260805-01-product-baseline/20260805-001-propose/action.md",
+    ".flowkit/runs/20260805-01-product-baseline/20260805-001-propose/context.json",
+    ".flowkit/runs/20260805-01-product-baseline/20260805-001-propose/result.json"
   ],
-  "requiredOutputPath": ".flowkit/runs/20260805-002-review-propose/result.json",
+  "requiredOutputPath": ".flowkit/runs/20260805-01-product-baseline/20260805-002-review-propose/result.json",
   "constraints": {
     "readOnlyExceptResult": true,
     "applyAllowed": false,
