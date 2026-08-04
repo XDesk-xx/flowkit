@@ -43,7 +43,6 @@ Action MUST 表示当前一次明确、受前置条件约束的流程步骤，�
 
 - **WHEN** author 完成一个 Action
 - **THEN** Flowkit MUST NOT 仅因为 Action 完成就要求创建专用 Commit
-- **AND** Commit MUST 只在保存、交接或正式边界需要时创建
 
 ### Requirement: 确定性必须约束流程合法性判断
 
