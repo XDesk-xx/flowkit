@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-002-review-propose",
+  "status": "pending",
+  "summary": "",
+  "findings": {
+    "blocking": [],
+    "nonBlocking": []
+  },
+  "verificationReviewed": [],
+  "verdict": null,
+  "nextActionRecommendation": null
+}
