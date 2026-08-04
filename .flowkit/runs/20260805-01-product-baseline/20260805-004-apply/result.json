@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-004-apply",
+  "status": "completed",
+  "summary": "Implemented the approved A1 product-positioning contract by creating the formal product document, completing all tasks, recording verification results, and preserving the B1/C1/D1 boundaries.",
+  "outputs": [
+    "docs/product-positioning.md",
+    "openspec/changes/product-positioning/tasks.md",
+    "openspec/changes/product-positioning/verification.md"
+  ],
+  "verification": {
+    "status": "passed-with-declared-environment-limitation",
+    "passed": [
+      "reconstructed-worktree git diff --check",
+      "required-section validation",
+      "requirement-to-evidence mapping",
+      "README consistency",
+      "scope boundary scan",
+      "formal role neutrality scan",
+      "Run authority boundary scan"
+    ],
+    "notApplicable": [
+      "project Markdown command: repository has no package.json or configured command"
+    ],
+    "deferredToReview": [
+      "rerun OpenSpec strict validation in an environment with the OpenSpec CLI"
+    ],
+    "fullTestRun": false
+  },
+  "nextAction": "review-apply"
+}
