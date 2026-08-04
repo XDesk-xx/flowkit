@@ -52,7 +52,7 @@ changes:
     goal: 冻结 Flowkit 的产品定位、非目标和 One fact, one authority 原则
     required: true
     dependsOn: []
-    state: planned
+    state: active
     outputs:
       - docs/product-positioning.md
 
