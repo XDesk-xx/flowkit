@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Build and test outputs
+dist/
+coverage/
+
+# Temporary Flowkit working files
+.tmp/
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
