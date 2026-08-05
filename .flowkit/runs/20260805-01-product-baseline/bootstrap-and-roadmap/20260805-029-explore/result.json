@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-029-explore",
+  "status": "completed",
+  "summary": "Completed D1 Explore: converted A1/B1/C1 frozen model into executable Bootstrap operational baseline. Defined the minimum execution loop (read formal facts → Policy → Run → execute → result → continuation → Policy recompute), Run operational rules (creation, completion, retention, no auto-commit), continuation boundary operational definition (when to form, minimum info, Bootstrap generation), Git model (Delivery Start, Change Start, Change Checkpoint, Delivery Final, ordinary Commit), owner authorization boundaries, and four formal outputs (bootstrap-reference.md, development-roadmap.md, AGENTS.md, flowkit-git-workflow SKILL.md). Identified old Bootstrap patterns to avoid: fixed executor (ChatGPT/Codex), fixed exchange media (GitHub/Push/PR), .flowkit/ prohibition, and Git Commit as mandatory for all continuations. Defined Development Roadmap (Deterministic Core → Change Execution Loop → Delivery Execution Loop) and first self-hosted acceptance conditions. D1/C1 boundary confirmed: C1 defines logical information, D1 defines when Bootstrap forms and presents it.",
+  "keyConclusions": [
+    "Bootstrap manually executes the same Flowkit rules; no second bootstrap-only state system.",
+    "Run creation and completion do not auto-commit; Runs enter formal history via ordinary or Checkpoint commits.",
+    "Continuation boundary is not Git Commit; whether to commit depends on Git save or interaction needs.",
+    "Git model: 1 Delivery Start + N Change Checkpoints + 1 Delivery Final + 0-to-N ordinary Commits per Delivery.",
+    "Owner authorization required for Apply, Archive, Full Test, Finalize, corrective Change, and destructive Git operations.",
+    "New docs must not fix GitHub, Push, PR, local/remote, ChatGPT, Codex, or Worktree topology.",
+    "flowkit-git-workflow Skill only executes determined Git behaviors; no Action decision, Change completion, or Delivery Final authority.",
+    "Development Roadmap: Deterministic Core → Change Execution Loop → Delivery Execution Loop; no Registry or plugin platform.",
+    "First self-hosted requires: persistent formal facts, Policy, OpenSpec integration, Review/Revise loop, Verification, Runs recoverable, Continuation Context, Checkpoint identifiable, Full Test authorization, Delivery Final identifiable, stable Runner, end-to-end Bootstrap acceptance.",
+    "D1 does not reopen A1, B1, or C1; true conflicts require corrective Change."
+  ],
+  "deviationsIdentified": [
+    "Fixed executor (ChatGPT as main developer, Codex as fixed reviewer) → corrected to owner/author/reviewer with environment mapping",
+    "Fixed exchange media (must Commit+Push before handoff, restore from remote, GitHub as default) → corrected to media-neutral continuation boundary",
+    "Fixed PR (one Delivery must have one PR) → corrected to one Delivery Branch; PR optional per project integration",
+    ".flowkit/ prohibition (no authoritative .flowkit/ during Bootstrap) → corrected to use B1-frozen .flowkit/runs/ for formal Run records",
+    "Git Commit as mandatory for all cross-AI sync → corrected to Git Commit as version save and formal boundary; continuation boundary ≠ Git Commit"
+  ],
+  "nextAction": "review-explore",
+  "blockedOn": []
+}
