@@ -21,8 +21,13 @@
     "applyAllowed": false,
     "fullTestAllowed": false,
     "mayAdvanceFlow": false,
+    "mayCreateReviewRun": false,
+    "mustKeepSameExploreRun": true,
     "mustPreserveProductPositioning": true,
+    "mustNotCreateSkillRegistry": true,
+    "mustNotCreateSkillRouter": true,
     "mustNotDefineC1Protocols": true,
+    "mustNotDefineC1SkillProtocol": true,
     "mustNotDefineD1OperationalSteps": true
   }
 }
