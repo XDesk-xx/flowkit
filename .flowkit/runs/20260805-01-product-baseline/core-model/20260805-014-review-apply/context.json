@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-014-review-apply",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "B1",
+  "changeId": "core-model",
+  "action": "review-apply",
+  "role": "reviewer",
+  "reviewRange": {
+    "baseRef": "f7008be68e9042ec3ab29534e377354c66a7f14c",
+    "headRef": "515dd185d6eefeb300249af53642bc915e565e00"
+  },
+  "sourceReviewRun": "20260805-012-review-apply",
+  "sourceReviseRun": "20260805-013-revise-apply",
+  "artifacts": [
+    "docs/core-model.md",
+    "docs/delivery-lifecycle.md",
+    "docs/verification-model.md",
+    "openspec/changes/core-model/proposal.md",
+    "openspec/changes/core-model/design.md",
+    "openspec/changes/core-model/specs/flowkit-core-model/spec.md",
+    "openspec/changes/core-model/tasks.md",
+    "openspec/changes/core-model/verification.md",
+    ".flowkit/runs/20260805-01-product-baseline/core-model/20260805-013-revise-apply/"
+  ],
+  "constraints": {
+    "readOnlyExceptCurrentRun": true,
+    "fullTestAllowed": false,
+    "mayFixFindings": false,
+    "mayArchive": false,
+    "mayAdvanceFlow": false,
+    "commitAllowed": false
+  }
+}
