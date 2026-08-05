@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-010-review-propose",
+  "status": "completed",
+  "summary": "已按固定 Base 62f4fc1642af64751b0cc4ecdf70d6fdbb21bc2e 与 Head 6a664b0a88e338c7ff41fda9d4e84ea86883aff2 独立审查 B1 Propose 全部产物。Proposal 忠实消费已批准 Explore 的 19 项冻结结论，Design 的 13 个 Decision 均有对应 Spec Requirement 和 Scenario，三个 Non-blocking Findings（NB-001/002/003）在正式契约中妥善处理，未越过 C1 或 D1 边界，Proposal/Design/Spec/Tasks 之间状态、Action 名称和路径一致。OpenSpec strict validation 通过。无 Blocking Findings，可进入 Apply。",
+  "findings": {
+    "blocking": [],
+    "nonBlocking": [
+      {
+        "id": "NB-001",
+        "title": "verification.md 推迟到 Apply 阶段，review-propose 无法审查具体验证项",
+        "location": "openspec/changes/core-model/proposal.md:70, openspec/changes/core-model/tasks.md:69-76",
+        "problem": "Proposal 明确将 verification.md 推迟到 Apply 阶段（proposal.md:70 “Apply 阶段填写 verification.md”），tasks.md §7.6 将其列为 Apply 任务。虽然 OpenSpec strict validation 通过且 A1 在 Propose 阶段已包含 verification.md，但当前验证计划只在 tasks.md §7 中以任务条目形式描述，缺少对每项检查的适用性声明和 not-run 状态记录。",
+        "impact": "若 Apply 阶段才发现某项验证不适用或遗漏，可能需要返回 revise-propose 增加验证项，增加返工成本。review-propose 当前无法确认验证计划的完整性。",
+        "requiredChange": "在 Apply 阶段开始时优先创建 verification.md，声明所有适用检查项（openspec validate、markdown 检查、git diff --check、文档一致性、A1 一致性、Full Test 未运行）及 not-run 状态，确保 review-apply 可审查完整验证计划。"
+      },
+      {
+        "id": "NB-002",
+        "title": "design.md 实施计划未声明 review-propose approved 前置门",
+        "location": "openspec/changes/core-model/design.md:286-296",
+        "problem": "实施计划列出 9 步（创建文档 → 验证 → 提交 review-apply），但未在步骤 1 前注明 Apply 开始需要 review-propose approved。虽然 Action Catalog（Spec “Review 必须是正式边界”）和生命周期已定义此门，但实施计划的读者可能误认为 Propose 完成后可直接开始 Apply。",
+        "impact": "可能在 review-propose 未批准时提前开始 Apply 工作，违反 Review 必经边界。",
+        "requiredChange": "在实施计划开头或步骤 1 前添加前置条件说明，例如“以下步骤在 review-propose approved 且 owner 授权 Apply 后开始”，使实施计划与生命周期门保持一致。"
+      }
+    ]
+  },
+  "verificationReviewed": [
+    "完整阅读 review-propose Run 的 action.md 与 context.json，以及 delivery group manifest、core-model/.openspec.yaml、B1 Explore、Proposal、Design、capability delta spec、Tasks、A1 capability spec、docs/product-positioning.md、008-review-explore result 和 009-propose author Run（action.md/context.json/result.json）。",
+    "检查固定范围 git diff --name-status 62f4fc1642af64751b0cc4ecdf70d6fdbb21bc2e 6a664b0a88e338c7ff41fda9d4e84ea86883aff2：仅含 proposal.md、design.md、specs/flowkit-core-model/spec.md、tasks.md 和 009-propose author Run（action.md、context.json、result.json），共 7 文件；未含生产代码、依赖、Runner、CLI 或状态机实现。",
+    "执行 git diff --check 62f4fc1642af64751b0cc4ecdf70d6fdbb21bc2e 6a664b0a88e338c7ff41fda9d4e84ea86883aff2：通过（exit 0），无空白错误。",
+    "执行 npx openspec validate core-model --strict：通过（Change 'core-model' is valid, exit 0）。",
+    "逐项核对 Explore 的 19 项冻结结论与 spec Requirements 的对应：三层核心模型（“Flowkit 必须使用三层核心模型”）、最小状态（“Delivery 和 Change 必须使用最小状态”）、不增加 Phase（同一 requirement）、Policy 推导（“Policy 必须计算唯一合法下一 Action”）、主 Action（“Action Catalog 必须固定”）、review-apply+fix-review-findings（同一 requirement）、Change Verification 强制边界（“Change Verification 必须位于 Change 边界”）、Full Test owner 授权（“Full Test 必须使用 Delivery 验证子状态”）、corrective Change（“Full Test 失败必须创建 corrective Change”）、Run 路径（“Run 路径和编号必须固定”）、_delivery 目录（同一 requirement）、Run ID 单调递增（同一 requirement）、Run 非第二权威（“Run 必须表示一次 Action 执行”）、统一 review 入口（“review 必须只是统一入口”）、review 只执行 Policy 计算的 Review Action（同一 requirement）、同一 Run 边界（“Run 必须表示一次 Action 执行”）、reviewer Run 执行时创建（“Reviewer Run 必须在真正执行时创建”）、Skill 边界（“Skill 必须保持 Action 内方法边界”）、checkout 恢复（“Checkout 后必须确定性恢复”）。19 项全部覆盖。",
+    "核对 NB-001 处理：Design Decision 11 定义 fullTestStatus 为 Flowkit 拥有的 Delivery 验证子状态，Bootstrap 由 Delivery YAML 人工投影，自托管后由 Flowkit Delivery 状态承载，Delivery 级 Run 不是状态权威；Spec “Full Test 必须使用 Delivery 验证子状态” requirement 明确记录该权威边界。NB-001 已妥善处理。",
+    "核对 NB-002 处理：Design Decision 9 定义 Change planned→cancelled 或 active→cancelled、Delivery active→cancelled，owner 授权，保留 artifacts/Runs/Git 历史，cancelled Change 不满足 dependency completion，取消 Delivery 时未 completed Changes 变为 cancelled；Spec “Change 和 Delivery 取消必须由 owner 授权” requirement 覆盖全部规则。NB-002 已妥善处理。",
+    "核对 NB-003 处理：Design Decision 12 使用抽象执行方法类别（文档审查、契约审查、代码审查、安全审查、性能审查），不绑定具体 Skill 标识；Spec “Skill 必须保持 Action 内方法边界” requirement 明确 B1 MUST NOT 绑定具体 Skill 标识。Explore 中的 code-review-and-quality 已被替换为抽象“代码审查”类别。NB-003 已妥善处理。",
+    "核对 Design 的 13 个 Decision 与 Spec Requirements 的对应：D1 三层模型→“Flowkit 必须使用三层核心模型”；D2 最小状态→“Delivery 和 Change 必须使用最小状态”；D3 Action Catalog→“Action Catalog 必须固定”；D4 Review 必经→“Review 必须是正式边界”+“Revision/Fix 必须由 changes-requested 触发”；D5 owner/reviewer→“Owner 不得绕过正式 Verdict”；D6 Policy→“Policy 必须计算唯一合法下一 Action”；D7 review 入口→“review 必须只是统一入口”；D8 Run 边界→“Run 必须表示一次 Action 执行”+“Reviewer Run 必须在真正执行时创建”+“Run 路径和编号必须固定”；D9 取消→“Change 和 Delivery 取消必须由 owner 授权”；D10 Change Verification→“Change Verification 必须位于 Change 边界”；D11 Full Test→“Full Test 必须使用 Delivery 验证子状态”+“Full Test 失败必须创建 corrective Change”；D12 Skill→“Skill 必须保持 Action 内方法边界”；D13 checkout 恢复→“Checkout 后必须确定性恢复”。13 个 Decision 全部覆盖。",
+    "核对 Spec 额外 Requirements：同时只能存在一个活动 Delivery 和 Change、Change 激活和完成条件、核心模型必须形成正式文档——均与 Explore 已冻结事实一致，未引入新决策。",
+    "核对 Proposal/Design/Spec/Tasks 一致性：Delivery 状态（active|completed|cancelled）四处一致；Change 状态（planned|active|completed|cancelled）四处一致；Action Catalog（4 主 + 6 辅助）四处一致；fix-review-findings 替代 revise-apply 在 proposal、design D3、spec 三处一致；fullTestStatus 五状态在 design D11 和 spec 两处一致；Change Verification 四状态在 design D10 和 spec 两处一致；Run 路径在 design D8 和 spec 两处一致；Run 状态（pending|completed|failed|cancelled）一致。",
+    "核对 owner 可承担 reviewer 角色规则：Design Decision 5 定义 owner 可亲自承担或授权他人，但正式 Review Action、Findings 和 Verdict 必须存在，owner 不得在 changes-requested 后直接推进；Spec “Review 必须是正式边界”和“Owner 不得绕过正式 Verdict”两个 requirement 覆盖该规则，且不引入 Review waiver、Finding override 或强制继续机制。规则清晰。",
+    "核对 C1 边界：Design 明确将 Action Package 字段、Skill 标识、Adapter、Schema、序列化路径、持久化 Schema 归属 C1 或后续实现；Spec 未定义任何 JSON Schema、Adapter 协议或 Action Package 字段。B1 未越过 C1。",
+    "核对 D1 边界：Design 明确将具体 Git 命令、提示、工作区处理、展示、授权操作、Commit/Push/Handoff 归属 D1；Spec 定义授权 IS REQUIRED（语义要求）但不定义 HOW（操作步骤）。B1 未越过 D1。",
+    "核对 Run 非第二权威边界：Spec “Run 必须表示一次 Action 执行” requirement 明确 Run 绑定一个 Delivery、零个或一个 Change、一个 Action 和一个角色，只记录一次执行；Design Decision 8 明确 Run 不拥有 Change 契约、流程状态、Git 历史或专业事实。Run 保持非权威边界。",
+    "检索正式 B1 Propose 产物和 009-propose author Run 中的具体执行工具名称：未发现 Codex、ChatGPT、Claude、Cursor、Copilot、Windsurf、VS Code 或 Trae 等名称；角色保持 owner、author、reviewer。",
+    "核对 009-propose author Run 的 findingsAddressed 和 additionalDecisions：NB-001/002/003 处理说明与正式契约一致；4 项 additionalDecisions（Review 必经、Revision/Fix 条件出现、owner 不得绕过、fix-review-findings 替代）均在 Spec 中有对应 Requirement。author Run 内容与正式产物一致。",
+    "核对 tasks.md：63 项任务覆盖核心模型文档（§1）、生命周期文档（§2）、验证文档（§3）、OpenSpec 契约（§4）、Reviewer Findings 收敛（§5）、范围边界检查（§6）、Change 验证（§7）和 Apply 完成定义（§8）；全部标记为未完成 [ ]，符合 Propose 阶段预期；tasks 与 Proposal、Design、Spec 的输出项一致。",
+    "核对正式 Run 定位：009-propose 和 010-review-propose 仅记录单次 Action 的任务、上下文、输出与结果摘要，未成为 Evidence、Receipt 或正式产品决策权威。"
+  ],
+  "verdict": "approved",
+  "nextActionRecommendation": "apply"
+}
