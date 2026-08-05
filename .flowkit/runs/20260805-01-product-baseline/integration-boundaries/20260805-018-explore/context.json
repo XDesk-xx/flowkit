@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-018-explore",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "C1",
+  "changeId": "integration-boundaries",
+  "action": "explore",
+  "role": "author",
+  "inputRef": "c0607262f89978bc8e123a59beecc5823b546320",
+  "dependsOn": [
+    "product-positioning",
+    "core-model"
+  ],
+  "artifacts": [
+    "openspec/specs/flowkit-core-model/spec.md",
+    "openspec/specs/flowkit-product-positioning/spec.md",
+    "docs/core-model.md",
+    "docs/delivery-lifecycle.md",
+    "docs/verification-model.md",
+    "docs/product-positioning.md",
+    "openspec/delivery-groups/20260805-01-product-baseline.yaml"
+  ],
+  "runPath": ".flowkit/runs/20260805-01-product-baseline/integration-boundaries/20260805-018-explore/",
+  "constraints": {
+    "mustNotReopenB1": true,
+    "mustNotModifyA1": true,
+    "mustNotCreateProposal": true,
+    "mustNotFixExchangeMedium": true,
+    "mustNotIntroduceMaterializer": true,
+    "fullTestAllowed": false,
+    "mayCreateReviewRun": false
+  }
+}
