@@ -899,4 +899,3 @@ docs/bootstrap-reference-corrections.md
 ```
 
 它们是 C1／D1 后续 Proposal 和文档修订的输入候选，不代表已经 Review Approved 或 Frozen。
-
