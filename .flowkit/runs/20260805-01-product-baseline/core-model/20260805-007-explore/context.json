@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-007-explore",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "B1",
+  "changeId": "core-model",
+  "action": "explore",
+  "role": "author",
+  "inputRef": "596e549c353659f83de2a46e3044156588ec6f77",
+  "inputs": [
+    "openspec/specs/flowkit-product-positioning/spec.md",
+    "docs/product-positioning.md",
+    "openspec/delivery-groups/20260805-01-product-baseline.yaml"
+  ],
+  "expectedOutputs": [
+    "openspec/changes/core-model/explore.md"
+  ],
+  "runPath": ".flowkit/runs/20260805-01-product-baseline/core-model/20260805-007-explore/",
+  "constraints": {
+    "proposeAllowed": false,
+    "applyAllowed": false,
+    "fullTestAllowed": false,
+    "mayAdvanceFlow": false,
+    "mustPreserveProductPositioning": true,
+    "mustNotDefineC1Protocols": true,
+    "mustNotDefineD1OperationalSteps": true
+  }
+}

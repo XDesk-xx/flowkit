@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-007-explore",
+  "status": "completed",
+  "summary": "Explored the minimal Flowkit core model for Delivery, Change, Action, Verification, Run scoping, and deterministic recovery. The result preserves the A1 product boundary and identifies the decisions that require review-explore confirmation before Propose.",
+  "outputs": [
+    "openspec/changes/core-model/explore.md"
+  ],
+  "proposedDecisions": [
+    "Change states remain planned, active, completed, cancelled.",
+    "Review, revision, verification, and checkpoint do not form an additional Phase layer.",
+    "The unique legal next Action is computed by Policy instead of stored in a current pointer.",
+    "Apply review uses review-apply and findings are corrected through fix-review-findings.",
+    "Change-level Runs use .flowkit/runs/<delivery-id>/<change-id>/<run-id>/.",
+    "Delivery-level Runs should use the reserved _delivery directory.",
+    "Full Test remains a Delivery-level owner-authorized boundary."
+  ],
+  "reviewFocus": [
+    "Whether Delivery needs a paused state.",
+    "Whether _delivery is the correct reserved directory for Delivery-level Runs.",
+    "Whether the proposed Full Test status set is minimal.",
+    "Whether next Action can remain fully derived without a persisted current pointer.",
+    "Whether review-apply and fix-review-findings should be the canonical Apply review loop names."
+  ],
+  "verification": {
+    "status": "not-run",
+    "reason": "Explore produces a decision artifact for review; no Apply verification or Full Test is applicable."
+  },
+  "nextAction": "review-explore"
+}
