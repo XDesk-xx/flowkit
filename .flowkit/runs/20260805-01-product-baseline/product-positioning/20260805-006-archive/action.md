@@ -12,7 +12,7 @@
 
 ## Inputs
 
-- `.flowkit/runs/20260805-01-product-baseline/20260805-005-review-apply/result.json`
+- `.flowkit/runs/20260805-01-product-baseline/product-positioning/20260805-005-review-apply/result.json`
 - `openspec/changes/product-positioning/`
 - `openspec/delivery-groups/20260805-01-product-baseline.yaml`
 - owner 对直接 Archive 和 Change Checkpoint 的授权

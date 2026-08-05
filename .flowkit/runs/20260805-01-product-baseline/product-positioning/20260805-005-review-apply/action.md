@@ -28,9 +28,9 @@ Base 是 owner 批准后的修订 Propose 边界；Head 是 author 完成 A1 App
 - `openspec/changes/product-positioning/verification.md`
 - `docs/product-positioning.md`
 - `README.md`
-- `.flowkit/runs/20260805-01-product-baseline/20260805-004-apply/action.md`
-- `.flowkit/runs/20260805-01-product-baseline/20260805-004-apply/context.json`
-- `.flowkit/runs/20260805-01-product-baseline/20260805-004-apply/result.json`
+- `.flowkit/runs/20260805-01-product-baseline/product-positioning/20260805-004-apply/action.md`
+- `.flowkit/runs/20260805-01-product-baseline/product-positioning/20260805-004-apply/context.json`
+- `.flowkit/runs/20260805-01-product-baseline/product-positioning/20260805-004-apply/result.json`
 
 ## Required verification
 

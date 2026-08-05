@@ -19,7 +19,7 @@
     "docs/product-positioning.md",
     "openspec/changes/product-positioning/tasks.md",
     "openspec/changes/product-positioning/verification.md",
-    ".flowkit/runs/20260805-01-product-baseline/20260805-004-apply/"
+    ".flowkit/runs/20260805-01-product-baseline/product-positioning/20260805-004-apply/"
   ],
   "constraints": {
     "fullTestAllowed": false,

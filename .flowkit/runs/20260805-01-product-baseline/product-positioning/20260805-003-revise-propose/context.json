@@ -7,13 +7,13 @@
   "action": "revise-propose",
   "role": "author",
   "inputRef": "74ed4c7964a1b03dd72b9ce9de71701093c3674c",
-  "sourceReviewRun": ".flowkit/runs/20260805-01-product-baseline/20260805-002-review-propose/result.json",
+  "sourceReviewRun": ".flowkit/runs/20260805-01-product-baseline/product-positioning/20260805-002-review-propose/result.json",
   "findings": [
     "B-001"
   ],
   "allowedPaths": [
     "openspec/changes/product-positioning/specs/flowkit-product-positioning/spec.md",
-    ".flowkit/runs/20260805-01-product-baseline/20260805-003-revise-propose/"
+    ".flowkit/runs/20260805-01-product-baseline/product-positioning/20260805-003-revise-propose/"
   ],
   "constraints": {
     "applyAllowed": false,

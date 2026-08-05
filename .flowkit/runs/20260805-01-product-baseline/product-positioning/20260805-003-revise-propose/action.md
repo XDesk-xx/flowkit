@@ -12,7 +12,7 @@
 
 ## Input
 
-- `.flowkit/runs/20260805-01-product-baseline/20260805-002-review-propose/result.json`
+- `.flowkit/runs/20260805-01-product-baseline/product-positioning/20260805-002-review-propose/result.json`
 - `openspec/changes/product-positioning/specs/flowkit-product-positioning/spec.md`
 
 ## Allowed work

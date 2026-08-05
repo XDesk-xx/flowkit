@@ -20,11 +20,11 @@
     "openspec/changes/product-positioning/verification.md",
     "docs/product-positioning.md",
     "README.md",
-    ".flowkit/runs/20260805-01-product-baseline/20260805-004-apply/action.md",
-    ".flowkit/runs/20260805-01-product-baseline/20260805-004-apply/context.json",
-    ".flowkit/runs/20260805-01-product-baseline/20260805-004-apply/result.json"
+    ".flowkit/runs/20260805-01-product-baseline/product-positioning/20260805-004-apply/action.md",
+    ".flowkit/runs/20260805-01-product-baseline/product-positioning/20260805-004-apply/context.json",
+    ".flowkit/runs/20260805-01-product-baseline/product-positioning/20260805-004-apply/result.json"
   ],
-  "requiredOutputPath": ".flowkit/runs/20260805-01-product-baseline/20260805-005-review-apply/result.json",
+  "requiredOutputPath": ".flowkit/runs/20260805-01-product-baseline/product-positioning/20260805-005-review-apply/result.json",
   "requiredChecks": [
     "git diff --name-status <baseRef> <headRef>",
     "git diff --check <baseRef> <headRef>",

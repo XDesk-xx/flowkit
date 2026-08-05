@@ -7,7 +7,7 @@
   "action": "archive",
   "role": "author",
   "inputRef": "1c6c2c63b4a024e44b4dd74892c3943c94d4461b",
-  "sourceReviewRun": ".flowkit/runs/20260805-01-product-baseline/20260805-005-review-apply/result.json",
+  "sourceReviewRun": ".flowkit/runs/20260805-01-product-baseline/product-positioning/20260805-005-review-apply/result.json",
   "reviewVerdict": "approved",
   "archivePath": "openspec/changes/archive/2026-08-05-product-positioning/",
   "mainSpecPath": "openspec/specs/flowkit-product-positioning/spec.md",
