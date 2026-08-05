@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-023-review-propose",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "C1",
+  "changeId": "integration-boundaries",
+  "action": "review-propose",
+  "role": "reviewer",
+  "reviewRange": {
+    "baseRef": "22045603bb145bfb48d5075778b673a61d3d8786",
+    "headRef": "3533fa209c9d744a07decc82d7d7bc86c2ac8113"
+  },
+  "sourceExploreReviewRun": "20260805-021-review-explore",
+  "sourceProposeRun": "20260805-022-propose",
+  "artifacts": [
+    "openspec/changes/integration-boundaries/explore.md",
+    "openspec/changes/integration-boundaries/proposal.md",
+    "openspec/changes/integration-boundaries/design.md",
+    "openspec/changes/integration-boundaries/specs/flowkit-integration-boundaries/spec.md",
+    "openspec/changes/integration-boundaries/tasks.md",
+    ".flowkit/runs/20260805-01-product-baseline/integration-boundaries/20260805-022-propose/"
+  ],
+  "constraints": {
+    "readOnlyExceptCurrentRun": true,
+    "fullTestAllowed": false,
+    "mayReviseProposal": false,
+    "mayApply": false,
+    "mayArchive": false,
+    "mayAdvanceFlow": false,
+    "commitAllowed": false
+  }
+}
