@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-022-propose",
+  "status": "completed",
+  "summary": "Completed C1 Propose: created proposal.md, design.md, spec.md (flowkit-integration-boundaries capability), and tasks.md. The proposal defines environment-neutral logical integration boundaries based on the approved Explore. Design has 13 Decisions answering Q1-Q8 convergence questions. Spec has 11 Requirements with 22 Scenarios covering Action Package, Action Result, ResultRef, Continuation Context, continuation boundary, reviewedResultRef, Adapter boundary, Skill declaration, external tool authority boundaries, exchange media neutrality, and no-modification-of-B1. Tasks has 5 sections with 33 items. No B1 documents modified. No exchange media fixed. No Materializer/Registry/topology introduced.",
+  "artifactsCreated": [
+    "openspec/changes/integration-boundaries/proposal.md",
+    "openspec/changes/integration-boundaries/design.md",
+    "openspec/changes/integration-boundaries/specs/flowkit-integration-boundaries/spec.md",
+    "openspec/changes/integration-boundaries/tasks.md"
+  ],
+  "keyDecisions": [
+    "D1: Action Package = logical input view, not physical file package (Q1)",
+    "D2: Action Result = record what happened, Policy decides next",
+    "D3: ResultRef minimum semantics (Q4)",
+    "D4: Continuation Context = generated view, not state authority (Q2)",
+    "D5: Continuation boundary = boundary semantics, not new entity",
+    "D6: reviewedResultRef replaces Git-only binding (Q3)",
+    "D7: Adapter = I/O conversion only, not second orchestrator",
+    "D8: Skill = method category declaration (Q5)",
+    "D9: External tool authority boundaries",
+    "D10: C1/D1 boundary (C1=what info, D1=when formed)",
+    "D11: Abolished directions (6 items)",
+    "D12: No modification to B1 frozen docs (Q6, Q7, Q8)",
+    "D13: Expected document impact"
+  ],
+  "nextAction": "review-propose",
+  "blockedOn": []
+}
