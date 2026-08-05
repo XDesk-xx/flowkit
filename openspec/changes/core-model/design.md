@@ -285,15 +285,18 @@ B1 不绑定具体 Skill 标识。Skill 不得决定 Delivery、Change、Action�
 
 ## 实施计划
 
-1. 创建 `docs/core-model.md`
-2. 创建 `docs/delivery-lifecycle.md`
-3. 创建 `docs/verification-model.md`
-4. 对照 capability spec 完成文档
-5. 处理 reviewer 的 NB-001、NB-002、NB-003
-6. 运行 OpenSpec strict validation
-7. 运行文档检查和 `git diff --check`
-8. 填写 `verification.md`
-9. 提交 `review-apply`
+前置条件：以下步骤仅在 `review-propose` Verdict 为 `approved` 且 owner 明确授权 Apply 后开始。
+
+1. 优先创建 `verification.md`，列出所有适用检查及初始 `not-run` 状态
+2. 创建 `docs/core-model.md`
+3. 创建 `docs/delivery-lifecycle.md`
+4. 创建 `docs/verification-model.md`
+5. 对照 capability spec 完成文档
+6. 处理 reviewer 的 NB-001、NB-002、NB-003
+7. 运行 OpenSpec strict validation
+8. 运行文档检查和 `git diff --check`
+9. 更新 `verification.md`
+10. 提交 `review-apply`
 
 ## 回滚
 

@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-011-apply",
+  "status": "completed",
+  "summary": "Applied the approved B1 core-model proposal by creating the three formal model documents, establishing the verification record at Apply start, adding the approved-and-authorized Apply gate to the design plan, completing all tasks, and running applicable document and consistency checks. No production code or Full Test was executed.",
+  "outputs": [
+    "docs/core-model.md",
+    "docs/delivery-lifecycle.md",
+    "docs/verification-model.md",
+    "openspec/changes/core-model/design.md",
+    "openspec/changes/core-model/tasks.md",
+    "openspec/changes/core-model/verification.md"
+  ],
+  "reviewFindingsAddressed": {
+    "NB-001": "Created verification.md at Apply start with all applicable checks, statuses, methods, and results.",
+    "NB-002": "Added the review-propose approved and owner Apply authorization precondition before the implementation plan."
+  },
+  "verification": {
+    "status": "passed",
+    "record": "openspec/changes/core-model/verification.md",
+    "openspecStrict": {
+      "status": "passed",
+      "evidence": "20260805-010-review-propose verified npx openspec validate core-model --strict at proposal head 6a664b0a88e338c7ff41fda9d4e84ea86883aff2; proposal and capability spec were unchanged during Apply."
+    },
+    "markdownStructure": "passed",
+    "whitespace": "passed",
+    "contractConsistency": "passed",
+    "productPositioningConsistency": "passed",
+    "scope": "passed",
+    "fullTest": "not-run"
+  },
+  "commit": {
+    "status": "created",
+    "kind": "ordinary-atomic-multi-file",
+    "authorization": "owner-confirmed",
+    "note": "This Apply result is recorded by the current atomic commit; the Run does not store its own commit SHA."
+  },
+  "nextAction": "review-apply"
+}
