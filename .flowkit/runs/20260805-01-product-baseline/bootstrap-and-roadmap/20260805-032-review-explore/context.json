@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-032-review-explore",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "D1",
+  "changeId": "bootstrap-and-roadmap",
+  "action": "review-explore",
+  "role": "reviewer",
+  "reviewRange": {
+    "baseRef": "4bd2fb85477c7059544dc86a7d428ad9126db280",
+    "headRef": "05efb94cd5cc5cd1f37ebd03d714141b94803cb5"
+  },
+  "sourceReviewRun": "20260805-030-review-explore",
+  "sourceReviseRun": "20260805-031-revise-explore",
+  "findingsReviewed": [
+    "D1-RE-001"
+  ],
+  "ownerConfirmedCorrectionsReviewed": [
+    "section-7.4-change-start-pseudo-boundary"
+  ],
+  "artifacts": [
+    "openspec/changes/bootstrap-and-roadmap/explore.md",
+    "openspec/specs/flowkit-core-model/spec.md",
+    "ref/d1-bootstrap-and-roadmap-reference.md",
+    ".flowkit/runs/20260805-01-product-baseline/bootstrap-and-roadmap/20260805-031-revise-explore/"
+  ],
+  "constraints": {
+    "readOnlyExceptCurrentRun": true,
+    "fullTestAllowed": false,
+    "mayFixFindings": false,
+    "mayPropose": false,
+    "mayApply": false,
+    "mayArchive": false,
+    "mayAdvanceFlow": false,
+    "commitAllowed": false
+  }
+}

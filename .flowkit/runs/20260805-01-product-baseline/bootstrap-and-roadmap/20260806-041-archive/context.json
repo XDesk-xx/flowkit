@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-041-archive",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "D1",
+  "changeId": "bootstrap-and-roadmap",
+  "action": "archive",
+  "role": "author",
+  "inputRef": "content-sha256:CC543BDFA013044B066EDA0747C48BAA565DBE7B07C20ED76F7D29A6AF247468",
+  "sourceReviewRun": "20260806-040-review-apply",
+  "sourceReviewVerdict": "approved",
+  "ownerAuthorization": {
+    "type": "archive",
+    "source": "owner directive"
+  },
+  "constraints": {
+    "mustNotReopenFrozenChanges": true,
+    "mustNotModifyFrozenDocs": true,
+    "mustNotAutoCommit": true,
+    "fullTestAllowed": false,
+    "mayCreateReviewRun": false
+  },
+  "runPath": ".flowkit/runs/20260805-01-product-baseline/bootstrap-and-roadmap/20260806-041-archive/"
+}

@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-038-review-apply",
+  "status": "completed",
+  "reviewedResultRef": {
+    "kind": "content-sha256",
+    "value": "9927ECD282A80ABCCDE61658EBBA36A7DE25E9310DB2FE2A54BFC37F91780AE8",
+    "artifacts": [
+      "docs/bootstrap-reference.md",
+      "docs/development-roadmap.md",
+      "AGENTS.md",
+      ".codex/skills/flowkit-git-workflow/SKILL.md",
+      "openspec/changes/bootstrap-and-roadmap/verification.md",
+      "openspec/changes/bootstrap-and-roadmap/tasks.md"
+    ]
+  },
+  "summary": "D1 037-apply 的四份正式输出文档覆盖了 approved Proposal 的 Bootstrap、Git、授权、媒介中立与 Roadmap 契约，且未修改 B1 冻结文档；严格 OpenSpec 校验、内容扫描也通过。但 tasks.md 的 74 项仍全部未完成，verification.md 仅列出预期结果而没有实际执行状态和证据。两项均阻止 Archive。",
+  "findings": {
+    "blocking": [
+      {
+        "id": "D1-RA-001",
+        "title": "Apply 已声称完成，但 tasks.md 的 74 项仍全部未完成",
+        "location": "openspec/changes/bootstrap-and-roadmap/tasks.md:3-94",
+        "problem": "037-apply result 声称四份正式文档和 verification.md 已完成，但 tasks.md 中全部 74 个 Apply/Verification task 仍为 [ ]。",
+        "impact": "D1 没有可核验的任务完成状态；依据 B1 的 Archive 前置条件，Tasks 未完成时 review-apply 和 Archive 都不能通过。",
+        "requiredResolution": "在 revise-apply 中逐项对照实际产物和验证证据后，将已完成的 74 项标为 [x]；不得把未完成或未验证的工作标为完成，且不得修改 A1/B1/C1 冻结文档。"
+      },
+      {
+        "id": "D1-RA-002",
+        "title": "正式 verification.md 只有验证计划，没有实际结果记录",
+        "location": "openspec/changes/bootstrap-and-roadmap/verification.md:11-39",
+        "problem": "第 1 节将 OpenSpec、whitespace、U+FFFD 和 git diff --check 均写为“预期结果”，没有记录本次 Apply 实际执行的 status、exit code/count、文件范围或结果引用；037 result.json 的摘要不能替代正式 Change Verification 记录。",
+        "impact": "Review 与 Archive 无法从 verification.md 无歧义地确认哪些适用检查已执行并通过，或将其与 Full Test 的 not-run/not-applicable 状态区分。",
+        "requiredResolution": "在 revise-apply 中将 verification.md 改为实际验证记录：对每项适用检查写入实际 status、命令/方法、文件范围和 exit code/count；Full Test 单独保持未运行且对当前文档 Change 不适用。"
+      }
+    ],
+    "nonBlocking": []
+  },
+  "verificationReviewed": [
+    "复核 037-apply Action、Context 和 Result：Apply 具有 owner apply 授权，并仅创建 D1 正式输出文档、verification.md 和 Apply Run。",
+    "执行 npx openspec validate bootstrap-and-roadmap --strict：通过（Change 'bootstrap-and-roadmap' is valid）。",
+    "复核 docs/bootstrap-reference.md、docs/development-roadmap.md、AGENTS.md 与 flowkit-git-workflow Skill：覆盖 Bootstrap 最小循环、Run 目标边界、三种 Git 正式边界、Section 10 覆盖、owner 授权、媒介中立和最小 Roadmap；未固定 Provider/Forge。",
+    "独立扫描六份 Apply artifacts：行尾空白 0 行、space-before-tab 0 行、U+FFFD replacement character 0 个。",
+    "检查 tasks.md：74 个 [ ] 未完成项，发现 D1-RA-001。",
+    "复核 verification.md：适用检查仅记录预期结果、没有实际状态与结果证据，发现 D1-RA-002。",
+    "检查 CodeGraph MCP 状态：已启用，但索引仍只有 5 个 YAML、0 个节点、0 条边；无法为当前未跟踪 Markdown/Skill 产物提供结构影响结果。",
+    "本轮未运行 Full Test，未修改 D1 正式产物、冻结产物、先前 Run 或 Delivery 状态，未提交或推送。"
+  ],
+  "verdict": "changes-requested",
+  "nextActionRecommendation": "revise-apply"
+}

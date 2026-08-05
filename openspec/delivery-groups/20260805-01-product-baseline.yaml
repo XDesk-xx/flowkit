@@ -86,7 +86,7 @@ changes:
       - product-positioning
       - core-model
       - integration-boundaries
-    state: active
+    state: completed
     outputs:
       - docs/bootstrap-reference.md
       - docs/development-roadmap.md

@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-041-archive",
+  "status": "completed",
+  "summary": "Completed D1 Archive: ran openspec archive bootstrap-and-roadmap -y, which synced 15 requirements to openspec/specs/flowkit-bootstrap-and-roadmap/spec.md and moved the change to openspec/changes/archive/2026-08-05-bootstrap-and-roadmap/. Updated manifest: D1 state active → completed. All 4 specs validate --strict. D1 lifecycle is now complete (explore → review → revise → review → propose → review → revise → review → apply → review → revise → review → archive). Next: Change Checkpoint Commit.",
+  "archiveExecuted": {
+    "command": "npx openspec archive bootstrap-and-roadmap -y",
+    "specCreated": "openspec/specs/flowkit-bootstrap-and-roadmap/spec.md",
+    "requirementsSynced": 15,
+    "changeArchivedTo": "openspec/changes/archive/2026-08-05-bootstrap-and-roadmap/",
+    "archivedFiles": [
+      ".openspec.yaml",
+      "design.md",
+      "explore.md",
+      "proposal.md",
+      "tasks.md",
+      "verification.md",
+      "specs/flowkit-bootstrap-and-roadmap/spec.md"
+    ]
+  },
+  "manifestUpdated": {
+    "file": "openspec/delivery-groups/20260805-01-product-baseline.yaml",
+    "change": "D1 state: active → completed"
+  },
+  "verification": {
+    "openspecValidateSpecs": {
+      "status": "passed",
+      "command": "npx openspec validate --specs --strict",
+      "result": "4 passed, 0 failed (flowkit-bootstrap-and-roadmap, flowkit-core-model, flowkit-integration-boundaries, flowkit-product-positioning)"
+    },
+    "whitespaceScan": {
+      "status": "passed",
+      "file": "openspec/specs/flowkit-bootstrap-and-roadmap/spec.md",
+      "result": "trailing=0, space_before_tab=0"
+    },
+    "ufffdScan": {
+      "status": "passed",
+      "file": "openspec/specs/flowkit-bootstrap-and-roadmap/spec.md",
+      "count": 0
+    },
+    "gitDiffCheck": {
+      "status": "passed",
+      "exitCode": 0
+    }
+  },
+  "d1LifecycleComplete": {
+    "explore": "029-explore",
+    "reviewExplore": "030-review-explore",
+    "reviseExplore": "031-revise-explore",
+    "reviewExplore2": "032-review-explore",
+    "propose": "033-propose",
+    "reviewPropose": "034-review-propose",
+    "revisePropose": "035-revise-propose",
+    "reviewPropose2": "036-review-propose",
+    "apply": "037-apply",
+    "reviewApply": "038-review-apply",
+    "reviseApply": "039-revise-apply",
+    "reviewApply2": "040-review-apply",
+    "archive": "041-archive"
+  },
+  "nextAction": "change-checkpoint-commit",
+  "blockedOn": []
+}

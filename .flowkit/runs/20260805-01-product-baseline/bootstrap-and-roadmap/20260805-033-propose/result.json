@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-033-propose",
+  "status": "completed",
+  "summary": "Completed D1 Propose: converted 032-approved Explore conclusions into formal Proposal four-artifact bundle. proposal.md defines Why (old Bootstrap fixed-pattern deviations), What Changes (4 formal output docs + capability spec + 12 frozen rules), Capabilities (new flowkit-bootstrap-and-roadmap), Impact. design.md defines 14 Decisions answering Explore Q1-Q10 and P1-P6, covering Bootstrap minimum loop, Run creation boundary (with goal change), Run file minimum content, Continuation Context generation, Git 3-boundary model (Change activation not formal), ordinary Commit principles, Review not requiring Commit, owner authorization, patterns to avoid, AGENTS/Skill boundaries, Development Roadmap, formal doc structure, delivery-lifecycle Section 10 handling, and capability naming. spec.md defines 15 Requirements with Scenarios covering all frozen conclusions. tasks.md defines 7 sections with apply-phase tasks. Per owner instruction, no Git Commit was created; all artifacts remain in working tree until Change Checkpoint.",
+  "artifactsProduced": [
+    "openspec/changes/bootstrap-and-roadmap/proposal.md",
+    "openspec/changes/bootstrap-and-roadmap/design.md",
+    "openspec/changes/bootstrap-and-roadmap/specs/flowkit-bootstrap-and-roadmap/spec.md",
+    "openspec/changes/bootstrap-and-roadmap/tasks.md"
+  ],
+  "keyConclusions": [
+    "Bootstrap manually executes same Flowkit rules; no second bootstrap-only state system.",
+    "Run creation boundary includes goal change; same Run only when Action+role+goal all unchanged.",
+    "Run files save minimum content; no complete conversations; no auto-commit.",
+    "Git formal boundaries are only 3: Delivery Start, Change Checkpoint, Delivery Final.",
+    "Change activation is NOT a formal Git boundary; does not require dedicated commit.",
+    "Ordinary Commits only by real need; do not advance Flowkit state.",
+    "Review not forced to bind Git Commit; reviewedResultRef may use Run ResultRef, content hash, etc.",
+    "Owner authorization required for Apply, Archive, Full Test, Finalize, corrective Change, destructive Git.",
+    "4 formal outputs: docs/bootstrap-reference.md, docs/development-roadmap.md, AGENTS.md, .codex/skills/flowkit-git-workflow/SKILL.md.",
+    "flowkit-git-workflow Skill only executes determined Git behaviors; no process decision authority.",
+    "Development Roadmap: Deterministic Core → Change Execution Loop → Delivery Execution Loop; no Registry or plugin platform.",
+    "D1 does not modify A1, B1, or C1; true conflicts require corrective Change."
+  ],
+  "verification": {
+    "openspecValidate": {
+      "status": "passed",
+      "command": "npx openspec validate bootstrap-and-roadmap --strict",
+      "result": "Change 'bootstrap-and-roadmap' is valid"
+    },
+    "ufffdScan": {
+      "status": "passed",
+      "files": [
+        "openspec/changes/bootstrap-and-roadmap/proposal.md",
+        "openspec/changes/bootstrap-and-roadmap/design.md",
+        "openspec/changes/bootstrap-and-roadmap/specs/flowkit-bootstrap-and-roadmap/spec.md",
+        "openspec/changes/bootstrap-and-roadmap/tasks.md"
+      ],
+      "count": 0
+    },
+    "gitDiffCheck": {
+      "status": "passed",
+      "command": "git diff --check",
+      "exitCode": 0
+    },
+    "jsonValid": {
+      "status": "passed",
+      "files": [
+        "context.json",
+        "result.json"
+      ]
+    }
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "reason": "Per owner instruction and D1 frozen Git model: Action/Run do not auto-commit. All propose artifacts remain in working tree and will enter Git history at Change Checkpoint."
+  },
+  "nextAction": "review-propose",
+  "blockedOn": []
+}

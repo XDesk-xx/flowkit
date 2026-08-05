@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-036-review-propose",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "D1",
+  "changeId": "bootstrap-and-roadmap",
+  "action": "review-propose",
+  "role": "reviewer",
+  "reviewRange": {
+    "baseRef": "content-sha256:F41767E9144B53ABAD70F3E063C731E93FCB45C32AE4F95A94566EE0E7F9EA6F",
+    "reviewedResultRef": {
+      "kind": "content-sha256",
+      "value": "E84621F8EDC742599AD06506ED87A46A90918D609A21BAB28228E806833AC2C4",
+      "artifacts": [
+        "openspec/changes/bootstrap-and-roadmap/proposal.md",
+        "openspec/changes/bootstrap-and-roadmap/design.md",
+        "openspec/changes/bootstrap-and-roadmap/specs/flowkit-bootstrap-and-roadmap/spec.md",
+        "openspec/changes/bootstrap-and-roadmap/tasks.md"
+      ]
+    }
+  },
+  "sourceReviewRun": "20260805-034-review-propose",
+  "sourceReviseRun": "20260805-035-revise-propose",
+  "findingsReviewed": [
+    "D1-RP-001",
+    "D1-RP-002"
+  ],
+  "artifacts": [
+    "openspec/changes/bootstrap-and-roadmap/proposal.md",
+    "openspec/changes/bootstrap-and-roadmap/design.md",
+    "openspec/changes/bootstrap-and-roadmap/specs/flowkit-bootstrap-and-roadmap/spec.md",
+    "openspec/changes/bootstrap-and-roadmap/tasks.md",
+    ".flowkit/runs/20260805-01-product-baseline/bootstrap-and-roadmap/20260805-035-revise-propose/"
+  ],
+  "constraints": {
+    "readOnlyExceptCurrentRun": true,
+    "fullTestAllowed": false,
+    "mayFixFindings": false,
+    "mayApply": false,
+    "mayArchive": false,
+    "mayAdvanceFlow": false,
+    "commitAllowed": false
+  }
+}
