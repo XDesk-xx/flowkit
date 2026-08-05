@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-008-review-explore",
+  "status": "completed",
+  "summary": "已按固定 Base 596e549c353659f83de2a46e3044156588ec6f77 与 Head 199eb3e0ab11ca5bf8af79957a226a8837c27f10 独立审查 B1 Explore 全文。Explore 忠实消费 A1 已冻结的产品定位，在 B1 边界内冻结了 Delivery/Change/Action 最小状态、Policy 推导、Review/Revision/Verification/Checkpoint 不形成额外 Phase、Run 模型与统一 review 入口、checkout 恢复和 Skill 边界。未发现隐含 Phase、重复状态、第二事实权威或越界定义 C1/D1 协议。_delivery 候选目录经本次审查确认。无 Blocking Findings，可进入 propose。",
+  "findings": {
+    "blocking": [],
+    "nonBlocking": [
+      {
+        "id": "NB-001",
+        "title": "Full Test 授权状态缺少确定的存储投影位置",
+        "location": "openspec/changes/core-model/explore.md §4.1, §8.2, §10",
+        "problem": "Explore 明确 Delivery 主状态为 active|completed|cancelled，并将 ready-for-full-test、awaiting-user-decision、full-test-failed、finalizing 归为验证状态或推导结论而非主状态；§8.2 进一步定义了 not-ready → awaiting-user-decision → authorized → passed|failed 的 Full Test 状态机。但 Explore 未指出这些 Full Test 验证状态在 checkout 后由哪个正式事实承载：§10 排除了 current pointer、聊天历史和未提交日志，Delivery YAML 被描述为人工维护投影，但未明确 Full Test 验证状态是否投影其中或由 Delivery 级 Run 承载。",
+        "impact": "当所有 required Change 完成归档后，Policy 需要判断 Full Test 处于 not-ready 还是 awaiting-user-decision，以及 owner 是否已授权。若该状态无确定承载位置，checkout 恢复无法确定性推导 Full Test 阶段，可能与 §10 的恢复契约不一致。",
+        "requiredChange": "在 Propose 阶段明确 Full Test 验证状态的正式承载方式（例如投影到 Delivery manifest 的验证字段，或由 Delivery 级 committed Run 记录授权事实），使其满足 §10 的 checkout 恢复要求；若属于 C1 存储协议则显式标注为 C1 负责。"
+      },
+      {
+        "id": "NB-002",
+        "title": "cancelled 状态缺少进入条件和转换规则",
+        "location": "openspec/changes/core-model/explore.md §4.1, §4.2, §7",
+        "problem": "Delivery 和 Change 均声明 cancelled 为合法状态，但 §7 的推进规则只定义了 planned→active、explore/propose/apply/archive 的正向闭环和 completed 的达成条件，未定义任何进入 cancelled 的前置条件、触发角色或状态转换。",
+        "impact": "当真实场景出现需要取消 Delivery 或 Change 时，Policy 无法确定性判断 cancelled 是否合法、由谁授权、是否需要归档已产生 artifacts。当前 Delivery 暂无取消场景，但不定义转换会让 cancelled 成为不可达的死状态。",
+        "requiredChange": "在 Propose 阶段为 cancelled 补充最小进入条件（至少：谁授权、是否需要保留已产生 artifacts、对依赖的影响），或显式声明 cancelled 的转换规则延后至出现真实取消场景时再定义。"
+      },
+      {
+        "id": "NB-003",
+        "title": "示例 Skill 名称 code-review-and-quality 应在 Propose 中保持非约束性",
+        "location": "openspec/changes/core-model/explore.md §9.4",
+        "problem": "§9.4 在说明 Review Action 可声明执行 Skill 时，以“涉及源码的 review-apply：可使用 code-review-and-quality”作为示例。虽然“可使用”表明非约束、且 Explore 明确将具体 Skill 标识交由 C1 定义，但在 B1 语义模型中出现具体 Skill 名称可能在 Propose 阶段被误读为正式 Skill 绑定。",
+        "impact": "若 Propose 的正式 spec 保留该名称且未标注为纯示例，可能提前固化 C1 负责的 Skill 声明协议，与 B1/C1 边界产生轻微张力。",
+        "requiredChange": "在 Propose 阶段确保正式契约中将该名称标注为 illustrative example，或将示例改为抽象描述（如“涉及源码的 review-apply 可声明代码审查类 Skill”），保持具体 Skill 标识和声明协议归属 C1。"
+      }
+    ]
+  },
+  "verificationReviewed": [
+    "完整阅读 review-explore Run 的 action.md 与 context.json，以及 delivery group manifest、core-model/.openspec.yaml、B1 Explore 全文、A1 capability spec、docs/product-positioning.md、已归档 A1 Explore 和 007-explore author Run（action.md/context.json/result.json）。",
+    "检查固定范围 git diff --name-status 596e549c353659f83de2a46e3044156588ec6f77 199eb3e0ab11ca5bf8af79957a226a8837c27f10：仅含 openspec/changes/core-model/explore.md 与 007-explore author Run（action.md、context.json、result.json），未含生产代码、依赖、Runner、CLI 或状态机实现。",
+    "执行 git diff --check 596e549c353659f83de2a46e3044156588ec6f77 199eb3e0ab11ca5bf8af79957a226a8837c27f10：通过，无空白错误。",
+    "执行 npx openspec validate core-model --strict：not-applicable。B1 处于 explore 阶段，仅有 explore.md 和 .openspec.yaml，无 Proposal/Specs/Tasks/Verification；openspec list 能识别 core-model 但 validate/show 因缺少 propose artifacts 而无法校验。OpenSpec 严格校验适用于 propose 阶段。",
+    "逐项核对 B1 Explore 与 A1 已冻结决策：Delivery>Change>Action 三层关系保持；One fact, one authority 保持（Run 明确不是第二权威）；正式角色保持 owner/author/reviewer 中立；Action 不与 Git Commit 一一对应保持；最小流程事实保持；产品非目标（无 Skill Registry/Skill Router/Plugin/Evidence/Receipt）保持。",
+    "核对 §4 状态模型：Delivery 为 active|completed|cancelled，Change 为 planned|active|completed|cancelled；未新增 reviewing/revising/verifying/ready 等隐式状态；Review/Revision/Verification/Checkpoint 在 §5 明确不形成额外 Phase。无重复状态。",
+    "核对 §6 Policy 推导：未持久化 currentAction；Policy 输入集（活动 Delivery/Change、依赖、OpenSpec artifacts、已完成/失败 Run、reviewer Verdict、Change Verification、owner 授权、Archive/Checkpoint/Git 边界）覆盖 §10 恢复所需事实；多解或冲突时阻塞。确定性可恢复。",
+    "核对 §6.1 统一 review 入口：reviewer 执行 review 时由 Policy 计算唯一具体 Review Action（review-explore/review-propose/review-apply），非 Review 或多解时返回 blocked diagnosis。reviewer 不自行选择，确定性保持。",
+    "核对 §9.3 Review Run 创建时机：author 在 result.json 记录 nextAction: review-*，不预建空 reviewer Run；reviewer 真正执行时创建新 Run。007-explore 的 result.json nextAction 为 review-explore，本次 008-review-explore 在 reviewer 执行时创建，与模型一致。",
+    "核对 §9.2 同一 Action 与新 Run 边界：同一角色、同一 Action、同一目标的多轮讨论和普通 Commit 属于同一 Run；新 Run 仅在正式 Action 变化、角色变化或上次 Run 失败/取消时创建。边界清晰且可机械判断。",
+    "核对 §9.4 Skill 边界：Skill 只提供当前 Action 内方法，不决定 Delivery/Change/Action/Review/Full Test/下一 Action/Archive/Finalize；不引入 Skill Registry/Skill Router/动态发现/Prompt Registry。Skill 保持轻量且未形成第二流程权威。",
+    "核对 §9.5 _delivery 候选目录：.flowkit/runs/<delivery-id>/_delivery/<run-id>/ 使用下划线前缀避免与语义 change-id 冲突（change-id 不以下划线开头），位置与 Change 级 Run 一致。本次 review-explore 确认 _delivery 适合作为 Delivery 级 Run 候选目录。",
+    "核对 §8.2 Full Test 状态机：not-ready → awaiting-user-decision → authorized → passed|failed 覆盖了未就绪、待 owner 决策、已授权和终态；§8.2 明确 Full Test 失败不重开归档 Change 而是新建 corrective Change，保持归档 Change 不可变性。状态集合基本最小。",
+    "核对 §10 checkout 恢复：7 步恢复只依赖活动 Delivery/Change、Delivery Branch、依赖、OpenSpec、committed Run、Run 路径/字段/Verdict/Verification/Git 边界和 Policy；明确排除聊天历史、.tmp、未提交日志、人工记忆、current pointer、预建 pending Review Run 和写入状态文件的 Commit SHA。",
+    "核对 §11 B1/C1/D1 边界：B1 冻结核心语义、状态、转换、阻塞规则、reviewer 入口、Run 边界、Skill 流程权威边界和恢复位置；Action Package 字段/Skill 标识/Adapter/Schema/错误协议归属 C1；owner/author/reviewer 协作步骤/Git 命令/Push/Handoff/Checkpoint 操作/Bootstrap 手工说明归属 D1。B1 未越界定义 C1 或 D1 的具体协议。",
+    "检索正式 B1 产物和 007-explore author Run 中的具体执行工具名称：未发现 Codex、ChatGPT、Claude、Cursor、Copilot、Windsurf、VS Code 或 Trae 等名称；角色保持 owner、author、reviewer。",
+    "核对 007-explore author Run 的 proposedDecisions 和 reviewFocus：逐项在 Explore 全文中找到对应冻结结论；author 提出的 9 项 reviewFocus 均在本 review 中独立审查并覆盖。",
+    "核对正式 Run 定位：007-explore 和 008-review-explore 仅记录单次 Action 的任务、上下文、输出与结果摘要（含 Findings/Verdict），未成为 Evidence、Receipt 或正式产品决策权威；Run 中未发现需要回写但未回写到正式权威的产品决策。"
+  ],
+  "verdict": "approved",
+  "nextActionRecommendation": "propose"
+}
