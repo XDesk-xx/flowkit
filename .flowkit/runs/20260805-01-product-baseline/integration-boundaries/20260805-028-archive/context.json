@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-028-archive",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "C1",
+  "changeId": "integration-boundaries",
+  "action": "archive",
+  "role": "author",
+  "inputRef": "f6bf580041de67418a913150f8f3f02b5535cbe2",
+  "sourceReviewRun": ".flowkit/runs/20260805-01-product-baseline/integration-boundaries/20260805-027-review-apply/result.json",
+  "reviewVerdict": "approved",
+  "archivePath": "openspec/changes/archive/2026-08-05-integration-boundaries/",
+  "mainSpecPath": "openspec/specs/flowkit-integration-boundaries/spec.md",
+  "statePath": "openspec/delivery-groups/20260805-01-product-baseline.yaml",
+  "constraints": {
+    "ownerAuthorizedArchive": true,
+    "ownerAuthorizedCheckpoint": true,
+    "fullTestAllowed": false,
+    "mayStartNextChange": false,
+    "mayFinalizeDelivery": false
+  }
+}
