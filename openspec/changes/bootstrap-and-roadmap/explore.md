@@ -266,10 +266,11 @@ Bootstrap 阶段没有 Runner 和 CLI，由人和 AI 手工保证 Flowkit 规则
 ```text
 正式 Action 改变
 执行角色改变
+本次目标改变
 前一 Run failed / cancelled 后重试同一 Action
 ```
 
-同一角色、同一 Action、同一目标内的多轮交流、内容完善和补充检查保持在同一个 Run。
+只有正式 Action、执行角色和本次目标三者均未改变时，多轮交流、内容完善、补充检查以及普通 Commit 才保持在同一个 Run。任一改变即创建新 Run。
 
 ### 5.2 Reviewer Run 不预建
 
@@ -424,6 +425,8 @@ D1 Checkpoint
 Delivery Final
 ```
 
+Change 激活（manifest `planned → active` 与创建 `.openspec.yaml`）不属于正式 Git 边界，不要求独立 Commit；其文件变更随当前 Change 的正常工作一起进入 Git 历史。
+
 ### 7.2 Action 和 Run 不自动 Commit
 
 禁止：
@@ -460,23 +463,7 @@ Commit 数量不影响 Flowkit Policy。
 chore(flowkit): start <delivery-id>
 ```
 
-### 7.4 Change Start Commit
-
-每个 Change 激活时一次，用于：
-
-- 标识 Change 正式开始；
-- 创建 Change 的 `.openspec.yaml`；
-- 更新 manifest 中该 Change 的 `state` 为 `active`。
-
-模板：
-
-```text
-chore(flowkit): start <change-id>
-```
-
-Change Start Commit 是普通 Commit，不是 Change Checkpoint。
-
-### 7.5 Change Checkpoint Commit
+### 7.4 Change Checkpoint Commit
 
 每个完成的 Change 一次。
 
@@ -500,7 +487,7 @@ chore(flowkit): checkpoint <change-id>
 
 Checkpoint Commit 应尽量包含真实收尾变化，例如 OpenSpec Archive、Manifest 状态更新和 Archive Run，不为了边界创建无意义空 Commit。
 
-### 7.6 Delivery Final Commit
+### 7.5 Delivery Final Commit
 
 每个 Delivery 一次。
 
@@ -524,7 +511,7 @@ chore(flowkit): finalize <delivery-id>
 
 Delivery Final 不要求必须存在 PR 或某个远程平台。
 
-### 7.7 普通 Commit
+### 7.6 普通 Commit
 
 仅在真实需要时创建：
 
@@ -548,7 +535,7 @@ Reviewer 需要稳定版本且无法共享工作区
 - 不要求 Push；
 - 不要求 PR。
 
-### 7.8 不创建的 Commit 类型
+### 7.7 不创建的 Commit 类型
 
 ```text
 Action Commit
@@ -560,7 +547,7 @@ Receipt Commit
 Handoff 专用空 Commit
 ```
 
-### 7.9 Review 不要求先 Commit
+### 7.8 Review 不要求先 Commit
 
 Review 必须绑定稳定的 `reviewedResultRef`，但该引用不必是 Git Commit。
 
@@ -581,7 +568,7 @@ Review 需要稳定结果
 ≠ Review 前必须 Commit
 ```
 
-### 7.10 Push、Remote、PR 与 Merge
+### 7.9 Push、Remote、PR 与 Merge
 
 这些都不是 Flowkit Core 的流程前提。
 
