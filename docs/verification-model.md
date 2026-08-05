@@ -68,7 +68,7 @@ apply
 revise-apply
 ```
 
-进入 `review-apply` 前，f��有适用检查必须为：
+进入 `review-apply` 前，所有适用检查必须为：
 
 ```text
 passed | not-applicable

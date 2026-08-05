@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-015-revise-apply",
+  "status": "completed",
+  "summary": "Resolved B-003 Blocking Finding from 014-review-apply: fixed two U+FFFD replacement characters in docs/verification-model.md:71 (\"f+U+FFFD×2+有\" → \"所有\"), re-scanned all 9 B1 formal Markdown files confirming 0 U+FFFD, re-ran OpenSpec strict validation and git diff --check both passing, and updated verification.md to correct the inaccurate 013-round U+FFFD claims and record this round's results. 013 Run historical record was not modified.",
+  "findingsAddressed": {
+    "B-003": "Fixed docs/verification-model.md:71 by replacing \"f\"+U+FFFD+U+FFFD+\"有\" with \"所有\". Re-scanned all 9 B1 formal Markdown files (docs/core-model.md, docs/delivery-lifecycle.md, docs/verification-model.md, explore.md, proposal.md, design.md, spec.md, tasks.md, verification.md) confirming 0 U+FFFD. Re-ran npx openspec validate core-model --strict (passed) and git diff --check (passed). Updated verification.md §7 N-001 and §8 替换字符检查 to correct the inaccurate 013-round claims, and added §10, §11, §12 to record the 015-round finding handling and verification results. 013 Run result.json was not modified; this Run documents that the 013 record's U+FFFD check claim was inaccurate and has been corrected."
+  },
+  "verification": {
+    "status": "passed",
+    "record": "openspec/changes/core-model/verification.md",
+    "checksPassed": [
+      "openspec-strict-validation",
+      "replacement-character-scan",
+      "whitespace-diff",
+      "markdown-structure",
+      "action-catalog-consistency"
+    ],
+    "openspecStrict": {
+      "status": "passed",
+      "command": "npx openspec validate core-model --strict",
+      "output": "Change 'core-model' is valid"
+    },
+    "ufffdScan": {
+      "status": "passed",
+      "scope": "All 9 B1 formal Markdown files",
+      "result": "0 U+FFFD found"
+    },
+    "fullTest": "not-run"
+  },
+  "commit": {
+    "status": "pending-owner-authorization",
+    "kind": "ordinary-atomic-multi-file",
+    "filesChanged": [
+      "docs/verification-model.md",
+      "openspec/changes/core-model/verification.md"
+    ]
+  },
+  "nextAction": "review-apply",
+  "blockedOn": []
+}

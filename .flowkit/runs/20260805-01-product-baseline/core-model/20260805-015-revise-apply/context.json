@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-015-revise-apply",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "B1",
+  "changeId": "core-model",
+  "action": "revise-apply",
+  "goal": "fix-review-findings",
+  "role": "author",
+  "inputRef": "515dd185d6eefeb300249af53642bc915e565e00",
+  "sourceReviewRun": "20260805-014-review-apply",
+  "sourceReviewVerdict": "changes-requested",
+  "findings": [
+    "B-003"
+  ],
+  "ownerAuthorization": {
+    "reviseApply": true,
+    "commit": true,
+    "fullTest": false
+  },
+  "runPath": ".flowkit/runs/20260805-01-product-baseline/core-model/20260805-015-revise-apply/",
+  "constraints": {
+    "mustOnlyAddressCurrentFindings": true,
+    "mustNotExpandChangeScope": true,
+    "mustReverify": true,
+    "mustReturnToReviewApply": true,
+    "mustNotModifyHistoryRun": true,
+    "commitAllowed": true,
+    "fullTestAllowed": false,
+    "mayCreateReviewRun": false,
+    "mayArchive": false
+  }
+}

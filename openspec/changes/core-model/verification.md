@@ -6,10 +6,10 @@
 - Change：`core-model`
 - Action：`revise-apply`
 - Apply Run：`20260805-011-apply`
-- Source Review Run：`20260805-012-review-apply`
-- Revise Run：`20260805-013-revise-apply`
-- 输入 Head：`f7008be68e9042ec3ab29534e377354c66a7f14c`
-- 总体状态：`passed`
+- Source Review Run：`20260805-012-review-apply`、`20260805-014-review-apply`
+- Revise Run：`20260805-013-revise-apply`、`20260805-015-revise-apply`
+- 输入 Head：`f7008be68e9042ec3ab29534e377354c66a7f14c`（013 base）、`515dd185d6eefeb300249af53642bc915e565e00`（015 base）
+- 总体状态：`passed`（015 修正后）
 - Full Test：`not-run`
 
 ## 2. 验证计划
@@ -113,7 +113,9 @@ Apply、Change Verification 和后续 `review-apply` 均不得自动触发 Full 
 
 ### N-001：替换字符
 
-已确认 `docs/core-model.md` 使用“不预建 `paused`”，且修订后全部 Markdown 文件不含 Unicode replacement character `U+FFFD`。
+已确认 `docs/core-model.md` 使用"不预建 `paused`"。
+
+> **015 更正**：013 轮声明"修订后全部 Markdown 文件不含 Unicode replacement character `U+FFFD`"不准确。`014-review-apply` 在 `docs/verification-model.md:71` 发现两个 `U+FFFD`（"f+U+FFFD×2+有"应为"所有"）。已在 `015-revise-apply` 中修正，详见 §10 和 §11。`013` Run 的历史记录不修改。
 
 ## 8. Revise-Apply 验证结果
 
@@ -125,7 +127,7 @@ Apply、Change Verification 和后续 `review-apply` 均不得自动触发 Full 
 | JSON 有效性 | applicable | passed | 012 与 013 Run JSON 可解析 |
 | Action Catalog 一致性 | applicable | passed | proposal/design/spec/三份正式文档统一使用 revise-apply；fix-review-findings 仅为 goal |
 | Full Test owner 边界一致性 | applicable | passed | failed 后停在 owner 决策边界，未自动创建 Change |
-| 替换字符检查 | applicable | passed | 修订范围内未发现 U+FFFD |
+| 替换字符检查 | applicable | passed（013，后更正为不准确） | 013 声明"修订范围内未发现 U+FFFD"不准确；`docs/verification-model.md:71` 含两个 `U+FFFD`。015 已修正，见 §11 |
 | Full Test | not-applicable | not-applicable | 未授权，未运行 |
 | OpenSpec v1.7.0 源码等价 delta 检查 | supplemental | passed | 在正式 CLI 可用前执行的补充检查为 0 errors、0 warnings、0 info；正式 CLI 已通过，因此该结果仅保留为补充证据 |
 
@@ -140,3 +142,38 @@ passed
 ```
 
 Full Test 未获授权，保持 `not-run`。本 Run 可以标记为 completed，下一 Action 为 `review-apply`。Reviewer Run 仍应在 reviewer 真正执行统一入口 `review` 时创建；author 不预建空 Run。
+
+## 10. Second Review-Apply (014) Findings 修订
+
+### B-003：Change Verification 关键准入规则含乱码，修订验证结果不真实
+
+已处理：
+
+- `docs/verification-model.md:71` 的 "f+U+FFFD×2+有" 修正为 "所有"；
+- 重新扫描全部 9 份 B1 正式 Markdown（`docs/core-model.md`、`docs/delivery-lifecycle.md`、`docs/verification-model.md`、`explore.md`、`proposal.md`、`design.md`、`spec.md`、`tasks.md`、`verification.md`），0 个 `U+FFFD`；
+- 重新执行 OpenSpec strict validation 和 `git diff --check`，均通过；
+- 更新本 `verification.md` 以准确记录本轮结果；
+- `013` Run 的历史记录不修改；`015` Run 说明已发现并纠正 `013` 记录的错误。
+
+## 11. Second Revise-Apply (015) 验证结果
+
+| 检查 | 适用性 | 状态 | 结果 |
+|---|---|---|---|
+| OpenSpec strict validation | applicable | passed | `npx openspec validate core-model --strict` 输出 `Change 'core-model' is valid` |
+| U+FFFD 替换字符扫描 | applicable | passed | 全部 9 份 B1 正式 Markdown 逐文件扫描，0 个 `U+FFFD` |
+| whitespace/diff | applicable | passed | `git diff --check` 通过 |
+| Markdown 结构 | applicable | passed | 修订文件 UTF-8 可读，代码围栏成对 |
+| Action Catalog 一致性 | applicable | passed | 本次未修改 Action Catalog 相关内容 |
+| Full Test | not-applicable | not-applicable | 未授权，未运行 |
+
+## 12. 更新后的结论
+
+B1 revise-apply (015) 已处理 `014-review-apply` 的 B-003 Blocking Finding。`docs/verification-model.md:71` 的 `U+FFFD` 已修正为"所有"，全部 B1 正式 Markdown 重新扫描确认无 `U+FFFD`。013 轮的 U+FFFD 检查声明不准确，已在 015 更正；`013` Run 的历史记录不修改。
+
+Change Verification 状态（015 修正后）：
+
+```text
+passed
+```
+
+Full Test 未获授权，保持 `not-run`。下一 Action 为 `review-apply`。
