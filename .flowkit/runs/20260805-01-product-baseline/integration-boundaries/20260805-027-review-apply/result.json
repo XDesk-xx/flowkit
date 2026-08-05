@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-027-review-apply",
+  "status": "completed",
+  "summary": "C1 026-revise-apply 已精确解决 C1-RA-001：verification.md 第 4 节现明确三项适用检查均已运行并通过，与第 3 节一致；Full Test 继续单独记录为未运行且对当前文档契约 Change 不适用。固定范围仅含该状态修正与 026 Run，严格 OpenSpec 校验、whitespace 检查和 B1 冻结范围检查均通过，未发现阻止 Archive 的 Finding。",
+  "findings": {
+    "blocking": [],
+    "nonBlocking": []
+  },
+  "verificationReviewed": [
+    "复核 026-revise-apply Action、Context 和 Result：其输入为 025-review-apply 的 changes-requested Verdict，目标仅为 C1-RA-001。",
+    "检查固定范围 git diff --name-status bacbb0d8ce1dd5b63f8f50addf928d5ae5cf6cbc c985ce47cfc28e4fb7eb16143cb8e4fdf7b2cfa8：仅含 026-revise-apply Run 与 verification.md。",
+    "复核 verification.md 第 3-5 节：三项适用检查均一致记录为已运行/通过；Full Test 单独保持未运行且当前 Change 不适用，不再存在状态矛盾。",
+    "执行 git diff --check bacbb0d8ce1dd5b63f8f50addf928d5ae5cf6cbc c985ce47cfc28e4fb7eb16143cb8e4fdf7b2cfa8：通过，exit code 0。",
+    "执行 npx openspec validate integration-boundaries --strict：通过（Change 'integration-boundaries' is valid）。",
+    "扫描 C1 正式文档、verification.md 与 tasks.md：未发现 U+FFFD replacement character。",
+    "检查固定范围对 B1 冻结文档和 flowkit-core-model capability 的变更：无输出，确认未重开 B1。",
+    "本轮未运行 Full Test，未修改正式 C1 产物、先前 Run 或 Delivery 状态，未提交或推送。"
+  ],
+  "verdict": "approved",
+  "nextActionRecommendation": "archive"
+}
