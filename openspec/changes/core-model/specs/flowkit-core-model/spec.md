@@ -56,16 +56,18 @@ revise-explore
 review-propose
 revise-propose
 review-apply
-fix-review-findings
+revise-apply
 ```
 
-B1 MUST 以 `fix-review-findings` 替代 Bootstrap v1 的 `revise-apply`，并 MUST NOT 同时保留 `review-code` 或 `revise-apply` 作为正式 Action。
+Review 与 Revision Action MUST 使用 `review-<stage> ↔ revise-<stage>` 对称形式。`fix-review-findings` MUST NOT 是正式 Action；它 MAY 作为 `revise-apply` 的 goal 或方法类别。B1 MUST NOT 同时保留 `review-code` 作为正式 Action。
 
 #### Scenario: Apply Review 请求修改
 
 - **WHEN** review-apply Verdict 为 changes-requested
-- **THEN** 唯一合法修复 Action MUST 为 fix-review-findings
-- **AND** 修复后 MUST 重新运行适用的 Change Verification
+- **THEN** 唯一合法 Revision Action MUST 为 revise-apply
+- **AND** revise-apply MUST 只处理当前 Findings，MUST NOT 扩张 Change 范围
+- **AND** 修订后 MUST 重新运行适用的 Change Verification
+- **AND** 验证通过后 MUST 再次进入 review-apply
 - **AND** MUST NOT 自动运行 Full Test
 
 ### Requirement: Review 必须是正式边界
@@ -83,7 +85,7 @@ Owner MAY 亲自承担 reviewer 角色，也 MAY 授权独立执行者承担 rev
 
 ### Requirement: Revision/Fix 必须由 changes-requested 触发
 
-`revise-explore`、`revise-propose` 和 `fix-review-findings` MUST 仅在对应 Review Verdict 为 `changes-requested` 时合法。
+`revise-explore`、`revise-propose` 和 `revise-apply` MUST 仅在对应 Review Verdict 为 `changes-requested` 时合法。
 
 Review approved 时，Revision/Fix MUST 被视为不适用，MUST NOT 创建 skipped 状态或空 Run。
 
@@ -127,6 +129,23 @@ Policy 输出 MUST 为一个合法 Action、一个 owner 决策边界或一个 b
 - **BUT** Policy 下一 Action 不是 Review Action
 - **THEN** Flowkit MUST 返回 blocked diagnosis
 - **AND** MUST NOT 创建 reviewer Run
+
+### Requirement: `revise` 必须只是统一入口
+
+`revise` MUST 是 author 的统一入口，MUST NOT 成为正式 Action。执行 `revise` 时，Flowkit MUST 从当前唯一有效的 `changes-requested` Verdict 解析唯一合法的 `revise-explore | revise-propose | revise-apply`。
+
+#### Scenario: 当前 Verdict 对应 Apply Review
+
+- **WHEN** 当前唯一有效 Verdict 来自 review-apply 且为 changes-requested
+- **AND** author 执行 revise
+- **THEN** Flowkit MUST 创建并执行 revise-apply Run
+- **AND** MUST NOT 创建名为 fix-review-findings 的正式 Action Run
+
+#### Scenario: 没有唯一可修订 Verdict
+
+- **WHEN** 不存在有效 changes-requested Verdict，或存在冲突/多解
+- **THEN** Flowkit MUST 返回 blocked diagnosis
+- **AND** MUST NOT 创建 Revision Run
 
 ### Requirement: Run 必须表示一次 Action 执行
 
@@ -199,16 +218,25 @@ Bootstrap 阶段 Delivery YAML MUST 作为人工投影；自托管后 Flowkit De
 - **THEN** fullTestStatus MUST 进入 authorized
 - **AND** Full Test MAY 执行
 
-### Requirement: Full Test 失败必须创建 corrective Change
+### Requirement: Full Test 失败必须进入 owner 决策边界
 
-Full Test failed 时，Flowkit MUST NOT 重新打开已 archived/completed Change。Flowkit MUST 创建 corrective Change，并使其完成完整 Change 生命周期。
+Full Test failed 时，Flowkit MUST NOT 重新打开已 archived/completed Change，也 MUST NOT 自动创建 Change 或扩张 Delivery 范围。`fullTestStatus` MUST 保持 failed，直到 owner 作出合法决策。
 
-#### Scenario: Corrective Change 创建
+#### Scenario: Full Test 失败等待 owner
 
-- **WHEN** Full Test failed
-- **THEN** corrective Change MUST 被创建
+- **WHEN** Full Test 返回 failed
+- **THEN** Policy MUST 返回 owner 决策边界或 blocked diagnosis
+- **AND** MUST NOT 自动创建 corrective Change
+- **AND** MUST NOT 自动 Finalize Delivery
+
+#### Scenario: Owner 授权 corrective Change
+
+- **WHEN** fullTestStatus 为 failed
+- **AND** owner 明确授权 corrective Change 的创建
+- **THEN** Flowkit MUST 创建该 Change
 - **AND** fullTestStatus MUST 返回 not-ready
-- **AND** corrective Change 完成后 MUST 再次等待 owner 授权
+- **AND** corrective Change MUST 按普通 Change 生命周期完成
+- **AND** 所有 required Changes 再次 completed 后 MUST 再次等待 owner 授权 Full Test
 
 ### Requirement: Skill 必须保持 Action 内方法边界
 

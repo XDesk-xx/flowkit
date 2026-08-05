@@ -85,15 +85,14 @@ revise-explore
 review-propose
 revise-propose
 review-apply
-fix-review-findings
+revise-apply
 ```
 
-B1 显式以 `fix-review-findings` 替代 Bootstrap v1 的 `revise-apply`。该命名只收窄 Apply Review 后的修复语义：
+Review 与 Revision Action 采用 `review-<stage> ↔ revise-<stage>` 对称形式，避免 Policy、Run 命名和 C1 Action Package 为 Apply 增加特殊分支。
 
-- 修复来源必须是当前 reviewer Findings；
-- 修复不得借机扩张 Change；
-- 修复后重新运行适用的 Change Verification；
-- 不自动运行 Full Test。
+`fix-review-findings` 下沉为 `revise-apply` 的默认 goal，不再是正式 Action。它表达本轮修订只处理当前 `review-apply` Findings；具体 goal 字段和 Skill 协议属于 C1。
+
+`revise-apply` 必须限制在当前 Findings 范围内，修订后重新运行适用 Change Verification，验证通过后返回 `review-apply`，且不得自动运行 Full Test。
 
 `review-code` 不作为正式 Action，因为 Apply 结果可能包含代码、文档、配置或其他产物。
 
@@ -124,7 +123,7 @@ apply
 → Change Verification
 → review-apply
 → approved: 等待 owner 授权 archive
-→ changes-requested: fix-review-findings
+→ changes-requested: revise-apply
 → Change Verification
 → review-apply
 ```
@@ -163,19 +162,25 @@ Flowkit 不保存 `currentAction`、`current-review.json` 或其他 pointer。Po
 
 多解或正式事实冲突时必须阻塞。
 
-### Decision 7: `review` 是统一入口
+### Decision 7: `review` 与 `revise` 是对称统一入口
 
-`review` 是 reviewer 的统一执行入口，不是正式 Action。
+`review` 和 `revise` 都是统一执行入口，不是正式 Action。
 
-执行时：
+执行 `review` 时：
 
-1. 找到唯一 active Delivery；
-2. 找到唯一 active Change；
-3. Policy 计算唯一下一 Action；
-4. 确认它属于 `review-explore | review-propose | review-apply`；
-5. 创建并执行对应 reviewer Run。
+1. 找到唯一 active Delivery 和 active Change；
+2. Policy 计算唯一下一 Action；
+3. 确认它属于 `review-explore | review-propose | review-apply`；
+4. 创建并执行对应 reviewer Run。
 
-下一 Action 不是 Review 或无法唯一确定时，返回 blocked diagnosis。
+执行 `revise` 时：
+
+1. 找到唯一 active Delivery 和 active Change；
+2. 读取当前唯一有效的 `changes-requested` Verdict；
+3. Policy 解析对应的 `revise-explore | revise-propose | revise-apply`；
+4. 创建并执行对应 author Run。
+
+下一 Action/Revision 不匹配、Verdict 缺失或失效、结果不唯一或存在冲突时，返回 blocked diagnosis，不创建 Run。
 
 ### Decision 8: Run 边界固定
 
@@ -258,7 +263,9 @@ failed
 - 自托管后由 Flowkit Delivery 状态承载；
 - 具体 Schema、序列化路径和 Adapter 由 C1 或后续实现定义。
 
-所有 required Changes completed 后进入 `awaiting-user-decision`；只有 owner 可授权。失败时创建 corrective Change，不重开已归档 Change；corrective Change 创建后回到 `not-ready`。
+所有 required Changes completed 后进入 `awaiting-user-decision`；只有 owner 可授权。
+
+Full Test failed 时保持 `failed`，Policy 返回 owner 决策边界，不得自动创建 Change。只有 owner 明确授权 corrective Change 后才创建，并将 `fullTestStatus` 返回 `not-ready`；corrective Change 不重开已归档 Change，并完整执行普通 Change 生命周期。Owner 也可以取消 Delivery，但 B1 不提供失败结果 waiver 或强制 Finalize。
 
 ### Decision 12: Skill 保持抽象
 
@@ -279,6 +286,7 @@ B1 不绑定具体 Skill 标识。Skill 不得决定 Delivery、Change、Action�
 | 状态过少 | 中 | 只实现当前真实流程，未来通过 Change 增加 |
 | `cancelled` 规则过轻 | 低 | B1 冻结语义，D1/C1 处理操作与 Schema |
 | Full Test 状态与测试结果混淆 | 高 | Flowkit 只拥有流程状态，完整结果仍归验证工具 |
+| Full Test 失败自动扩张范围 | 高 | failed 后停在 owner 决策边界；只有 owner 授权后创建 corrective Change |
 | Owner 承担 reviewer 被误解为跳过 Review | 中 | 正式 Review Action、Findings/Verdict 始终存在 |
 | Run 被误解为状态权威 | 中 | 明确 Run 只记录一次执行 |
 | Skill 名称提前固化 | 中 | B1 只使用抽象执行方法类别 |

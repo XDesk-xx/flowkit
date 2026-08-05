@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-013-revise-apply",
+  "status": "completed",
+  "summary": "Resolved all B1 review-apply Findings, restored the symmetric review/revise model, added the Full Test owner-decision boundary, and passed all applicable Change Verification including the official @fission-ai/openspec v1.7.0 strict validation. No Full Test was run.",
+  "findingsAddressed": {
+    "B-001": "Full Test failed keeps fullTestStatus=failed and returns an owner decision boundary. A corrective Change is created only after explicit owner authorization, then fullTestStatus returns not-ready and the normal Change lifecycle applies.",
+    "B-002": "Restored revise-apply, added the non-formal revise entry resolved by Policy, and moved fix-review-findings to the revise-apply goal while preserving Findings scope, reverification, review-apply return, and no-Full-Test constraints.",
+    "N-001": "Confirmed docs/core-model.md contains the correct text '不预建 paused' and no Unicode replacement character remains in the revised scope."
+  },
+  "verification": {
+    "status": "passed",
+    "record": "openspec/changes/core-model/verification.md",
+    "checksPassed": [
+      "openspec-strict-validation",
+      "markdown-structure",
+      "whitespace-diff",
+      "json-validity",
+      "action-catalog-consistency",
+      "full-test-owner-boundary-consistency",
+      "scope-consistency",
+      "replacement-character-scan"
+    ],
+    "openspecStrict": {
+      "status": "passed",
+      "package": "@fission-ai/openspec@1.7.0",
+      "command": "openspec validate core-model --strict --no-interactive",
+      "output": "Change 'core-model' is valid",
+      "source": "Project Library offline package openspec-1.7.0-offline.zip"
+    },
+    "fullTest": "not-run"
+  },
+  "commit": {
+    "status": "created",
+    "kind": "ordinary-atomic-multi-file",
+    "authorization": "owner-explicit"
+  },
+  "nextAction": "review-apply",
+  "blockedOn": []
+}

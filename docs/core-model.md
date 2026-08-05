@@ -63,7 +63,7 @@ cancelled
 - `completed`：所有 required Changes 完成，Delivery 验收条件满足并形成完成边界；
 - `cancelled`：owner 明确终止，不再允许继续推进。
 
-��预建 `paused`。Full Test 等状态属于 Delivery 验证子状态，不是 Delivery 主状态。
+不预建 `paused`。Full Test 等状态属于 Delivery 验证子状态，不是 Delivery 主状态。
 
 ### 3.2 Change 状态
 
@@ -111,16 +111,21 @@ revise-explore
 review-propose
 revise-propose
 review-apply
-fix-review-findings
+revise-apply
 ```
 
-B1 正式以 `fix-review-findings` 替代 Bootstrap v1 的 `revise-apply`。
+Review 与 Revision Action 保持按阶段对称：`review-<stage> ↔ revise-<stage>`。
 
-该名称明确 Apply Review 后的修复必须：
+`review` 和 `revise` 是统一执行入口，不是正式 Action。Policy 必须根据正式事实把它们唯一解析为具体的 `review-*` 或 `revise-*` Action。
 
-- 由当前 reviewer Findings 触发；
-- 保持在 Finding 范围内；
-- 修复后重新执行适用的 Change Verification；
+`fix-review-findings` 不再是正式 Action；它是 `revise-apply` 的默认 goal，表示本轮修订只处理当前 `review-apply` Findings。具体 goal 字段和 Skill 方法协议属于 C1。
+
+`revise-apply` 必须：
+
+- 仅由当前 `review-apply` 的 `changes-requested` 触发；
+- 只处理当前 Findings，不得扩张 Change 范围；
+- 完成后重新执行适用的 Change Verification；
+- 验证通过后返回 `review-apply`；
 - 不自动运行 Full Test。
 
 `review-code` 不作为正式 Action，因为 Apply 结果可能包含代码、文档、配置或其他正式产物。
@@ -130,11 +135,11 @@ B1 正式以 `fix-review-findings` 替代 Bootstrap v1 的 `revise-apply`。
 Review、Revision/Fix、Verification 和 Checkpoint 不形成额外 Phase 实体。
 
 - Review：独立判断当前 Action 的完整结果；
-- Revision/Fix：处理 `changes-requested` Verdict；
-- Verification：确认 Apply/Fix 后的适用检查；
+- Revision：处理 `changes-requested` Verdict；
+- Verification：确认 Apply/Revision 后的适用检查；
 - Checkpoint：Change 完成所需的 Git 正式边界。
 
-Review 是正式生命周期边界。Revision/Fix 只在对应 Review 返回 `changes-requested` 时适用；Review `approved` 时不创建 skipped 状态或空 Run。
+Review 是正式生命周期边界。Revision 只在对应 Review 返回 `changes-requested` 时适用；Review `approved` 时不创建 skipped 状态或空 Run。
 
 ## 6. 角色
 
@@ -145,6 +150,8 @@ Review 是正式生命周期边界。Revision/Fix 只在对应 Review 返回 `ch
 - `reviewer`：独立检查并返回 Findings 和 Verdict。
 
 Owner 可以承担 reviewer 角色，但仍必须执行正式 Review Action 并产生 Verdict；这不等于跳过 Review。
+
+Full Test failed 时，Flowkit 必须停在 owner 决策边界，不得自动扩张 Delivery 范围。只有 owner 明确授权 corrective Change 后，才创建该 Change；随后 `fullTestStatus` 返回 `not-ready`，corrective Change 按普通 Change 生命周期推进。
 
 ## 7. Run 边界
 
@@ -170,6 +177,8 @@ Owner 可以承担 reviewer 角色，但仍必须执行正式 Review Action 并�
 Author 完成当前 Action 后只记录推荐的 `nextAction: review-*`。
 
 Author 不预建空 reviewer Run。Reviewer 真正执行统一入口 `review` 时，Policy 先计算唯一具体 Review Action，再创建对应 reviewer Run。
+
+Author 执行统一入口 `revise` 时，Policy 必须从当前唯一的 `changes-requested` Verdict 解析对应 `revise-explore | revise-propose | revise-apply`。不存在、冲突或多解时必须阻塞，并且不创建 Revision Run。
 
 ### 7.4 Run 路径
 

@@ -30,16 +30,17 @@ B1 将 approved Explore 转化为正式产品文档与 OpenSpec capability contr
 - 新建 `docs/verification-model.md`
   - 定义 Change Verification 与 Delivery Full Test 的边界
   - 定义 `fullTestStatus` 为 Flowkit 拥有的 Delivery 验证子状态
-  - 定义 Full Test owner 授权和 corrective Change 闭环
+  - 定义 Full Test owner 授权、失败后的 owner 决策边界和 corrective Change 闭环
 - 固定 Delivery 主状态：`active | completed | cancelled`
 - 固定 Change 状态：`planned | active | completed | cancelled`
 - 固定主 Action：`explore | propose | apply | archive`
 - 固定辅助 Action：
   - `review-explore | revise-explore`
   - `review-propose | revise-propose`
-  - `review-apply | fix-review-findings`
-- 显式以 `fix-review-findings` 替代 Bootstrap v1 中的 `revise-apply`
-- 固定 `review` 为 reviewer 统一入口，而非正式 Action
+  - `review-apply | revise-apply`
+- 固定 Review/Revision 为 `review-<stage> ↔ revise-<stage>` 对称 Action
+- 固定 `fix-review-findings` 为 `revise-apply` 的 goal，而非正式 Action
+- 固定 `review` 与 `revise` 为统一入口，而非正式 Action
 - 固定 Review 为正式生命周期边界；Revision/Fix 仅在 `changes-requested` 时合法
 - 固定同一角色、同一 Action、同一目标的多轮讨论和普通 Commit 属于同一个 Run
 - 固定 reviewer 真正执行 Review 时才创建 reviewer Run

@@ -65,10 +65,10 @@ Change Verification 必须在以下 Action 后执行：
 
 ```text
 apply
-fix-review-findings
+revise-apply
 ```
 
-进入 `review-apply` 前，所有适用检查必须为：
+进入 `review-apply` 前，f��有适用检查必须为：
 
 ```text
 passed | not-applicable
@@ -78,7 +78,7 @@ passed | not-applicable
 
 ### 3.4 修复后的验证
 
-`fix-review-findings` 完成后：
+`revise-apply` 完成后：
 
 1. 重新执行与修改相关的 focused/affected 检查；
 2. 重新执行适用的 lint、typecheck 或文档检查；
@@ -124,7 +124,7 @@ Bootstrap 阶段：
 
 - Delivery YAML 是 `fullTestStatus` 的人工维护投影；
 - 人工按冻结规则更新；
-- 不创建第二套 current/state 文件。
+- 不创建第二奔 current/state 文件。
 
 自托管后：
 
@@ -149,7 +149,7 @@ Run 保存执行上下文和结果摘要；完整 Full Test 结果仍归项目�
 
 ```text
 apply
-fix-review-findings
+revise-apply
 review-apply
 archive
 ```
@@ -170,11 +170,17 @@ Full Test failed 时：
 
 - 不重新打开已 archived/completed Change；
 - 不修改已完成 Change 的历史状态；
-- 在当前 Delivery 中创建 corrective Change；
-- corrective Change 完整执行 Explore、Propose、Apply、Review、Archive 和 Checkpoint；
+- `fullTestStatus` 保持 `failed`；
+- Policy 返回 owner 决策边界或 blocked diagnosis，不得自动创建 Change；
+- owner 可以明确授权创建 corrective Change，或取消 Delivery；
+- 只有 owner 明确授权 corrective Change 后，才在当前 Delivery 中创建该 Change；
 - corrective Change 创建后，`fullTestStatus` 返回 `not-ready`；
+- corrective Change 按普通 Change 规则进入 `planned`，激活仍满足标准 owner 授权与依赖条件；
+- corrective Change 完整执行 Explore、Propose、Apply、Review、Archive 和 Checkpoint；
 - 所有 required Changes 再次 completed 后，重新进入 `awaiting-user-decision`；
 - 再次等待 owner 授权 Full Test。
+
+Full Test failed 不得自动扩张 Delivery 范围，也不提供失败结果 waiver 或强制 Finalize 机制。
 
 ## 7. Verification 记录
 

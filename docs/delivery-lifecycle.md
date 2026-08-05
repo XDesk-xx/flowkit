@@ -71,7 +71,7 @@ planned → active
 必须满足：
 
 - 所属 Delivery 为 active；
-- 当前没有其他 active Change；
+- 当前没有兞他 active Change；
 - declared dependencies 均为 completed；
 - owner 明确授权。
 
@@ -113,18 +113,19 @@ apply
 → Change Verification
 → review-apply
 → approved: 等待 owner 授权 archive
-→ changes-requested: fix-review-findings
+→ changes-requested: revise-apply
 → Change Verification
 → review-apply
 ```
 
 规则：
 
-- Apply/Fix 后必须执行适用的 focused、affected、lint、typecheck 或文档检查；
+- Apply/Revision 后必须执行适用的 focused、affected、lint、typecheck 或文档检查；
 - Verification 为 failed 或 not-run 时不能进入 review-apply；
-- `fix-review-findings` 必须只处理当前 Review Findings；
-- 修复后必须重新验证；
-- Apply、Fix、Review 和 Archive 都不得自动运行 Full Test。
+- `revise-apply` 必须只处理当前 `review-apply` Findings，不得扩张 Change 范围；
+- `fix-review-findings` 是 `revise-apply` 的 goal，而不是正式 Action；
+- 修订后必须重新验证；
+- Apply、Revision、Review 和 Archive 都不得自动运行 Full Test。
 
 ### 3.5 Archive 与完成
 
@@ -237,7 +238,26 @@ Flowkit 不保存 `currentAction`。Policy 使用以下正式事实计算唯一�
 
 如果下一 Action 不是 Review、结果不唯一或存在冲突，返回 blocked diagnosis，并且不创建 reviewer Run。
 
-## 7. Run 与生命周期
+## 7. 统一 `revise` 入口
+
+`revise` 是 author 的统一执行入口，不是正式 Action。
+
+执行步骤：
+
+1. 找到唯一 active Delivery；
+2. 找到其中唯一 active Change；
+3. 读取当前唯一有效的 `changes-requested` Verdict；
+4. Policy 解析对应的：
+   - `revise-explore`
+   - `revise-propose`
+   - `revise-apply`
+5. 创建并执行对应 author Run。
+
+如果不存在 `changes-requested`、结果不唯一、Verdict 已失效或存在冲突，返回 blocked diagnosis，并且不创建 Revision Run。
+
+`revise-apply` 的默认 goal 是 `fix-review-findings`；goal 和 Skill 协议由 C1 定义，不改变正式 Action 名称。
+
+## 8. Run 与生命周期
 
 同一角色、同一 Action、同一目标的多轮工作属于同一个 Run。
 
@@ -245,7 +265,7 @@ Author 完成 Action 后只记录 `nextAction: review-*`；Reviewer 真正开始
 
 Git Commit 只记录文件历史，不决定 Action 或 Run 数量。
 
-## 8. Checkout 后恢复
+## 9. Checkout 后恢复
 
 恢复步骤：
 
@@ -270,7 +290,7 @@ Git Commit 只记录文件历史，不决定 Action 或 Run 数量。
 - 预建 pending Review Run；
 - 写入状态文件的当前 Commit SHA。
 
-## 9. D1 所属的具体交互
+## 10. D1 所属的具体交互
 
 以下内容不由本文件定义，统一由 D1 冻结：
 
@@ -280,4 +300,5 @@ Git Commit 只记录文件历史，不决定 Action 或 Run 数量。
 - 何时 Push；
 - 如何切换 author 与 reviewer；
 - reviewer 如何执行统一 `review`；
+- author 如何执行统一 `revise`；
 - Checkpoint 的具体 Git 操作。
