@@ -7,7 +7,6 @@ goal: >
   Bootstrap 开发流程基线，使后续代码 Delivery 可以按照同一套
   Delivery、Change、Action 规则开发，并为稳定 Runner 和首次自托管
   Delivery 提供明确前置条件。
-
 delivery:
   state: active
 
@@ -62,7 +61,7 @@ changes:
     required: true
     dependsOn:
       - product-positioning
-    state: planned
+    state: active
     outputs:
       - docs/core-model.md
       - docs/delivery-lifecycle.md
