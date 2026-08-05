@@ -61,7 +61,7 @@ changes:
     required: true
     dependsOn:
       - product-positioning
-    state: active
+    state: completed
     outputs:
       - docs/core-model.md
       - docs/delivery-lifecycle.md

@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-017-archive",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "B1",
+  "changeId": "core-model",
+  "action": "archive",
+  "role": "author",
+  "inputRef": "19689294526511f25f06fedfbeebe36ec93ee116",
+  "sourceReviewRun": ".flowkit/runs/20260805-01-product-baseline/core-model/20260805-016-review-apply/result.json",
+  "reviewVerdict": "approved",
+  "archivePath": "openspec/changes/archive/2026-08-05-core-model/",
+  "mainSpecPath": "openspec/specs/flowkit-core-model/spec.md",
+  "statePath": "openspec/delivery-groups/20260805-01-product-baseline.yaml",
+  "constraints": {
+    "ownerAuthorizedArchive": true,
+    "ownerAuthorizedCheckpoint": true,
+    "fullTestAllowed": false,
+    "mayStartNextChange": false,
+    "mayFinalizeDelivery": false
+  }
+}
