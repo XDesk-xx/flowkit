@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-026-revise-apply",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "C1",
+  "changeId": "integration-boundaries",
+  "action": "revise-apply",
+  "role": "author",
+  "inputRef": "bacbb0d8ce1dd5b63f8f50addf928d5ae5cf6cbc",
+  "sourceReviewRun": "20260805-025-review-apply",
+  "sourceReviewVerdict": "changes-requested",
+  "findings": [
+    "C1-RA-001"
+  ],
+  "constraints": {
+    "mustOnlyAddressCurrentFindings": true,
+    "mustNotExpandChangeScope": true,
+    "mustNotModifyLogic": true,
+    "mustNotModifyB1": true,
+    "fullTestAllowed": false,
+    "mayCreateReviewRun": false
+  }
+}

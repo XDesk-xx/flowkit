@@ -38,7 +38,7 @@
 
 ## 4. 适用检查声明
 
-以下检查在 C1 Apply 阶段适用但标记为 `not-run`（需由 `review-apply` 复核）：
+以下检查在 C1 Apply 阶段已运行并通过：
 
 - `git diff --check`：已运行，passed
 - `npx openspec validate integration-boundaries --strict`：已运行，passed
