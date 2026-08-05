@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-019-review-explore",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "C1",
+  "changeId": "integration-boundaries",
+  "action": "review-explore",
+  "role": "reviewer",
+  "reviewRange": {
+    "baseRef": "c0607262f89978bc8e123a59beecc5823b546320",
+    "headRef": "af04445f942068e4cd061a4210bdf9d2959f8650"
+  },
+  "sourceExploreRun": "20260805-018-explore",
+  "artifacts": [
+    "openspec/changes/integration-boundaries/explore.md",
+    ".flowkit/runs/20260805-01-product-baseline/integration-boundaries/20260805-018-explore/"
+  ],
+  "constraints": {
+    "readOnlyExceptCurrentRun": true,
+    "fullTestAllowed": false,
+    "mayReviseExplore": false,
+    "mayPropose": false,
+    "mayApply": false,
+    "mayArchive": false,
+    "mayAdvanceFlow": false,
+    "commitAllowed": false
+  }
+}
