@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-017-revise-explore",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "B1",
+  "changeId": "domain-and-state-schema",
+  "action": "revise-explore",
+  "role": "author",
+  "inputRef": "c322ff653f434a7d83b85dd58185ee3a3f4ce4a5e0abd65e789d7ed2192963bb",
+  "sourceReviewRun": "20260806-016-review-explore",
+  "sourceReviewVerdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "B1-RE-003",
+      "title": "Review focus retains the superseded eleven-Action catalog",
+      "requiredResolution": "Update Review focus item 4 to require the frozen ten Change Actions plus the two Delivery Actions, and explicitly check that review, revise, and change-checkpoint are absent. Recheck the Explore for any remaining eleven-Action wording that presents it as the required catalog."
+    }
+  ],
+  "resolvedFindingsFromPriorRevision": [
+    {
+      "id": "B1-RE-001",
+      "resolvedIn": "20260806-015-revise-explore",
+      "resolution": "Action Catalog follows frozen core-model spec's ten formal Actions; change-checkpoint treated as Git boundary."
+    },
+    {
+      "id": "B1-RE-002",
+      "resolvedIn": "20260806-015-revise-explore",
+      "resolution": "ResultRef is provider-neutral without mandatory runPath; concrete serialization deferred to C1."
+    }
+  ],
+  "constraints": {
+    "mayModifyExplore": true,
+    "mayModifyCode": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/domain-and-state-schema/20260806-017-revise-explore/"
+}

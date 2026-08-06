@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-026-review-explore",
+  "status": "completed",
+  "summary": "B1 revised Explore review completed with changes-requested. B1-RE-007 is resolved in substance: Q3 now provides a pure parser, Delivery-wide duplicate detection, monotonic validation, gap preservation, and explicit exhaustion behavior. One input-boundary gap remains in validateCandidateNnn: its number parameter has no stated finite-integer 001-999 validation, so zero, negative, fractional, or non-finite candidates are not explicitly rejected by the function that validates candidates.",
+  "reviewedResultRef": "content-sha256:c2ee3935a72725d34f4d0c1594b5b9f8ccb31bec13929f8deb8d8af114032904",
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "B1-RE-008",
+      "title": "validateCandidateNnn does not validate its candidate as a valid NNN value",
+      "location": "openspec/changes/domain-and-state-schema/explore.md:232-241, 246-261",
+      "evidence": "The proposed validateCandidateNnn accepts a number and specifies rejection only for candidateNnn <= max(NNN) and candidateNnn > 999. It does not require a finite integer in the inclusive range 1 through 999, nor require tests for zero, negative, fractional, or non-finite input. The same Q3 defines NNN as the three-digit range 001-999.",
+      "impact": "The validator's public contract can accept a value that cannot be encoded as a valid NNN, especially when the existing set is empty or an implementation chooses no numeric lower bound for max. That defers rejection until a later formatter/parser rather than failing closed at the candidate-validation boundary.",
+      "requiredResolution": "Make validateCandidateNnn reject every candidate that is not a finite integer from 1 through 999 before evaluating monotonicity, using a machine-readable FlowkitError code. Add fixture tests for 0, a negative value, a fractional value, and non-finite input, as well as the existing monotonic/overflow/gap cases. Keep the returned/accepted candidate contract aligned with parseRunId's 001-999 grammar."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "resolvedFindings": [
+    {
+      "id": "B1-RE-007",
+      "resolution": "Q3 now defines pure format parsing, Delivery-wide NNN uniqueness, candidate monotonicity, allowed gaps, and NNN exhaustion without adding filesystem traversal to B1."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "reviewed Explore artifact hash",
+        "status": "passed",
+        "result": "SHA-256 is c2ee3935a72725d34f4d0c1594b5b9f8ccb31bec13929f8deb8d8af114032904 and matches the completed 025-revise-explore Run."
+      },
+      {
+        "name": "Run-ID set invariants",
+        "status": "passed",
+        "result": "The Explore now specifies format parsing, duplicate-NNN rejection, monotonicity, gap preservation, and exhaustion behavior using fixtures without filesystem traversal."
+      },
+      {
+        "name": "candidate-NNN input validation",
+        "status": "failed",
+        "result": "validateCandidateNnn lacks an explicit finite-integer 1 through 999 precondition and corresponding invalid-number fixture tests."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run; this is review-explore."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

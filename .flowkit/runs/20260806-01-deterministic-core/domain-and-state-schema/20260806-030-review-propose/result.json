@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-030-review-propose",
+  "status": "completed",
+  "summary": "B1 Proposal review approved. The complete Proposal, Design, Tasks, and delta spec are structurally valid and internally consistent with the approved Explore and frozen boundaries. They define the eleven-object type contract, exact Delivery/Change/Run states and structural transition tables, the frozen ten Change plus two Delivery Action Catalog, provider-neutral ResultRef, fail-closed pure Run-ID validators, terminal immutability, schema guards, and fixture-only tests. The bundle keeps C1 persistence/adapters, D1 Policy, code execution, and Full Test outside B1's Proposal scope.",
+  "reviewedResultRef": "proposal-bundle-sha256:1529b10e934b55f447c30a6f569e8f91778c8af66589c554684d23a1bd59a46a,33063a77efcccbf6c317f38c521d50815a13dbe3780effe07d3776f8d8eeca79,9cb133aaebe27658e150caf58da0ac00b357be0d36eff54cf241fa58aa6017b8,0fa6307501973e1ab472250e0f9575af5850ddb74f54a7a07dcf920e7d1a3751",
+  "verdict": "approved",
+  "blockingFindings": [],
+  "nonBlockingFindings": [],
+  "verification": {
+    "checks": [
+      {
+        "name": "OpenSpec strict validation",
+        "status": "passed",
+        "command": "openspec validate domain-and-state-schema --strict",
+        "result": "Change 'domain-and-state-schema' is valid."
+      },
+      {
+        "name": "source Proposal Run linkage",
+        "status": "passed",
+        "result": "029-propose action, context, and result are readable; they bind this bundle to the approved 028-review-explore Verdict and the B1 capability."
+      },
+      {
+        "name": "proposal boundary and task coverage",
+        "status": "passed",
+        "result": "The bundle covers all approved B1 contracts and their tests, preserves the frozen state/catalog/ResultRef boundaries, and leaves C1 persistence/adapters, D1 Policy, Apply code, and Full Test out of scope."
+      },
+      {
+        "name": "scope and whitespace review",
+        "status": "passed",
+        "result": "The Proposal creates only B1 OpenSpec artifacts and review evidence; git diff --check produced no output."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run; this is review-propose."
+      }
+    ]
+  },
+  "nextActionRecommendation": "await-owner-authorization-for-apply",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

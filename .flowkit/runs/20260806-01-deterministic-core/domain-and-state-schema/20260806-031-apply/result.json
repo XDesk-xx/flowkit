@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-031-apply",
+  "status": "completed",
+  "summary": "依据 030-review-propose 的 approved Verdict 实现 B1 的 44 项 tasks。创建 6 个源文件（src/domain/types.ts、states.ts、actions.ts、run-id.ts、terminal.ts、schema-validator.ts）和 6 个测试文件（tests/unit/domain/states.test.ts、actions.test.ts、run-id.test.ts、terminal.test.ts、schema-validator.test.ts、types.test.ts）。types.ts 定义 11 个领域对象 interface/type 和冻结状态联合类型（RunStatus 不含 in-progress）。states.ts 定义 Delivery/Change/Run 三个结构转换表 + 泛型 canTransition。actions.ts 定义固定 Action Catalog（10 Change + 2 Delivery，const + as const，不含 review/revise/change-checkpoint）。run-id.ts 定义 parseRunId/validateRunIdUniqueness/allocateNextNnn/validateCandidateNnn 四个纯函数（操作 fixture 不执行文件系统遍历，validateCandidateNnn 先校验候选为 1-999 有限整数再校验单调性）。terminal.ts 定义 isTerminal + assertMutable。schema-validator.ts 定义 type guard + validateRun（拒绝 in-progress 为 Run 状态）。全部测试使用构造 fixture，不依赖 Git/文件系统。tasks.md 44 项全部标记 [x]。四项验证全部通过：typecheck exit 0、build exit 0、test 87 pass 0 fail、lint exit 0。范围边界检查通过：无 Policy 引擎、无 fact reader/持久化、无外部运行时依赖、run-id.ts 无文件系统 API。未创建 Git Commit。",
+  "implementedArtifacts": {
+    "sourceFiles": [
+      { "path": "src/domain/types.ts", "sha256": "f830128036dcbd51ae2a5c2b39786953aa0d1215d5bcd2de9b2f4d5c343ce719" },
+      { "path": "src/domain/states.ts", "sha256": "3e900ad3c6af14c0cda8761a31a6add3aef369e74ed58687cd446907f9ff3c50" },
+      { "path": "src/domain/actions.ts", "sha256": "f5a79034ae38ff53f1c9feac8640fcb5fd66496a329d5544313c5a1d618cca48" },
+      { "path": "src/domain/run-id.ts", "sha256": "50a365308728329b5fafa47671ef8fb582a8d883dadef889ea956c0f0dc36989" },
+      { "path": "src/domain/terminal.ts", "sha256": "cbb0b57a71d07801755e1b79b5daa6e8b21b31a866d96ee37aad9c2febca179f" },
+      { "path": "src/domain/schema-validator.ts", "sha256": "72b2e67ea0888a4792d11cb03372f33b77b5948e986872267bce3f233fea30c1" }
+    ],
+    "testFiles": [
+      { "path": "tests/unit/domain/states.test.ts" },
+      { "path": "tests/unit/domain/actions.test.ts" },
+      { "path": "tests/unit/domain/run-id.test.ts" },
+      { "path": "tests/unit/domain/terminal.test.ts" },
+      { "path": "tests/unit/domain/schema-validator.test.ts" },
+      { "path": "tests/unit/domain/types.test.ts" }
+    ],
+    "tasksMd": {
+      "path": "openspec/changes/domain-and-state-schema/tasks.md",
+      "checked": 44,
+      "unchecked": 0
+    }
+  },
+  "verification": {
+    "checks": [
+      { "name": "typecheck", "status": "passed", "command": "npm run typecheck", "result": "tsc --noEmit + tsconfig.test.json exit 0" },
+      { "name": "build", "status": "passed", "command": "npm run build", "result": "tsc exit 0, dist/ emitted" },
+      { "name": "test", "status": "passed", "command": "npm test", "result": "87 tests, 87 pass, 0 fail (19 domain suites + existing suites)" },
+      { "name": "lint", "status": "passed", "command": "npm run lint", "result": "eslint . exit 0" },
+      { "name": "no Policy engine", "status": "passed", "command": "grep canRun/next/diagnose in src/domain/", "result": "not found" },
+      { "name": "no fact reader/persistence", "status": "passed", "command": "grep FormalFactSnapshot/factReader/persist in src/domain/", "result": "not found" },
+      { "name": "no external runtime deps", "status": "passed", "command": "check package.json dependencies", "result": "no dependencies field" },
+      { "name": "run-id.ts no fs API", "status": "passed", "command": "grep node:fs/readdir/readFile in run-id.ts", "result": "not found" },
+      { "name": "openspec validate --strict", "status": "passed", "command": "npx openspec validate domain-and-state-schema --strict", "result": "Change is valid" },
+      { "name": "git diff --check", "status": "passed", "command": "git diff --check", "result": "no whitespace errors" },
+      { "name": "U+FFFD check", "status": "passed", "command": "scan src/domain/*.ts", "result": "0 replacement characters in all 6 files" },
+      { "name": "Full Test", "status": "not-applicable", "command": "N/A", "result": "Not authorized; this is apply, not delivery-finalize." }
+    ]
+  },
+  "scopePreserved": {
+    "b1Scope": "domain types + schema validation + Run ID contract + terminal checks + Action Catalog + state transitions",
+    "manifestNotModified": true,
+    "a1TrackedFilesNotModified": true,
+    "terminalRunsPreserved": true,
+    "noPolicyEngine": true,
+    "noFactReader": true,
+    "noExternalDeps": true
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "nextAction": "review-apply",
+  "blockedOn": []
+}

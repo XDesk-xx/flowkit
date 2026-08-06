@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-033-revise-apply",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "B1",
+  "changeId": "domain-and-state-schema",
+  "action": "revise-apply",
+  "role": "author",
+  "inputRef": "cf17c7b733c6d99b88137208ac0c79bdeb8e72ebd05235d2f456dc4f92832518",
+  "sourceReviewRun": "20260806-032-review-apply",
+  "sourceReviewVerdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "B1-RA-001",
+      "title": "Formal Change Verification record is missing",
+      "requiredResolution": "Create verification.md as a Change artifact, record every applicable B1 check and its command/result, state that Full Test was not authorized or run, and set the overall Change Verification status from the recorded evidence."
+    },
+    {
+      "id": "B1-RA-002",
+      "title": "VerificationCheck applicability diverges from the approved B1 contract",
+      "requiredResolution": "Use the approved applicability union ('applicable' | 'not-applicable') and update the types tests and any affected fixtures. Keep VerificationStatus as the separate execution-result field."
+    },
+    {
+      "id": "B1-RA-003",
+      "title": "Domain types loosen and omit approved field-level facts",
+      "requiredResolution": "Align interfaces with the approved object-contract matrix: use ChangeAction | DeliveryAction where an action is formal, use ResultRef for Run.inputRef, and restore ChangeSummary.dependsOn and outputs. Update fixture/type tests and validateRun's returned type accordingly without adding C1 persistence or Policy behavior."
+    }
+  ],
+  "constraints": {
+    "mayModifyCode": true,
+    "mayModifyTasks": false,
+    "mayCreateVerificationMd": true,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/domain-and-state-schema/20260806-033-revise-apply/"
+}

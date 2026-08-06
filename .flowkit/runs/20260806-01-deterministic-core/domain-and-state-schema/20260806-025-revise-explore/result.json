@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-025-revise-explore",
+  "status": "completed",
+  "summary": "依据 024-review-explore 的 1 个 Blocking Finding 修订 B1 Explore。B1-RE-007：Q3 的 Run-ID 设计只扫描目录返回 max(NNN)+1，缺少校验唯一性、单调性和三位数耗尽的验证。修复：将 Q3 从分配逻辑扩展为纯解析/校验/分配契约。新增 4 个纯函数——parseRunId（解析并校验完整 YYYYMMDD-NNN-action 格式，NNN 越界 throw RUN_ID_NNN_OUT_OF_RANGE）、validateRunIdUniqueness（拒绝 Delivery-wide 重复 NNN，扫描 Change 级和 _delivery 级 Run，重复 throw RUN_ID_DUPLICATE_NNN）、allocateNextNnn（先校验唯一性再返回 max(NNN)+1，空列表返回 1，nextNnn > 999 throw RUN_ID_NNN_EXHAUSTED，不输出无效 ID）、validateCandidateNnn（校验候选严格大于 max(NNN)，candidateNnn <= max throw RUN_ID_NNN_NOT_MONOTONIC，允许缺号 candidateNnn > max+1 合法，> 999 throw RUN_ID_NNN_EXHAUSTED）。明确 B1 操作传入 Run-ID 字符串 fixture，不执行文件系统遍历；C1 负责文件系统遍历、原子创建和持久化。新增 ParsedRunId interface 和 6 类 fixture 测试（格式、唯一性、单调性、缺号、耗尽、空列表）。更新 Section 3.1 In scope、Section 4 run-id.ts/run-id.test.ts 描述、验收标准 5、Q10 测试策略、结论 4、Review 重点 5。B1-RE-001/002/003/004/005/006 在前序 revise 中已解决，本次未改动相关段落。未创建 Git Commit。",
+  "findingsResolved": [
+    {
+      "id": "B1-RE-007",
+      "title": "Run-ID plan allocates the next value but does not validate uniqueness, monotonicity, or three-digit exhaustion",
+      "resolution": "将 Q3 从分配逻辑扩展为纯解析/校验/分配契约。新增 ParsedRunId interface（date/nnn/action）。新增 4 个纯函数：parseRunId(value) 解析并校验完整 YYYYMMDD-NNN-action 格式，格式不符 throw FlowkitError('RUN_ID_INVALID_FORMAT')，NNN 越界 throw RUN_ID_NNN_OUT_OF_RANGE；validateRunIdUniqueness(existingRunIds) 拒绝 Delivery-wide 重复 NNN（Change 级和 _delivery 级 Run 间共享），重复 throw RUN_ID_DUPLICATE_NNN，调用方 C1 负责从文件系统收集 Run-ID 列表传入；allocateNextNnn(existingRunIds) 先校验唯一性再返回 max(NNN)+1，无已有 Run 返回 1，nextNnn > 999 throw RUN_ID_NNN_EXHAUSTED 不输出无效 ID；validateCandidateNnn(candidateNnn, existingRunIds) 校验候选严格大于 max(NNN)，candidateNnn <= max throw RUN_ID_NNN_NOT_MONOTONIC，允许缺号（candidateNnn > max+1 合法，跳过的编号不回填），> 999 throw RUN_ID_NNN_EXHAUSTED。规则段明确 NNN 在 Delivery 内唯一、严格递增不复用、允许缺号、不按日期/Change/Action/角色重置、上限 999 fail-closed、B1 不执行文件系统遍历、C1 负责遍历和持久化。新增 6 类 fixture 测试（格式校验合法/非法、唯一性拒绝、单调性拒绝、缺号保留、耗尽 fail-closed、空列表返回 1）。更新 Section 3.1 为 'Run ID 解析/校验/分配纯函数契约（格式校验、唯一性拒绝、单调性拒绝、缺号允许、NNN 耗尽 fail-closed）'。Section 4 run-id.ts 改为 'Run ID 解析/校验/分配纯函数（不执行文件系统遍历）'，run-id.test.ts 改为 'Run ID 解析/校验/分配 fixture 测试（格式、唯一性、单调性、缺号、耗尽）'。验收标准 5 更新为完整纯函数契约描述。Q10 测试策略新增 Run ID fixture 测试项。结论 4 更新为纯函数契约描述。Review 重点 5 更新为显式标注 B1-RE-007 校验契约。",
+      "changes": [
+        "Q3: 从分配逻辑扩展为纯解析/校验/分配契约，新增 ParsedRunId interface",
+        "Q3: 新增 parseRunId 纯函数（校验完整 YYYYMMDD-NNN-action 格式 + NNN 范围）",
+        "Q3: 新增 validateRunIdUniqueness 纯函数（拒绝 Delivery-wide 重复 NNN，Change 级和 _delivery 级共享）",
+        "Q3: 新增 allocateNextNnn 纯函数（先校验唯一性再返回 max+1，空列表返回 1，> 999 fail-closed）",
+        "Q3: 新增 validateCandidateNnn 纯函数（拒绝非单调/复用，允许缺号，> 999 fail-closed）",
+        "Q3: 新增规则段（NNN Delivery 内唯一、严格递增不复用、允许缺号、不重置、上限 999 fail-closed、B1 操作 fixture、C1 负责遍历持久化）",
+        "Q3: 新增 6 类 fixture 测试（格式、唯一性、单调性、缺号、耗尽、空列表）",
+        "Section 3.1: 新增 'Run ID 解析/校验/分配纯函数契约' 条目",
+        "Section 4 run-id.ts: 'Run ID 分配' 改为 'Run ID 解析/校验/分配纯函数（不执行文件系统遍历）'",
+        "Section 4 run-id.test.ts: 'Run ID 分配测试' 改为 'Run ID 解析/校验/分配 fixture 测试（格式、唯一性、单调性、缺号、耗尽）'",
+        "验收标准 5: 从分配规则更新为完整纯函数契约（格式校验、唯一性拒绝、单调性拒绝、缺号允许、NNN > 999 fail-closed、B1 操作 fixture）",
+        "Q10 测试策略: 新增 Run ID fixture 测试项（格式校验、唯一性拒绝、单调性拒绝、缺号允许、NNN 耗尽 fail-closed）",
+        "结论 4: 更新为纯函数契约描述（解析/校验/分配、拒绝重复/非单调/复用、允许缺号、fail-closed、B1 操作 fixture）",
+        "Review 重点 5: 从规则列表更新为显式标注 B1-RE-007 校验契约（解析/校验格式、拒绝重复/非单调/复用、允许缺号、fail-closed、B1 操作 fixture）"
+      ]
+    }
+  ],
+  "priorFindingsPreserved": [
+    {
+      "id": "B1-RE-001",
+      "resolvedIn": "20260806-015-revise-explore",
+      "preserved": true,
+      "note": "Q5 CHANGE_ACTIONS 仍为 10 项；Section 6.5 仍记录源冲突解决；验收标准 4 和结论 5 未改动。"
+    },
+    {
+      "id": "B1-RE-002",
+      "resolvedIn": "20260806-015-revise-explore",
+      "preserved": true,
+      "note": "Q9 ResultRef 仍为 provider-neutral；Section 5.1.8 交叉引用 Q9；验收标准 10 和结论 10 未改动。"
+    },
+    {
+      "id": "B1-RE-003",
+      "resolvedIn": "20260806-017-revise-explore",
+      "preserved": true,
+      "note": "Review 重点 item 4 仍为 '10 Change + 2 Delivery'；未改动。"
+    },
+    {
+      "id": "B1-RE-004",
+      "resolvedIn": "20260806-019-revise-explore",
+      "preserved": true,
+      "note": "Section 5.1 领域对象契约矩阵未改动；验收标准 15 和结论 11 未改动。"
+    },
+    {
+      "id": "B1-RE-005",
+      "resolvedIn": "20260806-021-revise-explore",
+      "preserved": true,
+      "note": "Section 5.1.2 RunStatus 仍为 'pending | completed | failed | cancelled'；验收标准 16 和结论 12 未改动。"
+    },
+    {
+      "id": "B1-RE-006",
+      "resolvedIn": "20260806-023-revise-explore",
+      "preserved": true,
+      "note": "Q6 仍为 Delivery/Change/Run 三个结构转换表 + 泛型 canTransition；验收标准 3 和结论 6 未改动。"
+    }
+  ],
+  "exploreArtifact": {
+    "path": "openspec/changes/domain-and-state-schema/explore.md",
+    "sha256": "c2ee3935a72725d34f4d0c1594b5b9f8ccb31bec13929f8deb8d8af114032904",
+    "previousSha256": "5feaa82fd8facc6ff4d7b7b04418188b6646b02eeb3e058d15c962f18a2a4091"
+  },
+  "scopePreserved": {
+    "b1Scope": "unchanged (domain types + schema validation + Run ID parse/validate/allocate contract + terminal checks + object contract matrix + three-entity transition tables)",
+    "manifestNotModified": true,
+    "terminalRunsPreserved": true,
+    "noCode": true,
+    "frozenSpecsNotModified": true
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "nextAction": "review-explore",
+  "blockedOn": []
+}

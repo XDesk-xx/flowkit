@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-018-review-explore",
+  "status": "completed",
+  "summary": "B1 revised Explore review completed with changes-requested. B1-RE-001 through B1-RE-003 are resolved: the fixed catalog is consistently ten Change Actions, change-checkpoint remains a Git boundary, and ResultRef is provider-neutral. However, the Explore still promises TypeScript definitions for eleven domain objects without specifying minimum fields or an explicit B1-versus-C1 ownership decision for most of them. A Proposal could therefore make incompatible object-shape decisions without reviewable Explore guidance.",
+  "reviewedResultRef": "content-sha256:8cc3c09b323795c35f5379e8470d25534a069d02a4fc940041dbc3ff96524882",
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "B1-RE-004",
+      "title": "The eleven promised domain types do not have a field-level or ownership contract",
+      "location": "openspec/changes/domain-and-state-schema/explore.md:3.1, Q1-Q10, section 7 item 1; docs/integration-boundaries.md:26-81, 101-128",
+      "evidence": "The Explore commits B1 to TypeScript definitions for Delivery, Change, Run, ActionDefinition, ActionResult, ResultRef, ReviewVerdict, FindingSummary, VerificationSummary, OwnerAuthorizationRef, and ContinuationContext. It defines states, the catalog, and a partial ResultRef/ReviewVerdict shape, but it gives no minimum-field plan for Delivery, Change, Run, ActionDefinition, ActionResult, VerificationSummary, OwnerAuthorizationRef, or ContinuationContext. The frozen integration boundary requires ActionDefinition to express role/goal/preconditions/allowed outputs/completion conditions, ActionResult to express its listed result facts, and ContinuationContext to carry its specified recoverable fields; it assigns concrete Action Package/Result/ResultRef/Continuation Context boundary work to C1.",
+      "impact": "The Proposal and Apply would have to invent fields, validation responsibilities, and the B1/C1 handoff after Explore approval. That risks incompatible public types, a second fact authority, or an accidental expansion of B1 into C1's serialization/adapter work, and prevents meaningful type/schema test planning now.",
+      "requiredResolution": "Add a compact object-contract matrix covering all eleven objects. For each, state the B1-owned minimum fields/invariants and validation expectation, or explicitly mark it C1-owned and remove/adjust B1's promise to define its concrete type. In particular reconcile B1's ActionDefinition obligation with the frozen role/goal/preconditions/allowed-output/completion requirements; define how ActionResult and ContinuationContext expose the documented logical minimum without fixing a physical transport or serialization schema; and give Delivery, Change, Run, VerificationSummary, and OwnerAuthorizationRef enough field-level direction for a Proposal and table-driven validation tests. Preserve the provider-neutral ResultRef boundary and do not implement C1 adapters or persistence."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "resolvedFindings": [
+    {
+      "id": "B1-RE-001",
+      "resolution": "The revised catalog, acceptance criterion, conclusion, and Review focus consistently require ten Change Actions and exclude change-checkpoint."
+    },
+    {
+      "id": "B1-RE-002",
+      "resolution": "ResultRef now uses provider-neutral identity and version-fingerprint concepts without a mandatory Run path."
+    },
+    {
+      "id": "B1-RE-003",
+      "resolution": "The stale eleven-Action Review focus was revised to the ten-Action criterion."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "reviewed Explore artifact hash",
+        "status": "passed",
+        "result": "SHA-256 is 8cc3c09b323795c35f5379e8470d25534a069d02a4fc940041dbc3ff96524882 and matches the completed 017-revise-explore Run."
+      },
+      {
+        "name": "prior finding resolutions",
+        "status": "passed",
+        "result": "The catalog and ResultRef resolutions remain present, and the Review focus matches the ten-Action catalog."
+      },
+      {
+        "name": "domain-object contract completeness",
+        "status": "failed",
+        "result": "The Explore lists eleven B1 type definitions but leaves most object shapes and the B1/C1 ownership boundary unspecified."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run; this is review-explore."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

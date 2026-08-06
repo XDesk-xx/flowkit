@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-017-revise-explore",
+  "status": "completed",
+  "summary": "依据 016-review-explore 的 1 个 Blocking Finding 修订 B1 Explore。B1-RE-003：Review 重点 item 4 原写 '11 Change + 2 Delivery'，与 015-revise-explore 已修订的 10-Action Catalog（Q5、Section 6.5、验收标准 4、结论 5）冲突。将 Review 重点 item 4 修改为 '10 Change + 2 Delivery，不含 review/revise/change-checkpoint'，与修订后 Catalog、验收标准和结论保持一致。通过搜索确认 explore.md 内无其他将 11-Action 作为必需 Catalog 的残留表述（line 412 '11 个领域对象' 指领域对象数量，正确）。B1-RE-001 和 B1-RE-002 在 015-revise-explore 已解决，本次未改动相关段落。未创建 Git Commit。",
+  "findingsResolved": [
+    {
+      "id": "B1-RE-003",
+      "title": "Review focus retains the superseded eleven-Action catalog",
+      "resolution": "Review 重点 item 4 从 '11 Change + 2 Delivery' 修改为 '10 Change + 2 Delivery，不含 review/revise/change-checkpoint'，与 Q5 的 CHANGE_ACTIONS（10 项）、Section 6.5（change-checkpoint 不是正式 Action）、验收标准 4（10 Change + 2 Delivery）和结论 5（10 个 Change Action）完全一致。findstr 搜索 '11 Change' 和 '11 Action' 无残留匹配（line 412 '11 个领域对象' 指领域对象数量，正确）。",
+      "changes": [
+        "Review 重点 item 4: '11 Change + 2 Delivery' 改为 '10 Change + 2 Delivery，不含 review/revise/change-checkpoint'",
+        "确认 explore.md 无其他 11-Action Catalog 残留表述"
+      ]
+    }
+  ],
+  "priorFindingsPreserved": [
+    {
+      "id": "B1-RE-001",
+      "resolvedIn": "20260806-015-revise-explore",
+      "preserved": true,
+      "note": "Q5 CHANGE_ACTIONS 仍为 10 项；Section 6.5 仍记录源冲突解决；验收标准 4 和结论 5 未改动。"
+    },
+    {
+      "id": "B1-RE-002",
+      "resolvedIn": "20260806-015-revise-explore",
+      "preserved": true,
+      "note": "Q9 ResultRef 仍为 provider-neutral { ref, versionFingerprint, kind? }；验收标准 10 和结论 10 未改动。"
+    }
+  ],
+  "exploreArtifact": {
+    "path": "openspec/changes/domain-and-state-schema/explore.md",
+    "sha256": "8cc3c09b323795c35f5379e8470d25534a069d02a4fc940041dbc3ff96524882",
+    "previousSha256": "c322ff653f434a7d83b85dd58185ee3a3f4ce4a5e0abd65e789d7ed2192963bb"
+  },
+  "scopePreserved": {
+    "b1Scope": "unchanged (domain types + schema validation + Run ID + terminal checks)",
+    "manifestNotModified": true,
+    "terminalRunsPreserved": true,
+    "noCode": true,
+    "frozenSpecsNotModified": true
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "nextAction": "review-explore",
+  "blockedOn": []
+}

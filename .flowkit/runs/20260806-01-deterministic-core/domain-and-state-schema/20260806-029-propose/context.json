@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-029-propose",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "B1",
+  "changeId": "domain-and-state-schema",
+  "action": "propose",
+  "role": "author",
+  "inputRef": "63169f74cf865271d728a2f63eb536a9c7884448b955abe11c4df3deca1fb224",
+  "sourceReviewRun": "20260806-028-review-explore",
+  "sourceReviewVerdict": "approved",
+  "approvedExploreSha256": "1373670bc7d14315f26f2dda1433655c70f2d15d78d063d2e89e613ce08b844c",
+  "capability": "flowkit-domain-and-state-schema",
+  "constraints": {
+    "mayCreateProposalArtifacts": true,
+    "mayModifyCode": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/domain-and-state-schema/20260806-029-propose/"
+}

@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-033-revise-apply",
+  "status": "completed",
+  "summary": "依据 032-review-apply 的 3 个 Blocking Findings 修订 B1 Apply 产物。B1-RA-001：创建 verification.md 正式 Change Verification 记录，包含 11 项检查（typecheck/build/test/lint/openspec validate/whitespace/无 Policy 引擎/无 fact reader/无外部依赖/run-id 无 fs API/Full Test not-applicable），总体状态 passed，Full Test not-run。B1-RA-002：修复 VerificationCheck.applicability 从 'always'|'conditional' 改为 approved Explore 定义的 'applicable'|'not-applicable'，更新 types.test.ts fixture。B1-RA-003：修复领域类型字段级契约——types.ts 导入 ChangeAction/DeliveryAction，Run.action/ActionDefinition.action/ActionResult.action/ContinuationContext.lastCompletedAction/nextAllowedAction 从 string 改为 ChangeAction|DeliveryAction；Run.inputRef 从 string 改为 ResultRef；ChangeSummary 补充 dependsOn:readonly string[] 和 outputs?:readonly string[]；schema-validator.ts 新增 validateResultRef 函数，validateRun 的 inputRef 验证从 requireString 改为 validateResultRef；新增 2 个 inputRef 测试（接受 ResultRef 对象、拒绝 bare string）；更新 types.test.ts 的 ChangeSummary 和 VerificationCheck fixtures。重新运行全部验证：typecheck exit 0、build exit 0、test 89 pass 0 fail、lint exit 0。范围边界检查通过。未创建 Git Commit。",
+  "findingsResolved": [
+    {
+      "id": "B1-RA-001",
+      "title": "Formal Change Verification record is missing",
+      "resolution": "创建 openspec/changes/domain-and-state-schema/verification.md，包含基本信息（Delivery/Change/Apply Run/Review Run/总体状态 passed/Full Test not-run）、验证范围（11 项检查）、验证结果表（每项含适用性/状态/命令/结果）、验证环境、输出检查、Full Test 边界、结果引用、补充说明、结论。verification.md 记录 Full Test 未获 owner 授权，总体 Change Verification 状态为 passed。",
+      "changes": [
+        "创建 openspec/changes/domain-and-state-schema/verification.md（9 section，11 项检查记录）"
+      ]
+    },
+    {
+      "id": "B1-RA-002",
+      "title": "VerificationCheck applicability diverges from the approved B1 contract",
+      "resolution": "将 types.ts 中 VerificationCheck.applicability 从 'always'|'conditional' 改为 'applicable'|'not-applicable'，与 approved Explore explore.md:597 一致。更新 types.test.ts 中 VerificationSummary fixture 的 applicability 从 'always' 改为 'applicable'。VerificationStatus 保持为独立执行结果字段不变。",
+      "changes": [
+        "types.ts VerificationCheck.applicability: 'always'|'conditional' -> 'applicable'|'not-applicable'",
+        "types.test.ts VerificationSummary fixture: applicability 'always' -> 'applicable'"
+      ]
+    },
+    {
+      "id": "B1-RA-003",
+      "title": "Domain types loosen and omit approved field-level facts",
+      "resolution": "types.ts 导入 ChangeAction/DeliveryAction from actions.js。Run.action 从 string 改为 ChangeAction|DeliveryAction；Run.inputRef 从 string 改为 ResultRef；ActionDefinition.action 从 string 改为 ChangeAction|DeliveryAction；ActionResult.action 从 string 改为 ChangeAction|DeliveryAction；ContinuationContext.lastCompletedAction 从 string 改为 ChangeAction|DeliveryAction；ContinuationContext.nextAllowedAction 从 string 改为 ChangeAction|DeliveryAction；ChangeSummary 补充 dependsOn:readonly string[] 和 outputs?:readonly string[]。schema-validator.ts 新增 validateResultRef 函数和 ResultRef import，validateRun 的 inputRef 从 requireString 改为 validateResultRef。新增 2 个测试：接受 inputRef 为 ResultRef 对象、拒绝 inputRef 为 bare string。更新 types.test.ts 的 ChangeSummary fixture（补充 dependsOn 和 outputs）。",
+      "changes": [
+        "types.ts: import type { ChangeAction, DeliveryAction } from './actions.js'",
+        "types.ts Run.action: string -> ChangeAction | DeliveryAction",
+        "types.ts Run.inputRef: string -> ResultRef",
+        "types.ts ActionDefinition.action: string -> ChangeAction | DeliveryAction",
+        "types.ts ActionResult.action: string -> ChangeAction | DeliveryAction",
+        "types.ts ContinuationContext.lastCompletedAction: string -> ChangeAction | DeliveryAction",
+        "types.ts ContinuationContext.nextAllowedAction: string -> ChangeAction | DeliveryAction",
+        "types.ts ChangeSummary: 补充 dependsOn:readonly string[] 和 outputs?:readonly string[]",
+        "schema-validator.ts: 新增 ResultRef import 和 validateResultRef 函数",
+        "schema-validator.ts validateRun: inputRef 从 requireString 改为 validateResultRef",
+        "schema-validator.test.ts: 新增 inputRef 为 ResultRef 对象测试 + inputRef 为 bare string 拒绝测试",
+        "types.test.ts: ChangeSummary fixture 补充 dependsOn 和 outputs"
+      ]
+    }
+  ],
+  "verification": {
+    "checks": [
+      { "name": "typecheck", "status": "passed", "command": "npm run typecheck", "result": "exit 0" },
+      { "name": "build", "status": "passed", "command": "npm run build", "result": "exit 0" },
+      { "name": "test", "status": "passed", "command": "npm test", "result": "89 tests, 89 pass, 0 fail" },
+      { "name": "lint", "status": "passed", "command": "npm run lint", "result": "exit 0" },
+      { "name": "openspec validate --strict", "status": "passed", "command": "npx openspec validate domain-and-state-schema --strict", "result": "Change is valid" },
+      { "name": "git diff --check", "status": "passed", "command": "git diff --check", "result": "exit 0" },
+      { "name": "no Policy engine", "status": "passed", "result": "not found in src/domain/*.ts" },
+      { "name": "no fact reader/persistence", "status": "passed", "result": "not found in src/domain/*.ts" },
+      { "name": "no external runtime deps", "status": "passed", "result": "no dependencies field" },
+      { "name": "run-id.ts no fs API", "status": "passed", "result": "not found" },
+      { "name": "U+FFFD check", "status": "passed", "result": "0 in all changed files" },
+      { "name": "Full Test", "status": "not-applicable", "result": "Not authorized; this is revise-apply." }
+    ],
+    "verificationMd": {
+      "path": "openspec/changes/domain-and-state-schema/verification.md",
+      "sha256": "257cfdfe72480425f0da34e3bfcae9fb53ef94b5ca19f0ea27e71035519c002d",
+      "overallStatus": "passed"
+    }
+  },
+  "modifiedArtifacts": {
+    "sourceFiles": [
+      { "path": "src/domain/types.ts", "sha256": "73ba8d8270cf773b3b59af12c53e2bf2954e0b78b45f3f3a9656004f4355074a" },
+      { "path": "src/domain/schema-validator.ts", "sha256": "02562f52ac98b14aba78e4c16f9b71d28ebbc5273f575dbb107f115ca00edca3" }
+    ],
+    "testFiles": [
+      { "path": "tests/unit/domain/types.test.ts" },
+      { "path": "tests/unit/domain/schema-validator.test.ts" }
+    ],
+    "verificationMd": {
+      "path": "openspec/changes/domain-and-state-schema/verification.md",
+      "sha256": "257cfdfe72480425f0da34e3bfcae9fb53ef94b5ca19f0ea27e71035519c002d"
+    }
+  },
+  "scopePreserved": {
+    "b1Scope": "unchanged (domain types + schema validation + Run ID contract + terminal checks + Action Catalog + state transitions)",
+    "manifestNotModified": true,
+    "a1TrackedFilesNotModified": true,
+    "terminalRunsPreserved": true,
+    "noPolicyEngine": true,
+    "noFactReader": true,
+    "noExternalDeps": true
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "nextAction": "review-apply",
+  "blockedOn": []
+}

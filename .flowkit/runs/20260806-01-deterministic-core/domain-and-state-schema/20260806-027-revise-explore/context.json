@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-027-revise-explore",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "B1",
+  "changeId": "domain-and-state-schema",
+  "action": "revise-explore",
+  "role": "author",
+  "inputRef": "c2ee3935a72725d34f4d0c1594b5b9f8ccb31bec13929f8deb8d8af114032904",
+  "sourceReviewRun": "20260806-026-review-explore",
+  "sourceReviewVerdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "B1-RE-008",
+      "title": "validateCandidateNnn does not validate its candidate as a valid NNN value",
+      "requiredResolution": "Make validateCandidateNnn reject every candidate that is not a finite integer from 1 through 999 before evaluating monotonicity, using a machine-readable FlowkitError code. Add fixture tests for 0, a negative value, a fractional value, and non-finite input, as well as the existing monotonic/overflow/gap cases. Keep the returned/accepted candidate contract aligned with parseRunId's 001-999 grammar."
+    }
+  ],
+  "resolvedFindingsFromPriorRevisions": [
+    {
+      "id": "B1-RE-001",
+      "resolvedIn": "20260806-015-revise-explore",
+      "resolution": "Action Catalog follows frozen core-model spec's ten formal Actions."
+    },
+    {
+      "id": "B1-RE-002",
+      "resolvedIn": "20260806-015-revise-explore",
+      "resolution": "ResultRef is provider-neutral without mandatory runPath."
+    },
+    {
+      "id": "B1-RE-003",
+      "resolvedIn": "20260806-017-revise-explore",
+      "resolution": "Review focus item 4 updated to ten Change Actions."
+    },
+    {
+      "id": "B1-RE-004",
+      "resolvedIn": "20260806-019-revise-explore",
+      "resolution": "Section 5.1 object-contract matrix covers all eleven objects."
+    },
+    {
+      "id": "B1-RE-005",
+      "resolvedIn": "20260806-021-revise-explore",
+      "resolution": "RunStatus matches frozen four-value set; in-progress limited to ExecutionStatus."
+    },
+    {
+      "id": "B1-RE-006",
+      "resolvedIn": "20260806-023-revise-explore",
+      "resolution": "Q6 defines separate Delivery, Change, and Run structural transition tables with exhaustive matrix tests."
+    },
+    {
+      "id": "B1-RE-007",
+      "resolvedIn": "20260806-025-revise-explore",
+      "resolution": "Q3 defines pure format parsing, Delivery-wide NNN uniqueness, candidate monotonicity, allowed gaps, and NNN exhaustion without filesystem traversal in B1."
+    }
+  ],
+  "constraints": {
+    "mayModifyExplore": true,
+    "mayModifyCode": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/domain-and-state-schema/20260806-027-revise-explore/"
+}

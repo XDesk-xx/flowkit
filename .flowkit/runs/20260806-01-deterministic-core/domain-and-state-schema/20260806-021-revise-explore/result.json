@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-021-revise-explore",
+  "status": "completed",
+  "summary": "依据 020-review-explore 的 1 个 Blocking Finding 修订 B1 Explore。B1-RE-005：Section 5.1.2 的 RunStatus 错误添加了 in-progress，与冻结 docs/core-model.md Section 3.3（pending | completed | failed | cancelled）冲突。修复：从 RunStatus 移除 in-progress，添加注释说明与冻结 core-model.md Section 3.3 一致、in-progress 仅存在于 ActionResult.ExecutionStatus。添加验收标准 16（Schema 拒绝 in-progress 为未知 Run 状态）、结论 12（RunStatus 与冻结一致）、更新 Review 重点 item 3（显式包含 RunStatus 检查）、更新 Q10 测试策略（特别验证 in-progress 被拒绝为未知 Run 状态）。findstr 确认 in-progress 仅出现在 ExecutionStatus 定义和说明'不含 in-progress'的注释/验收/结论中，无其他扩展冻结 Run 状态集合的表述。B1-RE-001/002/003/004 在前序 revise 中已解决，本次未改动相关段落。未创建 Git Commit。",
+  "findingsResolved": [
+    {
+      "id": "B1-RE-005",
+      "title": "RunStatus introduces an unfrozen in-progress state",
+      "resolution": "从 Section 5.1.2 的 RunStatus 移除 in-progress。RunStatus 现为 'pending' | 'completed' | 'failed' | 'cancelled'，与冻结 docs/core-model.md Section 3.3 和实现参考 Section 230-231 完全一致。添加注释说明 terminal = completed | failed | cancelled（与 Q4 一致），in-progress 仅存在于 ActionResult.ExecutionStatus，不进入 Run 状态或 Run 状态转换。添加验收标准 16：Schema 校验拒绝 in-progress 等未冻结状态作为 Run 状态。更新 Q10 测试策略：Schema 校验测试特别验证 in-progress 被拒绝为未知 Run 状态。添加结论 12。更新 Review 重点 item 3：显式包含 RunStatus 与冻结 core-model.md Section 3.3 一致性检查。findstr 确认无其他扩展冻结 Run 状态集合的表述。",
+      "changes": [
+        "Section 5.1.2 RunStatus: 从 'pending' | 'in-progress' | 'completed' | 'failed' | 'cancelled' 改为 'pending' | 'completed' | 'failed' | 'cancelled'",
+        "Section 5.1.2 添加注释：与冻结 docs/core-model.md Section 3.3 一致；不含 in-progress（B1-RE-005）；in-progress 仅存在于 ActionResult.ExecutionStatus",
+        "Section 5.1.2 ExecutionStatus 注释：独立于 RunStatus，可含 in-progress",
+        "验收标准新增 item 16：RunStatus 与冻结 core-model.md Section 3.3 一致，Schema 拒绝 in-progress 为未知 Run 状态",
+        "结论新增 item 12：RunStatus 与冻结一致，in-progress 仅在 ExecutionStatus",
+        "Review 重点 item 3 更新：显式包含 RunStatus 与冻结 core-model.md Section 3.3 一致性检查",
+        "Q10 测试策略更新：Schema 校验测试特别验证 in-progress 被拒绝为未知 Run 状态"
+      ]
+    }
+  ],
+  "priorFindingsPreserved": [
+    {
+      "id": "B1-RE-001",
+      "resolvedIn": "20260806-015-revise-explore",
+      "preserved": true,
+      "note": "Q5 CHANGE_ACTIONS 仍为 10 项；Section 6.5 仍记录源冲突解决；验收标准 4 和结论 5 未改动。"
+    },
+    {
+      "id": "B1-RE-002",
+      "resolvedIn": "20260806-015-revise-explore",
+      "preserved": true,
+      "note": "Q9 ResultRef 仍为 provider-neutral { ref, versionFingerprint, kind? }；Section 5.1.8 交叉引用 Q9；验收标准 10 和结论 10 未改动。"
+    },
+    {
+      "id": "B1-RE-003",
+      "resolvedIn": "20260806-017-revise-explore",
+      "preserved": true,
+      "note": "Review 重点 item 4 仍为 '10 Change + 2 Delivery，不含 review/revise/change-checkpoint'；未改动。"
+    },
+    {
+      "id": "B1-RE-004",
+      "resolvedIn": "20260806-019-revise-explore",
+      "preserved": true,
+      "note": "Section 5.1 领域对象契约矩阵未改动（仅 RunStatus 定义修正）；验收标准 15 和结论 11 未改动。"
+    }
+  ],
+  "exploreArtifact": {
+    "path": "openspec/changes/domain-and-state-schema/explore.md",
+    "sha256": "eb8d8ca96c69d65ba6fd252791a0f6a677c53265e247237dd2610867516e9877",
+    "previousSha256": "289a5e0426b5c201c00968c224b046604cdfb7a3bd502fa9e526a7e93fc0776a"
+  },
+  "scopePreserved": {
+    "b1Scope": "unchanged (domain types + schema validation + Run ID + terminal checks + object contract matrix)",
+    "manifestNotModified": true,
+    "terminalRunsPreserved": true,
+    "noCode": true,
+    "frozenSpecsNotModified": true
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "nextAction": "review-explore",
+  "blockedOn": []
+}

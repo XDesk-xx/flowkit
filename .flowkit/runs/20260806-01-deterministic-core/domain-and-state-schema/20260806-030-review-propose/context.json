@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "deliveryId": "20260806-01-deterministic-core",
+  "change": {
+    "key": "B1",
+    "id": "domain-and-state-schema"
+  },
+  "run": {
+    "id": "20260806-030-review-propose",
+    "action": "review-propose",
+    "role": "reviewer"
+  },
+  "reviewedRun": {
+    "path": ".flowkit/runs/20260806-01-deterministic-core/domain-and-state-schema/20260806-029-propose/",
+    "proposalArtifacts": [
+      "openspec/changes/domain-and-state-schema/proposal.md",
+      "openspec/changes/domain-and-state-schema/design.md",
+      "openspec/changes/domain-and-state-schema/tasks.md",
+      "openspec/changes/domain-and-state-schema/specs/flowkit-domain-and-state-schema/spec.md"
+    ]
+  },
+  "constraints": {
+    "readOnlyExceptCurrentRun": true,
+    "fullTestAllowed": false,
+    "commitAllowed": false,
+    "mayApply": false,
+    "mayArchive": false
+  }
+}

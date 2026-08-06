@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-031-apply",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "B1",
+  "changeId": "domain-and-state-schema",
+  "action": "apply",
+  "role": "author",
+  "inputRef": "4b0979ff45f56cff8dcef75a93130bda5be81ca7a702980ae68c7304237b090a",
+  "sourceReviewRun": "20260806-030-review-propose",
+  "sourceReviewVerdict": "approved",
+  "constraints": {
+    "mayCreateCode": true,
+    "mayModifyTasks": true,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/domain-and-state-schema/20260806-031-apply/"
+}

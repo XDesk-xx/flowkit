@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-027-revise-explore",
+  "status": "completed",
+  "summary": "依据 026-review-explore 的 1 个 Blocking Finding 修订 B1 Explore。B1-RE-008：validateCandidateNnn 接受 number 参数但只拒绝 candidateNnn <= max(NNN) 和 candidateNnn > 999，未要求候选是 1-999 范围内的有限整数——0、负数、小数、非有限值（NaN/Infinity）不会被显式拒绝。修复：在 validateCandidateNnn 单调性校验前增加有限整数 1-999 前置校验，candidateNnn 不是有限整数或不在 1-999 范围时 throw FlowkitError('RUN_ID_NNN_OUT_OF_RANGE')，与 parseRunId 的 001-999 语法对齐。移除原 candidateNnn > 999 -> RUN_ID_NNN_EXHAUSTED 分支（> 999 现由范围校验捕获为 OUT_OF_RANGE，EXHAUSTED 仅保留给 allocateNextNnn 的系统耗尽语义）。规则段新增候选 NNN 有限整数 1-999 条目。fixture 测试新增候选输入校验项（0、负数、小数、NaN/Infinity）。同步更新验收标准 5、Q10 测试策略、结论 4、Review 重点 5 标注 B1-RE-008。B1-RE-001~007 在前序 revise 中已解决，本次未改动相关段落。未创建 Git Commit。",
+  "findingsResolved": [
+    {
+      "id": "B1-RE-008",
+      "title": "validateCandidateNnn does not validate its candidate as a valid NNN value",
+      "resolution": "在 validateCandidateNnn 单调性校验前增加有限整数 1-999 前置校验。candidateNnn 不是有限整数或不在 1-999 范围时 throw FlowkitError('RUN_ID_NNN_OUT_OF_RANGE')，覆盖 0、负数、小数、NaN、Infinity，与 parseRunId 的 001-999 语法对齐。移除原 candidateNnn > 999 -> RUN_ID_NNN_EXHAUSTED 分支（> 999 现由范围校验捕获为 OUT_OF_RANGE；EXHAUSTED 仅保留给 allocateNextNnn 表示系统耗尽——nextNnn > 999 时无法分配）。保留单调性校验 candidateNnn <= max(NNN) -> RUN_ID_NNN_NOT_MONOTONIC 和缺号允许 candidateNnn > max+1 合法。规则段新增 '候选 NNN 必须是 1-999 范围内的有限整数' 条目。fixture 测试新增 '候选输入校验：构造 candidateNnn = 0、负数、小数、非有限值（NaN/Infinity），验证 throw'。验收标准 5、Q10 测试策略、结论 4、Review 重点 5 均新增候选 NNN 有限整数 1-999 校验描述并标注 B1-RE-008。",
+      "changes": [
+        "Q3 validateCandidateNnn 契约：单调性校验前新增有限整数 1-999 前置校验，throw RUN_ID_NNN_OUT_OF_RANGE（与 parseRunId 对齐）",
+        "Q3 validateCandidateNnn 契约：移除 candidateNnn > 999 -> RUN_ID_NNN_EXHAUSTED 分支（> 999 现由范围校验捕获为 OUT_OF_RANGE）",
+        "Q3 validateCandidateNnn 契约：docstring 显式列出 0、负数、小数、NaN、Infinity 均被拒绝",
+        "Q3 规则段：新增 '候选 NNN 必须是 1-999 范围内的有限整数' 条目",
+        "Q3 fixture 测试：新增 '候选输入校验：构造 candidateNnn = 0、负数、小数、非有限值（NaN/Infinity），验证 throw'",
+        "验收标准 5：新增 '候选 NNN 有限整数 1-999 校验' 并标注 B1-RE-008",
+        "Q10 测试策略：Run ID 测试新增 '候选输入校验（0/负数/小数/非有限值）' 并标注 B1-RE-008",
+        "结论 4：新增 '候选 NNN 有限整数 1-999 校验（拒绝 0/负数/小数/非有限值）' 并标注 B1-RE-008",
+        "Review 重点 5：新增 '候选 NNN 有限整数 1-999 校验（拒绝 0/负数/小数/非有限值）' 并标注 B1-RE-008"
+      ]
+    }
+  ],
+  "priorFindingsPreserved": [
+    {
+      "id": "B1-RE-001",
+      "resolvedIn": "20260806-015-revise-explore",
+      "preserved": true,
+      "note": "Q5 CHANGE_ACTIONS 仍为 10 项；Section 6.5 仍记录源冲突解决；验收标准 4 和结论 5 未改动。"
+    },
+    {
+      "id": "B1-RE-002",
+      "resolvedIn": "20260806-015-revise-explore",
+      "preserved": true,
+      "note": "Q9 ResultRef 仍为 provider-neutral；Section 5.1.8 交叉引用 Q9；验收标准 10 和结论 10 未改动。"
+    },
+    {
+      "id": "B1-RE-003",
+      "resolvedIn": "20260806-017-revise-explore",
+      "preserved": true,
+      "note": "Review 重点 item 4 仍为 '10 Change + 2 Delivery'；未改动。"
+    },
+    {
+      "id": "B1-RE-004",
+      "resolvedIn": "20260806-019-revise-explore",
+      "preserved": true,
+      "note": "Section 5.1 领域对象契约矩阵未改动；验收标准 15 和结论 11 未改动。"
+    },
+    {
+      "id": "B1-RE-005",
+      "resolvedIn": "20260806-021-revise-explore",
+      "preserved": true,
+      "note": "Section 5.1.2 RunStatus 仍为 'pending | completed | failed | cancelled'；验收标准 16 和结论 12 未改动。"
+    },
+    {
+      "id": "B1-RE-006",
+      "resolvedIn": "20260806-023-revise-explore",
+      "preserved": true,
+      "note": "Q6 仍为 Delivery/Change/Run 三个结构转换表 + 泛型 canTransition；验收标准 3 和结论 6 未改动。"
+    },
+    {
+      "id": "B1-RE-007",
+      "resolvedIn": "20260806-025-revise-explore",
+      "preserved": true,
+      "note": "Q3 仍为纯解析/校验/分配契约（parseRunId/validateRunIdUniqueness/allocateNextNnn/validateCandidateNnn）；B1 操作 fixture 不执行文件系统遍历；本次仅扩展 validateCandidateNnn 的输入校验，未移除 B1-RE-007 的任何内容。"
+    }
+  ],
+  "exploreArtifact": {
+    "path": "openspec/changes/domain-and-state-schema/explore.md",
+    "sha256": "1373670bc7d14315f26f2dda1433655c70f2d15d78d063d2e89e613ce08b844c",
+    "previousSha256": "c2ee3935a72725d34f4d0c1594b5b9f8ccb31bec13929f8deb8d8af114032904"
+  },
+  "scopePreserved": {
+    "b1Scope": "unchanged (domain types + schema validation + Run ID parse/validate/allocate contract + terminal checks + object contract matrix + three-entity transition tables)",
+    "manifestNotModified": true,
+    "terminalRunsPreserved": true,
+    "noCode": true,
+    "frozenSpecsNotModified": true
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "nextAction": "review-explore",
+  "blockedOn": []
+}

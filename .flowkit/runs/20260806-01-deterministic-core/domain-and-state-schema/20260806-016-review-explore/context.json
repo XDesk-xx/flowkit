@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "deliveryId": "20260806-01-deterministic-core",
+  "change": {
+    "key": "B1",
+    "id": "domain-and-state-schema"
+  },
+  "run": {
+    "id": "20260806-016-review-explore",
+    "action": "review-explore",
+    "role": "reviewer"
+  },
+  "reviewedRun": {
+    "path": ".flowkit/runs/20260806-01-deterministic-core/domain-and-state-schema/20260806-015-revise-explore/",
+    "explorePath": "openspec/changes/domain-and-state-schema/explore.md",
+    "exploreSha256": "c322ff653f434a7d83b85dd58185ee3a3f4ce4a5e0abd65e789d7ed2192963bb"
+  },
+  "sourceReview": {
+    "path": ".flowkit/runs/20260806-01-deterministic-core/domain-and-state-schema/20260806-014-review-explore/result.json",
+    "verdict": "changes-requested",
+    "blockingFindingIds": ["B1-RE-001", "B1-RE-002"]
+  },
+  "constraints": {
+    "readOnlyExceptCurrentRun": true,
+    "fullTestAllowed": false,
+    "commitAllowed": false,
+    "mayPropose": false,
+    "mayApply": false,
+    "mayArchive": false
+  }
+}

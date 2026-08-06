@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-021-revise-explore",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "B1",
+  "changeId": "domain-and-state-schema",
+  "action": "revise-explore",
+  "role": "author",
+  "inputRef": "289a5e0426b5c201c00968c224b046604cdfb7a3bd502fa9e526a7e93fc0776a",
+  "sourceReviewRun": "20260806-020-review-explore",
+  "sourceReviewVerdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "B1-RE-005",
+      "title": "RunStatus introduces an unfrozen in-progress state",
+      "requiredResolution": "Remove in-progress from RunStatus and add an explicit acceptance/test expectation that the schema rejects it as an unknown Run state. Retain in-progress only on ActionResult.ExecutionStatus. Recheck the Explore for any other statement that expands the frozen Run state set."
+    }
+  ],
+  "resolvedFindingsFromPriorRevisions": [
+    {
+      "id": "B1-RE-001",
+      "resolvedIn": "20260806-015-revise-explore",
+      "resolution": "Action Catalog follows frozen core-model spec's ten formal Actions; change-checkpoint treated as Git boundary."
+    },
+    {
+      "id": "B1-RE-002",
+      "resolvedIn": "20260806-015-revise-explore",
+      "resolution": "ResultRef is provider-neutral without mandatory runPath; concrete serialization deferred to C1."
+    },
+    {
+      "id": "B1-RE-003",
+      "resolvedIn": "20260806-017-revise-explore",
+      "resolution": "Review focus item 4 updated to require ten Change Actions plus two Delivery Actions."
+    },
+    {
+      "id": "B1-RE-004",
+      "resolvedIn": "20260806-019-revise-explore",
+      "resolution": "Section 5.1 object-contract matrix covers all eleven objects with ownership, minimum fields, and validation expectations."
+    }
+  ],
+  "constraints": {
+    "mayModifyExplore": true,
+    "mayModifyCode": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/domain-and-state-schema/20260806-021-revise-explore/"
+}

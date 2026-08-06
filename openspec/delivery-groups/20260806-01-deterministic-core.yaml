@@ -92,7 +92,7 @@ changes:
     required: true
     dependsOn:
       - runtime-foundation
-    state: planned
+    state: completed
     outputs:
       - 领域对象与状态 Schema
       - 固定 Action Catalog

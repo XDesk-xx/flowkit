@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-029-propose",
+  "status": "completed",
+  "summary": "依据 028-review-explore 的 approved Verdict 创建 B1 proposal 四件套。B1 冻结 Delivery/Change/Run 领域对象（11 个 TypeScript interface/type）、主状态联合类型（与冻结 spec 一致）、三个实体结构转换表 + 泛型 canTransition、固定 Action Catalog（10 Change + 2 Delivery，不含 review/revise/change-checkpoint）、Run ID 纯解析/校验/分配契约（parseRunId/validateRunIdUniqueness/allocateNextNnn/validateCandidateNnn，B1 操作 fixture 不执行文件系统遍历）、terminal immutability 校验、Schema 校验（拒绝未知主状态）。新建 capability flowkit-domain-and-state-schema，不修改已有 capability。proposal.md 含 Why/What Changes/Capabilities/Impact。design.md 含 Context/Goals/Non-Goals/D1-D10 决策 + 领域对象契约矩阵 + 状态集合冻结来源。spec.md 含 13 个 ADDED Requirement + 38 个 Scenario（每个含 MUST/SHALL 关键字）。tasks.md 含 8 section、44 项 apply 阶段任务。全部 8 个 review finding（B1-RE-001~008）在 explore 已 resolved 并反映在 proposal 中。未创建 Git Commit。",
+  "proposalArtifacts": {
+    "proposalMd": {
+      "path": "openspec/changes/domain-and-state-schema/proposal.md",
+      "content": "Why（A1 已交付骨架，B1-F1 需领域类型基底）、What Changes（7 项新增 src/domain/ 模块 + 测试）、Capabilities（新建 flowkit-domain-and-state-schema）、Impact（低风险，全部新增文件）"
+    },
+    "designMd": {
+      "path": "openspec/changes/domain-and-state-schema/design.md",
+      "content": "Context、Goals/Non-Goals、D1-D10 决策（对应 Explore Q1-Q10）、领域对象契约矩阵（11 个对象所有权边界）、状态集合冻结来源表"
+    },
+    "specMd": {
+      "path": "openspec/changes/domain-and-state-schema/specs/flowkit-domain-and-state-schema/spec.md",
+      "sha256": "0fa6307501973e1ab472250e0f9575af5850ddb74f54a7a07dcf920e7d1a3751",
+      "requirements": 13,
+      "scenarios": 38
+    },
+    "tasksMd": {
+      "path": "openspec/changes/domain-and-state-schema/tasks.md",
+      "sections": 8,
+      "checkboxes": 44
+    }
+  },
+  "decisions": [
+    {"id": "D1", "question": "Q1 领域对象表示", "decision": "interface + type，不用 class（FlowkitError 除外）"},
+    {"id": "D2", "question": "Q2 Schema 校验", "decision": "自定义 type guard，不用 Zod/JSON Schema"},
+    {"id": "D3", "question": "Q3 Run ID 纯函数契约", "decision": "parseRunId/validateRunIdUniqueness/allocateNextNnn/validateCandidateNnn，操作 fixture 不执行文件系统遍历"},
+    {"id": "D4", "question": "Q4 terminal immutability", "decision": "isTerminal + assertMutable"},
+    {"id": "D5", "question": "Q5 Action Catalog", "decision": "const 数组 + as const，10 Change + 2 Delivery，不含 review/revise/change-checkpoint"},
+    {"id": "D6", "question": "Q6 状态转换表", "decision": "Record<State, readonly State[]> + 泛型 canTransition，三个实体分别结构转换表"},
+    {"id": "D7", "question": "Q7 outputs 概念", "decision": "outputs?: readonly string[]，只定义类型不实现运行时校验"},
+    {"id": "D8", "question": "Q8 Archify 最小字段", "decision": "architecture: { impact, archifyPlan }，不创建 archifyStatus"},
+    {"id": "D9", "question": "Q9 ResultRef/ReviewVerdict", "decision": "ResultRef provider-neutral { ref, versionFingerprint, kind? }，不固定 runPath"},
+    {"id": "D10", "question": "Q10 测试策略", "decision": "全部构造 fixture，不依赖 Git/文件系统"}
+  ],
+  "reviewFindingsReflected": [
+    {"id": "B1-RE-001", "note": "Action Catalog 为 10 Change Action，change-checkpoint 不在 Catalog 中（源冲突以冻结 spec 为权威）"},
+    {"id": "B1-RE-002", "note": "ResultRef provider-neutral，不含 mandatory runPath"},
+    {"id": "B1-RE-003", "note": "Review 重点与 Catalog/验收标准一致使用 10 Change Action"},
+    {"id": "B1-RE-004", "note": "领域对象契约矩阵覆盖 11 个对象，ActionResult/ContinuationContext 标记逻辑最小字段"},
+    {"id": "B1-RE-005", "note": "RunStatus 为 pending|completed|failed|cancelled，不含 in-progress；Schema 校验拒绝 in-progress 为 Run 状态"},
+    {"id": "B1-RE-006", "note": "Delivery/Change/Run 三个结构转换表 + exhaustive matrix 测试"},
+    {"id": "B1-RE-007", "note": "Run ID 纯函数契约：格式校验、唯一性拒绝、单调性拒绝、缺号允许、NNN 耗尽 fail-closed"},
+    {"id": "B1-RE-008", "note": "validateCandidateNnn 先校验候选为 1-999 有限整数，拒绝 0/负数/小数/非有限值"}
+  ],
+  "scopePreserved": {
+    "b1Scope": "domain types + schema validation + Run ID contract + terminal checks + Action Catalog + state transitions",
+    "manifestNotModified": true,
+    "terminalRunsPreserved": true,
+    "noCode": true,
+    "frozenSpecsNotModified": true
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "nextAction": "review-propose",
+  "blockedOn": []
+}
