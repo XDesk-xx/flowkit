@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-003-revise-explore",
+  "status": "completed",
+  "summary": "依据 002-review-explore 的 3 个 Blocking Findings 修订 A1 Explore。修复 ESM package contract（type=module + engines + .js specifiers）、添加 @types/node devDependency、添加 tsconfig.test.json 覆盖测试 TypeScript typecheck。修改了 explore.md 的 Q1/Q2/Q3/Q4 和 Section 9/11/12。未修改 Manifest、冻结 specs、先前 terminal Runs 或任何代码文件。未创建 Git Commit。",
+  "exploreArtifact": {
+    "path": "openspec/changes/runtime-foundation/explore.md",
+    "sha256": "ad00831d2ba189bec65cfec730478d5d3e902ec7027751028567ce4ef268d2bc"
+  },
+  "findingsResolved": [
+    {
+      "id": "A1-RE-001",
+      "title": "ESM package contract is incomplete",
+      "resolution": "在 Q2 添加 ESM package contract 小节：package.json 必须设置 type=module 和 engines.node >= 22.0.0。在 Q1 添加 NodeNext 导入约定：.ts 源码中相对导入必须使用编译后 .js specifier。在 Section 9 添加验收标准 4 和 5。在 Section 11 添加结论 12。在 Section 12 添加审查重点 12。",
+      "changes": ["explore.md Q1 (NodeNext import convention)", "explore.md Q2 (ESM package contract)", "explore.md Section 9 (acceptance 4,5)", "explore.md Section 11 (conclusion 12)", "explore.md Section 12 (review focus 12)"]
+    },
+    {
+      "id": "A1-RE-002",
+      "title": "Node type declarations are missing",
+      "resolution": "在 Q1 tsconfig 添加 types: [\"node\"]。在 Q4 devDependencies 添加 @types/node ^22.0.0 pin 到 Node 22 major line。在 Section 9 添加验收标准 6。在 Section 11 添加结论 13。在 Section 12 添加审查重点 13。",
+      "changes": ["explore.md Q1 (types: [\"node\"])", "explore.md Q4 (@types/node ^22.0.0)", "explore.md Section 9 (acceptance 6)", "explore.md Section 11 (conclusion 13)", "explore.md Section 12 (review focus 13)"]
+    },
+    {
+      "id": "A1-RE-003",
+      "title": "Test TypeScript excluded from typecheck",
+      "resolution": "在 Q1 添加 tsconfig.test.json（extends 生产 tsconfig，include tests/**/*.ts，noEmit）。在 Q2 更新 typecheck script 为 tsc --noEmit && tsc --noEmit -p tsconfig.test.json。在 Q3 引号包裹 test glob。在 Section 9 添加验收标准 3。在 Section 11 添加结论 14 和 15。在 Section 12 添加审查重点 14 和 15。",
+      "changes": ["explore.md Q1 (tsconfig.test.json)", "explore.md Q2 (typecheck script)", "explore.md Q3 (quoted glob)", "explore.md Section 9 (acceptance 3)", "explore.md Section 11 (conclusion 14,15)", "explore.md Section 12 (review focus 14,15)"]
+    }
+  ],
+  "scopePreserved": {
+    "a1Scope": "unchanged (TypeScript runtime skeleton + shared engineering basics)",
+    "noNewCode": true,
+    "noProposalArtifacts": true,
+    "terminalRunsPreserved": true,
+    "manifestNotModified": true
+  },
+  "verification": {
+    "openspecValidateSpecs": {
+      "status": "pending",
+      "command": "npx openspec validate --specs --strict"
+    },
+    "gitDiffCheck": {
+      "status": "pending",
+      "command": "git diff --check"
+    },
+    "modifiedFiles": {
+      "status": "pending",
+      "files": ["explore.md"]
+    },
+    "contextJson": {
+      "status": "pending",
+      "command": "ConvertFrom-Json"
+    }
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "nextAction": "review-explore",
+  "blockedOn": []
+}

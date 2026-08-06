@@ -78,7 +78,7 @@ changes:
       不从旧 Flowkit 复制流程模型，不新增手写 .mjs 源码。
     required: true
     dependsOn: []
-    state: planned
+    state: completed
     outputs:
       - TypeScript 项目运行时骨架（src/ 分层 + dist/ 编译产物）
       - tsconfig / build / typecheck / test 工具链

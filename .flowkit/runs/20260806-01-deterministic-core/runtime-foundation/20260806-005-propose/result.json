@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-005-propose",
+  "status": "completed",
+  "summary": "基于 004-review-explore approved verdict 创建 A1 Proposal 四件套。Proposal 定义 TypeScript + ESM + Node.js 22 运行时骨架方案，含 8 个 Decision（D1-D8 对应 Explore Q1-Q8）、11 个 ADDED Requirements（含 Scenarios）、34 项 apply 阶段任务。处理了 Non-Blocking Finding A1-RE-004（核查为 reviewer 误读，types: [node] 已存在）。未修改 Manifest、冻结 specs、explore.md 或先前 terminal Runs。未创建 Git Commit。",
+  "proposalArtifacts": {
+    "proposal": {
+      "path": "openspec/changes/runtime-foundation/proposal.md",
+      "sha256": "c2a36055ab8370018ee9f833d52749623a61ae32af879ad9dd341a9e8cc0ee7d"
+    },
+    "design": {
+      "path": "openspec/changes/runtime-foundation/design.md",
+      "sha256": "e211d468df544c218324725f2eb4183d6752c3ad9c785cc405dd3c500e0cc1f9"
+    },
+    "spec": {
+      "path": "openspec/changes/runtime-foundation/specs/flowkit-runtime-foundation/spec.md",
+      "sha256": "2d8773f15ba6cd422b1c5e5d5602b61e3cb6ebb30728d184e73c77748bfda395"
+    },
+    "tasks": {
+      "path": "openspec/changes/runtime-foundation/tasks.md",
+      "sha256": "d0604e4bd8f8d61ae301a3d3743873714d4afa7b9744245df2635be547e7288d"
+    }
+  },
+  "decisions": [
+    "D1: TypeScript 编译器选项（target ES2022, module NodeNext, strict true, types [node], tsconfig.test.json）",
+    "D2: 构建工具链（tsc 直接编译，ESM package contract: type=module + engines.node >= 22.0.0）",
+    "D3: 测试框架（node:test + tsx，quoted glob）",
+    "D4: Lint/格式化（ESLint flat config + @typescript-eslint + Prettier，7 项 devDependencies）",
+    "D5: ESLint 配置格式（eslint.config.mjs，工具配置非生产源码）",
+    "D6: 包内目录结构（src/ 按 Change 归属 + tests/unit/ + tests/fixtures/）",
+    "D7: CLI 版本号（0.1.0）",
+    "D8: 旧项目参考范围（只参考工程基础模式，不继承 .mjs 实现）"
+  ],
+  "specRequirements": [
+    "TypeScript 源码约定",
+    "ESM package contract",
+    "NodeNext 导入约定",
+    "TypeScript 编译器配置",
+    "构建工具链",
+    "测试框架",
+    "Lint 和格式化",
+    "目录结构",
+    "CLI 入口",
+    "shared 工程基础模块",
+    "无外部运行时依赖"
+  ],
+  "taskCount": 34,
+  "nonBlockingFindingsAddressed": [
+    {
+      "id": "A1-RE-004",
+      "resolution": "已核查：types: [\"node\"] 在 explore.md line 165 存在，reviewer 判断有误。在 design.md D1 中再次确认。无需修复 explore.md。"
+    }
+  ],
+  "scopePreserved": {
+    "a1Scope": "unchanged (TypeScript runtime skeleton + shared engineering basics)",
+    "noCode": true,
+    "terminalRunsPreserved": true,
+    "exploreNotModified": true,
+    "manifestNotModified": true
+  },
+  "verification": {
+    "openspecValidateChange": {
+      "status": "passed",
+      "command": "npx openspec validate runtime-foundation --strict",
+      "result": "Change 'runtime-foundation' is valid"
+    }
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "nextAction": "review-propose",
+  "blockedOn": []
+}

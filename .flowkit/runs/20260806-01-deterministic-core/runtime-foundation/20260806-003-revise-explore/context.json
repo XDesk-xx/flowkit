@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-003-revise-explore",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "A1",
+  "changeId": "runtime-foundation",
+  "action": "revise-explore",
+  "role": "author",
+  "inputRef": "99a7436319c6dd79e11933b9a6b886bee7b355b394e866a35309094530a73c6b",
+  "sourceReviewRun": "20260806-002-review-explore",
+  "sourceReviewVerdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "A1-RE-001",
+      "title": "ESM package contract is incomplete",
+      "requiredResolution": "Require package.json type=module, Node 22 engine floor, NodeNext .js import specifiers."
+    },
+    {
+      "id": "A1-RE-002",
+      "title": "Node type declarations are missing",
+      "requiredResolution": "Add @types/node as devDependency pinned to Node 22 major line."
+    },
+    {
+      "id": "A1-RE-003",
+      "title": "Test TypeScript excluded from typecheck",
+      "requiredResolution": "Add tsconfig.test.json extending production tsconfig, typecheck covers both, quote test glob."
+    }
+  ],
+  "constraints": {
+    "readOnlyExceptCurrentRunAndExploreArtifact": true,
+    "fullTestAllowed": false,
+    "mayApply": false,
+    "mayArchive": false,
+    "mayAdvanceFlow": false,
+    "mayModifyReviewRun": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/runtime-foundation/20260806-003-revise-explore/"
+}

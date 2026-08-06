@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-006-review-propose",
+  "status": "completed",
+  "summary": "A1 Proposal review completed with changes-requested. The bundle is structurally valid, preserves the A1 boundary, and carries the approved ESM, Node typings, and test-typecheck decisions. One blocking configuration gap remains: the test tsconfig inherits rootDir=src while including tests outside src, so the promised test TypeScript typecheck cannot work as specified.",
+  "reviewedResultRef": "proposal-bundle-sha256:c2a36055ab8370018ee9f833d52749623a61ae32af879ad9dd341a9e8cc0ee7d,e211d468df544c218324725f2eb4183d6752c3ad9c785cc405dd3c500e0cc1f9,2d8773f15ba6cd422b1c5e5d5602b61e3cb6ebb30728d184e73c77748bfda395,d0604e4bd8f8d61ae301a3d3743873714d4afa7b9744245df2635be547e7288d",
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "A1-RP-001",
+      "title": "Test tsconfig cannot include tests outside the inherited rootDir",
+      "location": "openspec/changes/runtime-foundation/design.md:D1; openspec/changes/runtime-foundation/tasks.md:1.3; openspec/changes/runtime-foundation/specs/flowkit-runtime-foundation/spec.md:TypeScript 编译器配置",
+      "evidence": "Production tsconfig fixes rootDir to src. The proposed tsconfig.test.json extends it and includes tests/**/*.ts, but the Proposal bundle does not override rootDir to the repository root. TypeScript requires input files that would be emitted to be under rootDir; noEmit stops output but does not make the inherited project layout coherent for the stated test typecheck contract.",
+      "impact": "npm run typecheck cannot reliably cover tests/unit and tests/fixtures, contradicting the Proposal's required production-and-test typecheck and making Apply fail its required verification.",
+      "requiredResolution": "Add compilerOptions.rootDir: \".\" to tsconfig.test.json in Design, Task 1.3, and the TypeScript-configuration Requirement/Scenario. Keep noEmit true; do not introduce a test build output."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "verification": {
+    "checks": [
+      {
+        "name": "OpenSpec strict validation",
+        "status": "passed",
+        "command": "openspec validate runtime-foundation --strict",
+        "result": "Change 'runtime-foundation' is valid."
+      },
+      {
+        "name": "source Proposal Run JSON",
+        "status": "passed",
+        "result": "The Author context and result are readable JSON and bind this bundle to the approved 004-review-explore Run."
+      },
+      {
+        "name": "scope and whitespace review",
+        "status": "passed",
+        "result": "The bundle remains within A1; it creates no production code and does not alter frozen docs/specs. git diff --check produced no output."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run; this is review-propose."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-propose",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

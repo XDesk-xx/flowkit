@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-001-explore",
+  "status": "completed",
+  "summary": "完成 A1 runtime-foundation Explore。确认 TypeScript + ESM + Node.js 22 技术基线（已冻结），推荐 tsc 直接编译、node:test + tsx 测试框架、ESLint flat config + @typescript-eslint + Prettier。识别 8 个关键问题并给出推荐答案。A1 范围限定为项目运行时骨架和 src/shared/ 工程基础模块，不实现领域模型、Policy 或诊断 CLI。未修改 Delivery Manifest 或任何 tracked 文件。未创建 Git Commit。",
+  "exploreArtifact": {
+    "path": "openspec/changes/runtime-foundation/explore.md",
+    "sha256": "1fab6a68e9b6e1a914f840d27c3dfb98562f8858e78427ba7285ec67ca4b26b1"
+  },
+  "keyRecommendations": [
+    "TypeScript + ESM + Node.js 22 作为技术基线（已冻结，不重新选择）",
+    "tsc 作为编译和类型检查工具，不引入打包工具",
+    "node:test + tsx 作为测试框架，不引入 vitest/jest",
+    "ESLint flat config + @typescript-eslint + Prettier",
+    "eslint.config.mjs 作为 ESLint 配置文件格式（工具配置，非生产源码）",
+    "src/ 按 Change 归属划分子目录，占位目录用 .gitkeep + README.md",
+    "0.1.0 作为初始版本号",
+    "src/shared/ 提供 4 个工程基础模块（paths、atomic-write、external-command、errors）",
+    "CLI 入口 src/bin/flowkit.ts 只做 import 和调用，不含领域逻辑",
+    "A1 只交付骨架和工程基础，不实现领域模型、Policy 或诊断 CLI",
+    "不从旧项目复制 .mjs 实现，只参考工程基础模式"
+  ],
+  "openQuestions": [
+    "Q1: TypeScript 编译器选项（target ES2022, module NodeNext, strict true）",
+    "Q2: 构建工具链（tsc 直接编译，不引入打包工具）",
+    "Q3: 测试框架（node:test + tsx loader）",
+    "Q4: Lint/格式化（ESLint flat config + @typescript-eslint + Prettier）",
+    "Q5: ESLint 配置文件格式（eslint.config.mjs，工具配置非生产源码）",
+    "Q6: 包内目录结构（src/ 按 Change 归属 + tests/unit/ + tests/fixtures/）",
+    "Q7: CLI 版本号（0.1.0）",
+    "Q8: 旧项目参考范围（只参考工程基础，不继承 .mjs 实现）"
+  ],
+  "scopeBoundaries": {
+    "a1Scope": "TypeScript 项目运行时骨架 + 编译/类型检查工具链 + src/shared/ 工程基础模块 + 最小 CLI 版本输出",
+    "notInA1": ["领域对象定义(B1)", "状态 Schema 校验(B1)", "FormalFactSnapshot(C1)", "正式事实 Reader(C1)", "Policy 引擎(D1)", "诊断 CLI 命令(E1)"],
+    "frozenByDelivery": ["语言=TypeScript", "模块系统=ESM", "编译产物=dist/**/*.js", "CLI bin=dist/bin/flowkit.js", "不新增 .mjs"]
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "nextAction": "review-explore",
+  "blockedOn": []
+}

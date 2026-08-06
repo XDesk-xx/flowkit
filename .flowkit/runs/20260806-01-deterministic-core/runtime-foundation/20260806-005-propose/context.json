@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-005-propose",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "A1",
+  "changeId": "runtime-foundation",
+  "action": "propose",
+  "role": "author",
+  "inputRef": "fcc78e3a4010327396cfb84401042661810120bac802573b05e81791df985a9b",
+  "sourceReviewRun": "20260806-004-review-explore",
+  "sourceReviewVerdict": "approved",
+  "artifacts": [
+    "openspec/changes/runtime-foundation/proposal.md",
+    "openspec/changes/runtime-foundation/design.md",
+    "openspec/changes/runtime-foundation/specs/flowkit-runtime-foundation/spec.md",
+    "openspec/changes/runtime-foundation/tasks.md"
+  ],
+  "constraints": {
+    "readOnlyExceptCurrentRunAndProposalArtifacts": true,
+    "fullTestAllowed": false,
+    "mayApply": false,
+    "mayArchive": false,
+    "mayAdvanceFlow": false,
+    "mayModifyExplore": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/runtime-foundation/20260806-005-propose/"
+}

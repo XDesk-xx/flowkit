@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-009-apply",
+  "status": "completed",
+  "summary": "完成 A1 runtime-foundation 全部 34 项 tasks。创建 TypeScript + Node.js ESM 项目运行时骨架：package.json（type: module, engines.node >= 22.0.0, bin → dist/bin/flowkit.js）、tsconfig.json + tsconfig.test.json（rootDir 覆盖）、src/ 8 个子目录（含 5 个占位）、src/bin/flowkit.ts + src/cli/version.ts CLI 入口、src/shared/ 4 个工程基础模块（paths, atomic-write, external-command, errors）、tests/ 6 个测试文件、eslint.config.mjs + .prettierrc.json。全部验证通过：typecheck（生产+测试）、build、20 个单元测试、lint、CLI --version 输出 0.1.0。不存在新增 .mjs 文件、无运行时依赖、无插件/注册表抽象。未创建 Git Commit。",
+  "tasksCompleted": 34,
+  "tasksTotal": 34,
+  "verificationResults": {
+    "typecheck": {
+      "command": "npm run typecheck",
+      "status": "passed",
+      "detail": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json — both projects pass"
+    },
+    "build": {
+      "command": "npm run build",
+      "status": "passed",
+      "detail": "tsc compiled to dist/"
+    },
+    "cliVersion": {
+      "command": "node dist/bin/flowkit.js --version",
+      "status": "passed",
+      "detail": "Output: 0.1.0"
+    },
+    "test": {
+      "command": "npm test",
+      "status": "passed",
+      "detail": "20 tests, 20 pass, 0 fail"
+    },
+    "lint": {
+      "command": "npm run lint",
+      "status": "passed",
+      "detail": "eslint . — no errors"
+    },
+    "noMjsCheck": {
+      "status": "passed",
+      "detail": "No .mjs files in src/ or tests/"
+    },
+    "noRuntimeDeps": {
+      "status": "passed",
+      "detail": "package.json has no dependencies (only devDependencies)"
+    },
+    "noPluginRegistry": {
+      "status": "passed",
+      "detail": "No Plugin, Registry, or Gate abstractions in src/"
+    }
+  },
+  "filesCreated": [
+    "package.json",
+    "tsconfig.json",
+    "tsconfig.test.json",
+    "src/bin/flowkit.ts",
+    "src/cli/version.ts",
+    "src/shared/paths.ts",
+    "src/shared/atomic-write.ts",
+    "src/shared/external-command.ts",
+    "src/shared/errors.ts",
+    "src/domain/.gitkeep",
+    "src/domain/README.md",
+    "src/facts/.gitkeep",
+    "src/facts/README.md",
+    "src/persistence/.gitkeep",
+    "src/persistence/README.md",
+    "src/policy/.gitkeep",
+    "src/policy/README.md",
+    "src/diagnostics/.gitkeep",
+    "src/diagnostics/README.md",
+    "tests/fixtures/helpers.ts",
+    "tests/unit/version.test.ts",
+    "tests/unit/paths.test.ts",
+    "tests/unit/atomic-write.test.ts",
+    "tests/unit/external-command.test.ts",
+    "tests/unit/errors.test.ts",
+    "eslint.config.mjs",
+    ".prettierrc.json"
+  ],
+  "filesModified": [
+    "openspec/changes/runtime-foundation/tasks.md (all 34 tasks checked off)"
+  ],
+  "generatedArtifacts": [
+    "dist/ (gitignored, compiled output)",
+    "node_modules/ (gitignored, devDependencies)"
+  ],
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "nextAction": "review-apply",
+  "blockedOn": []
+}

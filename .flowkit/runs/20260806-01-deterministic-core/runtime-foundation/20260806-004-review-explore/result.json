@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-004-review-explore",
+  "status": "completed",
+  "summary": "A1 revised Explore review approved. All three blocking findings from 002 are resolved: the ESM package and NodeNext import contract are explicit, @types/node is a direct Node 22 devDependency, and typecheck covers both production and test TypeScript through tsconfig.test.json. The scope remains limited to the A1 runtime foundation. One non-blocking documentation inconsistency is recorded for Proposal cleanup.",
+  "reviewedResultRef": "content-sha256:ad00831d2ba189bec65cfec730478d5d3e902ec7027751028567ce4ef268d2bc",
+  "verdict": "approved",
+  "blockingFindings": [],
+  "nonBlockingFindings": [
+    {
+      "id": "A1-RE-004",
+      "title": "Node typings explanation does not match the displayed tsconfig",
+      "location": "openspec/changes/runtime-foundation/explore.md:150-201",
+      "evidence": "The explanatory text says types: [node] is explicitly configured, but the displayed production tsconfig does not contain a types field. The direct @types/node devDependency is sufficient because TypeScript includes visible @types packages by default when types is omitted.",
+      "impact": "No functional or boundary impact; the stated dependency keeps Node API and node:test declarations available. Leaving the mismatch can confuse implementation review.",
+      "recommendation": "During propose, either add types: [node] to the displayed tsconfig or revise the explanation to describe the default visible-types behavior."
+    }
+  ],
+  "resolvedFindings": [
+    {
+      "id": "A1-RE-001",
+      "resolution": "Explore now requires package.json type=module, engines.node >=22.0.0, and emitted .js relative import specifiers for NodeNext source."
+    },
+    {
+      "id": "A1-RE-002",
+      "resolution": "Explore now declares @types/node ^22.0.0 as a direct devDependency."
+    },
+    {
+      "id": "A1-RE-003",
+      "resolution": "Explore now defines tsconfig.test.json, typechecks both projects, and quotes the Node test glob."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "reviewed Explore artifact hash",
+        "status": "passed",
+        "result": "SHA-256 is ad00831d2ba189bec65cfec730478d5d3e902ec7027751028567ce4ef268d2bc and matches the Revision Run."
+      },
+      {
+        "name": "revision Run JSON",
+        "status": "passed",
+        "result": "The source review and revision result are readable JSON and link the three original blocking findings to the revised Explore artifact."
+      },
+      {
+        "name": "scope and whitespace review",
+        "status": "passed",
+        "result": "The revised Explore stays within A1; it adds no code, Proposal artifacts, frozen-document changes, or lifecycle expansion. git diff --check produced no output."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run; this is review-explore."
+      }
+    ]
+  },
+  "nextActionRecommendation": "propose",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

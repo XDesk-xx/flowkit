@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-012-archive",
+  "status": "completed",
+  "summary": "A1 runtime-foundation 已归档。openspec archive 将 11 个 ADDED Requirements 应用到冻结 spec openspec/specs/flowkit-runtime-foundation/spec.md，change 移动到 openspec/changes/archive/2026-08-06-runtime-foundation/。Manifest A1 state 从 active 更新为 completed。冻结 specs 验证 5 passed（含新增 flowkit-runtime-foundation）。未创建 Git Commit。",
+  "archiveResults": {
+    "command": "npx openspec archive runtime-foundation -y",
+    "specDeltas": {
+      "added": 11,
+      "modified": 0,
+      "removed": 0
+    },
+    "frozenSpecCreated": "openspec/specs/flowkit-runtime-foundation/spec.md",
+    "changeArchivedTo": "openspec/changes/archive/2026-08-06-runtime-foundation/",
+    "archivedArtifacts": [
+      ".openspec.yaml",
+      "explore.md",
+      "proposal.md",
+      "design.md",
+      "tasks.md",
+      "verification.md",
+      "specs/flowkit-runtime-foundation/spec.md"
+    ]
+  },
+  "manifestUpdate": {
+    "file": "openspec/delivery-groups/20260806-01-deterministic-core.yaml",
+    "change": "A1 state: active → completed"
+  },
+  "verificationResults": {
+    "frozenSpecExists": true,
+    "changeMovedToArchive": true,
+    "oldChangeDirGone": true,
+    "openspecValidateSpecs": "5 passed, 0 failed (including new flowkit-runtime-foundation)"
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit. Change Checkpoint is a separate formal Git boundary requiring owner authorization."
+  },
+  "nextAction": "change-checkpoint",
+  "nextActionNote": "Change Checkpoint 需 owner 明确授权 Git Commit。Checkpoint 后 A1 正式完成，可激活 B1。",
+  "blockedOn": []
+}

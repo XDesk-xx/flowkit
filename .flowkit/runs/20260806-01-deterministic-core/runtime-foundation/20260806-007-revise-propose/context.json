@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-007-revise-propose",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "A1",
+  "changeId": "runtime-foundation",
+  "action": "revise-propose",
+  "role": "author",
+  "inputRef": "2b6d6ddc021e04c4116516a3ed4e2b8a8c44131800722218e852a8682c85fe91",
+  "sourceReviewRun": "20260806-006-review-propose",
+  "sourceReviewVerdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "A1-RP-001",
+      "title": "Test tsconfig cannot include tests outside the inherited rootDir",
+      "requiredResolution": "Add compilerOptions.rootDir: \".\" to tsconfig.test.json in Design, Task 1.3, and the TypeScript-configuration Requirement/Scenario."
+    }
+  ],
+  "constraints": {
+    "readOnlyExceptCurrentRunAndProposalArtifacts": true,
+    "mayModifyExplore": false,
+    "mayModifyProposal": true,
+    "mayModifyCode": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/runtime-foundation/20260806-007-revise-propose/"
+}

@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-008-review-propose",
+  "status": "completed",
+  "summary": "A1 revised Proposal review approved. A1-RP-001 is resolved consistently: tsconfig.test.json now overrides inherited rootDir=src with rootDir=., keeps noEmit=true, and includes source plus test TypeScript. The Proposal remains structurally valid, within the A1 boundary, and aligned with the approved Explore and Delivery technical baseline.",
+  "reviewedResultRef": "proposal-bundle-sha256:c2a36055ab8370018ee9f833d52749623a61ae32af879ad9dd341a9e8cc0ee7d,52c807d9063b47647f9ac5eeff02644a0ab7ec2627eb7df566c7e9292e9ae2fc,6feca45cd593dfa7d02dc527ab12ffb0842a776b9d89f2070a4454af27a99554,06483d7f368e9576703a92a6770ace154701357e5cf29f668d9a13b66c3a462d",
+  "verdict": "approved",
+  "blockingFindings": [],
+  "nonBlockingFindings": [],
+  "resolvedFindings": [
+    {
+      "id": "A1-RP-001",
+      "resolution": "Design D1, Task 1.3, and the TypeScript-configuration Scenario now require tsconfig.test.json compilerOptions.rootDir=\".\" while retaining noEmit=true and both source/test include patterns."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "OpenSpec strict validation",
+        "status": "passed",
+        "command": "openspec validate runtime-foundation --strict",
+        "result": "Change 'runtime-foundation' is valid."
+      },
+      {
+        "name": "source Revision Run JSON",
+        "status": "passed",
+        "result": "The Revision context and result are readable JSON and bind the changed artifacts to A1-RP-001."
+      },
+      {
+        "name": "scope and whitespace review",
+        "status": "passed",
+        "result": "The revision only addresses the test-tsconfig inheritance defect. It adds no code, lifecycle behavior, external runtime dependency, or frozen-document change. git diff --check produced no output."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run; this is review-propose."
+      }
+    ]
+  },
+  "nextActionRecommendation": "await-owner-authorization-for-apply",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}
