@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-057-apply",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "E1",
+  "changeId": "baseline-finalization-corrections",
+  "action": "apply",
+  "role": "author",
+  "inputRef": "content-sha256:29407347996A0AC757F811EB47F4D69890C05487730C587E94C89D618D2EA839",
+  "sourceReviewRun": "20260806-056-review-propose",
+  "sourceReviewVerdict": "approved",
+  "ownerAuthorization": {
+    "type": "apply",
+    "source": "owner directive",
+    "scope": "E1 baseline-finalization-corrections apply phase"
+  },
+  "dependsOn": [
+    "product-positioning",
+    "core-model",
+    "integration-boundaries",
+    "bootstrap-and-roadmap"
+  ],
+  "artifacts": [
+    "openspec/changes/baseline-finalization-corrections/explore.md",
+    "openspec/changes/baseline-finalization-corrections/proposal.md",
+    "openspec/changes/baseline-finalization-corrections/design.md",
+    "openspec/changes/baseline-finalization-corrections/specs/flowkit-bootstrap-and-roadmap/spec.md",
+    "openspec/changes/baseline-finalization-corrections/tasks.md"
+  ],
+  "constraints": {
+    "mustNotReopenA1": true,
+    "mustNotReopenB1": true,
+    "mustNotReopenC1": true,
+    "mustNotReopenD1": true,
+    "mustNotModifyExistingRequirementOrScenario": true,
+    "soleExceptionOwnerAuthorizedADDEDRequirement": "flowkit-bootstrap-and-roadmap ADDED Requirement and its 3 Scenarios",
+    "mustNotModifyProductPositioning": true,
+    "mustNotModifyActionCatalog": true,
+    "mustNotImplementRunner": true,
+    "mustNotAutoCommit": true,
+    "fullTestAllowed": false,
+    "mayCreateReviewRun": false
+  },
+  "runPath": ".flowkit/runs/20260805-01-product-baseline/baseline-finalization-corrections/20260806-057-apply/"
+}

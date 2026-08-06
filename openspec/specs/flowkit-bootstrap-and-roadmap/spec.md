@@ -1,7 +1,9 @@
 # flowkit-bootstrap-and-roadmap Specification
 
 ## Purpose
-TBD - created by archiving change bootstrap-and-roadmap. Update Purpose after archive.
+
+定义在 Runner 和 CLI 尚未实现时，如何手工执行同一套 Flowkit 规则，包括 Run 操作、续接上下文、Git 正式边界、owner 授权、Delivery Finalize 和后续 Runner 开发路线。
+
 ## Requirements
 ### Requirement: Bootstrap 必须手工执行同一套 Flowkit 规则
 

@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-059-revise-apply",
+  "status": "completed",
+  "summary": "Resolved E1-RA-001: expanded U+FFFD and whitespace scan scope in verification.md from 7 files to 13 E1 formal files (7 formal outputs/Manifest + 6 E1 Change Markdown including delta spec and verification.md). Re-ran both scans on the complete 13-file scope: U+FFFD count = 0, trailing whitespace = 0, space-before-tab = 0. Clarified CJK check scope to 2 target docs only (delivery-lifecycle.md, verification-model.md), with note that E1 Change Markdown intentionally retains 兞他/第二奔 literals as correction documentation. Updated verification.md header to record both 057-apply (initial) and 059-revise-apply (revised scope). 057-apply terminal Run not modified.",
+  "findingResolution": {
+    "E1-RA-001": {
+      "status": "resolved",
+      "resolution": "verification.md sections 1.4, 1.5, 1.6 updated: U+FFFD and whitespace scan scope expanded from 7 to 13 files (7 formal outputs/Manifest + 6 E1 Change Markdown); CJK check scope clarified to 2 target docs only with note on E1 Change Markdown literal retention. All scans pass on complete scope."
+    }
+  },
+  "scanResults": {
+    "fileScope": {
+      "totalFiles": 13,
+      "formalOutputsAndManifest": [
+        "openspec/specs/flowkit-core-model/spec.md",
+        "openspec/specs/flowkit-integration-boundaries/spec.md",
+        "openspec/specs/flowkit-bootstrap-and-roadmap/spec.md",
+        "openspec/specs/flowkit-product-positioning/spec.md",
+        "docs/delivery-lifecycle.md",
+        "docs/verification-model.md",
+        "openspec/delivery-groups/20260805-01-product-baseline.yaml"
+      ],
+      "e1ChangeMarkdown": [
+        "openspec/changes/baseline-finalization-corrections/explore.md",
+        "openspec/changes/baseline-finalization-corrections/proposal.md",
+        "openspec/changes/baseline-finalization-corrections/design.md",
+        "openspec/changes/baseline-finalization-corrections/tasks.md",
+        "openspec/changes/baseline-finalization-corrections/verification.md",
+        "openspec/changes/baseline-finalization-corrections/specs/flowkit-bootstrap-and-roadmap/spec.md"
+      ]
+    },
+    "ufffdScan": {
+      "status": "passed",
+      "method": "Python per-file byte scan \\xef\\xbf\\xbd on 13 files",
+      "result": { "ufffdCount": 0 }
+    },
+    "whitespaceScan": {
+      "status": "passed",
+      "method": "Python per-file scan: trailing whitespace + space-before-tab on 13 files",
+      "result": { "trailingWhitespace": 0, "spaceBeforeTab": 0, "totalIssues": 0 }
+    },
+    "cjkCheck": {
+      "status": "passed",
+      "method": "Python exact string scan for 兞他 and 第二奔",
+      "fileScope": "2 target docs only (delivery-lifecycle.md, verification-model.md)",
+      "result": { "badCjkStringCount": 0 },
+      "note": "E1 Change Markdown intentionally retains these strings as correction documentation; not treated as product output errors"
+    }
+  },
+  "artifactsModified": [
+    "openspec/changes/baseline-finalization-corrections/verification.md (sections 1.4, 1.5, 1.6 and header updated)"
+  ],
+  "terminalRunPreserved": {
+    "run": "20260806-057-apply",
+    "preserved": true,
+    "note": "057-apply Run files not modified in this revision"
+  },
+  "verification": {
+    "openspecValidateSpecs": {
+      "status": "passed",
+      "command": "npx openspec validate --specs --strict",
+      "result": "4 passed, 0 failed"
+    },
+    "openspecValidateChange": {
+      "status": "passed",
+      "command": "npx openspec validate baseline-finalization-corrections --strict",
+      "result": "Change 'baseline-finalization-corrections' is valid"
+    },
+    "fullTest": {
+      "status": "not-run",
+      "reason": "Full Test is Delivery-level, requires owner authorization"
+    }
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "reason": "Per owner instruction and Flowkit Git model: Action/Run do not auto-commit."
+  },
+  "nextAction": "review-apply",
+  "blockedOn": []
+}

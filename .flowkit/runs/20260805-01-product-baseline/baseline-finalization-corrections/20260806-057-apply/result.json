@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-057-apply",
+  "status": "completed",
+  "summary": "Completed E1 Apply: implemented all 25 tasks from the 056-approved Proposal. Replaced TBD Purpose in 3 capability specs (flowkit-core-model, flowkit-integration-boundaries, flowkit-bootstrap-and-roadmap) with formal text. Fixed 2 erroneous CJK characters (兞他→其他 in delivery-lifecycle.md L74, 第二奔→第二套 in verification-model.md L127). Confirmed Manifest projections (E1 state=active, fullTestStatus=not-ready, outputs include manifest). Confirmed delta spec (ADDED Requirement with 3 Scenarios on flowkit-bootstrap-and-roadmap, created in propose phase). Created verification.md recording applicable checks, A1 Bootstrap history exception, and A1–D1 consistency confirmations. All 7 validation checks passed: specs strict (4 passed), change strict (valid), TBD scan (0), CJK scan (0), U+FFFD scan (0), whitespace scan (0), git diff --check (exit 0). Full Test not-run (Delivery level, requires owner authorization). No Git Commit created per owner instruction.",
+  "artifactsModified": [
+    "openspec/specs/flowkit-core-model/spec.md (Purpose: TBD → formal text)",
+    "openspec/specs/flowkit-integration-boundaries/spec.md (Purpose: TBD → formal text)",
+    "openspec/specs/flowkit-bootstrap-and-roadmap/spec.md (Purpose: TBD → formal text)",
+    "docs/delivery-lifecycle.md (L74: 兞他 → 其他)",
+    "docs/verification-model.md (L127: 第二奔 → 第二套)"
+  ],
+  "artifactsConfirmed": [
+    "openspec/specs/flowkit-product-positioning/spec.md (Purpose already formal, no change)",
+    "openspec/delivery-groups/20260805-01-product-baseline.yaml (E1 state=active, fullTestStatus=not-ready, outputs include manifest)",
+    "openspec/changes/baseline-finalization-corrections/specs/flowkit-bootstrap-and-roadmap/spec.md (delta created in propose phase)"
+  ],
+  "artifactsProduced": [
+    "openspec/changes/baseline-finalization-corrections/verification.md"
+  ],
+  "tasksCompleted": {
+    "total": 25,
+    "completed": 25,
+    "remaining": 0
+  },
+  "verification": {
+    "openspecValidateSpecs": {
+      "status": "passed",
+      "command": "npx openspec validate --specs --strict",
+      "result": "4 passed, 0 failed"
+    },
+    "openspecValidateChange": {
+      "status": "passed",
+      "command": "npx openspec validate baseline-finalization-corrections --strict",
+      "result": "Change 'baseline-finalization-corrections' is valid"
+    },
+    "purposePlaceholderScan": {
+      "status": "passed",
+      "method": "Python per-file scan for 'TBD - created by archiving'",
+      "fileScope": [
+        "openspec/specs/flowkit-core-model/spec.md",
+        "openspec/specs/flowkit-integration-boundaries/spec.md",
+        "openspec/specs/flowkit-bootstrap-and-roadmap/spec.md",
+        "openspec/specs/flowkit-product-positioning/spec.md",
+        "docs/delivery-lifecycle.md",
+        "docs/verification-model.md",
+        "openspec/delivery-groups/20260805-01-product-baseline.yaml"
+      ],
+      "result": { "tbdPlaceholderCount": 0 }
+    },
+    "cjkCharacterCheck": {
+      "status": "passed",
+      "method": "Python per-file scan for exact strings 兞他 (U+515E+U+4ED6) and 第二奔 (U+7B2C+U+4E8C+U+5954), not limited to U+FFFD",
+      "fileScope": "same 7 files as purposePlaceholderScan",
+      "result": { "badCjkStringCount": 0 }
+    },
+    "ufffdScan": {
+      "status": "passed",
+      "method": "Python per-file byte scan \\xef\\xbf\\xbd",
+      "fileScope": "same 7 files as purposePlaceholderScan",
+      "result": { "ufffdCount": 0 }
+    },
+    "whitespaceScan": {
+      "status": "passed",
+      "method": "Python per-file scan: trailing whitespace + space-before-tab",
+      "fileScope": "same 7 files as purposePlaceholderScan",
+      "result": { "trailingWhitespace": 0, "spaceBeforeTab": 0, "totalIssues": 0 }
+    },
+    "gitDiffCheck": {
+      "status": "passed",
+      "command": "git diff --check",
+      "exitCode": 0,
+      "note": "CRLF warnings are Windows line-ending notices, not errors"
+    },
+    "fullTest": {
+      "status": "not-run",
+      "reason": "Full Test is Delivery-level, requires owner authorization, not auto-triggered by Apply"
+    }
+  },
+  "consistencyCheck": {
+    "a1ProductPositioning": "consistent — Delivery > Change > Action hierarchy, owner/author/reviewer roles, product positioning preserved",
+    "b1CoreModel": "consistent — Policy authority, Change main flow, Run structure preserved; CJK fixes do not change lifecycle/verification design",
+    "c1IntegrationBoundaries": "consistent — integration boundaries preserved, no new Adapter/Registry/Plugin",
+    "d1Bootstrap": "consistent — Bootstrap rules preserved; ADDED Requirement on flowkit-bootstrap-and-roadmap is owner-authorized sole exception",
+    "existingRequirementScenarioNotModified": "confirmed — no existing Requirement/Scenario modified; sole exception is owner-authorized flowkit-bootstrap-and-roadmap ADDED Requirement and its 3 Scenarios",
+    "a1ToD1NotReopened": "confirmed — A1–D1 archived Change history not reopened"
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "reason": "Per owner instruction and Flowkit Git model: Action/Run do not auto-commit. All apply artifacts remain in working tree and will enter Git history at Change Checkpoint."
+  },
+  "nextAction": "review-apply",
+  "blockedOn": []
+}

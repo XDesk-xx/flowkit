@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-059-revise-apply",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "E1",
+  "changeId": "baseline-finalization-corrections",
+  "action": "revise-apply",
+  "role": "author",
+  "inputRef": "content-sha256:32E0498D8F14AF72478FCF59CB8257DFB5CB67DFDE1E5ED67E5EBB45F7896DB7",
+  "sourceReviewRun": "20260806-058-review-apply",
+  "sourceReviewVerdict": "changes-requested",
+  "sourceFindings": ["E1-RA-001"],
+  "ownerAuthorization": {
+    "type": "revise-apply",
+    "source": "owner directive",
+    "scope": "E1 baseline-finalization-corrections revise-apply for E1-RA-001"
+  },
+  "dependsOn": [
+    "product-positioning",
+    "core-model",
+    "integration-boundaries",
+    "bootstrap-and-roadmap"
+  ],
+  "mustNotOverwriteTerminalRun": "20260806-057-apply",
+  "constraints": {
+    "mustNotModify057ApplyRun": true,
+    "mustNotReopenA1": true,
+    "mustNotReopenB1": true,
+    "mustNotReopenC1": true,
+    "mustNotReopenD1": true,
+    "mustNotModifyExistingRequirementOrScenario": true,
+    "mustNotRunFullTest": true,
+    "mustNotAutoCommit": true,
+    "mayCreateReviewRun": false
+  },
+  "runPath": ".flowkit/runs/20260805-01-product-baseline/baseline-finalization-corrections/20260806-059-revise-apply/"
+}

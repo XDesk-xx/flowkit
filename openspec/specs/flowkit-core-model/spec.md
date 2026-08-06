@@ -1,7 +1,9 @@
 # flowkit-core-model Specification
 
 ## Purpose
-TBD - created by archiving change core-model. Update Purpose after archive.
+
+定义 Flowkit 的 Delivery、Change、Action 和 Run 核心模型，以及生命周期、Review/Revise、Verification、Full Test、Checkpoint 和 Policy 的正式边界，为后续 Runner 实现提供确定性流程契约。
+
 ## Requirements
 ### Requirement: Flowkit 必须使用三层核心模型
 

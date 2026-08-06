@@ -1,7 +1,9 @@
 # flowkit-integration-boundaries Specification
 
 ## Purpose
-TBD - created by archiving change integration-boundaries. Update Purpose after archive.
+
+定义 Flowkit 与 OpenSpec、Git、Reviewer、项目验证工具、Archify、CodeGraph、Skill 和 Adapter 之间的事实权威、逻辑输入输出和权力边界，确保外部系统不会成为第二流程编排器。
+
 ## Requirements
 ### Requirement: Action Package 必须是逻辑执行输入视图
 

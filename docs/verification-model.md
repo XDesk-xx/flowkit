@@ -124,7 +124,7 @@ Bootstrap 阶段：
 
 - Delivery YAML 是 `fullTestStatus` 的人工维护投影；
 - 人工按冻结规则更新；
-- 不创建第二奔 current/state 文件。
+- 不创建第二套 current/state 文件。
 
 自托管后：
 

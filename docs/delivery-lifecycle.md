@@ -71,7 +71,7 @@ planned → active
 必须满足：
 
 - 所属 Delivery 为 active；
-- 当前没有兞他 active Change；
+- 当前没有其他 active Change；
 - declared dependencies 均为 completed；
 - owner 明确授权。
 

@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-058-review-apply",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "E1",
+  "changeId": "baseline-finalization-corrections",
+  "action": "review-apply",
+  "role": "reviewer",
+  "sourceApplyRun": "20260806-057-apply",
+  "reviewRange": {
+    "baseRef": "77c4c36636b5866423e5904ad4f23a6631f7a87a",
+    "headRef": "worktree",
+    "reason": "E1 apply artifacts remain uncommitted until Change Checkpoint."
+  },
+  "reviewedArtifacts": {
+    "sourceApplyActionSha256": "1e2c8cc34eb8f7e7e9e85a11cab68ae19f283ddb9c41625432a038b634e20b5a",
+    "sourceApplyContextSha256": "c7baaf4fa31af1ac876e7328d70b8a1935855d06a269c51a621615572b0292d5",
+    "sourceApplyResultSha256": "9f45cb6b10c6bd649999def7b2d4b79e7187a88e629f6c383c43c335c4660bda",
+    "verificationSha256": "b630f88e2bcd5408e08451b9be2e56f5f81c0dfcbcc074ef176935a9ec44f079",
+    "tasksSha256": "ae1d1bcd0838d0f940106cd827409f8ab37ec315b780249e94c5f97219e566f3",
+    "coreModelSpecSha256": "83f06ff7950134e539e96e75ac9889622ba501c55df01a30a085e64406288caf",
+    "integrationSpecSha256": "a1d4f0d4cec2bb405a0255d9408df250b00cddf2a6d313c923255a8378cf1e5d",
+    "bootstrapSpecSha256": "5e4beb59a74006c04eb46357be5b95b9b477aede0db65eae1319262ecad7624b",
+    "deliveryLifecycleSha256": "1debb26a68edeee49a069b73f87c33a2624df602f665e4452e6fbc9c2ab75182",
+    "verificationModelSha256": "0ee29c094742aae80dad15287767323c38668e21e22c13feae4c8058a12f58a1"
+  },
+  "constraints": {
+    "readOnlyExceptCurrentRun": true,
+    "fullTestAllowed": false,
+    "mayReviseApply": false,
+    "mayArchive": false,
+    "mayAdvanceFlow": false,
+    "commitAllowed": false
+  }
+}
