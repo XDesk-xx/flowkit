@@ -1,0 +1,193 @@
+id: 20260806-01-deterministic-core
+createdAt: "2026-08-06"
+branch: delivery/20260806-01-deterministic-core
+
+goal: >
+  交付 Flowkit 的 TypeScript 确定性内核：建立生产运行时和构建工具链，
+  读取正式事实、校验状态、计算唯一合法下一 Action，并提供最小只读 CLI。
+  从本 Delivery 起，新增手写生产源码和测试源码统一使用 TypeScript，
+  编译为 dist/ 下的 Node.js ESM .js，不再新增手写 .mjs。
+
+delivery:
+  state: active
+  fullTestStatus: not-ready
+
+technicalBaseline:
+  language: TypeScript
+  moduleSystem: ESM
+  runtime: Node.js
+  sourceExtension: .ts
+  compiledOutput: dist/**/*.js
+  cliBin: dist/bin/flowkit.js
+  constraints:
+    - 新增手写生产源码和测试源码统一使用 .ts
+    - 不新增手写 .mjs 生产源码、测试源码或 CLI 启动壳
+    - 不把旧 Flowkit 的 .mjs 逐文件翻译为新 Core
+    - typecheck 与 build 是代码 Change 的必需检查
+    - package.json 的 bin 指向 dist/bin/flowkit.js
+
+scope:
+  included:
+    - TypeScript + Node.js ESM 项目运行时骨架
+    - tsconfig、build、typecheck 和测试基础工具链
+    - 新增手写生产源码与测试源码统一使用 .ts
+    - 编译产物输出为 dist/ 下的 ESM .js
+    - Delivery / Change / Run 领域模型
+    - 固定 Action Catalog
+    - 状态与 Schema 校验
+    - 正式事实读取
+    - 原子持久化
+    - Run ID 分配与 terminal immutability
+    - Policy / canRun / next
+    - blocked diagnosis
+    - owner decision boundary 表达
+    - status / next / doctor / resume-context
+    - 核心单元测试和状态转换测试
+
+  excluded:
+    - 新增手写 .mjs 生产源码、测试源码或 CLI 启动壳
+    - 直接复制或逐文件改写旧 Flowkit 的 .mjs 流程实现
+    - 完整 Change 创建和执行循环
+    - OpenSpec apply / archive 集成
+    - Review / Findings 写入闭环
+    - Change Verification 调度
+    - actualChangeSet 计算
+    - 自动 Commit / Push / Merge
+    - Delivery Full Test 执行
+    - Delivery Finalize
+    - Archify CLI 集成
+    - CodeGraph 集成
+    - Agent Adapter
+    - 动态 Provider / Skill 注册
+    - 自托管切换
+
+architecture:
+  impact: true
+  archifyPlan: deferred
+  rationale: >
+    本 Delivery 建立 TypeScript 确定性内核，具有架构影响。
+    Archify 的正式契约和调用方式尚未冻结，完整 Archify Start/Finalize
+    准入规则在 Delivery Execution Loop Delivery 冻结。
+    本 Delivery 不实现 Archify 状态机或 Adapter，不探测或调用本地 Archify CLI。
+
+changes:
+  - key: A1
+    id: runtime-foundation
+    goal: >
+      建立 TypeScript + Node.js ESM 最小生产代码骨架、编译和类型检查工具链，
+      不从旧 Flowkit 复制流程模型，不新增手写 .mjs 源码。
+    required: true
+    dependsOn: []
+    state: planned
+    outputs:
+      - TypeScript 项目运行时骨架（src/ 分层 + dist/ 编译产物）
+      - tsconfig / build / typecheck / test 工具链
+      - package.json（bin 指向 dist/bin/flowkit.js）
+
+  - key: B1
+    id: domain-and-state-schema
+    goal: >
+      冻结 Delivery / Change / Run 领域对象、主状态、固定 Action Catalog、
+      Run ID 规则和 terminal immutability。
+    required: true
+    dependsOn:
+      - runtime-foundation
+    state: planned
+    outputs:
+      - 领域对象与状态 Schema
+      - 固定 Action Catalog
+      - Run ID 分配规则与 terminal immutability 校验
+
+  - key: C1
+    id: formal-fact-reader-and-persistence
+    goal: >
+      读取并归一化正式事实为 FormalFactSnapshot，
+      实现 Flowkit 自有状态的原子持久化。
+    required: true
+    dependsOn:
+      - domain-and-state-schema
+    state: planned
+    outputs:
+      - FormalFactSnapshot 只读输入视图
+      - 正式事实 Reader
+      - 原子持久化层
+
+  - key: D1
+    id: policy-engine
+    goal: >
+      实现 canRun / next / diagnose，
+      根据正式事实计算唯一合法下一 Action 或 owner 决策边界或 blocked diagnosis。
+    required: true
+    dependsOn:
+      - formal-fact-reader-and-persistence
+    state: planned
+    outputs:
+      - Policy 引擎（canRun / next / diagnose）
+      - 状态转换规则表驱动测试
+
+  - key: E1
+    id: diagnostic-cli
+    goal: >
+      实现只读诊断 CLI：status / next / doctor / resume-context。
+    required: true
+    dependsOn:
+      - policy-engine
+    state: planned
+    outputs:
+      - flowkit status 命令
+      - flowkit next 命令
+      - flowkit doctor 命令
+      - flowkit resume-context 命令
+
+  - key: F1
+    id: core-hardening-and-release-candidate
+    goal: >
+      完成测试层次覆盖、固定 Full Test Plan 并发布内部 core release candidate。
+    required: true
+    dependsOn:
+      - diagnostic-cli
+    state: planned
+    outputs:
+      - 单元测试 / fixture 集成测试 / CLI 契约测试 / 恢复测试
+      - 固定 Full Test Plan
+      - core release candidate
+
+verification:
+  change:
+    requireApplicableChecks: true
+
+  fullTest:
+    requiresOwnerAuthorization: true
+    plan:
+      - unit tests
+      - fixture integration tests
+      - CLI contract tests
+      - state transition matrix
+      - atomic write / recovery tests
+      - OpenSpec strict validation
+      - lint
+      - typecheck
+      - build
+      - 新增手写 .mjs 源码缺失检查
+
+acceptance:
+  - 所有 required Changes 的 state 均为 completed
+  - 所有 Change 已完成 Archive 并形成 Change Checkpoint
+  - 所有新增手写生产源码和测试源码均为 .ts
+  - 不存在新增手写 .mjs 生产源码、测试源码或 CLI 启动壳
+  - package.json 的 bin 指向 dist/bin/flowkit.js
+  - typecheck 和 build 通过
+  - 状态模型与 Product Baseline 一致
+  - Policy 对所有固定 Action 产生唯一结果或明确阻塞
+  - terminal Run 不可覆盖
+  - Run ID 为 Delivery-scoped 单调递增
+  - facts reader 冲突时 fail-closed
+  - 持久化原子且可恢复
+  - 四个诊断 CLI 可用
+  - Full Test Plan 固定并通过
+  - 未实现完整 Change / Delivery 执行
+  - 未引入 Registry / Plugin / Gate
+  - 未集成 Archify
+  - 所有 Blocking Findings 已清零
+  - 未经 owner 授权没有运行 Full Test
+  - owner 已批准 Delivery Finalize
