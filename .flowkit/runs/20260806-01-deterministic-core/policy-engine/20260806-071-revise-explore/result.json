@@ -1,0 +1,275 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-071-revise-explore",
+  "status": "completed",
+  "summary": "D1 policy-engine revise-explore 完成。修复 070-review-explore 的 2 个 P1 blocking findings：D1-EX-001（引入 Lineage 模型替代存在性禁止规则，通过 reviewedRunId 追踪 review/revision 循环）和 D1-EX-002（Verification facts 不可用时 blocked，ownerAuthorizations 空数组时 owner-decision，不 infer）。全量 consistencyScan 覆盖 10 个交叉引用维度，0 contradictions。explore artifact 写入 .tmp/explore/policy-engine/（scratch-only，未修改 manifest/tracked files/terminal Runs）。",
+  "exploreArtifact": {
+    "conclusionPath": ".tmp/explore/policy-engine/conclusion.md",
+    "evidencePath": ".tmp/explore/policy-engine/evidence.json",
+    "conclusionHash": "aa7e92b98f8f8683489cfad3036c50eb645858bb40794a8d6af29ad1cc7b4b8e"
+  },
+  "findingsAddressed": [
+    {
+      "id": "D1-EX-001",
+      "severity": "P1",
+      "title": "Lifecycle stage selection cannot progress after a completed review",
+      "rootCause": "Section 3.1 使用 '无 completed review-S Run' 作为 review-S 前置条件，一旦 review-S 完成则永远禁止，阻断了 revise→review 循环。Section 4 决策树缺少 review-* 完成后的分支。",
+      "fix": "引入 Lineage 模型（Section 3.0, D1-8）：通过 ReviewVerdictFact.reviewedRunId 追踪 review 与 artifact Run 的审阅关系。revise-S 完成后 Current Artifact Run 更新，Current Review.reviewedRunId 不再匹配 → review-S 可再执行。决策树（Section 4）使用 lineage 规则重构，统一处理 review-* 和 revise-* 作为最新 Run 的情况。",
+      "sectionsModified": ["1.3", "3.0 (new)", "3.1", "3.3", "4.1-4.6", "4.6", "6 (D1-8)", "7", "8.3", "9", "10"],
+      "verificationEvidence": "Section 3.0 多轮 Revision 正确性验证表覆盖 6 步循环（explore→review(cr)→revise→review(cr)→revise→review(approved)→propose），每步的 Current Artifact / Current Review / Lineage match / next action 均一致。"
+    },
+    {
+      "id": "D1-EX-002",
+      "severity": "P1",
+      "title": "Policy gates require formal facts that the declared snapshot does not provide",
+      "rootCause": "Section 3 声称 Policy 消费 C1 FormalFactSnapshot 判断 Verification 和 owner authorization，但 snapshot 无 Verification status 字段（openSpecArtifacts 无 change-verification kind），ownerAuthorizations 为空占位。",
+      "fix": "Verification: D1 对 verification-gated actions (review-apply, archive) 返回 blocked: verification-facts-unavailable (D1-7)，不从 Run 历史/OpenSpec 产物/聊天推断。ownerAuthorizations: 确认字段在 C1 契约中存在 (Section 1.3 可用性矩阵)，空数组 → owner-decision (正确 fail-closed)，C1 Reader 扩展后 D1 自动正确无需修改。",
+      "sectionsModified": ["1.3 (可用性矩阵)", "3.1", "3.3", "5", "6 (D1-7)", "8.4 (new)", "8.5 (new)", "9", "10"],
+      "verificationEvidence": "Section 1.3 可用性矩阵列出全部 11 个 snapshot 字段的契约存在性、Reader 填充状态和 D1 行为。Section 5 新增 verification-facts-unavailable 与 verification-failed/verification-not-run 区分。Section 8.4-8.5 定义专项测试。"
+    }
+  ],
+  "keyFindings": [
+    "Lineage 模型通过 reviewedRunId 追踪 review/artifact 关系，正确支持 delivery-lifecycle.md Section 3.2 定义的 revise→review 循环",
+    "C1 ReviewVerdictFact 已携带 reviewedRunId（readC1Run 从 ContextFile.reviewedRunId 提取），D1 可直接从 snapshot.reviewVerdicts 读取",
+    "ownerAuthorizations 字段在 C1 契约中存在，空数组是 C1 Reader 占位行为而非契约缺失，D1 fail-closed 行为正确",
+    "Change Verification status 是 C1 snapshot 的真实缺口，D1 blocked 而非 infer，由未来 change 扩展",
+    "Policy 三函数仍为纯函数，只读 FormalFactSnapshot，不修改状态、不调用 I/O",
+    "conflicts 非空时 fail-closed 优先于一切决策（包括 lineage 推断）"
+  ],
+  "sourceFactsRead": {
+    "formalDocs": [
+      "docs/delivery-lifecycle.md (Section 3.2-3.5: lifecycle, Section 4: multi-round review, Section 5: Policy inputs, Section 6/7: unified review/revise, Section 9: recovery, Section 10: D1 scope)",
+      "docs/core-model.md (Section 3: state model, Section 4: Action Catalog, Section 7: Run boundaries, Section 10: D1 boundary)"
+    ],
+    "frozenSpecs": [
+      "openspec/specs/flowkit-domain-and-state-schema/spec.md (B1: 13 Requirements)",
+      "openspec/specs/flowkit-formal-fact-reader-and-persistence/spec.md (C1: 18 Requirements)"
+    ],
+    "sourceFiles": [
+      "src/domain/types.ts (11 domain objects + state union types)",
+      "src/domain/actions.ts (10 Change Actions + 2 Delivery Actions)",
+      "src/domain/states.ts (structural transition tables + canTransition)",
+      "src/facts/formal-fact-snapshot.ts (FormalFactSnapshot + 8 sub-types, ReviewVerdictFact.reviewedRunId)",
+      "src/facts/formal-fact-reader.ts (readC1Run: reviewedRunId extraction, collectOwnerAuthorizations: empty placeholder)"
+    ],
+    "reviewRun": [
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-070-review-explore/result.json (verdict: changes-requested, 2 P1 findings)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-070-review-explore/context.json (reviewedRun, inputs, constraints)"
+    ],
+    "exploredRun": [
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-069-explore/result.json (original explore conclusion)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-069-explore/context.json (inputRef: 632805c)"
+    ]
+  },
+  "consistencyScan": {
+    "scanType": "full",
+    "triggerRun": "20260806-070-review-explore (changes-requested)",
+    "modifiedConcepts": [
+      "Review/Revision lineage model (D1-EX-001)",
+      "Verification facts availability (D1-EX-002)",
+      "Owner authorization field availability (D1-EX-002)"
+    ],
+    "dimensions": [
+      {
+        "id": "CS-01",
+        "name": "Lineage 模型内部一致性",
+        "concept": "Review/Revision lineage by reviewedRunId",
+        "sectionsChecked": ["3.0 (定义)", "3.1 (前置条件矩阵)", "4.1-4.6 (决策树)", "4.6 (统一入口)", "6 D1-8 (设计决策)", "8.3 (测试)"],
+        "checks": [
+          "Section 3.0 lineage 规则与 Section 3.1 前置条件矩阵一致：review-S 前置条件使用 'Current Review = null OR reviewedRunId ≠ Current Artifact Run.runId'，与 lineage 规则 2/4 一致",
+          "Section 4.2 阶段内决策使用 Section 3.0 的 lineage 规则，四个分支（null/no-match/match-approved/match-changes-requested）全覆盖",
+          "Section 4.6 统一入口解析引用 Section 4.1 阶段识别和 Section 3.0 lineage，解析逻辑一致",
+          "D1-8 设计决策与 Section 3.0 定义一致，明确旧规则问题和新规则优势",
+          "Section 8.3 测试覆盖单轮路径、多轮 Revision 闭环、lineage 正确性、failed/cancelled 重试"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-02",
+        "name": "Verification facts 可用性一致性",
+        "concept": "Change Verification status 在 snapshot 中不存在",
+        "sectionsChecked": ["1.3 (可用性矩阵)", "3.1 (review-apply/archive 前置条件)", "5 (blocked diagnosis)", "6 D1-7 (设计决策)", "8.4 (测试)"],
+        "checks": [
+          "Section 1.3 可用性矩阵标注 'Change Verification status' 契约不存在 → D1 blocked",
+          "Section 3.1 review-apply 和 archive 标注 'Verification 事实可用且 passed（不可用 → blocked）'",
+          "Section 5 新增 'verification-facts-unavailable' 与 'verification-failed'/'verification-not-run' 区分",
+          "D1-7 明确不从 Run 历史/OpenSpec 产物/聊天推断 Verification",
+          "Section 8.4 定义专项测试：apply 阶段 approved + Verification 不可用 → blocked"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-03",
+        "name": "Owner authorization 一致性",
+        "concept": "ownerAuthorizations 字段存在但 Reader 返回空数组",
+        "sectionsChecked": ["1.3 (可用性矩阵)", "3.1 (apply/archive/full-test/finalize 前置条件)", "3.3 (owner 决策边界)", "6 D1-7 (设计决策)", "8.5 (测试)"],
+        "checks": [
+          "Section 1.3 可用性矩阵标注 ownerAuthorizations '契约存在 / Reader 空数组（占位）/ D1: 空数组 → owner-decision'",
+          "Section 3.1 apply 和 archive 前置条件引用 snapshot.ownerAuthorizations",
+          "Section 3.3 owner 决策边界说明 'snapshot.ownerAuthorizations 无对应 scope → owner-decision'",
+          "D1-7 明确 '字段在 C1 契约中存在，空数组是 C1 Reader 占位行为而非契约缺失'",
+          "Section 8.5 定义专项测试：空数组 → owner-decision（非 blocked），包含 scope → 正常推进"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-04",
+        "name": "与 delivery-lifecycle.md 一致性",
+        "concept": "D1 conclusion 与冻结正式文档的生命周期定义一致",
+        "sectionsChecked": ["delivery-lifecycle.md Section 3.2 (explore)", "3.3 (propose)", "3.4 (apply)", "3.5 (archive)", "4 (multi-round review)", "5 (Policy inputs)", "6/7 (unified review/revise)"],
+        "checks": [
+          "Section 3.2: 'changes-requested: revise-explore → review-explore' → D1 Section 3.0 lineage 模型支持此循环 ✓",
+          "Section 3.3: 'approved: 等待 owner 授权 apply' → D1 Section 4.2 propose approved → owner-decision: authorize-apply ✓",
+          "Section 3.4: 'Verification 为 failed 或 not-run 时不能进入 review-apply' → D1 Section 3.1 review-apply 前置条件包含 Verification ✓",
+          "Section 3.4: 'revise-apply 必须只处理当前 review-apply Findings' → D1 不扩张范围（revise-S 前置条件: lineage match + changes-requested）✓",
+          "Section 3.5: 'Change Verification 为 passed 或 not-applicable' for archive → D1 Section 3.1 archive 前置条件 ✓",
+          "Section 4: 'review → changes-requested → revise/fix → review → ... → approved' → D1 Section 3.0 多轮验证表覆盖 ✓",
+          "Section 5: Policy inputs 列表包含 'Change Verification' → D1 Section 1.3 标注此事实当前不可用 → blocked ✓",
+          "Section 5: Policy inputs 列表包含 'owner 授权事实' → D1 Section 1.3 标注字段存在但空数组 → owner-decision ✓",
+          "Section 6: unified review → D1 Section 4.6 review 入口解析 ✓",
+          "Section 7: unified revise → D1 Section 4.6 revise 入口解析 ✓"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-05",
+        "name": "与 C1 FormalFactSnapshot 契约一致性",
+        "concept": "D1 使用的 snapshot 字段与 C1 冻结定义一致",
+        "sectionsChecked": ["src/facts/formal-fact-snapshot.ts (FormalFactSnapshot interface)", "src/facts/formal-fact-reader.ts (Reader implementation)"],
+        "checks": [
+          "FormalFactSnapshot.deliveryId / deliveryState / deliveryFullTestStatus → D1 Section 1.3 标注 ✅ 完整 ✓",
+          "FormalFactSnapshot.changes → D1 Section 1.3 标注 ✅ ✓",
+          "FormalFactSnapshot.runs → D1 Section 1.3 标注 ✅，用于 lineage 推断 ✓",
+          "FormalFactSnapshot.openSpecArtifacts → D1 Section 1.3 标注 ✅，但无 change-verification kind ✓",
+          "FormalFactSnapshot.gitBoundaries → D1 Section 1.3 标注 ✅ (best-effort) ✓",
+          "FormalFactSnapshot.ownerAuthorizations → D1 Section 1.3 标注 ✅ 契约存在 / ❌ Reader 空数组 ✓",
+          "FormalFactSnapshot.reviewVerdicts → D1 Section 1.3 标注 ✅，reviewedRunId 可用于 lineage ✓",
+          "FormalFactSnapshot.conflicts → D1 Section 1.3 标注 ✅，fail-closed ✓",
+          "ReviewVerdictFact.reviewedRunId 字段存在于 C1 formal-fact-snapshot.ts → D1 lineage 模型依赖此字段 ✓",
+          "readC1Run 从 ContextFile.reviewedRunId 提取 → D1 Section 3.0/D1-8 引用此数据来源 ✓",
+          "collectOwnerAuthorizations 返回空数组 → D1 Section 1.3/D1-7 标注为 C1 占位行为 ✓",
+          "D1 不声称需要 C1 不提供的字段（除了标注为不可用的 Verification status）✓"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-06",
+        "name": "与 B1 Action Catalog / states.ts 一致性",
+        "concept": "D1 使用的 Action 枚举和状态转换与 B1 冻结定义一致",
+        "sectionsChecked": ["src/domain/actions.ts (CHANGE_ACTIONS, DELIVERY_ACTIONS)", "src/domain/states.ts (transition tables)"],
+        "checks": [
+          "D1 Section 3 覆盖全部 10 Change Actions + 2 Delivery Actions = 12 Actions ✓",
+          "D1 Section 3.0 lineage 模型适用于 explore/propose/apply 三个阶段，对应 B1 的 review-*/revise-* 对称 ✓",
+          "D1 D1-4 明确不修改 B1 states.ts 结构转换表，只添加语义前置条件 ✓",
+          "D1 不自创 Action（使用 B1 ACTION_CATALOG）✓",
+          "D1 不自创状态（使用 B1 DeliveryState/ChangeState/RunStatus）✓"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-07",
+        "name": "与 core-model.md 一致性",
+        "concept": "D1 conclusion 与冻结核心模型一致",
+        "sectionsChecked": ["docs/core-model.md Section 3 (states)", "4 (Action Catalog)", "7 (Run boundaries)", "10 (D1 boundary)"],
+        "checks": [
+          "Section 4 Action Catalog: 10 Change Actions + 6 辅助 (review/revise pairs) → D1 Section 3 覆盖全部 ✓",
+          "Section 4: 'review 和 revise 是统一执行入口，不是正式 Action' → D1 Section 4.6 一致 ✓",
+          "Section 4: 'revise-apply 仅由 review-apply 的 changes-requested 触发' → D1 Section 3.1 revise-apply 前置条件: lineage match + changes-requested ✓",
+          "Section 7.3: 'Author 完成当前 Action 后只记录推荐的 nextAction: review-*' → D1 D1-6 一致 ✓",
+          "Section 7.3: 'Policy 先计算唯一具体 Review Action，再创建对应 reviewer Run' → D1 Section 4.6 一致 ✓",
+          "Section 10: D1 负责展示、授权、Commit、Push、Handoff、Checkpoint → D1 scope 不超出此边界 ✓"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-08",
+        "name": "Terminal Run 不可变性",
+        "concept": "069-explore 和 070-review-explore 的 result.json 未被修改",
+        "sectionsChecked": [
+          ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-069-explore/result.json",
+          ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-070-review-explore/result.json"
+        ],
+        "checks": [
+          "069-explore result.json: 未修改（status: completed, nextAction: review-explore 保持不变）",
+          "070-review-explore result.json: 未修改（verdict: changes-requested, 2 P1 findings 保持不变）",
+          "修订只写入 .tmp/explore/policy-engine/conclusion.md 和 evidence.json（scratch-only）",
+          "新 Run 071-revise-explore 的 context.json/action.md/result.json 是新建，非修改 terminal Run"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-09",
+        "name": "Mutation policy 合规性",
+        "concept": "explore/revise-explore 为 scratch-only，不修改 manifest/tracked files/production code",
+        "sectionsChecked": ["openspec/delivery-groups/20260806-01-deterministic-core.yaml", "src/", "tests/", "openspec/changes/"],
+        "checks": [
+          "Manifest 未修改（D1 state 仍为 active，未变更）",
+          "无生产代码修改（src/ 未写入）",
+          "无测试代码修改（tests/ 未写入）",
+          "无 OpenSpec changes 修改（openspec/changes/ 未写入）",
+          "仅修改 .tmp/explore/policy-engine/（scratch root）和 .flowkit/runs/.../071-revise-explore/（新 Run 记录）"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-10",
+        "name": "交叉引用契约完整性",
+        "concept": "Section 9 交叉引用契约覆盖全部共享概念",
+        "sectionsChecked": ["Section 9 (交叉引用契约)"],
+        "checks": [
+          "FormalFactSnapshot 条目: C1 spec + C1 source + D1 Section 1.3 → 一致",
+          "conflicts fail-closed 条目: C1 spec + D1 Section 2/4/D1-3 → 一致",
+          "Action Catalog 条目: B1 + D1 Section 3 → 一致",
+          "状态转换 条目: B1 + D1 Section 3/4/D1-4 → 一致",
+          "nextAllowedAction 条目: B1 + D1 Section 2/D1-2 → 一致",
+          "owner 决策边界 条目: delivery-lifecycle.md + D1 Section 3.3/4/D1-5 → 一致",
+          "统一 review/revise 条目: delivery-lifecycle.md + D1 Section 4.6 → 一致",
+          "Review/Revision lineage 条目 (新增): delivery-lifecycle.md + C1 ReviewVerdictFact + D1 Section 3.0/D1-8 → 一致",
+          "Verification facts 可用性 条目 (新增): delivery-lifecycle.md + C1 snapshot + D1 Section 1.3/D1-7 → 一致",
+          "ownerAuthorizations 字段 条目 (新增): C1 snapshot + C1 Reader + D1 Section 1.3/D1-7 → 一致",
+          "Change Verification status 条目 (新增): delivery-lifecycle.md + C1 snapshot + D1 Section 3.1/5/D1-7 → 一致",
+          "stage 判定 条目 (新增): delivery-lifecycle.md + D1 Section 4.1 → 一致",
+          "多轮 Review 闭环 条目 (新增): delivery-lifecycle.md Section 4 + D1 Section 3.0/D1-8 → 一致"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      }
+    ],
+    "totalContradictions": 0,
+    "overallResult": "pass"
+  },
+  "mutationPolicyCheck": {
+    "scratchOnly": true,
+    "scratchRoot": ".tmp/explore/policy-engine/",
+    "manifestModified": false,
+    "trackedFilesModified": false,
+    "openspecChangesWritten": false,
+    "productionCodeWritten": false,
+    "testCodeWritten": false,
+    "terminalRunsModified": false,
+    "filesWritten": [
+      ".tmp/explore/policy-engine/conclusion.md (revised)",
+      ".tmp/explore/policy-engine/evidence.json (updated hash)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-071-revise-explore/context.json (new Run)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-071-revise-explore/action.md (new Run)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-071-revise-explore/result.json (new Run)"
+    ]
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "nextAction": "review-explore",
+  "nextActionNote": "reviewer 审查修订后的 explore conclusion，重点验证：(1) D1-EX-001 lineage 模型是否正确支持多轮 revise→review 循环（对照 delivery-lifecycle.md Section 3.2-3.4）；(2) D1-EX-02 Verification/authorization facts 可用性处理是否正确（blocked vs owner-decision）；(3) 全量 consistencyScan 的 10 个维度是否完整覆盖；(4) Section 9 交叉引用契约新增条目是否一致；(5) 069/070 terminal Runs 未被修改。",
+  "blockedOn": []
+}

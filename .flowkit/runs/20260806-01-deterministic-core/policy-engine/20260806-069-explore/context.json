@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-069-explore",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "D1",
+  "changeId": "policy-engine",
+  "action": "explore",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "inputRef": "632805c",
+  "sourceChangeState": "C1 formal-fact-reader-and-persistence: completed (checkpoint commit 632805c)",
+  "constraints": {
+    "mayReadFormalDocs": true,
+    "mayReadFrozenSpecs": true,
+    "mayReadRefDocs": true,
+    "mayWriteExploreArtifact": true,
+    "mayModifyManifest": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-069-explore/"
+}

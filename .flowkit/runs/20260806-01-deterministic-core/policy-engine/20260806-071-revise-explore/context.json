@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-071-revise-explore",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "D1",
+  "changeId": "policy-engine",
+  "action": "revise-explore",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "inputRef": {
+    "ref": "run-result:.flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-070-review-explore/result.json",
+    "versionFingerprint": "sha256:5a3e7b1c9f2d8e4a6b0c3f5d7e9a1b3c5d7e9f1a3b5c7d9e1f3a5b7c9d1e3f5"
+  },
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-070-review-explore/",
+  "sourceReviewVerdict": "changes-requested",
+  "sourceChangeState": "D1 policy-engine: active (explore completed, review-explore changes-requested)",
+  "constraints": {
+    "mayReadFormalDocs": true,
+    "mayReadFrozenSpecs": true,
+    "mayReadRefDocs": true,
+    "mayWriteExploreArtifact": true,
+    "mayModifyManifest": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-071-revise-explore/"
+}

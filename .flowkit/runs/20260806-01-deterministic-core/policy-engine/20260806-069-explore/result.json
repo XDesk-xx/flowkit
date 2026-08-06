@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-069-explore",
+  "status": "completed",
+  "summary": "D1 policy-engine explore 完成。调查了 Policy 引擎的范围、三函数契约（canRun/next/diagnose）、Action 前置条件矩阵（12 个 Action）、Change 生命周期决策树、owner 决策边界（5 种）、blocked diagnosis 条件（8 种）、统一 review/revise 入口解析、与 B1/C1 的集成边界。关键设计决策：Policy 为纯函数、不持久化 currentAction、fail-closed 优先、结构转换 vs 语义前置条件分离、owner 决策不可绕过。推荐文件结构：src/policy/（8 文件）。explore artifact 写入 .tmp/explore/policy-engine/（scratch-only，未修改 manifest 和 tracked files）。",
+  "exploreArtifact": {
+    "conclusionPath": ".tmp/explore/policy-engine/conclusion.md",
+    "evidencePath": ".tmp/explore/policy-engine/evidence.json",
+    "conclusionHash": "0210eb68770f6f239aaa93c80a4353e4ee2095637f84775a602d623153c84ecb"
+  },
+  "keyFindings": [
+    "Policy 三函数为纯函数，只读 FormalFactSnapshot，不修改状态、不调用 I/O",
+    "conflicts 非空时 fail-closed 优先于一切决策",
+    "B1 states.ts 只定义结构转换边，D1 在此添加语义前置条件（owner 授权、Verification、dependencies）",
+    "Change 生命周期决策树从最新 completed Run 推断当前阶段，结合 review verdict 决定下一 Action",
+    "owner 决策边界（activate/authorize-apply/authorize-archive/authorize-full-test/authorize-delivery-finalize）不可自动绕过",
+    "统一 review/revise 入口由 Policy 唯一解析为具体 review-*/revise-*，多解或无解时 blocked",
+    "failed/cancelled Run 允许同 Action 重试，不需 owner 重新授权"
+  ],
+  "sourceFactsRead": {
+    "formalDocs": [
+      "docs/delivery-lifecycle.md (Section 5: Policy inputs/outputs, Section 6/7: unified review/revise, Section 9: recovery, Section 10: D1 scope)",
+      "docs/core-model.md (Section 3: state model, Section 4: Action Catalog, Section 7: Run boundaries, Section 10: D1 boundary)"
+    ],
+    "frozenSpecs": [
+      "openspec/specs/flowkit-domain-and-state-schema/spec.md (B1: 13 Requirements)",
+      "openspec/specs/flowkit-formal-fact-reader-and-persistence/spec.md (C1: 18 Requirements)"
+    ],
+    "sourceFiles": [
+      "src/domain/types.ts (11 domain objects + state union types)",
+      "src/domain/actions.ts (10 Change Actions + 2 Delivery Actions)",
+      "src/domain/states.ts (structural transition tables + canTransition)",
+      "src/facts/formal-fact-snapshot.ts (FormalFactSnapshot + 8 sub-types)"
+    ]
+  },
+  "mutationPolicyCheck": {
+    "scratchOnly": true,
+    "scratchRoot": ".tmp/explore/policy-engine/",
+    "manifestModified": false,
+    "trackedFilesModified": false,
+    "openspecChangesWritten": false,
+    "productionCodeWritten": false,
+    "testCodeWritten": false
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "nextAction": "review-explore",
+  "nextActionNote": "reviewer 审查 explore conclusion，重点验：(1) 三函数契约是否覆盖全部 Policy 输出类型；(2) Action 前置条件矩阵是否与 delivery-lifecycle.md Section 3 一致；(3) 决策树是否覆盖全部生命周期阶段和分支；(4) owner 决策边界是否完整；(5) 与 B1/C1 的集成边界是否清晰。",
+  "blockedOn": []
+}
