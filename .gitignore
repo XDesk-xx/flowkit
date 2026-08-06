@@ -21,3 +21,7 @@ coverage/
 Thumbs.db
 .vscode/
 .idea/
+
+.codegraph/
+.trae/
+ref/
