@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-061-review-propose",
+  "status": "completed",
+  "verdict": "approved",
+  "summary": "C1 proposal is approved. The schemaVersion-2 C1 format and bounded schemaVersion-1/missing legacy recognizer preserve fail-closed behavior; ContextFile now projects directly to B1 Run and supports both Change-level and Delivery-level Runs.",
+  "reviewedResultRef": "run-result:.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-060-revise-propose/result.json;sha256:816288e2e54962c93e07778912188dd8f04643addd2ed5893cc5478bff2c83bd",
+  "blockingFindings": [],
+  "nonBlockingFindings": [],
+  "resolvedFindings": [
+    {
+      "id": "C1-PR-006",
+      "resolution": "Three-way version discriminator prevents malformed schemaVersion-2 C1 records from downgrading to legacy."
+    },
+    {
+      "id": "C1-PR-007",
+      "resolution": "ContextFile.inputRef is optional ResultRef and directly maps to B1 Run.inputRef."
+    },
+    {
+      "id": "C1-PR-008",
+      "resolution": "Action scope defines changeKey/changeId presence for Change-level and Delivery-level Runs."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "OpenSpec strict validation",
+        "status": "passed"
+      },
+      {
+        "name": "Typecheck",
+        "status": "passed"
+      },
+      {
+        "name": "Lint",
+        "status": "passed"
+      },
+      {
+        "name": "Proposal contract review",
+        "status": "passed",
+        "result": "Reviewed frozen boundaries, B1 types, C1 persistence contracts, historical Bootstrap compatibility, and lifecycle routing."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run."
+      }
+    ]
+  },
+  "nextActionRecommendation": "owner authorization required for apply",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

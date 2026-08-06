@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-044-revise-explore",
+  "status": "completed",
+  "summary": "C1 revise-explore 完成。修复了 043-review-explore 的 1 个 P1 blocking finding (C1-EX-006)。C1-EX-006：terminal result 发布没有独占单写者声明——atomicWriteFile (temp + rename) 是原子替换操作，不是 create-if-not-exists，两个 writer 可都通过 assertMutable 后分别发布不同 result.json。修复为独占完成发布协议：writeRunResult 使用 temp-file + fs.link 原子 create-if-not-exists。temp 文件写入完整内容后，fs.link(temp, result.json) 原子创建 result.json，目标已存在时抛 EEXIST。第一个 writer 的 result.json 保留不变，后续 writer 收到 EEXIST → throw RUN_TERMINAL。不使用 atomicWriteFile（rename 是替换不是 no-replace）。不依赖预先 exists 检查做并发安全（并发安全由 fs.link 保证）。中断不留下部分 result.json（temp 文件被遗弃，result.json 不存在）。恢复表新增 .result-tmp-* 条目。fixture 新增并发 writer、不依赖 exists 检查、中断、EEXIST 路径。验收标准从 25 项扩展到 26 项，探索结论和 Review 重点同步更新。",
+  "reviewedResultRef": "run-result:.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-043-review-explore/result.json;sha256:2f2a805afdd2ac6888e8743d0c6a9c1c62db2cfdb3af43650336a5cba12dbe77",
+  "revisedArtifact": {
+    "path": "openspec/changes/formal-fact-reader-and-persistence/explore.md",
+    "sha256": "80ade8ac6fffd67417d0416ada3053790c3f72be9c5efdbf3ea17388a5c06004"
+  },
+  "resolvedFindings": [
+    {
+      "id": "C1-EX-006",
+      "resolution": "定义独占完成发布协议（temp-file + fs.link 原子 create-if-not-exists）：(1) writeRunResult 函数注释更新为独占发布；(2) 完成流程步骤 4-7 重写：序列化 → 写入 temp 文件 → fs.link(temp, result.json) 原子 create-if-not-exists → EEXIST throw RUN_TERMINAL / 成功发布 → 清理 temp；(3) 关键顺序图更新包含 fs.link 步骤；(4) 新增'不这样做'反例展示 atomicWriteFile 的并发覆盖问题和 fs.link 的正确保证；(5) 恢复表新增 .result-tmp-* 条目；(6) fixture 新增 4 个独占完成发布测试（并发 writer、不依赖 exists 检查、中断、EEXIST 路径）；(7) 验收标准新增 item 9；(8) 探索结论 item 5 更新；(9) Review 重点新增 item 7。"
+    }
+  ],
+  "changesSummary": {
+    "Q5_writeRunResult_function": "函数注释重写为独占发布协议，明确 temp-file + fs.link + EEXIST + 不使用 atomicWriteFile",
+    "Q5_completion_flow": "步骤 4-7 重写：序列化 → 写入 temp → fs.link 原子 create-if-not-exists → EEXIST throw / 成功 → 清理 temp",
+    "Q5_key_sequence": "关键顺序图更新包含 序列化 JSON → 写入 temp → fs.link → EEXIST/成功 → 清理 temp",
+    "Q5_anti_patterns": "新增 atomicWriteFile 并发覆盖反例和 fs.link 正确保证示例",
+    "Q5_recovery_table": "新增 .result-tmp-*.json 条目（Reader 忽略 + writeRunResult best-effort 清理 + 显式恢复 deferred）",
+    "Q5_fixtures": "新增 4 个独占完成发布 fixture（并发 writer、不依赖 exists 检查、中断、EEXIST 路径）",
+    "section7": "验收标准从 25 项扩展到 26 项，新增 item 9（独占完成发布协议）",
+    "section8": "探索结论 item 5 更新，新增完成发布使用 fs.link + 并发 writer 保证",
+    "section9": "Review 重点新增 item 7（独占完成发布协议正确性），后续项重新编号"
+  },
+  "exclusivePublicationDesign": {
+    "problem": "atomicWriteFile (temp + rename) 是原子替换操作，不提供 no-replace 保证。两个 writer 可都通过 assertMutable 后分别调用 atomicWriteFile，后写者覆盖先写者的 terminal result。",
+    "solution": "temp-file + fs.link 原子 create-if-not-exists：temp 文件写入完整内容后，fs.link(temp, result.json) 原子创建 result.json。fs.link 在目标已存在时抛 EEXIST，提供原子 no-replace 保证。",
+    "writeBehavior": "序列化 JSON → 写入 .result-tmp-<pid>-<timestamp>.json → fs.link(temp, result.json) → EEXIST throw RUN_TERMINAL / 成功发布 → 清理 temp",
+    "concurrencyGuarantee": "两个 writer 同时调用 writeRunResult：第一个 writer 的 fs.link 成功，第二个 writer 的 fs.link 抛 EEXIST → throw RUN_TERMINAL。第一个 result.json 保留不变。不依赖预先 exists 检查。",
+    "interruptRecovery": "writer 在 fs.link 前崩溃 → temp 文件存在但 result.json 不存在 → Run 仍为 pending → 可重新尝试完成。.result-tmp-* 对 Reader 不可见。",
+    "whyNotAtomicWriteFile": "atomicWriteFile 使用 temp + rename。rename 是原子替换（replace target if exists），不是 create-if-not-exists。无法防止后续 writer 覆盖已发布的 terminal result。"
+  },
+  "scopeDiscipline": {
+    "scopeExpanded": false,
+    "reason": "只处理 C1-EX-006，不扩张 Change 范围"
+  },
+  "nextActionRecommendation": "review-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "lastCommit": "180f161 checkpoint(domain-and-state-schema): B1 Change Checkpoint",
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "blockedOn": []
+}

@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-039-review-explore",
+  "status": "completed",
+  "summary": "C1 Explore review requests changes. Revision 038 correctly fixes the initial terminal-check ordering and partial-publication findings, but the proposed persistence contract still cannot deterministically serialize and recover a terminal Run status. It conflates ActionResult.executionStatus with RunStatus even though their closed value sets differ and ActionResult has no Run status field.",
+  "reviewedResultRef": "run-result:.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-038-revise-explore/result.json;sha256:318c00805098d0013a9abb32f7d5981cdd8c50b5a4dbe92caa32286d36e3c042",
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "C1-EX-003",
+      "title": "Terminal Run status has no defined physical representation or mapping",
+      "severity": "P1",
+      "evidence": "Explore Q5 stage 2 says result.executionStatus may be completed, failed, or blocked and also says result.json carries a terminal Run status. But src/domain/types.ts defines ActionResult with executionStatus only, not Run.status; src/domain/schema-validator.ts accepts RunStatus only as pending, completed, failed, or cancelled. Therefore blocked cannot be read as a RunStatus, and the Reader cannot reconstruct or validate the terminal status it is required to enforce.",
+      "requiredChange": "Define the C1-owned physical result.json schema with an explicit terminal runStatus field or an exhaustive validated mapping from ActionResult.executionStatus to RunStatus. Specify all allowed combinations, including cancellation and blocked behavior, require it on write, and require run-reader to validate it on read before reconstructing Run. Add fixtures for every allowed terminal state and invalid/mismatched combinations."
+    }
+  ],
+  "nonBlockingFindings": [
+    {
+      "id": "C1-EX-004",
+      "title": "Staging cleanup must not be assigned to the read-only doctor command",
+      "severity": "P2",
+      "evidence": "The recovery table says doctor may clean staging directories, while the Delivery defines E1 diagnostic CLI as read-only and C1 excludes diagnostic CLI work.",
+      "requiredChange": "State that C1 Reader ignores staging directories and createRun performs its own best-effort cleanup. Defer any explicit recovery mutation to a separately authorized future action; do not assign deletion to doctor."
+    }
+  ],
+  "resolvedFindings": [
+    {
+      "id": "C1-EX-001",
+      "resolution": "Resolved by revision 038: assertMutable now checks the current pending persisted state before terminal result publication."
+    },
+    {
+      "id": "C1-EX-002",
+      "resolution": "Resolved by revision 038: creation stages and validates initial files before atomic directory publication, and Reader ignores staging directories."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "Formal contract review",
+        "status": "passed",
+        "result": "Reviewed revised Explore against B1 types/schema, delivery lifecycle, delivery scope, and prior findings."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

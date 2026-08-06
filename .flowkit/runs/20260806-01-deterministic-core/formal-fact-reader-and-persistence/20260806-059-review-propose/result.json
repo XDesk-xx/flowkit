@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-059-review-propose",
+  "status": "completed",
+  "verdict": "changes-requested",
+  "summary": "Revised proposal still has three P1 blockers: the compatibility discriminator is a downgrade path, inputRef cannot project to B1 ResultRef, and ContextFile excludes Delivery-level Runs.",
+  "findings": [
+    {
+      "id": "C1-PR-006",
+      "severity": "P1",
+      "title": "schema-validation failure is an unsafe Bootstrap discriminator",
+      "disposition": "changes-requested"
+    },
+    {
+      "id": "C1-PR-007",
+      "severity": "P1",
+      "title": "ContextFile.inputRef cannot map to B1 Run.inputRef",
+      "disposition": "changes-requested"
+    },
+    {
+      "id": "C1-PR-008",
+      "severity": "P1",
+      "title": "ContextFile contradicts Delivery-level Run support",
+      "disposition": "changes-requested"
+    }
+  ],
+  "verification": [
+    {
+      "command": "npx openspec validate formal-fact-reader-and-persistence --strict",
+      "status": "passed",
+      "note": "Structural validation only."
+    },
+    {
+      "command": "npm run typecheck",
+      "status": "passed"
+    },
+    {
+      "command": "npm run lint",
+      "status": "passed"
+    },
+    {
+      "command": "full test",
+      "status": "not-run",
+      "note": "No owner authorization; proposal review does not authorize it."
+    }
+  ],
+  "nextAction": "revise-propose"
+}

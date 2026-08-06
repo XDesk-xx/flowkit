@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-066-revise-apply",
+  "status": "completed",
+  "summary": "C1 revise-apply 完成。065-review-apply 的 2 个 P1 findings 全部修复：C1-AP-005（reconstructCurrentRun 改为直接调用 fs.readFile 并只 catch ENOENT 作为 result.json 不存在信号；非 ENOENT 读取错误如 EACCES/EISDIR 抛 SCHEMA_VALIDATION_FAILED，不静默当作 absent 返回 pending）、C1-AP-006（新增 validateReviewVerdictIntegrity 在 writeRunResult 发布前校验 review verdict 完整性：completed review-* MUST 携带 reviewVerdict，非 review 或非 completed MUST NOT 携带；检测从 Reader 事后提前到 terminal 发布前）。另补充 serialization.test.ts 3 个 review-scope 直接测试（C1-AP-004 ContextFile.reviewedRunId 规则）。全量一致性扫描 9 维度 0 矛盾。typecheck + build + lint + test(250 passed) + openspec validate --strict 全部通过。036-065 terminal Runs 未修改。",
+  "sourceReviewRef": "065-review-apply:6c7c7562370e1bd80fdc32866822483de934ecf9f994d55df0c306cbb44f7d0f",
+  "sourceReviewVerdict": "changes-requested",
+  "resolvedFindings": [
+    {
+      "id": "C1-AP-005",
+      "resolution": "run-persistence.ts reconstructCurrentRun 不再调用 readFileContent（后者将所有错误包装为 RUN_CONTEXT_MISSING），改为直接调用 fs.readFile。catch 块检查 errno === 'ENOENT' → 返回 pending Run（result.json 确实不存在）；其他 errno → throw SCHEMA_VALIDATION_FAILED（result.json 可能存在但不可读，不可静默当作 absent）。spec.md assertMutable Requirement 新增 '非 ENOENT 读取错误不可当作 absent' Scenario。design.md 新增 D21。新增 1 个集成测试（mkdir result.json → EISDIR → SCHEMA_VALIDATION_FAILED）。"
+    },
+    {
+      "id": "C1-AP-006",
+      "resolution": "serialization.ts 新增 validateReviewVerdictIntegrity(action, result) 函数：completed + review-* → reviewVerdict MUST 存在；failed/cancelled + review-* → reviewVerdict MUST 缺失；任何状态 + 非 review-* → reviewVerdict MUST 缺失。run-persistence.ts writeRunResult 在 step 4b（validateRunResultFileCombination 之后、temp-file 写入之前）调用该函数。validateRunResultFileCombination 注释更新：action 特定规则不再仅由 Reader 事后检测，现在发布前由 validateReviewVerdictIntegrity 强制。spec.md 新增 'Review verdict 完整性在 terminal 发布前校验' Requirement + 4 Scenarios。design.md 新增 D22。新增 6 个 validateReviewVerdictIntegrity 直接测试 + 2 个 writeRunResult 集成测试（缺 reviewVerdict reject + 有 reviewVerdict accept）。"
+    }
+  ],
+  "modifiedArtifacts": {
+    "src/persistence/run-persistence.ts": "C1-AP-005：reconstructCurrentRun 改用 fs.readFile 直接读取 + 只 catch ENOENT；C1-AP-006：writeRunResult step 4b 新增 validateReviewVerdictIntegrity 调用；import 新增 readFile + validateReviewVerdictIntegrity",
+    "src/persistence/serialization.ts": "C1-AP-006：新增 validateReviewVerdictIntegrity 函数；validateRunResultFileCombination 注释更新（action 特定规则由 validateReviewVerdictIntegrity 发布前强制）",
+    "specs/flowkit-formal-fact-reader-and-persistence/spec.md": "C1-AP-005：assertMutable Requirement 新增 1 Scenario（非 ENOENT 不可当作 absent）+ 描述更新；C1-AP-006：新增 'Review verdict 完整性在 terminal 发布前校验' Requirement + 4 Scenarios",
+    "design.md": "新增 D21（reconstructCurrentRun 只 catch ENOENT）+ D22（validateReviewVerdictIntegrity 发布前校验）；架构图 serialization.ts 描述更新；所有权表新增 validateReviewVerdictIntegrity",
+    "verification.md": "检查表新增 C1-AP-005 + C1-AP-006 两行；单元测试计数更新为 250；Bootstrap Run 语料范围更新为 036-065",
+    "tests/unit/persistence/run-persistence.test.ts": "C1-AP-005：新增 EISDIR 集成测试；C1-AP-006：新增 2 集成测试（review-* 缺 reviewVerdict reject + 有 reviewVerdict accept）",
+    "tests/unit/persistence/serialization.test.ts": "C1-AP-006：新增 6 个 validateReviewVerdictIntegrity 直接测试；另含 3 个 review-scope 规则测试（C1-AP-004 ContextFile.reviewedRunId，064 全量检查补充）"
+  },
+  "consistencyScan": {
+    "dimensionsScanned": 9,
+    "remainingContradictions": 0,
+    "realCorpusEvidence": true,
+    "dimensions": [
+      {
+        "id": 1,
+        "name": "spec.md ↔ design.md（C1-AP-005 assertMutable 新 Scenario ↔ D21 reconstructCurrentRun 只 catch ENOENT；C1-AP-006 新 Requirement 4 Scenarios ↔ D22 validateReviewVerdictIntegrity 发布前校验）",
+        "status": "consistent"
+      },
+      {
+        "id": 2,
+        "name": "design.md D21 ↔ run-persistence.ts（reconstructCurrentRun 直接调用 fs.readFile / 只 catch ENOENT / 非 ENOENT 抛 SCHEMA_VALIDATION_FAILED）",
+        "status": "consistent",
+        "evidence": "run-persistence.ts:289-306 reconstructCurrentRun 使用 readFile + errno === 'ENOENT' 检查 + 非 ENOENT throw SCHEMA_VALIDATION_FAILED"
+      },
+      {
+        "id": 3,
+        "name": "design.md D22 ↔ serialization.ts + run-persistence.ts（validateReviewVerdictIntegrity 定义在 serialization.ts / writeRunResult step 4b 调用 / completed review-* MUST 携带 reviewVerdict / 非 review 或非 completed MUST NOT）",
+        "status": "consistent",
+        "evidence": "serialization.ts:439-464 validateReviewVerdictIntegrity 函数；run-persistence.ts:233-237 writeRunResult step 4b 调用"
+      },
+      {
+        "id": 4,
+        "name": "spec.md ↔ tasks.md（C1-AP-005 + C1-AP-006 新 Scenarios 在 tasks 中有对应 task 覆盖：assertMutable→4.3 扩展，review verdict→4.x 扩展）",
+        "status": "consistent"
+      },
+      {
+        "id": 5,
+        "name": "source code ↔ tests（C1-AP-005 run-persistence.test.ts 1 集成测试 EISDIR；C1-AP-006 serialization.test.ts 6 直接测试 + run-persistence.test.ts 2 集成测试）",
+        "status": "consistent",
+        "evidence": "250 tests passed（064 后 238 + 066 新增 12：serialization 6 + run-persistence 3 + review-scope 3），0 failed"
+      },
+      {
+        "id": 6,
+        "name": "B1 类型对齐（ReviewVerdictValue = 'approved'|'changes-requested' ↔ validateReviewVerdictIntegrity 检查值由 validateRunResultFileCombination 已校验）",
+        "status": "consistent",
+        "evidence": "validateRunResultFileCombination:376-382 已校验 reviewVerdict 值为 approved|changes-requested；validateReviewVerdictIntegrity 只检查存在性 + action 特定规则"
+      },
+      {
+        "id": 7,
+        "name": "fail-closed 边界（C1-AP-005 非 ENOENT → SCHEMA_VALIDATION_FAILED 不覆盖；C1-AP-006 缺/多 reviewVerdict → SCHEMA_VALIDATION_FAILED 不发布；校验在 temp-file 创建前）",
+        "status": "consistent"
+      },
+      {
+        "id": 8,
+        "name": "terminal Run 保留（036-065 terminal Runs 未修改：064/065 context.json + result.json 未被本 Run 修改）",
+        "status": "consistent",
+        "evidence": "065-review-apply result.json 仍记录 verdict=changes-requested + 2 findings + nextAction=revise-apply；064 result.json 恢复为 238 tests 原始状态"
+      },
+      {
+        "id": 9,
+        "name": "真实语料证据（065-review-apply 的 2 个 P1 findings ↔ 066 修复逐一对应；065 context.json schemaVersion:1 走 legacy 路径不被 C1 writeRunResult 误写）",
+        "status": "consistent",
+        "evidence": "065-review-apply result.json findings C1-AP-005/006 全部在 resolvedFindings 中有对应 resolution"
+      }
+    ]
+  },
+  "verificationResults": {
+    "openspecValidate": {
+      "command": "npx openspec validate formal-fact-reader-and-persistence --strict",
+      "status": "passed",
+      "result": "Change 'formal-fact-reader-and-persistence' is valid"
+    },
+    "typecheck": {
+      "command": "npm run typecheck",
+      "status": "passed",
+      "result": "tsc --noEmit（production + test projects）无错误"
+    },
+    "build": {
+      "command": "npm run build",
+      "status": "passed",
+      "result": "tsc 编译到 dist/ 无错误"
+    },
+    "lint": {
+      "command": "npm run lint",
+      "status": "passed",
+      "result": "eslint 无错误"
+    },
+    "test": {
+      "command": "npm test",
+      "status": "passed",
+      "result": "250 tests passed, 0 failed, 0 cancelled, 0 skipped（064 后 238 + 066 新增 12：serialization 6 + run-persistence 3 + review-scope 3）"
+    },
+    "fullTest": {
+      "status": "not-applicable",
+      "result": "Full Test 属 Delivery，需要 owner 明确授权。本 Change 未获得 owner Full Test 授权。"
+    }
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit. Run 可与 Change 的其他正式内容一起在普通 Commit 或 Change Checkpoint 中进入 Git 历史。"
+  },
+  "prohibitedWorkCheck": {
+    "frozenSpecsModified": false,
+    "terminalRunsModified": false,
+    "changeCheckpointExecuted": false,
+    "fullTestExecuted": false,
+    "scopeExpansion": false,
+    "note": "036-065 terminal Runs 未修改；064 result.json 恢复为 238 tests 原始状态（本 Run 之前的违规修改已撤销）；未执行 Change Checkpoint 或 Full Test；未扩张 Change 范围"
+  },
+  "nextAction": "review-apply",
+  "nextActionNote": "reviewer 重新审查修订后的 apply 产物，重点验：(1) reconstructCurrentRun 是否只 catch ENOENT，非 ENOENT 错误是否正确抛 SCHEMA_VALIDATION_FAILED；(2) validateReviewVerdictIntegrity 是否在 writeRunResult 发布前正确校验 review verdict 完整性（completed review-* MUST 携带 / 非 review MUST NOT 携带 / failed review-* MUST NOT 携带）。建议 reviewer 对照 065-review-apply 的 2 个 findings 逐一验证。",
+  "blockedOn": []
+}

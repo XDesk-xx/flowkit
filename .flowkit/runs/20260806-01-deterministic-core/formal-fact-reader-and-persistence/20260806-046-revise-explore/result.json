@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-046-revise-explore",
+  "status": "completed",
+  "summary": "C1 revise-explore 完成。修复了 045-review-explore 的 1 个 P1 blocking finding (C1-EX-007)。C1-EX-007：物理 ActionResult 投影没有可执行的校验器——Q5 声称 actionResult 通过 B1 Schema 校验，但 B1 schema-validator.ts 只导出 validateRun，没有 validateActionResult；且物理类型 ActionResultWithoutRunRef 故意省略必填 runRef（C1-EX-005），B1 的 ActionResult 校验器无法接受该投影。修复为 C1 拥有的物理投影校验器：在 serialization.ts 中定义 validateActionResultWithoutRunRef，枚举 3 个必填字段（action、executionStatus、summary）和 6 个可选字段（含 4 个嵌套 ResultRef），使用 B1 导出的 isExecutionStatus 和 CHANGE_ACTIONS/DELIVERY_ACTIONS 常量校验枚举值；不调用不存在的 B1 validateActionResult；C1 定义自己的 validateResultRefProjection（B1 的 validateResultRef 是私有的未导出）；禁止 runRef 字段（C1-EX-005）；重建后校验逻辑不变量。新增 11 种 malformed 投影 fixture。Q5 写入流程和读取流程中的'B1 Schema 校验'引用全部替换为'C1 validateActionResultWithoutRunRef 校验'。验收标准从 26 项扩展到 27 项，探索结论和 Review 重点同步更新。",
+  "reviewedResultRef": "run-result:.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-045-review-explore/result.json;sha256:d8716e499947736d7aaf1211a93f873bf3ac39116dc31fc45626b14b8375e295",
+  "revisedArtifact": {
+    "path": "openspec/changes/formal-fact-reader-and-persistence/explore.md",
+    "sha256": "d3ebf01ead9baca3cda97ca91bc1eb86abc1b502d28058f735c1a905aec55829"
+  },
+  "resolvedFindings": [
+    {
+      "id": "C1-EX-007",
+      "resolution": "定义 C1 拥有的物理投影校验器：(1) validateActionResultWithoutRunRef 函数——枚举 3 必填字段（action 在 CHANGE_ACTIONS/DELIVERY_ACTIONS 中、executionStatus 通过 isExecutionStatus、summary 非空 string）+ 6 可选字段（producedResultRefs/consumedInputRefs 为 ResultRef 数组、verificationSummaryRef/reviewVerdictRef 为 ResultRef、failureDiagnosis/nextActionRecommendation 为 string）+ 禁止 runRef 字段；(2) validateResultRefProjection 函数——C1 自己的 ResultRef 校验（B1 的 validateResultRef 未导出），校验 ref/versionFingerprint 非空 string、kind 可选 string；(3) 重建后逻辑不变量校验——runRef.ref 非空、runRef.versionFingerprint 非空、runRef.kind='run-result'；(4) 11 种 malformed 投影 fixture；(5) Q5 写入流程步骤 3 和读取流程步骤 6 中的'B1 Schema 校验'替换为'C1 validateActionResultWithoutRunRef 校验'；(6) Section 4 serialization.ts 描述更新。"
+    }
+  ],
+  "changesSummary": {
+    "Q5_write_flow_step3": "'B1 Schema 校验'替换为'C1 validateActionResultWithoutRunRef 校验（C1-EX-007：不调用不存在的 B1 ActionResult 校验器）'",
+    "Q5_reader_step6": "'B1 Schema 校验'替换为'C1 validateActionResultWithoutRunRef 校验'，新增'校验重建后的逻辑不变量'",
+    "Q5_new_section": "新增'C1 拥有的物理投影校验器（C1-EX-007）'子节：validateActionResultWithoutRunRef 函数 + 必填字段表 + 可选字段表 + 禁止字段表 + validateResultRefProjection 函数 + 校验规则 + 重建后逻辑不变量 + 11 种 malformed 投影 fixture",
+    "section4": "serialization.ts 描述更新为'RunResultFile 物理 schema + validateActionResultWithoutRunRef + validateResultRefProjection + ...'",
+    "section7": "验收标准从 26 项扩展到 27 项，新增 item 13（C1 物理投影校验器）",
+    "section8": "探索结论新增 item 8（C1 物理投影校验器），item 14 更新测试覆盖",
+    "section9": "Review 重点新增 item 10（C1 物理投影校验器可执行性），item 18 更新测试覆盖"
+  },
+  "c1OwnedValidatorDesign": {
+    "problem": "B1 schema-validator.ts 只导出 validateRun，没有 validateActionResult。B1 ActionResult 要求必填 runRef，C1 物理投影 ActionResultWithoutRunRef 故意省略 runRef（C1-EX-005）。原 Q5 声称调用 B1 Schema 校验 actionResult，但该校验器不存在且无法接受投影。",
+    "solution": "C1 在 serialization.ts 中定义 validateActionResultWithoutRunRef：枚举必填/可选字段，使用 B1 导出的 isExecutionStatus 和 CHANGE_ACTIONS/DELIVERY_ACTIONS 常量，C1 定义自己的 validateResultRefProjection（B1 的未导出），禁止 runRef 字段，重建后校验逻辑不变量。",
+    "requiredFields": ["action (ChangeAction|DeliveryAction)", "executionStatus (ExecutionStatus)", "summary (string, non-empty)"],
+    "optionalFields": ["producedResultRefs (ResultRef[])", "consumedInputRefs (ResultRef[])", "verificationSummaryRef (ResultRef)", "reviewVerdictRef (ResultRef)", "failureDiagnosis (string)", "nextActionRecommendation (string)"],
+    "forbiddenFields": ["runRef (C1-EX-005 物理投影省略，读取时派生)"],
+    "b1Exports": ["isExecutionStatus (type guard)", "CHANGE_ACTIONS (constant)", "DELIVERY_ACTIONS (constant)"],
+    "b1DoesNotExport": ["validateActionResult (不存在)", "validateResultRef (私有，未导出)"],
+    "malformedFixtures": 11,
+    "ownershipBoundary": "B1 拥有逻辑类型和类型守卫；C1 拥有物理投影校验器（validateActionResultWithoutRunRef + validateResultRefProjection）"
+  },
+  "scopeDiscipline": {
+    "scopeExpanded": false,
+    "reason": "只处理 C1-EX-007，不扩张 Change 范围"
+  },
+  "nextActionRecommendation": "review-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "lastCommit": "180f161 checkpoint(domain-and-state-schema): B1 Change Checkpoint",
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "blockedOn": []
+}

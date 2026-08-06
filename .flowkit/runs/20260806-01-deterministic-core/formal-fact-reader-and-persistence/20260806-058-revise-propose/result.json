@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-058-revise-propose",
+  "status": "completed",
+  "summary": "C1 revise-propose 完成。2 个 P1 findings 已修复：C1-PR-004（ContextFile 确定性 current-Run 投影 + validateContextFileIdentity 身份校验，4 维路径一致性 + 字段映射）、C1-PR-005（Bootstrap 判别器改为 validateContextFile 校验结果，不使用 schemaVersion 数值；runStatus 归一化为 B1 TerminalRunStatus，不降级为无差别 terminal；malformed legacy fail closed 为 FactConflict）。全量一致性扫描 10 维度 0 矛盾。OpenSpec strict validation + typecheck + lint 通过。",
+  "sourceReviewRef": "057-review-propose:03bd7a80313e52537f57569c1a2523221c07150e01a8bff293db06efe5f273c2",
+  "sourceReviewVerdict": "changes-requested",
+  "resolvedFindings": [
+    {
+      "id": "C1-PR-004",
+      "resolution": "design.md D15 增强：定义 ContextFile 为构造当前 Run 对象（result.json 写入前，status=pending）的唯一确定性来源；新增 validateContextFileIdentity(contextFile, expectedRunDir) 校验 runId 匹配目录名、deliveryId 匹配 Delivery 级路径段、changeId 匹配 Change 级路径段（Delivery 级 Run 除外）、runPath 与实际文件系统路径一致；定义 5 步校验流程（validateContextFile → validateContextFileIdentity → C1 Run / Bootstrap Run / FactConflict）。spec.md context.json Requirement 新增 5 Scenarios（确定性 current-Run 投影 + 4 维身份校验）。tasks.md 第 10 组扩展为 17 tasks（10.7-10.17 新增身份校验 + 确定性投影任务）。proposal.md item 6 更新。测试 fixture 新增 12.30-12.37（字段类型 + 身份校验 + 确定性投影）。"
+    },
+    {
+      "id": "C1-PR-005",
+      "resolution": "design.md D16 修订：判别器从 schemaVersion 数值改为 validateContextFile 校验结果（通过→C1 Run，失败→Bootstrap Run），因现有 Bootstrap Run 已有 schemaVersion: 1 但缺 C1 必填字段（changeKey/ownerAuthorization/inputRef/runPath），数值判别器无法区分。runStatus 归一化：result.json 不存在→pending；存在→从 result.json.status 读取并归一化为 B1 TerminalRunStatus（completed/failed/cancelled），MUST NOT 降级为无差别 terminal；status 缺失或值不在枚举内→fail closed 收集为 FactConflict。spec.md Bootstrap Requirement 重构为 4 Scenarios（判别器失败 + runStatus 归一化 + 判别器通过 + 不修改）。tasks.md 第 11 组扩展为 9 tasks（11.1-11.9）。proposal.md item 9 更新。测试 fixture 新增 12.38-12.46（判别器 + 终态归一化 + fail closed + 不修改 + legacy）。"
+    }
+  ],
+  "modifiedArtifacts": {
+    "proposal.md": "item 6 更新（validateContextFileIdentity + 确定性投影）、item 9 更新（validateContextFile 判别器 + runStatus 归一化）",
+    "design.md": "D15 增强（确定性投影 + 身份校验 + 5 步校验流程）、D16 修订（判别器改为 validateContextFile + runStatus 归一化 + fail closed）、所有权表已含 validateContextFileIdentity",
+    "spec.md": "context.json Requirement 新增 5 Scenarios（总 8 Scenarios）、Bootstrap Requirement 重构为 4 Scenarios（总 14 Requirements, 46 Scenarios）",
+    "tasks.md": "第 10 组扩展 6→17 tasks、第 11 组扩展 5→9 tasks、第 12 组扩展 32→46 tasks（总 13 组 148 tasks）"
+  },
+  "specStats": {
+    "requirements": 14,
+    "scenarios": 46,
+    "allAdded": true
+  },
+  "taskStats": {
+    "total": 148,
+    "completed": 0,
+    "pending": 148,
+    "groups": 13
+  },
+  "consistencyScan": {
+    "dimensionsScanned": 10,
+    "remainingContradictions": 0,
+    "dimensions": [
+      {
+        "id": 1,
+        "name": "proposal.md ↔ design.md 一致（item 6 → D15 身份校验+确定性投影；item 9 → D16 判别器+归一化）",
+        "status": "consistent"
+      },
+      {
+        "id": 2,
+        "name": "design.md ↔ spec.md 一致（D15 确定性投影+4 维身份校验+5 步流程 → spec 5 Scenarios；D16 判别器+归一化+不修改 → spec 4 Scenarios）",
+        "status": "consistent"
+      },
+      {
+        "id": 3,
+        "name": "spec.md ↔ tasks.md 一致（context.json 8 Scenarios → tasks 10.1-10.17；Bootstrap 4 Scenarios → tasks 11.1-11.9）",
+        "status": "consistent"
+      },
+      {
+        "id": 4,
+        "name": "tasks.md ↔ design.md 文件规划一致（serialization.ts 含 validateContextFileIdentity → tasks 10.7；架构图未变）",
+        "status": "consistent"
+      },
+      {
+        "id": 5,
+        "name": "ContextFile 身份校验跨文档一致（design D15 4 维校验 ↔ spec 4 身份校验 Scenarios ↔ tasks 10.7-10.13 + 12.31-12.35）",
+        "status": "consistent"
+      },
+      {
+        "id": 6,
+        "name": "ContextFile 确定性投影跨文档一致（design D15 投影规则 ↔ spec 确定性投影 Scenario ↔ tasks 10.14-10.17 + 12.36-12.37）",
+        "status": "consistent"
+      },
+      {
+        "id": 7,
+        "name": "Bootstrap 判别器跨文档一致（design D16 validateContextFile 判别器 ↔ spec 2 判别器 Scenarios ↔ tasks 11.1/11.6 + 12.38-12.40，MUST NOT 使用 schemaVersion 数值）",
+        "status": "consistent"
+      },
+      {
+        "id": 8,
+        "name": "Bootstrap runStatus 归一化跨文档一致（design D16 归一化 completed/failed/cancelled 不降级 terminal ↔ spec runStatus 归一化 Scenario ↔ tasks 11.4/11.5 + 12.41-12.43）",
+        "status": "consistent"
+      },
+      {
+        "id": 9,
+        "name": "writeRunResult 签名跨文档一致（design D5/D6/D15 ↔ spec assertMutable + 确定性投影 ↔ tasks 4.x + 10.14-10.17）",
+        "status": "consistent"
+      },
+      {
+        "id": 10,
+        "name": "tasks.md 格式与 A1 一致（## N. 节标题 + - [ ]N.M 格式，13 组）",
+        "status": "consistent"
+      }
+    ]
+  },
+  "verificationResults": {
+    "openspecValidate": {
+      "command": "npx openspec validate formal-fact-reader-and-persistence --strict",
+      "status": "passed",
+      "result": "Change 'formal-fact-reader-and-persistence' is valid"
+    },
+    "typecheck": {
+      "command": "npm run typecheck",
+      "status": "passed"
+    },
+    "lint": {
+      "command": "npm run lint",
+      "status": "passed"
+    },
+    "fullTest": {
+      "status": "not-applicable",
+      "result": "Not authorized and not run."
+    }
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "nextAction": "review-propose",
+  "nextActionNote": "reviewer 重新审查修订后的 proposal 产物，确认 C1-PR-004/005 已解决且无新矛盾。",
+  "blockedOn": []
+}

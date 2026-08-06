@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-056-revise-propose",
+  "status": "completed",
+  "summary": "C1 revise-propose 完成。3 个 P1 findings 已修复：C1-PR-001（YAML 解析契约冻结为 D14 手写最小子集）、C1-PR-002（context.json 物理 schema 定义为 D15 ContextFile + validateContextFile）、C1-PR-003（Bootstrap Run 兼容性定义为 D16 检测+读取+不修改）。tasks.md 格式已修复为 A1 格式（## N. 节标题）。全量一致性扫描 9 维度 0 矛盾。OpenSpec strict validation 通过。",
+  "sourceReviewRef": "055-review-propose:b755df42a70a5990a84bb07e767ab460f454adaa0a1fdae1b0a107a0ec444f6e",
+  "sourceReviewVerdict": "changes-requested",
+  "resolvedFindings": [
+    {
+      "id": "C1-PR-001",
+      "resolution": "design.md 新增 D14 冻结 YAML 解析契约：手写最小子集解析器，支持 block mapping/sequence/flow sequence/scalars/nested/基础类型/注释/多行字符串，不支持 anchor/alias/multi-doc/tag/complex flow mapping。解析失败→FactConflict 不 throw。spec.md 新增 Requirement: YAML manifest 解析使用手写最小子集（3 Scenarios）。tasks.md 新增第 9 组（5 tasks）。proposal.md 新增 item 8。"
+    },
+    {
+      "id": "C1-PR-002",
+      "resolution": "design.md 新增 D15 定义 ContextFile 物理 schema（schemaVersion/runId/deliveryId/changeKey/changeId/action/role/ownerAuthorization/inputRef/runPath + 可选 sourceReviewRun/sourceReviewVerdict/constraints）。createRun 写入前 validateContextFile 校验，Reader 读取校验失败→FactConflict。spec.md 新增 Requirement: context.json 物理 schema（3 Scenarios）。tasks.md 新增第 10 组（6 tasks）。proposal.md item 6 更新。"
+    },
+    {
+      "id": "C1-PR-003",
+      "resolution": "design.md 新增 D16 定义 Bootstrap Run 兼容性：检测（schemaVersion 缺失或<1）、读取（不强制 schema 校验、缺失字段用默认值、runStatus 从 result.json 存在性推断）、不修改/不迁移/不重写。新 Run 使用 schemaVersion=1 + 完整校验。spec.md 新增 Requirement: Bootstrap Run 兼容性（2 Scenarios）。tasks.md 新增第 11 组（5 tasks）。proposal.md 新增 item 9。"
+    }
+  ],
+  "formatFix": {
+    "issue": "tasks.md 缺少 ## N. 节标题分组标题，与 A1 archived tasks.md 格式不一致",
+    "fix": "tasks.md 重写为 13 个 ## N. 节标题分组，与 A1 格式一致"
+  },
+  "modifiedArtifacts": {
+    "proposal.md": "item 6 更新（ContextFile）、新增 item 8（YAML）、新增 item 9（Bootstrap）",
+    "design.md": "新增 D14/D15/D16、架构图新增 yaml-parser.ts、所有权表新增 ContextFile/validateContextFile/yaml-parser、不做节更新",
+    "spec.md": "新增 3 Requirements（YAML/context.json/Bootstrap），总 14 Requirements, 39 Scenarios",
+    "tasks.md": "格式修复 + 新增第 9/10/11 组 + 测试组新增 6 tasks，总 13 组 119 tasks"
+  },
+  "specStats": {
+    "requirements": 14,
+    "scenarios": 39,
+    "allAdded": true
+  },
+  "taskStats": {
+    "total": 119,
+    "completed": 0,
+    "pending": 119,
+    "groups": 13
+  },
+  "consistencyScan": {
+    "dimensionsScanned": 9,
+    "remainingContradictions": 0,
+    "dimensions": [
+      {
+        "id": 1,
+        "name": "proposal.md ↔ design.md 一致（10 项 What Changes → 16 个 D 决策）",
+        "status": "consistent"
+      },
+      {
+        "id": 2,
+        "name": "design.md ↔ spec.md 一致（每个 D 决策有对应 Requirement）",
+        "status": "consistent"
+      },
+      {
+        "id": 3,
+        "name": "spec.md ↔ tasks.md 一致（每个 Requirement 有对应 task）",
+        "status": "consistent"
+      },
+      {
+        "id": 4,
+        "name": "tasks.md ↔ design.md 文件规划一致（8 生产文件 + 7 测试文件）",
+        "status": "consistent"
+      },
+      {
+        "id": 5,
+        "name": "RunResultFile schema 跨文档一致（design D7/D8 ↔ spec 2 Requirements ↔ tasks 5.x）",
+        "status": "consistent"
+      },
+      {
+        "id": 6,
+        "name": "writeRunResult 签名跨文档一致（design D5 ↔ spec Requirement ↔ tasks 4.x）",
+        "status": "consistent"
+      },
+      {
+        "id": 7,
+        "name": "新增 YAML/context.json/Bootstrap 契约跨文档一致（design D14/D15/D16 ↔ spec 3 Requirements ↔ tasks 9/10/11 ↔ proposal items）",
+        "status": "consistent"
+      },
+      {
+        "id": 8,
+        "name": "不做清单跨文档一致（design 不做 ↔ proposal Impact ↔ tasks 13.7/13.8）",
+        "status": "consistent"
+      },
+      {
+        "id": 9,
+        "name": "tasks.md 格式与 A1 一致（## N. 节标题 + - [ ]N.M 格式）",
+        "status": "consistent"
+      }
+    ]
+  },
+  "verificationResults": {
+    "openspecValidate": {
+      "command": "npx openspec validate formal-fact-reader-and-persistence --strict",
+      "status": "passed",
+      "result": "Change 'formal-fact-reader-and-persistence' is valid"
+    },
+    "typecheck": {
+      "command": "npm run typecheck",
+      "status": "passed"
+    },
+    "lint": {
+      "command": "npm run lint",
+      "status": "passed"
+    },
+    "fullTest": {
+      "status": "not-applicable",
+      "result": "Not authorized and not run."
+    }
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "nextAction": "review-propose",
+  "nextActionNote": "reviewer 重新审查修订后的 proposal 产物，确认 C1-PR-001/002/003 已解决且无新矛盾。",
+  "blockedOn": []
+}

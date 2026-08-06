@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-067-review-apply",
+  "status": "completed",
+  "verdict": "approved",
+  "summary": "C1 Apply is approved. Change Verification is passed; reconstructCurrentRun now fails closed for non-ENOENT result read failures, and review verdict integrity is validated before immutable terminal publication.",
+  "reviewedResultRef": "run-result:.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-066-revise-apply/result.json;sha256:b1a331c58523ee4335eee9c2ddb2042438b0b30ec83af1d668ba3c03ea47c656",
+  "blockingFindings": [],
+  "nonBlockingFindings": [],
+  "resolvedFindings": [
+    {
+      "id": "C1-AP-005",
+      "resolution": "Only ENOENT maps to pending; all other result-path read failures reject before publication."
+    },
+    {
+      "id": "C1-AP-006",
+      "resolution": "Context-aware review verdict validation runs before terminal result publication."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "OpenSpec strict validation",
+        "status": "passed"
+      },
+      {
+        "name": "Typecheck",
+        "status": "passed"
+      },
+      {
+        "name": "Build",
+        "status": "passed"
+      },
+      {
+        "name": "Lint",
+        "status": "passed"
+      },
+      {
+        "name": "Unit tests",
+        "status": "passed",
+        "result": "250 tests passed."
+      },
+      {
+        "name": "Change Verification",
+        "status": "passed",
+        "result": "verification.md is present and complete."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run."
+      }
+    ]
+  },
+  "nextActionRecommendation": "owner authorization required for archive",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

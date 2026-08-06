@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-036-explore",
+  "status": "completed",
+  "summary": "C1 formal-fact-reader-and-persistence explore 完成。探索了 FormalFactSnapshot 只读输入视图、正式事实 Reader（Delivery Manifest / OpenSpec 目录结构 / Run 文件 / Git 只读命令）、Run 原子持久化、ResultRef adapter 映射的范围、契约和推荐结构。C1 消费 B1 已冻结的领域类型、Schema 校验、Run ID 纯函数和 terminal immutability，消费 A1 的 atomic-write / paths / errors / external-command 基础设施。确定了 fail-closed 冲突检测机制（FactConflict[]）、自引用 Commit SHA 禁止（使用 content hash）、OpenSpec CLI 不调用（只读目录结构）等关键边界。",
+  "exploreArtifact": {
+    "path": "openspec/changes/formal-fact-reader-and-persistence/explore.md",
+    "sha256": "37d096a01a6d3554809b81e5082f07ebeb3d4751fe8f4dbf6f7f1f8827b78f53"
+  },
+  "activation": {
+    "manifestUpdate": "openspec/delivery-groups/20260806-01-deterministic-core.yaml",
+    "change": "C1 state: planned → active",
+    "openspecYamlCreated": "openspec/changes/formal-fact-reader-and-persistence/.openspec.yaml"
+  },
+  "scopeSummary": {
+    "inScope": [
+      "FormalFactSnapshot 只读输入视图类型定义",
+      "正式事实 Reader（Delivery Manifest / OpenSpec 目录 / Run 文件 / Git 只读）",
+      "Run 文件系统遍历（为 B1 Run ID 纯函数提供 Run-ID 列表）",
+      "Run 原子持久化（创建目录 / 写入三文件 / assertMutable / Schema 校验）",
+      "ResultRef adapter 映射（逻辑引用 ↔ Run 路径 + content hash）",
+      "Git 只读边界摘要（branch / HEAD / status，不写入状态文件）",
+      "fail-closed 冲突检测（FactConflict[]）",
+      "fixture 集成测试"
+    ],
+    "outOfScope": [
+      "Policy 引擎（canRun / next / diagnose）— D1",
+      "诊断 CLI — E1",
+      "完整 OpenSpec CLI 集成 — 下一 Delivery",
+      "Review / Findings 写入闭环 — 下一 Delivery",
+      "Change Verification 调度 — 下一 Delivery",
+      "actualChangeSet 计算 — Change Execution Loop Delivery",
+      "自动 Commit / Push / Merge — 下一 Delivery",
+      "Delivery Full Test / Finalize — F1",
+      "Archify / CodeGraph 集成 — 后续 Delivery",
+      "通用 Migration Framework — 不建立"
+    ]
+  },
+  "keyDecisions": [
+    "FormalFactSnapshot 字段直接映射 delivery-lifecycle.md Section 5 Policy 输入清单",
+    "Reader 遵循 One fact, one authority：每个事实从唯一权威来源读取",
+    "fail-closed：冲突收集为 FactConflict[]，Reader 不自动择优，Policy 在冲突时 blocked",
+    "Reader 不调用 OpenSpec CLI，只读取目录结构存在性与状态摘要",
+    "Run 持久化调用 B1 assertMutable + Schema 校验 + A1 atomicWriteFile",
+    "ResultRef versionFingerprint 使用 content hash（SHA-256），不用自引用 Commit SHA",
+    "Git 边界摘要只读不写，不持久化到状态文件",
+    "Run ID 分配：C1 文件系统收集 Run-ID 列表 → B1 allocateNextNnn 纯函数",
+    "YAML 解析倾向手写最小子集解析器（避免外部运行时依赖），Propose 阶段最终确认"
+  ],
+  "b1Consumption": {
+    "types": "src/domain/types.ts — 11 领域对象，C1 owns persistence 标注",
+    "schemaValidator": "src/domain/schema-validator.ts — Run 写入前 Schema 校验",
+    "runId": "src/domain/run-id.ts — allocateNextNnn / validateRunIdUniqueness（C1 提供文件系统 Run-ID 列表）",
+    "terminal": "src/domain/terminal.ts — assertMutable（Run 写入前 terminal 拦截）"
+  },
+  "a1Consumption": {
+    "atomicWrite": "src/shared/atomic-write.ts — atomicWriteFile（临时文件 + rename）",
+    "paths": "src/shared/paths.ts — normalizeSeparators / joinPath / relativePath",
+    "errors": "src/shared/errors.ts — FlowkitError",
+    "externalCommand": "src/shared/external-command.ts — Git 只读命令封装"
+  },
+  "nextActionRecommendation": "review-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "lastCommit": "180f161 checkpoint(domain-and-state-schema): B1 Change Checkpoint",
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit. Change activation is not a formal Git boundary."
+  },
+  "blockedOn": []
+}

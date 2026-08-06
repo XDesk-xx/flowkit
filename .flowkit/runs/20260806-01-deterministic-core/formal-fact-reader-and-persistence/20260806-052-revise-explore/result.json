@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-052-revise-explore",
+  "status": "completed",
+  "summary": "C1 revise-explore 完成。修复了 051-review-explore 的 1 个 P1 blocking finding (C1-EX-010) 并进行了全文档一致性扫描以打破'修旧引新'循环。C1-EX-010：Q5 声明 writeRunResult(runPath, resultFile: RunResultFile) 并在函数内部校验+序列化，但 Q7 说'序列化为 JSON 字符串交给 writeRunResult'——输入类型矛盾（object vs string），序列化归属矛盾。修复：Q7 write behavior 重写为只构造 RunResultFile 对象并传递给 writeRunResult，不序列化。校验、序列化、独占发布全部在 writeRunResult（Q5）内部完成。writeRunResult 函数注释新增 C1-EX-010 归属声明（调用方传入对象、本函数校验、本函数序列化、本函数发布、adapter 不校验不序列化不发布）。adapter 边界更新为'只负责构造对象和读取派生'。全文档一致性扫描覆盖 8 个维度：writeRunResult 签名、函数注释、完成流程、Q7 write behavior、Q7 adapter 边界、Section 7 item 9、Section 8 item 5、Section 9 item 7——全部对齐。发现并修复了 Section 8 item 5 残留的'序列化'引用（改为'构造对象'）。",
+  "reviewedResultRef": "run-result:.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-051-review-explore/result.json;sha256:b20fb54733e7b3df22f511753cf8266edf01bf2d34d9681708111e820993be62",
+  "revisedArtifact": {
+    "path": "openspec/changes/formal-fact-reader-and-persistence/explore.md",
+    "sha256": "3497f11b57a73731b2f06b37bb446ff6b61687b32829932c96e0fc1eeb3d17ae"
+  },
+  "resolvedFindings": [
+    {
+      "id": "C1-EX-010",
+      "resolution": "Q7 write behavior 重写：(1) 移除'序列化为 JSON 字符串交给 writeRunResult'，替换为'构造 RunResultFile 对象并传递给 writeRunResult(runPath, resultFile)'；(2) 明确'adapter 不序列化'——序列化在 writeRunResult 内部完成；(3) writeRunResult 函数注释新增 C1-EX-010 归属声明：调用方传入 RunResultFile 对象（不接受 JSON 字符串）、本函数校验、本函数序列化、本函数执行 temp-file+fs.link 独占发布、adapter 不校验不序列化不发布；(4) adapter 边界更新为'只负责构造对象和读取派生，不负责序列化和发布'。"
+    }
+  ],
+  "consistencySweep": {
+    "triggerReason": "打破 C1-EX-006→EX-009→EX-010 的'修旧引新'循环——每轮只改局部未做跨章节一致性校验",
+    "dimensionsChecked": 8,
+    "results": [
+      {
+        "dimension": "writeRunResult 签名（Q5 line 483-486）",
+        "status": "consistent",
+        "value": "writeRunResult(runPath: string, resultFile: RunResultFile): Promise<void> — 接受对象"
+      },
+      {
+        "dimension": "writeRunResult 函数注释（Q5 line 475-481）",
+        "status": "fixed",
+        "before": "只提到 assertMutable 和 fs.link 发布，未提到校验和序列化归属",
+        "after": "新增 C1-EX-010 归属声明：调用方传入对象、本函数校验、本函数序列化、本函数发布、adapter 不校验不序列化不发布"
+      },
+      {
+        "dimension": "Q7 write behavior（line 769-785）",
+        "status": "fixed",
+        "before": "序列化为 JSON 字符串交给 writeRunResult（C1-EX-010 矛盾）",
+        "after": "构造 RunResultFile 对象传递给 writeRunResult，adapter 不序列化"
+      },
+      {
+        "dimension": "Q7 adapter 边界（line 787-793）",
+        "status": "fixed",
+        "before": "只负责序列化和读取派生（C1-EX-010 矛盾）",
+        "after": "只负责构造对象和读取派生，不负责序列化和发布"
+      },
+      {
+        "dimension": "Section 7 item 9（验收标准）",
+        "status": "fixed",
+        "before": "C1-EX-006 + C1-EX-009，未提到序列化归属",
+        "after": "C1-EX-006 + C1-EX-009 + C1-EX-010，明确 adapter 不序列化、writeRunResult 接受对象不接受字符串"
+      },
+      {
+        "dimension": "Section 8 item 5（探索结论）",
+        "status": "fixed",
+        "before": "Q7 adapter 只负责序列化和读取派生（C1-EX-010 矛盾残留）",
+        "after": "Q7 adapter 只负责构造对象和读取派生，不序列化、不发布——校验、序列化、独占发布全部在 writeRunResult 内部完成"
+      },
+      {
+        "dimension": "Section 9 item 7（Review 重点）",
+        "status": "fixed",
+        "before": "C1-EX-006 + C1-EX-009，未提到序列化归属",
+        "after": "C1-EX-006 + C1-EX-009 + C1-EX-010，明确 adapter 不序列化、writeRunResult 接受对象、校验+序列化+发布在函数内部"
+      },
+      {
+        "dimension": "Q5 完成流程 step 4（序列化）",
+        "status": "consistent",
+        "value": "step 4 '序列化：将 RunResultFile 序列化为 JSON 字符串' 在 writeRunResult 内部 — 与 Q7 'adapter 不序列化' 一致"
+      }
+    ],
+    "remainingContradictions": 0
+  },
+  "changesSummary": {
+    "Q5_writeRunResult_comment": "新增 C1-EX-010 归属声明：6 条（传入对象、本函数校验、本函数校验 actionResult、本函数序列化、本函数发布、adapter 不校验不序列化不发布）",
+    "Q7_write_behavior": "重写：构造对象 → 传递给 writeRunResult → adapter 不序列化 → 校验序列化发布在 writeRunResult 内部",
+    "Q7_adapter_boundary": "更新：只负责构造对象和读取派生，不负责序列化和发布",
+    "section7_item9": "更新：C1-EX-006 + C1-EX-009 + C1-EX-010，新增序列化归属和输入类型",
+    "section8_item5": "修复：'序列化' → '构造对象'，新增 C1-EX-010",
+    "section9_item7": "更新：C1-EX-006 + C1-EX-009 + C1-EX-010，新增序列化归属和输入类型"
+  },
+  "rootCauseAnalysis": {
+    "pattern": "C1-EX-006→EX-009→EX-010 三轮'修旧引新'循环",
+    "rootCause": "每轮修订只聚焦 reviewer 指出的单个 finding，未做跨章节一致性校验。Q5 改了签名/流程，Q7 没同步；Q7 改了写入路径，没回头检查 Q5 签名。",
+    "correctiveAction": "本轮在修复 C1-EX-010 后执行全文档一致性扫描（8 个维度），发现并修复了 Section 8 item 5 残留的'序列化'引用。扫描结果全部 consistent。",
+    "preventionForFuture": "后续修订应在提交前执行一致性扫描，确认所有交叉引用对齐。"
+  },
+  "scopeDiscipline": {
+    "scopeExpanded": false,
+    "reason": "只处理 C1-EX-010 + 一致性扫描，不扩张 Change 范围"
+  },
+  "nextActionRecommendation": "review-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "lastCommit": "180f161 checkpoint(domain-and-state-schema): B1 Change Checkpoint",
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "blockedOn": []
+}

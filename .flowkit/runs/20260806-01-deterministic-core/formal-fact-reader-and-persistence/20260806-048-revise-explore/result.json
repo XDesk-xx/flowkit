@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-048-revise-explore",
+  "status": "completed",
+  "summary": "C1 revise-explore 完成。修复了 047-review-explore 的 1 个 P1 blocking finding (C1-EX-008)。C1-EX-008：RunResultFile 的 executionStatus 在 envelope 和 actionResult 两处重复，但没有跨字段一致性规则——runStatus:completed + 顶层 executionStatus:completed + 嵌套 actionResult.executionStatus:failed 会被接受。修复为单源真相：移除 RunResultFile 顶层 executionStatus 字段，当 actionResult 存在时从 actionResult.executionStatus 派生。允许组合表更新为 runStatus + actionResult 存在性 + actionResult.executionStatus 三维校验。禁止组合表新增'顶层 executionStatus 字段存在 → reject'。写入流程 step 3 更新校验规则。读取流程新增 step 5 校验顶层字段不存在。新增 5 个 C1-EX-008 mismatch fixture。验收标准 item 10/11/12 更新，探索结论 item 7 更新，Review 重点 item 8/9 更新。",
+  "reviewedResultRef": "run-result:.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-047-review-explore/result.json;sha256:2a4b092668380fa581cfd3eb0a5634f1d93442407ea758b0da270970e0c4a6bf",
+  "revisedArtifact": {
+    "path": "openspec/changes/formal-fact-reader-and-persistence/explore.md",
+    "sha256": "dcffc8105d89bfeb32cb2625dc569ceef3bd97a3812e02a66d12794eccd28dfc"
+  },
+  "resolvedFindings": [
+    {
+      "id": "C1-EX-008",
+      "resolution": "executionStatus 单源真相：(1) RunResultFile 移除顶层 executionStatus 字段——当 actionResult 存在时从 actionResult.executionStatus 派生，当 actionResult 不存在（runStatus=failed/cancelled）时没有 executionStatus；(2) 允许组合表更新为 runStatus + actionResult 存在性 + actionResult.executionStatus 三维校验；(3) 禁止组合表新增'顶层 executionStatus 字段存在 → reject'；(4) 写入流程 step 3 更新：不得包含顶层 executionStatus 字段 + runStatus + actionResult + actionResult.executionStatus 组合校验；(5) 读取流程新增 step 5 校验顶层字段不存在；(6) 新增 5 个 mismatch fixture（顶层字段存在 reject、completed 缺 actionResult reject、in-progress reject、failed 含 actionResult reject、cancelled 含 actionResult reject）。"
+    }
+  ],
+  "changesSummary": {
+    "Q5_RunResultFile_type": "移除顶层 executionStatus 字段，新增 C1-EX-008 单源真相说明",
+    "Q5_allowed_combinations": "表头从 runStatus+executionStatus+actionResult 改为 runStatus+actionResult+actionResult.executionStatus",
+    "Q5_forbidden_combinations": "更新为三维校验，新增'顶层 executionStatus 字段存在 → reject'",
+    "Q5_key_distinction": "executionStatus:failed 引用改为 actionResult.executionStatus:failed",
+    "Q5_write_flow_step3": "新增'不得包含顶层 executionStatus 字段'，校验改为 runStatus+actionResult+actionResult.executionStatus 组合",
+    "Q5_reader_flow": "新增 step 5 校验顶层字段不存在，step 6 改为 runStatus+actionResult+actionResult.executionStatus 组合校验",
+    "Q5_fixtures": "新增 5 个 C1-EX-008 mismatch fixture",
+    "section7": "item 10 更新（移除'可选 executionStatus'改为'从 actionResult.executionStatus 派生'），item 11 更新（7 个非法组合），item 12 更新（三维组合校验）",
+    "section8": "item 7 更新（executionStatus 不在顶层，从 actionResult 派生）",
+    "section9": "item 8 更新（C1-EX-008 单源真相），item 9 更新（7 个非法含顶层字段 reject）"
+  },
+  "singleSourceOfTruthDesign": {
+    "problem": "RunResultFile 有可选顶层 executionStatus + actionResult.executionStatus（必填），两者重复但无一致性规则。runStatus:completed + 顶层 executionStatus:completed + actionResult.executionStatus:failed 会被接受——Policy-facing 重建事实不一致。",
+    "solution": "移除顶层 executionStatus 字段。当 actionResult 存在时，executionStatus 从 actionResult.executionStatus 派生。当 actionResult 不存在（runStatus=failed/cancelled）时，没有 executionStatus。单源真相，无重复，无跨字段不一致。",
+    "before": "RunResultFile { runStatus, executionStatus?, actionResult?, ... } — 两个 executionStatus 来源",
+    "after": "RunResultFile { runStatus, actionResult?, ... } — executionStatus 只从 actionResult.executionStatus 派生",
+    "combinationTable": "三维校验：runStatus + actionResult 存在性 + actionResult.executionStatus",
+    "mismatchFixtures": 5,
+    "ownershipBoundary": "C1 拥有物理传输 schema RunResultFile，决定 executionStatus 的序列化方式（不在顶层，从 actionResult 派生）"
+  },
+  "scopeDiscipline": {
+    "scopeExpanded": false,
+    "reason": "只处理 C1-EX-008，不扩张 Change 范围"
+  },
+  "nextActionRecommendation": "review-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "lastCommit": "180f161 checkpoint(domain-and-state-schema): B1 Change Checkpoint",
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "blockedOn": []
+}

@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-047-review-explore",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "C1",
+  "changeId": "formal-fact-reader-and-persistence",
+  "action": "review-explore",
+  "role": "reviewer",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-046-revise-explore/",
+  "inputs": [
+    "openspec/changes/formal-fact-reader-and-persistence/explore.md",
+    ".flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-046-revise-explore/result.json",
+    "src/domain/types.ts",
+    "docs/core-model.md"
+  ],
+  "constraints": {
+    "readOnlyExceptCurrentRun": true,
+    "fullTestAllowed": false,
+    "mayArchive": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-047-review-explore/"
+}

@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-045-review-explore",
+  "status": "completed",
+  "summary": "C1 Explore review requests changes. Revision 044 resolves terminal-result exclusive publication, but the design requires B1 schema validation of ActionResultWithoutRunRef even though B1 exposes no ActionResult validator and the projection deliberately lacks ActionResult.required runRef. The proposed validation path is therefore not implementable as written.",
+  "reviewedResultRef": "run-result:.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-044-revise-explore/result.json;sha256:1f18c3c1addc89b90672e56b965ac5841aaf296a88f746e7ad148355c9cb6e6f",
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "C1-EX-007",
+      "title": "Physical ActionResult projection has no defined executable validator",
+      "severity": "P1",
+      "evidence": "Explore Q5 requires actionResult to pass B1 schema validation, while the physical type is ActionResultWithoutRunRef. src/domain/schema-validator.ts exports state guards and validateRun only; it has no validator for ActionResult. A full ActionResult validator cannot accept the serialized projection because B1 ActionResult requires runRef, which C1 deliberately omits to avoid self-reference.",
+      "requiredChange": "Define the C1-owned validator for ActionResultWithoutRunRef: enumerate its required fields and nested ResultRef validation rules, validate the physical projection before write and read, then reconstruct runRef and validate any remaining logical invariants. Do not claim to call a nonexistent B1 ActionResult validator. Add malformed projection fixtures for missing and invalid required fields."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "resolvedFindings": [
+    {
+      "id": "C1-EX-006",
+      "resolution": "Resolved by revision 044: temp-file plus fs.link provides no-replace terminal publication and concurrent writers lose with RUN_TERMINAL."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "Formal implementation-contract review",
+        "status": "passed",
+        "result": "Compared C1 requested validation calls with B1 exported schema-validator functions and ActionResult type requirements."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

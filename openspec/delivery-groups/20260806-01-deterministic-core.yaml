@@ -106,7 +106,7 @@ changes:
     required: true
     dependsOn:
       - domain-and-state-schema
-    state: planned
+    state: completed
     outputs:
       - FormalFactSnapshot 只读输入视图
       - 正式事实 Reader

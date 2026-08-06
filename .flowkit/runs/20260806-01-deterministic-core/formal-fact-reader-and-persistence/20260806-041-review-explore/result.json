@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-041-review-explore",
+  "status": "completed",
+  "summary": "C1 Explore review requests changes. Revision 040 resolves the prior terminal-status representation and staging-cleanup findings, but its physical result schema is self-referential: ActionResult requires runRef, while the adapter defines runRef.versionFingerprint as the SHA-256 of the result.json that contains that ActionResult. No stable first-write representation or validation rule is defined.",
+  "reviewedResultRef": "run-result:.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-040-revise-explore/result.json;sha256:d42d9de4c4a9ace7755f3b0e704e6b92466a55d365b94c9e6ecf615bc841110f",
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "C1-EX-005",
+      "title": "ResultRef content-hash design is self-referential",
+      "severity": "P1",
+      "evidence": "RunResultFile.actionResult is an ActionResult, whose required runRef includes versionFingerprint. Q7 defines a run-result versionFingerprint as SHA-256 of the complete result.json content. Because result.json contains actionResult.runRef.versionFingerprint, the value to hash is part of the content being hashed; the proposed write path has no stable construction or read-time verification rule for this cycle.",
+      "requiredChange": "Define a non-self-referential physical serialization boundary. For example, persist an ActionResult payload without its self ResultRef and derive runRef from the finalized file on read, or define and validate a canonical hash projection that excludes the self-reference field. Specify exact write/read behavior and fixtures proving replacement detection and rejection of an incorrect fingerprint."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "resolvedFindings": [
+    {
+      "id": "C1-EX-003",
+      "resolution": "Resolved by revision 040: RunResultFile explicitly carries terminal runStatus and validates legal executionStatus combinations."
+    },
+    {
+      "id": "C1-EX-004",
+      "resolution": "Resolved by revision 040: staging cleanup remains createRun best-effort work and is not assigned to read-only doctor."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "Formal contract review",
+        "status": "passed",
+        "result": "Reviewed revised Explore against B1 ActionResult/ResultRef types, frozen ResultRef contract, and Q5/Q7 serialization design."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}
