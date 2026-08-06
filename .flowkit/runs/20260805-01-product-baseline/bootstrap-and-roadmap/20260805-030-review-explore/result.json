@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-030-review-explore",
+  "status": "completed",
+  "summary": "D1 Explore 对 Bootstrap 最小循环、续接切点、Git 边界、owner 授权、媒介中立和 C1/D1 分界的处理总体与 A1/B1/C1 一致，且固定范围未改动冻结产物。但 Run 创建规则遗漏“目标改变”这一 B1 已冻结的边界，可能让不同目标错误复用同一 Run；在修正前不满足进入 Propose 的 review-explore 条件。",
+  "findings": {
+    "blocking": [
+      {
+        "id": "D1-RE-001",
+        "title": "Bootstrap Run 创建规则遗漏目标变化边界",
+        "location": "openspec/changes/bootstrap-and-roadmap/explore.md:264-272",
+        "problem": "第 5.1 节将新 Run 限定为正式 Action 改变、执行角色改变、或 failed/cancelled 后重试，却未将目标改变列为新 Run 条件；第 5.1 随后又引用“同一角色、同一 Action、同一目标”才可复用 Run。",
+        "impact": "同一角色、同一 Action 但目标已经改变时，Bootstrap 操作规则可能错误复用旧 Run，违背 B1 对 Run 作为一次特定 Action 执行实例及同一目标限制的冻结语义。",
+        "requiredResolution": "在 revise-explore 中把“本次目标改变”补为新 Run 边界，并明确只有 Action、角色和目标均未改变时，多轮工作与普通 Commit 才保持在同一个 Run；不得改变 D1 的媒介中立、Git 边界或 A1/B1/C1 冻结范围。"
+      }
+    ],
+    "nonBlocking": []
+  },
+  "verificationReviewed": [
+    "复核 029-explore Action、Context 和 Result：D1 仅创建 Explore artifact 与 Author Run，下一 Action 为 review-explore。",
+    "检查固定范围 git diff --name-status 9d475d12eb5a83d346c77e1a6a3c163e473ab179 25bea7d7b18342d0c2abb88e3d15269c6f044e65：仅含 029-explore Run 与 D1 explore.md。",
+    "执行 git diff --check 9d475d12eb5a83d346c77e1a6a3c163e473ab179 25bea7d7b18342d0c2abb88e3d15269c6f044e65：通过，exit code 0。",
+    "复核 D1 最小执行循环、Continuation Context、Git Start/Checkpoint/Final/普通 Commit、owner 授权、媒介中立和 C1/D1 分界：未发现对 A1/B1/C1 的范围扩张、Provider/Forge 固定、第二套 bootstrap-only 状态系统或 Runner 实现。",
+    "对照 B1 flowkit-core-model spec 的 Run 规则：同一 Run 仅适用于同一角色、同一 Action、同一目标；发现 D1-RE-001。",
+    "本轮未运行 Full Test，未修改正式 D1 Explore artifact、冻结产物、先前 Run 或 Delivery 状态，未提交或推送。"
+  ],
+  "verdict": "changes-requested",
+  "nextActionRecommendation": "revise-explore"
+}

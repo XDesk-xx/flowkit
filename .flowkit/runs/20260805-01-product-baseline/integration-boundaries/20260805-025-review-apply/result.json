@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-025-review-apply",
+  "status": "completed",
+  "summary": "C1 024-apply 的正式集成边界文档、OpenSpec 契约覆盖、任务完成状态和 B1 范围均符合 approved Proposal，严格 OpenSpec 校验与 whitespace 检查也通过。但 verification.md 将同三项检查同时表述为 not-run 和已运行/通过，导致 Apply 验证状态自相矛盾；在修正该正式验证记录前，不满足 Archive 的 review-apply 条件。",
+  "findings": {
+    "blocking": [
+      {
+        "id": "C1-RA-001",
+        "title": "Apply Verification 对适用检查的状态自相矛盾",
+        "location": "openspec/changes/integration-boundaries/verification.md:41-45",
+        "problem": "第 4 节称 git diff --check、OpenSpec strict validation 和 U+FFFD 扫描为“适用但标记为 not-run”，但第 43-45 行又将三项均记录为已运行且通过。",
+        "impact": "正式 Verification 无法无歧义地表达哪些检查已执行、哪些仅待 review-apply 复核，Archive 不能依赖该记录确认 C1 的验证状态。",
+        "requiredResolution": "在 revise-apply 中将第 4 节改为与第 3 节一致的状态：三项检查均为已运行/通过，Full Test 单独保持 not-run/not-applicable；不得改变 C1 逻辑边界、Proposal bundle 或 B1 冻结产物。"
+      }
+    ],
+    "nonBlocking": []
+  },
+  "verificationReviewed": [
+    "复核 024-apply Action、Context 和 Result：Apply 仅创建 docs/integration-boundaries.md、verification.md，完成 tasks.md，并保持 C1 的媒介中立约束。",
+    "检查固定范围 git diff --name-status 1a97837549c88cf76db0f998f8eb846b5eb9d896 f848384e7aa881b1b387908f192843ecbb76a5e0：仅含 024-apply Run、C1 正式文档、verification.md 和 tasks.md。",
+    "执行 git diff --check 1a97837549c88cf76db0f998f8eb846b5eb9d896 f848384e7aa881b1b387908f192843ecbb76a5e0：通过，exit code 0。",
+    "执行 npx openspec validate integration-boundaries --strict：通过（Change 'integration-boundaries' is valid）。",
+    "检查 tasks.md：没有未完成的 [ ] 项；复核 docs/integration-boundaries.md 与 C1 Design D1-D13、11 个 Spec Requirements，未发现媒介固定、Provider/Registry/Materializer/拓扑引入。",
+    "检查固定范围对 B1 冻结文档和 flowkit-core-model capability 的变更：无输出，确认未重开 B1。",
+    "复核 verification.md 第 4 节：发现 C1-RA-001 的 not-run 与已运行/通过矛盾。",
+    "本轮未运行 Full Test，未修改正式 C1 产物、先前 Run 或 Delivery 状态，未提交或推送。"
+  ],
+  "verdict": "changes-requested",
+  "nextActionRecommendation": "revise-apply"
+}

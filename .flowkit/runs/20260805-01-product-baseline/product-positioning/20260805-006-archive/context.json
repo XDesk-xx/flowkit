@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-006-archive",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "A1",
+  "changeId": "product-positioning",
+  "action": "archive",
+  "role": "author",
+  "inputRef": "1c6c2c63b4a024e44b4dd74892c3943c94d4461b",
+  "sourceReviewRun": ".flowkit/runs/20260805-01-product-baseline/product-positioning/20260805-005-review-apply/result.json",
+  "reviewVerdict": "approved",
+  "archivePath": "openspec/changes/archive/2026-08-05-product-positioning/",
+  "mainSpecPath": "openspec/specs/flowkit-product-positioning/spec.md",
+  "statePath": "openspec/delivery-groups/20260805-01-product-baseline.yaml",
+  "constraints": {
+    "ownerAuthorizedArchive": true,
+    "ownerAuthorizedCheckpoint": true,
+    "fullTestAllowed": false,
+    "mayStartNextChange": false,
+    "mayFinalizeDelivery": false
+  }
+}

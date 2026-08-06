@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-007-explore",
+  "status": "completed",
+  "summary": "Explored and refined the minimal Flowkit core model for Delivery, Change, Action, Verification, Run scoping, deterministic recovery, the generic reviewer entry, Review Run creation timing, and stage-specific Skill boundaries. The result preserves the A1 product boundary and is ready for whole-boundary review-explore before Propose.",
+  "outputs": [
+    "openspec/changes/core-model/explore.md"
+  ],
+  "proposedDecisions": [
+    "Change states remain planned, active, completed, cancelled.",
+    "Review, revision, verification, and checkpoint do not form an additional Phase layer.",
+    "The unique legal next Action is computed by Policy instead of stored in a current pointer.",
+    "Apply review uses review-apply and findings are corrected through fix-review-findings.",
+    "Change-level Runs use .flowkit/runs/<delivery-id>/<change-id>/<run-id>/.",
+    "Delivery-level Runs should use the reserved _delivery directory.",
+    "Full Test remains a Delivery-level owner-authorized boundary.",
+    "Reviewer uses the generic review entry, while the formal Action remains review-explore, review-propose, or review-apply.",
+    "The review entry may execute only the unique Review Action already derived by Policy.",
+    "Discussion and ordinary commits within the same role and Action remain part of the same Run.",
+    "A reviewer Run is created when the reviewer actually begins the Review Action; the author does not pre-create an empty review Run.",
+    "A Review Action may name an execution Skill, but the Skill does not own flow decisions and the exact declaration protocol belongs to C1."
+  ],
+  "reviewFocus": [
+    "Whether Delivery needs a paused state.",
+    "Whether _delivery is the correct reserved directory for Delivery-level Runs.",
+    "Whether the proposed Full Test status set is minimal.",
+    "Whether next Action can remain fully derived without a persisted current pointer.",
+    "Whether review-apply and fix-review-findings should be the canonical Apply review loop names.",
+    "Whether the generic review entry remains deterministic without a pending placeholder Run.",
+    "Whether the proposed Action and role boundary is sufficient for deciding when a new Run is created.",
+    "Whether stage-specific Skill use remains lightweight and avoids creating a Skill Router.",
+    "Whether the full B1 Explore remains inside the B1 boundary without defining C1 protocols or D1 operating steps."
+  ],
+  "verification": {
+    "status": "not-run",
+    "reason": "Explore produces a decision artifact for review; no Apply verification or Full Test is applicable."
+  },
+  "nextAction": "review-explore"
+}

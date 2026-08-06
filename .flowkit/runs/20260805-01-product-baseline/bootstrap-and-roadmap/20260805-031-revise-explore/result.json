@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-031-revise-explore",
+  "status": "completed",
+  "summary": "Resolved D1-RE-001 Blocking Finding from 030-review-explore and applied an owner-confirmed correction. (1) D1-RE-001: added '本次目标改变' as a new Run creation boundary in explore.md §5.1, and rewrote the reuse rule to explicitly require formal Action, execution role, AND current goal all unchanged before multi-round work or ordinary commits may stay in the same Run. (2) Owner-confirmed correction: removed §7.4 'Change Start Commit' pseudo-boundary entirely, because reference §8.1 freezes only 3 formal Git boundaries (Delivery Start, Change Checkpoint, Delivery Final); added a clarifying note in §7.1 that Change activation (manifest planned→active + .openspec.yaml) is not a formal Git boundary and does not require a dedicated commit; renumbered §7.5–7.10 → §7.4–7.9 to align with reference §8 structure. D1's exploration conclusions, media neutrality, C1/D1 boundary, and A1/B1/C1 frozen scope are preserved unchanged.",
+  "findingsAddressed": {
+    "D1-RE-001": "§5.1 boundary list now includes '本次目标改变' alongside formal Action change, execution role change, and failed/cancelled retry. The reuse rule now reads: only when formal Action, execution role, and current goal are all unchanged may multi-round exchanges, content refinement, supplementary checks, and ordinary commits remain in the same Run; any one changing requires a new Run. This removes the prior self-contradiction where the reuse rule referenced '同一目标' but the boundary list omitted goal change."
+  },
+  "ownerConfirmedCorrections": {
+    "section-7.4-change-start-pseudo-boundary": "Removed the entire §7.4 'Change Start Commit' section. That section erroneously gave Change activation a dedicated commit type and template (chore(flowkit): start <change-id>), elevating it to a pseudo-boundary alongside the 3 formal boundaries. Per reference §8.1, only Delivery Start, Change Checkpoint, and Delivery Final are formal Git boundaries; Change activation file changes are ordinary file changes that enter Git history with whichever commit naturally contains them. A one-line note was added to §7.1 stating Change activation is not a formal Git boundary. §7.5–7.10 were renumbered to §7.4–7.9 to match the reference §8 structure. This correction was owner-confirmed before the 030 review and explicitly deferred to this revise."
+  },
+  "verification": {
+    "gitDiffCheck": {
+      "status": "passed",
+      "command": "git diff --check",
+      "exitCode": 0
+    },
+    "ufffdScan": {
+      "status": "passed",
+      "file": "openspec/changes/bootstrap-and-roadmap/explore.md",
+      "count": 0
+    },
+    "jsonValid": {
+      "status": "passed",
+      "files": [
+        "context.json",
+        "result.json"
+      ]
+    }
+  },
+  "scopePreserved": {
+    "mediaNeutrality": "unchanged",
+    "gitBoundaryModel": "corrected to align with reference §8.1 three-boundary model; no new boundary introduced",
+    "c1D1Boundary": "unchanged",
+    "frozenChangesReopened": "none"
+  },
+  "nextAction": "review-explore",
+  "blockedOn": []
+}

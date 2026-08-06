@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-046-propose",
+  "status": "completed",
+  "summary": "Created E1 Proposal four-piece set: proposal.md (Why/What/Capabilities/Impact), design.md (8 Decisions covering Purpose texts, CJK fixes, fullTestStatus state machine, A1 history exception, Manifest as output, no new product capability, lifecycle, Full Test/Finalize separation), spec.md (7 Requirements with 15 Scenarios for flowkit-baseline-finalization-corrections capability), tasks.md (6 sections, 17 tasks). OpenSpec validate --strict passed. No Git Commit created.",
+  "artifactsProduced": [
+    "openspec/changes/baseline-finalization-corrections/proposal.md",
+    "openspec/changes/baseline-finalization-corrections/design.md",
+    "openspec/changes/baseline-finalization-corrections/specs/flowkit-baseline-finalization-corrections/spec.md",
+    "openspec/changes/baseline-finalization-corrections/tasks.md"
+  ],
+  "designDecisions": {
+    "D1": "Purpose text for 3 capability specs",
+    "D2": "CJK character fixes (U+515E->U+5176, U+5954->U+5957, not U+FFFD)",
+    "D3": "fullTestStatus state machine (not-ready -> awaiting-user-decision -> authorized -> passed/failed)",
+    "D4": "A1 history exception recorded in verification.md",
+    "D5": "Delivery Manifest as E1 controlled output",
+    "D6": "New capability records baseline quality standards, not product feature",
+    "D7": "E1 full lifecycle with review at each stage",
+    "D8": "Full Test and Finalize authorization separated"
+  },
+  "specRequirements": 7,
+  "specScenarios": 15,
+  "tasksTotal": 17,
+  "verification": {
+    "openspecValidateChange": {
+      "status": "passed",
+      "command": "npx openspec validate baseline-finalization-corrections --strict",
+      "result": "Change is valid"
+    },
+    "whitespaceScan": {
+      "status": "passed",
+      "files": ["proposal.md", "design.md", "spec.md", "tasks.md"],
+      "trailingWhitespace": 0,
+      "spaceBeforeTab": 0,
+      "ufffd": 0
+    },
+    "gitDiffCheck": {
+      "status": "passed",
+      "exitCode": 0
+    }
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "reason": "Per owner instruction and D1 frozen Git model: Action/Run do not auto-commit."
+  },
+  "nextAction": "review-propose",
+  "blockedOn": []
+}

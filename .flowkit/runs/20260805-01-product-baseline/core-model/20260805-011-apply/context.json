@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-011-apply",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "B1",
+  "changeId": "core-model",
+  "action": "apply",
+  "role": "author",
+  "inputRef": "94b17299ebe1d05ed4fd3482e836cd72556061a3",
+  "sourceReviewRun": "20260805-010-review-propose",
+  "sourceReviewVerdict": "approved",
+  "ownerAuthorization": {
+    "apply": true,
+    "commit": true,
+    "fullTest": false
+  },
+  "expectedOutputs": [
+    "docs/core-model.md",
+    "docs/delivery-lifecycle.md",
+    "docs/verification-model.md",
+    "openspec/changes/core-model/design.md",
+    "openspec/changes/core-model/tasks.md",
+    "openspec/changes/core-model/verification.md"
+  ],
+  "reviewFindingsConsumed": [
+    "NB-001",
+    "NB-002"
+  ],
+  "runPath": ".flowkit/runs/20260805-01-product-baseline/core-model/20260805-011-apply/",
+  "constraints": {
+    "commitAllowed": true,
+    "fullTestAllowed": false,
+    "mayAdvanceFlow": false,
+    "mayCreateReviewRun": false,
+    "mustPreserveProductPositioning": true,
+    "mustStayWithinB1": true,
+    "mustNotDefineC1Protocols": true,
+    "mustNotDefineD1OperationalSteps": true,
+    "mustNotImplementProductionCode": true
+  }
+}

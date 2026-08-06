@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-004-apply",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "A1",
+  "changeId": "product-positioning",
+  "action": "apply",
+  "role": "author",
+  "inputRef": "741c2bca194642b10785f654cd5a1ae5fdaee1af",
+  "contracts": [
+    "openspec/changes/product-positioning/explore.md",
+    "openspec/changes/product-positioning/proposal.md",
+    "openspec/changes/product-positioning/design.md",
+    "openspec/changes/product-positioning/specs/flowkit-product-positioning/spec.md",
+    "openspec/changes/product-positioning/tasks.md",
+    "openspec/changes/product-positioning/verification.md"
+  ],
+  "allowedPaths": [
+    "docs/product-positioning.md",
+    "openspec/changes/product-positioning/tasks.md",
+    "openspec/changes/product-positioning/verification.md",
+    ".flowkit/runs/20260805-01-product-baseline/product-positioning/20260805-004-apply/"
+  ],
+  "constraints": {
+    "fullTestAllowed": false,
+    "productionCodeAllowed": false,
+    "mayAdvanceToArchive": false,
+    "formalRolesMustBeNeutral": true
+  }
+}

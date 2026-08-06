@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-040-review-apply",
+  "status": "completed",
+  "reviewedResultRef": {
+    "kind": "content-sha256",
+    "value": "CC543BDFA013044B066EDA0747C48BAA565DBE7B07C20ED76F7D29A6AF247468",
+    "artifacts": [
+      "docs/bootstrap-reference.md",
+      "docs/development-roadmap.md",
+      "AGENTS.md",
+      ".codex/skills/flowkit-git-workflow/SKILL.md",
+      "openspec/changes/bootstrap-and-roadmap/verification.md",
+      "openspec/changes/bootstrap-and-roadmap/tasks.md"
+    ]
+  },
+  "summary": "D1 039-revise-apply 已完整解决 038 的两个 Blocking Findings：tasks.md 的 74 项均已完成，verification.md 现在逐项记录实际验证状态、方法/命令、文件范围和结果。D1 正式输出、冻结范围、媒介中立和 Git/授权契约维持不变；严格 OpenSpec 校验和独立内容扫描均通过，未发现阻止 Archive 的 Finding。",
+  "findings": {
+    "blocking": [],
+    "nonBlocking": []
+  },
+  "verificationReviewed": [
+    "复核 039-revise-apply Action、Context 和 Result：其输入为 038-review-apply 的 changes-requested Verdict，且仅处理 D1-RA-001、D1-RA-002。",
+    "检查 tasks.md：74 个 [x]、0 个 [ ]；各 Section 与四份正式输出文档、Capability Spec 和 verification.md 的实际覆盖一致。",
+    "复核 verification.md：OpenSpec、内容感知 whitespace、U+FFFD 和 git diff --check 均有实际 status、命令/方法、文件范围和 exit code/count；Full Test 单独为 not-applicable。",
+    "执行 npx openspec validate bootstrap-and-roadmap --strict：通过（Change 'bootstrap-and-roadmap' is valid）。",
+    "独立扫描六份 Apply artifacts：行尾空白 0 行、space-before-tab 0 行、U+FFFD replacement character 0 个。",
+    "执行 git diff --check：通过，exit code 0；未跟踪正式文档由内容感知扫描覆盖。",
+    "检查 CodeGraph MCP 状态：已启用，但索引仍只有 5 个 YAML、0 个节点、0 条边；无法对当前未跟踪 Markdown/Skill 产物提供结构影响结果。",
+    "本轮未运行 Full Test，未修改 D1 正式产物、冻结产物、先前 Run 或 Delivery 状态，未提交或推送。"
+  ],
+  "verdict": "approved",
+  "nextActionRecommendation": "archive"
+}

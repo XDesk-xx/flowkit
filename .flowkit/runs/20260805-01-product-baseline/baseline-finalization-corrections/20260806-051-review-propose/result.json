@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-051-review-propose",
+  "status": "completed",
+  "summary": "050-revise-propose 已把 delta 放在既有 flowkit-bootstrap-and-roadmap capability，且严格 Change validation 通过。但其所引用的 owner decision source ref/a.md 是 0-byte 空文件，不能证明范围改变已获 owner 授权；新增 Requirement 又规定发现问题时 MUST 创建 corrective Change，遗漏既有模型要求的 owner 明确授权。Proposal 不得进入 Apply。",
+  "findings": {
+    "blocking": [
+      {
+        "id": "E1-RP-004",
+        "title": "声称的 owner scope decision 没有可验证内容",
+        "location": "ref/a.md; .flowkit/runs/20260805-01-product-baseline/baseline-finalization-corrections/20260806-050-revise-propose/context.json:ownerDecision",
+        "problem": "050 将 ref/a.md 作为允许修改已批准 Explore 范围的 owner decision source，但该文件存在且长度为 0 bytes（SHA-256 为空文件值）。其中没有 owner、授权内容、范围、时间或可引用决定。",
+        "impact": "从“仅 Purpose 修正、不新增 Requirement/Scenario”扩展为 ADDED Requirement 的授权事实不可验证；Agent/author 不得用空文件替代 owner 授权。",
+        "requiredResolution": "owner 必须提供可验证的明确范围决定，至少说明授权 E1 修改的既有 capability、最小 Requirement 的目的、不得扩张的边界及其与 049 Finding 的关系。只有该决定成为可引用输入后，才可生成对应的 Revision。"
+      },
+      {
+        "id": "E1-RP-005",
+        "title": "最小 delta 绕过 corrective Change 的 owner 授权边界",
+        "location": "openspec/changes/baseline-finalization-corrections/specs/flowkit-bootstrap-and-roadmap/spec.md:3-15",
+        "problem": "新增 Requirement 写成：Delivery Final Audit 发现已 Checkpoint 产物问题时 Flowkit MUST 通过 corrective Change 处理，并在 Scenario 中要求 MUST 创建 corrective Change；它没有把 owner 明确授权作为前置条件。",
+        "impact": "这与 flowkit-core-model 中 corrective Change 只有在 owner 明确授权后才 MUST 创建，以及 bootstrap-and-roadmap 中 corrective Change 创建由 owner 明确控制的冻结规则冲突，错误地赋予 Policy 自动创建 Change 的权力。",
+        "requiredResolution": "在获得 E1-RP-004 所需的 owner scope decision 后，将 delta 改为：发现 Final Audit Finding 时 Policy 停在 owner 决策边界；只有 owner 明确授权 corrective Change 后，Flowkit 才创建该 Change，并在它按普通生命周期 Checkpoint 后回到 awaiting-user-decision。不得自动创建 Change 或运行 Full Test。"
+      }
+    ],
+    "nonBlocking": []
+  },
+  "verificationReviewed": [
+    "复核 050-revise-propose Action、Context 和 Result：它声称依赖 ref/a.md 的 owner decision，未运行 Full Test，未提交。",
+    "检查 ref/a.md：文件存在但为 0 bytes、内容为空，不能作为 owner scope decision 证据；发现 E1-RP-004。",
+    "执行 npx openspec validate baseline-finalization-corrections --strict：Change is valid。该结果只证明 delta 结构有效，不证明 owner 授权或与冻结语义一致。",
+    "复核最小 delta：它不创建新 capability，且 tasks.md 有 25 个 checkbox，与 050 Result 一致；049 的 no-delta Finding 已在结构层面解决。",
+    "对照 flowkit-core-model corrective Change Scenario 和 flowkit-bootstrap-and-roadmap owner 授权边界：新增 delta 遗漏 owner 前置条件并要求自动创建 Change，发现 E1-RP-005。",
+    "执行 git diff --check：通过，exit code 0。该检查仅覆盖已跟踪变更；Proposal/Run 为 untracked，已单独内容复核。",
+    "CodeGraph MCP 已启用，但当前索引仅含 6 个 YAML 文件、0 nodes、0 edges；无法对未跟踪 Markdown/Run 产物提供结构影响证据，故本轮未将其作为结论依据。",
+    "本轮未运行 Full Test，未修改 owner decision evidence、Proposal、Design、Tasks、Spec、Manifest、冻结产物或先前 Runs，未提交或推送。"
+  ],
+  "verdict": "changes-requested",
+  "nextActionRecommendation": "owner-scope-decision-required",
+  "commitPolicy": {
+    "commitAllowed": false,
+    "commitCreated": false
+  }
+}

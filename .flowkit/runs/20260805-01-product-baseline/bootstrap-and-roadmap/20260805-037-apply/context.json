@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-037-apply",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "D1",
+  "changeId": "bootstrap-and-roadmap",
+  "action": "apply",
+  "role": "author",
+  "inputRef": "content-sha256:E84621F8EDC742599AD06506ED87A46A90918D609A21BAB28228E806833AC2C4",
+  "sourceReviewRun": "20260805-036-review-propose",
+  "sourceReviewVerdict": "approved",
+  "ownerAuthorization": {
+    "type": "apply",
+    "source": "owner directive",
+    "scope": "D1 bootstrap-and-roadmap apply phase"
+  },
+  "dependsOn": [
+    "product-positioning",
+    "core-model",
+    "integration-boundaries"
+  ],
+  "artifacts": [
+    "openspec/changes/bootstrap-and-roadmap/explore.md",
+    "openspec/changes/bootstrap-and-roadmap/proposal.md",
+    "openspec/changes/bootstrap-and-roadmap/design.md",
+    "openspec/changes/bootstrap-and-roadmap/specs/flowkit-bootstrap-and-roadmap/spec.md",
+    "openspec/changes/bootstrap-and-roadmap/tasks.md"
+  ],
+  "constraints": {
+    "mustNotReopenA1": true,
+    "mustNotReopenB1": true,
+    "mustNotReopenC1": true,
+    "mustNotModifyDeliveryLifecycle": true,
+    "mustNotImplementRunner": true,
+    "mustNotFixExchangeMedium": true,
+    "mustNotCreateBootstrapOnlyState": true,
+    "mustNotAutoCommit": true,
+    "fullTestAllowed": false,
+    "mayCreateReviewRun": false
+  },
+  "runPath": ".flowkit/runs/20260805-01-product-baseline/bootstrap-and-roadmap/20260805-037-apply/"
+}

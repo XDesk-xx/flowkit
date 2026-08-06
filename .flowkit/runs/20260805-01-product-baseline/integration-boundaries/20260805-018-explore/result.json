@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-018-explore",
+  "status": "completed",
+  "summary": "Completed C1 Explore: identified design deviations where exchange media (GitHub, Push, PR, Remote Author, Local Materializer, Worktree topology) were incorrectly written as flow rules, and defined environment-neutral logical integration boundaries. C1 defines what logical information is exchanged (Action Definition, Action Package, Action Result, ResultRef, Continuation Context, continuation boundary), who owns each fact, and Agent/Adapter/Skill power limits. C1 does not define exchange media, provider, or topology. The C1/D1 boundary is clear: C1 defines 'what information is needed for continuation', D1 defines 'when Bootstrap forms and presents these'. Supporting correction candidate docs identified for D1 (bootstrap-reference-corrections) and C1 Apply (continuation-boundary-reference, c1-d1-boundary-correction).",
+  "keyConclusions": [
+    "Flowkit defines executable, verifiable, continuable logical boundaries but does not prescribe what media executors use to exchange information.",
+    "Action Package is a logical execution input view, not a fixed file package.",
+    "Action Result records what happened; Policy decides what happens next; Result must not self-advance Change or Delivery.",
+    "ResultRef must uniquely identify results, detect staleness, and not bind to a single provider.",
+    "Continuation Context is a recovery view generated from formal facts, not a new state authority.",
+    "Continuation boundary is boundary semantics, not a new entity, state, Action, or Commit type.",
+    "Review binds to reviewedResultRef (not Git-only SHA); approval invalidates when reviewed result changes.",
+    "Adapter only converts I/O; must not judge Action, skip Review, self-authorize, or become a second orchestrator.",
+    "C1 does not fix GitHub, Remote, Push, PR, Patch, ZIP, Worktree, PowerShell, local/remote, or AI provider.",
+    "C1 does not introduce Materializer, Provider Registry, Workspace Capability enumeration, or topology enumeration."
+  ],
+  "deviationsIdentified": [
+    "GitHub/Remote/Push/PR written as flow rules → corrected to environment-neutral continuation boundary",
+    "Remote Author + Local Materializer elevated to formal roles → abolished; only owner/author/reviewer remain",
+    "Fixed Workspace Capability enumeration → abolished; not needed for C1 core",
+    "Fixed Worktree/Bare Remote/Remote Forge topology → abolished; Flowkit stays media-agnostic",
+    "Git Commit treated as mandatory for all continuations → separated: Git boundary ≠ continuation boundary ≠ exchange media"
+  ],
+  "nextAction": "review-explore",
+  "blockedOn": []
+}

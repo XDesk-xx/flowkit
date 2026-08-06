@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-037-apply",
+  "status": "completed",
+  "summary": "Completed D1 Apply: created 4 formal output documents and verification.md from the 036-approved Proposal. docs/bootstrap-reference.md covers Bootstrap minimum loop, Run operation rules (with goal-change boundary), continuation cutpoint, Git 3-boundary model (Change activation not formal), ordinary Commit principles, Review not requiring Commit, owner authorization, Full Test not auto-triggered, media neutrality, and old-pattern correction table. docs/development-roadmap.md covers Deterministic Core, Change Execution Loop, Delivery Execution Loop, first self-hosted conditions (13 items), and no-Registry declaration. AGENTS.md covers 11 minimal repository-level rules. .codex/skills/flowkit-git-workflow/SKILL.md covers boundary templates, ordinary Commit principles, no-auto-commit, no-process-decision-authority. verification.md records applicable checks, no-Full-Test, and A1/B1/C1 consistency confirmations. D1 does not modify delivery-lifecycle.md or other B1 frozen docs. No Git Commit created per owner instruction.",
+  "artifactsProduced": [
+    "docs/bootstrap-reference.md",
+    "docs/development-roadmap.md",
+    "AGENTS.md",
+    ".codex/skills/flowkit-git-workflow/SKILL.md",
+    "openspec/changes/bootstrap-and-roadmap/verification.md"
+  ],
+  "formalDocsCoverage": {
+    "bootstrap-reference.md": "9 sections: overview, minimum loop, Run operation rules (6 subsections), continuation cutpoint (4 subsections), Git model (9 subsections), owner authorization, media neutrality, old-pattern correction, delivery-lifecycle Section 10 coverage",
+    "development-roadmap.md": "6 sections: overview, Deterministic Core, Change Execution Loop, Delivery Execution Loop, first self-hosted conditions (13 items), no-Registry declaration",
+    "AGENTS.md": "11 minimal rules + not-fixed list + references to formal docs",
+    "SKILL.md": "Coverage (8 areas) + prohibitions (6 powers) + capabilities (6 services) + Git boundary overview"
+  },
+  "verification": {
+    "openspecValidate": {
+      "status": "passed",
+      "command": "npx openspec validate bootstrap-and-roadmap --strict",
+      "result": "Change 'bootstrap-and-roadmap' is valid"
+    },
+    "whitespaceScan": {
+      "status": "passed",
+      "method": "Python per-file scan: trailing whitespace + space-before-tab",
+      "fileScope": [
+        "docs/bootstrap-reference.md",
+        "docs/development-roadmap.md",
+        "AGENTS.md",
+        ".codex/skills/flowkit-git-workflow/SKILL.md",
+        "openspec/changes/bootstrap-and-roadmap/verification.md"
+      ],
+      "result": {
+        "trailingWhitespace": 0,
+        "spaceBeforeTab": 0,
+        "totalIssues": 0
+      }
+    },
+    "ufffdScan": {
+      "status": "passed",
+      "count": 0,
+      "fileScope": [
+        "docs/bootstrap-reference.md",
+        "docs/development-roadmap.md",
+        "AGENTS.md",
+        ".codex/skills/flowkit-git-workflow/SKILL.md",
+        "openspec/changes/bootstrap-and-roadmap/verification.md"
+      ]
+    },
+    "gitDiffCheck": {
+      "status": "passed",
+      "command": "git diff --check",
+      "exitCode": 0,
+      "note": "Covers tracked files; untracked formal docs covered by whitespaceScan above"
+    },
+    "jsonValid": {
+      "status": "passed",
+      "files": ["context.json", "result.json"]
+    }
+  },
+  "consistencyCheck": {
+    "a1ProductPositioning": "consistent — Delivery > Change > Action hierarchy, owner/author/reviewer roles preserved",
+    "b1CoreModel": "consistent — Policy authority, Change main flow, Run structure and states preserved",
+    "c1IntegrationBoundaries": "consistent — Action Package/Result/ResultRef, Continuation Context, Review binding, media neutrality preserved",
+    "b1FrozenDocsNotModified": "confirmed — delivery-lifecycle.md, core-model.md, verification-model.md not modified",
+    "noProviderOrForgeFixed": "confirmed — no GitHub/Push/PR/ChatGPT/Codex fixed in any formal doc"
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "reason": "Per owner instruction and D1 frozen Git model: Action/Run do not auto-commit. All apply artifacts remain in working tree and will enter Git history at Change Checkpoint."
+  },
+  "nextAction": "review-apply",
+  "blockedOn": []
+}

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-016-review-apply",
+  "status": "completed",
+  "summary": "B1 015-revise-apply 已完整修复 B-003：Change Verification 准入规则恢复为“所有适用检查”，9 份正式 B1 Markdown 的 U+FFFD 扫描为 0，验证记录准确保留并解释 013 的历史错误。固定范围、当前 OpenSpec strict validation 和文档结构均通过，未发现阻止 Archive 的 Finding。",
+  "findings": {
+    "blocking": [],
+    "nonBlocking": []
+  },
+  "verificationReviewed": [
+    "检查固定范围 git diff --name-status 52d3357871b7373a416f58aec53f02db180e5276 7fedaed7d094669ac80a60c3236090ca26a957d9：仅含 015-revise-apply Run、docs/verification-model.md 与 B1 verification.md 的 B-003 修订。",
+    "执行 git diff --check 52d3357871b7373a416f58aec53f02db180e5276 7fedaed7d094669ac80a60c3236090ca26a957d9：通过。",
+    "执行 npx openspec validate core-model --strict：通过（Change 'core-model' is valid）。",
+    "扫描全部 9 份当前 B1 正式 Markdown：未发现 U+FFFD replacement character。",
+    "复核 docs/verification-model.md 的 review-apply 准入规则、verification.md 对 013 历史错误的更正记录，以及 015-revise-apply Run 的范围和验证：B-003 已解决。",
+    "确认本轮未运行 Full Test，且未包含生产代码、Runner、CLI、依赖、C1 协议或 D1 操作步骤。"
+  ],
+  "verdict": "approved",
+  "nextActionRecommendation": "archive"
+}

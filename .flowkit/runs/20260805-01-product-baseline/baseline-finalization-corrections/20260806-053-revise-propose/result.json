@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-053-revise-propose",
+  "status": "completed",
+  "summary": "Revised E1 Proposal per 052-review-propose findings. E1-RP-005: spec.md now requires Policy to stop at owner decision boundary before creating corrective Change; added owner authorization Scenario (3 Scenarios total). Updated design.md D8, explore.md §4.5, tasks.md 5.2. E1-RP-006: did not modify 050/051/052 Runs; created new 053 Run. openspec validate --strict passes. No Git Commit created.",
+  "findingsAddressed": {
+    "E1-RP-005": {
+      "status": "resolved",
+      "resolution": "spec.md Requirement changed: Policy MUST stop at owner decision boundary, MUST NOT auto-create corrective Change. Only after owner authorization does Flowkit create corrective Change. Added Scenario 'owner 授权后创建 corrective Change'. Total 3 Scenarios. design.md D8 and explore.md §4.5 updated with owner authorization prerequisite."
+    },
+    "E1-RP-006": {
+      "status": "resolved",
+      "resolution": "Did not modify 050, 051, or 052 Runs. Created new 053-revise-propose Run referencing 052 findings."
+    }
+  },
+  "specDelta": {
+    "capability": "flowkit-bootstrap-and-roadmap",
+    "type": "ADDED",
+    "requirements": 1,
+    "scenarios": 3,
+    "requirementTitle": "Delivery Final Audit corrective Change 路径",
+    "ownerAuthorizationRequired": true
+  },
+  "verification": {
+    "openspecValidateChange": {
+      "status": "passed",
+      "command": "npx openspec validate baseline-finalization-corrections --strict",
+      "result": "Change is valid"
+    },
+    "whitespaceScan": {
+      "status": "passed",
+      "files": ["spec.md", "design.md", "explore.md", "tasks.md"],
+      "trailingWhitespace": 0,
+      "ufffd": 0
+    }
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "reason": "Per owner instruction and D1 frozen Git model: Action/Run do not auto-commit."
+  },
+  "nextAction": "review-propose",
+  "blockedOn": []
+}

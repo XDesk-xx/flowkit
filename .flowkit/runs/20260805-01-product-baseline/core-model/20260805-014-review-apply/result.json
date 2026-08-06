@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-014-review-apply",
+  "status": "completed",
+  "summary": "B1 revise-apply 已正确解决 Full Test owner 决策边界和对称 review/revise Action Catalog，但复核发现 docs/verification-model.md 仍含 Unicode replacement characters，且 revision verification 错误声明全部 Markdown 无 U+FFFD。因此当前 Change Verification 证据不真实，不能进入 Archive。",
+  "findings": {
+    "blocking": [
+      {
+        "id": "B-003",
+        "title": "Change Verification 的关键准入规则仍含乱码，且修订验证结果不真实",
+        "location": "docs/verification-model.md:71; openspec/changes/core-model/verification.md:116,128; .flowkit/runs/20260805-01-product-baseline/core-model/20260805-013-revise-apply/result.json:9",
+        "problem": "docs/verification-model.md 将“所有适用检查必须为”写成“f��有适用检查必须为”，包含两个 U+FFFD replacement characters。与此同时，B1 verification.md 和 013-revise-apply result.json 声称修订范围或全部 Markdown 不含 U+FFFD，和当前正式文件事实冲突。",
+        "impact": "进入 review-apply 前的 Verification 准入规则不可可靠读取，且 Change Verification 的 passed 证据不真实。未修正前无法证明适用文档检查通过，因此不得进入 Archive。",
+        "requiredChange": "使用 revise-apply 仅修复该正式文档文本为“所有适用检查必须为”，重新扫描所有当前 B1 正式 Markdown 的 U+FFFD 并重新执行适用文档/一致性检查。更新 verification.md 以准确记录本轮结果；不得改写 013 Run 的历史结果，而应由新的 Revise Run 说明已发现并纠正该旧记录的错误。"
+      }
+    ],
+    "nonBlocking": []
+  },
+  "verificationReviewed": [
+    "执行 git diff --check f7008be68e9042ec3ab29534e377354c66a7f14c 515dd185d6eefeb300249af53642bc915e565e00：通过。",
+    "执行 npx openspec validate core-model --strict：通过（Change 'core-model' is valid）。",
+    "复核 proposal、design、capability spec、三份正式文档、verification.md 与 013-revise-apply Run：B-001 和 B-002 的正式契约已一致修复。",
+    "对当前 B1 正式 Markdown 扫描 U+FFFD：docs/verification-model.md 仍命中；013 的无替换字符验证声明不成立。"
+  ],
+  "verdict": "changes-requested",
+  "nextActionRecommendation": "revise-apply"
+}

@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-009-propose",
+  "status": "completed",
+  "summary": "Created the complete B1 Proposal, Design, flowkit-core-model capability delta, and Tasks from the approved Explore. The proposal preserves mandatory Review boundaries, treats Revision/Fix as conditional and repeatable, allows the owner to perform the reviewer role without bypassing Verdict, and explicitly replaces revise-apply with fix-review-findings.",
+  "outputs": [
+    "openspec/changes/core-model/proposal.md",
+    "openspec/changes/core-model/design.md",
+    "openspec/changes/core-model/specs/flowkit-core-model/spec.md",
+    "openspec/changes/core-model/tasks.md"
+  ],
+  "findingsAddressed": {
+    "NB-001": "Defined fullTestStatus as Flowkit-owned Delivery verification substate; Bootstrap uses Delivery YAML as a manual projection, self-hosting uses Delivery state, and Delivery Runs are not authoritative.",
+    "NB-002": "Defined owner-authorized cancellation for planned/active Changes and active Deliveries while preserving artifacts, Runs, Git history, and dependency blocking.",
+    "NB-003": "The formal contract uses abstract review-method categories and does not bind any concrete Skill identifier."
+  },
+  "additionalDecisions": [
+    "Review remains a required lifecycle boundary even when the owner performs the reviewer role.",
+    "Revision/Fix is applicable only after changes-requested and may repeat with Review until approved or cancelled.",
+    "Owner cannot bypass a changes-requested Verdict.",
+    "fix-review-findings explicitly supersedes the Bootstrap v1 term revise-apply."
+  ],
+  "verification": {
+    "status": "not-run",
+    "reason": "This commit creates proposal artifacts only. OpenSpec strict validation and document verification belong to the subsequent Apply preparation and Change verification tasks."
+  },
+  "nextAction": "review-propose"
+}

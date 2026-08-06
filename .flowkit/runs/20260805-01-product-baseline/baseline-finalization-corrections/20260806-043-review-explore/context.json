@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-043-review-explore",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "E1",
+  "changeId": "baseline-finalization-corrections",
+  "action": "review-explore",
+  "role": "reviewer",
+  "sourceExploreRun": "20260806-042-explore",
+  "reviewRange": {
+    "baseRef": "77c4c36636b5866423e5904ad4f23a6631f7a87a",
+    "headRef": "worktree",
+    "reason": "E1 activation and Explore artifacts are uncommitted by design at this stage."
+  },
+  "reviewedArtifacts": {
+    "sourceRunActionSha256": "e0229306646ed2b1049ef037ec6448ab9b65f7284347c8d1046a179511c12f69",
+    "sourceRunContextSha256": "9b203c5ebdae02a88b124ca4a0ef619aaf9a0ca2928cea9fc5323e3385281819",
+    "sourceRunResultSha256": "566f2af74f393ac90dab22c40c0797909fb959a6d01a8864f92555a29542fc04",
+    "exploreSha256": "0372e52a2dff6309ae5193b6cb260c7ccc43a9f1d50a97d53d7243dcf7caa295"
+  },
+  "constraints": {
+    "readOnlyExceptCurrentRun": true,
+    "fullTestAllowed": false,
+    "mayReviseExplore": false,
+    "mayPropose": false,
+    "mayApply": false,
+    "mayArchive": false,
+    "mayAdvanceFlow": false,
+    "commitAllowed": false
+  }
+}

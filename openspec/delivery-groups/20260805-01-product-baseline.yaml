@@ -1,0 +1,134 @@
+id: 20260805-01-product-baseline
+createdAt: "2026-08-05"
+branch: delivery/20260805-01-product-baseline
+
+goal: >
+  建立 Flowkit 的产品定位、核心模型、集成边界、验证边界和
+  Bootstrap 开发流程基线，使后续代码 Delivery 可以按照同一套
+  Delivery、Change、Action 规则开发，并为稳定 Runner 和首次自托管
+  Delivery 提供明确前置条件。
+delivery:
+  state: completed
+  fullTestStatus: passed
+
+scope:
+  included:
+    - 冻结 Flowkit 的产品定位和非目标
+    - 冻结 Delivery、Change、Action 三层模型
+    - 冻结 Change 的 explore、propose、apply、archive 四个主 Action
+    - 冻结 OpenSpec、Git、Archify、CodeGraph、Review 和 Tests 的职责边界
+    - 冻结 owner、author、reviewer 三类中立角色
+    - 冻结 Review、Revision、Commit 和 Full Test 授权边界
+    - 建立 Bootstrap 仓库开发说明
+    - 建立后续代码 Delivery 路线
+    - 定义首次自托管切换条件
+
+  excluded:
+    - Flowkit Runner 实现
+    - CLI 产品命令实现
+    - 状态持久化实现
+    - Action Package 实现
+    - 外部工具适配器实现
+    - Review Findings 存储实现
+    - 测试调度器实现
+    - 自动 Commit、Push、Merge、Rebase 或回滚
+    - Skill Registry 或 Skill Router
+    - Gate Registry
+    - Evidence 或 Receipt 系统
+    - Profile 或 Executor Registry
+    - 通用插件平台
+    - Adoption、Migration、Upgrade 或 Rebaseline 机制
+
+architecture:
+  impact: true
+  archifyPlan: not-required
+  rationale: >
+    本 Delivery 用于冻结产品与系统边界，但 Archify 的正式契约和调用方式尚未冻结。
+    当前由 OpenSpec 和正式文档承载计划边界，不创建可能成为第二事实源的占位 JSON。
+
+changes:
+  - key: A1
+    id: product-positioning
+    goal: 冻结 Flowkit 的产品定位、非目标和 One fact, one authority 原则
+    required: true
+    dependsOn: []
+    state: completed
+    outputs:
+      - docs/product-positioning.md
+
+  - key: B1
+    id: core-model
+    goal: 冻结 Delivery、Change、Action 模型、生命周期和 Verification 边界
+    required: true
+    dependsOn:
+      - product-positioning
+    state: completed
+    outputs:
+      - docs/core-model.md
+      - docs/delivery-lifecycle.md
+      - docs/verification-model.md
+
+  - key: C1
+    id: integration-boundaries
+    goal: 冻结外部工具、Skill 和执行角色的集成边界
+    required: true
+    dependsOn:
+      - product-positioning
+      - core-model
+    state: completed
+    outputs:
+      - docs/integration-boundaries.md
+
+  - key: D1
+    id: bootstrap-and-roadmap
+    goal: 固化 Bootstrap 规则、Git 交接规则和后续开发路线
+    required: true
+    dependsOn:
+      - product-positioning
+      - core-model
+      - integration-boundaries
+    state: completed
+    outputs:
+      - docs/bootstrap-reference.md
+      - docs/development-roadmap.md
+      - AGENTS.md
+      - .codex/skills/flowkit-git-workflow/SKILL.md
+
+  - key: E1
+    id: baseline-finalization-corrections
+    goal: 修正 Product Baseline Delivery Final Audit 中发现的正式基线问题，并使 Delivery 进入 Full Test 就绪状态
+    required: true
+    dependsOn:
+      - product-positioning
+      - core-model
+      - integration-boundaries
+      - bootstrap-and-roadmap
+    state: completed
+    outputs:
+      - openspec/specs/flowkit-core-model/spec.md
+      - openspec/specs/flowkit-integration-boundaries/spec.md
+      - openspec/specs/flowkit-bootstrap-and-roadmap/spec.md
+      - docs/delivery-lifecycle.md
+      - docs/verification-model.md
+      - openspec/delivery-groups/20260805-01-product-baseline.yaml
+
+verification:
+  change:
+    requireApplicableChecks: true
+
+  fullTest:
+    requiresOwnerAuthorization: true
+
+acceptance:
+  - 所有 required Changes 的 state 均为 completed
+  - 所有 Change 已完成 Archive 并形成 Change Checkpoint
+  - 所有 Blocking Findings 已清零
+  - 正式文档之间不存在已知冲突
+  - README 与产品定位一致
+  - AGENTS.md 与冻结流程一致
+  - flowkit-git-workflow 与 Git 边界一致
+  - Bootstrap 参考文档已包含本 Delivery 确认的新规则
+  - 未创建第二套 Bootstrap 状态系统
+  - 未实现范围外的生产功能
+  - 未经 owner 授权没有运行 Full Test
+  - owner 已批准 Delivery Finalize

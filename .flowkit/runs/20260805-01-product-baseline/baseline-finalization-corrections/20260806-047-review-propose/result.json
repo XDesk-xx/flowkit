@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-047-review-propose",
+  "status": "completed",
+  "summary": "E1 Proposal 对三个 Purpose、两处精确 CJK 修正、Manifest 投影、A1 历史例外、Full Test 边界和 Tasks 的表达大体可执行，且 OpenSpec strict validation 通过。但其新增 flowkit-baseline-finalization-corrections capability 和 7 个新 Requirement，直接违背已批准 Explore 的“不创建新的 capability spec”边界，属于未经审查的产品语义扩张，因此不得进入 Apply。",
+  "findings": {
+    "blocking": [
+      {
+        "id": "E1-RP-001",
+        "title": "Proposal 新增 capability 和 Requirement，越出已批准的 E1 Explore 范围",
+        "location": "openspec/changes/baseline-finalization-corrections/proposal.md:43-45; design.md:96-98; specs/flowkit-baseline-finalization-corrections/spec.md",
+        "problem": "045-review-explore 已批准的 Explore 明确：E1 只修改现有三个 capability spec 的 Purpose，且“不创建新 capability”。046-propose 却创建 flowkit-baseline-finalization-corrections capability，并新增七个持续性产品 Requirement 与十五个 Scenario。",
+        "impact": "新增 capability 将一次性基线收口变成新的产品契约，并把未来 capability Purpose、文档字符和 E1 专属状态规则扩张为额外语义；这既改变 Explore 冻结范围，也违反 E1 不修改 Requirement/Scenario 的边界。strict validation 只证明结构有效，不能批准该范围扩张。",
+        "requiredResolution": "在 revise-propose 中移除新增 capability spec 及其所有对应的 Capabilities、D6、Requirement/Scenario 和 Tasks 表述；保留 Proposal/Design/Tasks 对既有三份 spec Purpose、两份 docs、Delivery Manifest 与 E1 verification.md 的受控修正。若确有新增 capability 的需要，必须回到 Explore 并取得新的范围授权，不得在本 Proposal 内自行引入。"
+      }
+    ],
+    "nonBlocking": [
+      {
+        "id": "E1-RP-002",
+        "title": "Propose Run 的任务总数与 checklist 不一致",
+        "location": ".flowkit/runs/20260805-01-product-baseline/baseline-finalization-corrections/20260806-046-propose/result.json:summary, tasksTotal",
+        "problem": "046 Result 记录 17 tasks，但 tasks.md 当前有 22 个未完成 checkbox。",
+        "impact": "不影响本轮范围 Finding，但会误导后续 Apply 完成度和审计摘要。",
+        "requiredResolution": "在 revise-propose 的新 Result 中记录校正后的实际 checklist 数量；不得改写已完成的 046 Run。"
+      }
+    ]
+  },
+  "verificationReviewed": [
+    "复核 046-propose Action、Context 和 Result：作者在 045-review-explore approved 后创建四件套，未运行 Full Test，未提交。",
+    "执行 npx openspec validate baseline-finalization-corrections --strict：Change is valid。该检查只验证 OpenSpec 结构，不替代范围和语义 Review。",
+    "执行 git diff --check：通过，exit code 0。该检查仅覆盖已跟踪 Manifest 变更；Proposal/Run 为 untracked，已单独内容复核。",
+    "对照已批准 Explore Q1：它明确 E1 不需要、也不得创建新的 capability spec；发现 E1-RP-001。",
+    "复核 Purpose-only、精确 CJK、Manifest fullTestStatus 和 A1 历史例外的计划：均仍保留既定边界；Full Test/Finalize 未被自动授权。",
+    "统计 tasks.md 未完成 checkbox：22；与 046 Result 的 tasksTotal=17 不一致，记录为 E1-RP-002。",
+    "CodeGraph MCP 已启用，但当前索引仅含 6 个 YAML 文件、0 nodes、0 edges；无法对未跟踪 Markdown/Run 产物提供结构影响证据，故本轮未将其作为结论依据。",
+    "本轮未运行 Full Test，未修改 Proposal、Design、Spec、Tasks、Manifest、冻结产物或先前 Runs，未提交或推送。"
+  ],
+  "verdict": "changes-requested",
+  "nextActionRecommendation": "revise-propose",
+  "commitPolicy": {
+    "commitAllowed": false,
+    "commitCreated": false
+  }
+}

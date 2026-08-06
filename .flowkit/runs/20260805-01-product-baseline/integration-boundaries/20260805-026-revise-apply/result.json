@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-026-revise-apply",
+  "status": "completed",
+  "summary": "Resolved C1-RA-001 Blocking Finding from 025-review-apply: fixed verification.md Section 4 header from 'applicable but marked as not-run' to 'already run and passed', making it consistent with Section 3. The three checks (git diff --check, OpenSpec strict validation, U+FFFD scan) are now clearly stated as run/passed in both sections. Full Test remains not-applicable. No C1 logical boundaries, Proposal bundle, or B1 frozen artifacts were modified.",
+  "findingsAddressed": {
+    "C1-RA-001": "Changed verification.md Section 4 header from '以下检查在 C1 Apply 阶段适用但标记为 not-run（需由 review-apply 复核）' to '以下检查在 C1 Apply 阶段已运行并通过'. The three check items (git diff --check, openspec validate, U+FFFD scan) already stated '已运行，passed' and remain unchanged. Section 5 (Full Test) remains unchanged. The verification record is now internally consistent."
+  },
+  "verification": {
+    "gitDiffCheck": {
+      "status": "passed",
+      "command": "git diff --check",
+      "exitCode": 0
+    },
+    "ufffdScan": {
+      "status": "passed",
+      "count": 0
+    }
+  },
+  "nextAction": "review-apply",
+  "blockedOn": []
+}

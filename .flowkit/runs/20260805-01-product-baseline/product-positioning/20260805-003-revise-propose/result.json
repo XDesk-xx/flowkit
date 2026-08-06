@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-003-revise-propose",
+  "status": "completed",
+  "summary": "Resolved review-propose Blocking Finding B-001 by removing the A1 capability spec rule that prescribed specific Commit timing. A1 now retains only the high-level constraint that Action completion does not automatically require a dedicated Commit.",
+  "resolvedFindings": [
+    {
+      "id": "B-001",
+      "status": "resolved",
+      "change": "Removed the sentence 'Commit MUST 只在保存、交接或正式边界需要时创建' from the Action/Commit scenario.",
+      "boundary": "Concrete Commit and handoff policy remains deferred to D1."
+    }
+  ],
+  "outputs": [
+    "openspec/changes/product-positioning/specs/flowkit-product-positioning/spec.md"
+  ],
+  "verification": {
+    "status": "targeted-review-only",
+    "checks": [
+      "Confirmed the revised scenario preserves the approved Explore decision that Action and Commit are not one-to-one.",
+      "Confirmed the revised scenario no longer defines Commit timing or handoff policy."
+    ],
+    "fullTestRun": false
+  },
+  "nextAction": "review-propose"
+}

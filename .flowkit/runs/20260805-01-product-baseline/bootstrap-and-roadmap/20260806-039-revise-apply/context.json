@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-039-revise-apply",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "D1",
+  "changeId": "bootstrap-and-roadmap",
+  "action": "revise-apply",
+  "role": "author",
+  "inputRef": "content-sha256:9927ECD282A80ABCCDE61658EBBA36A7DE25E9310DB2FE2A54BFC37F91780AE8",
+  "sourceReviewRun": "20260806-038-review-apply",
+  "sourceReviewVerdict": "changes-requested",
+  "findings": [
+    "D1-RA-001",
+    "D1-RA-002"
+  ],
+  "constraints": {
+    "mustOnlyAddressCurrentFindings": true,
+    "mustNotModifyFormalDocs": true,
+    "mustNotReopenFrozenChanges": true,
+    "mustNotAutoCommit": true,
+    "fullTestAllowed": false,
+    "mayCreateReviewRun": false
+  },
+  "runPath": ".flowkit/runs/20260805-01-product-baseline/bootstrap-and-roadmap/20260806-039-revise-apply/"
+}

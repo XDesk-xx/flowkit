@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-024-apply",
+  "status": "completed",
+  "summary": "Completed C1 Apply: created docs/integration-boundaries.md (15 sections covering all Design D1-D13 decisions and Spec 11 requirements), created verification.md (7 applicable checks passed, Full Test not-applicable), marked all 33 tasks in tasks.md as completed. No B1 documents modified. No exchange media fixed. No Materializer/Registry/topology introduced. OpenSpec validation passed. git diff --check passed. No U+FFFD in any file.",
+  "artifactsCreated": [
+    "docs/integration-boundaries.md",
+    "openspec/changes/integration-boundaries/verification.md"
+  ],
+  "artifactsModified": [
+    "openspec/changes/integration-boundaries/tasks.md"
+  ],
+  "tasksCompleted": 33,
+  "tasksTotal": 33,
+  "verification": {
+    "openspecValidate": "passed",
+    "gitDiffCheck": "passed",
+    "ufffdScan": "0 found",
+    "fullTest": "not-applicable"
+  },
+  "nextAction": "review-apply",
+  "blockedOn": []
+}

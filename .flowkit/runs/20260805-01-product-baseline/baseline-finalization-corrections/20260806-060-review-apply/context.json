@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-060-review-apply",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "E1",
+  "changeId": "baseline-finalization-corrections",
+  "action": "review-apply",
+  "role": "reviewer",
+  "sourceReviewRun": "20260806-058-review-apply",
+  "sourceRevisionRun": "20260806-059-revise-apply",
+  "reviewRange": {
+    "baseRef": "77c4c36636b5866423e5904ad4f23a6631f7a87a",
+    "headRef": "worktree",
+    "reason": "E1 apply artifacts remain uncommitted until Change Checkpoint."
+  },
+  "reviewedArtifacts": {
+    "sourceRevisionActionSha256": "7b496432ce7542b274b04f2a3ca2c114b49e98c1d3a1e381e3566b945e16053f",
+    "sourceRevisionContextSha256": "4c18cbc7e22461f6fffdf7d2b73394422a488148d7b85d8b91d59bac051e1456",
+    "sourceRevisionResultSha256": "a0d87741e492b77a716cef893936caa704d0566376b17c869647c0562800aa16",
+    "verificationSha256": "bee31c260d1203d5bdfe865707d3d6b05881634e75b85ea9c8022828ded18a48",
+    "sourceApplyRun": "20260806-057-apply",
+    "sourceApplyRunPreserved": true
+  },
+  "constraints": {
+    "readOnlyExceptCurrentRun": true,
+    "fullTestAllowed": false,
+    "mayReviseApply": false,
+    "mayArchive": false,
+    "mayAdvanceFlow": false,
+    "commitAllowed": false
+  }
+}

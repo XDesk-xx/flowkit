@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-031-revise-explore",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "D1",
+  "changeId": "bootstrap-and-roadmap",
+  "action": "revise-explore",
+  "role": "author",
+  "inputRef": "4bd2fb85477c7059544dc86a7d428ad9126db280",
+  "sourceReviewRun": "20260805-030-review-explore",
+  "sourceReviewVerdict": "changes-requested",
+  "findings": [
+    "D1-RE-001"
+  ],
+  "ownerConfirmedCorrections": [
+    "section-7.4-change-start-pseudo-boundary"
+  ],
+  "constraints": {
+    "mustOnlyAddressCurrentFindingsAndOwnerConfirmedCorrections": true,
+    "mustNotExpandChangeScope": true,
+    "mustNotModifyLogic": true,
+    "mustNotChangeMediaNeutrality": true,
+    "mustNotReopenFrozenChanges": true,
+    "fullTestAllowed": false,
+    "mayCreateReviewRun": false,
+    "mayPropose": false
+  },
+  "runPath": ".flowkit/runs/20260805-01-product-baseline/bootstrap-and-roadmap/20260805-031-revise-explore/"
+}

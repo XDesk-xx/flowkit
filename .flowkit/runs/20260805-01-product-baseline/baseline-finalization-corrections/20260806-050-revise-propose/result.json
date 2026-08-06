@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-050-revise-propose",
+  "status": "completed",
+  "summary": "Revised E1 Proposal per owner scope decision and 049-review-propose E1-RP-003. Added minimal ADDED Requirement to existing flowkit-bootstrap-and-roadmap capability (not new capability), freezing Delivery Final Audit -> corrective Change -> Full Test behavior. Updated explore.md Q1 and added §4.5. Created specs/flowkit-bootstrap-and-roadmap/spec.md with 1 Requirement (2 Scenarios). Updated proposal.md (section E, Capabilities, Impact), design.md (D8), tasks.md (7 sections, 25 tasks). openspec validate baseline-finalization-corrections --strict now passes. No Git Commit created.",
+  "findingsAddressed": {
+    "E1-RP-003": {
+      "status": "resolved",
+      "resolution": "Added minimal ADDED Requirement to existing flowkit-bootstrap-and-roadmap capability. spec.md at specs/flowkit-bootstrap-and-roadmap/spec.md. openspec validate baseline-finalization-corrections --strict passes. Not a new capability — delta on existing capability per owner decision."
+    }
+  },
+  "ownerDecision": {
+    "summary": "Add minimal delta to existing flowkit-bootstrap-and-roadmap, not create new capability"
+  },
+  "artifactsAfterRevision": [
+    "openspec/changes/baseline-finalization-corrections/explore.md",
+    "openspec/changes/baseline-finalization-corrections/proposal.md",
+    "openspec/changes/baseline-finalization-corrections/design.md",
+    "openspec/changes/baseline-finalization-corrections/tasks.md",
+    "openspec/changes/baseline-finalization-corrections/specs/flowkit-bootstrap-and-roadmap/spec.md"
+  ],
+  "specDelta": {
+    "capability": "flowkit-bootstrap-and-roadmap",
+    "type": "ADDED",
+    "requirements": 1,
+    "scenarios": 2,
+    "requirementTitle": "Delivery Final Audit corrective Change 路径"
+  },
+  "designDecisionsTotal": 8,
+  "tasksTotal": 25,
+  "verification": {
+    "openspecValidateChange": {
+      "status": "passed",
+      "command": "npx openspec validate baseline-finalization-corrections --strict",
+      "result": "Change is valid"
+    },
+    "whitespaceScan": {
+      "status": "passed",
+      "files": ["explore.md", "proposal.md", "design.md", "spec.md", "tasks.md"],
+      "trailingWhitespace": 0,
+      "spaceBeforeTab": 0,
+      "ufffd": 0
+    },
+    "gitDiffCheck": {
+      "status": "passed",
+      "exitCode": 0
+    },
+    "checkboxCount": {
+      "status": "passed",
+      "actualCount": 25
+    }
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "reason": "Per owner instruction and D1 frozen Git model: Action/Run do not auto-commit."
+  },
+  "nextAction": "review-propose",
+  "blockedOn": []
+}

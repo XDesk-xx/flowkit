@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-010-review-propose",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "B1",
+  "changeId": "core-model",
+  "action": "review-propose",
+  "role": "reviewer",
+  "reviewRange": {
+    "baseRef": "62f4fc1642af64751b0cc4ecdf70d6fdbb21bc2e",
+    "headRef": "6a664b0a88e338c7ff41fda9d4e84ea86883aff2"
+  },
+  "artifacts": [
+    "openspec/delivery-groups/20260805-01-product-baseline.yaml",
+    "openspec/changes/core-model/.openspec.yaml",
+    "openspec/changes/core-model/explore.md",
+    "openspec/changes/core-model/proposal.md",
+    "openspec/changes/core-model/design.md",
+    "openspec/changes/core-model/specs/flowkit-core-model/spec.md",
+    "openspec/changes/core-model/tasks.md",
+    "openspec/specs/flowkit-product-positioning/spec.md",
+    "docs/product-positioning.md",
+    ".flowkit/runs/20260805-01-product-baseline/core-model/20260805-008-review-explore/result.json",
+    ".flowkit/runs/20260805-01-product-baseline/core-model/20260805-009-propose/action.md",
+    ".flowkit/runs/20260805-01-product-baseline/core-model/20260805-009-propose/context.json",
+    ".flowkit/runs/20260805-01-product-baseline/core-model/20260805-009-propose/result.json"
+  ],
+  "requiredOutputPath": ".flowkit/runs/20260805-01-product-baseline/core-model/20260805-010-review-propose/result.json",
+  "constraints": {
+    "readOnlyExceptResult": true,
+    "applyAllowed": false,
+    "fullTestAllowed": false,
+    "mayAdvanceFlow": false,
+    "formalRolesMustBeNeutral": true
+  }
+}

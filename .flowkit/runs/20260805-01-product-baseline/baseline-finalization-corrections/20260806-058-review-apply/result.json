@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-058-review-apply",
+  "status": "completed",
+  "summary": "E1 Apply 的三个 Purpose、两处 CJK 修正、owner-authorized 最小 delta、Manifest 投影、Tasks 和 Apply 授权均与 approved Proposal 一致，严格 OpenSpec 校验通过，且未运行 Full Test。但 verification.md 将 U+FFFD 与 whitespace 扫描写成“所有修改文件”，实际只列 7 份文件，漏掉 E1 delta spec、verification.md 及 Proposal bundle；Change Verification 记录的覆盖范围不真实完整，不能批准 Archive。",
+  "findings": {
+    "blocking": [
+      {
+        "id": "E1-RA-001",
+        "title": "Change Verification 声称覆盖所有修改文件，但实际扫描范围遗漏 E1 正式产物",
+        "location": "openspec/changes/baseline-finalization-corrections/verification.md:55-76; tasks.md:44-45",
+        "problem": "tasks.md 要求对所有修改文件执行 U+FFFD 与 whitespace 扫描；verification.md 的两项检查却只列 7 份文件。该范围未包含新增的 specs/flowkit-bootstrap-and-roadmap/spec.md、verification.md，以及 E1 Explore/Proposal/Design/Tasks bundle。",
+        "impact": "057 Result 的“所有 7 项验证通过”不能证明实际 E1 正式产物均经过所声称的内容质量检查；git diff --check 也不覆盖 untracked verification.md，因此无法替代遗漏范围。",
+        "requiredResolution": "在 revise-apply 中对明确、完整的 E1 正式文件范围重新执行 U+FFFD 与 whitespace 扫描，并在 verification.md 记录该范围、命令/方法和实际计数。范围至少覆盖所有 E1 Change Markdown（含 delta spec 与 verification.md）及所有实际修改的正式 outputs/Manifest；保留精确 CJK 检查只针对两份目标 docs，且不得运行 Full Test。"
+      }
+    ],
+    "nonBlocking": []
+  },
+  "verificationReviewed": [
+    "复核 057-apply Action、Context 和 Result：Apply 引用 056 approved Verdict 和 owner apply authorization，只实施 E1 范围，未运行 Full Test，未提交。",
+    "复核正式输出：三个 Purpose 已替换，目标 docs 中错误字符串已修正；delta 保持 Final Audit 停在 owner 决策边界、owner 授权后创建 corrective Change、Full Test 独立授权。",
+    "复核 Tasks：25 项均完成，Manifest 保持 E1 active、fullTestStatus not-ready 且 outputs 包含 Manifest。",
+    "执行 npx openspec validate baseline-finalization-corrections --strict：Change is valid。",
+    "执行 npx openspec validate --specs --strict：4 passed, 0 failed。",
+    "独立扫描 13 份 E1 正式文件（outputs/Manifest + E1 Change Markdown）：trailing whitespace 0、space-before-tab 0、U+FFFD 0；内容本身通过，但 057 verification 的已记录范围不完整。",
+    "检查精确错误字符串：目标 docs 中无 兞他 或 第二奔；E1 Proposal/verification 等叙述文件保留这些字面量作为修正说明，属预期，不视为产品输出错误。",
+    "执行 git diff --check：通过，exit code 0；它仅覆盖已跟踪文件，不能覆盖未跟踪 verification.md。",
+    "CodeGraph MCP 已启用，但当前索引仅含 6 个 YAML 文件、0 nodes、0 edges；无法对未跟踪 Markdown/Run 产物提供结构影响证据，故本轮未将其作为结论依据。",
+    "本轮未运行 Full Test，未修改正式输出、Tasks、verification、Manifest、冻结产物或先前 Runs，未提交或推送。"
+  ],
+  "verdict": "changes-requested",
+  "nextActionRecommendation": "revise-apply",
+  "commitPolicy": {
+    "commitAllowed": false,
+    "commitCreated": false
+  }
+}

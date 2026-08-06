@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-006-archive",
+  "status": "completed",
+  "summary": "Archived A1 product-positioning after approved review-apply, synchronized the capability delta into the main OpenSpec spec, updated the Delivery YAML state to completed, and completed the Change Checkpoint in the containing commit.",
+  "outputs": [
+    "openspec/specs/flowkit-product-positioning/spec.md",
+    "openspec/changes/archive/2026-08-05-product-positioning/",
+    "openspec/delivery-groups/20260805-01-product-baseline.yaml"
+  ],
+  "archive": {
+    "schema": "spec-driven",
+    "artifactsComplete": true,
+    "tasksComplete": true,
+    "reviewVerdict": "approved",
+    "specsSynced": true,
+    "archivePath": "openspec/changes/archive/2026-08-05-product-positioning/"
+  },
+  "checkpoint": {
+    "status": "completed-by-containing-commit",
+    "changeState": "completed"
+  },
+  "verification": {
+    "fullTestRun": false,
+    "reason": "Full Test is a Delivery-level owner-authorized boundary and was not requested for this Change checkpoint."
+  },
+  "nextAction": "none"
+}

@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-012-review-apply",
+  "status": "completed",
+  "summary": "B1 Apply 的范围、结构和当前 OpenSpec 严格校验均通过，但核心生命周期契约存在两项阻塞问题：Full Test 失败时自动创建 corrective Change 绕过 owner 的范围授权；Apply Review 的 Revision Action 使用不对称的 fix-review-findings，破坏统一 review/revise 调度模型。",
+  "findings": {
+    "blocking": [
+      {
+        "id": "B-001",
+        "title": "Full Test 失败自动创建 corrective Change 绕过 owner 范围授权",
+        "location": "openspec/changes/core-model/specs/flowkit-core-model/spec.md:202-211; docs/verification-model.md:167-177; docs/core-model.md:141-145",
+        "problem": "B1 要求 Flowkit 在 Full Test failed 时直接创建 corrective Change，但同一核心模型规定 owner 拥有范围、授权和最终决策。把新 Change 加入 Delivery 会改变 Delivery 的 Change 集合与范围，当前契约没有 owner 决策边界或授权条件。",
+        "impact": "Policy 或验证失败会自动扩张 Delivery 范围，违反 owner 权威与确定性流程边界；实现者也无法判断应创建 Change、返回 blocked diagnosis，还是等待 owner 决策。",
+        "requiredChange": "将失败后的直接创建改为明确的 owner-decision / blocked boundary。只有 owner 明确授权 corrective Change 后，才创建该 Change 并把 fullTestStatus 返回 not-ready；保留不得重新打开已 archived/completed Change 与 corrective Change 完整闭环的约束。"
+      },
+      {
+        "id": "B-002",
+        "title": "Apply Review 修订 Action 破坏 review/revise 的对称调度模型",
+        "location": "openspec/changes/core-model/specs/flowkit-core-model/spec.md:47-68; docs/core-model.md:95-129; docs/delivery-lifecycle.md:109-127",
+        "problem": "正式 Catalog 以 fix-review-findings 替代 revise-apply，并禁止后者。Explore/Propose 使用 review-stage ↔ revise-stage 对称对，而 Apply 成为唯一例外；现有 review 统一入口也没有对称的 revise 统一入口。fix-review-findings 描述的是修订目标或方法，而不是与 revise-explore/revise-propose 对齐的生命周期 Action。",
+        "impact": "Policy、Run 命名、授权与 C1 后续 Action Package 需要对 Apply 增加特殊分支，无法使用统一的 review/revise 阶段解析；当前 B1 还把 revise-apply 明确排除，阻止后续按统一模型实现。",
+        "requiredChange": "将正式 Revision Action 恢复为 revise-explore、revise-propose、revise-apply，并令 review-apply changes-requested 唯一推导 revise-apply。新增与 review 对称的非正式 revise 统一入口，由 Policy 从当前 changes-requested Verdict 解析唯一 revise-stage Action。revise-apply 必须仅处理当前 Findings、不得扩张范围、完成适用 Change Verification 后回到 review-apply，且不得自动运行 Full Test。fix-review-findings 下沉为 revise-apply 的 goal（推荐）或方法类别；具体 Action Package 字段与 Skill 协议仍留给 C1。"
+      }
+    ],
+    "nonBlocking": [
+      {
+        "id": "N-001",
+        "title": "正式核心模型含替换字符",
+        "location": "docs/core-model.md:66",
+        "suggestion": "将“��预建 `paused`”修正为“不预建 `paused`”。capability spec 和 Design 已有正确表述，但正式文档不应保留乱码。"
+      }
+    ]
+  },
+  "verificationReviewed": [
+    "检查固定范围 git diff --name-status 94b17299ebe1d05ed4fd3482e836cd72556061a3 82e9d5cabd5e4b51b8a0c1dc12c854f8ff84c53d：仅含 B1 文档、OpenSpec records 与 Apply Run，无生产代码或依赖。",
+    "执行 git diff --check 94b17299ebe1d05ed4fd3482e836cd72556061a3 82e9d5cabd5e4b51b8a0c1dc12c854f8ff84c53d：通过。",
+    "执行 npx openspec validate core-model --strict：通过（Change 'core-model' is valid）。",
+    "完整阅读 A1 产品定位、B1 Explore/Proposal/Design/Spec/Tasks/Verification、三份正式 B1 文档与 20260805-011-apply Run。",
+    "检查 Full Test、owner 权威、Action Catalog、Review/Revision 闭环、Run 边界、C1/D1 边界和正式角色中立。"
+  ],
+  "verdict": "changes-requested",
+  "nextActionRecommendation": "revise-apply"
+}

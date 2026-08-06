@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-060-review-apply",
+  "status": "completed",
+  "summary": "059-revise-apply 已完整解决 E1-RA-001：verification.md 现在将 U+FFFD 和 whitespace 扫描明确覆盖 13 份 E1 正式文件，精确 CJK 检查仅覆盖两份目标 docs 并解释其他 Change Markdown 的预期字面量。独立复扫结果与记录一致，057 Apply Run 未被改写，Tasks 完成、OpenSpec strict validation 通过、Full Test 未运行。E1 Apply 可进入 Archive 授权边界。",
+  "findings": {
+    "blocking": [],
+    "nonBlocking": []
+  },
+  "resolvedFindings": [
+    {
+      "id": "E1-RA-001",
+      "result": "resolved",
+      "evidence": "verification.md 将 U+FFFD 和 whitespace 扫描扩展为 13 份 E1 正式文件，列出全部路径、方法和实际 0 计数；CJK 仅检查两份发生错误的 target docs。"
+    }
+  ],
+  "verificationReviewed": [
+    "复核 059-revise-apply Action、Context 和 Result：它只处理 058 的 E1-RA-001，未运行 Full Test，未提交。",
+    "复核 verification.md：正式 outputs/Manifest 7 份与 E1 Change Markdown 6 份均被明确列入 U+FFFD/whitespace 范围；精确 CJK 检查限定于 delivery-lifecycle.md 与 verification-model.md，并正确排除 Change 文档中的修正说明字面量。",
+    "独立扫描相同 13 份 E1 正式文件：trailing whitespace 0、space-before-tab 0、U+FFFD 0。",
+    "独立检查两份目标 docs：兞他 与 第二奔 均为 0。",
+    "验证 057-apply 的 Action、Context、Result 哈希仍与 058 Review 保存值一致，未发现终态 Run 改写。",
+    "执行 npx openspec validate baseline-finalization-corrections --strict：Change is valid。",
+    "执行 npx openspec validate --specs --strict：4 passed, 0 failed。",
+    "执行 git diff --check：通过，exit code 0；Windows CRLF 警告不是 whitespace error。",
+    "CodeGraph MCP 已启用，但当前索引仅含 6 个 YAML 文件、0 nodes、0 edges；无法对未跟踪 Markdown/Run 产物提供结构影响证据，故本轮未将其作为结论依据。",
+    "本轮未运行 Full Test，未修改正式输出、Tasks、verification、Manifest、冻结产物或先前 Runs，未提交或推送。"
+  ],
+  "verdict": "approved",
+  "nextActionRecommendation": "archive",
+  "authorizationGate": "Archive 仍必须等待 owner 明确授权。",
+  "commitPolicy": {
+    "commitAllowed": false,
+    "commitCreated": false
+  }
+}

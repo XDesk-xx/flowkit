@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260805-029-explore",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "D1",
+  "changeId": "bootstrap-and-roadmap",
+  "action": "explore",
+  "role": "author",
+  "inputRef": "9d475d12eb5a83d346c77e1a6a3c163e473ab179",
+  "dependsOn": [
+    "product-positioning",
+    "core-model",
+    "integration-boundaries"
+  ],
+  "artifacts": [
+    "openspec/specs/flowkit-product-positioning/spec.md",
+    "openspec/specs/flowkit-core-model/spec.md",
+    "openspec/specs/flowkit-integration-boundaries/spec.md",
+    "docs/product-positioning.md",
+    "docs/core-model.md",
+    "docs/delivery-lifecycle.md",
+    "docs/verification-model.md",
+    "docs/integration-boundaries.md",
+    "openspec/delivery-groups/20260805-01-product-baseline.yaml",
+    "ref/d1-bootstrap-and-roadmap-reference.md"
+  ],
+  "runPath": ".flowkit/runs/20260805-01-product-baseline/bootstrap-and-roadmap/20260805-029-explore/",
+  "constraints": {
+    "mustNotReopenA1": true,
+    "mustNotReopenB1": true,
+    "mustNotReopenC1": true,
+    "mustNotCreateProposal": true,
+    "mustNotImplementRunner": true,
+    "mustNotFixExchangeMedium": true,
+    "mustNotCreateBootstrapOnlyState": true,
+    "fullTestAllowed": false,
+    "mayCreateReviewRun": false
+  }
+}

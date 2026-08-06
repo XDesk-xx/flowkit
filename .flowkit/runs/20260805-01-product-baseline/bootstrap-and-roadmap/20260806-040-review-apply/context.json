@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-040-review-apply",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "D1",
+  "changeId": "bootstrap-and-roadmap",
+  "action": "review-apply",
+  "role": "reviewer",
+  "reviewRange": {
+    "baseRef": "content-sha256:9927ECD282A80ABCCDE61658EBBA36A7DE25E9310DB2FE2A54BFC37F91780AE8",
+    "reviewedResultRef": {
+      "kind": "content-sha256",
+      "value": "CC543BDFA013044B066EDA0747C48BAA565DBE7B07C20ED76F7D29A6AF247468",
+      "artifacts": [
+        "docs/bootstrap-reference.md",
+        "docs/development-roadmap.md",
+        "AGENTS.md",
+        ".codex/skills/flowkit-git-workflow/SKILL.md",
+        "openspec/changes/bootstrap-and-roadmap/verification.md",
+        "openspec/changes/bootstrap-and-roadmap/tasks.md"
+      ]
+    }
+  },
+  "sourceReviewRun": "20260806-038-review-apply",
+  "sourceReviseRun": "20260806-039-revise-apply",
+  "findingsReviewed": [
+    "D1-RA-001",
+    "D1-RA-002"
+  ],
+  "artifacts": [
+    "docs/bootstrap-reference.md",
+    "docs/development-roadmap.md",
+    "AGENTS.md",
+    ".codex/skills/flowkit-git-workflow/SKILL.md",
+    "openspec/changes/bootstrap-and-roadmap/tasks.md",
+    "openspec/changes/bootstrap-and-roadmap/verification.md",
+    ".flowkit/runs/20260805-01-product-baseline/bootstrap-and-roadmap/20260806-039-revise-apply/"
+  ],
+  "constraints": {
+    "readOnlyExceptCurrentRun": true,
+    "fullTestAllowed": false,
+    "mayFixFindings": false,
+    "mayArchive": false,
+    "mayAdvanceFlow": false,
+    "commitAllowed": false
+  }
+}

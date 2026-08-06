@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-052-review-propose",
+  "status": "completed",
+  "summary": "更新后的 050 Run 已在 Action/Context 中记录 owner 对最小 delta 的范围决定，因此 051 的授权证据缺失问题已被实质补足，且严格 Change validation 通过。Proposal 仍不能进入 Apply：delta 仍把 corrective Change 写成发现 Final Audit 问题即 MUST 创建，遗漏 owner 授权前置条件；同时 050 在被 051 审查后被原位改写，违反其自身声明的 terminal Run 不覆盖约束。",
+  "findings": {
+    "blocking": [
+      {
+        "id": "E1-RP-005",
+        "title": "最小 delta 仍绕过 corrective Change 的 owner 授权边界",
+        "location": "openspec/changes/baseline-finalization-corrections/specs/flowkit-bootstrap-and-roadmap/spec.md:3-15",
+        "problem": "新增 Requirement 和首个 Scenario 规定发现已 Checkpoint 产物问题时 MUST 通过或创建 corrective Change，却未要求 owner 明确授权。",
+        "impact": "这与既有 core-model 和 bootstrap-and-roadmap 规定的 corrective Change 创建必须由 owner 明确控制相冲突，会让 Policy 自动推进范围变更。",
+        "requiredResolution": "在新的 revise-propose Run 中将规则改为：Final Audit 发现问题时 Policy 停在 owner 决策边界；只有 owner 明确授权 corrective Change 后 Flowkit 才创建它；该 Change 按普通生命周期完成 Checkpoint 后，Delivery 再进入 awaiting-user-decision。Full Test 仍必须等待单独的 owner 授权。"
+      },
+      {
+        "id": "E1-RP-006",
+        "title": "已完成的 050 Revision Run 在被审查后被原位改写",
+        "location": ".flowkit/runs/20260805-01-product-baseline/baseline-finalization-corrections/20260806-050-revise-propose/{action.md,context.json,result.json}",
+        "problem": "051 的 Context 已记录 050 的三个 source hash；当前三个文件的 hash 均不同。050 Context 同时声明 mustNotOverwriteTerminalRun: true。",
+        "impact": "Review 引用的作者输入不再不可变，审计链无法判断 051 审查的是哪一版本，也会让后续 Policy 以改写历史替代新的 Revision。",
+        "requiredResolution": "保留 050 和 051 作为历史记录，不再修改它们；创建新的 revise-propose Run，引用 052 的 Findings 并承载后续 delta 修正与验证。"
+      }
+    ],
+    "nonBlocking": []
+  },
+  "resolvedFindings": [
+    {
+      "id": "E1-RP-004",
+      "result": "resolved-by-updated-source-input",
+      "evidence": "更新后的 050 Action 与 Context 已明确记录 owner 允许 E1 为既有 flowkit-bootstrap-and-roadmap capability 增加最小 ADDED Requirement，且限制为不新建 capability、不重开 A1-D1、不扩张到 Runner/CLI。"
+    }
+  ],
+  "verificationReviewed": [
+    "按 owner 指示重新读取更新后的 050 Action、Context 和 Result；未将 ref/a.md 作为本轮判断输入。",
+    "复核更新后的 050 ownerDecision：其范围限于既有 flowkit-bootstrap-and-roadmap 的最小 ADDED Requirement，不创建新 capability。",
+    "执行 npx openspec validate baseline-finalization-corrections --strict：Change is valid。该结果证明 delta 结构有效，不替代 owner 授权边界的语义审查。",
+    "对照 flowkit-core-model 与 bootstrap-and-roadmap 的 corrective Change owner-control 要求：delta 未写入 owner 明确授权前置条件，发现 E1-RP-005。",
+    "比对 051 Context 保存的 050 source hashes 与当前文件 hashes：action、context、result 均已变化，发现 E1-RP-006。",
+    "执行 git diff --check：通过，exit code 0。该检查仅覆盖已跟踪变更；Proposal/Run 为 untracked，已单独内容复核。",
+    "CodeGraph MCP 已启用，但当前索引仅含 6 个 YAML 文件、0 nodes、0 edges；无法对未跟踪 Markdown/Run 产物提供结构影响证据，故本轮未将其作为结论依据。",
+    "本轮未运行 Full Test，未修改 source Revision Run、Proposal、Design、Tasks、Spec、Manifest、冻结产物或先前 Runs，未提交或推送。"
+  ],
+  "verdict": "changes-requested",
+  "nextActionRecommendation": "revise-propose",
+  "commitPolicy": {
+    "commitAllowed": false,
+    "commitCreated": false
+  }
+}

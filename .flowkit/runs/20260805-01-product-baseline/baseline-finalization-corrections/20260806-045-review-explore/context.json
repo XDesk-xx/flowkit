@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-045-review-explore",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "E1",
+  "changeId": "baseline-finalization-corrections",
+  "action": "review-explore",
+  "role": "reviewer",
+  "sourceReviewRun": "20260806-043-review-explore",
+  "sourceRevisionRun": "20260806-044-revise-explore",
+  "reviewRange": {
+    "baseRef": "77c4c36636b5866423e5904ad4f23a6631f7a87a",
+    "headRef": "worktree",
+    "reason": "E1 artifacts remain uncommitted at the Explore stage."
+  },
+  "reviewedArtifacts": {
+    "sourceRevisionActionSha256": "961c5806ad100ac03b11bd9ceac9c34a668b1e7836d6cf60a51801c4423d001b",
+    "sourceRevisionContextSha256": "466ef8332504ceae14fe726f55f9b3a4363be97ea6e6a9dee09913531cf14126",
+    "sourceRevisionResultSha256": "13e25b08cba0eb2af923df0b871a9c0860ad0cf89d69da06d96cc6f3d457155e",
+    "exploreSha256": "a7aa62d092c453ad68fb66a37f4eb51123fce7608e8a94ab27834d20f3ff456e",
+    "manifestSha256": "8420553872d397eee7cc0f3d84530a7f9cfb54d89c45681154d34f13acef9dc8"
+  },
+  "constraints": {
+    "readOnlyExceptCurrentRun": true,
+    "fullTestAllowed": false,
+    "mayReviseExplore": false,
+    "mayPropose": false,
+    "mayApply": false,
+    "mayArchive": false,
+    "mayAdvanceFlow": false,
+    "commitAllowed": false
+  }
+}
