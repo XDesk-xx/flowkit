@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-062-full-test",
+  "deliveryId": "20260805-01-product-baseline",
+  "action": "full-test",
+  "role": "author",
+  "inputRef": "content-sha256:DBD86416F8AF688C150B5F11E573779998CD369534EC1C71449B23A35B1C18A5",
+  "ownerAuthorization": {
+    "type": "full-test",
+    "source": "owner explicit directive",
+    "scope": "20260805-01-product-baseline Delivery Full Test"
+  },
+  "scope": {
+    "changesCovered": ["A1", "B1", "C1", "D1", "E1"],
+    "specsCovered": [
+      "flowkit-product-positioning",
+      "flowkit-core-model",
+      "flowkit-integration-boundaries",
+      "flowkit-bootstrap-and-roadmap"
+    ],
+    "formalDocsCovered": 14,
+    "gitHistoryCommits": 61
+  },
+  "constraints": {
+    "mustNotModifyFormalArtifacts": true,
+    "mustNotCreateDeliveryFinalCommit": true,
+    "mustNotAutoCommit": true
+  },
+  "runPath": ".flowkit/runs/20260805-01-product-baseline/20260806-062-full-test/"
+}

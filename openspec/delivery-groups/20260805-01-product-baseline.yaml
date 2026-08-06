@@ -8,8 +8,8 @@ goal: >
   Delivery、Change、Action 规则开发，并为稳定 Runner 和首次自托管
   Delivery 提供明确前置条件。
 delivery:
-  state: active
-  fullTestStatus: awaiting-user-decision
+  state: completed
+  fullTestStatus: passed
 
 scope:
   included:

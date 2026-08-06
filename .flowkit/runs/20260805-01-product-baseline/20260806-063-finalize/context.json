@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-063-finalize",
+  "deliveryId": "20260805-01-product-baseline",
+  "action": "finalize",
+  "role": "author",
+  "inputRef": "content-sha256:79E961447DA78D99E3AC6C928AA021D60ED39CC07F327C36ED07CB0715CDC54A",
+  "ownerAuthorization": {
+    "type": "delivery-finalize",
+    "source": "owner explicit directive",
+    "scope": "20260805-01-product-baseline Delivery Finalize"
+  },
+  "preconditionsVerified": {
+    "allRequiredChangesCompleted": true,
+    "allChangesArchivedAndCheckpointed": true,
+    "allBlockingFindingsCleared": true,
+    "noKnownConflictsInFormalDocs": true,
+    "deliveryVerificationSatisfied": true,
+    "fullTestPassed": true,
+    "ownerApprovedFinalize": true
+  },
+  "stateTransition": {
+    "from": "active",
+    "to": "completed",
+    "fullTestStatus": "passed"
+  },
+  "constraints": {
+    "mustNotModifyFormalArtifacts": true,
+    "mustNotReopenCheckpointedChanges": true,
+    "mustNotAutoCreatePR": true,
+    "mustNotUpdatePRDescription": true
+  },
+  "runPath": ".flowkit/runs/20260805-01-product-baseline/20260806-063-finalize/"
+}
