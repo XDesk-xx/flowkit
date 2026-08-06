@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-061-archive",
+  "status": "completed",
+  "summary": "Archived E1 baseline-finalization-corrections: synced 1 ADDED Requirement (Delivery Final Audit corrective Change 路径, 3 Scenarios) to openspec/specs/flowkit-bootstrap-and-roadmap/spec.md via openspec archive -y. Change moved to openspec/changes/archive/2026-08-06-baseline-finalization-corrections/. Manifest updated: E1 state active→completed, delivery fullTestStatus not-ready→awaiting-user-decision. All 4 specs pass strict validation. All required Changes (A1–E1) now completed. Next action is Change Checkpoint Commit (requires owner authorization).",
+  "archiveOperations": {
+    "command": "openspec archive baseline-finalization-corrections -y",
+    "specSync": {
+      "capability": "flowkit-bootstrap-and-roadmap",
+      "added": 1,
+      "modified": 0,
+      "removed": 0,
+      "details": "ADDED Requirement: Delivery Final Audit corrective Change 路径 (3 Scenarios: 发现已 Checkpoint 产物问题, owner 授权后创建 corrective Change, corrective Change 完成后进入 Full Test)"
+    },
+    "changeMovedTo": "openspec/changes/archive/2026-08-06-baseline-finalization-corrections/"
+  },
+  "manifestUpdates": {
+    "e1State": "active → completed",
+    "deliveryFullTestStatus": "not-ready → awaiting-user-decision",
+    "rationale": "All required Changes (A1–E1) completed. Per design D3, Archive action converts fullTestStatus to awaiting-user-decision."
+  },
+  "verification": {
+    "openspecValidateSpecs": {
+      "status": "passed",
+      "command": "npx openspec validate --specs --strict",
+      "result": "4 passed, 0 failed"
+    },
+    "gitDiffCheck": {
+      "status": "passed",
+      "command": "git diff --check",
+      "exitCode": 0
+    },
+    "fullTest": {
+      "status": "not-run",
+      "reason": "Full Test is Delivery-level, requires owner authorization. fullTestStatus is now awaiting-user-decision."
+    }
+  },
+  "deliveryState": {
+    "allRequiredChangesCompleted": true,
+    "changes": {
+      "A1": "completed",
+      "B1": "completed",
+      "C1": "completed",
+      "D1": "completed",
+      "E1": "completed"
+    },
+    "fullTestStatus": "awaiting-user-decision",
+    "nextMilestone": "Change Checkpoint Commit for E1, then owner authorizes Full Test"
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "reason": "Per owner instruction and Flowkit Git model: Archive does not auto-commit. Change Checkpoint Commit requires separate owner authorization."
+  },
+  "nextAction": "checkpoint",
+  "nextActionNote": "Change Checkpoint Commit for E1. Requires owner authorization. After Checkpoint, Delivery enters Full Test readiness (fullTestStatus already awaiting-user-decision).",
+  "blockedOn": []
+}

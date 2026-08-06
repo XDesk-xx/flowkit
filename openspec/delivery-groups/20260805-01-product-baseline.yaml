@@ -9,7 +9,7 @@ goal: >
   Delivery 提供明确前置条件。
 delivery:
   state: active
-  fullTestStatus: not-ready
+  fullTestStatus: awaiting-user-decision
 
 scope:
   included:
@@ -103,7 +103,7 @@ changes:
       - core-model
       - integration-boundaries
       - bootstrap-and-roadmap
-    state: active
+    state: completed
     outputs:
       - openspec/specs/flowkit-core-model/spec.md
       - openspec/specs/flowkit-integration-boundaries/spec.md

@@ -3,7 +3,6 @@
 ## Purpose
 
 定义在 Runner 和 CLI 尚未实现时，如何手工执行同一套 Flowkit 规则，包括 Run 操作、续接上下文、Git 正式边界、owner 授权、Delivery Finalize 和后续 Runner 开发路线。
-
 ## Requirements
 ### Requirement: Bootstrap 必须手工执行同一套 Flowkit 规则
 
@@ -279,4 +278,28 @@ D1 MUST NOT 修改 A1、B1、C1 已 Checkpoint 的核心文档和 capability spe
 - **WHEN** D1 发现与 A1、B1 或 C1 已冻结文档存在真正冲突
 - **THEN** MUST 提出新的 corrective Change
 - **AND** MUST NOT 在 D1 中静默修改冻结文档
+
+### Requirement: Delivery Final Audit corrective Change 路径
+
+当 Delivery Final Audit 发现已 Checkpoint 产物的问题时，Flowkit MUST 停在 owner 决策边界，不得自动创建 corrective Change，不得重新打开已 Checkpoint 的 Change，也不得直接塞入 Delivery Final Commit。只有 owner 明确授权后，Flowkit 才创建 corrective Change。
+
+#### Scenario: 发现已 Checkpoint 产物问题
+
+- **WHEN** Delivery Final Audit 发现已 Checkpoint 产物的问题
+- **THEN** Policy MUST 停在 owner 决策边界
+- **AND** MUST NOT 自动创建 corrective Change
+- **AND** MUST NOT 重新打开已 Checkpoint 的 Change
+- **AND** MUST NOT 直接塞入 Delivery Final Commit
+
+#### Scenario: owner 授权后创建 corrective Change
+
+- **WHEN** owner 明确授权创建 corrective Change
+- **THEN** Flowkit MUST 创建 corrective Change
+- **AND** corrective Change MUST 按普通 Change 生命周期完成 Checkpoint
+
+#### Scenario: corrective Change 完成后进入 Full Test
+
+- **WHEN** corrective Change 完成 Checkpoint
+- **THEN** Delivery fullTestStatus MUST 转换为 `awaiting-user-decision`
+- **AND** Full Test 仍需 owner 明确授权
 

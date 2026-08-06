@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-061-archive",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "E1",
+  "changeId": "baseline-finalization-corrections",
+  "action": "archive",
+  "role": "author",
+  "inputRef": "content-sha256:4575DD841AC3910813ABE38875F3B47E56EA9A0C9F92C896CEC26FCCC322F695",
+  "sourceReviewRun": "20260806-060-review-apply",
+  "sourceReviewVerdict": "approved",
+  "ownerAuthorization": {
+    "type": "archive",
+    "source": "owner directive",
+    "scope": "E1 baseline-finalization-corrections archive phase"
+  },
+  "dependsOn": [
+    "product-positioning",
+    "core-model",
+    "integration-boundaries",
+    "bootstrap-and-roadmap"
+  ],
+  "constraints": {
+    "mustNotRunFullTest": true,
+    "mustNotAutoCommit": true,
+    "mustNotCreateCheckpointCommit": true,
+    "fullTestStatusTransition": "not-ready → awaiting-user-decision"
+  },
+  "runPath": ".flowkit/runs/20260805-01-product-baseline/baseline-finalization-corrections/20260806-061-archive/"
+}
