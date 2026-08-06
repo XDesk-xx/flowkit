@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-055-revise-propose",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "E1",
+  "changeId": "baseline-finalization-corrections",
+  "action": "revise-propose",
+  "role": "author",
+  "sourceReviewRun": "20260806-054-review-propose",
+  "sourceReviewVerdict": "changes-requested",
+  "findingsAddressed": [
+    "E1-RP-007"
+  ],
+  "constraints": {
+    "mustNotOverwriteTerminalRun": true,
+    "mustNotModifyRuns050to054": true,
+    "mustNotCreateFormalDocs": true,
+    "mustNotAutoCommit": true,
+    "fullTestAllowed": false,
+    "mayCreateReviewRun": false
+  },
+  "runPath": ".flowkit/runs/20260805-01-product-baseline/baseline-finalization-corrections/20260806-055-revise-propose/"
+}

@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-054-review-propose",
+  "status": "completed",
+  "summary": "053-revise-propose 已正确把 Final Audit Finding 停在 owner 决策边界、只在 owner 明确授权后创建 corrective Change，并用新的 Revision Run 保持 050-052 历史不变；严格 validation 通过。但 Explore Q2 与 Design Non-Goals 仍无条件宣称 E1 不修改 Requirement/Scenario，而同一 Proposal 实际新增一个 owner-authorized ADDED Requirement，范围契约仍自相矛盾，不能进入 Apply。",
+  "findings": {
+    "blocking": [
+      {
+        "id": "E1-RP-007",
+        "title": "Proposal/Explore 对 Requirement 修改边界仍自相矛盾",
+        "location": "openspec/changes/baseline-finalization-corrections/explore.md:229,235; design.md:20; specs/flowkit-bootstrap-and-roadmap/spec.md:1",
+        "problem": "Explore 已说明 E1 额外新增一个 ADDED Requirement，但 Q2 仍写 E1 MUST NOT 修改 Requirement 或 Scenario；Design Non-Goals 也无条件写不修改 Requirement/Scenario。与此同时 delta spec 确实含 ADDED Requirement。",
+        "impact": "Apply 的范围约束既可被解读为禁止该 delta，也可被解读为允许它，无法形成唯一可执行的契约；后续 Review 无法判断新增 Requirement 是否是唯一 owner-authorized 例外。",
+        "requiredResolution": "在新的 revise-propose Run 中统一明确：E1 不修改任何既有 Requirement/Scenario；唯一例外是 owner 已授权的、位于 flowkit-bootstrap-and-roadmap 的这一个 ADDED Requirement 及其 3 个 Scenario。所有其他 Requirement/Scenario 仍保持冻结。不得扩大到其它 capability 或进一步语义变更。"
+      }
+    ],
+    "nonBlocking": []
+  },
+  "resolvedFindings": [
+    {
+      "id": "E1-RP-005",
+      "result": "resolved",
+      "evidence": "delta 现要求 Policy 在 Final Audit Finding 后停在 owner 决策边界，禁止自动创建；仅在 owner 明确授权后创建 corrective Change，并将 Full Test 保持为独立授权。"
+    },
+    {
+      "id": "E1-RP-006",
+      "result": "resolved",
+      "evidence": "053 是引用 052 Findings 的新 revise-propose Run；050、051、052 的历史 Run 未在本轮被修改。"
+    }
+  ],
+  "verificationReviewed": [
+    "复核 053-revise-propose Action、Context 和 Result：它只处理 052 的 Findings，未运行 Full Test，未提交。",
+    "复核 delta 的三个 Scenario：Final Audit Finding 停在 owner 决策边界、owner 授权后创建 corrective Change、Checkpoint 后 awaiting-user-decision；与既有 owner 授权和 Full Test 边界一致。",
+    "执行 npx openspec validate baseline-finalization-corrections --strict：Change is valid。",
+    "执行 npx openspec validate --specs --strict：4 passed, 0 failed。",
+    "统计 tasks.md 未完成 checkbox：25，与 053 的 tasksTotal 一致。",
+    "交叉检查 Explore、Design 与 delta spec 的 Requirement/Scenario 范围表述：发现 E1-RP-007。",
+    "执行 git diff --check：通过，exit code 0。该检查仅覆盖已跟踪变更；Proposal/Run 为 untracked，已单独内容复核。",
+    "CodeGraph MCP 已启用，但当前索引仅含 6 个 YAML 文件、0 nodes、0 edges；无法对未跟踪 Markdown/Run 产物提供结构影响证据，故本轮未将其作为结论依据。",
+    "本轮未运行 Full Test，未修改 Proposal、Design、Tasks、Spec、Manifest、冻结产物或先前 Runs，未提交或推送。"
+  ],
+  "verdict": "changes-requested",
+  "nextActionRecommendation": "revise-propose",
+  "commitPolicy": {
+    "commitAllowed": false,
+    "commitCreated": false
+  }
+}

@@ -22,19 +22,26 @@
 
 - [ ]4.1 在 verification.md 中记录 A1 历史例外（正式 Run 模型冻结前、不补造 Run、从 B1 起正式模型）
 
-## 5. 创建 verification.md
+## 5. 创建最小 delta spec
 
-- [ ]5.1 创建 `openspec/changes/baseline-finalization-corrections/verification.md`
-- [ ]5.2 记录适用检查项和不运行 Full Test 的理由
-- [ ]5.3 记录 A1–D1 一致性确认
-- [ ]5.4 记录不修改冻结文档的确认
+- [ ]5.1 创建 `openspec/changes/baseline-finalization-corrections/specs/flowkit-bootstrap-and-roadmap/spec.md`
+- [ ]5.2 定义 Delivery Final Audit corrective Change 路径 Requirement（含 3 个 Scenario：发现问题停owner边界、owner授权后创建、Checkpoint后进Full Test）
+- [ ]5.3 `npx openspec validate baseline-finalization-corrections --strict`（E1 change 通过）
 
-## 6. 执行验证检查
+## 6. 创建 verification.md
 
-- [ ]6.1 `npx openspec validate --specs --strict`（所有 specs 通过）
-- [ ]6.2 Purpose 占位扫描（确认无 TBD）
-- [ ]6.3 错误 CJK 字符检查（确认无 `兞他`、`第二奔`，检查精确字符串）
-- [ ]6.4 U+FFFD 扫描（所有修改文件）
-- [ ]6.5 whitespace 扫描（所有修改文件）
-- [ ]6.6 `git diff --check`（exit 0）
-- [ ]6.7 Full Test：not-run（Delivery 级，需要 owner 授权）
+- [ ]6.1 创建 `openspec/changes/baseline-finalization-corrections/verification.md`
+- [ ]6.2 记录适用检查项和不运行 Full Test 的理由
+- [ ]6.3 记录 A1–D1 一致性确认
+- [ ]6.4 记录不修改冻结文档的确认
+
+## 7. 执行验证检查
+
+- [ ]7.1 `npx openspec validate --specs --strict`（所有 specs 通过）
+- [ ]7.2 `npx openspec validate baseline-finalization-corrections --strict`（E1 change 通过）
+- [ ]7.3 Purpose 占位扫描（确认无 TBD）
+- [ ]7.4 错误 CJK 字符检查（确认无 `兞他`、`第二奔`，检查精确字符串）
+- [ ]7.5 U+FFFD 扫描（所有修改文件）
+- [ ]7.6 whitespace 扫描（所有修改文件）
+- [ ]7.7 `git diff --check`（exit 0）
+- [ ]7.8 Full Test：not-run（Delivery 级，需要 owner 授权）

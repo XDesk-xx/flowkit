@@ -40,13 +40,17 @@ Delivery Manifest（`openspec/delivery-groups/20260805-01-product-baseline.yaml`
 
 在 E1 的 verification.md 中记录 A1 历史例外。不补造不存在的历史 Run，不创建 waiver，不修改 A1 completed 状态。
 
+### E. 增加最小 delta to flowkit-bootstrap-and-roadmap
+
+为现有 `flowkit-bootstrap-and-roadmap` capability 增加一个最小 ADDED Requirement，冻结 Delivery Final Audit → corrective Change → Full Test 的行为。不创建新 capability。
+
 ## Capabilities
 
-E1 不创建新 capability。E1 只修改现有 capability spec 的 Purpose 字段、正式文档字符和 Delivery Manifest 投影。
+E1 不创建新 capability。E1 修改现有 capability spec 的 Purpose 字段、正式文档字符和 Delivery Manifest 投影。此外，E1 为现有 `flowkit-bootstrap-and-roadmap` capability 增加一个最小 ADDED Requirement，冻结 Delivery Final Audit corrective Change 路径。
 
 ## Impact
 
-- **修改的正式产物**：3 个 capability spec（Purpose 字段）、2 个正式文档（字符修正）、1 个 Delivery Manifest（fullTestStatus 投影）
-- **不修改**：A1–D1 的 archived Change 历史、Requirement/Scenario、产品定位、Action Catalog、Review/Revise 语义
+- **修改的正式产物**：3 个 capability spec（Purpose 字段）、2 个正式文档（字符修正）、1 个 Delivery Manifest（fullTestStatus 投影）、1 个 ADDED Requirement on flowkit-bootstrap-and-roadmap
+- **不修改**：A1–D1 的 archived Change 历史、任何既有 Requirement/Scenario、产品定位、Action Catalog、Review/Revise 语义（唯一例外：owner 已授权的 flowkit-bootstrap-and-roadmap ADDED Requirement 及其 3 个 Scenario）
 - **不引入**：Runner、CLI、状态持久化实现、Adapter、Registry、Plugin
 - **风险**：低——全部是文本修正和状态投影，不涉及设计变更

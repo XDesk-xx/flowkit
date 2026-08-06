@@ -17,7 +17,7 @@ A1–D1 已全部完成完整 Change 生命周期并 Checkpoint。Delivery Final
 ## Non-Goals
 
 - 不重新打开 A1–D1
-- 不修改 Requirement/Scenario
+- 不修改任何既有 Requirement/Scenario（唯一例外：owner 已授权的 flowkit-bootstrap-and-roadmap ADDED Requirement 及其 3 个 Scenario）
 - 不修改产品定位、Action Catalog、Review/Revise 语义
 - 不新增 Runner、CLI、状态持久化实现
 - 不新增 Adapter、Registry、Plugin、Evidence 或 Receipt 系统
@@ -111,3 +111,13 @@ E1 Checkpoint 后，所有 required Changes（A1–E1）均为 completed，Deliv
 ```
 
 E1 Checkpoint 后 fullTestStatus 转为 `awaiting-user-decision`。owner 授权 Full Test 后执行 Full Test。Full Test passed 后仍需 owner 明确批准 Finalize。
+
+### D8：最小 delta on flowkit-bootstrap-and-roadmap
+
+E1 为现有 `flowkit-bootstrap-and-roadmap` capability 增加一个最小 ADDED Requirement，冻结 Delivery Final Audit → owner 授权 → corrective Change → Full Test 的行为。
+
+关键约束：Final Audit 发现问题时 Policy MUST 停在 owner 决策边界，不得自动创建 corrective Change。只有 owner 明确授权后 Flowkit 才创建 corrective Change。corrective Change 完成 Checkpoint 后 fullTestStatus 转为 `awaiting-user-decision`，Full Test 仍需单独 owner 授权。
+
+该 Requirement 不是为了让校验通过而凑的，而是 E1 实际发现的一个尚未被完整冻结的长期行为。未来每个 Delivery Finalize 都可能遇到已 Checkpoint 产物问题，需要 corrective Change 路径。
+
+不创建新 capability。不把具体错别字分别建模为 Requirement。不扩张到 Runner 或 CLI 实现。

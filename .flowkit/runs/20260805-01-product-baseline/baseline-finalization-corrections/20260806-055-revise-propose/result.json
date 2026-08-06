@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-055-revise-propose",
+  "status": "completed",
+  "summary": "Revised E1 Proposal per 054-review-propose E1-RP-007. Fixed contradiction between 'do not modify Requirement/Scenario' and the ADDED Requirement delta. Unified 4 locations (explore.md Q1, explore.md Q2, design.md Non-Goals, proposal.md Impact) to consistently state: E1 does not modify any existing Requirement/Scenario; sole exception is the owner-authorized ADDED Requirement on flowkit-bootstrap-and-roadmap with its 3 Scenarios. Cross-check confirms zero remaining unconditional prohibitions. openspec validate --strict passes. No previous Runs modified. No Git Commit created.",
+  "findingsAddressed": {
+    "E1-RP-007": {
+      "status": "resolved",
+      "resolution": "4 locations unified: explore.md Q1 (L229), explore.md Q2 (L235), design.md Non-Goals (L20), proposal.md Impact (L54). All now state: no modification of existing Requirement/Scenario, with sole exception being owner-authorized flowkit-bootstrap-and-roadmap ADDED Requirement and its 3 Scenarios. Cross-check: zero remaining unconditional prohibitions."
+    }
+  },
+  "filesModified": [
+    "openspec/changes/baseline-finalization-corrections/explore.md",
+    "openspec/changes/baseline-finalization-corrections/design.md",
+    "openspec/changes/baseline-finalization-corrections/proposal.md"
+  ],
+  "filesNotModified": [
+    "openspec/changes/baseline-finalization-corrections/specs/flowkit-bootstrap-and-roadmap/spec.md",
+    "openspec/changes/baseline-finalization-corrections/tasks.md"
+  ],
+  "verification": {
+    "openspecValidateChange": {
+      "status": "passed",
+      "command": "npx openspec validate baseline-finalization-corrections --strict",
+      "result": "Change is valid"
+    },
+    "contradictionCrossCheck": {
+      "status": "passed",
+      "result": "Zero unconditional Requirement/Scenario prohibitions remain",
+      "exceptionClausesFound": 4
+    },
+    "whitespaceScan": {
+      "status": "passed",
+      "files": ["explore.md", "proposal.md", "design.md", "tasks.md", "spec.md"],
+      "trailingWhitespace": 0,
+      "ufffd": 0
+    }
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "reason": "Per owner instruction and D1 frozen Git model: Action/Run do not auto-commit."
+  },
+  "nextAction": "review-propose",
+  "blockedOn": []
+}

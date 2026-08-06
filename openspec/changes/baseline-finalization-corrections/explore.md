@@ -181,6 +181,23 @@ fullTestStatus: awaiting-user-decision
 
 不补造不存在的历史 Run。不创建 waiver。不修改 A1 completed 状态。
 
+### 4.5 E. 增加最小 delta to flowkit-bootstrap-and-roadmap
+
+E1 为现有 `flowkit-bootstrap-and-roadmap` capability 增加一个最小 ADDED Requirement，冻结以下行为：
+
+```text
+Delivery Final Audit
+→ 发现已 Checkpoint 产物问题
+→ Policy 停在 owner 决策边界
+→ owner 明确授权 corrective Change
+→ corrective Change 完成 Checkpoint
+→ 再进入 Full Test（仍需 owner 授权）
+```
+
+该行为不仅适用于本次三个 Purpose 和两个错别字，未来每个 Delivery Finalize 都可能遇到。
+
+不创建新 capability。不把具体错别字分别建模为 Requirement。不扩张到 Runner 或 CLI 实现。
+
 ---
 
 ## 5. E1 不包含范围
@@ -207,13 +224,15 @@ E1 不得：
 
 ### Q1：E1 是否需要创建新的 capability spec？
 
-不需要。E1 只修改现有 3 个 capability spec 的 Purpose 字段，不创建新 capability。
+不创建新 capability。但 E1 为现有 `flowkit-bootstrap-and-roadmap` capability 增加一个最小 ADDED Requirement，冻结 Delivery Final Audit → corrective Change → Full Test 的行为。该 delta 是真实的、可复用的长期规则，不是为了让校验通过而凑的 Requirement。
+
+E1 修改现有 3 个 capability spec 的 Purpose 字段，不修改任何既有 Requirement/Scenario。唯一例外：owner 已授权的、位于 `flowkit-bootstrap-and-roadmap` 的一个 ADDED Requirement 及其 3 个 Scenario。所有其他 Requirement/Scenario 仍保持冻结。
 
 ### Q2：E1 的 Purpose 修正是否算修改冻结文档？
 
 Purpose 字段是 OpenSpec 自动生成的占位文本，不是 A1–D1 的冻结内容。替换 TBD 占位为正式 Purpose 属于基线收口，不属于重新打开 Change。
 
-但 E1 MUST NOT 修改 spec 中的 Requirement 和 Scenario —— 那些是冻结内容。
+但 E1 MUST NOT 修改任何既有 Requirement 和 Scenario —— 那些是冻结内容。唯一例外是 owner 已授权的、位于 `flowkit-bootstrap-and-roadmap` 的一个 ADDED Requirement 及其 3 个 Scenario；所有其他 Requirement/Scenario 仍保持冻结。
 
 ### Q3：fullTestStatus 的状态转换时机？
 

@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-050-revise-propose",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "E1",
+  "changeId": "baseline-finalization-corrections",
+  "action": "revise-propose",
+  "role": "author",
+  "sourceReviewRun": "20260806-049-review-propose",
+  "sourceReviewVerdict": "changes-requested",
+  "findingsAddressed": [
+    "E1-RP-003"
+  ],
+  "ownerDecision": {
+    "summary": "Authorize E1 to add a minimal ADDED Requirement to existing flowkit-bootstrap-and-roadmap capability, freezing Delivery Final Audit -> corrective Change -> Full Test behavior. No new capability. No reopening A1-D1. No modeling typos as Requirements. No Runner/CLI expansion."
+  },
+  "constraints": {
+    "mustNotOverwriteTerminalRun": true,
+    "mustNotCreateFormalDocs": true,
+    "mustNotAutoCommit": true,
+    "fullTestAllowed": false,
+    "mayCreateReviewRun": false
+  },
+  "runPath": ".flowkit/runs/20260805-01-product-baseline/baseline-finalization-corrections/20260806-050-revise-propose/"
+}
