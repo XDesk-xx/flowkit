@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-048-revise-propose",
+  "status": "completed",
+  "summary": "Revised E1 Proposal per 047-review-propose findings. E1-RP-001: removed new capability spec (specs/ directory deleted), removed Capabilities section from proposal.md, removed D6 from design.md (renumbered D7->D6, D8->D7), removed spec validation task from tasks.md. E1-RP-002: corrected tasksTotal from 17 to 21 (actual checkbox count). Additional: reformatted tasks.md to use numbered sub-items (1.1, 1.2, ...) matching D1 archived tasks.md pattern. E1 now aligns with approved Explore Q1 (no new capability). No Git Commit created.",
+  "findingsAddressed": {
+    "E1-RP-001": {
+      "status": "resolved",
+      "resolution": "Deleted specs/flowkit-baseline-finalization-corrections/spec.md and specs/ directory. Replaced proposal.md Capabilities with 'E1 does not create new capability'. Removed design.md D6, renumbered D7->D6 and D8->D7. Removed 'openspec validate baseline-finalization-corrections --strict' from tasks.md Section 6."
+    },
+    "E1-RP-002": {
+      "status": "resolved",
+      "resolution": "Corrected tasksTotal: 21 (actual checkbox count after removing 1 spec validation task). 046 Run not modified."
+    }
+  },
+  "artifactsAfterRevision": [
+    "openspec/changes/baseline-finalization-corrections/proposal.md",
+    "openspec/changes/baseline-finalization-corrections/design.md",
+    "openspec/changes/baseline-finalization-corrections/tasks.md"
+  ],
+  "artifactsRemoved": [
+    "openspec/changes/baseline-finalization-corrections/specs/flowkit-baseline-finalization-corrections/spec.md"
+  ],
+  "designDecisionsRemaining": 7,
+  "tasksTotal": 21,
+  "verification": {
+    "whitespaceScan": {
+      "status": "passed",
+      "files": ["proposal.md", "design.md", "tasks.md"],
+      "trailingWhitespace": 0,
+      "spaceBeforeTab": 0,
+      "ufffd": 0
+    },
+    "specsDirectoryRemoved": {
+      "status": "passed",
+      "result": "specs/ directory does not exist"
+    },
+    "openspecValidateSpecs": {
+      "status": "passed",
+      "command": "npx openspec validate --specs --strict",
+      "result": "4 passed, 0 failed"
+    },
+    "gitDiffCheck": {
+      "status": "passed",
+      "exitCode": 0
+    },
+    "checkboxCount": {
+      "status": "passed",
+      "actualCount": 21
+    }
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "reason": "Per owner instruction and D1 frozen Git model: Action/Run do not auto-commit."
+  },
+  "nextAction": "review-propose",
+  "blockedOn": []
+}

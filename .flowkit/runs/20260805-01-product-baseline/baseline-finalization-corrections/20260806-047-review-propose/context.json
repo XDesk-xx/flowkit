@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-047-review-propose",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "E1",
+  "changeId": "baseline-finalization-corrections",
+  "action": "review-propose",
+  "role": "reviewer",
+  "sourceExploreReviewRun": "20260806-045-review-explore",
+  "sourceProposeRun": "20260806-046-propose",
+  "reviewRange": {
+    "baseRef": "77c4c36636b5866423e5904ad4f23a6631f7a87a",
+    "headRef": "worktree",
+    "reason": "E1 proposal artifacts remain uncommitted at the Propose stage."
+  },
+  "reviewedArtifacts": {
+    "sourceProposeActionSha256": "34e424588a9c4cd3585b791f8194467dd3b968c16e8bca73eeacbbaa01273c71",
+    "sourceProposeContextSha256": "e1a19e34636d90ae4745b401c23af6f2da53c29e72588d85100159c24eee456c",
+    "sourceProposeResultSha256": "e02ee3e1d9c9f9550c428a8b5d4122275eeaf411611893c28eaaa6664d405d25",
+    "proposalSha256": "1a825a29d5f5c5c57fdf0b3e6528f31a4f46915849a8ad8da60433081b3a1562",
+    "designSha256": "1f48f2d34e8918277c94a6da1c7ca7639bbcc50a5267b2962529521c20500e22",
+    "tasksSha256": "c615f6c49568aa07aff1a826cfef9576eaf442317e222590e5c15ca55c958079",
+    "addedSpecSha256": "3c016a03d38b896b6cea7e15973ab1d08b4f5d4a549f7dce62282fd2b0297536"
+  },
+  "constraints": {
+    "readOnlyExceptCurrentRun": true,
+    "fullTestAllowed": false,
+    "mayRevisePropose": false,
+    "mayApply": false,
+    "mayArchive": false,
+    "mayAdvanceFlow": false,
+    "commitAllowed": false
+  }
+}

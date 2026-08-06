@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-042-explore",
+  "deliveryId": "20260805-01-product-baseline",
+  "changeKey": "E1",
+  "changeId": "baseline-finalization-corrections",
+  "action": "explore",
+  "role": "author",
+  "inputRef": "77c4c36",
+  "sourceReference": "ref/product-baseline-finalization-reference.md",
+  "activationExecuted": {
+    "manifestField": "changes[E1].state",
+    "transition": "planned -> active",
+    "activatedBy": "author",
+    "rationale": "Author activates Change when starting explore"
+  },
+  "dependsOn": [
+    "product-positioning",
+    "core-model",
+    "integration-boundaries",
+    "bootstrap-and-roadmap"
+  ],
+  "constraints": {
+    "mustNotReopenCompletedChanges": true,
+    "mustNotModifyArchivedHistory": true,
+    "mustNotCreateProposal": true,
+    "mustNotCreateFormalDocs": true,
+    "mustNotAutoCommit": true,
+    "fullTestAllowed": false,
+    "mayCreateReviewRun": false
+  },
+  "runPath": ".flowkit/runs/20260805-01-product-baseline/baseline-finalization-corrections/20260806-042-explore/"
+}

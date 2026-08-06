@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-043-review-explore",
+  "status": "completed",
+  "summary": "E1 Explore 正确将四个已 checkpoint 的 Change 保持冻结，并准确识别三个 Purpose 占位、两处精确 CJK 文字错误、fullTestStatus、A1 历史说明和 Delivery 级授权边界。其范围却包含一个不存在的旧 D1 Reference 删除，并且 Delivery Manifest 的 E1 outputs 漏列自身这一必改文件；这会让后续 Proposal/Apply 的受控范围不完整。",
+  "findings": {
+    "blocking": [
+      {
+        "id": "E1-RE-001",
+        "title": "旧 D1 Reference 删除没有对应的现存输入，构成未经证实的修正范围",
+        "location": "openspec/changes/baseline-finalization-corrections/explore.md:71, 185-188, 245-246",
+        "problem": "Explore 将 ref/d1-bootstrap-and-roadmap-reference.md 作为需要替换和删除的旧 Reference；当前工作区中该文件不存在。Finalization Reference 仅将其列为可删除示例，且说明当前 Finalization Reference 可保留到 Delivery Final Commit 前。",
+        "impact": "Proposal 会被引导为删除不存在的文件，或为满足该叙述制造不必要变更，无法证明该项是 E1 当前、可执行且受控的 corrective scope。",
+        "requiredResolution": "在 revise-explore 中移除该文件作为 E1 既定修正项及其删除任务；如存在另一个真实的过期 Reference，必须给出其实际路径、使用证据和删除时机。保留新 Finalization Reference 的非权威边界，不得删除用户未授权的 ref/ 内容。"
+      },
+      {
+        "id": "E1-RE-002",
+        "title": "E1 Manifest outputs 漏列 Delivery Manifest 本身",
+        "location": "openspec/delivery-groups/20260805-01-product-baseline.yaml:E1 outputs; openspec/changes/baseline-finalization-corrections/explore.md:175-179, 254-257",
+        "problem": "Explore 明确 E1 必须维护 delivery.fullTestStatus（创建时 not-ready，Checkpoint 后 awaiting-user-decision），而当前 E1 outputs 只列三个 spec 和两份 docs，未列 openspec/delivery-groups/20260805-01-product-baseline.yaml。",
+        "impact": "Manifest 是本 Change 的实际受控输出和状态投影；遗漏它会让 Proposal、Apply 范围检查及 Change Verification 无法完整判断允许的修改范围。",
+        "requiredResolution": "在 revise-explore 中将 Delivery Manifest 加入 E1 outputs，并明确它只承载 E1 生命周期中的 fullTestStatus 与 E1 state 投影；不得借此改写 Delivery 主状态或扩张到第二套状态系统。"
+      }
+    ],
+    "nonBlocking": [
+      {
+        "id": "E1-RE-003",
+        "title": "一处文档行号与已验证位置不一致",
+        "location": "openspec/changes/baseline-finalization-corrections/explore.md:171",
+        "problem": "第 2.2 节和原始文件均定位 docs/verification-model.md 为 L127，但第 4.2 节写为 L123。",
+        "requiredResolution": "随 revise-explore 统一为当前实际行号，或改用稳定的精确文本定位。"
+      }
+    ]
+  },
+  "verificationReviewed": [
+    "复核 042-explore Action、Context 和 Result：作者 Run 记录了 E1 planned -> active、未创建 Proposal/正式文档、未运行 Full Test、未提交，下一 Action 为 review-explore。",
+    "复核 Delivery Manifest：Delivery 为 active，E1 是唯一 active required Change，A1-D1 依赖均已 completed，delivery.fullTestStatus 为 not-ready。",
+    "复核 Explore 与三个 capability spec：三个 Purpose 均仍为 OpenSpec TBD 占位；Explore 限制为 Purpose 修正，未提议修改 Requirement 或 Scenario。",
+    "复核 docs/delivery-lifecycle.md:74 和 docs/verification-model.md:127：精确错误文本分别为 兞他 和 第二奔；两者不是 U+FFFD。",
+    "复核文件存在性：ref/d1-bootstrap-and-roadmap-reference.md 不存在；ref/product-baseline-finalization-reference.md 存在。",
+    "执行 git diff --check：通过，exit code 0。该检查仅覆盖已跟踪的 Manifest 变更；Explore/Run 为 untracked，已单独内容复核。",
+    "执行 npx openspec validate --specs --strict：4 passed, 0 failed。此结果验证现有 capability specs 的结构，不替代本 Review 的语义判断。",
+    "CodeGraph MCP 已启用，但当前索引仅含 6 个 YAML 文件、0 nodes、0 edges；无法对未跟踪 Markdown/Run 产物提供结构影响证据，故本轮未将其作为范围结论依据。",
+    "本轮未运行 Full Test，未修改正式 E1 Explore artifact、冻结产物、Manifest 或先前 Runs，未提交或推送。"
+  ],
+  "verdict": "changes-requested",
+  "nextActionRecommendation": "revise-explore",
+  "commitPolicy": {
+    "commitAllowed": false,
+    "commitCreated": false
+  }
+}

@@ -9,6 +9,7 @@ goal: >
   Delivery 提供明确前置条件。
 delivery:
   state: active
+  fullTestStatus: not-ready
 
 scope:
   included:
@@ -92,6 +93,24 @@ changes:
       - docs/development-roadmap.md
       - AGENTS.md
       - .codex/skills/flowkit-git-workflow/SKILL.md
+
+  - key: E1
+    id: baseline-finalization-corrections
+    goal: 修正 Product Baseline Delivery Final Audit 中发现的正式基线问题，并使 Delivery 进入 Full Test 就绪状态
+    required: true
+    dependsOn:
+      - product-positioning
+      - core-model
+      - integration-boundaries
+      - bootstrap-and-roadmap
+    state: active
+    outputs:
+      - openspec/specs/flowkit-core-model/spec.md
+      - openspec/specs/flowkit-integration-boundaries/spec.md
+      - openspec/specs/flowkit-bootstrap-and-roadmap/spec.md
+      - docs/delivery-lifecycle.md
+      - docs/verification-model.md
+      - openspec/delivery-groups/20260805-01-product-baseline.yaml
 
 verification:
   change:

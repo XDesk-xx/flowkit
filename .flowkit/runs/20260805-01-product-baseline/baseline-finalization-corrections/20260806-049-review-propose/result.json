@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-049-review-propose",
+  "status": "completed",
+  "summary": "048-revise-propose 已正确移除越界的新 capability、Requirement 和 Scenario，并把实际 checklist 数量校正为 21，消除了 047 的原始范围 Finding。但删除唯一 delta 后 E1 不再是有效 OpenSpec Change：严格 Change validation 报告 no deltas found。仅通过 --specs 的既有 capability 结构检查不能替代这一前置条件，因此 Proposal 仍不能进入 Apply。",
+  "findings": {
+    "blocking": [
+      {
+        "id": "E1-RP-003",
+        "title": "移除越界 delta 后，E1 不再是有效的 OpenSpec Change",
+        "location": "openspec/changes/baseline-finalization-corrections/ (specs/ directory absent)",
+        "problem": "048 移除了唯一的 specs/ delta。执行 npx openspec validate baseline-finalization-corrections --strict 返回错误：Change must have at least one delta; No deltas found。048 只运行 npx openspec validate --specs --strict，该命令仅验证四个现有 capability spec，不验证 E1 Change。",
+        "impact": "E1 既不能以无 delta 的 OpenSpec Change 进入 Apply，也不能在未改变已批准 Explore 范围的前提下自行重新新增 capability/Requirement/Scenario。当前 Proposal 缺少可执行且合法的 OpenSpec 表达。",
+        "requiredResolution": "停止把 --specs 结果当作 E1 Change validation。需要 owner 对范围作出明确决定：要么授权回到 Explore，审查并明确允许一个最小、持续性的 capability delta；要么授权采用不要求 OpenSpec delta 的其他受控修正路径。仅在该决定后，才能生成与决定一致的有效 Proposal 并重新执行严格 Change validation。"
+      }
+    ],
+    "nonBlocking": []
+  },
+  "resolvedFindings": [
+    {
+      "id": "E1-RP-001",
+      "result": "resolved",
+      "evidence": "Proposal 现明确 E1 不创建新 capability；Design 已移除新增 capability 的 Decision；specs/ directory 已移除。"
+    },
+    {
+      "id": "E1-RP-002",
+      "result": "resolved",
+      "evidence": "tasks.md 当前有 21 个 checkbox，048 Result 记录 tasksTotal=21，未改写 046 terminal Run。"
+    }
+  ],
+  "verificationReviewed": [
+    "复核 048-revise-propose Action、Context 和 Result：它仅处理 047 Findings，未创建正式输出、未运行 Full Test、未提交。",
+    "复核 Proposal/Design/Tasks：新增 capability、对应 Requirements/Scenarios 和其 validation task 已移除；E1 恢复为既有 Purpose、两处文字、Manifest 和 verification.md 的受控修正范围。",
+    "统计 tasks.md 未完成 checkbox：21，与 048 Result 一致。",
+    "执行 npx openspec validate --specs --strict：4 passed, 0 failed；这只验证现有 capability specs。",
+    "执行 npx openspec validate baseline-finalization-corrections --strict：失败，错误为 no deltas found；发现 E1-RP-003。",
+    "执行 git diff --check：通过，exit code 0。该检查仅覆盖已跟踪 Manifest 变更；Proposal/Run 为 untracked，已单独内容复核。",
+    "CodeGraph MCP 已启用，但当前索引仅含 6 个 YAML 文件、0 nodes、0 edges；无法对未跟踪 Markdown/Run 产物提供结构影响证据，故本轮未将其作为结论依据。",
+    "本轮未运行 Full Test，未修改 Proposal、Design、Tasks、Manifest、冻结产物或先前 Runs，未提交或推送。"
+  ],
+  "verdict": "changes-requested",
+  "nextActionRecommendation": "owner-scope-decision-required",
+  "commitPolicy": {
+    "commitAllowed": false,
+    "commitCreated": false
+  }
+}
