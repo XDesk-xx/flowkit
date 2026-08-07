@@ -47,6 +47,7 @@ function createRunInput(overrides: Partial<Parameters<typeof createRun>[0]> = {}
     actionMd: '# Action\nexplore\n',
     deliveryRunsDir: deliveryRunsDir(),
     runsPathPrefix: '.flowkit/runs',
+    repoRoot: tempRoot,
     ...overrides,
   };
 }
@@ -403,6 +404,20 @@ describe('writeRunResult', () => {
   });
 
   it('rejects completed review-* Run missing reviewVerdict before publication (C1-AP-006)', async () => {
+    // Q1: createRun derives inputRef from reviewedRunId by reading the
+    // reviewed Run's result.json. Set up the reviewed Run first.
+    const reviewedRunDir = await createRun(
+      createRunInput({
+        runId: '20260806-020-apply',
+        action: 'apply',
+        role: 'author',
+      }),
+    );
+    await writeRunResult(reviewedRunDir, {
+      runStatus: 'completed',
+      actionResult: { action: 'apply', executionStatus: 'completed', summary: 'applied' },
+    });
+
     // Create a review-apply Run, then try to publish a completed result
     // WITHOUT reviewVerdict. writeRunResult MUST reject at
     // validateReviewVerdictIntegrity, BEFORE result.json is created.
@@ -411,7 +426,7 @@ describe('writeRunResult', () => {
         runId: '20260806-021-review-apply',
         action: 'review-apply',
         role: 'reviewer',
-        reviewedRunId: '20260806-009-apply',
+        reviewedRunId: '20260806-020-apply',
       }),
     );
 
@@ -430,13 +445,27 @@ describe('writeRunResult', () => {
   });
 
   it('accepts completed review-* Run with reviewVerdict (C1-AP-006)', async () => {
+    // Q1: createRun derives inputRef from reviewedRunId by reading the
+    // reviewed Run's result.json. Set up the reviewed Run first.
+    const reviewedRunDir = await createRun(
+      createRunInput({
+        runId: '20260806-023-apply',
+        action: 'apply',
+        role: 'author',
+      }),
+    );
+    await writeRunResult(reviewedRunDir, {
+      runStatus: 'completed',
+      actionResult: { action: 'apply', executionStatus: 'completed', summary: 'applied' },
+    });
+
     // Create a review-apply Run, publish a completed result WITH reviewVerdict.
     const runDir = await createRun(
       createRunInput({
         runId: '20260806-022-review-apply',
         action: 'review-apply',
         role: 'reviewer',
-        reviewedRunId: '20260806-009-apply',
+        reviewedRunId: '20260806-023-apply',
       }),
     );
 

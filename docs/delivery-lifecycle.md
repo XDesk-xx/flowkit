@@ -164,6 +164,22 @@ active  → cancelled
 - cancelled Change 不满足 dependency completion；
 - 依赖 cancelled Change 的其他 Change 保持 blocked，直到 owner 取消、替换或重新规划依赖。
 
+### 3.7 Change artifact 生命周期
+
+active Change 的正式 artifact 位于 `openspec/changes/<changeId>/`：
+
+```text
+explore.md / proposal.md / design.md / specs/** / tasks.md / verification.md
+```
+
+这些是 **mutable current-state canonical path**，不是每个 terminal Run 的 immutable history store：
+
+- 合法 `revise-explore` / `revise-propose` MAY 覆盖同一路径；历史 `producedResultRefs` 的 fingerprint 表达“该 generation 完成时的内容断言”，不要求所有历史 generation 永久匹配当前 bytes；
+- Reader 使用 **generation-aware validation**：通过合法 `review-S changes-requested → revise-S` lineage 分类 current / superseded / revision-window，只对当前 effective generation 的 mutable refs 严格验证当前 canonical bytes；没有合法 successor 的 canonical overwrite 仍 fail-closed；
+- archive 后最终 current-state artifact relocation 到唯一 `openspec/changes/archive/<date>-<changeId>/`；持久化 logical ref 不改写，archive 必须保持最终 effective bytes 不变，active/archive 歧义或多 archive 匹配 fail-closed；
+- `.tmp/**` 只作可删除 scratch，resume / review / archive 不得依赖其作为唯一事实来源；
+- terminal `result.json` 发布前的 completion preflight 验证所有 Core-owned ResultRef；preflight 失败（`RESULT_REF_TARGET_MISSING` / `RESULT_REF_MISMATCH`）不发布 result.json，Run 保持 pending，可在修正输入后重试，`assertMutable + fs.link` create-once 不变量不变。
+
 ## 4. Review 与 Revision/Fix 多轮闭环
 
 Review 可以多轮执行：

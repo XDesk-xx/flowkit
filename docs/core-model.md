@@ -45,9 +45,11 @@ Action 与 Git Commit 不一一对应。同一个 Action 可以包含多轮讨�
 
 ### 2.4 Run
 
-Run 是某个角色对某个正式 Action 的一次执行实例。
+Run 是某个角色对某个正式 Action 的一次执行实例，是流程推进、精确交接和恢复所需的最小执行信封（execution envelope）。
 
 Run 不构成第四个产品实体层，不拥有 Change 契约、流程状态、Git 历史、Findings、测试结果或其他专业事实的主要权威。
+
+Run 的 `result.json` 使用 closed Core-validated schema：只保存执行状态、动作结果摘要和 Core 派生的 ResultRef，拒绝 `blockingFindings`、`verification[]`、`consistencyScan`、`commitPolicy` 等自由重型 bookkeeping 字段。所有 ResultRef（run-result、produced-artifact、verification-summary）的 kind、path 和 fingerprint 均由 Core 从真实目标派生，不由 Agent 手工填写。
 
 ## 3. 状态模型
 

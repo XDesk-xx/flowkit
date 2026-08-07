@@ -30,6 +30,12 @@ import type { ChangeAction, DeliveryAction } from '../domain/actions.js';
 import { isExecutionStatus } from '../domain/schema-validator.js';
 import { FlowkitError } from '../shared/errors.js';
 import { normalizeSeparators } from '../shared/paths.js';
+import {
+  RUN_RESULT_KIND,
+  PRODUCED_ARTIFACT_KIND,
+  VERIFICATION_SUMMARY_KIND,
+  RESULT_REF_KINDS,
+} from './result-ref-adapter.js';
 import type {
   ActionResult,
   ResultRef,
@@ -55,6 +61,35 @@ export type TerminalRunStatus = 'completed' | 'failed' | 'cancelled';
 export type ActionResultWithoutRunRef = Omit<ActionResult, 'runRef'>;
 
 // ---------------------------------------------------------------------------
+// ReviewFinding (Q1 typed reviewer payload)
+// ---------------------------------------------------------------------------
+
+/**
+ * Typed review finding — the minimal Reviewer-owned payload stored in a
+ * completed `review-*` Run's `result.json`. Core validates this typed schema;
+ * free-text findings arrays (`blockingFindings`, `nonBlockingFindings`) are
+ * rejected by the closed schema.
+ *
+ * Q1 design Q1-2: each finding has a minimal structure. `severity=blocking`
+ * findings MUST have a non-empty `requiredChange` when the verdict is
+ * `changes-requested`.
+ */
+export interface ReviewFinding {
+  /** Non-empty stable finding ID (e.g. "Q1-RP-001"). */
+  readonly id: string;
+  /** `blocking` or `non-blocking`. */
+  readonly severity: 'blocking' | 'non-blocking';
+  /** Non-empty short title. */
+  readonly title: string;
+  /** Non-empty description of the problem. */
+  readonly problem: string;
+  /** Optional location reference (file path, line range, or section). */
+  readonly location?: string;
+  /** Required for `blocking` severity: what the author must change. */
+  readonly requiredChange?: string;
+}
+
+// ---------------------------------------------------------------------------
 // RunResultFile (result.json physical schema)
 // ---------------------------------------------------------------------------
 
@@ -71,6 +106,13 @@ export type ActionResultWithoutRunRef = Omit<ActionResult, 'runRef'>;
  * carry it), but the Reader treats a missing `reviewVerdict` on a completed
  * `review-*` Run as a `FactConflict` — the verdict-to-reviewed-Run linkage is
  * a required Policy input.
+ *
+ * Q1: `reviewFindings` is the typed Reviewer-owned payload for completed
+ * `review-*` Runs. Non-review Runs MUST NOT carry it. The closed schema
+ * rejects free-text findings arrays (`blockingFindings`, `nonBlockingFindings`,
+ * `resolvedFindings`) and other heavy bookkeeping fields (`verification[]`,
+ * `archiveResults`, `manifestUpdate`, `policyRoute`, `commitPolicy`,
+ * `consistencyScan`).
  */
 export interface RunResultFile {
   readonly runStatus: TerminalRunStatus;
@@ -82,6 +124,8 @@ export interface RunResultFile {
   readonly cancellationReason?: string;
   /** Present for completed `review-*` Runs (C1-AP-004 canonical verdict payload). */
   readonly reviewVerdict?: ReviewVerdictValue;
+  /** Q1: typed Reviewer findings for completed `review-*` Runs. */
+  readonly reviewFindings?: readonly ReviewFinding[];
 }
 
 // ---------------------------------------------------------------------------
@@ -191,18 +235,43 @@ function asObject(value: unknown, label: string): Record<string, unknown> {
 // ---------------------------------------------------------------------------
 
 /**
+ * Known fields for ResultRef closed-schema validation.
+ */
+const RESULT_REF_KNOWN_FIELDS = new Set(['ref', 'versionFingerprint', 'kind']);
+
+/**
  * C1's own ResultRef validator. Validates that `ref` and `versionFingerprint`
- * are non-empty strings and `kind` (optional) is a string.
+ * are non-empty strings. `kind` (optional) MUST be in the Core-owned
+ * {@link RESULT_REF_KINDS} enum — unknown kinds are rejected.
+ *
+ * Q1: closed schema — unknown fields are rejected (not passed through).
  *
  * @throws {FlowkitError} `SCHEMA_VALIDATION_FAILED` when validation fails.
  */
 export function validateResultRefProjection(value: unknown): ResultRef {
   const obj = asObject(value, 'ResultRef');
+
+  // Closed schema: reject unknown fields.
+  for (const key of Object.keys(obj)) {
+    if (!RESULT_REF_KNOWN_FIELDS.has(key)) {
+      schemaFail(`ResultRef contains unknown field: ${key}`, { field: key });
+    }
+  }
+
   const ref = requireNonEmptyString(obj, 'ref');
   const versionFingerprint = requireNonEmptyString(obj, 'versionFingerprint');
   const kindRaw = obj['kind'];
-  if (kindRaw !== undefined && typeof kindRaw !== 'string') {
-    schemaFail('ResultRef.kind must be a string', { kind: kindRaw });
+  if (kindRaw !== undefined) {
+    if (typeof kindRaw !== 'string') {
+      schemaFail('ResultRef.kind must be a string', { kind: kindRaw });
+    }
+    // Q1: kind MUST be in the Core-owned enum.
+    if (!(RESULT_REF_KINDS as readonly string[]).includes(kindRaw)) {
+      schemaFail(
+        `ResultRef.kind must be one of ${RESULT_REF_KINDS.join(', ')}, got: ${kindRaw}`,
+        { kind: kindRaw },
+      );
+    }
   }
   const result: ResultRef = {
     ref,
@@ -217,13 +286,35 @@ export function validateResultRefProjection(value: unknown): ResultRef {
 // ---------------------------------------------------------------------------
 
 /**
+ * Known fields for ActionResultWithoutRunRef closed-schema validation.
+ */
+const ACTION_RESULT_KNOWN_FIELDS = new Set([
+  'action',
+  'executionStatus',
+  'summary',
+  'producedResultRefs',
+  'consumedInputRefs',
+  'verificationSummaryRef',
+  'reviewVerdictRef',
+  'failureDiagnosis',
+  'nextActionRecommendation',
+]);
+
+/**
  * Validate an unknown value as {@link ActionResultWithoutRunRef}.
  *
  * `runRef` MUST be absent — it is derived on read from the file content
  * SHA-256 (D7). Required fields: `action` (in B1 Action Catalog),
  * `executionStatus` (via B1 `isExecutionStatus`), `summary` (non-empty
  * string). Nested ResultRef fields are validated via
- * {@link validateResultRefProjection}.
+ * {@link validateResultRefProjection} with field-specific kind binding.
+ *
+ * Q1: closed schema — unknown fields are rejected. Field-specific kind
+ * binding enforces:
+ *   - `producedResultRefs` → kind MUST be `produced-artifact`
+ *   - `consumedInputRefs` → kind MUST be `run-result`
+ *   - `verificationSummaryRef` → kind MUST be `verification-summary`
+ *   - `reviewVerdictRef` → kind MUST be `run-result`
  *
  * @throws {FlowkitError} `SCHEMA_VALIDATION_FAILED` on any validation failure.
  * @throws {FlowkitError} `UNKNOWN_ACTION` when `action` is not a formal Action.
@@ -238,6 +329,15 @@ export function validateActionResultWithoutRunRef(
     schemaFail('runRef must be absent in ActionResultWithoutRunRef (derived on read)', {
       runRef: obj['runRef'],
     });
+  }
+
+  // Q1: closed schema — reject unknown fields.
+  for (const key of Object.keys(obj)) {
+    if (!ACTION_RESULT_KNOWN_FIELDS.has(key)) {
+      schemaFail(`ActionResultWithoutRunRef contains unknown field: ${key}`, {
+        field: key,
+      });
+    }
   }
 
   const action = requireNonEmptyString(obj, 'action');
@@ -255,13 +355,29 @@ export function validateActionResultWithoutRunRef(
 
   const summary = requireNonEmptyString(obj, 'summary');
 
-  // Optional ResultRef arrays.
-  const producedResultRefs = validateOptionalResultRefArray(obj, 'producedResultRefs');
-  const consumedInputRefs = validateOptionalResultRefArray(obj, 'consumedInputRefs');
+  // Optional ResultRef arrays with field-specific kind binding.
+  const producedResultRefs = validateOptionalResultRefArray(
+    obj,
+    'producedResultRefs',
+    PRODUCED_ARTIFACT_KIND,
+  );
+  const consumedInputRefs = validateOptionalResultRefArray(
+    obj,
+    'consumedInputRefs',
+    RUN_RESULT_KIND,
+  );
 
-  // Optional single ResultRefs.
-  const verificationSummaryRef = validateOptionalResultRef(obj, 'verificationSummaryRef');
-  const reviewVerdictRef = validateOptionalResultRef(obj, 'reviewVerdictRef');
+  // Optional single ResultRefs with field-specific kind binding.
+  const verificationSummaryRef = validateOptionalResultRef(
+    obj,
+    'verificationSummaryRef',
+    VERIFICATION_SUMMARY_KIND,
+  );
+  const reviewVerdictRef = validateOptionalResultRef(
+    obj,
+    'reviewVerdictRef',
+    RUN_RESULT_KIND,
+  );
 
   // Optional strings.
   const failureDiagnosis = validateOptionalString(obj, 'failureDiagnosis');
@@ -281,20 +397,39 @@ export function validateActionResultWithoutRunRef(
   return result;
 }
 
+/**
+ * Validate an optional ResultRef field with field-specific kind binding.
+ *
+ * @param expectedKind - The kind that MUST be present on the ResultRef (if
+ *   `kind` is provided). When `undefined`, kind is not checked (legacy mode).
+ */
 function validateOptionalResultRef(
   obj: Record<string, unknown>,
   field: string,
+  expectedKind: string,
 ): ResultRef | undefined {
   const v = obj[field];
   if (v === undefined) {
     return undefined;
   }
-  return validateResultRefProjection(v);
+  const ref = validateResultRefProjection(v);
+  // Q1: field-specific kind binding.
+  if (ref.kind !== undefined && ref.kind !== expectedKind) {
+    schemaFail(
+      `Field ${field} ResultRef.kind must be ${expectedKind}, got: ${ref.kind}`,
+      { field, expectedKind, actualKind: ref.kind },
+    );
+  }
+  return ref;
 }
 
+/**
+ * Validate an optional ResultRef array with field-specific kind binding.
+ */
 function validateOptionalResultRefArray(
   obj: Record<string, unknown>,
   field: string,
+  expectedKind: string,
 ): readonly ResultRef[] | undefined {
   const v = obj[field];
   if (v === undefined) {
@@ -305,7 +440,15 @@ function validateOptionalResultRefArray(
   }
   return v.map((item, i) => {
     try {
-      return validateResultRefProjection(item);
+      const ref = validateResultRefProjection(item);
+      // Q1: field-specific kind binding.
+      if (ref.kind !== undefined && ref.kind !== expectedKind) {
+        schemaFail(
+          `Field ${field}[${i}] ResultRef.kind must be ${expectedKind}, got: ${ref.kind}`,
+          { field, index: i, expectedKind, actualKind: ref.kind },
+        );
+      }
+      return ref;
     } catch {
       throw new FlowkitError(
         'SCHEMA_VALIDATION_FAILED',
@@ -335,6 +478,18 @@ function validateOptionalString(
 // ---------------------------------------------------------------------------
 
 /**
+ * Known fields for RunResultFile closed-schema validation.
+ */
+const RUN_RESULT_FILE_KNOWN_FIELDS = new Set([
+  'runStatus',
+  'actionResult',
+  'failureDiagnosis',
+  'cancellationReason',
+  'reviewVerdict',
+  'reviewFindings',
+]);
+
+/**
  * Validate the `runStatus` × `actionResult` combination gate (D8:
  * executionStatus single-source-of-truth).
  *
@@ -351,10 +506,24 @@ function validateOptionalString(
  *   - cancelled + actionResult
  *   - top-level `executionStatus` field present
  *
+ * Q1: closed schema — unknown fields (including `blockingFindings`,
+ * `nonBlockingFindings`, `resolvedFindings`, `verification`, `archiveResults`,
+ * `manifestUpdate`, `policyRoute`, `commitPolicy`, `consistencyScan`) are
+ * rejected.
+ *
  * @throws {FlowkitError} `SCHEMA_VALIDATION_FAILED` on any invalid combination.
  */
 export function validateRunResultFileCombination(value: RunResultFile): void {
   const obj = asObject(value, 'RunResultFile');
+
+  // Q1: closed schema — reject unknown fields.
+  for (const key of Object.keys(obj)) {
+    if (!RUN_RESULT_FILE_KNOWN_FIELDS.has(key)) {
+      schemaFail(`RunResultFile contains unknown field: ${key} (closed schema rejects heavy bookkeeping fields)`, {
+        field: key,
+      });
+    }
+  }
 
   // Top-level executionStatus MUST be absent (D8).
   if ('executionStatus' in obj) {
@@ -379,6 +548,19 @@ export function validateRunResultFileCombination(value: RunResultFile): void {
       schemaFail('RunResultFile.reviewVerdict must be approved|changes-requested', {
         reviewVerdict: reviewVerdictRaw,
       });
+    }
+  }
+
+  // Q1: reviewFindings — when present, MUST be a valid typed array.
+  const reviewFindingsRaw = obj['reviewFindings'];
+  if (reviewFindingsRaw !== undefined) {
+    if (!Array.isArray(reviewFindingsRaw)) {
+      schemaFail('RunResultFile.reviewFindings must be an array', {
+        reviewFindings: reviewFindingsRaw,
+      });
+    }
+    for (let i = 0; i < reviewFindingsRaw.length; i++) {
+      validateReviewFinding(reviewFindingsRaw[i], i);
     }
   }
 
@@ -413,6 +595,69 @@ export function validateRunResultFileCombination(value: RunResultFile): void {
   }
 }
 
+/**
+ * Validate a single ReviewFinding entry (Q1 typed payload).
+ *
+ * Each finding MUST have:
+ *   - non-empty `id`
+ *   - `severity` ∈ {blocking, non-blocking}
+ *   - non-empty `title`
+ *   - non-empty `problem`
+ *   - optional non-empty `location`
+ *   - optional non-empty `requiredChange` (required for blocking severity)
+ */
+function validateReviewFinding(value: unknown, index: number): void {
+  const obj = asObject(value, `reviewFindings[${index}]`);
+
+  // Closed schema for ReviewFinding.
+  const knownFields = new Set(['id', 'severity', 'title', 'problem', 'location', 'requiredChange']);
+  for (const key of Object.keys(obj)) {
+    if (!knownFields.has(key)) {
+      schemaFail(`reviewFindings[${index}] contains unknown field: ${key}`, {
+        field: key,
+        index,
+      });
+    }
+  }
+
+  const id = requireNonEmptyString(obj, 'id');
+  // Allow `id` to be re-validated but rename for clarity.
+  void id;
+
+  const severityRaw = obj['severity'];
+  if (severityRaw !== 'blocking' && severityRaw !== 'non-blocking') {
+    schemaFail(`reviewFindings[${index}].severity must be blocking|non-blocking`, {
+      severity: severityRaw,
+      index,
+    });
+  }
+
+  requireNonEmptyString(obj, 'title');
+  requireNonEmptyString(obj, 'problem');
+
+  // Optional location.
+  const locationRaw = obj['location'];
+  if (locationRaw !== undefined) {
+    if (typeof locationRaw !== 'string' || locationRaw.trim() === '') {
+      schemaFail(`reviewFindings[${index}].location must be a non-empty string`, {
+        location: locationRaw,
+        index,
+      });
+    }
+  }
+
+  // Optional requiredChange — required for blocking severity.
+  const requiredChangeRaw = obj['requiredChange'];
+  if (requiredChangeRaw !== undefined) {
+    if (typeof requiredChangeRaw !== 'string' || requiredChangeRaw.trim() === '') {
+      schemaFail(`reviewFindings[${index}].requiredChange must be a non-empty string`, {
+        requiredChange: requiredChangeRaw,
+        index,
+      });
+    }
+  }
+}
+
 // ---------------------------------------------------------------------------
 // validateReviewVerdictIntegrity (C1-AP-006)
 // ---------------------------------------------------------------------------
@@ -434,6 +679,13 @@ export function validateRunResultFileCombination(value: RunResultFile): void {
  *   incomplete review has no verdict.
  * - Any status + non-`review-*` → `reviewVerdict` MUST be absent.
  *
+ * Q1: verdict × findings consistency:
+ * - `changes-requested` MUST have at least 1 blocking `reviewFindings` entry.
+ * - `approved` MUST NOT have any blocking `reviewFindings` entry.
+ * - Each blocking finding MUST have non-empty `requiredChange`.
+ * - Non-review Runs MUST NOT carry `reviewFindings`.
+ * - `failed`/`cancelled` review-* Runs MUST NOT carry `reviewFindings`.
+ *
  * @throws {FlowkitError} `SCHEMA_VALIDATION_FAILED` on any violation.
  */
 export function validateReviewVerdictIntegrity(
@@ -442,24 +694,92 @@ export function validateReviewVerdictIntegrity(
 ): void {
   const isReviewAction = action.startsWith('review-');
   const hasReviewVerdict = result.reviewVerdict !== undefined;
+  const hasReviewFindings = result.reviewFindings !== undefined;
+  const findings = result.reviewFindings ?? [];
 
-  if (isReviewAction && result.runStatus === 'completed') {
-    if (!hasReviewVerdict) {
+  // Non-review Runs: MUST NOT carry reviewVerdict or reviewFindings.
+  if (!isReviewAction) {
+    if (hasReviewVerdict) {
       throw new FlowkitError(
         'SCHEMA_VALIDATION_FAILED',
-        `completed review-* Run result MUST contain reviewVerdict (action=${action}); a missing verdict cannot be detected after terminal publication (C1-AP-006)`,
+        `Non-review Run result MUST NOT contain reviewVerdict (action=${action})`,
+        { action, runStatus: result.runStatus, reviewVerdict: result.reviewVerdict },
+      );
+    }
+    if (hasReviewFindings) {
+      throw new FlowkitError(
+        'SCHEMA_VALIDATION_FAILED',
+        `Non-review Run result MUST NOT contain reviewFindings (action=${action})`,
         { action, runStatus: result.runStatus },
       );
     }
     return;
   }
 
-  if (hasReviewVerdict) {
+  // Review-* Runs below.
+
+  // failed/cancelled review-* Runs: MUST NOT carry reviewVerdict or reviewFindings.
+  if (result.runStatus !== 'completed') {
+    if (hasReviewVerdict) {
+      throw new FlowkitError(
+        'SCHEMA_VALIDATION_FAILED',
+        `Non-completed review-* Run MUST NOT contain reviewVerdict (action=${action}, runStatus=${result.runStatus})`,
+        { action, runStatus: result.runStatus, reviewVerdict: result.reviewVerdict },
+      );
+    }
+    if (hasReviewFindings) {
+      throw new FlowkitError(
+        'SCHEMA_VALIDATION_FAILED',
+        `Non-completed review-* Run MUST NOT contain reviewFindings (action=${action}, runStatus=${result.runStatus})`,
+        { action, runStatus: result.runStatus },
+      );
+    }
+    return;
+  }
+
+  // completed review-* Run: reviewVerdict MUST be present.
+  if (!hasReviewVerdict) {
     throw new FlowkitError(
       'SCHEMA_VALIDATION_FAILED',
-      `Run result MUST NOT contain reviewVerdict when action is non-review or runStatus is not completed (action=${action}, runStatus=${result.runStatus})`,
-      { action, runStatus: result.runStatus, reviewVerdict: result.reviewVerdict },
+      `completed review-* Run result MUST contain reviewVerdict (action=${action}); a missing verdict cannot be detected after terminal publication (C1-AP-006)`,
+      { action, runStatus: result.runStatus },
     );
+  }
+
+  // Q1: verdict × findings consistency.
+  const blockingFindings = findings.filter((f) => f.severity === 'blocking');
+
+  if (result.reviewVerdict === 'changes-requested') {
+    // changes-requested MUST have at least 1 blocking finding.
+    if (blockingFindings.length === 0) {
+      throw new FlowkitError(
+        'SCHEMA_VALIDATION_FAILED',
+        `changes-requested review-* Run MUST have at least 1 blocking reviewFindings entry (action=${action})`,
+        { action, runStatus: result.runStatus, reviewVerdict: result.reviewVerdict },
+      );
+    }
+    // Each blocking finding MUST have non-empty requiredChange.
+    for (let i = 0; i < findings.length; i++) {
+      const f = findings[i];
+      if (f.severity === 'blocking') {
+        if (f.requiredChange === undefined || f.requiredChange.trim() === '') {
+          throw new FlowkitError(
+            'SCHEMA_VALIDATION_FAILED',
+            `blocking reviewFindings[${i}] MUST have non-empty requiredChange (action=${action})`,
+            { action, index: i, findingId: f.id },
+          );
+        }
+      }
+    }
+  } else if (result.reviewVerdict === 'approved') {
+    // approved MUST NOT have any blocking finding.
+    if (blockingFindings.length > 0) {
+      throw new FlowkitError(
+        'SCHEMA_VALIDATION_FAILED',
+        `approved review-* Run MUST NOT have blocking reviewFindings entries (action=${action}, count=${blockingFindings.length})`,
+        { action, runStatus: result.runStatus, reviewVerdict: result.reviewVerdict, blockingCount: blockingFindings.length },
+      );
+    }
   }
 }
 

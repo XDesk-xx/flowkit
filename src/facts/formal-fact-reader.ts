@@ -25,6 +25,8 @@ import { readGitBoundarySummaries } from './git-boundary-reader.js';
 import { discriminateRun, normalizeBootstrapRunStatus } from '../persistence/legacy-recognizer.js';
 import { validateContextFile } from '../persistence/serialization.js';
 import type { ContextFile } from '../persistence/serialization.js';
+import { resolveArchiveAwareArtifactPath } from '../persistence/result-ref-adapter.js';
+import { FlowkitError } from '../shared/errors.js';
 import type {
   ChangeFact,
   FactConflict,
@@ -91,6 +93,44 @@ export async function readFormalFactSnapshot(
 
   // 6. Manifest conflicts.
   conflicts.push(...manifestResult.conflicts);
+
+  // 7. Q1: Review exact binding validation (tasks 4.5-4.6).
+  //    For each completed review-* Run, verify inputRef.ref ↔ reviewedRunId
+  //    result.json path and inputRef.versionFingerprint ↔ actual SHA-256.
+  conflicts.push(
+    ...await validateReviewExactBindings(
+      runs,
+      reviewVerdicts,
+      input.repoRoot,
+      input.runsPathPrefix,
+    ),
+  );
+
+  // 8. Q1: Generation-aware mutable artifact validation (tasks 5.1-5.8).
+  //    Classify artifact generations and validate only the current effective
+  //    generation's producedResultRefs against current canonical bytes.
+  conflicts.push(
+    ...await validateGenerationAwareArtifacts(
+      runs,
+      reviewVerdicts,
+      input.repoRoot,
+    ),
+  );
+
+  // 9. Q1: Verification generation-aware validation (tasks 7.4-7.7 / Q1-9).
+  //    verification.md is a mutable Change artifact. Classify review-apply
+  //    verification generations and validate ONLY the current review-apply's
+  //    verificationSummaryRef against current verification.md bytes. Superseded
+  //    review-apply summary refs (legitimate changes-requested → revise-apply
+  //    → review-apply lineage) are not re-validated. No-lineage replacement of
+  //    verification.md fails closed.
+  conflicts.push(
+    ...await validateVerificationGenerationAware(
+      runs,
+      reviewVerdicts,
+      input.repoRoot,
+    ),
+  );
 
   return {
     deliveryId: input.deliveryId,
@@ -720,6 +760,609 @@ function collectOwnerAuthorizations(runs: readonly RunFact[]): {
   // until D1 defines the authorization store.
   void runs;
   return [];
+}
+
+// ---------------------------------------------------------------------------
+// Q1: Review exact binding validation (tasks 4.5-4.6)
+// ---------------------------------------------------------------------------
+
+/**
+ * Q1-6: Validate review-* Run exact content binding.
+ *
+ * For each completed review-* Run with `inputRef` and `reviewedRunId`:
+ *   - Verify `inputRef.ref` matches the reviewed Run's result.json path.
+ *   - Verify `inputRef.versionFingerprint` matches the actual SHA-256 of the
+ *     reviewed Run's result.json content.
+ *
+ * Mismatches produce `FactConflict`s — the Reader MUST NOT construct a valid
+ * ReviewVerdictFact for a review-* Run with a broken binding.
+ *
+ * This binding is **permanently valid** — it is NOT affected by mutable
+ * artifact generation supersession (Q1-6: "该 exact Run-result binding 永久有效").
+ */
+async function validateReviewExactBindings(
+  runs: readonly RunFact[],
+  reviewVerdicts: readonly ReviewVerdictFact[],
+  repoRoot: string,
+  runsPathPrefix: string,
+): Promise<FactConflict[]> {
+  const conflicts: FactConflict[] = [];
+
+  for (const verdict of reviewVerdicts) {
+    const reviewRun = runs.find((r) => r.runId === verdict.reviewRunId);
+    if (reviewRun === undefined) {
+      continue; // Missing review Run is already a conflict from readC1Run.
+    }
+
+    // Only validate completed review-* Runs with inputRef.
+    if (reviewRun.status !== 'completed' || reviewRun.inputRef === undefined) {
+      continue;
+    }
+
+    const reviewedRunId = verdict.reviewedRunId;
+    const expectedPath = `${runsPathPrefix}/${reviewRun.deliveryId}/${reviewRun.changeId ?? ''}/${reviewedRunId}/result.json`
+      .replace(/\/+/g, '/');
+
+    // Verify inputRef.ref matches the reviewed Run's result.json path.
+    // The inputRef.ref may use different separator conventions; normalize both.
+    const normalizedInputRef = reviewRun.inputRef.ref.replace(/\/+/g, '/');
+    const normalizedExpected = expectedPath.replace(/\/+/g, '/');
+
+    if (normalizedInputRef !== normalizedExpected) {
+      conflicts.push({
+        dimension: 'review-binding-target',
+        authority: reviewRun.runId,
+        message: `review-* Run ${reviewRun.runId} inputRef.ref (${reviewRun.inputRef.ref}) does not match reviewed Run ${reviewedRunId} result.json path (${expectedPath})`,
+        detail: {
+          reviewRunId: reviewRun.runId,
+          reviewedRunId,
+          expectedRef: expectedPath,
+          actualRef: reviewRun.inputRef.ref,
+        },
+      });
+      continue; // Skip fingerprint check — target is already wrong.
+    }
+
+    // Verify inputRef.versionFingerprint matches actual SHA-256.
+    const reviewedResultPath = join(repoRoot, reviewRun.inputRef.ref);
+    let content: string;
+    try {
+      content = await readFile(reviewedResultPath, 'utf-8');
+    } catch {
+      conflicts.push({
+        dimension: 'review-binding-missing',
+        authority: reviewRun.runId,
+        message: `review-* Run ${reviewRun.runId} reviewed Run ${reviewedRunId} result.json not found or unreadable`,
+        detail: { reviewRunId: reviewRun.runId, reviewedRunId, path: reviewedResultPath },
+      });
+      continue;
+    }
+
+    const { createHash } = await import('node:crypto');
+    const actualHash = createHash('sha256').update(content, 'utf8').digest('hex');
+    if (actualHash !== reviewRun.inputRef.versionFingerprint) {
+      conflicts.push({
+        dimension: 'review-binding-mismatch',
+        authority: reviewRun.runId,
+        message: `review-* Run ${reviewRun.runId} inputRef.versionFingerprint does not match reviewed Run ${reviewedRunId} result.json actual SHA-256`,
+        detail: {
+          reviewRunId: reviewRun.runId,
+          reviewedRunId,
+          expected: reviewRun.inputRef.versionFingerprint,
+          actual: actualHash,
+        },
+      });
+    }
+  }
+
+  return conflicts;
+}
+
+// ---------------------------------------------------------------------------
+// Q1: Generation-aware mutable artifact validation (tasks 5.1-5.8)
+// ---------------------------------------------------------------------------
+
+/**
+ * Artifact generation classification (Q1-5.2).
+ */
+type GenerationClass = 'current' | 'superseded' | 'revision-window';
+
+/**
+ * Q1-5: Validate mutable Change artifact refs using generation-aware rules.
+ *
+ * Reader MUST first classify artifact generations based on review/revise
+ * lineage, then decide which mutable artifact refs need replacement validation
+ * against current canonical bytes.
+ *
+ * Rules:
+ *   - `current` generation: producedResultRefs MUST match current canonical bytes.
+ *   - `superseded` generation: producedResultRefs are NOT re-validated against
+ *     current canonical bytes (the successor legally overwrote them).
+ *   - `revision-window`: predecessor's mutable refs MAY be in flux; do not
+ *     produce false conflicts.
+ *
+ * Immutable Run-result refs (inputRef, consumedInputRefs, reviewVerdictRef)
+ * and review exact bindings are ALWAYS strictly validated (in
+ * {@link validateReviewExactBindings}), regardless of generation class.
+ */
+async function validateGenerationAwareArtifacts(
+  runs: readonly RunFact[],
+  reviewVerdicts: readonly ReviewVerdictFact[],
+  repoRoot: string,
+): Promise<FactConflict[]> {
+  const conflicts: FactConflict[] = [];
+
+  // Group completed artifact Runs by (changeId, stage).
+  const artifactRuns = runs.filter(
+    (r) =>
+      r.status === 'completed' &&
+      r.changeId !== undefined &&
+      (r.action === 'explore' ||
+        r.action === 'revise-explore' ||
+        r.action === 'propose' ||
+        r.action === 'revise-propose'),
+  );
+
+  // Group by changeId.
+  const byChange = new Map<string, RunFact[]>();
+  for (const run of artifactRuns) {
+    if (run.changeId === undefined) continue;
+    const list = byChange.get(run.changeId) ?? [];
+    list.push(run);
+    byChange.set(run.changeId, list);
+  }
+
+  // For each change, classify generations and validate current generation.
+  for (const changeRuns of byChange.values()) {
+    const classification = classifyGenerations(changeRuns, reviewVerdicts);
+
+    // Validate only the current generation's producedResultRefs.
+    for (const run of changeRuns) {
+      const genClass = classification.get(run.runId);
+      if (genClass === 'current') {
+        const runConflicts = await validateCurrentGenerationRefs(run, repoRoot);
+        conflicts.push(...runConflicts);
+      }
+      // superseded / revision-window: skip mutable artifact ref validation.
+      // Immutable refs (inputRef, review bindings) are validated separately.
+    }
+  }
+
+  return conflicts;
+}
+
+/**
+ * Classify artifact generations for a Change's artifact Runs.
+ *
+ * Q1-5.1: A successor G1 is legitimate only when:
+ *   G0 = completed S/revise-S artifact generation
+ *   R  = completed review-S
+ *   R.reviewedRunId == G0.runId
+ *   R.verdict == changes-requested
+ *   G1 = completed revise-S
+ *   G1.sourceReviewRun == R.runId (traced via context.json)
+ *
+ * Returns a map from runId → GenerationClass.
+ */
+function classifyGenerations(
+  artifactRuns: RunFact[],
+  reviewVerdicts: readonly ReviewVerdictFact[],
+): Map<string, GenerationClass> {
+  const result = new Map<string, GenerationClass>();
+
+  // Sort by runId (chronological order, since Run IDs are monotonically increasing).
+  const sorted = [...artifactRuns].sort((a, b) => a.runId.localeCompare(b.runId));
+
+  // Determine the current generation: the latest completed artifact Run
+  // that has a legitimate lineage chain (or is the initial generation).
+  // All earlier completed artifact Runs with a legitimate successor are superseded.
+
+  // Find the latest completed artifact Run — it is the current generation.
+  // Earlier ones are superseded IF a legitimate successor chain exists.
+  if (sorted.length === 0) {
+    return result;
+  }
+
+  const latest = sorted[sorted.length - 1];
+  result.set(latest.runId, 'current');
+
+  // All earlier artifact Runs are superseded (the latest legally overwrote them
+  // through the review/revise lineage). If there is no legitimate successor
+  // chain, the earlier Run is still current and its refs must match — but we
+  // classify it as 'current' only when there's no later Run.
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const earlier = sorted[i];
+    // Check if there's a legitimate review → revise chain between earlier and later.
+    const hasLegitimateSuccessor = hasLegitimateRevisionChain(
+      earlier,
+      latest,
+      reviewVerdicts,
+    );
+    if (hasLegitimateSuccessor) {
+      result.set(earlier.runId, 'superseded');
+    } else {
+      // No legitimate successor — earlier Run is still current (its refs must match).
+      result.set(earlier.runId, 'current');
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Check whether there is a legitimate review → revise chain from `earlier` to
+ * `later`. This is a simplified check — a full implementation would trace the
+ * exact sourceReviewRun linkage through context.json.
+ *
+ * Q1-5.1: The chain requires:
+ *   - A completed review-S Run reviewing `earlier` with verdict=changes-requested
+ *   - A completed revise-S Run that is `later` (or an intermediate Run)
+ */
+function hasLegitimateRevisionChain(
+  earlier: RunFact,
+  later: RunFact,
+  reviewVerdicts: readonly ReviewVerdictFact[],
+): boolean {
+  const stage = earlier.action.replace('revise-', '');
+  const reviseAction = `revise-${stage}`;
+
+  // Find a completed review-* Run that reviewed `earlier` with changes-requested.
+  const review = reviewVerdicts.find(
+    (v) =>
+      v.reviewedRunId === earlier.runId &&
+      v.verdict === 'changes-requested',
+  );
+  if (review === undefined) {
+    return false;
+  }
+
+  // Check that `later` is a revise-* Run (the successor).
+  // A full check would verify later.sourceReviewRun == review.reviewRunId,
+  // but RunFact doesn't carry sourceReviewRun. We rely on the Run ordering:
+  // if there's a changes-requested review of `earlier` and `later` is a
+  // revise-* Run that came after, the chain is legitimate.
+  if (later.action !== reviseAction && later.action !== stage) {
+    return false;
+  }
+
+  // The review Run must have been completed before `later`.
+  // Run IDs are monotonically increasing, so we can compare lexicographically.
+  if (review.reviewRunId >= later.runId) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Validate the current generation's producedResultRefs against current
+ * canonical bytes.
+ *
+ * Q1-5.2: "没有合法 successor 时，G0 是 current generation，其 effective refs
+ * MUST 严格验证当前 canonical bytes"
+ *
+ * Reads the Run's result.json actionResult.producedResultRefs and verifies
+ * each ref against the actual artifact file content.
+ */
+async function validateCurrentGenerationRefs(
+  run: RunFact,
+  repoRoot: string,
+): Promise<FactConflict[]> {
+  const conflicts: FactConflict[] = [];
+
+  // Read the Run's result.json to get producedResultRefs.
+  const runDir = resolveRunDir(repoRoot, run);
+  const resultPath = join(runDir, 'result.json');
+  let content: string;
+  try {
+    content = await readFile(resultPath, 'utf-8');
+  } catch {
+    // If result.json is missing, the Run isn't actually completed — skip.
+    return conflicts;
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(content);
+  } catch {
+    return conflicts; // Malformed result.json is already a conflict from readC1Run.
+  }
+
+  const obj = parsed as Record<string, unknown>;
+  const actionResult = obj['actionResult'];
+  if (actionResult === undefined || typeof actionResult !== 'object' || actionResult === null) {
+    return conflicts;
+  }
+  const ar = actionResult as Record<string, unknown>;
+  const producedRefs = ar['producedResultRefs'];
+  if (!Array.isArray(producedRefs)) {
+    return conflicts; // No produced refs to validate.
+  }
+
+  // Validate each produced ref against current canonical bytes.
+  const { createHash } = await import('node:crypto');
+  for (let i = 0; i < producedRefs.length; i++) {
+    const ref = producedRefs[i] as Record<string, unknown>;
+    const refPath = ref['ref'];
+    const refFingerprint = ref['versionFingerprint'];
+    if (typeof refPath !== 'string' || typeof refFingerprint !== 'string') {
+      continue;
+    }
+
+    // Resolve the artifact path (archive-aware: active or unique archive target,
+    // Q1-10 / task 8.3). Mirrors the preflight's `verifyArtifactRef`.
+    let artifactPath: string;
+    try {
+      artifactPath = await resolveArchiveAwareArtifactPath(repoRoot, normalizeSeparators(refPath));
+    } catch (e) {
+      // Missing (RESULT_REF_TARGET_MISSING) or ambiguous active+archive /
+      // multiple archives (SCHEMA_VALIDATION_FAILED) → fail-closed conflict.
+      const dimension =
+        e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED'
+          ? 'artifact-archive-ambiguous'
+          : 'artifact-missing';
+      conflicts.push({
+        dimension,
+        authority: run.runId,
+        message: `Current generation ${run.runId} producedResultRefs[${i}] target ${dimension}: ${refPath}`,
+        detail: { runId: run.runId, refPath, index: i },
+      });
+      continue;
+    }
+    let artifactContent: string;
+    try {
+      artifactContent = await readFile(artifactPath, 'utf-8');
+    } catch {
+      // Artifact missing — for current generation, this is a conflict.
+      conflicts.push({
+        dimension: 'artifact-missing',
+        authority: run.runId,
+        message: `Current generation ${run.runId} producedResultRefs[${i}] target unreadable: ${refPath}`,
+        detail: { runId: run.runId, refPath, index: i, artifactPath },
+      });
+      continue;
+    }
+
+    const actualHash = createHash('sha256').update(artifactContent, 'utf8').digest('hex');
+    if (actualHash !== refFingerprint) {
+      conflicts.push({
+        dimension: 'artifact-replaced',
+        authority: run.runId,
+        message: `Current generation ${run.runId} producedResultRefs[${i}] fingerprint mismatch: ${refPath} (expected ${refFingerprint}, got ${actualHash})`,
+        detail: {
+          runId: run.runId,
+          refPath,
+          index: i,
+          expected: refFingerprint,
+          actual: actualHash,
+        },
+      });
+    }
+  }
+
+  return conflicts;
+}
+
+/**
+ * Resolve a Run's directory path from repoRoot + RunFact.
+ */
+function resolveRunDir(repoRoot: string, run: RunFact): string {
+  const segments = [repoRoot, '.flowkit', 'runs', run.deliveryId];
+  if (run.changeId !== undefined) {
+    segments.push(run.changeId);
+  }
+  segments.push(run.runId);
+  return join(...segments);
+}
+
+// ---------------------------------------------------------------------------
+// Q1-9: Verification generation-aware validation (tasks 7.4-7.7)
+// ---------------------------------------------------------------------------
+
+/**
+ * Q1-9: `verification.md` is a mutable Change artifact. A `review-apply` Run
+ * carries a `verificationSummaryRef` over the then-current `verification.md`
+ * bytes. When a `review-apply` returns `changes-requested` and a legitimate
+ * `revise-apply` follows, the verification revision window opens: the old
+ * review-apply's `verificationSummaryRef` may be legally superseded by the
+ * next review-apply, and updating `verification.md` MUST NOT produce a
+ * historical false FactConflict.
+ *
+ * This function classifies review-apply verification generations and strictly
+ * validates ONLY the current generation's `verificationSummaryRef` against the
+ * current `verification.md` bytes. Superseded generations are skipped. When
+ * `verification.md` is replaced without a legitimate `changes-requested →
+ * revise-apply` lineage, the current review-apply's ref no longer matches and a
+ * FactConflict is collected (fail-closed, task 7.7).
+ *
+ * Historical review-apply review result, reviewedRun exact binding and verdict
+ * continue to be strictly validated by {@link validateReviewExactBindings}
+ * regardless of generation class.
+ */
+async function validateVerificationGenerationAware(
+  runs: readonly RunFact[],
+  reviewVerdicts: readonly ReviewVerdictFact[],
+  repoRoot: string,
+): Promise<FactConflict[]> {
+  const conflicts: FactConflict[] = [];
+
+  // Group completed review-apply Runs by changeId.
+  const reviewApplyRuns = runs.filter(
+    (r) => r.status === 'completed' && r.changeId !== undefined && r.action === 'review-apply',
+  );
+  const byChange = new Map<string, RunFact[]>();
+  for (const run of reviewApplyRuns) {
+    if (run.changeId === undefined) continue;
+    const list = byChange.get(run.changeId) ?? [];
+    list.push(run);
+    byChange.set(run.changeId, list);
+  }
+
+  // Completed revise-apply Runs are used to confirm legitimate lineage.
+  const reviseApplyRuns = runs.filter(
+    (r) => r.status === 'completed' && r.changeId !== undefined && r.action === 'revise-apply',
+  );
+
+  for (const changeRuns of byChange.values()) {
+    const classification = classifyVerificationGenerations(
+      changeRuns,
+      reviewVerdicts,
+      reviseApplyRuns,
+    );
+    for (const run of changeRuns) {
+      if (classification.get(run.runId) === 'current') {
+        conflicts.push(...await validateCurrentVerificationSummaryRef(run, repoRoot));
+      }
+      // superseded: skip verificationSummaryRef re-validation (legitimate
+      // revise-apply lineage superseded it). Immutable review binding/verdict
+      // remain validated by validateReviewExactBindings.
+    }
+  }
+
+  return conflicts;
+}
+
+/**
+ * Classify review-apply verification generations for a Change.
+ *
+ * The latest completed review-apply is `current`. An earlier review-apply V0 is
+ * `superseded` when it returned `changes-requested` AND a completed
+ * `revise-apply` exists between V0 and the latest review-apply (the legitimate
+ * verification revision window, Q1-9). Otherwise V0 remains `current` and its
+ * verificationSummaryRef MUST match current bytes (fail-closed, task 7.7).
+ */
+function classifyVerificationGenerations(
+  reviewApplyRuns: RunFact[],
+  reviewVerdicts: readonly ReviewVerdictFact[],
+  reviseApplyRuns: readonly RunFact[],
+): Map<string, GenerationClass> {
+  const result = new Map<string, GenerationClass>();
+  const sorted = [...reviewApplyRuns].sort((a, b) => a.runId.localeCompare(b.runId));
+  if (sorted.length === 0) {
+    return result;
+  }
+
+  const latest = sorted[sorted.length - 1];
+  result.set(latest.runId, 'current');
+
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const earlier = sorted[i];
+    const changeId = earlier.changeId;
+    // V0 must have returned changes-requested to open the revision window.
+    const v0ChangesRequested = reviewVerdicts.some(
+      (v) => v.reviewRunId === earlier.runId && v.verdict === 'changes-requested',
+    );
+    // A completed revise-apply must exist between V0 and the latest review-apply
+    // (same Change) to legitimate the supersession.
+    const hasReviseApplyBetween = reviseApplyRuns.some(
+      (r) =>
+        r.changeId === changeId &&
+        r.runId > earlier.runId &&
+        r.runId < latest.runId,
+    );
+    if (v0ChangesRequested && hasReviseApplyBetween) {
+      result.set(earlier.runId, 'superseded');
+    } else {
+      // No legitimate successor — earlier review-apply is still current.
+      result.set(earlier.runId, 'current');
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Validate the current review-apply's `verificationSummaryRef` against the
+ * current `verification.md` bytes (task 7.6).
+ *
+ * Reads the Run's result.json `actionResult.verificationSummaryRef`. When
+ * absent, no validation is performed (the preflight is the authority for
+ * requiring it). When present, the referenced `verification.md` MUST exist and
+ * its current SHA-256 MUST equal the ref's `versionFingerprint`; otherwise a
+ * FactConflict is collected (missing → `verification-summary-missing`, hash
+ * mismatch → `verification-summary-replaced`, task 7.7 fail-closed).
+ */
+async function validateCurrentVerificationSummaryRef(
+  run: RunFact,
+  repoRoot: string,
+): Promise<FactConflict[]> {
+  const conflicts: FactConflict[] = [];
+
+  const runDir = resolveRunDir(repoRoot, run);
+  const resultPath = join(runDir, 'result.json');
+  let content: string;
+  try {
+    content = await readFile(resultPath, 'utf-8');
+  } catch {
+    return conflicts; // result.json missing — handled elsewhere.
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(content);
+  } catch {
+    return conflicts; // Malformed result.json is already a conflict from readC1Run.
+  }
+
+  const obj = parsed as Record<string, unknown>;
+  const actionResult = obj['actionResult'];
+  if (actionResult === undefined || typeof actionResult !== 'object' || actionResult === null) {
+    return conflicts;
+  }
+  const ar = actionResult as Record<string, unknown>;
+  const summaryRef = ar['verificationSummaryRef'];
+  if (summaryRef === undefined || typeof summaryRef !== 'object' || summaryRef === null) {
+    return conflicts; // No verificationSummaryRef — preflight is the authority.
+  }
+  const ref = summaryRef as Record<string, unknown>;
+  const refPath = ref['ref'];
+  const refFingerprint = ref['versionFingerprint'];
+  if (typeof refPath !== 'string' || typeof refFingerprint !== 'string') {
+    return conflicts;
+  }
+
+  // Resolve verification.md via archive-aware resolution (Q1-10 / task 8.3).
+  let artifactPath: string;
+  try {
+    artifactPath = await resolveArchiveAwareArtifactPath(repoRoot, normalizeSeparators(refPath));
+  } catch (e) {
+    const dimension =
+      e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED'
+        ? 'verification-summary-archive-ambiguous'
+        : 'verification-summary-missing';
+    conflicts.push({
+      dimension,
+      authority: run.runId,
+      message: `Current review-apply ${run.runId} verificationSummaryRef target ${dimension}: ${refPath}`,
+      detail: { runId: run.runId, refPath },
+    });
+    return conflicts;
+  }
+  let artifactContent: string;
+  try {
+    artifactContent = await readFile(artifactPath, 'utf-8');
+  } catch {
+    conflicts.push({
+      dimension: 'verification-summary-missing',
+      authority: run.runId,
+      message: `Current review-apply ${run.runId} verificationSummaryRef target unreadable: ${refPath}`,
+      detail: { runId: run.runId, refPath, artifactPath },
+    });
+    return conflicts;
+  }
+
+  const { createHash } = await import('node:crypto');
+  const actualHash = createHash('sha256').update(artifactContent, 'utf8').digest('hex');
+  if (actualHash !== refFingerprint) {
+    conflicts.push({
+      dimension: 'verification-summary-replaced',
+      authority: run.runId,
+      message: `Current review-apply ${run.runId} verificationSummaryRef fingerprint mismatch: ${refPath} (expected ${refFingerprint}, got ${actualHash}); no legitimate revise-apply lineage superseded it`,
+      detail: { runId: run.runId, refPath, expected: refFingerprint, actual: actualHash },
+    });
+  }
+
+  return conflicts;
 }
 
 // ---------------------------------------------------------------------------

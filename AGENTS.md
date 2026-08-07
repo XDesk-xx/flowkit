@@ -38,3 +38,7 @@
 
 能由 Core、类型、Policy、Git 或验证工具确定的事实，
 不要要求 Agent 手工维护或重复证明。
+
+- Run `result.json` 是 closed Core-validated schema；Agent 不得手工填写 `blockingFindings`、`verification[]`、`consistencyScan` 等重型 bookkeeping 字段。
+- 所有 ResultRef（kind / path / fingerprint）由 Core 从真实目标派生；Agent 只提供 typed target descriptor（`consumedRunId` / `reviewedRunId` / produced tag），不手工构造 ResultRef。
+- 历史 mutable artifact ref 的 replacement validation 由 Reader generation-aware 规则判定，不由 Agent 手工维护 supersession 状态。

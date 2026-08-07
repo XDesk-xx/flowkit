@@ -87,6 +87,26 @@ passed | not-applicable
 
 不得因为是 Review 修复就跳过验证。
 
+### 3.5 成本边界与脚本归属
+
+Change Verification 冻结的是 timing 与 ownership，不是具体脚本：
+
+```text
+explore / propose
+  → 当前契约/文档适用检查
+
+apply / revise-apply
+  → focused + affected 范围适用检查
+  → typecheck / lint / build / OpenSpec strict 仅在适用时执行
+
+review-apply / archive
+  → 消费 Change Verification，不自动跑 Delivery Full Test
+```
+
+- 小修改优先 focused checks；只有影响共享契约、公共类型或跨模块行为时才扩大到 affected checks；
+- 具体的 `test:focused` / `test:affected` / `test:full` / `verify:change` 脚本属于 F1，不在本文定义；
+- Delivery Full Test 只有 Delivery ready + owner explicit authorization 才允许，详见 §4–§5。
+
 ## 4. Delivery Full Test
 
 ### 4.1 状态

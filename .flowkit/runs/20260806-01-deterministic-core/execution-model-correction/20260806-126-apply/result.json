@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-126-apply",
+  "status": "completed",
+  "summary": "Q1 execution-model-correction apply completed from approved 125-review-propose. Implements Lean Run closed schema (unknown-field rejection + typed reviewFindings + verdict×findings consistency), Core-owned ResultRef authority (kind enum, buildArtifactResultRef, archive-aware resolver, specs namespace enumeration), review exact binding (Core-derived inputRef from reviewedRunId, Reader path+hash validation), generation-aware mutable artifact lifecycle (classify current/superseded via review→revise lineage, validate only current effective producedResultRefs), completion preflight (verifyArtifactRef/verifyRunResultRef before terminal publication, retry on failure), revise-propose effective-set validation (inherited refs + specs namespace exact-set), verificationSummaryRef generation lifecycle (review-apply current/superseded classification, no-lineage replacement fail-closed), archive-aware Reader resolution for producedResultRefs + verificationSummaryRef, and Bootstrap legacy compatibility (schemaVersion 1 recognizer preserved, no auto-migration, no artifact snapshot store). Formal docs (core-model, delivery-lifecycle, verification-model, bootstrap-reference, AGENTS.md) updated; verification.md + tasks.md maintained. 471 unit tests pass (47 Q1 invariant fixtures). No Git commit auto-produced (AGENTS.md rule #6).",
+  "sourceReview": {
+    "runId": "20260806-125-review-propose",
+    "verdict": "approved",
+    "resultRef": "content-sha256:2374ecf5fd9516fc2fe3fd178c2f138150a15dd17af71f43c7d9af0dfb46fc03"
+  },
+  "artifacts": [
+    { "path": "src/persistence/serialization.ts", "sha256": "ea8c393c268fc82dc86c1e64800f497c2ef33c94c1b359bc6e463bc5261e5633" },
+    { "path": "src/persistence/result-ref-adapter.ts", "sha256": "3e1406dd336cf581840888b0ad8a07bba4a86a2c9574668a1634d0594051c57d" },
+    { "path": "src/persistence/run-persistence.ts", "sha256": "19a4215dd424dbfdfd259e95df9981a27db926338fb839a815953a4b6cb45ba9" },
+    { "path": "src/facts/formal-fact-reader.ts", "sha256": "6640fe295c7aeeedea0aa9bb2e4075e2d96f0a06a7056f868799f9038fc9f317" },
+    { "path": "tests/unit/persistence/q1-execution-model.test.ts", "sha256": "2ba87bea7f0651a158031e8b755f443e861fc4a09ffa2b23c1d21f7940be7b89" },
+    { "path": "tests/unit/persistence/run-persistence.test.ts", "sha256": "b39b501d260d453ac8b18fc6dcf11871b455c174857793c7409c853cb8d5d122" },
+    { "path": "docs/core-model.md", "sha256": "a145202799ba1d9aa1e60eb79f786e47a2c49d44c12be6f14026f8c9107939d8" },
+    { "path": "docs/delivery-lifecycle.md", "sha256": "89ea61846a348ba78413532601565d04e70f322035757f483e7a88615223a3ec" },
+    { "path": "docs/verification-model.md", "sha256": "ed293a112b71d38fdd055682b075201183973ae5f375b86350eee5dd08d8b25a" },
+    { "path": "docs/bootstrap-reference.md", "sha256": "ec622931025e402cc0ff42815a592230d6335de7a8e3ad77c18fece90a3ad440" },
+    { "path": "AGENTS.md", "sha256": "28706242553558d30d6947b5c358a71348e83cc405ed7acd4096e4a25431afc7" },
+    { "path": "openspec/changes/execution-model-correction/verification.md", "sha256": "f557121a620368bf4006d4240021d05ebc7458316e53e07cca84e08885161f46" },
+    { "path": "openspec/changes/execution-model-correction/tasks.md", "sha256": "a09bea736887f722723094f76d4d68138435972c8fe2af1c941a646f1b1bd275" }
+  ],
+  "scope": {
+    "modifiedCapabilities": [
+      "flowkit-formal-fact-reader-and-persistence"
+    ],
+    "productionCodeModified": true,
+    "testsModified": true,
+    "fullTestRun": false
+  },
+  "verification": {
+    "typecheck": "passed",
+    "lint": "passed",
+    "build": "passed",
+    "unitTests": "passed (471 tests, 471 pass, 0 fail)",
+    "q1InvariantFixtures": "passed (47 tests covering closed schema, typed reviewFindings, ResultRef kind enum, specs namespace enumeration, archive-aware resolution, completion preflight, review exact binding, generation-aware Reader 5.9/5.10, revise-propose specs exact-set 5.13, subset omission 5.11, initial coverage 5.12, verification generation-aware 7.5/7.7, archive relocation 8.3/8.4)",
+    "openspecStrict": "passed",
+    "openspecCommand": "openspec validate execution-model-correction --strict",
+    "canonicalSpecs": "passed (8 passed, 0 failed)",
+    "whitespace": "passed (git diff --check exit 0; benign LF/CRLF warnings only)"
+  },
+  "nextActionRecommendation": "review-apply",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

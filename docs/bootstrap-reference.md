@@ -107,32 +107,28 @@ deliveryId
 changeId
 action
 role
-inputRef
-dependsOn
-artifacts / input ResultRefs
+inputRef              // Core 从 consumedRunId / reviewedRunId 派生，不手工填写
+sourceReviewRun / sourceReviewVerdict
+reviewedRunId         // review-* Run 必填
 constraints
-owner authorizations
+ownerAuthorization
 runPath
 ```
 
-规则：保存引用与约束；不复制 OpenSpec、Git、Review、Verification 的全部内部状态；不保存完整聊天；不保存会因当前 Commit 自身变化而立即失效的自引用 SHA；路径与字段冲突时必须阻塞。
+规则：保存引用与约束；不复制 OpenSpec、Git、Review、Verification 的全部内部状态；不保存完整聊天；不保存会因当前 Commit 自身变化而立即失效的自引用 SHA；路径与字段冲突时必须阻塞。`inputRef` 的 kind、path 和 fingerprint 由 Core 从真实目标派生，Agent 不得手工构造。
 
-**result.json** 保存本次执行发生的事实：
+**result.json** 保存本次执行的最小正式事实，使用 closed Core-validated schema：
 
 ```text
-schemaVersion
-runId
-status
-summary
-produced / updated ResultRefs
-consumed Findings / authorization refs
-Verification summary / ref
-Review Verdict / Findings refs
-failure / blocked reason
-nextActionRecommendation（可选）
+runStatus                 // completed | failed | cancelled
+actionResult?             // action / executionStatus / summary + Core 派生的 ResultRef
+failureDiagnosis?
+cancellationReason?
+reviewVerdict?            // review-* completed 专用
+reviewFindings?           // review-* completed 专用 typed payload
 ```
 
-`nextActionRecommendation` 只能是建议，不能替代 Policy。
+`blockingFindings`、`nonBlockingFindings`、`verification[]`、`consistencyScan`、`commitPolicy` 等自由重型字段不属于 result.json，出现时被拒绝。`nextActionRecommendation`（可选）只能是建议，不能替代 Policy。
 
 ### 3.3 Run 不保存完整对话
 
@@ -178,6 +174,31 @@ Policy 解析具体 review-*
 Run 状态：`pending / completed / failed / cancelled`。
 
 Run 进入 terminal 状态后保留原记录。需要重试时创建新 Run，不把失败 Run 改写成成功 Run。
+
+### 3.7 Canonical artifact revision 语义
+
+`openspec/changes/<changeId>/` 下的 `explore.md / proposal.md / design.md / specs/** / tasks.md / verification.md` 是 **current-state canonical path**：
+
+- 合法 `revise-*` MAY 覆盖同一路径；Bootstrap 阶段手工执行同一套 generation-aware 语义——历史 terminal Run 的 `producedResultRefs` 不要求永久匹配当前 bytes，只在合法 `review-S changes-requested → revise-S` lineage 下停止对已 superseded 的 mutable ref 重新验证；
+- 不建立 `.flowkit/artifacts/`、`openspec/.history/` 或其他 per-Run artifact snapshot store；
+- archive 后最终 current-state artifact relocation 到唯一 `openspec/changes/archive/<date>-<changeId>/`，terminal Run 不重写。
+
+### 3.8 Legacy metadata-only 有界例外
+
+schemaVersion 1 历史 Run 继续由 legacy recognizer best-effort 读取，`createRun` / `writeRunResult` 不自动迁移或重写 legacy Run。
+
+Bootstrap 仅允许 owner 明确授权的 migration-time metadata correction，且必须满足：
+
+```text
+schemaVersion 1 legacy
+metadata-only
+不改 result.json
+不改 Action / Role / Verdict / Findings / 业务产物
+不存在已知下游消费冲突
+Git 保存 before / after
+```
+
+该例外不实现通用 CLI/API，不成为长期产品接口，也不修改任何 terminal Run 的业务事实。
 
 ---
 
