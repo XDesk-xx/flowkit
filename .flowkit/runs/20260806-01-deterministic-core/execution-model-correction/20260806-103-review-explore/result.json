@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-103-review-explore",
+  "status": "completed",
+  "summary": "Complete Q1 Explore review of 102 finished with changes-requested. Q1-RE-001 is resolved: Core construction and later preflight revalidation are now consistently distinguished. Q1-RE-003 is not resolved. The proposed bounded envelope labels its contents unvalidated, yet requires tests to reject prohibited copied facts; it also places ActionResult's already validated ResultRef and continuation fields in both formal authority and the unvalidated envelope. Finally, it says complete Findings stay in the review Run while also prohibiting Run-held Findings. The Explore must specify one enforceable physical contract and a separate reviewer-owned result artifact/reference, rather than relying on a permissive unknown-field channel.",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-102-revise-explore/",
+  "reviewedResultRef": "content-sha256:50e6b3b6a0e5bec0d9d9505a398800d64f21e71f18d753c3349069467a5032ff",
+  "sourceReview": {
+    "runId": "20260806-101-review-explore",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:919026709162e71d1dd35b358e09a7b2fa7a31f4a9a348221226b10e27d3c2cd"
+  },
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "Q1-RE-003",
+      "title": "Bounded-envelope rule is neither physically coherent nor enforceable",
+      "location": "openspec/changes/execution-model-correction/explore.md:188-225, 317, 340-342, 362, 365",
+      "evidence": "Section 4.1 says the bounded envelope is not Core-validated, but section 5 requires tests that reject copied full findings/verification; current C1 serialization is intentionally lenient for unknown fields, so an unvalidated envelope cannot enforce that prohibition. The same section places reviewVerdictRef, verificationSummaryRef, producedResultRefs, consumedInputRefs, failureDiagnosis, and nextActionRecommendation first in validated formal ActionResult and then again in the unvalidated envelope. It also says complete Findings remain in the review Run while Q1's governing reference prohibits a Run from copying complete Findings and assigns those facts to the reviewer formal result. No separate reviewer-result artifact or physical schema ownership is defined.",
+      "impact": "A future implementation has no determinate answer to which fields serialize where, whether unknown fields are accepted, or how the promised rejection test can pass. It can either preserve the current arbitrary evidence payloads, reject legitimate reviewer information, or create an undocumented second evidence store. Any result violates Q1's Lean Run and one-fact-one-authority boundary.",
+      "requiredResolution": "Keep Q1-RE-003 open and choose one coherent design. Define a closed, Core-validated RunResultFile/ActionResult allowlist for the minimal execution envelope; do not duplicate its fields in an unvalidated layer. Define the reviewer-owned formal findings/verdict artifact that reviewVerdictRef targets (its path, producer, ResultRef lifecycle, and retention), with verificationSummaryRef analogously targeting verification.md or its summary. Either remove blockedOn or make it a typed, bounded formal field with ownership and serialization rules. Specify unknown-field behavior and tests: allowed minimal fields round-trip; copied full findings/verification/archive/consistency fields are rejected; reviewer artifact references are required where applicable. This is a Q1 contract change, not a generic evidence subsystem."
+    }
+  ],
+  "nonBlockingFindings": [
+    {
+      "id": "Q1-NB-001",
+      "title": "Explore source links remain checkout-specific",
+      "location": "openspec/changes/execution-model-correction/explore.md:62, 72, 90, 98, 106, 127, 131, 137",
+      "evidence": "Code citations still use file:///D:/Projects/flowkit absolute paths, which cannot resolve from a different checkout or platform.",
+      "recommendedResolution": "Convert these citations to repository-relative Markdown links during a future in-scope Explore edit. This remains non-blocking because the cited source evidence was independently verified."
+    }
+  ],
+  "resolvedFindings": [
+    {
+      "id": "Q1-RE-001",
+      "result": "resolved",
+      "evidence": "102 consistently requires createRun to derive and persist ResultRef with buildRunResultRef and reserves verifyResultRef for writeRunResult preflight revalidation across sections 3.2, 4.2-4.3, 5, 7, and 8."
+    },
+    {
+      "id": "Q1-RE-002",
+      "result": "resolved",
+      "evidence": "Concrete verification scripts remain assigned to F1; Q1 retains only verification timing, ownership, and Full-Test authorization boundaries."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "102 reviewed-result binding and JSON validity",
+        "status": "passed",
+        "result": "102 context.json and result.json parse as JSON. SHA-256 of 102 result.json is 50e6b3b6a0e5bec0d9d9505a398800d64f21e71f18d753c3349069467a5032ff."
+      },
+      {
+        "name": "revision lineage and Run numbering",
+        "status": "passed",
+        "result": "102 inputRef equals the actual SHA-256 of 101 result.json, sourceReviewRun/verdict match 101, and 102 was the Delivery-wide maximum before this reviewer Run."
+      },
+      {
+        "name": "Q1 scope and semantic contract scan",
+        "status": "failed",
+        "result": "Q1-RE-001 and Q1-RE-002 are resolved. Q1-RE-003 remains blocking because the bounded envelope lacks a compatible, enforceable physical contract and reviewer-result ownership boundary."
+      },
+      {
+        "name": "canonical OpenSpec specs",
+        "command": "npx openspec validate --specs --strict",
+        "status": "passed",
+        "result": "8 canonical specs passed, 0 failed. This structural result does not clear the semantic Q1-RE-003 finding."
+      },
+      {
+        "name": "scope and whitespace",
+        "status": "passed",
+        "result": "102 declares and records only the Explore revision. JSON parsing, git diff --check, and explicit trailing-whitespace scan passed. The separately modified AGENTS.md is treated as an owner/repository instruction outside 102's declared modified-file claim and is not attributed to this review result."
+      },
+      {
+        "name": "Delivery Full Test",
+        "status": "not-applicable",
+        "result": "Not owner-authorized and not run; review-explore has no Full-Test authority."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

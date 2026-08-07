@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-110-revise-explore",
+  "status": "completed",
+  "actionResult": {
+    "action": "revise-explore",
+    "executionStatus": "completed",
+    "summary": "最小安全修复 109-review-explore 的 1 个 blocking finding（Q1-RE-001 重开）。按 AGENTS.md preflight 4 步 + 代码层验证执行。Q1-RE-001 修复：读 109 finding requiredResolution 全文 + 引用 explore.md:203-215/238-247/324-340/451-460。读 result-ref-adapter.ts:44-54（buildRunResultRef 签名）+ serialization.ts:199-213（validateResultRefProjection 当前接受任意非空 ref/kind 字符串）+ serialization.ts:284-317（validateOptionalResultRef/Array 泛化调用无 field→kind binding）+ run-persistence.ts:363-381（buildContextFile 直接透传 inputRef 不派生）。确认 reviewer claim 成立。修复：buildArtifactResultRef kind 改为 Core 内部 validated enum，由 result field 决定（producedResultRefs→produced-artifact、verificationSummaryRef→verification-summary），caller 不选择。定义 Core-owned field→kind→path mapping：verificationSummaryRef 固定 active change verification.md（Core 从 active change id 派生，caller 不提供 path）；producedResultRefs 由 Core-owned Action+tag→path mapping 派生（caller 只提供 tag）。定义 executable tag→path mapping per Action：explore/revise-explore→'explore'；propose/revise-propose→'proposal'/'design'/'specs'/'tasks'；apply/revise-apply/review-*/archive→无 producedResultRefs。Reject：tag-not-in-permitted-set、traversal、绝对路径、result.json target、kind/field mismatch。同一 resolver + validation 用于 createRun/preflight/Reader。C1 delta 收紧 validateResultRefProjection（kind enum + field→kind binding + path root per kind）。Section 4.1/4.2/4.3/5/7/8 全部更新。Grep 确认 0 occurrences of '由 caller 指定'/'artifactPath'/'verificationPath'/'path root 由 Action 定义'。OpenSpec strict 8/8 passed。git diff --check 无 whitespace。未修改生产代码、测试、冻结文档或 terminal Runs。"
+  },
+  "preflight": {
+    "rule": "AGENTS.md revise 契约产物 preflight（4 步 + 代码层验证）",
+    "step1_completeReading": "读 Q1-RE-001 requiredResolution 全文（Make category selection Core-owned: callers provide only a typed descriptor appropriate to the result field, and Core fixes verificationSummaryRef to canonical active Change verification.md path and assigns its kind itself. Define executable fixed mapping for producedResultRefs from Action plus descriptor to permitted repository-relative roots; reject path outside mapping, traversal, absolute paths, result.json targets, kind/field mismatches. buildArtifactResultRef may accept internal validated enum, but callers must not select it. Specify same resolver and validation for creation, preflight, and Reader, with tests for valid targets and each rejected mismatched kind/path case.）+ finding 引用的 explore.md:203-215（两个构造器 + Allowed kinds and path roots）、238-247（producedResultRefs + verificationSummaryRef per-category）、324-340（Section 4.2 Core-derived ResultRef）、451-460（Section 7 acceptance）。读 108 result.json 确认上一轮修复范围。",
+    "step2_enumerateInstances": "枚举 'caller-defined kind/path' 概念在 explore.md 全部出现位置：Section 4.1 两个构造器 block（kind: 由 caller 指定）、Section 4.1 Allowed kinds and path roots block（path root 由 Action 定义）、Section 4.1 per-category producedResultRefs（descriptor: artifactPath[]）、Section 4.1 per-category verificationSummaryRef（descriptor: verificationPath）、Section 4.2（buildArtifactResultRef kind 由 caller、Caller 声明 artifactPath/verificationPath）、Section 4.3 preflight（无 same-resolver 声明）、Section 5（无 Core-owned mapping 行）、Section 7（acceptance 无 Core-owned mapping criterion）、Section 8（无 Core-owned mapping row）。逐一确认修复覆盖。",
+    "step3_implementabilityVerification": {
+      "abstract": "模拟 Core-owned resolver 流程：caller 提供 producedArtifactTag 或无 descriptor（verificationSummaryRef）→ Core 从 field 决定 kind → Core 从 Action+tag 或 active change id 派生 path → Core 读取文件 → SHA-256 → buildArtifactResultRef(path, content, kind)。无循环依赖、无自引用（kind 由 field 决定，不由 caller 提供）。",
+      "codeLevel_a_readFunctionSignatures": "读 result-ref-adapter.ts:44-54：buildRunResultRef(runPath, fileContent) kind 恒为 RUN_RESULT_KIND，ref 恒为 <runPath>/result.json。读 result-ref-adapter.ts:97-102：resolveRunResultRef 已 reject 非 run-result kind。读 serialization.ts:199-213：validateResultRefProjection 当前接受任意非空 ref/kind 字符串（确认 reviewer claim：无 enum check、无 path-root check）。读 serialization.ts:284-317：validateOptionalResultRef/Array 泛化调用 validateResultRefProjection，无 field→kind binding（确认 kind/field mismatch 不被捕获）。需 NEW buildArtifactResultRef + C1 delta 收紧 validateResultRefProjection。",
+      "codeLevel_b_traceFullDataFlow": "追踪 producedResultRefs 完整流程：caller 提供 producedArtifactTag[] → Core 查 Action permitted set（reject tag-not-in-permitted-set）→ Core 查 tag→path mapping → Core 读取文件 → SHA-256 → buildArtifactResultRef(path, content, 'produced-artifact')（kind 由 field 决定不由 caller）→ 写入 result.json。preflight：同一 resolver 重新解析 tag→path→读取→SHA-256→比较。Reader：validateResultRefProjection 收紧后 validate kind enum + field→kind binding + path root per kind。追踪 verificationSummaryRef：Core 从 active changeId（ContextFile.changeId）派生 path openspec/changes/<changeId>/verification.md → 读取 → SHA-256 → buildArtifactResultRef(path, content, 'verification-summary')。无循环依赖。",
+      "codeLevel_c_checkC1FieldConstraints": "读 serialization.ts:120-143（ContextFile）：inputRef optional ResultRef 无 kind/path 约束；reviewedRunId required for review-*；changeId required for Change-level。读 run-persistence.ts:363-381（buildContextFile）：直接透传 inputRef 不派生。读 serialization.ts:231-282（validateActionResultWithoutRunRef）：producedResultRefs/verificationSummaryRef 均通过 validateOptionalResultRef/Array 泛化验证，无 field→kind binding。确认需要：Core-owned field→kind→path mapping + C1 delta 收紧 validateResultRefProjection（kind enum + field→kind binding + path root per kind）。"
+    },
+    "step4_globalConsistency": "consistency scan 覆盖 6 维度（见 consistencyScan）。Grep 确认 0 occurrences of '由 caller 指定'、'artifactPath'、'verificationPath'、'path root 由 Action 定义'。Positive grep：Core-owned=16、Core assigns kind=6、field→kind→path=6、caller 不选择 kind=3、同一 resolver=7。OpenSpec strict 8/8 passed。git diff --check 无 whitespace。trailing whitespace=0、U+FFFD=0。"
+  },
+  "findingsAddressed": [
+    {
+      "id": "Q1-RE-001",
+      "severity": "P1",
+      "origin": "20260806-109-review-explore",
+      "title": "Non-Run artifact provenance still leaves kind and produced-artifact roots caller-defined",
+      "fix": "读 109 finding requiredResolution 全文 + 引用章节（explore.md:203-215/238-247/324-340/451-460）。读 result-ref-adapter.ts:44-54（buildRunResultRef 签名）+ serialization.ts:199-213（validateResultRefProjection 接受任意非空 ref/kind）+ serialization.ts:284-317（无 field→kind binding）+ run-persistence.ts:363-381（buildContextFile 透传 inputRef）。确认 reviewer claim。修复（minimal，只改 explore.md）：(1) buildArtifactResultRef kind 改为 Core 内部 validated enum，由 result field 决定，caller 不选择（Section 4.1 两个构造器 block + Section 4.2）。(2) 定义 Core-owned field→kind→path mapping block（Section 4.1）：verificationSummaryRef→kind=verification-summary、path=openspec/changes/<active-change-id>/verification.md（Core 从 active change id 派生，caller 不提供）；producedResultRefs→kind=produced-artifact、path 由 Core-owned Action+tag mapping 派生（caller 只提供 tag）。(3) 定义 executable produced-artifact tag→path mapping per Action：explore/revise-explore→'explore'；propose/revise-propose→'proposal'/'design'/'specs'/'tasks'；apply/revise-apply/review-*/archive→无 producedResultRefs。(4) Reject 规则：tag-not-in-permitted-set、traversal、绝对路径、result.json target、kind/field mismatch。(5) 同一 resolver + validation 用于 createRun/preflight/Reader；C1 delta 收紧 validateResultRefProjection（kind enum + field→kind binding + path root per kind）。(6) Section 4.1 per-category：producedResultRefs descriptor 改为 producedArtifactTag[]，verificationSummaryRef descriptor 改为无（Core 派生）。(7) Section 4.2：Caller descriptor 改为 consumedRunId/producedArtifactTag/reviewRunId；buildArtifactResultRef kind 说明改为 Core 内部 enum。(8) Section 4.3：新增 preflight 同一 resolver + Reader validation 行。(9) Section 5：run-persistence/result-ref-adapter/serialization/tests 行更新。(10) Section 7：acceptance 更新 + 新增 Core-owned mapping criterion。(11) Section 8：ALL ResultRef row 更新 + 新增 Core-owned kind/path mapping row。"
+    }
+  ],
+  "consistencyScan": {
+    "dimensionsScanned": [
+      {
+        "concept": "Core-owned kind/path mapping (NEW — Q1-RE-001 fix)",
+        "locations": ["Section 4.1 (两个构造器 block: kind Core 内部 enum + Core-owned field→kind→path mapping block + per-category producedResultRefs/verificationSummaryRef)", "Section 4.2 (Caller descriptor + buildArtifactResultRef kind 说明 + 同一 resolver 声明)", "Section 4.3 (preflight 同一 resolver + Reader validation)", "Section 5 (run-persistence/result-ref-adapter/serialization/tests rows)", "Section 7 (2 acceptance criteria)", "Section 8 (ALL ResultRef row + Core-owned kind/path mapping row)"],
+        "result": "consistent — buildArtifactResultRef kind 由 Core 按 field 决定（producedResultRefs→produced-artifact、verificationSummaryRef→verification-summary），caller 不选择 kind、不提供 path。verificationSummaryRef 固定 active change verification.md。producedResultRefs 由 Action+tag mapping 派生。Grep: '由 caller 指定'=0, 'artifactPath'=0, 'verificationPath'=0, 'path root 由 Action 定义'=0. Positive: Core-owned=16, Core assigns kind=6, field→kind→path=6, caller 不选择 kind=3, 同一 resolver=7."
+      },
+      {
+        "concept": "two ResultRef constructors (buildRunResultRef for run-result, buildArtifactResultRef for non-Run)",
+        "locations": ["Section 4.1 (两个构造器 + per-category derivation)", "Section 4.2 (derivation flow)", "Section 4.3 (preflight per category)", "Section 5 (result-ref-adapter / tests rows)", "Section 7 (acceptance)", "Section 8 (ALL ResultRef fingerprint row)"],
+        "result": "consistent — unchanged from 108. buildRunResultRef used only for run-result targets (inputRef/consumedInputRefs/reviewVerdictRef); buildArtifactResultRef used for non-Run targets (producedResultRefs/verificationSummaryRef). Grep: buildRunResultRef=15, buildArtifactResultRef=11. buildArtifactResultRef kind now Core-owned enum (not caller-specified)."
+      },
+      {
+        "concept": "review-* inputRef exact content binding (REQUIRED + bound to reviewedRunId)",
+        "locations": ["Section 4.1 (exact content binding block + per-category inputRef review-* row)", "Section 4.2 (review-* inputRef binding paragraph)", "Section 4.3 (preflight review-* binding + reviewFindings gating)", "Section 5 (run-persistence / tests rows)", "Section 7 (2 acceptance criteria)", "Section 8 (review-* inputRef binding row)"],
+        "result": "consistent — unchanged from 108. review-* inputRef REQUIRED, MUST resolve to reviewedRunId's result.json. Grep: reviewedRunId=17, reviewFindings=15. No residual 'inputRef optional for review-*'."
+      },
+      {
+        "concept": "reviewVerdictRef non-self-referential + reviewFindings typed payload",
+        "locations": ["Section 4.1 (allowlist + Reviewer formal artifact + exact content binding)", "Section 5 (C1 delta + tests rows)", "Section 7 (acceptance)", "Section 8 (Lean Run row)"],
+        "result": "consistent — unchanged from 108. review-* Run does NOT carry reviewVerdictRef; carries reviewVerdict + reviewFindings typed payload."
+      },
+      {
+        "concept": "closed allowlist coherence",
+        "locations": ["Section 4.1", "Section 5", "Section 7", "Section 8"],
+        "result": "consistent — unchanged. Single closed Core-validated allowlist; unknown fields rejected; caller-supplied versionFingerprint rejected (grep=6). No unvalidated layer."
+      },
+      {
+        "concept": "terminal create-once preservation",
+        "locations": ["Section 3.4", "Section 4.3", "Section 6", "Section 8"],
+        "result": "consistent — unchanged. Q1 MUST NOT change terminal semantics. Grep: terminal create-once/create-once=6."
+      }
+    ],
+    "totalContradictions": 0,
+    "overallResult": "pass"
+  },
+  "modifiedFiles": [
+    "openspec/changes/execution-model-correction/explore.md"
+  ],
+  "commitPolicy": "No commit, checkpoint, or Full Test was authorized or performed by this revise Run. No self-review performed.",
+  "nextAction": "review-explore"
+}

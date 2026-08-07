@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-099-review-explore",
+  "status": "completed",
+  "summary": "Q1 Explore review completed with changes-requested. 098 correctly identifies the excessive Agent-authored Run notes, missing input-reference preflight, retained terminal create-once invariant, formal artifact boundary, and legacy-compatibility limit. However, its selected provenance model still makes the Agent supply versionFingerprint for Core to verify, contrary to the updated reference's Core-owned generation requirement. It also assigns concrete focused/affected/full npm scripts to Q1 although the updated Q1 boundary freezes verification principles only and defers concrete scripts to F1. These two proposal-shaping errors must be corrected before Q1 can advance.",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-098-explore/",
+  "reviewedResultRef": "content-sha256:7d3ca005d6bd98e8dd2dc32eeb0aefdd02e1c230ae6d01beace0a9d3bb23eb22",
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "Q1-RE-001",
+      "title": "The selected inputRef model preserves Agent-authored fingerprint authority",
+      "location": "openspec/changes/execution-model-correction/explore.md:207-230, 244-254",
+      "evidence": "Section 4.2 recommends option B: the Agent supplies inputRef.ref plus inputRef.versionFingerprint and Core merely verifies the supplied fingerprint. Section 4.3 then preflights that same Agent-authored value. The updated Q1 reference states that the production path must prohibit Agent-authored versionFingerprint: Core reads the real target, computes SHA-256, constructs ResultRef, and revalidates it before publish; the Agent may declare which result it consumes but cannot be the fingerprint authority (ref/01 section 6.5). The active manifest repeats that ResultRef/fingerprint is Core-derived and must not depend on Agent manual input. Current createRun accepts an unverified caller-supplied ResultRef, so choosing verification-only would retain the defect Q1 is meant to remove.",
+      "impact": "A stale, fabricated, or incorrectly computed fingerprint can still enter a new Run context through the production creation path. The later completion check only detects a subset of that problem after a malformed provenance record has already been persisted, so Q1 would not meet its Core-owned provenance acceptance boundary.",
+      "requiredResolution": "Replace option B and every dependent completion-preflight description with a Core-derived design. The caller may identify the consumed result/run, but createRun must resolve the actual result.json, compute and persist the canonical ResultRef itself, and reject a missing or invalid target before publishing the Run. Completion must recompute and compare the Core-created stored reference before terminal publication. Define the corresponding C1 delta and tests for successful derivation, missing target, replacement/mismatch, and pending preservation; do not retain an Agent-provided versionFingerprint as a production input."
+    },
+    {
+      "id": "Q1-RE-002",
+      "title": "Q1 improperly takes ownership of concrete verification scripts",
+      "location": "openspec/changes/execution-model-correction/explore.md:267-284",
+      "evidence": "Section 4.5 proposes adding npm run test:focused, test:affected, test:full, and verify:change in Q1. The updated reference sets Q1's scope to freeze the verification cost boundary only; its F1 section 8.3 assigns those concrete scripts to F1 and says their commands are frozen in the F1 Proposal. Q1's manifest outputs likewise name the focused/affected/full cost boundary, not a script implementation.",
+      "impact": "The Q1 Proposal would expand a corrective execution-model Change into F1's quality and verification-tooling work, creating an unnecessary cross-Change scope conflict and weakening the agreed staged Delivery plan.",
+      "requiredResolution": "Keep Q1's docs and delta requirements to the timing, ownership, and no-unauthorized-Full-Test principles. Remove concrete npm script creation from Q1's recommendation, required-file table, acceptance criteria, and tests. Record that F1 owns the command names, implementation, and script-level acceptance."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "verification": {
+    "checks": [
+      {
+        "name": "reviewed result binding",
+        "status": "passed",
+        "result": "SHA-256 of 098 result.json is 7d3ca005d6bd98e8dd2dc32eeb0aefdd02e1c230ae6d01beace0a9d3bb23eb22 and matches reviewedResultRef."
+      },
+      {
+        "name": "Policy action eligibility",
+        "status": "passed",
+        "result": "Q1 is active; 098 is the current completed Explore Run and no Q1 review-explore lineage exists, so frozen D1 lineage rules permit review-explore."
+      },
+      {
+        "name": "reference and formal-boundary comparison",
+        "status": "failed",
+        "result": "Q1-RE-001 and Q1-RE-002 found: the Explore's selected fingerprint and verification-script scope disagree with the owner-updated reference and active manifest."
+      },
+      {
+        "name": "review scope and whitespace",
+        "status": "passed",
+        "result": "Only the new reviewer Run is written; git diff --check reported no whitespace errors."
+      },
+      {
+        "name": "Delivery Full Test",
+        "status": "not-applicable",
+        "result": "Not owner-authorized and not run; this is review-explore."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

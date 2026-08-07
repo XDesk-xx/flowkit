@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-112-revise-explore",
+  "status": "completed",
+  "actionResult": {
+    "action": "revise-explore",
+    "executionStatus": "completed",
+    "summary": "最小安全修复 111-review-explore 的 1 个 blocking finding（Q1-RE-004）。按 AGENTS.md preflight 4 步 + 代码层验证执行。先验证 111 finding 真实性：grep 确认 110 在 10 处使用 active-change-id/active change id（lines 221,222,274,275,276,357,460,466,492,515），这是 mutable 的——Q1 完成后 E1 变 active，历史 Q1 Run 的 verificationSummaryRef 会指向 E1 的 verification.md。且 descriptor:无 但未定义何时 attempt/absent——unconditional resolver 在 Explore/Propose（verification.md 不存在）会失败，conditional omission 无法 record。两问题均确认存在。代码层验证：读 serialization.ts:128（ContextFile.changeId required for Change-level, immutable）+ validateContextFileIdentity（验证 changeId 与 Run path 一致）确认 context.changeId 是 Run-stable 正确来源。修复（minimal，只改 explore.md）：(1) 所有 <active-change-id> → <context.changeId>（Run 自己的 immutable context），create/preflight/Reader 同一 context-derived resolver。(2) 定义 Action-owned inclusion lifecycle：verification-eligible（apply/revise-apply/review-apply/archive）→ Core attempts，exists→include，absent→RESULT_REF_TARGET_MISSING pending；non-eligible（explore/propose/revise-explore/revise-propose/review-explore/review-propose）→ absent。(3) Reader historical read 用 context.changeId，不依赖 active Change，历史 Run 读回指向原 Change verification.md。(4) 覆盖 reviewer 全部 case：Explore/Propose before verification.md exists、eligible+valid、eligible+missing、historical read after another Change active、replacement detection。Section 4.1（mapping block+inclusion lifecycle block+per-category）、4.2、4.3、5、7、8 全部更新。Grep 确认 0 残留 <active-change-id> 作为 path source（5 处 'active Change' 均为否定引用 '不随/不用/不依赖 active Change'）。OpenSpec strict 8/8 passed。git diff --check 无 whitespace。未修改生产代码、测试、冻结文档或 terminal Runs。"
+  },
+  "preflight": {
+    "rule": "AGENTS.md revise 契约产物 preflight（4 步 + 代码层验证）",
+    "step1_completeReading": "读 Q1-RE-004 requiredResolution 全文（Define verificationSummaryRef from the persisted Run context, never the currently active Change: for a Change-level Run its sole canonical target is openspec/changes/<context.changeId>/verification.md, and create/preflight/Reader must use that same context-derived resolver. Separately define the field's inclusion lifecycle without returning kind/path authority to callers: specify the narrow typed intent or fixed Action/verification-state rule that causes Core to attempt the reference, and specify absent versus requested-but-missing behavior. Cover at least an Explore/Propose Run before verification.md exists, an eligible Run with a valid summary, requested-but-missing preservation of pending, a historical Q1 read after another Change is active, and replacement detection.）+ finding 引用的 explore.md:219-243（mapping block）、273-277（per-category verificationSummaryRef）、357-370（Section 4.2）、379-385（Section 4.3 preflight）、460-466（Section 5）、490-492（Section 7）。读 111 result.json 确认 Q1-RE-001/002/003 均 resolved，只有 Q1-RE-004 open。",
+    "step2_enumerateInstances": "枚举 'active change' 作为 path source 的全部出现位置：line 221（<active-change-id>）、222（active change id）、274（<active-change-id>）、275（active change id）、276（active change id）、357（active change id）、460（active change verification.md）、466（active change verification.md）、492（active change verification.md）、515（active change verification.md）= 10 处。枚举 verificationSummaryRef 出现位置（14 处），确认需同步更新 inclusion rule 的位置：mapping block、per-category derivation、Section 4.2、Section 4.3、Section 5（2 rows）、Section 7、Section 8。逐一确认修复覆盖。",
+    "step3_implementabilityVerification": {
+      "abstract": "模拟 context.changeId resolver 流程：Run 的 context.changeId（immutable, persisted at createRun）→ path openspec/changes/<context.changeId>/verification.md → read → SHA-256 → buildArtifactResultRef。历史 Run 读回：Reader 读 context.json → context.changeId → path → 原 Change verification.md。无 mutable state 依赖、无循环依赖。",
+      "codeLevel_a_readFunctionSignatures": "读 serialization.ts:128（ContextFile.changeId: readonly changeId?, required for Change-level, MUST be absent for Delivery-level）。读 run-persistence.ts:99（validateContextFileIdentity 验证 changeId 与 Run path 一致）。读 run-persistence.ts:363-381（buildContextFile 从 input.changeId 写入 contextFile.changeId，持久化后 immutable）。确认 context.changeId 是 Run-stable 正确来源。result-ref-adapter.ts buildArtifactResultRef 接受 repoRelPath + content + kind，context.changeId 派生的 path 可直接传入。",
+      "codeLevel_b_traceFullDataFlow": "追踪 verificationSummaryRef 完整流程：(a) eligible Action at writeRunResult preflight → Core 读 context.json → context.changeId → resolve openspec/changes/<context.changeId>/verification.md → exists? → read → SHA-256 → buildArtifactResultRef(kind=verification-summary) → include in actionResult. (b) eligible + absent → RESULT_REF_TARGET_MISSING, Run pending. (c) non-eligible → skip, verificationSummaryRef absent. (d) Reader historical read → context.changeId → path → 原 Change verification.md（即使另一 Change active）→ validate kind/field/path. (e) preflight replacement detection → re-read → re-compute SHA-256 → compare. 无循环依赖、无 mutable state 依赖。",
+      "codeLevel_c_checkC1FieldConstraints": "读 serialization.ts:120-143（ContextFile）：changeId required for Change-level（所有 Q1 Runs 是 Change-level），immutable after createRun。读 serialization.ts:199-213（validateResultRefProjection）：当前接受任意 kind/ref，C1 delta 需收紧为 kind enum + field→kind binding + path root per kind。读 serialization.ts:231-282（validateActionResultWithoutRunRef）：verificationSummaryRef 通过 validateOptionalResultRef 泛化验证，C1 delta 需加 field→kind=verification-summary binding + path=root openspec/changes/<context.changeId>/verification.md。确认 inclusion rule（Action-owned eligibility）在 writeRunResult 层实现，不在 schema validation 层。"
+    },
+    "step4_globalConsistency": "consistency scan 覆盖 6 维度（见 consistencyScan）。Grep 确认 0 残留 <active-change-id> 作为 path source（5 处 'active Change' 均为否定引用）。Positive grep：context.changeId=17、inclusion=8、RESULT_REF_TARGET_MISSING=5、verification-eligible=2、Run-stable=8、historical=2。OpenSpec strict 8/8 passed。git diff --check exit 0。trailing whitespace=0、U+FFFD=0。"
+  },
+  "findingsAddressed": [
+    {
+      "id": "Q1-RE-004",
+      "severity": "P1",
+      "origin": "20260806-111-review-explore",
+      "title": "verificationSummaryRef has neither a Run-stable target nor an executable inclusion rule",
+      "fix": "先验证 finding 真实性：grep 确认 110 在 10 处使用 active-change-id/active change id 作为 path source。代码层验证 context.changeId（serialization.ts:128, immutable, required for Change-level, validated by validateContextFileIdentity）是 Run-stable 正确来源。修复（minimal，只改 explore.md）：(1) Run-stable target：所有 <active-change-id> → <context.changeId>（10 处：Section 4.1 mapping block line 221-222、per-category line 274-276、Section 4.2 line 357、Section 4.3 line 406、Section 5 line 481+487、Section 7 line 513、Section 8 line 536）。create/preflight/Reader 同一 context-derived resolver。(2) Inclusion lifecycle（NEW block，Section 4.1 line 244-259）：Action-owned rule，无 caller descriptor。verification-eligible（apply/revise-apply/review-apply/archive）→ Core attempts，exists→include，absent/unreadable→RESULT_REF_TARGET_MISSING pending。non-eligible（explore/propose/revise-explore/revise-propose/review-explore/review-propose）→ absent。Reader historical read 用 context.changeId，不依赖 active Change。(3) Per-category derivation（line 291-298）：target 改 context.changeId，加 inclusion line + eligible+missing + non-eligible behavior。(4) Section 4.3 preflight（line 406）：加 Run-stable + eligible only + missing behavior。(5) Section 5 run-persistence row + tests row：改 context.changeId + inclusion rule + historical read test。(6) Section 7 acceptance：改 context.changeId + Run-stable + inclusion rule + historical Run。(7) Section 8 Core-owned mapping row：改 context.changeId + Run-stable + inclusion rule + historical Run。覆盖 reviewer 全部 5 case。"
+    }
+  ],
+  "consistencyScan": {
+    "dimensionsScanned": [
+      {
+        "concept": "verificationSummaryRef Run-stable target (context.changeId, not active Change) — Q1-RE-004 fix",
+        "locations": ["Section 4.1 (mapping block: context.changeId + inclusion lifecycle block + per-category)", "Section 4.2 (Caller descriptor)", "Section 4.3 (preflight line + same-resolver paragraph)", "Section 5 (run-persistence + tests rows)", "Section 7 (acceptance)", "Section 8 (Core-owned mapping row)"],
+        "result": "consistent — all path sources use context.changeId (immutable, persisted at createRun). Grep: <active-change-id> as path source = 0. 5 'active Change' mentions are all negation ('不随/不用/不依赖 active Change'). Positive: context.changeId=17, Run-stable=8, historical=2. Reader uses Run's own context.changeId, historical Q1 Run after E1 active still points to Q1's verification.md."
+      },
+      {
+        "concept": "verificationSummaryRef inclusion lifecycle (Action-owned, no caller descriptor)",
+        "locations": ["Section 4.1 (inclusion lifecycle block + per-category inclusion line)", "Section 4.3 (preflight eligible-only + missing behavior)", "Section 5 (tests row: eligible/non-eligible/missing)", "Section 7 (acceptance: eligible/non-eligible/missing)", "Section 8 (Core-owned mapping row)"],
+        "result": "consistent — verification-eligible (apply/revise-apply/review-apply/archive): Core attempts, exists→include, absent→RESULT_REF_TARGET_MISSING pending. non-eligible (explore/propose/revise-*/review-explore/review-propose): absent. No caller descriptor. Grep: inclusion=8, verification-eligible=2, RESULT_REF_TARGET_MISSING=5. Covers reviewer's 5 cases: Explore/Propose before verification.md exists (non-eligible→absent), eligible+valid (exists→include), requested-but-missing (eligible+absent→pending), historical read (context.changeId→correct target), replacement detection (preflight fingerprint mismatch)."
+      },
+      {
+        "concept": "Core-owned kind/path mapping (unchanged from 110 except verificationSummaryRef target+inclusion)",
+        "locations": ["Section 4.1 (mapping block + tag→path mapping)", "Section 4.2", "Section 4.3", "Section 5", "Section 7", "Section 8"],
+        "result": "consistent — buildArtifactResultRef kind still Core internal enum (producedResultRefs→produced-artifact, verificationSummaryRef→verification-summary). producedResultRefs still Action+tag mapping. Only verificationSummaryRef target changed (active-change-id→context.changeId) + inclusion lifecycle added. No regression to Q1-RE-001 fix."
+      },
+      {
+        "concept": "two ResultRef constructors (unchanged)",
+        "locations": ["Section 4.1", "Section 4.2", "Section 4.3", "Section 5", "Section 7", "Section 8"],
+        "result": "consistent — unchanged from 110. buildRunResultRef=15, buildArtifactResultRef=11."
+      },
+      {
+        "concept": "review-* inputRef exact content binding (unchanged)",
+        "locations": ["Section 4.1", "Section 4.2", "Section 4.3", "Section 5", "Section 7", "Section 8"],
+        "result": "consistent — unchanged from 108/110. reviewedRunId=17, reviewFindings=15."
+      },
+      {
+        "concept": "terminal create-once + closed allowlist (unchanged)",
+        "locations": ["Section 3.4", "Section 4.1", "Section 4.3", "Section 6", "Section 7", "Section 8"],
+        "result": "consistent — unchanged. Q1 MUST NOT change terminal semantics. Closed allowlist: unknown fields rejected, caller-supplied versionFingerprint rejected."
+      }
+    ],
+    "totalContradictions": 0,
+    "overallResult": "pass"
+  },
+  "modifiedFiles": [
+    "openspec/changes/execution-model-correction/explore.md"
+  ],
+  "commitPolicy": "No commit, checkpoint, or Full Test was authorized or performed by this revise Run. No self-review performed.",
+  "nextAction": "review-explore"
+}

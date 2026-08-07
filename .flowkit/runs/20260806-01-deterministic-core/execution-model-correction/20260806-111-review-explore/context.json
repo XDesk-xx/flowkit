@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-111-review-explore",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "Q1",
+  "changeId": "execution-model-correction",
+  "action": "review-explore",
+  "role": "reviewer",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-110-revise-explore/",
+  "reviewedResultRef": "content-sha256:1c13ddc021e2ac83701d696a3232711536a5116235c31ed89856223f3977d1a1",
+  "sourceReview": {
+    "runId": "20260806-109-review-explore",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:20795279995e861cb8a4c76cfb83cf0dc8630bcf23a2f487690d23567cc6b077"
+  },
+  "inputs": [
+    "ref/01-deterministic-core-delivery-implementation-reference.md",
+    "AGENTS.md",
+    "docs/bootstrap-reference.md",
+    "docs/delivery-lifecycle.md",
+    "docs/verification-model.md",
+    "openspec/delivery-groups/20260806-01-deterministic-core.yaml",
+    "openspec/changes/execution-model-correction/explore.md",
+    "openspec/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+    "openspec/specs/flowkit-policy-engine/spec.md",
+    "src/facts/formal-fact-reader.ts",
+    "src/persistence/run-persistence.ts",
+    "src/persistence/serialization.ts",
+    ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-109-review-explore/result.json",
+    ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-110-revise-explore/context.json",
+    ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-110-revise-explore/result.json"
+  ],
+  "constraints": {
+    "readOnlyExceptOwnRun": true,
+    "mayModifyReviewedArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayFullTest": false,
+    "mayCheckpoint": false,
+    "commitAllowed": false
+  }
+}

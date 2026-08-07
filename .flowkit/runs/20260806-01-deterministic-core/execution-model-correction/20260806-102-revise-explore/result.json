@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-102-revise-explore",
+  "status": "completed",
+  "actionResult": {
+    "action": "revise-explore",
+    "executionStatus": "completed",
+    "summary": "最小安全修复 101-review-explore 的 2 个 blocking findings。Q1-RE-001：将 Core-derived provenance 贯穿全文——Section 3.2 结论从'派生或验证'改为'派生（构造 ResultRef）+ preflight 重新验证'；Section 5 表 run-persistence/result-ref-adapter/C1-delta/serialization/docs 行全部从'验证'改为'派生（Core 构造）+ preflight 验证'；Section 7 验收从'验证'改为'派生（构造 ResultRef），preflight 重新验证'；Section 8 交叉引用从'createRun 验证'改为'createRun 派生（buildRunResultRef）+ preflight 验证（verifyResultRef）'。Q1-RE-003：Section 4.1 从无界 Agent notes 改为 bounded envelope——Run 不复制完整 Findings/Verification/archive 事实，只持有 result references（reviewVerdictRef/verificationSummaryRef）；consistencyScan 不作为 Run schema 字段；明确禁止复制完整 findings/verification/archiveResults/consistencyScan；原则对齐 ref/01 section 2.1（不得让 Run 复制 Reviewer/Verification 事实）和 section 6.3（Run 是执行信封不是审计账本）。Section 4.1 标题、Section 5 表、Section 7 验收、Section 8 交叉引用同步更新。未修改生产代码、测试、冻结文档或 terminal Runs。"
+  },
+  "findingsAddressed": [
+    {
+      "id": "Q1-RE-001",
+      "severity": "P1",
+      "origin": "20260806-101-review-explore",
+      "title": "Core-derived provenance is still not an end-to-end Q1 requirement",
+      "fix": "Made derivation mandatory everywhere, reserving 'verify' for preflight only. Section 3.2 conclusion: '派生或验证' → '派生（构造 ResultRef）+ preflight 重新验证'. Section 5 table: run-persistence.ts row 'createRun inputRef 验证' → 'createRun inputRef 派生（Core 构造 ResultRef）、writeRunResult preflight 验证'; result-ref-adapter.ts row '验证函数' → '派生（buildRunResultRef）+ preflight 验证（verifyResultRef）函数'; C1 delta row 'inputRef 派生/验证' → 'inputRef 派生（Core 构造）+ preflight 验证'; serialization.ts row 'Agent notes' → 'bounded envelope'. Section 7 acceptance: 'inputRef fingerprint 由 Core 在 createRun 时验证' → '由 Core 在 createRun 时派生（构造 ResultRef），writeRunResult preflight 重新验证'. Section 8 cross-ref: 'createRun 验证 + writeRunResult preflight 使用同一 verifyResultRef' → 'createRun 派生（buildRunResultRef 构造 ResultRef）+ writeRunResult preflight 验证（verifyResultRef 重新校验 Core-created reference）'. No residual '派生或验证' or 'createRun 验证' in recommendation/implementation/acceptance/cross-ref."
+    },
+    {
+      "id": "Q1-RE-003",
+      "severity": "P1",
+      "origin": "20260806-101-review-explore",
+      "title": "Lean Run contract still permits the Run to be an unbounded Findings and Verification ledger",
+      "fix": "Section 4.1 retitled to '区分 formal authority 与 bounded envelope'. Replaced unbounded Agent notes layer with bounded envelope: Run does not copy complete Findings/Verification/archive facts (ref/01 section 2.1); holds only minimal result references (reviewVerdictRef → Reviewer result, verificationSummaryRef → verification.md, producedResultRefs, consumedInputRefs). Allowed minimal envelope fields: nextActionRecommendation, failureDiagnosis, blockedOn. Explicitly prohibited from copying into Run: complete findings, complete verification[], archiveResults/manifestUpdate/verificationResults, consistencyScan (not a Run schema field; if needed, output minimal result reference). Principles: Run is execution envelope not audit ledger (ref/01 section 6.3); complete facts stay with owning artifact; no second evidence subsystem. Section 5 table updated (serialization.ts, C1 delta, docs/core-model, tests rows). Section 7 acceptance: added '完整 Findings / Verification / archive 事实不复制进 Run（只持有 result references）'; changed 'Formal authority vs Agent notes' → 'Formal authority vs bounded envelope'. Section 8 cross-ref: 'formal vs Agent notes' → 'formal vs bounded envelope' with updated consistency requirement; Lean Run row updated to mention bounded envelope."
+    }
+  ],
+  "consistencyScan": {
+    "dimensionsScanned": [
+      {
+        "concept": "inputRef fingerprint authority (derive vs verify)",
+        "locations": ["Section 3.2 (conclusion)", "Section 4.2 (recommendation)", "Section 4.3 (preflight)", "Section 5 (implementation table)", "Section 7 (acceptance)", "Section 8 (cross-ref)"],
+        "result": "consistent — Section 3.2 conclusion now says '派生（构造 ResultRef）+ preflight 重新验证'; Section 4.2 prescribes Core-derived (buildRunResultRef); Section 4.3 preflight recomputes and compares Core-created reference; Section 5 table rows all say '派生（Core 构造）+ preflight 验证'; Section 7 acceptance says '派生（构造 ResultRef），preflight 重新验证'; Section 8 cross-ref says 'createRun 派生（buildRunResultRef）+ preflight 验证（verifyResultRef）'. '验证' reserved for preflight only. No residual '派生或验证' or 'createRun 验证' in recommendation/implementation/acceptance/cross-ref. Grep confirms 0 occurrences of '派生或验证'."
+      },
+      {
+        "concept": "Lean Run bounded envelope (no copied payloads)",
+        "locations": ["Section 4.1 (contract)", "Section 5 (implementation table)", "Section 7 (acceptance)", "Section 8 (cross-ref)"],
+        "result": "consistent — Section 4.1 defines bounded envelope: Run holds only result references (reviewVerdictRef/verificationSummaryRef) + minimal envelope fields; explicitly prohibits copying complete findings/verification/archiveResults/consistencyScan. Section 5 table: serialization.ts row 'bounded envelope', C1 delta row 'bounded envelope', tests row 'bounded envelope（拒绝复制完整 findings/verification）'. Section 7: 'Formal authority vs bounded envelope' + '完整 Findings/Verification/archive 不复制进 Run'. Section 8: 'formal vs bounded envelope' + '完整 Findings/Verification/archive 不复制进 Run，只持有 result references'. No residual 'Agent notes' in body (grep confirms 0 occurrences). Aligns with ref/01 section 2.1 (Run 不复制 Reviewer/Verification 事实) and section 6.3 (Run 是执行信封不是审计账本)."
+      },
+      {
+        "concept": "terminal create-once preservation",
+        "locations": ["Section 3.4", "Section 4.3", "Section 6", "Section 8"],
+        "result": "consistent — Q1 MUST NOT change terminal semantics; preflight adds to writeRunResult without relaxing terminal create-once. Unchanged by this revision."
+      },
+      {
+        "concept": "verification script ownership",
+        "locations": ["Section 3.7", "Section 4.5", "Section 7", "Section 8"],
+        "result": "consistent — Q1 freezes timing/ownership/no-unauthorized-Full-Test principles only; concrete scripts belong to F1. Unchanged by this revision (Q1-RE-002 resolved in 100-revise-explore)."
+      }
+    ],
+    "totalContradictions": 0,
+    "overallResult": "pass"
+  },
+  "modifiedFiles": [
+    "openspec/changes/execution-model-correction/explore.md"
+  ],
+  "commitPolicy": "No commit, checkpoint, or Full Test was authorized or performed by this revise Run. No self-review performed.",
+  "nextAction": "review-explore"
+}

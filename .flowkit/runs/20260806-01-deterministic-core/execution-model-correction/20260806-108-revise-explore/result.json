@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-108-revise-explore",
+  "status": "completed",
+  "actionResult": {
+    "action": "revise-explore",
+    "executionStatus": "completed",
+    "summary": "最小安全修复 107-review-explore 的 2 个 blocking findings（Q1-RE-001 重开 + Q1-RE-003 重开）。按 AGENTS.md preflight 4 步 + 代码层验证执行。Q1-RE-001 修复：读 buildRunResultRef 实际签名（result-ref-adapter.ts:44-54），确认它只接受 runPath 并无条件追加 result.json、kind 恒为 run-result，不能用于非 Run target。定义 NEW buildArtifactResultRef(repoRelPath, fileContent, kind) 接受 normalized repo-relative path + content + validated kind，不追加 result.json，执行 traversal rejection。保留 buildRunResultRef 只作为 run-result 特化。指定 allowed kinds（run-result / produced-artifact / verification-summary）和 path roots。更新 per-category derivation：producedResultRefs 和 verificationSummaryRef 改用 buildArtifactResultRef。Q1-RE-003 修复：读 C1 ContextFile 验证（serialization.ts:528-561）和 CreateRunInput（run-persistence.ts:46-74），确认 inputRef 是 optional + caller-provided，不要求指向 reviewedRunId。查 buildContextFile（run-persistence.ts:363-381）确认直接透传 inputRef 不派生。追踪 review-* Run 完整数据流（createRun→writeRunResult→Reader），定义 exact content binding：review-* Run inputRef REQUIRED，MUST resolve 到 reviewedRunId 的 result.json；Core 在 createRun 派生（buildRunResultRef），在 preflight 重新验证；Reader fail-closed 当 binding absent/mismatched/unreadable/replaced；reviewFindings payload 只在 preflight 通过后才写入。Section 4.1/4.2/4.3/5/7/8 全部更新。未修改生产代码、测试、冻结文档或 terminal Runs。"
+  },
+  "preflight": {
+    "rule": "AGENTS.md revise 契约产物 preflight（4 步 + 代码层验证）",
+    "step1_completeReading": "读 Q1-RE-001 requiredResolution（定义 generic artifact constructor）+ Q1-RE-003 requiredResolution（review-* inputRef bound to reviewedRunId）+ ref/01 section 6.5（UNIVERSAL）",
+    "step2_enumerateInstances": "5 ResultRef 类别 × 2 构造器映射：inputRef/consumedInputRefs/reviewVerdictRef → buildRunResultRef（run-result）；producedResultRefs/verificationSummaryRef → buildArtifactResultRef（NEW）。review-* inputRef：当前 optional → 需 REQUIRED + bound to reviewedRunId。",
+    "step3_implementabilityVerification": {
+      "abstract": "逐类模拟 hash 计算流程，确认无循环依赖/自引用",
+      "codeLevel_a_readFunctionSignatures": "读 result-ref-adapter.ts:44-54：buildRunResultRef(runPath, fileContent) → joinResultJson(runPath) 无条件追加 result.json，kind=RUN_RESULT_KIND。确认不能用于非 Run target。读 computeResultFileHash（通用 SHA-256）和 verifyResultRef（通用比较）确认可用。需 NEW buildArtifactResultRef。",
+      "codeLevel_b_traceFullDataFlow": "追踪 review-* Run 完整流程：createRun（Core resolve reviewedRunId → 读取 result.json → SHA-256 → buildRunResultRef → 写入 inputRef）→ writeRunResult preflight（重读 → 重算 → 比较 → mismatch 则 fail）→ Reader（fail-closed 当 absent/mismatched/unreadable/replaced）。reviewFindings 只在 preflight 通过后写入。无循环依赖。",
+      "codeLevel_c_checkC1FieldConstraints": "读 serialization.ts:528-561：reviewedRunId required for review-*，inputRef optional for all。读 run-persistence.ts:46-74：CreateRunInput.inputRef 是 optional ResultRef。读 run-persistence.ts:363-381：buildContextFile 直接透传 inputRef 不派生。确认需要改为：review-* inputRef REQUIRED + Core-derived + bound to reviewedRunId。"
+    },
+    "step4_globalConsistency": "更新位置：Section 3.2/3.3（已在前轮更新）、Section 4.1（两个构造器 + allowed kinds + per-category derivation + review-* exact content binding block）、Section 4.2（buildArtifactResultRef + review-* inputRef binding）、Section 4.3（preflight 含 review binding + reviewFindings gating）、Section 5（result-ref-adapter/run-persistence/tests 行）、Section 7（3 行新增）、Section 8（ALL ResultRef fingerprint 行更新 + review-* inputRef binding 行新增）。Grep 确认 0 occurrences of INPUT_REF_MISMATCH/bounded envelope。"
+  },
+  "findingsAddressed": [
+    {
+      "id": "Q1-RE-001",
+      "severity": "P1",
+      "origin": "20260806-107-review-explore",
+      "title": "All-category ResultRef design invokes a Run-only constructor for non-Run artifacts",
+      "fix": "Read buildRunResultRef actual signature (result-ref-adapter.ts:44-54): takes runPath, unconditionally appends result.json via joinResultJson, kind always RUN_RESULT_KIND. Cannot construct ResultRef for verification.md or arbitrary artifacts. Defined NEW buildArtifactResultRef(repoRelPath, fileContent, kind): accepts normalized repo-relative path (not appending result.json), content, validated kind; performs traversal rejection (reject .. or absolute paths outside repo). Kept buildRunResultRef only as run-result specialization. Section 4.1 adds '两个 ResultRef 构造器' block with both constructors; 'Allowed kinds and path roots' block (run-result / produced-artifact / verification-summary); per-category derivation updated: producedResultRefs uses buildArtifactResultRef(kind=produced-artifact), verificationSummaryRef uses buildArtifactResultRef(kind=verification-summary). Section 4.2 adds buildArtifactResultRef to the derivation flow. Section 4.3 preflight references both constructors per category. Section 5: result-ref-adapter.ts row 'buildRunResultRef（保留）+ buildArtifactResultRef（NEW）+ verifyResultRef'; tests row 'buildArtifactResultRef（traversal rejection/kind validation/path normalization）'. Section 7: 'run-result target 用 buildRunResultRef；non-Run artifact 用 buildArtifactResultRef'. Section 8: ALL ResultRef fingerprint row 'run-result 用 buildRunResultRef，non-Run artifact 用 buildArtifactResultRef'."
+    },
+    {
+      "id": "Q1-RE-003",
+      "severity": "P1",
+      "origin": "20260806-107-review-explore",
+      "title": "Review version binding remains run-ID-only rather than content-bound",
+      "fix": "Read C1 ContextFile validation (serialization.ts:528-561): reviewedRunId required for review-*, but inputRef optional for all actions. Read CreateRunInput (run-persistence.ts:46-74): inputRef is optional caller-provided ResultRef. Read buildContextFile (run-persistence.ts:363-381): directly passes through inputRef, no derivation. Traced full review-* Run data flow (createRun→writeRunResult→Reader). Section 4.1 adds 'review-* Run exact content binding（Q1-RE-003）' block: review-* inputRef REQUIRED (not optional), MUST resolve to reviewedRunId's result.json; Core at createRun: resolve reviewedRunId → read result.json → SHA-256 → buildRunResultRef → write inputRef; inputRef.ref MUST equal reviewedRunId's result.json path; reviewed result.json missing/unreadable → createRun fails. writeRunResult preflight: re-read reviewedRunId's result.json → recompute SHA-256 → compare with inputRef.versionFingerprint → mismatch → RESULT_REF_MISMATCH. Reader fail-closed: inputRef absent → FactConflict; inputRef.ref ≠ reviewedRunId's result.json → FactConflict; result.json missing/unreadable → FactConflict; fingerprint mismatch → FactConflict. reviewFindings payload only after preflight passes (reviewedResultRef binding established). Section 4.1 per-category: context.inputRef（review-* Run, REQUIRED — Q1-RE-003 exact content binding）. Section 4.2 adds 'review-* Run inputRef binding（Q1-RE-003）' paragraph. Section 4.3: preflight includes review-* binding check + reviewFindings gating. Section 5: run-persistence row 'review-* inputRef REQUIRED + bound to reviewedRunId'; tests row 'review-* inputRef binding（valid/missing/mismatched ID/replacement/pending preservation）+ reviewFindings gating'. Section 7: 'review-* Run inputRef REQUIRED + bound to reviewedRunId（exact content binding）；Reader fail-closed' + 'reviewFindings payload 只在 preflight 通过后才写入'. Section 8: new 'review-* inputRef binding' row."
+    }
+  ],
+  "consistencyScan": {
+    "dimensionsScanned": [
+      {
+        "concept": "two ResultRef constructors (buildRunResultRef for run-result, buildArtifactResultRef for non-Run)",
+        "locations": ["Section 4.1 (两个构造器 + per-category derivation)", "Section 4.2 (derivation flow)", "Section 4.3 (preflight per category)", "Section 5 (result-ref-adapter / tests rows)", "Section 7 (acceptance)", "Section 8 (ALL ResultRef fingerprint row)"],
+        "result": "consistent — buildRunResultRef used only for run-result targets (inputRef/consumedInputRefs/reviewVerdictRef); buildArtifactResultRef used for non-Run targets (producedResultRefs/verificationSummaryRef). Grep: buildRunResultRef=15, buildArtifactResultRef=11. No residual buildRunResultRef for verification.md or producedResultRefs. Allowed kinds and path roots specified."
+      },
+      {
+        "concept": "review-* inputRef exact content binding (REQUIRED + bound to reviewedRunId)",
+        "locations": ["Section 4.1 (exact content binding block + per-category inputRef review-* row)", "Section 4.2 (review-* inputRef binding paragraph)", "Section 4.3 (preflight review-* binding + reviewFindings gating)", "Section 5 (run-persistence / tests rows)", "Section 7 (2 acceptance criteria)", "Section 8 (review-* inputRef binding row)"],
+        "result": "consistent — review-* inputRef REQUIRED, MUST resolve to reviewedRunId's result.json. Core derives at createRun, verifies at preflight, Reader fail-closed. reviewFindings only after preflight passes. Grep: reviewedRunId=17, reviewFindings=14, 'preflight 通过后'=2 (Section 4.1 + 4.3). No residual 'inputRef optional for review-*'."
+      },
+      {
+        "concept": "reviewVerdictRef non-self-referential + reviewFindings typed payload",
+        "locations": ["Section 4.1 (allowlist + Reviewer formal artifact + exact content binding)", "Section 5 (C1 delta + tests rows)", "Section 7 (acceptance)", "Section 8 (Lean Run row)"],
+        "result": "consistent — unchanged from 106: review-* Run does NOT carry reviewVerdictRef; carries reviewVerdict + reviewFindings typed payload. Non-review Run carries reviewVerdictRef (buildRunResultRef, different Run, not self-referential)."
+      },
+      {
+        "concept": "closed allowlist coherence",
+        "locations": ["Section 4.1", "Section 5", "Section 7", "Section 8"],
+        "result": "consistent — unchanged. Single closed Core-validated allowlist; unknown fields rejected; no unvalidated layer. Grep: 'bounded envelope'=0."
+      },
+      {
+        "concept": "terminal create-once preservation",
+        "locations": ["Section 3.4", "Section 4.3", "Section 6", "Section 8"],
+        "result": "consistent — unchanged. Q1 MUST NOT change terminal semantics."
+      }
+    ],
+    "totalContradictions": 0,
+    "overallResult": "pass"
+  },
+  "modifiedFiles": [
+    "openspec/changes/execution-model-correction/explore.md"
+  ],
+  "commitPolicy": "No commit, checkpoint, or Full Test was authorized or performed by this revise Run. No self-review performed.",
+  "nextAction": "review-explore"
+}

@@ -38,6 +38,11 @@ scope:
     - 正式事实读取
     - 原子持久化
     - Run ID 分配与 terminal immutability
+    - Lean Run contract（执行信封，非审计账本）
+    - Run completion preflight
+    - machine-derived ResultRef / versionFingerprint
+    - 正式 explore.md 路径与 .tmp 边界冻结
+    - Verification 分层成本边界（focused / affected / full）
     - Policy / canRun / next
     - blocked diagnosis
     - owner decision boundary 表达
@@ -125,13 +130,31 @@ changes:
       - Policy 引擎（canRun / next / diagnose）
       - 状态转换规则表驱动测试
 
+  - key: Q1
+    id: execution-model-correction
+    goal: >
+      收敛 Run 为轻量执行信封，修正 Run finalization / ResultRef provenance /
+      正式 artifact 路径与 Verification 成本边界，为 E1 和后续 Change Runner
+      提供稳定、低成本的执行契约。
+    required: true
+    dependsOn:
+      - policy-engine
+    state: active
+    outputs:
+      - Lean Run contract（执行信封，非审计账本）
+      - machine-derived ResultRef / versionFingerprint
+      - Run completion preflight + terminal create-once 保持
+      - 正式 explore.md 路径修正与 .tmp 边界冻结
+      - Verification 分层成本边界（focused / affected / full）
+      - Bootstrap legacy Run 有界兼容
+
   - key: E1
     id: diagnostic-cli
     goal: >
       实现只读诊断 CLI：status / next / doctor / resume-context。
     required: true
     dependsOn:
-      - policy-engine
+      - execution-model-correction
     state: planned
     outputs:
       - flowkit status 命令
@@ -164,6 +187,10 @@ verification:
       - CLI contract tests
       - state transition matrix
       - atomic write / recovery tests
+      - Lean Run contract / Run authority boundary
+      - machine-derived ResultRef / fingerprint
+      - formal artifact path check
+      - verification layer contract
       - OpenSpec strict validation
       - lint
       - typecheck
@@ -181,6 +208,10 @@ acceptance:
   - Policy 对所有固定 Action 产生唯一结果或明确阻塞
   - terminal Run 不可覆盖
   - Run ID 为 Delivery-scoped 单调递增
+  - Run authority 已收敛为执行信封，不复制 OpenSpec / Verification / Git 事实
+  - ResultRef / fingerprint 由 Core 自动派生，不依赖 Agent 手写
+  - 正式 Change artifacts 可 Git 恢复，.tmp 不作为正式恢复依赖
+  - Verification 分层边界已冻结，小修改不默认执行全量测试
   - facts reader 冲突时 fail-closed
   - 持久化原子且可恢复
   - 四个诊断 CLI 可用

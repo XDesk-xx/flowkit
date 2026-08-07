@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-104-revise-explore",
+  "status": "completed",
+  "actionResult": {
+    "action": "revise-explore",
+    "executionStatus": "completed",
+    "summary": "最小安全修复 103-review-explore 的 1 个 blocking finding（Q1-RE-003）。将 Section 4.1 从不可执行的两层设计（formal authority + unvalidated bounded envelope）改为单一 closed Core-validated allowlist：RunResultFile 是 closed schema，未知字段被 Core 拒绝（不透传、不持久化），不区分两层。定义 reviewVerdictRef target（review Run result.json，reviewer-owned，terminal create-once，Git-tracked，携带 reviewVerdict + reviewer formal findings，reviewer 是 authority 非 Run 复制）和 verificationSummaryRef target（verification.md，Change-owned）。移除 blockedOn（不在 allowlist）。明确 closed schema 测试：allowlist round-trip、未知字段拒绝、reviewVerdictRef 引用必需。review-* Run 的 result.json 携带 reviewer formal findings 作为 reviewer 正式产物；非 review Run 通过 reviewVerdictRef 引用。Section 5 表（C1 delta / serialization / docs / tests 行）、Section 7 验收、Section 8 交叉引用同步更新为 closed allowlist。Q1-RE-001 和 Q1-RE-002 已 resolved（103 确认），不修改。未修改生产代码、测试、冻结文档或 terminal Runs。"
+  },
+  "findingsAddressed": [
+    {
+      "id": "Q1-RE-003",
+      "severity": "P1",
+      "origin": "20260806-103-review-explore",
+      "title": "Bounded-envelope rule is neither physically coherent nor enforceable",
+      "fix": "Replaced two-layer design (formal authority + unvalidated bounded envelope) with a single closed Core-validated allowlist. Section 4.1 retitled to 'closed Core-validated allowlist'. Removed the unvalidated envelope layer entirely — no duplication of reviewVerdictRef/verificationSummaryRef/producedResultRefs/consumedInputRefs/failureDiagnosis/nextActionRecommendation across two layers. RunResultFile is closed schema: unknown fields rejected by Core (not passed through). Defined reviewVerdictRef target: review Run result.json (path .flowkit/runs/<delivery>/<change>/<review-run-id>/result.json, producer=reviewer, lifecycle=terminal create-once, retention=Git-tracked, carries reviewVerdict + reviewer formal findings where reviewer is authority). Defined verificationSummaryRef target: verification.md (Change-owned). Removed blockedOn (not in allowlist). Added closed schema tests: allowlist round-trip, unknown fields (full findings/verification/archive/consistencyScan) rejected, reviewVerdictRef required for applicable Runs. Clarified: review-* Run result.json carries reviewer formal findings as reviewer's formal artifact (reviewer is authority, not Run copying); non-review Runs reference via reviewVerdictRef. C1 delta spec will define reviewer findings formal field schema. Section 5 table: serialization.ts row changed to 'closed allowlist: 未知字段拒绝 (从 lenient 改为 strict)'; C1 delta row 'closed allowlist + reviewer findings formal schema'; tests row 'closed schema 拒绝未知字段 + reviewer findings formal schema'. Section 7 acceptance: 'RunResultFile closed allowlist 边界 (未知字段被 Core 拒绝)' + '完整 Findings/Verification/archive 不在 closed allowlist 中，被 Core 拒绝'. Section 8 cross-ref: 'closed allowlist' dimension with 'RunResultFile 是 closed schema; 未知字段被 Core 拒绝; Run 只持有 ResultRef 引用'."
+    }
+  ],
+  "consistencyScan": {
+    "dimensionsScanned": [
+      {
+        "concept": "closed allowlist coherence (single layer, no duplication, enforceable)",
+        "locations": ["Section 4.1 (contract)", "Section 5 (implementation table)", "Section 7 (acceptance)", "Section 8 (cross-ref)"],
+        "result": "consistent — Section 4.1 defines ONE closed Core-validated allowlist; no unvalidated layer; no field duplication; unknown fields rejected by Core. Section 5 table: serialization.ts 'closed allowlist 未知字段拒绝', C1 delta 'closed allowlist', tests 'closed schema 拒绝未知字段'. Section 7: 'RunResultFile closed allowlist 边界 (未知字段被 Core 拒绝)' + '完整 Findings/Verification/archive 不在 closed allowlist 中，被 Core 拒绝'. Section 8: 'closed allowlist' dimension. Grep confirms 0 occurrences of 'bounded envelope', 'Agent notes', 'blockedOn'. 'closed' appears 14 times consistently."
+      },
+      {
+        "concept": "ResultRef target ownership (reviewer-owned vs Change-owned)",
+        "locations": ["Section 4.1 (ResultRef target definitions)", "Section 8 (cross-ref)"],
+        "result": "consistent — reviewVerdictRef target: review Run result.json (producer=reviewer, lifecycle=terminal create-once, retention=Git-tracked, carries reviewVerdict + reviewer formal findings, reviewer is authority). verificationSummaryRef target: verification.md (producer=Change Verification tool, lifecycle=Change-owned, retention=Git-tracked). Section 8 Lean Run row references 'reviewVerdictRef → review Run result.json (reviewer-owned)'. No contradiction with ref/01 section 2.1 (Run does not copy Reviewer facts — review Run PRODUCES them as reviewer authority; non-review Runs reference via reviewVerdictRef)."
+      },
+      {
+        "concept": "inputRef fingerprint authority (derive vs verify)",
+        "locations": ["Section 3.2", "Section 4.2", "Section 4.3", "Section 5", "Section 7", "Section 8"],
+        "result": "consistent — unchanged by this revision. Q1-RE-001 resolved in 102-revise-explore, confirmed by 103-review-explore. createRun 派生 (buildRunResultRef) + writeRunResult preflight 验证 (verifyResultRef)."
+      },
+      {
+        "concept": "terminal create-once preservation",
+        "locations": ["Section 3.4", "Section 4.3", "Section 6", "Section 8"],
+        "result": "consistent — unchanged by this revision. Q1 MUST NOT change terminal semantics. reviewVerdictRef lifecycle=terminal create-once aligns with existing terminal immutability."
+      },
+      {
+        "concept": "verification script ownership",
+        "locations": ["Section 3.7", "Section 4.5", "Section 7", "Section 8"],
+        "result": "consistent — unchanged by this revision. Q1-RE-002 resolved, confirmed by 103-review-explore. Concrete scripts belong to F1."
+      }
+    ],
+    "totalContradictions": 0,
+    "overallResult": "pass"
+  },
+  "modifiedFiles": [
+    "openspec/changes/execution-model-correction/explore.md"
+  ],
+  "commitPolicy": "No commit, checkpoint, or Full Test was authorized or performed by this revise Run. No self-review performed.",
+  "nextAction": "review-explore"
+}

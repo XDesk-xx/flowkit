@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-114-revise-explore",
+  "status": "completed",
+  "actionResult": {
+    "action": "revise-explore",
+    "executionStatus": "completed",
+    "summary": "最小安全修复 113-review-explore 的 1 个 blocking finding（Q1-RE-004 重开：lifecycle inversion）。按 AGENTS.md preflight 4 步 + 代码层验证执行。先验证 113 finding 真实性：读 verification-model.md:63-73 确认 'Change Verification 必须在以下 Action 后执行: apply, revise-apply' + '进入 review-apply 前，所有适用检查必须为 passed | not-applicable'。确认 lifecycle 是 apply/revise-apply → Change Verification → review-apply。112 把 apply/revise-apply 设为 verification-eligible = deadlock（apply preflight 要求 verification.md 存在，但 Change Verification 在 apply 后才创建/更新它）。Archive 也不 stable（relocates artifacts）。finding 确认存在。修复（minimal，只改 explore.md）：eligibility 从 {apply, revise-apply, review-apply, archive} 收窄为 {review-apply only}。review-apply 在 Change Verification 后执行，verification.md 已存在。apply/revise-apply non-eligible（deadlock 避免）。archive non-eligible（path 不稳定）。覆盖 reviewer 全部 4 case：first apply before verification→absent、revised apply before re-verification→absent、review-apply with passed/not-applicable verification→eligible→include、archive relocation→absent。Section 4.1 inclusion lifecycle block + per-category、4.3 preflight、5 tests、7 acceptance、8 cross-reference 全部更新。Grep 确认 0 残留旧 eligible set。OpenSpec strict 8/8 passed。git diff --check 无 whitespace。未修改生产代码、测试、冻结文档或 terminal Runs。"
+  },
+  "preflight": {
+    "rule": "AGENTS.md revise 契约产物 preflight（4 步 + 代码层验证）",
+    "step1_completeReading": "读 Q1-RE-004 requiredResolution 全文（Keep Q1-RE-004 open. Set verificationSummaryRef eligibility only at a lifecycle point where the relevant verification record already exists and remains at the resolver's declared path—at minimum review-apply may consume the completed Change Verification record. Remove apply and revise-apply from automatic eligibility; they must complete before Verification runs. Either remove archive eligibility or define an archive-safe, immutable target/retention resolver after the formal artifact move; do not rely on the pre-archive path during archive completion. Update the inclusion, preflight, tests, acceptance, and cross-reference matrix for: first apply before verification, revised apply before re-verification, review-apply with passed/not-applicable verification, and archive relocation.）+ finding 引用的 explore.md:244-261（inclusion lifecycle block）、291-298（per-category）、378-386（Section 4.2）、400-412（Section 4.3 preflight）、481-487（Section 5）、511-513（Section 7）。读 verification-model.md:61-76 确认 lifecycle ordering。读 113 result.json 确认 Q1-RE-001/002/003 均 resolved，只有 Q1-RE-004 open。",
+    "step2_enumerateInstances": "枚举旧 eligible set 'apply, revise-apply, review-apply, archive' 全部出现位置：Section 4.1 inclusion lifecycle block（line 247）、per-category derivation（line 293）、Section 4.3 preflight（line 406 eligible Action only）、Section 5 tests row（line 487）、Section 7 acceptance（line 513）、Section 8 cross-reference（line 536）= 6 处。逐一确认修复覆盖。枚举 non-eligible set 也需同步更新（原为 explore/propose/revise-*/review-explore/review-propose，新增 apply/revise-apply/archive）。",
+    "step3_implementabilityVerification": {
+      "abstract": "模拟 review-apply 时 verificationSummaryRef 流程：review-apply 在 Change Verification 后执行 → verification.md 已存在 → Core 读 context.changeId → path → read → SHA-256 → buildArtifactResultRef → include。apply/revise-apply preflight 时 verification.md 不存在 → non-eligible → skip（无 deadlock）。archive relocates artifacts → non-eligible → skip（无 path 不稳定）。无循环依赖。",
+      "codeLevel_a_readFunctionSignatures": "读 verification-model.md:63-68（Change Verification 必须在 apply/revise-apply 后执行）+ 70-73（进入 review-apply 前所有适用检查必须 passed/not-applicable）。确认 lifecycle ordering：apply/revise-apply → Change Verification → review-apply。读 serialization.ts:128（ContextFile.changeId immutable）确认 path 仍 Run-stable。eligibility check 是 Action-type 判断，在 writeRunResult 层实现。",
+      "codeLevel_b_traceFullDataFlow": "追踪 4 个 lifecycle case：(a) first apply：apply completes → Change Verification runs → verification.md created. apply preflight 时 verification.md 不存在 → apply non-eligible → verificationSummaryRef absent. 无 deadlock. (b) revised apply：同 (a). (c) review-apply：Change Verification 已完成 → verification.md exists + passed/not-applicable → review-apply eligible → Core reads → include. 若 verification.md absent → RESULT_REF_TARGET_MISSING, review-apply pending（review-apply 不能在缺 verification record 时完成）. (d) archive：relocates artifacts → non-eligible → absent. 无 path 不稳定. Reader historical read 仍用 context.changeId.",
+      "codeLevel_c_checkC1FieldConstraints": "读 serialization.ts:120-143（ContextFile）：changeId required for Change-level, immutable。读 verification-model.md:63-73 确认 lifecycle ordering 是 formal constraint。确认 eligibility set {review-apply only} 与 lifecycle 一致：review-apply 是唯一在 Change Verification 后执行的 review-* Action。apply/revise-apply 在 Change Verification 前，archive relocates artifacts。C1 delta 需在 writeRunResult 层实现 Action-type eligibility check（不在 schema validation 层）。"
+    },
+    "step4_globalConsistency": "consistency scan 覆盖 6 维度（见 consistencyScan）。Grep 确认 0 残留旧 eligible set 'apply, revise-apply, review-apply, archive'=0, 'apply/revise-apply/review-apply/archive'=0。Positive: 'review-apply only'=5, lifecycle=9, deadlock=1, archive relocation=3。OpenSpec strict 8/8 passed。git diff --check exit 0。trailing whitespace=0。"
+  },
+  "findingsAddressed": [
+    {
+      "id": "Q1-RE-004",
+      "severity": "P1",
+      "origin": "20260806-113-review-explore",
+      "title": "verificationSummaryRef eligibility is ordered before the Verification it requires",
+      "fix": "先验证 finding 真实性：读 verification-model.md:63-73 确认 lifecycle 是 apply/revise-apply → Change Verification → review-apply。112 把 apply/revise-apply 设为 eligible = deadlock（apply preflight 要求 verification.md 存在，但 Change Verification 在 apply 后才创建它）。Archive relocates artifacts = path 不稳定。确认 finding 存在。修复（minimal，只改 explore.md）：(1) eligibility 从 {apply, revise-apply, review-apply, archive} 收窄为 {review-apply only}。review-apply 在 Change Verification 后执行，verification.md 已存在。(2) non-eligible set 更新为 {explore, propose, apply, revise-apply, revise-explore, revise-propose, review-explore, review-propose, archive}，附 deadlock 避免 rationale（apply/revise-apply: Change Verification 在其后执行）+ archive path 不稳定 rationale。(3) Section 4.1 inclusion lifecycle block（line 247-257）：eligible 改 review-apply only + lifecycle 引用 verification-model.md:63-73；non-eligible 加 apply/revise-apply/archive + rationale。(4) per-category（line 298）：eligibility 改 review-apply only。(5) Section 4.3 preflight（line 410）：改 review-apply only。(6) Section 5 tests（line 491）：改 review-apply eligible + lifecycle cases（first apply before verification→absent, revised apply before re-verification→absent, archive relocation→absent）。(7) Section 7 acceptance（line 517）：改 review-apply only + apply/revise-apply/archive non-eligible rationale。(8) Section 8（line 540）：改 review-apply only + lifecycle。覆盖 reviewer 全部 4 case。"
+    }
+  ],
+  "consistencyScan": {
+    "dimensionsScanned": [
+      {
+        "concept": "verificationSummaryRef eligibility = review-apply only (lifecycle-aligned) — Q1-RE-004 fix",
+        "locations": ["Section 4.1 (inclusion lifecycle block + per-category)", "Section 4.3 (preflight)", "Section 5 (tests row)", "Section 7 (acceptance)", "Section 8 (Core-owned mapping row)"],
+        "result": "consistent — eligibility = {review-apply only}. Grep: 'review-apply only'=5, old set 'apply, revise-apply, review-apply, archive'=0, 'apply/revise-apply/review-apply/archive'=0. Lifecycle: apply/revise-apply → Change Verification → review-apply (verification-model.md:63-73). review-apply is the only Action that executes after Change Verification. apply/revise-apply non-eligible (deadlock avoidance). archive non-eligible (path instability)."
+      },
+      {
+        "concept": "lifecycle case coverage (reviewer's 4 cases)",
+        "locations": ["Section 4.1 (inclusion lifecycle block rationale)", "Section 5 (tests row lifecycle cases)", "Section 7 (acceptance lifecycle cases)", "Section 8 (cross-reference)"],
+        "result": "consistent — 4 cases covered: (1) first apply before verification → non-eligible → absent; (2) revised apply before re-verification → non-eligible → absent; (3) review-apply with passed/not-applicable verification → eligible → exists → include; (4) archive relocation → non-eligible → absent. Grep: lifecycle=9, deadlock=1, 'archive relocation'/relocates=3."
+      },
+      {
+        "concept": "verificationSummaryRef Run-stable target (context.changeId, unchanged from 112)",
+        "locations": ["Section 4.1 (mapping block + inclusion lifecycle + per-category)", "Section 4.2", "Section 4.3", "Section 5", "Section 7", "Section 8"],
+        "result": "consistent — unchanged from 112. All path sources use context.changeId (immutable). No <active-change-id> as path source. Historical Run read uses Run's own context.changeId. Grep: context.changeId=17, Run-stable=8."
+      },
+      {
+        "concept": "Core-owned kind/path mapping (unchanged except eligibility set)",
+        "locations": ["Section 4.1", "Section 4.2", "Section 4.3", "Section 5", "Section 7", "Section 8"],
+        "result": "consistent — buildArtifactResultRef kind still Core internal enum. producedResultRefs still Action+tag mapping. Only verificationSummaryRef eligibility set changed. No regression to Q1-RE-001 fix."
+      },
+      {
+        "concept": "review-* inputRef exact content binding (unchanged)",
+        "locations": ["Section 4.1", "Section 4.2", "Section 4.3", "Section 5", "Section 7", "Section 8"],
+        "result": "consistent — unchanged. reviewedRunId=17, reviewFindings=15."
+      },
+      {
+        "concept": "terminal create-once + closed allowlist (unchanged)",
+        "locations": ["Section 3.4", "Section 4.1", "Section 4.3", "Section 6", "Section 7", "Section 8"],
+        "result": "consistent — unchanged. Q1 MUST NOT change terminal semantics."
+      }
+    ],
+    "totalContradictions": 0,
+    "overallResult": "pass"
+  },
+  "modifiedFiles": [
+    "openspec/changes/execution-model-correction/explore.md"
+  ],
+  "commitPolicy": "No commit, checkpoint, or Full Test was authorized or performed by this revise Run. No self-review performed.",
+  "nextAction": "review-explore"
+}

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 2,
+  "runId": "20260806-098-explore",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "Q1",
+  "changeId": "execution-model-correction",
+  "action": "explore",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-098-explore/",
+  "constraints": {
+    "mayCreateProposalArtifacts": true,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

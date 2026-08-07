@@ -57,3 +57,17 @@ PR
 - `docs/verification-model.md`：B1 验证模型
 - `docs/integration-boundaries.md`：C1 集成边界
 - `.codex/skills/flowkit-git-workflow/SKILL.md`：Git 工作流 Skill
+
+## Review / Revise 默认规则
+
+- `review` = **完整审查**：一次检查当前阶段全部适用契约与验收条件，尽量一次列全 Blocking Findings；不得发现第一个问题就停止；Non-blocking Findings 不触发 Revision。
+- `revise` = **最小安全修复**：只解决当前 Blocking Findings，不扩大 scope、不顺手重构；默认执行 focused checks，只在修改影响共享契约、公共类型或跨模块行为时扩大到 affected checks。
+- `revise，影响面检查` = 修复当前 Findings，并对直接受影响范围执行 consistency scan + affected checks；不等于 Delivery Full Test。
+- `revise` 契约产物（explore.md / proposal / design / spec）时，Author MUST 在编辑前完成 preflight 并在 result.json 中记录：
+  1. **完整阅读**：读 finding 的 requiredResolution 全文 + finding 引用的 ref 章节全文（不只读匹配 finding 的句子）。
+  2. **枚举实例**：finding 涉及某类对象（如 ResultRef、字段、Action）时，枚举该类在全文的全部实例，逐一确认修复覆盖。
+  3. **可实现性验证**：模拟实现——hash 计算流程、字段 writer/reader、序列化/反序列化；标记并排除循环依赖、自引用、不可执行的约束。**代码层验证（MUST）**：(a) 读设计中命名的每个函数的实际签名和行为，确认函数能执行所分配的操作；(b) 追踪完整数据流（创建→持久化→读取→消费），不只解决眼前问题；(c) 查 C1 当前对被修改字段的实际约束（optional/required、验证逻辑），不只靠记忆推断。
+  4. **全局一致性**：consistency scan 覆盖 finding 概念在全文的所有出现位置，不只 reviewer 指出的行号。
+- Reviewer 不得重复已 resolved 的 Finding；语义相同的问题应沿用原 Finding ID。
+- Author 不得因为纯 Run metadata、统计或可机器派生的 hash 错误制造新的业务修改。
+- 除非明确要求或达到 Delivery Full Test 阶段，Review / Revise 不运行全量测试。

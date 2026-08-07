@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-105-review-explore",
+  "status": "completed",
+  "summary": "Complete Q1 Explore review of 104 finished with changes-requested. The closed-schema direction correctly replaces the permissive unknown-field channel, but Q1-RE-003 remains unresolved because it makes a review Run require reviewVerdictRef to its own terminal result.json. A content-hash ResultRef embedded in its own hashed file is self-referential and cannot be constructed or verified. Q1-RE-001 also remains open at the broader ResultRef boundary: Core derivation is specified only for context.inputRef, while producedResultRefs, consumedInputRefs, verificationSummaryRef, and reviewVerdictRef remain caller-provided ActionResult fields despite the Q1 reference requiring production fingerprints to be Core-derived.",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-104-revise-explore/",
+  "reviewedResultRef": "content-sha256:1d5365e180576e49e0d8922346fd921f43fc0b09cb0fda8cd7817dd99819eeb5",
+  "sourceReview": {
+    "runId": "20260806-103-review-explore",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:cd54ed8b30df6ea368a47b650c1957925aa6c8df42bd9d29bf4552563c5e9b02"
+  },
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "Q1-RE-001",
+      "title": "Core-owned ResultRef provenance remains limited to context.inputRef",
+      "location": "openspec/changes/execution-model-correction/explore.md:117-123, 177-187, 251-263, 312-321, 345, 363",
+      "evidence": "The Explore correctly makes createRun derive context.inputRef, but section 3.3 identifies the separate defects that ActionResult.consumedInputRefs/producedResultRefs are not derived or checked. Section 4.1 retains all four ActionResult ResultRef categories in the allowlist, while section 4.2-4.3 only defines creation and preflight validation for context.inputRef. Current validateActionResultWithoutRunRef validates caller-provided ResultRef shapes and writeRunResult serializes the caller's object; neither derives fingerprints from the target. The updated reference section 6.5 states that production ResultRef/versionFingerprint must be machine generated, not just the context input reference.",
+      "impact": "An author can still fabricate, stale, or misbind produced, consumed, verification, and review ResultRefs in a terminal ActionResult. The closed schema restricts field names but does not establish the required provenance authority, so Q1 would leave a central ResultRef integrity gap unchanged.",
+      "requiredResolution": "Keep Q1-RE-001 open and specify one Core-owned derivation/validation path for every allowed ResultRef category. Callers may provide typed target descriptors or identifiers, never versionFingerprint values; Core resolves each target, computes the canonical fingerprint, constructs the ResultRef, and verifies all referenced targets before terminal publication. Define category-specific allowed targets (Run result, Change verification artifact, reviewer findings artifact), missing/unreadable/replaced-target failures, and tests for all ResultRef categories."
+    },
+    {
+      "id": "Q1-RE-003",
+      "title": "Reviewer-result reference design creates a self-referential content hash",
+      "location": "openspec/changes/execution-model-correction/explore.md:177-187, 195-205, 321, 340-343, 362",
+      "evidence": "Section 4.1 defines reviewVerdictRef as a reference to the review Run's own result.json and requires review-* Runs to carry that reference. ResultRef.versionFingerprint is the SHA-256 of target file content; embedding a reference whose fingerprint is the hash of the very result.json that contains it produces a circular hash equation. C1 already omits only ActionResult.runRef from serialized result.json to avoid this exact self-reference; reviewVerdictRef is not omitted. The allowlist also does not name a formal reviewer-findings field even though it says that result.json carries one.",
+      "impact": "No implementation can write a stable, terminal review result satisfying this contract: changing the embedded fingerprint changes the target content and therefore its fingerprint. Treating it as optional would violate the stated requirement; accepting a caller-provided value would violate Q1-RE-001 and version binding.",
+      "requiredResolution": "Keep Q1-RE-003 open. Choose a non-self-referential reviewer result design: either add a closed, typed reviewer-findings/verdict payload directly to the terminal review result and require later non-review consumers to reference that completed result, or create a distinct reviewer-owned findings artifact before result.json and reference that artifact. Do not require a review Run to reference its own result.json. Define the new field/artifact's serialization, atomic lifecycle, ResultRef construction, reader reconstruction, and tests for content-hash stability and stale-result detection."
+    }
+  ],
+  "nonBlockingFindings": [
+    {
+      "id": "Q1-NB-001",
+      "title": "Explore source links remain checkout-specific",
+      "location": "openspec/changes/execution-model-correction/explore.md:62, 72, 90, 98, 106, 127, 131, 137",
+      "evidence": "Code citations still use file:///D:/Projects/flowkit absolute paths, which cannot resolve from a different checkout or platform.",
+      "recommendedResolution": "Convert these citations to repository-relative Markdown links during a future in-scope Explore edit. This remains non-blocking because the cited source evidence was independently verified."
+    }
+  ],
+  "resolvedFindings": [
+    {
+      "id": "Q1-RE-002",
+      "result": "resolved",
+      "evidence": "Concrete verification scripts remain assigned to F1; Q1 retains only verification timing, ownership, and Full-Test authorization boundaries."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "104 reviewed-result binding and JSON validity",
+        "status": "passed",
+        "result": "104 context.json and result.json parse as JSON. SHA-256 of 104 result.json is 1d5365e180576e49e0d8922346fd921f43fc0b09cb0fda8cd7817dd99819eeb5."
+      },
+      {
+        "name": "revision lineage and Run numbering",
+        "status": "passed",
+        "result": "104 inputRef equals the actual SHA-256 of 103 result.json, sourceReviewRun/verdict match 103, and 104 was the Delivery-wide maximum before this reviewer Run."
+      },
+      {
+        "name": "Q1 semantic and serialization-contract scan",
+        "status": "failed",
+        "result": "Closed-schema direction is sound, but Q1-RE-001 exposes unowned ActionResult ResultRef provenance and Q1-RE-003 exposes an impossible self-referential review-result hash."
+      },
+      {
+        "name": "canonical OpenSpec specs",
+        "command": "npx openspec validate --specs --strict",
+        "status": "passed",
+        "result": "8 canonical specs passed, 0 failed. This structural result does not clear the semantic findings."
+      },
+      {
+        "name": "scope and whitespace",
+        "status": "passed",
+        "result": "104 declares and records only the Explore revision. JSON parsing, git diff --check, and explicit trailing-whitespace scan passed. The separately modified AGENTS.md is treated as an owner/repository instruction outside 104's declared modified-file claim and is not attributed to this review result."
+      },
+      {
+        "name": "Delivery Full Test",
+        "status": "not-applicable",
+        "result": "Not owner-authorized and not run; review-explore has no Full-Test authority."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}
