@@ -566,6 +566,108 @@ async function pathExists(path: string): Promise<boolean> {
 }
 
 // ---------------------------------------------------------------------------
+// Shared effective-set validation (Q1-RA-001 / Q1-RA-003)
+// ---------------------------------------------------------------------------
+//
+// Used by completion preflight (run-persistence), review-entry (createRun) and
+// Reader (formal-fact-reader) so the "current effective artifact set" contract
+// has ONE authority. Each caller resolves which refs are the current effective
+// set; these functions validate those refs against current canonical bytes and
+// the specs namespace invariant.
+
+/**
+ * A problem detected while validating an effective artifact ref against current
+ * canonical bytes. Callers translate these into `RESULT_REF_*` errors (preflight)
+ * or `FactConflict`s (Reader) or pre-publish rejection (review-entry).
+ */
+export interface EffectiveArtifactProblem {
+  readonly ref: string;
+  readonly kind: 'missing' | 'ambiguous' | 'mismatch';
+  readonly expected?: string;
+  readonly actual?: string;
+}
+
+/**
+ * Read the current canonical bytes for a non-Run artifact logical ref using
+ * archive-aware resolution.
+ *
+ * @throws {FlowkitError} `RESULT_REF_TARGET_MISSING` / `SCHEMA_VALIDATION_FAILED`
+ *   when the target cannot be uniquely resolved.
+ */
+export async function readArtifactBytes(
+  repoRoot: string,
+  logicalRef: string,
+): Promise<string> {
+  const filePath = await resolveArchiveAwareArtifactPath(repoRoot, logicalRef);
+  try {
+    return await readFile(filePath, 'utf-8');
+  } catch {
+    throw new FlowkitError(
+      'RESULT_REF_TARGET_MISSING',
+      `Artifact target unreadable: ${logicalRef}`,
+      { logicalRef, filePath },
+    );
+  }
+}
+
+/**
+ * Validate a set of effective produced-artifact refs against current canonical
+ * bytes. Returns a list of problems (empty ⇒ all refs match current bytes).
+ *
+ * This is the shared "current effective artifact set" validator used by
+ * completion preflight, review-entry and Reader. Each caller decides which refs
+ * are the current effective set; this function only checks byte consistency.
+ */
+export async function validateEffectiveArtifactRefs(
+  repoRoot: string,
+  refs: readonly ResultRef[],
+): Promise<EffectiveArtifactProblem[]> {
+  const problems: EffectiveArtifactProblem[] = [];
+  for (const ref of refs) {
+    let content: string;
+    try {
+      content = await readArtifactBytes(repoRoot, ref.ref);
+    } catch (e) {
+      if (e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED') {
+        problems.push({ ref: ref.ref, kind: 'ambiguous' });
+      } else {
+        problems.push({ ref: ref.ref, kind: 'missing' });
+      }
+      continue;
+    }
+    const actualHash = computeResultFileHash(content);
+    if (actualHash !== ref.versionFingerprint) {
+      problems.push({
+        ref: ref.ref,
+        kind: 'mismatch',
+        expected: ref.versionFingerprint,
+        actual: actualHash,
+      });
+    }
+  }
+  return problems;
+}
+
+/**
+ * Validate the specs namespace exact-set invariant: the effective specs
+ * logical-ref identities MUST exactly equal the current canonical `specs/**`
+ * namespace. Returns the mismatch detail or `null` when the sets match.
+ */
+export async function validateSpecsExactSet(
+  repoRoot: string,
+  changeId: string,
+  effectiveSpecsRefs: readonly ResultRef[],
+): Promise<{ effective: readonly string[]; canonical: readonly string[] } | null> {
+  const effectiveIdentities = extractSpecsLogicalIdentities(effectiveSpecsRefs);
+  const canonicalRefs = await enumerateSpecsNamespace(repoRoot, changeId);
+  const canonicalIdentities = extractSpecsLogicalIdentities(canonicalRefs);
+  if (effectiveIdentities.join(',') !== canonicalIdentities.join(',')) {
+    return { effective: effectiveIdentities, canonical: canonicalIdentities };
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
 

@@ -18,35 +18,48 @@ import {
 // ---------------------------------------------------------------------------
 
 describe('validateResultRefProjection', () => {
-  it('accepts a valid ResultRef with ref + versionFingerprint', () => {
-    const ref = validateResultRefProjection({
-      ref: 'result.json',
-      versionFingerprint: 'abc123',
-    });
-    assert.equal(ref.ref, 'result.json');
-    assert.equal(ref.versionFingerprint, 'abc123');
-    assert.equal(ref.kind, undefined);
-  });
-
-  it('accepts a ResultRef with optional kind', () => {
+  it('accepts a valid ResultRef with ref + versionFingerprint + kind', () => {
     const ref = validateResultRefProjection({
       ref: 'result.json',
       versionFingerprint: 'abc123',
       kind: 'run-result',
     });
+    assert.equal(ref.ref, 'result.json');
+    assert.equal(ref.versionFingerprint, 'abc123');
     assert.equal(ref.kind, 'run-result');
+  });
+
+  it('rejects missing kind (Q1-RA-004: kind is required for schemaVersion 2)', () => {
+    assert.throws(
+      () => validateResultRefProjection({ ref: 'r', versionFingerprint: 'v' }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('rejects empty kind string (Q1-RA-004)', () => {
+    assert.throws(
+      () => validateResultRefProjection({ ref: 'r', versionFingerprint: 'v', kind: '' }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('rejects unknown kind value (Q1-RA-004)', () => {
+    assert.throws(
+      () => validateResultRefProjection({ ref: 'r', versionFingerprint: 'v', kind: 'other' }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
   });
 
   it('rejects empty ref string (task 6.10)', () => {
     assert.throws(
-      () => validateResultRefProjection({ ref: '  ', versionFingerprint: 'abc' }),
+      () => validateResultRefProjection({ ref: '  ', versionFingerprint: 'abc', kind: 'run-result' }),
       (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
     );
   });
 
   it('rejects empty versionFingerprint string (task 6.10)', () => {
     assert.throws(
-      () => validateResultRefProjection({ ref: 'r', versionFingerprint: '' }),
+      () => validateResultRefProjection({ ref: 'r', versionFingerprint: '', kind: 'run-result' }),
       (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
     );
   });
@@ -54,6 +67,13 @@ describe('validateResultRefProjection', () => {
   it('rejects non-string kind (task 6.11)', () => {
     assert.throws(
       () => validateResultRefProjection({ ref: 'r', versionFingerprint: 'v', kind: 42 }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('rejects unknown field (closed schema)', () => {
+    assert.throws(
+      () => validateResultRefProjection({ ref: 'r', versionFingerprint: 'v', kind: 'run-result', extra: true }),
       (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
     );
   });
@@ -129,11 +149,21 @@ describe('validateActionResultWithoutRunRef', () => {
   it('validates nested ResultRef arrays (task 6.5, 12.27)', () => {
     const ar = validateActionResultWithoutRunRef({
       ...valid,
-      producedResultRefs: [{ ref: 'a', versionFingerprint: 'v1' }],
-      consumedInputRefs: [{ ref: 'b', versionFingerprint: 'v2' }],
+      producedResultRefs: [{ ref: 'a', versionFingerprint: 'v1', kind: 'produced-artifact' }],
+      consumedInputRefs: [{ ref: 'b', versionFingerprint: 'v2', kind: 'run-result' }],
     });
     assert.equal(ar.producedResultRefs?.length, 1);
     assert.equal(ar.consumedInputRefs?.length, 1);
+  });
+
+  it('rejects nested ResultRef missing kind (Q1-RA-004)', () => {
+    assert.throws(
+      () => validateActionResultWithoutRunRef({
+        ...valid,
+        producedResultRefs: [{ ref: 'a', versionFingerprint: 'v1' }],
+      }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
   });
 
   it('rejects nested ResultRef missing fields (task 12.27)', () => {
@@ -146,14 +176,54 @@ describe('validateActionResultWithoutRunRef', () => {
     );
   });
 
+  it('rejects producedResultRefs with wrong kind (Q1-RA-004 field-kind binding)', () => {
+    assert.throws(
+      () => validateActionResultWithoutRunRef({
+        ...valid,
+        producedResultRefs: [{ ref: 'a', versionFingerprint: 'v1', kind: 'run-result' }],
+      }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('rejects consumedInputRefs with wrong kind (Q1-RA-004 field-kind binding)', () => {
+    assert.throws(
+      () => validateActionResultWithoutRunRef({
+        ...valid,
+        consumedInputRefs: [{ ref: 'b', versionFingerprint: 'v2', kind: 'produced-artifact' }],
+      }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
   it('validates optional single ResultRefs (task 6.6)', () => {
     const ar = validateActionResultWithoutRunRef({
       ...valid,
-      verificationSummaryRef: { ref: 'v', versionFingerprint: 'vf' },
-      reviewVerdictRef: { ref: 'r', versionFingerprint: 'rf' },
+      verificationSummaryRef: { ref: 'v', versionFingerprint: 'vf', kind: 'verification-summary' },
+      reviewVerdictRef: { ref: 'r', versionFingerprint: 'rf', kind: 'run-result' },
     });
     assert.equal(ar.verificationSummaryRef?.ref, 'v');
     assert.equal(ar.reviewVerdictRef?.ref, 'r');
+  });
+
+  it('rejects verificationSummaryRef with wrong kind (Q1-RA-004)', () => {
+    assert.throws(
+      () => validateActionResultWithoutRunRef({
+        ...valid,
+        verificationSummaryRef: { ref: 'v', versionFingerprint: 'vf', kind: 'run-result' },
+      }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('rejects reviewVerdictRef with wrong kind (Q1-RA-004)', () => {
+    assert.throws(
+      () => validateActionResultWithoutRunRef({
+        ...valid,
+        reviewVerdictRef: { ref: 'r', versionFingerprint: 'rf', kind: 'produced-artifact' },
+      }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
   });
 
   it('validates optional string fields (task 6.7)', () => {
@@ -262,6 +332,66 @@ describe('validateRunResultFileCombination', () => {
       (e: unknown) => e instanceof FlowkitError,
     );
   });
+
+  // -------------------------------------------------------------------------
+  // Closed schema rejection (task 2.6): legacy heavy fields MUST be rejected.
+  // -------------------------------------------------------------------------
+
+  it('rejects RunResultFile with blockingFindings (legacy heavy field, task 2.6)', () => {
+    assert.throws(
+      () =>
+        validateRunResultFileCombination({
+          runStatus: 'completed',
+          actionResult: { action: 'explore', executionStatus: 'completed', summary: 'done' },
+          blockingFindings: [],
+        } as RunResultFile),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('rejects RunResultFile with verification array (legacy heavy field, task 2.6)', () => {
+    assert.throws(
+      () =>
+        validateRunResultFileCombination({
+          runStatus: 'completed',
+          actionResult: { action: 'explore', executionStatus: 'completed', summary: 'done' },
+          verification: { checks: [] },
+        } as RunResultFile),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('rejects RunResultFile with consistencyScan (legacy heavy field, task 2.6)', () => {
+    assert.throws(
+      () =>
+        validateRunResultFileCombination({
+          runStatus: 'completed',
+          actionResult: { action: 'explore', executionStatus: 'completed', summary: 'done' },
+          consistencyScan: { contradictions: 0 },
+        } as RunResultFile),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('rejects RunResultFile with commitPolicy (legacy heavy field, task 2.6)', () => {
+    assert.throws(
+      () =>
+        validateRunResultFileCombination({
+          runStatus: 'completed',
+          actionResult: { action: 'explore', executionStatus: 'completed', summary: 'done' },
+          commitPolicy: { autoCommit: false },
+        } as RunResultFile),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('accepts a valid closed-schema RunResultFile (task 2.6)', () => {
+    // Should not throw — only runStatus + actionResult are permitted for completed.
+    validateRunResultFileCombination({
+      runStatus: 'completed',
+      actionResult: { action: 'explore', executionStatus: 'completed', summary: 'done' },
+    });
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -360,7 +490,7 @@ describe('validateContextFile', () => {
   it('accepts inputRef as ResultRef object (task 10.6, 12.35)', () => {
     const cf = validateContextFile({
       ...validChangeContext,
-      inputRef: { ref: 'result.json', versionFingerprint: 'sha256:abc' },
+      inputRef: { ref: 'result.json', versionFingerprint: 'sha256:abc', kind: 'run-result' },
     });
     assert.equal(cf.inputRef?.ref, 'result.json');
   });
@@ -591,5 +721,51 @@ describe('validateReviewVerdictIntegrity', () => {
       actionResult: { action: 'explore', executionStatus: 'completed', summary: 'done' },
     });
     // No throw ⇒ pass.
+  });
+
+  // -------------------------------------------------------------------------
+  // Typed reviewFindings + verdict consistency (tasks 2.2-2.3)
+  // -------------------------------------------------------------------------
+
+  it('rejects changes-requested without blocking findings (task 2.2)', () => {
+    assert.throws(
+      () =>
+        validateReviewVerdictIntegrity('review-propose', {
+          runStatus: 'completed',
+          actionResult: { action: 'review-propose', executionStatus: 'completed', summary: 'review' },
+          reviewVerdict: 'changes-requested',
+          reviewFindings: [
+            { id: 'NB-001', severity: 'non-blocking', title: 'minor', problem: 'typo' },
+          ],
+        }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('rejects approved with blocking findings (task 2.3)', () => {
+    assert.throws(
+      () =>
+        validateReviewVerdictIntegrity('review-propose', {
+          runStatus: 'completed',
+          actionResult: { action: 'review-propose', executionStatus: 'completed', summary: 'review' },
+          reviewVerdict: 'approved',
+          reviewFindings: [
+            { id: 'B-001', severity: 'blocking', title: 'major', problem: 'broken', requiredChange: 'fix it' },
+          ],
+        }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('accepts changes-requested with blocking findings + requiredChange (task 2.2)', () => {
+    // Should not throw.
+    validateReviewVerdictIntegrity('review-propose', {
+      runStatus: 'completed',
+      actionResult: { action: 'review-propose', executionStatus: 'completed', summary: 'review' },
+      reviewVerdict: 'changes-requested',
+      reviewFindings: [
+        { id: 'B-001', severity: 'blocking', title: 'major', problem: 'broken', requiredChange: 'fix it' },
+      ],
+    });
   });
 });

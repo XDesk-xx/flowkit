@@ -30,7 +30,7 @@ import { assertMutable } from '../domain/terminal.js';
 import { validateRun } from '../domain/schema-validator.js';
 import type { Run } from '../domain/types.js';
 import type { ChangeAction, DeliveryAction } from '../domain/actions.js';
-import type { ResultRef, ReviewVerdictValue, Role } from '../domain/types.js';
+import type { ExecutionStatus, ResultRef, ReviewVerdictValue, Role, RunStatus } from '../domain/types.js';
 import { FlowkitError } from '../shared/errors.js';
 import { atomicWriteFile } from '../shared/atomic-write.js';
 import { normalizeSeparators } from '../shared/paths.js';
@@ -44,15 +44,30 @@ import {
   type ContextFileConstraints,
   type RunResultFile,
   type ActionResultWithoutRunRef,
+  type TerminalRunStatus,
 } from './serialization.js';
 import {
   buildRunResultRef,
+  buildArtifactResultRef,
   computeResultFileHash,
   resolveRunResultPath,
   resolveSingletonArtifactRef,
+  resolveVerificationSummaryRef,
   enumerateSpecsNamespace,
   extractSpecsLogicalIdentities,
+  readArtifactBytes,
+  validateSpecsExactSet,
+  validateEffectiveArtifactRefs,
+  PRODUCED_ARTIFACT_KIND,
+  VERIFICATION_SUMMARY_KIND,
+  type ProducedArtifactTag,
 } from './result-ref-adapter.js';
+import {
+  classifyReviewedArtifactGeneration,
+  type LineageFact,
+  type ReviewLineageFact,
+} from '../facts/generation-resolver.js';
+import type { ReviewFinding } from './serialization.js';
 
 // ---------------------------------------------------------------------------
 // createRun
@@ -140,6 +155,15 @@ export async function createRun(input: CreateRunInput): Promise<string> {
   //    - normal actions: derive from consumedRunId (optional).
   //    - Neither: inputRef is absent (no input).
   const inputRef = await deriveInputRef(input);
+
+  // 2b. Q1-RA-003: Review-entry validation for review-explore/review-propose.
+  //     Before publishing, verify the reviewed Run is the current effective
+  //     generation and its producedResultRefs match current canonical bytes.
+  //     For review-propose, also verify specs namespace exact-set. On any
+  //     failure, throw BEFORE staging publish — the review Run is not created.
+  if (input.action === 'review-explore' || input.action === 'review-propose') {
+    await validateReviewEntry(input);
+  }
 
   // 3. Build the ContextFile object (inputRef is Core-derived, not caller-supplied).
   const contextFile = buildContextFile(input, runPath, inputRef);
@@ -282,6 +306,285 @@ async function readReferencedRunResult(
 }
 
 // ---------------------------------------------------------------------------
+// Q1-RA-003: Review-entry validation (review-explore / review-propose)
+// ---------------------------------------------------------------------------
+
+/**
+ * Q1-RA-003: Validate the reviewed Run's current effective generation before
+ * publishing a review-explore/review-propose Run.
+ *
+ * Uses the SAME shared lineage/effective-set semantics as Reader
+ * ({@link classifyReviewedArtifactGeneration} +
+ * {@link validateEffectiveArtifactRefs} + {@link validateSpecsExactSet}) so the
+ * review-entry boundary and Reader agree on "what is the current effective
+ * artifact set".
+ *
+ * Steps:
+ *   1. Read the reviewed Run's lineage fact + producedResultRefs.
+ *   2. Read sibling Run lineage facts for generation classification.
+ *   3. Classify the reviewed Run's generation — MUST be `current`.
+ *   4. Validate producedResultRefs against current canonical bytes.
+ *   5. For review-propose: exact-compare effective specs identities with
+ *      current canonical specs/**.
+ *
+ * On any failure, throw BEFORE staging publish — the review Run is not created.
+ *
+ * @throws {FlowkitError} `RESULT_REF_TARGET_MISSING` when the reviewed Run's
+ *   context.json is missing/unreadable.
+ * @throws {FlowkitError} `RESULT_REF_MISMATCH` when the reviewed Run is not the
+ *   current effective generation, or its effective artifact set has drifted.
+ */
+async function validateReviewEntry(input: CreateRunInput): Promise<void> {
+  if (input.reviewedRunId === undefined || input.changeId === undefined) {
+    return; // Cannot validate without reviewedRunId or changeId.
+  }
+  const repoRoot = input.repoRoot;
+  const changeId = input.changeId;
+  const reviewedRunId = input.reviewedRunId;
+  const changeDir = join(input.deliveryRunsDir, changeId);
+
+  // 1. Read the reviewed Run's lineage fact + producedResultRefs.
+  const reviewedRunDir = join(changeDir, reviewedRunId);
+  const reviewedFact = await readRunLineageFact(reviewedRunDir, reviewedRunId, changeId);
+  if (reviewedFact === undefined) {
+    throw new FlowkitError(
+      'RESULT_REF_TARGET_MISSING',
+      `review-* entry: reviewed Run ${reviewedRunId} context.json missing or unreadable`,
+      { reviewedRunId, changeDir },
+    );
+  }
+  const producedRefs = await readRunProducedResultRefs(reviewedRunDir);
+
+  // 2. Read sibling lineage facts for generation classification.
+  //    Exclude the review Run being created (input.runId) — it is not on disk
+  //    yet. The reviewed Run MUST be included so its generation can be classified.
+  const { completedArtifactRuns, allReviseRuns, reviews } = await readSiblingLineageFacts(
+    changeDir,
+    input.runId,
+    changeId,
+  );
+
+  // 3. Classify the reviewed Run's generation — MUST be `current`.
+  const genClass = classifyReviewedArtifactGeneration(
+    reviewedFact,
+    completedArtifactRuns,
+    allReviseRuns,
+    reviews,
+  );
+  if (genClass !== 'current') {
+    throw new FlowkitError(
+      'RESULT_REF_MISMATCH',
+      `review-* entry: reviewed Run ${reviewedRunId} is not the current effective generation (class=${genClass ?? 'non-artifact'}); only the current generation can be reviewed`,
+      { reviewedRunId, generationClass: genClass },
+    );
+  }
+
+  // 4. Validate producedResultRefs against current canonical bytes.
+  if (producedRefs.length > 0) {
+    const problems = await validateEffectiveArtifactRefs(repoRoot, producedRefs);
+    if (problems.length > 0) {
+      throw new FlowkitError(
+        'RESULT_REF_MISMATCH',
+        `review-* entry: reviewed Run ${reviewedRunId} effective artifact set has drifted: ${problems.map((p) => `${p.ref}(${p.kind})`).join(', ')}`,
+        { reviewedRunId, problems },
+      );
+    }
+  }
+
+  // 5. For review-propose: exact-compare effective specs identities with
+  //    current canonical specs/**.
+  if (input.action === 'review-propose') {
+    const specsRefs = producedRefs.filter((r) => r.ref.includes('/specs/'));
+    const mismatch = await validateSpecsExactSet(repoRoot, changeId, specsRefs);
+    if (mismatch !== null) {
+      throw new FlowkitError(
+        'RESULT_REF_MISMATCH',
+        `review-propose entry: effective specs namespace drifts from current canonical (effective=[${mismatch.effective.join(',')}], canonical=[${mismatch.canonical.join(',')}])`,
+        { reviewedRunId, effective: mismatch.effective, canonical: mismatch.canonical },
+      );
+    }
+  }
+}
+
+/**
+ * Read a single Run's {@link LineageFact} from its context.json + result.json.
+ *
+ * Determines `status` from result.json existence (pending when absent; terminal
+ * `runStatus` when present). Returns `undefined` when context.json is missing
+ * or unreadable.
+ */
+async function readRunLineageFact(
+  runDir: string,
+  runId: string,
+  changeId: string,
+): Promise<LineageFact | undefined> {
+  let ctxContent: string;
+  try {
+    ctxContent = await readFile(join(runDir, 'context.json'), 'utf-8');
+  } catch {
+    return undefined;
+  }
+  let ctx: Record<string, unknown>;
+  try {
+    ctx = JSON.parse(ctxContent) as Record<string, unknown>;
+  } catch {
+    return undefined;
+  }
+
+  const action = typeof ctx['action'] === 'string' ? ctx['action'] : '';
+
+  // Determine status from result.json existence.
+  let status: RunStatus = 'pending';
+  try {
+    const resultContent = await readFile(join(runDir, 'result.json'), 'utf-8');
+    const result = JSON.parse(resultContent) as Record<string, unknown>;
+    const runStatus = result['runStatus'];
+    if (runStatus === 'completed' || runStatus === 'failed' || runStatus === 'cancelled') {
+      status = runStatus;
+    }
+  } catch {
+    // result.json missing → pending.
+  }
+
+  const sourceReviewRun = ctx['sourceReviewRun'];
+  const sourceReviewVerdict = ctx['sourceReviewVerdict'];
+  const reviewedRunId = ctx['reviewedRunId'];
+
+  const fact: LineageFact = {
+    runId,
+    changeId,
+    action,
+    status,
+    ...(typeof sourceReviewRun === 'string' && { sourceReviewRun }),
+    ...((sourceReviewVerdict === 'approved' || sourceReviewVerdict === 'changes-requested') && {
+      sourceReviewVerdict,
+    }),
+    ...(typeof reviewedRunId === 'string' && { reviewedRunId }),
+  };
+  return fact;
+}
+
+/**
+ * Read all sibling Run lineage facts in a Change directory for generation
+ * classification. Excludes staging/temp entries and the Run being created.
+ *
+ * Returns:
+ *   - `completedArtifactRuns`: completed explore/revise-explore/propose/revise-propose.
+ *   - `allReviseRuns`: all revise-explore/revise-propose (completed + pending).
+ *   - `reviews`: completed review-* Run lineage facts (with verdict).
+ */
+async function readSiblingLineageFacts(
+  changeDir: string,
+  excludeRunId: string,
+  changeId: string,
+): Promise<{
+  readonly completedArtifactRuns: readonly LineageFact[];
+  readonly allReviseRuns: readonly LineageFact[];
+  readonly reviews: readonly ReviewLineageFact[];
+}> {
+  const entries = await readVisibleEntries(changeDir);
+  const facts: LineageFact[] = [];
+  const reviewFacts: ReviewLineageFact[] = [];
+
+  for (const entry of entries) {
+    if (entry === excludeRunId) continue;
+    if (!looksLikeRunIdEntry(entry)) continue;
+
+    const runDir = join(changeDir, entry);
+    if (!(await existsDirectory(runDir))) continue;
+
+    const fact = await readRunLineageFact(runDir, entry, changeId);
+    if (fact === undefined) continue;
+    facts.push(fact);
+
+    // If completed review-* Run with reviewedRunId, read verdict for lineage proof.
+    if (
+      fact.status === 'completed' &&
+      fact.action.startsWith('review-') &&
+      fact.reviewedRunId !== undefined
+    ) {
+      const verdict = await readRunVerdict(runDir);
+      if (verdict !== undefined) {
+        reviewFacts.push({
+          reviewRunId: entry,
+          verdict,
+          reviewedRunId: fact.reviewedRunId,
+          reviewAction: fact.action,
+          reviewStatus: fact.status,
+          changeId,
+        });
+      }
+    }
+  }
+
+  const completedArtifactRuns = facts.filter(
+    (f) =>
+      f.status === 'completed' &&
+      (f.action === 'explore' ||
+        f.action === 'revise-explore' ||
+        f.action === 'propose' ||
+        f.action === 'revise-propose'),
+  );
+  const allReviseRuns = facts.filter(
+    (f) => f.action === 'revise-explore' || f.action === 'revise-propose',
+  );
+
+  return { completedArtifactRuns, allReviseRuns, reviews: reviewFacts };
+}
+
+/**
+ * Read a Run's `producedResultRefs` from its result.json. Returns `[]` when
+ * result.json is missing, malformed, or has no producedResultRefs.
+ */
+async function readRunProducedResultRefs(runDir: string): Promise<ResultRef[]> {
+  try {
+    const content = await readFile(join(runDir, 'result.json'), 'utf-8');
+    const result = JSON.parse(content) as Record<string, unknown>;
+    const ar = result['actionResult'];
+    if (ar === undefined || typeof ar !== 'object' || ar === null) return [];
+    const arObj = ar as Record<string, unknown>;
+    const refs = arObj['producedResultRefs'];
+    if (!Array.isArray(refs)) return [];
+    return (refs as Array<Record<string, unknown>>)
+      .filter(
+        (r) => typeof r['ref'] === 'string' && typeof r['versionFingerprint'] === 'string',
+      )
+      .map((r) => ({
+        ref: r['ref'] as string,
+        versionFingerprint: r['versionFingerprint'] as string,
+        ...(typeof r['kind'] === 'string' && { kind: r['kind'] as ResultRef['kind'] }),
+      }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Read a completed review-* Run's `reviewVerdict` from its result.json.
+ * Returns `undefined` when result.json is missing, malformed, or has no verdict.
+ */
+async function readRunVerdict(runDir: string): Promise<ReviewVerdictValue | undefined> {
+  try {
+    const content = await readFile(join(runDir, 'result.json'), 'utf-8');
+    const result = JSON.parse(content) as Record<string, unknown>;
+    const verdict = result['reviewVerdict'];
+    if (verdict === 'approved' || verdict === 'changes-requested') {
+      return verdict;
+    }
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Check whether a directory entry looks like a Run ID (`YYYYMMDD-NNN-action`).
+ */
+function looksLikeRunIdEntry(name: string): boolean {
+  return /^\d{8}-\d{3}-[a-z][a-z-]*$/.test(name);
+}
+
+// ---------------------------------------------------------------------------
 // projectCurrentRun (deterministic current-Run projection)
 // ---------------------------------------------------------------------------
 
@@ -348,31 +651,60 @@ export async function writeRunResult(
   const contextFile = await readContextFile(runDir);
   validateContextFileIdentity(contextFile, runDir);
 
-  // 2. Reconstruct the CURRENT persisted Run status.
+  // 2. Delegate to the shared publish primitive.
+  await publishTerminalResult(runDir, contextFile, result);
+}
+
+/**
+ * Shared terminal-result publish primitive (Q1-RA-001).
+ *
+ * Performs the full publish sequence shared by the low-level
+ * {@link writeRunResult} and the descriptor-driven {@link completeRun}:
+ *   1. Reconstruct the CURRENT persisted Run status + `assertMutable`.
+ *   2. Validate RunResultFile combination + actionResult projection.
+ *   3. Validate review verdict integrity (C1-AP-006).
+ *   4. Q1-8 completion preflight — validate Core-owned ResultRefs against
+ *      actual file content.
+ *   5. Serialize + temp-file + `fs.link` (atomic create-if-not-exists).
+ *
+ * The race-safe fs.link publication is preserved: even if two writers pass
+ * assertMutable (both see no result.json), exactly one fs.link succeeds.
+ *
+ * @throws {FlowkitError} `RUN_TERMINAL` when result.json already exists.
+ * @throws {FlowkitError} `SCHEMA_VALIDATION_FAILED` on validation failure.
+ * @throws {FlowkitError} `RESULT_REF_TARGET_MISSING` / `RESULT_REF_MISMATCH`
+ *   on preflight failure (Run stays pending).
+ */
+async function publishTerminalResult(
+  runDir: string,
+  contextFile: ContextFile,
+  result: RunResultFile,
+): Promise<void> {
+  // 1. Reconstruct the CURRENT persisted Run status.
   //    - result.json absent → status=pending (projected from ContextFile).
   //    - result.json present → status=runStatus (terminal; reconstructed from
   //      the persisted RunResultFile so assertMutable observes the real
   //      persisted state, not a freshly projected pending Run — C1-AP-002).
   const currentRun = await reconstructCurrentRun(contextFile, runDir);
 
-  // 3. assertMutable — rejects terminal Runs based on persisted state.
+  // 2. assertMutable — rejects terminal Runs based on persisted state.
   //    Throws RUN_TERMINAL when result.json already exists with a terminal
   //    status, BEFORE any publication attempt.
   assertMutable(currentRun);
 
-  // 4. Validate combination + actionResult projection.
+  // 3. Validate combination + actionResult projection.
   validateRunResultFileCombination(result);
   if (result.actionResult !== undefined) {
     validateActionResultWithoutRunRef(result.actionResult);
   }
 
-  // 4b. Validate review verdict integrity before publication (C1-AP-006).
+  // 3b. Validate review verdict integrity before publication (C1-AP-006).
   //     completed review-* Runs MUST carry reviewVerdict; non-review or
   //     non-completed Runs MUST NOT. Detecting a missing verdict only at
   //     Reader time is too late — the result is already terminal and immutable.
   validateReviewVerdictIntegrity(contextFile.action, result);
 
-  // 4c. Q1-8: Completion preflight — validate all Core-owned ResultRefs
+  // 3c. Q1-8: Completion preflight — validate all Core-owned ResultRefs
   //     against actual file content before terminal publication. Target
   //     missing → RESULT_REF_TARGET_MISSING (Run stays pending). Hash
   //     mismatch → RESULT_REF_MISMATCH (Run stays pending). This allows
@@ -383,24 +715,24 @@ export async function writeRunResult(
     await completionPreflight(contextFile, result.actionResult, repoRoot);
   }
 
-  // 5. Serialize (runRef already absent from ActionResultWithoutRunRef).
+  // 4. Serialize (runRef already absent from ActionResultWithoutRunRef).
   const json = serializeRunResultFile(result);
 
-  // 6. Write temp file.
+  // 5. Write temp file.
   const tempPath = join(
     runDir,
     `.result-tmp-${process.pid}-${Date.now()}.json`,
   );
   await writeFile(tempPath, json, 'utf-8');
 
-  // 7. fs.link — atomic create-if-not-exists.
+  // 6. fs.link — atomic create-if-not-exists.
   const resultPath = join(runDir, 'result.json');
   try {
     await link(tempPath, resultPath);
   } catch (e) {
     const code = (e as NodeJS.ErrnoException).code;
     if (code === 'EEXIST') {
-      // 8. Concurrent writer won the race — clean temp, throw RUN_TERMINAL.
+      // 7. Concurrent writer won the race — clean temp, throw RUN_TERMINAL.
       //    assertMutable and fs.link together cover both the single-writer
       //    fast path and the multi-writer race.
       await bestEffortUnlink(tempPath);
@@ -415,10 +747,470 @@ export async function writeRunResult(
     throw e;
   }
 
-  // 9. Success: temp is now linked as result.json; clean the temp name
+  // 8. Success: temp is now linked as result.json; clean the temp name
   // (best-effort — the link created a second name for the same inode, removing
   // it leaves result.json intact).
   await bestEffortUnlink(tempPath);
+}
+
+// ---------------------------------------------------------------------------
+// Q1-RA-001: completeRun — descriptor-driven terminal write (production API)
+// ---------------------------------------------------------------------------
+
+/**
+ * Descriptor-driven terminal completion input (Q1-RA-001).
+ *
+ * This is the PRODUCTION terminal-write entry shape. The caller describes
+ * intent with typed descriptors; Core derives every {@link ResultRef} from
+ * actual target bytes. The caller MUST NOT supply `ResultRef` objects, paths,
+ * kinds, or fingerprints — that authority belongs to Core alone.
+ *
+ * Field → Core-derived ResultRef mapping:
+ *   - `consumedRunIds` → `consumedInputRefs` (kind `run-result`)
+ *   - `context.sourceReviewRun` (non-review actions) → `reviewVerdictRef`
+ *     (kind `run-result`)
+ *   - `producedArtifactTags` (revise-* only) + Core-expected set →
+ *     `producedResultRefs` (kind `produced-artifact`). Initial explore/propose
+ *     ignore caller tags and unconditionally build the complete Core-expected
+ *     set; revise-propose applies a subset overlay over the predecessor
+ *     effective set.
+ *   - `review-apply` action → `verificationSummaryRef` (kind
+ *     `verification-summary`), Core-derived from current `verification.md`.
+ *
+ * Reviewer-owned payload (`reviewVerdict`, `reviewFindings`) is carried
+ * verbatim for completed `review-*` Runs; Core validates its shape.
+ */
+export interface CompleteRunInput {
+  /** ActionResult.executionStatus. Required for `completed` Runs. */
+  readonly executionStatus?: ExecutionStatus;
+  /** ActionResult.summary. Required for `completed` Runs. */
+  readonly summary?: string;
+  /** Typed descriptors: Run IDs whose `result.json` is consumed as input. */
+  readonly consumedRunIds?: readonly string[];
+  /**
+   * Typed descriptors: produced-artifact tags the caller declares as changed.
+   * Only meaningful for `revise-propose` (subset overlay). Ignored for initial
+   * explore/propose, which Core builds unconditionally.
+   */
+  readonly producedArtifactTags?: readonly ProducedArtifactTag[];
+  /** Reviewer-owned verdict (completed `review-*` Runs only). */
+  readonly reviewVerdict?: ReviewVerdictValue;
+  /** Reviewer-owned findings (completed `review-*` Runs only). */
+  readonly reviewFindings?: readonly ReviewFinding[];
+  /** Present → `runStatus = failed` (no actionResult). */
+  readonly failureDiagnosis?: string;
+  /** Present → `runStatus = cancelled` (no actionResult). */
+  readonly cancellationReason?: string;
+}
+
+/**
+ * Descriptor-driven terminal completion (Q1-RA-001 production API).
+ *
+ * Reads `context.json`, derives ALL applicable {@link ResultRef}s from typed
+ * descriptors + actual target bytes, builds the {@link RunResultFile}
+ * internally, then publishes via the shared {@link publishTerminalResult}.
+ *
+ * The caller never constructs a `ResultRef`. Initial explore/propose ALWAYS
+ * derive the complete Core-expected produced set (ignoring caller tags);
+ * missing target → `RESULT_REF_TARGET_MISSING` (Run stays pending, retryable).
+ * `review-apply` ALWAYS derives `verificationSummaryRef` from current
+ * `verification.md`; missing/unreadable/ambiguous → Run stays pending.
+ *
+ * @param runDir - Absolute path to the Run directory.
+ * @param input - Descriptor-driven completion intent (no ResultRef objects).
+ * @throws {FlowkitError} `RUN_TERMINAL` when result.json already exists.
+ * @throws {FlowkitError} `RESULT_REF_TARGET_MISSING` when a derived target is
+ *   missing/unreadable (Run stays pending).
+ * @throws {FlowkitError} `SCHEMA_VALIDATION_FAILED` on validation failure.
+ */
+export async function completeRun(
+  runDir: string,
+  input: CompleteRunInput,
+): Promise<void> {
+  // 1. Read context.json → validate C1 schema + identity (C1-AP-002).
+  const contextFile = await readContextFile(runDir);
+  validateContextFileIdentity(contextFile, runDir);
+
+  // 2. Core-derive the full RunResultFile from typed descriptors.
+  const result = await buildRunResultFromDescriptors(contextFile, runDir, input);
+
+  // 3. Publish via the shared primitive (assertMutable + validate + preflight +
+  //    fs.link). The preflight re-validates every Core-derived ref against
+  //    current bytes as defense-in-depth and catches any drift between
+  //    derivation and publish.
+  await publishTerminalResult(runDir, contextFile, result);
+}
+
+/**
+ * Build a {@link RunResultFile} entirely from typed descriptors (Q1-RA-001).
+ *
+ * Determines `runStatus` from the input shape, then — for `completed` Runs —
+ * derives every applicable ResultRef via the Core-owned constructors. No
+ * caller-supplied ResultRef ever enters the persisted model.
+ */
+async function buildRunResultFromDescriptors(
+  contextFile: ContextFile,
+  runDir: string,
+  input: CompleteRunInput,
+): Promise<RunResultFile> {
+  const action = contextFile.action;
+  const isReviewAction = action.startsWith('review-');
+
+  // Determine runStatus from the input shape.
+  let runStatus: TerminalRunStatus;
+  if (input.failureDiagnosis !== undefined) {
+    runStatus = 'failed';
+  } else if (input.cancellationReason !== undefined) {
+    runStatus = 'cancelled';
+  } else {
+    runStatus = 'completed';
+  }
+
+  // failed / cancelled: no actionResult, no review payload.
+  if (runStatus !== 'completed') {
+    const failedResult: RunResultFile = {
+      runStatus,
+      ...(runStatus === 'failed' && { failureDiagnosis: input.failureDiagnosis }),
+      ...(runStatus === 'cancelled' && { cancellationReason: input.cancellationReason }),
+    };
+    return failedResult;
+  }
+
+  // completed: actionResult required. Validate the caller supplied the
+  // minimal intent fields.
+  if (input.executionStatus === undefined || input.summary === undefined) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `completeRun completed Run requires executionStatus and summary (action=${action})`,
+      { action, runId: contextFile.runId },
+    );
+  }
+
+  const repoRoot = deriveRepoRoot(runDir, contextFile.runPath);
+  const actionResult = await deriveActionResult(contextFile, runDir, repoRoot, input);
+
+  const result: RunResultFile = {
+    runStatus: 'completed',
+    actionResult,
+    // Reviewer-owned payload (completed review-* Runs only). Non-review Runs
+    // MUST NOT carry these (validateReviewVerdictIntegrity enforces).
+    ...(isReviewAction && input.reviewVerdict !== undefined && { reviewVerdict: input.reviewVerdict }),
+    ...(isReviewAction && input.reviewFindings !== undefined && { reviewFindings: input.reviewFindings }),
+  };
+  return result;
+}
+
+/**
+ * Derive the complete {@link ActionResultWithoutRunRef} from typed descriptors.
+ *
+ * Core owns every ResultRef:
+ *   - `producedResultRefs`: explore/revise-explore/propose/revise-propose only.
+ *   - `consumedInputRefs`: from `consumedRunIds`.
+ *   - `reviewVerdictRef`: from `context.sourceReviewRun` (non-review actions).
+ *   - `verificationSummaryRef`: `review-apply` only, from `verification.md`.
+ */
+async function deriveActionResult(
+  contextFile: ContextFile,
+  runDir: string,
+  repoRoot: string,
+  input: CompleteRunInput,
+): Promise<ActionResultWithoutRunRef> {
+  const action = contextFile.action;
+  const isReviewAction = action.startsWith('review-');
+
+  // producedResultRefs — Core-expected complete set for artifact actions.
+  let producedResultRefs: readonly ResultRef[] | undefined;
+  if (action === 'explore' || action === 'revise-explore') {
+    producedResultRefs = await deriveExploreProducedRefs(contextFile, repoRoot);
+  } else if (action === 'propose') {
+    producedResultRefs = await deriveProposeProducedRefs(contextFile, repoRoot);
+  } else if (action === 'revise-propose') {
+    producedResultRefs = await deriveReviseProposeProducedRefs(
+      contextFile,
+      repoRoot,
+      input.producedArtifactTags,
+    );
+  }
+  // apply / revise-apply / archive / review-* / delivery-* → no producedResultRefs.
+
+  // consumedInputRefs — from typed Run IDs.
+  let consumedInputRefs: readonly ResultRef[] | undefined;
+  if (input.consumedRunIds !== undefined && input.consumedRunIds.length > 0) {
+    consumedInputRefs = await deriveConsumedInputRefs(contextFile, runDir, input.consumedRunIds);
+  }
+
+  // reviewVerdictRef — from context.sourceReviewRun (non-review actions only).
+  // review-* Runs MUST NOT carry reviewVerdictRef (self-reference, Q1-7).
+  let reviewVerdictRef: ResultRef | undefined;
+  if (!isReviewAction && contextFile.sourceReviewRun !== undefined) {
+    reviewVerdictRef = await deriveReviewVerdictRef(contextFile, runDir);
+  }
+
+  // verificationSummaryRef — review-apply only, Core-derived from verification.md.
+  let verificationSummaryRef: ResultRef | undefined;
+  if (action === 'review-apply') {
+    verificationSummaryRef = await deriveVerificationSummaryArtifactRef(contextFile, repoRoot);
+  }
+
+  const actionResult: ActionResultWithoutRunRef = {
+    action: action as ChangeAction | DeliveryAction,
+    executionStatus: input.executionStatus!,
+    summary: input.summary!,
+    ...(producedResultRefs !== undefined && { producedResultRefs }),
+    ...(consumedInputRefs !== undefined && { consumedInputRefs }),
+    ...(reviewVerdictRef !== undefined && { reviewVerdictRef }),
+    ...(verificationSummaryRef !== undefined && { verificationSummaryRef }),
+  };
+  return actionResult;
+}
+
+/**
+ * Derive the produced-artifact ref set for `explore` / `revise-explore`.
+ *
+ * Core unconditionally resolves `explore.md` and builds a single
+ * `produced-artifact` ref from its current bytes. Caller tags are ignored —
+ * there is exactly one explore artifact. Missing `explore.md` →
+ * `RESULT_REF_TARGET_MISSING` (Run stays pending).
+ */
+async function deriveExploreProducedRefs(
+  contextFile: ContextFile,
+  repoRoot: string,
+): Promise<ResultRef[]> {
+  requireChangeId(contextFile, 'explore');
+  const ref = await buildSingletonArtifactRef(
+    contextFile.action,
+    'explore',
+    contextFile.changeId!,
+    repoRoot,
+  );
+  return [ref];
+}
+
+/**
+ * Derive the COMPLETE Core-expected produced set for initial `propose`.
+ *
+ * Core unconditionally builds: `proposal.md` + `design.md` + `tasks.md` + the
+ * complete current `specs/**` namespace. Caller tags are ignored — the initial
+ * set is not shrinkable. Any missing target → `RESULT_REF_TARGET_MISSING`.
+ */
+async function deriveProposeProducedRefs(
+  contextFile: ContextFile,
+  repoRoot: string,
+): Promise<ResultRef[]> {
+  requireChangeId(contextFile, 'propose');
+  const changeId = contextFile.changeId!;
+  const refs: ResultRef[] = [];
+  refs.push(await buildSingletonArtifactRef('propose', 'proposal', changeId, repoRoot));
+  refs.push(await buildSingletonArtifactRef('propose', 'design', changeId, repoRoot));
+  refs.push(await buildSingletonArtifactRef('propose', 'tasks', changeId, repoRoot));
+  const specsRefs = await enumerateSpecsNamespace(repoRoot, changeId);
+  refs.push(...specsRefs);
+  refs.sort((a, b) => a.ref.localeCompare(b.ref));
+  return refs;
+}
+
+/**
+ * Derive the effective produced set for `revise-propose` via subset overlay.
+ *
+ * `successor effective set = predecessor effective set, with declared tags
+ * replaced`. Declared singletons (proposal/design/tasks) replace the
+ * predecessor ref of the same logical identity with a fresh Core-derived ref
+ * (current bytes). Declared `specs` replaces ALL predecessor specs refs with a
+ * fresh Core-enumerated canonical namespace. Non-declared refs are inherited
+ * as-is from the predecessor (their fingerprint is preserved; the preflight
+ * validates they still match current bytes, catching undeclared drift).
+ *
+ * Caller supplies ONLY changed tags — Core enumerates and hashes.
+ */
+async function deriveReviseProposeProducedRefs(
+  contextFile: ContextFile,
+  repoRoot: string,
+  declaredTags: readonly ProducedArtifactTag[] | undefined,
+): Promise<ResultRef[]> {
+  requireChangeId(contextFile, 'revise-propose');
+  const changeId = contextFile.changeId!;
+  const declared = new Set(declaredTags ?? []);
+
+  // Fresh Core-derived refs for declared tags.
+  const freshRefs: ResultRef[] = [];
+  const freshLogicalRefs = new Set<string>();
+  if (declared.has('proposal')) {
+    const r = await buildSingletonArtifactRef('revise-propose', 'proposal', changeId, repoRoot);
+    freshRefs.push(r);
+    freshLogicalRefs.add(r.ref);
+  }
+  if (declared.has('design')) {
+    const r = await buildSingletonArtifactRef('revise-propose', 'design', changeId, repoRoot);
+    freshRefs.push(r);
+    freshLogicalRefs.add(r.ref);
+  }
+  if (declared.has('tasks')) {
+    const r = await buildSingletonArtifactRef('revise-propose', 'tasks', changeId, repoRoot);
+    freshRefs.push(r);
+    freshLogicalRefs.add(r.ref);
+  }
+  const declaredSpecs = declared.has('specs');
+  if (declaredSpecs) {
+    const specsRefs = await enumerateSpecsNamespace(repoRoot, changeId);
+    freshRefs.push(...specsRefs);
+    for (const r of specsRefs) {
+      freshLogicalRefs.add(r.ref);
+    }
+  }
+
+  // Inherit predecessor refs not overwritten by declared tags.
+  const predecessorRefs = await resolvePredecessorProducedRefs(contextFile, repoRoot);
+  const inherited: ResultRef[] = [];
+  for (const predRef of predecessorRefs) {
+    const isSpec = predRef.ref.includes('/specs/');
+    // Declared 'specs' overwrites ALL predecessor specs refs.
+    if (isSpec && declaredSpecs) {
+      continue;
+    }
+    // Declared singleton overwrites the predecessor ref of the same logical ref.
+    if (freshLogicalRefs.has(predRef.ref)) {
+      continue;
+    }
+    inherited.push(predRef);
+  }
+
+  const all = [...inherited, ...freshRefs];
+  all.sort((a, b) => a.ref.localeCompare(b.ref));
+  return all;
+}
+
+/**
+ * Derive `consumedInputRefs` from typed Run IDs. Each Run's `result.json` is
+ * read and a `run-result` ref is built from its current bytes.
+ */
+async function deriveConsumedInputRefs(
+  contextFile: ContextFile,
+  runDir: string,
+  consumedRunIds: readonly string[],
+): Promise<ResultRef[]> {
+  const deliveryRunsDir = deriveDeliveryRunsDir(runDir, contextFile);
+  const runsPathPrefix = deriveRunsPathPrefix(contextFile);
+  const refs: ResultRef[] = [];
+  for (const runId of consumedRunIds) {
+    const content = await readReferencedRunResult(
+      deliveryRunsDir,
+      contextFile.changeId,
+      runId,
+    );
+    const runDirRelative = resolveRunResultPath(
+      runsPathPrefix,
+      contextFile.deliveryId,
+      contextFile.changeId,
+      runId,
+    ).replace(/\/result\.json$/, '');
+    refs.push(buildRunResultRef(runDirRelative, content));
+  }
+  return refs;
+}
+
+/**
+ * Derive `reviewVerdictRef` from `context.sourceReviewRun` (the prior review
+ * being addressed by a `revise-*` / `apply` Run). Reads that review Run's
+ * `result.json` and builds a `run-result` ref from its current bytes.
+ */
+async function deriveReviewVerdictRef(
+  contextFile: ContextFile,
+  runDir: string,
+): Promise<ResultRef> {
+  if (contextFile.sourceReviewRun === undefined) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `completeRun cannot derive reviewVerdictRef: sourceReviewRun absent (action=${contextFile.action})`,
+      { action: contextFile.action, runId: contextFile.runId },
+    );
+  }
+  const deliveryRunsDir = deriveDeliveryRunsDir(runDir, contextFile);
+  const runsPathPrefix = deriveRunsPathPrefix(contextFile);
+  const content = await readReferencedRunResult(
+    deliveryRunsDir,
+    contextFile.changeId,
+    contextFile.sourceReviewRun,
+  );
+  const runDirRelative = resolveRunResultPath(
+    runsPathPrefix,
+    contextFile.deliveryId,
+    contextFile.changeId,
+    contextFile.sourceReviewRun,
+  ).replace(/\/result\.json$/, '');
+  return buildRunResultRef(runDirRelative, content);
+}
+
+/**
+ * Derive `verificationSummaryRef` for `review-apply` from current
+ * `verification.md`. Core resolves `openspec/changes/<changeId>/verification.md`
+ * via archive-aware resolution, reads its bytes, and builds a
+ * `verification-summary` ref. Missing/unreadable/ambiguous →
+ * `RESULT_REF_TARGET_MISSING` (Run stays pending).
+ */
+async function deriveVerificationSummaryArtifactRef(
+  contextFile: ContextFile,
+  repoRoot: string,
+): Promise<ResultRef> {
+  requireChangeId(contextFile, 'review-apply');
+  const logicalRef = resolveVerificationSummaryRef(contextFile.changeId!);
+  const content = await readArtifactBytes(repoRoot, logicalRef);
+  return buildArtifactResultRef(logicalRef, content, VERIFICATION_SUMMARY_KIND);
+}
+
+// ---------------------------------------------------------------------------
+// Q1-RA-001 derivation helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Build a singleton produced-artifact ref: resolve the tag → logical ref, read
+ * current bytes (archive-aware), construct a `produced-artifact` ResultRef.
+ */
+async function buildSingletonArtifactRef(
+  action: string,
+  tag: Exclude<ProducedArtifactTag, 'specs'>,
+  changeId: string,
+  repoRoot: string,
+): Promise<ResultRef> {
+  const logicalRef = resolveSingletonArtifactRef(action, tag, changeId);
+  const content = await readArtifactBytes(repoRoot, logicalRef);
+  return buildArtifactResultRef(logicalRef, content, PRODUCED_ARTIFACT_KIND);
+}
+
+/**
+ * Require `context.changeId` for an action that produces Change artifacts.
+ */
+function requireChangeId(contextFile: ContextFile, action: string): void {
+  if (contextFile.changeId === undefined) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `${action} Run requires changeId to derive produced artifacts (runId=${contextFile.runId})`,
+      { action, runId: contextFile.runId },
+    );
+  }
+}
+
+/**
+ * Derive the Delivery runs directory (parent of all Run directories for this
+ * Delivery) from the absolute Run directory + ContextFile.
+ *
+ * - Change-level Run (`changeId` present): `runDir = <deliveryRunsDir>/<changeId>/<runId>`.
+ * - Delivery-level Run: `runDir = <deliveryRunsDir>/<runId>`.
+ */
+function deriveDeliveryRunsDir(runDir: string, contextFile: ContextFile): string {
+  return contextFile.changeId !== undefined
+    ? dirname(dirname(runDir))
+    : dirname(runDir);
+}
+
+/**
+ * Derive the repo-relative runs path prefix (e.g. `.flowkit/runs`) from the
+ * ContextFile `runPath`. `runPath = <prefix>/<deliveryId>/<changeId?>/<runId>/`.
+ */
+function deriveRunsPathPrefix(contextFile: ContextFile): string {
+  const rp = normalizeSeparators(contextFile.runPath).replace(/\/+$/, '');
+  const marker = `/${contextFile.deliveryId}/`;
+  const idx = rp.indexOf(marker);
+  return idx >= 0 ? rp.slice(0, idx) : '.flowkit/runs';
 }
 
 /**

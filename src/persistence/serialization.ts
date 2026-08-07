@@ -241,8 +241,12 @@ const RESULT_REF_KNOWN_FIELDS = new Set(['ref', 'versionFingerprint', 'kind']);
 
 /**
  * C1's own ResultRef validator. Validates that `ref` and `versionFingerprint`
- * are non-empty strings. `kind` (optional) MUST be in the Core-owned
- * {@link RESULT_REF_KINDS} enum — unknown kinds are rejected.
+ * are non-empty strings and that `kind` is a non-empty member of the Core-owned
+ * {@link RESULT_REF_KINDS} enum.
+ *
+ * Q1-RA-004: `kind` is REQUIRED for every schemaVersion 2 ResultRef projection.
+ * Missing, empty, or unknown kind is rejected. Legacy schemaVersion 1 is
+ * handled separately by the legacy recognizer and never reaches this validator.
  *
  * Q1: closed schema — unknown fields are rejected (not passed through).
  *
@@ -260,23 +264,28 @@ export function validateResultRefProjection(value: unknown): ResultRef {
 
   const ref = requireNonEmptyString(obj, 'ref');
   const versionFingerprint = requireNonEmptyString(obj, 'versionFingerprint');
+
+  // Q1-RA-004: kind is REQUIRED (non-empty, in the Core-owned enum).
   const kindRaw = obj['kind'];
-  if (kindRaw !== undefined) {
-    if (typeof kindRaw !== 'string') {
-      schemaFail('ResultRef.kind must be a string', { kind: kindRaw });
-    }
-    // Q1: kind MUST be in the Core-owned enum.
-    if (!(RESULT_REF_KINDS as readonly string[]).includes(kindRaw)) {
-      schemaFail(
-        `ResultRef.kind must be one of ${RESULT_REF_KINDS.join(', ')}, got: ${kindRaw}`,
-        { kind: kindRaw },
-      );
-    }
+  if (kindRaw === undefined) {
+    schemaFail('ResultRef.kind is required for schemaVersion 2 projections', { ref });
+  }
+  if (typeof kindRaw !== 'string') {
+    schemaFail('ResultRef.kind must be a string', { kind: kindRaw });
+  }
+  if (kindRaw.trim() === '') {
+    schemaFail('ResultRef.kind must be a non-empty string', { kind: kindRaw });
+  }
+  if (!(RESULT_REF_KINDS as readonly string[]).includes(kindRaw)) {
+    schemaFail(
+      `ResultRef.kind must be one of ${RESULT_REF_KINDS.join(', ')}, got: ${kindRaw}`,
+      { kind: kindRaw },
+    );
   }
   const result: ResultRef = {
     ref,
     versionFingerprint,
-    ...(kindRaw !== undefined && { kind: kindRaw }),
+    kind: kindRaw,
   };
   return result;
 }
@@ -400,8 +409,9 @@ export function validateActionResultWithoutRunRef(
 /**
  * Validate an optional ResultRef field with field-specific kind binding.
  *
- * @param expectedKind - The kind that MUST be present on the ResultRef (if
- *   `kind` is provided). When `undefined`, kind is not checked (legacy mode).
+ * Q1-RA-004: `kind` is always present (enforced by
+ * {@link validateResultRefProjection}); this requires EXACT equality with
+ * `expectedKind`. No legacy tolerance for absent/mismatched kind.
  */
 function validateOptionalResultRef(
   obj: Record<string, unknown>,
@@ -413,8 +423,8 @@ function validateOptionalResultRef(
     return undefined;
   }
   const ref = validateResultRefProjection(v);
-  // Q1: field-specific kind binding.
-  if (ref.kind !== undefined && ref.kind !== expectedKind) {
+  // Q1-RA-004: exact field-specific kind equality.
+  if (ref.kind !== expectedKind) {
     schemaFail(
       `Field ${field} ResultRef.kind must be ${expectedKind}, got: ${ref.kind}`,
       { field, expectedKind, actualKind: ref.kind },
@@ -425,6 +435,8 @@ function validateOptionalResultRef(
 
 /**
  * Validate an optional ResultRef array with field-specific kind binding.
+ *
+ * Q1-RA-004: each ref's `kind` MUST exactly equal `expectedKind`.
  */
 function validateOptionalResultRefArray(
   obj: Record<string, unknown>,
@@ -441,8 +453,8 @@ function validateOptionalResultRefArray(
   return v.map((item, i) => {
     try {
       const ref = validateResultRefProjection(item);
-      // Q1: field-specific kind binding.
-      if (ref.kind !== undefined && ref.kind !== expectedKind) {
+      // Q1-RA-004: exact field-specific kind equality.
+      if (ref.kind !== expectedKind) {
         schemaFail(
           `Field ${field}[${i}] ResultRef.kind must be ${expectedKind}, got: ${ref.kind}`,
           { field, index: i, expectedKind, actualKind: ref.kind },

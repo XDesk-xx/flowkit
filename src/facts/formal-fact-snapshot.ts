@@ -65,6 +65,11 @@ export interface ChangeFact {
 
 /**
  * Read-only summary of a committed Run.
+ *
+ * Q1-RA-002: lineage facts (`sourceReviewRun`, `sourceReviewVerdict`,
+ * `reviewedRunId`) are carried on `RunFact` so generation classification can
+ * prove exact review/revise lineage instead of inferring from Run ID order.
+ * These are read directly from `context.json` (one fact, one authority).
  */
 export interface RunFact {
   readonly runId: string;
@@ -78,6 +83,12 @@ export interface RunFact {
   readonly inputRef?: ResultRef;
   /** Terminal result reference, present when `status` is terminal. */
   readonly resultRef?: ResultRef;
+  /** Prior review being addressed by a `revise-*` Run (from context.json). */
+  readonly sourceReviewRun?: string;
+  /** Verdict of the prior review addressed by a `revise-*` Run. */
+  readonly sourceReviewVerdict?: ReviewVerdictValue;
+  /** Run being reviewed by a `review-*` Run (C1-AP-004 canonical linkage). */
+  readonly reviewedRunId?: string;
 }
 
 /**

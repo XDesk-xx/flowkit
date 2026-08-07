@@ -26,6 +26,11 @@ import { discriminateRun, normalizeBootstrapRunStatus } from '../persistence/leg
 import { validateContextFile } from '../persistence/serialization.js';
 import type { ContextFile } from '../persistence/serialization.js';
 import { resolveArchiveAwareArtifactPath } from '../persistence/result-ref-adapter.js';
+import {
+  classifyArtifactGenerations,
+  classifyVerificationGenerations,
+  type ReviewLineageFact,
+} from './generation-resolver.js';
 import { FlowkitError } from '../shared/errors.js';
 import type {
   ChangeFact,
@@ -565,6 +570,11 @@ function readC1Run(
     status,
     ...(contextFile.changeId !== undefined && { changeId: contextFile.changeId }),
     ...(contextFile.inputRef !== undefined && { inputRef: contextFile.inputRef }),
+    // Q1-RA-002: carry exact persisted lineage facts so generation
+    // classification can prove review/revise lineage without Run-ID inference.
+    ...(contextFile.sourceReviewRun !== undefined && { sourceReviewRun: contextFile.sourceReviewRun }),
+    ...(contextFile.sourceReviewVerdict !== undefined && { sourceReviewVerdict: contextFile.sourceReviewVerdict }),
+    ...(contextFile.reviewedRunId !== undefined && { reviewedRunId: contextFile.reviewedRunId }),
   };
 
   return { run, verdict, conflicts };
@@ -863,27 +873,32 @@ async function validateReviewExactBindings(
 // ---------------------------------------------------------------------------
 
 /**
- * Artifact generation classification (Q1-5.2).
- */
-type GenerationClass = 'current' | 'superseded' | 'revision-window';
-
-/**
- * Q1-5: Validate mutable Change artifact refs using generation-aware rules.
+ * Q1-RA-002: Validate mutable Change artifact refs using generation-aware rules.
  *
- * Reader MUST first classify artifact generations based on review/revise
- * lineage, then decide which mutable artifact refs need replacement validation
- * against current canonical bytes.
+ * Reader classifies artifact generations using EXACT review/revise lineage
+ * (delegated to {@link classifyArtifactGenerations}), then decides which
+ * mutable artifact refs need replacement validation against current canonical
+ * bytes.
  *
  * Rules:
  *   - `current` generation: producedResultRefs MUST match current canonical bytes.
  *   - `superseded` generation: producedResultRefs are NOT re-validated against
- *     current canonical bytes (the successor legally overwrote them).
- *   - `revision-window`: predecessor's mutable refs MAY be in flux; do not
- *     produce false conflicts.
+ *     current canonical bytes (a COMPLETED legitimate successor legally
+ *     overwrote them).
+ *   - `revision-window`: a PENDING legitimate successor is editing canonical
+ *     artifacts; mutable refs MAY be in flux and MUST NOT produce false
+ *     `artifact-replaced` conflicts.
  *
  * Immutable Run-result refs (inputRef, consumedInputRefs, reviewVerdictRef)
  * and review exact bindings are ALWAYS strictly validated (in
  * {@link validateReviewExactBindings}), regardless of generation class.
+ *
+ * Supersession is proven ONLY by exact lineage (Q1-RA-002 I3):
+ *   R = completed review-<stage>, R.reviewedRunId == G0.runId,
+ *   R.verdict == changes-requested,
+ *   G1 = revise-<stage> (completed OR pending),
+ *   G1.sourceReviewRun == R.runId, G1.sourceReviewVerdict == changes-requested.
+ * Run ID ordering is NEVER used as lineage proof.
  */
 async function validateGenerationAwareArtifacts(
   runs: readonly RunFact[],
@@ -892,8 +907,8 @@ async function validateGenerationAwareArtifacts(
 ): Promise<FactConflict[]> {
   const conflicts: FactConflict[] = [];
 
-  // Group completed artifact Runs by (changeId, stage).
-  const artifactRuns = runs.filter(
+  // Completed artifact Runs (G0 candidates): explore/revise-explore/propose/revise-propose.
+  const completedArtifactRuns = runs.filter(
     (r) =>
       r.status === 'completed' &&
       r.changeId !== undefined &&
@@ -903,135 +918,63 @@ async function validateGenerationAwareArtifacts(
         r.action === 'revise-propose'),
   );
 
-  // Group by changeId.
-  const byChange = new Map<string, RunFact[]>();
-  for (const run of artifactRuns) {
-    if (run.changeId === undefined) continue;
-    const list = byChange.get(run.changeId) ?? [];
-    list.push(run);
-    byChange.set(run.changeId, list);
-  }
+  // ALL revise Runs (completed AND pending) — pending revise Runs open the
+  // bounded revision window without themselves being validated (they have no
+  // terminal result yet).
+  const allReviseRuns = runs.filter(
+    (r) =>
+      r.changeId !== undefined &&
+      (r.action === 'revise-explore' || r.action === 'revise-propose'),
+  );
 
-  // For each change, classify generations and validate current generation.
-  for (const changeRuns of byChange.values()) {
-    const classification = classifyGenerations(changeRuns, reviewVerdicts);
+  // Build review lineage facts for exact successor proof.
+  const reviewLineageFacts = buildReviewLineageFacts(runs, reviewVerdicts);
 
-    // Validate only the current generation's producedResultRefs.
-    for (const run of changeRuns) {
-      const genClass = classification.get(run.runId);
-      if (genClass === 'current') {
-        const runConflicts = await validateCurrentGenerationRefs(run, repoRoot);
-        conflicts.push(...runConflicts);
-      }
-      // superseded / revision-window: skip mutable artifact ref validation.
-      // Immutable refs (inputRef, review bindings) are validated separately.
+  // Classify using EXACT lineage only (Q1-RA-002).
+  const classification = classifyArtifactGenerations(
+    completedArtifactRuns,
+    allReviseRuns,
+    reviewLineageFacts,
+  );
+
+  // Validate only the current generation's producedResultRefs.
+  for (const run of completedArtifactRuns) {
+    if (classification.get(run.runId) === 'current') {
+      const runConflicts = await validateCurrentGenerationRefs(run, repoRoot);
+      conflicts.push(...runConflicts);
     }
+    // superseded / revision-window: skip mutable artifact ref validation.
+    // Immutable refs (inputRef, review bindings) are validated separately.
   }
 
   return conflicts;
 }
 
 /**
- * Classify artifact generations for a Change's artifact Runs.
+ * Build {@link ReviewLineageFact}[] from committed Runs + review verdicts.
  *
- * Q1-5.1: A successor G1 is legitimate only when:
- *   G0 = completed S/revise-S artifact generation
- *   R  = completed review-S
- *   R.reviewedRunId == G0.runId
- *   R.verdict == changes-requested
- *   G1 = completed revise-S
- *   G1.sourceReviewRun == R.runId (traced via context.json)
- *
- * Returns a map from runId → GenerationClass.
+ * Each completed review-* Run's verdict is augmented with its action + status
+ * + changeId so the lineage resolver can prove exact review→revise chains
+ * without re-reading filesystem state.
  */
-function classifyGenerations(
-  artifactRuns: RunFact[],
+function buildReviewLineageFacts(
+  runs: readonly RunFact[],
   reviewVerdicts: readonly ReviewVerdictFact[],
-): Map<string, GenerationClass> {
-  const result = new Map<string, GenerationClass>();
-
-  // Sort by runId (chronological order, since Run IDs are monotonically increasing).
-  const sorted = [...artifactRuns].sort((a, b) => a.runId.localeCompare(b.runId));
-
-  // Determine the current generation: the latest completed artifact Run
-  // that has a legitimate lineage chain (or is the initial generation).
-  // All earlier completed artifact Runs with a legitimate successor are superseded.
-
-  // Find the latest completed artifact Run — it is the current generation.
-  // Earlier ones are superseded IF a legitimate successor chain exists.
-  if (sorted.length === 0) {
-    return result;
+): ReviewLineageFact[] {
+  const facts: ReviewLineageFact[] = [];
+  for (const verdict of reviewVerdicts) {
+    const reviewRun = runs.find((r) => r.runId === verdict.reviewRunId);
+    if (reviewRun === undefined) continue;
+    facts.push({
+      reviewRunId: verdict.reviewRunId,
+      verdict: verdict.verdict,
+      reviewedRunId: verdict.reviewedRunId,
+      reviewAction: reviewRun.action,
+      reviewStatus: reviewRun.status,
+      ...(reviewRun.changeId !== undefined && { changeId: reviewRun.changeId }),
+    });
   }
-
-  const latest = sorted[sorted.length - 1];
-  result.set(latest.runId, 'current');
-
-  // All earlier artifact Runs are superseded (the latest legally overwrote them
-  // through the review/revise lineage). If there is no legitimate successor
-  // chain, the earlier Run is still current and its refs must match — but we
-  // classify it as 'current' only when there's no later Run.
-  for (let i = 0; i < sorted.length - 1; i++) {
-    const earlier = sorted[i];
-    // Check if there's a legitimate review → revise chain between earlier and later.
-    const hasLegitimateSuccessor = hasLegitimateRevisionChain(
-      earlier,
-      latest,
-      reviewVerdicts,
-    );
-    if (hasLegitimateSuccessor) {
-      result.set(earlier.runId, 'superseded');
-    } else {
-      // No legitimate successor — earlier Run is still current (its refs must match).
-      result.set(earlier.runId, 'current');
-    }
-  }
-
-  return result;
-}
-
-/**
- * Check whether there is a legitimate review → revise chain from `earlier` to
- * `later`. This is a simplified check — a full implementation would trace the
- * exact sourceReviewRun linkage through context.json.
- *
- * Q1-5.1: The chain requires:
- *   - A completed review-S Run reviewing `earlier` with verdict=changes-requested
- *   - A completed revise-S Run that is `later` (or an intermediate Run)
- */
-function hasLegitimateRevisionChain(
-  earlier: RunFact,
-  later: RunFact,
-  reviewVerdicts: readonly ReviewVerdictFact[],
-): boolean {
-  const stage = earlier.action.replace('revise-', '');
-  const reviseAction = `revise-${stage}`;
-
-  // Find a completed review-* Run that reviewed `earlier` with changes-requested.
-  const review = reviewVerdicts.find(
-    (v) =>
-      v.reviewedRunId === earlier.runId &&
-      v.verdict === 'changes-requested',
-  );
-  if (review === undefined) {
-    return false;
-  }
-
-  // Check that `later` is a revise-* Run (the successor).
-  // A full check would verify later.sourceReviewRun == review.reviewRunId,
-  // but RunFact doesn't carry sourceReviewRun. We rely on the Run ordering:
-  // if there's a changes-requested review of `earlier` and `later` is a
-  // revise-* Run that came after, the chain is legitimate.
-  if (later.action !== reviseAction && later.action !== stage) {
-    return false;
-  }
-
-  // The review Run must have been completed before `later`.
-  // Run IDs are monotonically increasing, so we can compare lexicographically.
-  if (review.reviewRunId >= later.runId) {
-    return false;
-  }
-
-  return true;
+  return facts;
 }
 
 /**
@@ -1186,89 +1129,39 @@ async function validateVerificationGenerationAware(
 ): Promise<FactConflict[]> {
   const conflicts: FactConflict[] = [];
 
-  // Group completed review-apply Runs by changeId.
-  const reviewApplyRuns = runs.filter(
+  // Completed review-apply Runs (V0 candidates).
+  const completedReviewApplyRuns = runs.filter(
     (r) => r.status === 'completed' && r.changeId !== undefined && r.action === 'review-apply',
   );
-  const byChange = new Map<string, RunFact[]>();
-  for (const run of reviewApplyRuns) {
-    if (run.changeId === undefined) continue;
-    const list = byChange.get(run.changeId) ?? [];
-    list.push(run);
-    byChange.set(run.changeId, list);
-  }
 
-  // Completed revise-apply Runs are used to confirm legitimate lineage.
-  const reviseApplyRuns = runs.filter(
-    (r) => r.status === 'completed' && r.changeId !== undefined && r.action === 'revise-apply',
+  // ALL revise-apply Runs (completed AND pending) — pending revise-apply opens
+  // the verification revision window (Q1-RA-002).
+  const allReviseApplyRuns = runs.filter(
+    (r) => r.changeId !== undefined && r.action === 'revise-apply',
   );
 
-  for (const changeRuns of byChange.values()) {
-    const classification = classifyVerificationGenerations(
-      changeRuns,
-      reviewVerdicts,
-      reviseApplyRuns,
-    );
-    for (const run of changeRuns) {
-      if (classification.get(run.runId) === 'current') {
-        conflicts.push(...await validateCurrentVerificationSummaryRef(run, repoRoot));
-      }
-      // superseded: skip verificationSummaryRef re-validation (legitimate
-      // revise-apply lineage superseded it). Immutable review binding/verdict
-      // remain validated by validateReviewExactBindings.
+  // Build review lineage facts for exact successor proof.
+  const reviewLineageFacts = buildReviewLineageFacts(runs, reviewVerdicts);
+
+  // Classify using EXACT review-apply → revise-apply lineage (Q1-RA-002):
+  // supersession requires V0.verdict == changes-requested,
+  // R0.sourceReviewRun == V0.runId, R0.sourceReviewVerdict == changes-requested.
+  const classification = classifyVerificationGenerations(
+    completedReviewApplyRuns,
+    allReviseApplyRuns,
+    reviewLineageFacts,
+  );
+
+  for (const run of completedReviewApplyRuns) {
+    if (classification.get(run.runId) === 'current') {
+      conflicts.push(...await validateCurrentVerificationSummaryRef(run, repoRoot));
     }
+    // superseded: skip verificationSummaryRef re-validation (legitimate
+    // revise-apply lineage superseded it). Immutable review binding/verdict
+    // remain validated by validateReviewExactBindings.
   }
 
   return conflicts;
-}
-
-/**
- * Classify review-apply verification generations for a Change.
- *
- * The latest completed review-apply is `current`. An earlier review-apply V0 is
- * `superseded` when it returned `changes-requested` AND a completed
- * `revise-apply` exists between V0 and the latest review-apply (the legitimate
- * verification revision window, Q1-9). Otherwise V0 remains `current` and its
- * verificationSummaryRef MUST match current bytes (fail-closed, task 7.7).
- */
-function classifyVerificationGenerations(
-  reviewApplyRuns: RunFact[],
-  reviewVerdicts: readonly ReviewVerdictFact[],
-  reviseApplyRuns: readonly RunFact[],
-): Map<string, GenerationClass> {
-  const result = new Map<string, GenerationClass>();
-  const sorted = [...reviewApplyRuns].sort((a, b) => a.runId.localeCompare(b.runId));
-  if (sorted.length === 0) {
-    return result;
-  }
-
-  const latest = sorted[sorted.length - 1];
-  result.set(latest.runId, 'current');
-
-  for (let i = 0; i < sorted.length - 1; i++) {
-    const earlier = sorted[i];
-    const changeId = earlier.changeId;
-    // V0 must have returned changes-requested to open the revision window.
-    const v0ChangesRequested = reviewVerdicts.some(
-      (v) => v.reviewRunId === earlier.runId && v.verdict === 'changes-requested',
-    );
-    // A completed revise-apply must exist between V0 and the latest review-apply
-    // (same Change) to legitimate the supersession.
-    const hasReviseApplyBetween = reviseApplyRuns.some(
-      (r) =>
-        r.changeId === changeId &&
-        r.runId > earlier.runId &&
-        r.runId < latest.runId,
-    );
-    if (v0ChangesRequested && hasReviseApplyBetween) {
-      result.set(earlier.runId, 'superseded');
-    } else {
-      // No legitimate successor — earlier review-apply is still current.
-      result.set(earlier.runId, 'current');
-    }
-  }
-
-  return result;
 }
 
 /**

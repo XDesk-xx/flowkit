@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-128-revise-apply",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "Q1",
+  "changeId": "execution-model-correction",
+  "action": "revise-apply",
+  "role": "author",
+  "ownerAuthorization": "owner-authorized: revise-apply (127-review-apply changes-requested) + Q1-RA-001 test refactor",
+  "inputRef": {
+    "ref": "run-result:.flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-127-review-apply/result.json",
+    "versionFingerprint": "sha256:9797725abe5a2cce06502e1622f4ff129d8c3fd7322c7116bb0cd46295825b8d"
+  },
+  "sourceReviewRun": "20260806-127-review-apply",
+  "sourceReviewVerdict": "changes-requested",
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": true,
+    "mayWriteTestCode": true,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-128-revise-apply/"
+}
