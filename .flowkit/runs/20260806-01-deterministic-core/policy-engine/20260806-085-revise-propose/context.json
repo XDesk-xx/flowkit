@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-085-revise-propose",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "D1",
+  "changeId": "policy-engine",
+  "action": "revise-propose",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "inputRef": {
+    "ref": "run-result:.flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-074-review-explore/result.json",
+    "versionFingerprint": "sha256:b1323433400ff5aa39027adc7196a9cd69492773e60630d38798e8388ad4e293"
+  },
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-084-review-propose/",
+  "sourceReviewRun": "20260806-084-review-propose",
+  "sourceReviewVerdict": "changes-requested",
+  "sourceChangeState": "D1 policy-engine: active (explore approved via 074; propose 075/077/079/081/083 reviewed by 076/078/080/082/084; 084 changes-requested D1-PR-006; D1-PR-001/002/003/004/005 resolved)",
+  "triggerFindings": [
+    {
+      "id": "D1-PR-006",
+      "severity": "P1",
+      "origin": "20260806-084-review-propose",
+      "title": "full-test is permitted before the Delivery reaches authorized"
+    }
+  ],
+  "inputRefSemantics": "inputRef cites 074-review-explore/result.json (the approved source review that authorizes the propose stage) with its actual immutable SHA-256 (b1323433...), consistent with 077/079/081/083. reviewedRun names 084-review-propose, the review whose changes-requested verdict and D1-PR-006 finding triggered this revision. 085 fixes D1-PR-006: 083 incorrectly included awaiting-user-decision as a full-test eligible state, but frozen verification-model.md Section 4.2 states '未 authorized 时不得执行 Full Test' — awaiting-user-decision is a pre-authorization state. 085 restricts full-test to deliveryFullTestStatus = authorized only; awaiting-user-decision returns owner-decision: authorize-full-test. proposal.md unchanged; spec.md, design.md, tasks.md modified; conclusion.md (gitignored scratch) aligned.",
+  "constraints": {
+    "mayReadFormalDocs": true,
+    "mayReadFrozenSpecs": true,
+    "mayReadRefDocs": true,
+    "mayWriteProposalArtifacts": true,
+    "mayModifyManifest": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-085-revise-propose/"
+}

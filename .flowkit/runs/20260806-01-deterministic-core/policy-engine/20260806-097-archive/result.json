@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-097-archive",
+  "status": "completed",
+  "summary": "D1 policy-engine 已归档。openspec archive 将 19 个 ADDED Requirements 应用到新冻结 spec openspec/specs/flowkit-policy-engine/spec.md，change 移动到 openspec/changes/archive/2026-08-07-policy-engine/。Manifest D1 state 从 active 更新为 completed。冻结 specs 验证 8 passed（含新增 flowkit-policy-engine）。未创建 Git Commit。",
+  "archiveResults": {
+    "command": "npx openspec archive policy-engine -y",
+    "specDeltas": {
+      "added": 19,
+      "modified": 0,
+      "removed": 0
+    },
+    "frozenSpecCreated": "openspec/specs/flowkit-policy-engine/spec.md",
+    "changeArchivedTo": "openspec/changes/archive/2026-08-07-policy-engine/",
+    "archivedArtifacts": [
+      ".openspec.yaml",
+      "explore.md",
+      "proposal.md",
+      "design.md",
+      "tasks.md",
+      "verification.md",
+      "specs/flowkit-policy-engine/spec.md"
+    ]
+  },
+  "manifestUpdate": {
+    "file": "openspec/delivery-groups/20260806-01-deterministic-core.yaml",
+    "change": "D1 state: active → completed"
+  },
+  "verificationResults": {
+    "frozenSpecExists": true,
+    "changeMovedToArchive": true,
+    "oldChangeDirGone": true,
+    "openspecValidateSpecs": "8 passed, 0 failed (including new flowkit-policy-engine)",
+    "openspecValidateChanges": "No items found to validate (policy-engine was the only active change and is now archived)"
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit. Change Checkpoint is a separate formal Git boundary requiring owner authorization."
+  },
+  "nextAction": "change-checkpoint",
+  "nextActionNote": "Change Checkpoint 需 owner 明确授权 Git Commit。Checkpoint 后 D1 正式完成，可激活 E1 (diagnostic-cli)。",
+  "blockedOn": []
+}

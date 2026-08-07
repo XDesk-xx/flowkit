@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-094-review-apply",
+  "status": "completed",
+  "verdict": "changes-requested",
+  "summary": "093 correctly resolves D1-RA-003 in source and active Proposal artifacts: passed and not-applicable both satisfy the Change Verification gate; failed, not-run, and unavailable facts remain distinct blocking outcomes; FullTestStatus remains passed-only. However, the Change-owned verification.md was not updated after the 091 and 093 revisions. It still records only 087/089 and 406/406 tests, while 093 records 424/424 and introduces the RA-002/RA-003 verification obligations. A Run result cannot replace the required Change Verification record, so the current Verification evidence is stale and Review cannot approve.",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-093-revise-apply/",
+  "reviewedResultRef": "content-sha256:bbb1c89b075f2a05ee183bbcfbd3d76d019974758c304b3651f2b723f64ebcfb",
+  "sourceReview": {
+    "runId": "20260806-092-review-apply",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:4d5a75a0c74e1ce7c51738bf5f583ced4cc4acb391aab227e37ba85715c72bfe"
+  },
+  "blockingFindings": [
+    {
+      "id": "D1-RA-004",
+      "severity": "P1",
+      "title": "Change Verification record is stale after the latest revise-apply Runs",
+      "evidence": [
+        "docs/verification-model.md Section 3.3 requires Verification to be updated after revise-apply before re-entering review-apply.",
+        "docs/verification-model.md Section 7 requires a Change-owned verification.md and states that Run result.json cannot replace it.",
+        "openspec/changes/policy-engine/verification.md references only Apply 087 and revise-apply 089, reports 406/406 tests, and documents only D1-RA-001.",
+        "093-revise-apply/result.json records the later 424/424 verification and D1-RA-003, while 091-revise-apply/result.json records D1-RA-002; neither revision is reflected in verification.md."
+      ],
+      "impact": "The formal Change Verification record does not evidence the current implementation revision, so its passed status cannot support a review-apply approval or Archive boundary.",
+      "requiredChange": "Create a new revise-apply Run that updates only openspec/changes/policy-engine/verification.md as the Change-owned record: reference 091 and 093, record the relevant D1-RA-002 and D1-RA-003 checks, replace the stale 406/406 summary with the current validation evidence, retain Full Test as not-applicable for this Change, and keep the overall Change Verification status explicit. Re-run the applicable ordinary checks for that revision and record their actual outcomes. Do not modify frozen documents, terminal Runs, FullTestStatus semantics, or unrelated code."
+    }
+  ],
+  "resolvedFindings": [
+    {
+      "id": "D1-RA-003",
+      "result": "resolved",
+      "evidence": "mapVerificationStatusToGate maps both passed and not-applicable to {kind:'satisfied'}; verificationGateUnmet releases satisfied; next and canRun share the same status-aware gate; unit coverage verifies both release while failed, not-run, and unavailable remain blocked."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "verification": [
+    {
+      "check": "D1-RA-003 source and proposal alignment",
+      "status": "passed",
+      "evidence": "Current hashes match all eight modified-file hashes declared by 093; frozen docs require passed | not-applicable for Change Verification; active spec/design/tasks now use that contract while D1-12 FullTestStatus remains passed-only."
+    },
+    {
+      "check": "ordinary unit tests",
+      "command": "npm test",
+      "status": "passed",
+      "evidence": "424 tests passed, 0 failed; includes the passed/not-applicable release and distinct failed/not-run/unavailable gate cases."
+    },
+    {
+      "check": "typecheck",
+      "command": "npm run typecheck",
+      "status": "passed"
+    },
+    {
+      "check": "lint",
+      "command": "npm run lint",
+      "status": "passed"
+    },
+    {
+      "check": "build",
+      "command": "npm run build",
+      "status": "passed"
+    },
+    {
+      "check": "OpenSpec strict validation",
+      "command": "npx openspec validate policy-engine --strict",
+      "status": "passed",
+      "evidence": "Change 'policy-engine' is valid."
+    },
+    {
+      "check": "Delivery Full Test",
+      "status": "not-applicable",
+      "evidence": "Not authorized and not run; it is a Delivery-level activity, not Change Verification."
+    }
+  ],
+  "policyRoute": {
+    "current": "review-apply of 093",
+    "verdict": "changes-requested",
+    "nextAction": "revise-apply",
+    "reason": "D1-RA-004 is a blocking Review finding. The revision must update the formal Change Verification record before a fresh review-apply Run."
+  },
+  "commitPolicy": "No commit, checkpoint, archive, or Full Test was authorized or performed by this Review Run."
+}

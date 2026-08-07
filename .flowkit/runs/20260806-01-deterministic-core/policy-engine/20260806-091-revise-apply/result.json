@@ -1,0 +1,251 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-091-revise-apply",
+  "status": "completed",
+  "summary": "D1 policy-engine revise-apply 091 resolves D1-RA-002 (P1, blocking): the Verification gate conflated fact availability with a passed result. Root cause: src/policy/preconditions.ts exposed only isVerificationFactAvailable() (availability boolean); both canRun and next treated true as sufficient — a future snapshot extension carrying a failed/not-run Verification field would wrongly allow review-apply and advance archive, violating fail-closed. Fix: new src/policy/verification-gate.ts introduces a status-aware VerificationGateResult (unavailable|passed|failed|not-run) shared by canRun and next via evaluateVerificationGate(snapshot); only passed releases the gate, each non-passed kind has a distinct blocked reason. blocked-diagnosis.ts gains verificationFailedDiagnosis()/verificationNotRunDiagnosis(); preconditions.ts drops isVerificationFactAvailable and gates review-apply (apply stage) + archive on evaluateVerificationGate; next.ts decideApplyStage (!lineage.match and approved branches) gates the same way. D1 behavior unchanged (gate always unavailable → verification-facts-unavailable); forward-compat branches are the single correct extension point. Per owner instruction, the explore artifact is also relocated from .tmp/explore/policy-engine/conclusion.md (gitignored, non-recoverable) to openspec/changes/policy-engine/explore.md, matching all 8 prior archived changes. proposal/design/spec/tasks unchanged; frozen specs / B1 states.ts / 069–090 terminal Runs unchanged. typecheck/build/lint/test(423)/openspec strict all pass. consistencyScan 7 dimensions, 0 contradictions. Next action: review-apply.",
+  "inputRef": "032bb814081a2466b59c0e3387517e7f419ccd00fcca2d77268720334c5b7413",
+  "inputRefNote": "SHA-256 of 20260806-090-review-apply/result.json (the review whose changes-requested verdict + D1-RA-002 triggered this revision). Matches the revise-apply precedent: 089 inputRef = 088 result SHA.",
+  "sourceReviewRef": "090-review-apply:032bb814081a2466b59c0e3387517e7f419ccd00fcca2d77268720334c5b7413",
+  "sourceReviewVerdict": "changes-requested",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-089-revise-apply/",
+  "findingsAddressed": [
+    {
+      "id": "D1-RA-002",
+      "severity": "P1",
+      "origin": "20260806-090-review-apply",
+      "title": "Verification gate conflates fact availability with a passed result",
+      "rootCause": "preconditions.ts exposed only isVerificationFactAvailable() (availability), and both canRun (reviewSPreconditions apply stage, archivePreconditions) and next() (decideApplyStage !lineage.match + approved branches) treated true as sufficient. No predicate inspected the Verification result. Once a future change extends the snapshot with a Verification status field, failed/not-run values would be treated as a release — breaking the fail-closed contract and letting review-apply/archive advance on a non-passed result.",
+      "fix": "New src/policy/verification-gate.ts: VerificationGateResult = unavailable|passed|failed|not-run; mapVerificationStatusToGate maps undefined→unavailable, passed→passed, failed→failed, not-run/not-applicable→not-run (fail-closed); readChangeVerificationStatus returns undefined in D1 (C1 has no field) — the single forward-compat point; evaluateVerificationGate(snapshot) is the shared entry for canRun and next; verificationGateUnmet(gate)→canRun unmet string; verificationGateDiagnosis(gate)→next blocked diagnosis. blocked-diagnosis.ts adds verificationFailedDiagnosis()/verificationNotRunDiagnosis(). preconditions.ts removes isVerificationFactAvailable; reviewSPreconditions (apply stage) and archivePreconditions use evaluateVerificationGate + verificationGateUnmet. next.ts decideApplyStage (!lineage.match and approved branches) uses evaluateVerificationGate + verificationGateDiagnosis. D1 behavior unchanged: gate is always unavailable → verification-facts-unavailable (canRun rejects, next blocks). Only passed releases the gate.",
+      "verificationEvidence": "verification-gate.ts: VerificationGateResult discriminated union + mapVerificationStatusToGate + evaluateVerificationGate. preconditions.ts: reviewSPreconditions apply-stage branch + archivePreconditions gate on evaluateVerificationGate. next.ts: decideApplyStage !lineage.match and approved branches gate via evaluateVerificationGate + verificationGateDiagnosis. blocked-diagnosis.ts: verificationFailedDiagnosis/verificationNotRunDiagnosis with distinct reasons. verification-gate.test.ts: covers mapping, unmet, diagnosis for all 4 kinds; failed → verification-failed (not verification-facts-unavailable). 423/423 tests pass. In D1 the gate is always unavailable → next() and canRun(review-apply)/canRun(archive) all return verification-facts-unavailable, identical surface behavior to 090 but now forward-correct."
+    }
+  ],
+  "modifiedFiles": [
+    {
+      "path": "src/policy/verification-gate.ts",
+      "sha256": "f3465d4917d597c3d2fb1356fa4148c699fb66dd6871181ad2520264b86fb95b",
+      "modified": false,
+      "changeSummary": "New module: status-aware VerificationGateResult (unavailable|passed|failed|not-run) shared by canRun and next; fail-closed mapping; D1 returns undefined (single forward-compat point)."
+    },
+    {
+      "path": "src/policy/blocked-diagnosis.ts",
+      "sha256": "68573173d0c2effa7eb14da6080f27075e3c5b1b66a20f59c8b943f0d75d0c11",
+      "modified": true,
+      "changeSummary": "Added verificationFailedDiagnosis() and verificationNotRunDiagnosis() with distinct blocked reasons (D1-RA-002)."
+    },
+    {
+      "path": "src/policy/preconditions.ts",
+      "sha256": "7eb63b897510f098e30ef360fd1979d3d428eca5d78162e5065848c6f4b88c9e",
+      "modified": true,
+      "changeSummary": "Removed isVerificationFactAvailable; reviewSPreconditions (apply stage) and archivePreconditions gate on evaluateVerificationGate + verificationGateUnmet."
+    },
+    {
+      "path": "src/policy/next.ts",
+      "sha256": "a0403fdb97af5735e981df6c6c7c4965e1f8857a9672bedaf246546681008150",
+      "modified": true,
+      "changeSummary": "decideApplyStage !lineage.match and approved branches gate via evaluateVerificationGate + verificationGateDiagnosis; consistent with canRun."
+    },
+    {
+      "path": "tests/unit/policy/verification-gate.test.ts",
+      "sha256": "fd1473668e8ae7755e197f9346b60238ce42b04d30320cfefd2c83f210025b8b",
+      "modified": false,
+      "changeSummary": "New tests: mapVerificationStatusToGate (all status kinds), verificationGateUnmet per kind, verificationGateDiagnosis per kind (failed → verification-failed, not verification-facts-unavailable)."
+    },
+    {
+      "path": "openspec/changes/policy-engine/explore.md",
+      "sha256": "5c95d7015c8162c7e959f9efb5438599438a4eb0dfe05ed7610d4029b947d646",
+      "modified": false,
+      "changeSummary": "Owner-directed path correction: restored from .tmp/explore/policy-engine/conclusion.md (gitignored, non-recoverable) to the formal change-dir location matching all 8 prior archived changes."
+    }
+  ],
+  "consistencyScan": {
+    "scanType": "focused",
+    "triggerRun": "20260806-090-review-apply (changes-requested, D1-RA-002)",
+    "modifiedConcepts": [
+      "Verification gate is now status-aware (unavailable|passed|failed|not-run), shared by canRun and next via evaluateVerificationGate; only passed releases",
+      "isVerificationFactAvailable removed from preconditions.ts; replaced by evaluateVerificationGate + verificationGateUnmet",
+      "next.ts decideApplyStage !lineage.match + approved branches gate via evaluateVerificationGate + verificationGateDiagnosis",
+      "blocked-diagnosis.ts adds verificationFailed/verificationNotRun distinct reasons",
+      "explore artifact relocated to openspec/changes/policy-engine/explore.md"
+    ],
+    "dimensions": [
+      {
+        "id": "CS-01",
+        "name": "D1-RA-002 fix correctness (status-aware gate, only passed releases)",
+        "concept": "canRun and next share evaluateVerificationGate; unavailable/failed/not-run each block with a distinct reason; only passed releases review-apply/archive",
+        "checks": [
+          "verification-gate.ts: mapVerificationStatusToGate maps undefined→unavailable, passed→passed, failed→failed, not-run/not-applicable→not-run",
+          "verification-gate.test.ts: failed → verification-failed (not verification-facts-unavailable); not-run → verification-not-run",
+          "preconditions.ts: apply-stage reviewSPreconditions + archivePreconditions gate on evaluateVerificationGate + verificationGateUnmet",
+          "next.ts: decideApplyStage !lineage.match + approved branches gate via evaluateVerificationGate + verificationGateDiagnosis"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-02",
+        "name": "next() ↔ canRun consistency (shared gate, fail-closed aligned)",
+        "concept": "next() and canRun(review-apply)/canRun(archive) enforce the same status-aware Verification gate",
+        "checks": [
+          "Both call evaluateVerificationGate(snapshot) — single source of truth",
+          "unavailable → canRun adds verification-facts-unavailable; next returns blocked verification-facts-unavailable",
+          "failed → canRun adds verification-failed; next returns blocked verification-failed",
+          "not-run → canRun adds verification-not-run; next returns blocked verification-not-run",
+          "passed (forward-compat) → both release",
+          "No divergence: 423/423 tests pass"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-03",
+        "name": "revise-apply path NOT affected (no new inconsistency)",
+        "concept": "canRun(revise-apply) does not require Verification facts; next() revise-apply branch must not gate verification",
+        "checks": [
+          "reviseSPreconditions: checks review≠null, lineage.match, verdict=changes-requested — NO verification gate",
+          "next.ts match+changes-requested branch → actionResult('revise-apply') — NO verification gate (unchanged)",
+          "Verification gate lives only on review-apply (!lineage.match) and archive (approved) branches",
+          "revise-apply still allowed without Verification facts — no new next/canRun inconsistency introduced"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-04",
+        "name": "D1 behavior unchanged (gate always unavailable → verification-facts-unavailable)",
+        "concept": "D1 snapshot has no Verification field; surface behavior must stay identical to 090 (verification-facts-unavailable), only forward-correct now",
+        "checks": [
+          "readChangeVerificationStatus(snapshot) returns undefined in D1 (C1 has no field)",
+          "mapVerificationStatusToGate(undefined) = unavailable → verificationGateUnmet = verification-facts-unavailable; verificationGateDiagnosis = verification-facts-unavailable",
+          "canRun(review-apply)/canRun(archive) still reject with verification-facts-unavailable (same as 089/090)",
+          "next() decideApplyStage still returns blocked verification-facts-unavailable on review-apply/archive paths (same as 089)",
+          "Existing preconditions.test.ts / next.test.ts assertions for verification-facts-unavailable still pass — no behavioral regression"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-05",
+        "name": "Explore artifact path correction (A1–C1 precedent aligned)",
+        "concept": "explore.md belongs in openspec/changes/<change-id>/explore.md (git-tracked), NOT .tmp/explore/<change-id>/conclusion.md (gitignored, non-recoverable)",
+        "checks": [
+          "openspec/changes/policy-engine/explore.md exists (33097 bytes, git-trackable location)",
+          "All 8 prior archived changes (2026-08-05-bootstrap-and-roadmap … 2026-08-06-runtime-foundation) carry explore.md in their change dir",
+          ".tmp/ is gitignored and listed in delivery-lifecycle.md as non-recoverable — formal artifacts must not live there",
+          "memory updated: user_profile 'Explore artifact path contract (CORRECTED 2026-08-07)' records the correct convention to prevent recurrence",
+          "mutationPolicy: explore.md is a tracked change-dir artifact, consistent with explore action's formal output"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-06",
+        "name": "Proposal bundle / frozen specs / terminal Runs / B1 states.ts unmodified",
+        "concept": "revise-apply touches only the buggy gate + its tests + explore path; no scope creep",
+        "checks": [
+          "proposal.md / design.md / spec.md / tasks.md — unchanged (mayModifyProposalArtifacts: false)",
+          "openspec/specs/flowkit-domain-and-state-schema/spec.md (B1) — not modified",
+          "openspec/specs/flowkit-formal-fact-reader-and-persistence/spec.md (C1) — not modified",
+          "src/domain/states.ts — not modified (B1 structure table frozen)",
+          "069–090 terminal Run directories — not modified (terminal immutability)"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-07",
+        "name": "Verification suite + no new problems",
+        "concept": "All checks pass; fix introduces no new inconsistency or regression",
+        "checks": [
+          "npm run typecheck: passed (production + test)",
+          "npm run build: passed",
+          "npm run lint: passed (no errors)",
+          "npm test: 423/423 passed (0 fail) — +17 from 089 (406) via new verification-gate.test.ts; no regression",
+          "npx openspec validate policy-engine --strict: 'Change policy-engine is valid'",
+          "No new inconsistency: next() vs canRun for review-apply/revise-apply/archive all consistent under the shared status-aware gate"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      }
+    ],
+    "totalContradictions": 0,
+    "overallResult": "pass"
+  },
+  "verificationResults": {
+    "typecheck": {
+      "command": "npm run typecheck",
+      "status": "passed",
+      "result": "tsc --noEmit (production) + tsc --noEmit -p tsconfig.test.json (test) passed with no errors."
+    },
+    "build": {
+      "command": "npm run build",
+      "status": "passed",
+      "result": "tsc emitted production build with no errors."
+    },
+    "test": {
+      "command": "npm test",
+      "status": "passed",
+      "result": "423/423 tests passed (0 fail). New verification-gate.test.ts adds 17 tests covering mapVerificationStatusToGate, verificationGateUnmet, verificationGateDiagnosis for all 4 gate kinds."
+    },
+    "lint": {
+      "command": "npm run lint",
+      "status": "passed",
+      "result": "eslint completed with no errors."
+    },
+    "openspecValidate": {
+      "command": "npx openspec validate policy-engine --strict",
+      "status": "passed",
+      "result": "Change 'policy-engine' is valid"
+    },
+    "fullTest": {
+      "status": "not-applicable",
+      "result": "Not authorized in this Run; Full Test requires owner authorization per AGENTS.md rule #5. revise-apply constraints mayFullTest=false."
+    }
+  },
+  "mutationPolicyCheck": {
+    "mayModifyProposalArtifacts": false,
+    "mayWriteProductionCode": true,
+    "mayWriteTestCode": true,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false,
+    "proposalBundleModified": false,
+    "frozenSpecsModified": false,
+    "terminalRunsModified": false,
+    "b1StatesTsModified": false,
+    "productionCodeWritten": true,
+    "testCodeWritten": true,
+    "manifestModified": false,
+    "filesWritten": [
+      "src/policy/verification-gate.ts (new — D1-RA-002 fix: status-aware gate shared by canRun/next)",
+      "src/policy/blocked-diagnosis.ts (modified — added verificationFailed/verificationNotRun diagnoses)",
+      "src/policy/preconditions.ts (modified — replaced isVerificationFactAvailable with evaluateVerificationGate)",
+      "src/policy/next.ts (modified — decideApplyStage branches gate via evaluateVerificationGate)",
+      "tests/unit/policy/verification-gate.test.ts (new — gate mapping/unmet/diagnosis coverage)",
+      "openspec/changes/policy-engine/explore.md (restored — owner-directed path correction)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-091-revise-apply/context.json (new Run)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-091-revise-apply/action.md (new Run)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-091-revise-apply/result.json (new Run)"
+    ]
+  },
+  "ownerDirectedScope": {
+    "explorePathCorrection": "Owner instructed during 090 revise to handle the explore.md path issue directly in this run. The D1 explore artifact was incorrectly written to .tmp/explore/policy-engine/conclusion.md (gitignored, non-recoverable per delivery-lifecycle.md). All 8 prior archived changes carry explore.md in their change directory (git-tracked). 091 restores openspec/changes/policy-engine/explore.md. Convention recorded in user memory to prevent recurrence."
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "prohibitedWorkCheck": {
+    "frozenSpecsModified": false,
+    "terminalRunsModified": false,
+    "changeCheckpointExecuted": false,
+    "fullTestExecuted": false,
+    "scopeExpanded": false,
+    "proposalBundleModified": false,
+    "newInconsistencyIntroduced": false,
+    "autoCommit": false
+  },
+  "nextAction": "review-apply",
+  "nextActionNote": "reviewer 审查 091-revise-apply，重点验证 D1-RA-002 是否真正解决且未引入新问题：(1) 新增 verification-gate.ts 提供 status-aware VerificationGateResult（unavailable|passed|failed|not-run），canRun 与 next 共享 evaluateVerificationGate，只有 passed 放行；(2) preconditions.ts 删除 isVerificationFactAvailable，review-apply(apply 阶段)与 archive 改用 evaluateVerificationGate+verificationGateUnmet；(3) next.ts decideApplyStage 的 !lineage.match 与 approved 分支改用 evaluateVerificationGate+verificationGateDiagnosis；(4) blocked-diagnosis.ts 补 verificationFailed/verificationNotRun 两个 distinct reason；(5) revise-apply 分支未加 verification gate（canRun(revise-apply) 不要求 Verification 事实），未制造新不一致；(6) D1 行为不变（gate 始终 unavailable → verification-facts-unavailable），仅前向兼容分支正确化；(7) explore 产物路径已纠正至 openspec/changes/policy-engine/explore.md（owner 指示，与 A1–C1 一致）；(8) proposal/design/spec/tasks 未修改，冻结 specs / B1 states.ts / 069–090 terminal Runs 未修改；(9) typecheck/build/lint/test(423)/openspec strict 全通过；(10) consistencyScan 7 维度 0 contradictions。如 approved 则进入 archive（需 owner 授权）；如 changes-requested 则进入 revise-apply。",
+  "blockedOn": []
+}

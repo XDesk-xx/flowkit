@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-074-review-explore",
+  "status": "completed",
+  "verdict": "approved",
+  "summary": "D1 Explore is approved. Run 073 correctly cites the immutable 070 review result, preserves the earlier terminal Run chain, and carries forward the reviewed lineage and fact-availability design without regression.",
+  "reviewedResultRef": "run-result:.flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-073-revise-explore/result.json;sha256:403a638468d1b2edbbe4f43e55c9698e063094a2a63d40e77d46fc7937cb98a5",
+  "blockingFindings": [],
+  "nonBlockingFindings": [],
+  "resolvedFindings": [
+    {
+      "id": "D1-EX-001",
+      "resolution": "The reviewedRunId lineage model permits each changes-requested -> revise -> review loop and determines the current review from the current artifact Run."
+    },
+    {
+      "id": "D1-EX-002",
+      "resolution": "Verification-gated actions block when the snapshot lacks verification facts; absent authorization scope yields an owner-decision without inference."
+    },
+    {
+      "id": "D1-EX-003",
+      "resolution": "073 context.inputRef cites 070-review-explore/result.json with its actual SHA-256 and leaves 070, 071, and 072 unchanged."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "073 reviewed-result reference",
+        "status": "passed",
+        "result": "073 result SHA-256 is 403a638468d1b2edbbe4f43e55c9698e063094a2a63d40e77d46fc7937cb98a5 and matches this Review context."
+      },
+      {
+        "name": "D1-EX-003 provenance correction",
+        "status": "passed",
+        "result": "073 inputRef names 070 result and uses its actual SHA-256: 4a69f71f95ce5b29dfbfbf2f4a3e640f2d35d2728415cdbda799ba975501c770."
+      },
+      {
+        "name": "Explore artifact integrity and lifecycle-contract review",
+        "status": "passed",
+        "result": "conclusion.md SHA-256 aa7e92b98f8f8683489cfad3036c50eb645858bb40794a8d6af29ad1cc7b4b8e matches evidence.json; lineage and unavailable-fact handling remain consistent with the frozen lifecycle boundary."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run."
+      }
+    ]
+  },
+  "nextActionRecommendation": "propose",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

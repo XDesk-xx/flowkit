@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-096-review-apply",
+  "status": "completed",
+  "verdict": "approved",
+  "summary": "095 resolves D1-RA-004. The Change-owned verification.md now records the current 424/424 unit-test evidence and 174/174 Policy subset, references 091/093/095 and 090/092/094, and explicitly records D1-RA-002, D1-RA-003, and the D1-RA-004 record refresh. Its scope, checks, status, result references, Full Test boundary, and overall passed state satisfy the Verification record contract. No code, tests, Proposal artifacts, frozen docs, or prior terminal Runs were modified. The D1-RA-004 finding is resolved.",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-095-revise-apply/",
+  "reviewedResultRef": "content-sha256:1f6039b434a6c91b9aa29c96ca9852a9b7707d25ef66cf429dd40a0da7e77392",
+  "sourceReview": {
+    "runId": "20260806-094-review-apply",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:b07d894d83a3e6c03d87cd6e925e65887fb20f10bab78e72563c38ee870dda8f"
+  },
+  "blockingFindings": [],
+  "nonBlockingFindings": [],
+  "resolvedFindings": [
+    {
+      "id": "D1-RA-004",
+      "result": "resolved",
+      "evidence": "verification.md now includes the 091/093/095 revision chain, D1-RA-002/003/004 checks, current 424/424 and 174/174 evidence, Full Test not-applicable, and explicit overall passed status."
+    }
+  ],
+  "verification": [
+    {
+      "check": "095 provenance and scope",
+      "status": "passed",
+      "evidence": "095 inputRef equals the actual SHA-256 of 094 result.json; its declared and actual modified-file hash match verification.md. No scope expansion was found."
+    },
+    {
+      "check": "Change Verification record completeness",
+      "status": "passed",
+      "evidence": "verification.md contains scope, applicable checks with commands/methods and statuses, environment/result references, Full Test disposition, and overall Change Verification status; it now reflects the latest revisions."
+    },
+    {
+      "check": "ordinary unit tests",
+      "command": "npm test",
+      "status": "passed",
+      "evidence": "424 tests passed, 113 suites, 0 failed."
+    },
+    {
+      "check": "Policy unit-test subset",
+      "command": "node --import tsx --test \"tests/unit/policy/**/*.test.ts\"",
+      "status": "passed",
+      "evidence": "174 tests passed, 59 suites, 0 failed."
+    },
+    {
+      "check": "typecheck",
+      "command": "npm run typecheck",
+      "status": "passed"
+    },
+    {
+      "check": "lint",
+      "command": "npm run lint",
+      "status": "passed"
+    },
+    {
+      "check": "build",
+      "command": "npm run build",
+      "status": "passed"
+    },
+    {
+      "check": "OpenSpec strict validation",
+      "command": "npx openspec validate policy-engine --strict",
+      "status": "passed",
+      "evidence": "Change 'policy-engine' is valid."
+    },
+    {
+      "check": "Delivery Full Test",
+      "status": "not-applicable",
+      "evidence": "Not authorized and not run; it is Delivery-level and does not substitute for Change Verification."
+    }
+  ],
+  "policyRoute": {
+    "current": "review-apply of 095",
+    "verdict": "approved",
+    "nextAction": "owner-decision: authorize-archive",
+    "reason": "The approved Review, zero blocking findings, passed Change Verification, and completed Tasks satisfy the Archive prerequisites except for the required owner authorization."
+  },
+  "commitPolicy": "No archive, checkpoint, commit, push, or Full Test was authorized or performed by this Review Run."
+}

@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-080-review-propose",
+  "status": "completed",
+  "verdict": "changes-requested",
+  "summary": "D1-PR-002 is resolved, but the Proposal still omits the mandatory Archive task-completion gate and lets delivery-finalize accept Full Test not-applicable even though that is not a FullTestStatus. Both defects make Policy authorize progress without representable required facts.",
+  "reviewedResultRef": "run-result:.flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-079-revise-propose/result.json;sha256:709ddb70ebd6ab5b1b8cabcc9971035e2701b213f2d5755564526309e7094ffe",
+  "blockingFindings": [
+    {
+      "id": "D1-PR-003",
+      "severity": "P1",
+      "title": "Archive gate omits mandatory task completion and has no fact-availability behavior",
+      "evidence": "docs/delivery-lifecycle.md requires Tasks completed before Archive. The Proposal's archive precondition includes approved review, blocking findings, Verification, and owner authorization, but not task completion. FormalFactSnapshot exposes change-tasks existence only; it exposes no task-completion status. The Proposal therefore has neither the required gate nor a fail-closed outcome when the required fact is unavailable.",
+      "requiredChange": "Add task completion as an Archive prerequisite. Because the current snapshot cannot represent completion, specify and test a distinct fail-closed tasks-facts-unavailable diagnosis until an upstream snapshot extension exists; do not infer completion from artifact existence, Run history, or chat. Update Design, Spec, Tasks, and the Archive decision path consistently."
+    },
+    {
+      "id": "D1-PR-004",
+      "severity": "P1",
+      "title": "delivery-finalize permits an unrepresentable Full Test not-applicable state",
+      "evidence": "The Proposal requires Full Test passed or not-applicable for delivery-finalize. `not-applicable` belongs to Change VerificationStatus, not Delivery FullTestStatus. B1 FullTestStatus is not-ready | awaiting-user-decision | authorized | passed | failed, and the Delivery lifecycle owner-decision for finalize is conditioned on Full Test passed.",
+      "requiredChange": "Require snapshot.deliveryFullTestStatus = passed for delivery-finalize and add negative table-driven coverage for every non-passed FullTestStatus. Remove Full Test not-applicable from Design, Spec, Tasks, and any related decision rules; it must not be conflated with Change Verification not-applicable."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "resolvedFindings": [
+    {
+      "id": "D1-PR-002",
+      "resolution": "079 consistently makes canRun(review-S) reject lineage match + changes-requested, and makes unified review remain blocked until revise-S produces a new artifact."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "079 source-review provenance",
+        "status": "passed",
+        "result": "079's reviewed source and 074 upstream reference hashes are valid."
+      },
+      {
+        "name": "D1-PR-002 semantic repair",
+        "status": "passed",
+        "result": "Design, Spec, Tasks, and unified-review scenarios now agree that a matching changes-requested Verdict requires revise-S."
+      },
+      {
+        "name": "OpenSpec strict validation",
+        "status": "passed",
+        "result": "openspec validate policy-engine --strict: Change 'policy-engine' is valid."
+      },
+      {
+        "name": "Archive and delivery-finalize fact-model review",
+        "status": "failed",
+        "result": "D1-PR-003 and D1-PR-004 leave required gates omitted or unrepresentable."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-propose",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-090-review-apply",
+  "status": "completed",
+  "verdict": "changes-requested",
+  "summary": "089 fixes the current missing-Verification path: next() now blocks instead of returning review-apply. However, the gate still tests only Verification fact availability. The approved D1 contract requires facts to be both available and passed. The implementation has no passed-state predicate or status result, so a future C1 snapshot with Verification=failed or not-run would be treated as available and incorrectly allow review-apply and the approved-review archive path. Existing tests cover only today's unavailable snapshot and therefore miss this semantic defect.",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-089-revise-apply/",
+  "reviewedResultRef": "content-sha256:0968e0bc9b9a894524021e2bdf6f5ebb564b5b8968f8a9e787cf78f164e20cf3",
+  "sourceReview": {
+    "runId": "20260806-088-review-apply",
+    "verdict": "changes-requested",
+    "resultSha256": "c49495cebbffbd52d8b220e6772534f9d6bda17ef5cc0454e10c18753b3dc27d"
+  },
+  "blockingFindings": [
+    {
+      "id": "D1-RA-002",
+      "severity": "P1",
+      "title": "Verification gate conflates fact availability with a passed result",
+      "location": "src/policy/preconditions.ts:106-120; src/policy/next.ts:214-226, 231-234",
+      "problem": "The only predicate is isVerificationFactAvailable(). Its documented future behavior is to return true when a Verification field exists, and both canRun(review-apply) and next() treat true as sufficient. No predicate or result checks that Verification is passed. The same availability-only check controls the approved-review archive path.",
+      "evidence": "The approved specification requires review-apply facts to be available and passed (spec.md:178-184, 209-215), and distinguishes unavailable from available-but-failed and available-but-not-run (spec.md:382-391). 088's required change also required a future-compatible review-apply case only when Verification is both available and passed. In 089, next.ts calls only isVerificationFactAvailable; preconditions.ts documents that function as availability rather than passed status; no test exercises failed/not-run or a passed gate.",
+      "impact": "The current C1 snapshot remains safely blocked, but the documented future extension would make any present Verification field—including failed or not-run—eligible for review-apply and could then progress an approved review toward archive. This violates the fail-closed Verification contract at the extension boundary.",
+      "requiredChange": "Represent the Verification gate as a status-aware, fail-closed predicate/result used consistently by canRun and next. In D1 it must remain unavailable because C1 exposes no status; when the snapshot is extended, only passed may permit review-apply or archive, while not-run and failed produce their distinct blocked diagnoses. Update the current unavailable tests and add status-result coverage at the gate boundary; do not infer status from Run history, OpenSpec artifacts, or chat."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "resolvedFindings": [
+    "D1-RA-001"
+  ],
+  "verification": [
+    {
+      "name": "Revision provenance",
+      "result": "passed",
+      "evidence": "089 result.json SHA-256 is 0968e0bc9b9a894524021e2bdf6f5ebb564b5b8968f8a9e787cf78f164e20cf3, matching this Run's reviewedResultRef. 089 correctly references the immutable 088 result."
+    },
+    {
+      "name": "D1-RA-001 current-state fix",
+      "result": "passed",
+      "evidence": "With the current C1 snapshot (no Verification status), next() now returns blocked: verification-facts-unavailable before review-apply, matching canRun(review-apply)."
+    },
+    {
+      "name": "Ordinary unit suite",
+      "command": "npm test",
+      "result": "passed",
+      "evidence": "406 tests passed; coverage is insufficient for D1-RA-002 because it does not model an available failed/not-run Verification status."
+    },
+    {
+      "name": "Typecheck",
+      "command": "npm run typecheck",
+      "result": "passed"
+    },
+    {
+      "name": "Lint",
+      "command": "npm run lint",
+      "result": "passed"
+    },
+    {
+      "name": "Build",
+      "command": "npm run build",
+      "result": "passed"
+    },
+    {
+      "name": "OpenSpec strict validation",
+      "command": "npx openspec validate policy-engine --strict",
+      "result": "passed",
+      "evidence": "Change 'policy-engine' is valid."
+    },
+    {
+      "name": "Delivery Full Test",
+      "result": "not-applicable",
+      "evidence": "Not owner-authorized and not run; Apply Review does not authorize Delivery Full Test."
+    }
+  ],
+  "policyRoute": {
+    "basis": "089 is the latest apply artifact Run and 090 returns changes-requested against it. The required revision action is revise-apply.",
+    "nextAction": "revise-apply"
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Action/Run completion does not create a Git commit."
+  },
+  "nextAction": "revise-apply",
+  "nextActionNote": "Author must create a new revise-apply Run to resolve D1-RA-002; do not modify 088, 089, or 090 in place.",
+  "blockedOn": []
+}

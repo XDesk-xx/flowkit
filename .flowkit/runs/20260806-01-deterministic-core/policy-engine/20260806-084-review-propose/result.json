@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-084-review-propose",
+  "status": "completed",
+  "verdict": "changes-requested",
+  "summary": "D1-PR-005 correctly blocks retry after failed Full Test, but full-test remains allowed in awaiting-user-decision. The frozen Full Test state machine requires the owner authorization transition to authorized before execution; an authorization reference alone cannot bypass that Delivery state.",
+  "reviewedResultRef": "run-result:.flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-083-revise-propose/result.json;sha256:de5038b56aa309a8bf335466dd92a6ed93a0ad1b8b07a6b1a0f02c9ec75de742",
+  "blockingFindings": [
+    {
+      "id": "D1-PR-006",
+      "severity": "P1",
+      "title": "full-test is permitted before the Delivery reaches authorized",
+      "evidence": "The Proposal permits full-test for deliveryFullTestStatus in {awaiting-user-decision, authorized} when an authorization scope exists. Frozen verification-model.md defines awaiting-user-decision -> authorized -> passed|failed and states that a Full Test must not execute while not authorized. This permits Policy to bypass the explicit Delivery substate transition.",
+      "requiredChange": "Require deliveryFullTestStatus = authorized for canRun(full-test). In awaiting-user-decision, next must return authorize-full-test when owner authorization is absent; recording/accepting authorization must transition the authoritative Delivery fact to authorized before full-test is legal. Add table-driven cases showing awaiting-user-decision is never runnable, authorized is runnable only with the required authorization, and failed/passed remain non-runnable. Update Design, Spec, Tasks, and diagnostics consistently."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "resolvedFindings": [
+    {
+      "id": "D1-PR-005",
+      "resolution": "failed now returns blocked full-test-failed and does not permit direct full-test retry; the corrective Change reset path is documented and tested."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "083 source-review provenance",
+        "status": "passed",
+        "result": "083's reviewed source and upstream approved-review reference hashes are valid."
+      },
+      {
+        "name": "D1-PR-005 failed-recovery repair",
+        "status": "passed",
+        "result": "failed is rejected and diagnosed as full-test-failed without automatic retry or corrective Change creation."
+      },
+      {
+        "name": "OpenSpec strict validation",
+        "status": "passed",
+        "result": "openspec validate policy-engine --strict: Change 'policy-engine' is valid."
+      },
+      {
+        "name": "Full Test authorization-state review",
+        "status": "failed",
+        "result": "D1-PR-006: awaiting-user-decision is still accepted by canRun(full-test)."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-propose",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-088-review-apply",
+  "status": "completed",
+  "verdict": "changes-requested",
+  "summary": "D1 Apply 087 has one P1 semantic blocker. In the current C1 snapshot, Change Verification facts are unavailable. canRun(snapshot, 'review-apply') correctly rejects that state, but next(snapshot) bypasses the same gate and returns action: review-apply. This permits the Review action despite the frozen requirement to fail closed. Ordinary tests, typecheck, lint, build, and OpenSpec strict validation pass, but the existing tests encode the incorrect next() behavior.",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-087-apply/",
+  "reviewedResultRef": "content-sha256:7505b2a3b0d59476e34dac314c2041f0ec8b7fc8665e90aaca929f7f163a47af",
+  "sourceReview": {
+    "runId": "20260806-086-review-propose",
+    "verdict": "approved",
+    "resultSha256": "bc4cafd502a19c6771ee9c9c931f16625f0bdeada46eabb6f114651869351505"
+  },
+  "blockingFindings": [
+    {
+      "id": "D1-RA-001",
+      "severity": "P1",
+      "title": "next() bypasses the Verification-facts gate before review-apply",
+      "location": "src/policy/next.ts:214-215",
+      "problem": "When the apply artifact has no matching review, decideApplyStage returns action: review-apply without checking Change Verification. In the same snapshot, src/policy/preconditions.ts makes canRun(snapshot, 'review-apply') return allowed:false with verification-facts-unavailable because C1 currently carries no Change Verification status.",
+      "evidence": "The approved D1 spec requires review-apply to have Verification facts available and passed (spec.md:178-184 and 209-215). Its D1-7 scenario requires next() to return blocked: verification-facts-unavailable and canRun(review-apply) to reject when those facts are unavailable (spec.md:382-391). next.ts returns review-apply before its only isVerificationFactAvailable check, which occurs only after an approved review. next.test.ts:339-357 and 497-506 assert this incorrect action result, while preconditions tests assert the opposite gate.",
+      "impact": "The Policy reports a Review action as legal while its own canRun contract rejects it. With the current C1 snapshot this occurs for every unreviewed Apply artifact, allowing a review to be created from unavailable Verification facts instead of failing closed.",
+      "requiredChange": "Make the no-lineage apply branch in next() honor the same Verification gate as canRun(): with unavailable Verification facts it must return blocked: verification-facts-unavailable, never action: review-apply. Keep the later approved-review archive gate. Update the lifecycle and next() tests to assert the D1-7 blocked result and retain a future-compatible review-apply case only when Verification is both available and passed."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "verification": [
+    {
+      "name": "Apply Run provenance",
+      "result": "passed",
+      "evidence": "087 result.json SHA-256 is 7505b2a3b0d59476e34dac314c2041f0ec8b7fc8665e90aaca929f7f163a47af, matching this Run's reviewedResultRef."
+    },
+    {
+      "name": "Ordinary unit suite",
+      "command": "npm test",
+      "result": "passed",
+      "evidence": "406 tests passed; the suite does not expose D1-RA-001 because next.test.ts currently asserts the incorrect review-apply action."
+    },
+    {
+      "name": "Typecheck",
+      "command": "npm run typecheck",
+      "result": "passed"
+    },
+    {
+      "name": "Lint",
+      "command": "npm run lint",
+      "result": "passed"
+    },
+    {
+      "name": "Build",
+      "command": "npm run build",
+      "result": "passed"
+    },
+    {
+      "name": "OpenSpec strict validation",
+      "command": "npx openspec validate policy-engine --strict",
+      "result": "passed",
+      "evidence": "Change 'policy-engine' is valid."
+    },
+    {
+      "name": "Delivery Full Test",
+      "result": "not-applicable",
+      "evidence": "Not owner-authorized and not run; Apply Review does not authorize Delivery Full Test."
+    }
+  ],
+  "policyRoute": {
+    "basis": "087 is the latest apply artifact Run and 088 returns changes-requested against it. The required revision action is revise-apply.",
+    "nextAction": "revise-apply"
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Action/Run completion does not create a Git commit."
+  },
+  "nextAction": "revise-apply",
+  "nextActionNote": "Author must create a new revise-apply Run that addresses D1-RA-001; do not modify 087 or 088 in place.",
+  "blockedOn": []
+}

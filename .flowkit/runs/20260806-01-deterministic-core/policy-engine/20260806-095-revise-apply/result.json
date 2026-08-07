@@ -1,0 +1,221 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-095-revise-apply",
+  "status": "completed",
+  "summary": "D1 policy-engine revise-apply 095 resolves D1-RA-004 (P1, blocking): the Change-owned verification.md was stale after 091 (D1-RA-002) and 093 (D1-RA-003) — it still recorded only 087/089, 406/406 tests, and D1-RA-001, while docs/verification-model.md Section 7 requires verification.md as the formal Change record that result.json cannot replace. Per the finding requiredChange, 095 updates ONLY openspec/changes/policy-engine/verification.md: Section 2 unit-test row 406/406→424/424 (113 suites; Policy subset 174/174, 59 suites); adds D1-RA-002/D1-RA-003/D1-RA-004 check rows; Section 3 adds 091/093/095 revise-apply + 090/092/094 review-apply references; Section 6 rewritten to describe 091/093/095 revision history with D1-RA-002/D1-RA-003/D1-RA-004 fix narratives; Section 7 next action updated to review 095. Full Test stays not-applicable; overall Change Verification status stays passed. Ordinary checks re-run and recorded: typecheck/build/lint/test 424/424/openspec strict all pass. No production code / tests / proposal bundle / frozen docs / terminal Runs modified. consistencyScan 7 dimensions, 0 contradictions. Next action: review-apply.",
+  "inputRef": "b07d894d83a3e6c03d87cd6e925e65887fb20f10bab78e72563c38ee870dda8f",
+  "inputRefNote": "SHA-256 of 20260806-094-review-apply/result.json (the review whose changes-requested verdict + D1-RA-004 triggered this revision). Matches the revise-apply precedent: 089 inputRef = 088 result SHA; 091 inputRef = 090 result SHA; 093 inputRef = 092 result SHA.",
+  "sourceReviewRef": "094-review-apply:b07d894d83a3e6c03d87cd6e925e65887fb20f10bab78e72563c38ee870dda8f",
+  "sourceReviewVerdict": "changes-requested",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-093-revise-apply/",
+  "findingsAddressed": [
+    {
+      "id": "D1-RA-004",
+      "severity": "P1",
+      "origin": "20260806-094-review-apply",
+      "title": "Change Verification record is stale after the latest revise-apply Runs",
+      "rootCause": "091-revise-apply (D1-RA-002) and 093-revise-apply (D1-RA-003) updated Run result.json, production code, and the proposal bundle, but did not sync the Change-owned verification.md. The file stayed at its 087/089 state: 406/406 tests, only a D1-RA-001 check row, and result references ending at 089. docs/verification-model.md Section 7 requires verification.md as the formal Change record and states result.json cannot replace it; Section 3.3/3.4 require Verification to be updated after revise-apply before re-entering review-apply. The stale record therefore could not support a review-apply approval or the Archive boundary.",
+      "fix": "Updated only openspec/changes/policy-engine/verification.md. Section 2: unit-test row 406/406 (109 suites; Policy subset 156/156, 55 suites) → 424/424 (113 suites; Policy subset 174/174, 59 suites); added three check rows — D1-RA-002 (status-aware verification gate), D1-RA-003 (not-applicable → satisfied), D1-RA-004 (Change Verification record update); updated 'Change Verification 记录' row to note refresh to 095. Section 3: added 091 (D1-RA-002, 423/423), 093 (D1-RA-003, 424/424), 095 (this Run) revise-apply references and 090/092/094 review-apply references. Section 6: rewritten to describe the 091/093/095 revision history with D1-RA-002/D1-RA-003/D1-RA-004 fix narratives; notes ordinary checks were re-run. Section 7: next action updated to review 095-revise-apply. Full Test stays not-applicable; overall Change Verification status stays passed.",
+      "verificationEvidence": "verification.md Section 2 unit-test row now reads 424/424 (113 suites); Policy subset 174/174 (59 suites) — matches actual npm test output (# tests 424, # suites 113) and policy-subset run (# tests 174, # suites 59). New D1-RA-002/D1-RA-003/D1-RA-004 rows reference 091/093/095. Section 3 lists 091/093/095 revise-apply + 090/092/094 review-apply. Section 6 documents all four RA findings. openspec validate policy-engine --strict: 'Change policy-engine is valid' after the update."
+    }
+  ],
+  "modifiedFiles": [
+    {
+      "path": "openspec/changes/policy-engine/verification.md",
+      "sha256": "14b7adbe8b832fc8d255ff990a66ee56458336f1a78a52b28b2d8ce315a31613",
+      "modified": true,
+      "changeSummary": "D1-RA-004: refreshed stale Change Verification record — 406/406→424/424, added D1-RA-002/D1-RA-003/D1-RA-004 check rows, added 091/093/095 + 090/092/094 Run references, rewrote Section 6 revision history, updated Section 7 next action. Full Test stays not-applicable; overall status stays passed."
+    }
+  ],
+  "consistencyScan": {
+    "scanType": "focused",
+    "triggerRun": "20260806-094-review-apply (changes-requested, D1-RA-004)",
+    "modifiedConcepts": [
+      "verification.md Section 2 unit-test count 406→424 + new D1-RA-002/D1-RA-003/D1-RA-004 rows",
+      "verification.md Section 3 Run references extended to 091/093/095 + 090/092/094",
+      "verification.md Section 6 revision history rewritten for 091/093/095",
+      "verification.md Section 7 next action → review 095"
+    ],
+    "dimensions": [
+      {
+        "id": "CS-01",
+        "name": "D1-RA-004 fix correctness (verification.md no longer stale)",
+        "concept": "verification.md references 091/093, records D1-RA-002/D1-RA-003, shows 424/424 not 406/406",
+        "checks": [
+          "Section 2 unit-test row: 424/424 (113 suites); Policy subset 174/174 (59 suites) — matches actual npm test + policy-subset output",
+          "Section 2 has D1-RA-002 row (091, status-aware gate) + D1-RA-003 row (093, not-applicable → satisfied) + D1-RA-004 row (095, record update)",
+          "Section 3 lists 091-revise-apply (423/423), 093-revise-apply (424/424), 095-revise-apply (this Run), and 090/092/094 review-apply",
+          "Section 6 describes D1-RA-002/D1-RA-003/D1-RA-004 fix narratives",
+          "No remaining reference to 406/406 as the current test count"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-02",
+        "name": "verification.md conforms to verification-model.md Section 7 structure",
+        "concept": "Section 7 requires: scope, applicability, command/method, status, summary, result refs/env, Full Test run?, overall status",
+        "checks": [
+          "Section 1 验证范围 — present (unchanged)",
+          "Section 2 适用检查与结果 — table with 检查/适用性/命令/状态/摘要 columns — present, expanded",
+          "Section 3 结果引用与环境 — present, expanded with 091/093/095/090/092/094",
+          "Section 4 Full Test — present, not-applicable (unchanged)",
+          "Section 7 总体 Change Verification 状态 — present, passed",
+          "All seven Section 7 fields covered"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-03",
+        "name": "No code / tests / proposal bundle / frozen docs / terminal Runs modified",
+        "concept": "095 touches only verification.md; everything else immutable",
+        "checks": [
+          "src/**/*.ts — not modified (mayWriteProductionCode: false)",
+          "tests/**/*.ts — not modified (mayWriteTestCode: false)",
+          "proposal.md / design.md / spec.md / tasks.md — not modified (mayModifyProposalArtifacts: false)",
+          "docs/verification-model.md / docs/delivery-lifecycle.md — not modified (frozen)",
+          "B1/C1 archived specs / src/domain/states.ts — not modified",
+          "069–094 terminal Run directories — not modified (terminal immutability)",
+          "Only openspec/changes/policy-engine/verification.md modified"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-04",
+        "name": "Full Test stays not-applicable (no unauthorized Full Test)",
+        "concept": "Full Test is Delivery-level; not authorized in this Change-level revise-apply",
+        "checks": [
+          "verification.md Section 4: Full Test 未运行, not-applicable (unchanged)",
+          "verification.md Section 2 Full Test row: not-applicable (unchanged)",
+          "AGENTS.md rule #5: revise-apply must not auto-trigger Full Test (mayFullTest: false)",
+          "No Full Test executed or authorized"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-05",
+        "name": "Overall Change Verification status stays passed (no regression)",
+        "concept": "Refreshing the record does not change verification status; all applicable checks still pass",
+        "checks": [
+          "verification.md Section 7: **passed** (unchanged)",
+          "All Section 2 applicable checks status = passed; Full Test = not-applicable",
+          "No not-run or failed check introduced",
+          "D1 still satisfies review-apply/archive Verification precondition"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-06",
+        "name": "Ordinary checks re-run with actual outcomes recorded (verification-model.md 3.4)",
+        "concept": "revise-apply must re-run focused/affected checks and record actual results, not skip verification",
+        "checks": [
+          "npm run typecheck: passed (production + test, no errors)",
+          "npm run build: passed (tsc, no errors)",
+          "npm run lint: passed (eslint, no errors)",
+          "npm test: 424/424 passed (0 fail) — matches verification.md Section 2 recorded count",
+          "npx openspec validate policy-engine --strict: 'Change policy-engine is valid' (after verification.md update)",
+          "Policy subset: 174/174 passed (59 suites) — matches verification.md Section 2 recorded count"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-07",
+        "name": "Consistency with prior revision records (D1-RA-001/002/003 narratives accurate)",
+        "concept": "verification.md D1-RA-002/D1-RA-003 narratives match what 091/093 actually did",
+        "checks": [
+          "D1-RA-002 narrative: verification-gate.ts, VerificationGateResult (unavailable/satisfied/failed/not-run), evaluateVerificationGate shared by canRun/next — matches 091",
+          "D1-RA-003 narrative: not-applicable → satisfied, gate kind passed → satisfied, spec/design/tasks aligned to frozen contract, FullTestStatus unchanged — matches 093",
+          "D1-RA-001 narrative retained from 089 (next() !lineage.match gate) — unchanged",
+          "D1-RA-004 narrative: this Run updates verification.md only — matches actual scope",
+          "Run references' test counts (087:406, 089:406, 091:423, 093:424, 095:424) are internally consistent"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      }
+    ],
+    "totalContradictions": 0,
+    "overallResult": "pass"
+  },
+  "verificationResults": {
+    "typecheck": {
+      "command": "npm run typecheck",
+      "status": "passed",
+      "result": "tsc --noEmit (production) + tsc --noEmit -p tsconfig.test.json (test) passed with no errors."
+    },
+    "build": {
+      "command": "npm run build",
+      "status": "passed",
+      "result": "tsc emitted production build with no errors."
+    },
+    "test": {
+      "command": "npm test",
+      "status": "passed",
+      "result": "424/424 tests passed (0 fail, 113 suites). Policy subset 174/174 (59 suites). Matches verification.md Section 2 recorded count."
+    },
+    "lint": {
+      "command": "npm run lint",
+      "status": "passed",
+      "result": "eslint completed with no errors."
+    },
+    "openspecValidate": {
+      "command": "npx openspec validate policy-engine --strict",
+      "status": "passed",
+      "result": "Change 'policy-engine' is valid (re-run after verification.md update)."
+    },
+    "fullTest": {
+      "status": "not-applicable",
+      "result": "Not authorized in this Run; Full Test is Delivery-level and requires owner authorization per AGENTS.md rule #5. revise-apply constraints mayFullTest=false."
+    }
+  },
+  "mutationPolicyCheck": {
+    "mayModifyProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyVerificationRecord": true,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false,
+    "proposalBundleModified": false,
+    "productionCodeWritten": false,
+    "testCodeWritten": false,
+    "verificationRecordModified": true,
+    "frozenSpecsModified": false,
+    "frozenDocsModified": false,
+    "terminalRunsModified": false,
+    "b1StatesTsModified": false,
+    "manifestModified": false,
+    "filesWritten": [
+      "openspec/changes/policy-engine/verification.md (modified — D1-RA-004: refreshed stale record to 424/424 + D1-RA-002/003/004)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-095-revise-apply/context.json (new Run)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-095-revise-apply/action.md (new Run)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-095-revise-apply/result.json (new Run)"
+    ]
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "prohibitedWorkCheck": {
+    "productionCodeModified": false,
+    "testCodeModified": false,
+    "proposalBundleModified": false,
+    "frozenSpecsModified": false,
+    "frozenDocsModified": false,
+    "terminalRunsModified": false,
+    "changeCheckpointExecuted": false,
+    "fullTestExecuted": false,
+    "scopeExpanded": false,
+    "fullTestStatusGateModified": false,
+    "newInconsistencyIntroduced": false,
+    "autoCommit": false
+  },
+  "nextAction": "review-apply",
+  "nextActionNote": "reviewer 审查 095-revise-apply，重点验证 D1-RA-004 是否真正解决：(1) verification.md Section 2 单元测试行已从 406/406 更新为 424/424（113 suites；Policy 子集 174/174，59 suites），与实际 npm test 输出一致；(2) 新增 D1-RA-002（091 status-aware gate）、D1-RA-003（093 not-applicable → satisfied）、D1-RA-004（095 本记录更新）三行检查，均为 passed；(3) Section 3 结果引用补充 091/093/095 revise-apply 与 090/092/094 review-apply；(4) Section 6 补充说明重写，描述 D1-RA-001/002/003/004 全部修复历程，说明 095 仅更新本文件、未改代码/测试/proposal/冻结文档/terminal Runs；(5) Section 7 下一 Action 更新为审查 095；(6) Full Test 仍 not-applicable，总体 Change Verification 状态仍 passed；(7) ordinary checks 重新执行（typecheck/build/lint/test 424/424/openspec strict 全通过）；(8) 本 Run 仅修改 verification.md，未修改生产代码/测试/proposal bundle/冻结文档/B1 states.ts/069–094 terminal Runs；(9) consistencyScan 7 维度 0 contradictions。如 approved 则进入 archive（需 owner 授权）；如 changes-requested 则进入 revise-apply。",
+  "blockedOn": []
+}

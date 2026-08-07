@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-079-revise-propose",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "D1",
+  "changeId": "policy-engine",
+  "action": "revise-propose",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "inputRef": {
+    "ref": "run-result:.flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-074-review-explore/result.json",
+    "versionFingerprint": "sha256:b1323433400ff5aa39027adc7196a9cd69492773e60630d38798e8388ad4e293"
+  },
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-078-review-propose/",
+  "sourceReviewRun": "20260806-078-review-propose",
+  "sourceReviewVerdict": "changes-requested",
+  "sourceChangeState": "D1 policy-engine: active (explore approved via 074; propose 075/077 reviewed by 076/078; 078 changes-requested D1-PR-002)",
+  "triggerFindings": [
+    {
+      "id": "D1-PR-002",
+      "severity": "P1",
+      "origin": "20260806-078-review-propose",
+      "title": "review-S precondition permits a Review when the matching Verdict requires Revision"
+    }
+  ],
+  "inputRefSemantics": "inputRef cites 074-review-explore/result.json (the approved source review that authorizes the propose stage) with its actual immutable SHA-256, consistent with 077. reviewedRun names 078-review-propose, the review whose changes-requested verdict and D1-PR-002 finding triggered this revision. Unlike 077 (provenance carry-forward), 079 modifies the Proposal bundle content (spec.md, design.md, tasks.md) to fix the D1-PR-002 semantic contradiction; proposal.md is unchanged.",
+  "constraints": {
+    "mayReadFormalDocs": true,
+    "mayReadFrozenSpecs": true,
+    "mayReadRefDocs": true,
+    "mayWriteProposalArtifacts": true,
+    "mayModifyManifest": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-079-revise-propose/"
+}

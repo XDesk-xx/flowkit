@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-075-propose",
+  "status": "completed",
+  "summary": "D1 policy-engine propose 完成。基于 074-review-explore approved 的 explore conclusion 生成 proposal.md、design.md、specs/flowkit-policy-engine/spec.md（19 ADDED Requirements, 65 Scenarios）、tasks.md（101 tasks）。spec 覆盖 Policy 三函数纯函数契约、Lineage 模型（D1-8 reviewedRunId 追踪）、12 个 Action 前置条件矩阵、fail-closed 冲突优先、owner 决策边界、Verification 事实不可用 blocked（D1-7）、ownerAuthorizations 空数组 owner-decision、统一 review/revise 入口解析、diagnose、不持久化 currentAction、不自创 Action/状态、failed/cancelled 重试、阶段识别、不实现 CLI/执行循环。OpenSpec strict validation 通过。typecheck 和 lint 保持通过。未创建 Git Commit。",
+  "sourceReviewRef": "074-review-explore:c672e7621062bb95c8dba3b68a8fee38d5529d8bef6ae86cfb3e811bae8792e9",
+  "sourceReviewVerdict": "approved",
+  "proposeResults": {
+    "artifacts": {
+      "proposal": "openspec/changes/policy-engine/proposal.md",
+      "design": "openspec/changes/policy-engine/design.md",
+      "spec": "openspec/changes/policy-engine/specs/flowkit-policy-engine/spec.md",
+      "tasks": "openspec/changes/policy-engine/tasks.md"
+    },
+    "specStats": {
+      "requirements": 19,
+      "scenarios": 65,
+      "allAdded": true
+    },
+    "taskStats": {
+      "total": 101,
+      "completed": 0,
+      "pending": 101
+    },
+    "designDecisions": 9,
+    "filesPlanned": {
+      "production": [
+        "src/policy/types.ts",
+        "src/policy/lineage.ts",
+        "src/policy/stage-detector.ts",
+        "src/policy/preconditions.ts",
+        "src/policy/can-run.ts",
+        "src/policy/next.ts",
+        "src/policy/diagnose.ts",
+        "src/policy/owner-decision.ts",
+        "src/policy/blocked-diagnosis.ts"
+      ],
+      "tests": [
+        "tests/unit/policy/types.test.ts",
+        "tests/unit/policy/lineage.test.ts",
+        "tests/unit/policy/stage-detector.test.ts",
+        "tests/unit/policy/preconditions.test.ts",
+        "tests/unit/policy/can-run.test.ts",
+        "tests/unit/policy/next.test.ts",
+        "tests/unit/policy/diagnose.test.ts"
+      ]
+    },
+    "resolvedFindingsCarriedForward": [
+      {
+        "id": "D1-EX-001",
+        "resolution": "Lineage 模型（D1-8）通过 reviewedRunId 追踪 review/artifact 关系，允许 revise→review 循环。spec Requirement 'Review/Revision lineage by reviewed Run' + 6 Scenarios 覆盖。"
+      },
+      {
+        "id": "D1-EX-002",
+        "resolution": "Verification 事实不可用时 blocked（D1-7），ownerAuthorizations 空数组时 owner-decision。spec Requirement 'Verification 事实不可用时 blocked' + 'ownerAuthorizations 空数组时 owner-decision' + 8 Scenarios 覆盖。"
+      },
+      {
+        "id": "D1-EX-003",
+        "resolution": "073-revise-explore 已修正 071 inputRef provenance，074-review-explore approved。本 propose Run 的 inputRef 正确引用 074 result SHA-256。"
+      }
+    ]
+  },
+  "verificationResults": {
+    "openspecValidate": {
+      "command": "npx openspec validate policy-engine --strict",
+      "status": "passed",
+      "result": "Change 'policy-engine' is valid"
+    },
+    "typecheck": {
+      "command": "npm run typecheck",
+      "status": "passed",
+      "result": "Production and test TypeScript projects passed."
+    },
+    "lint": {
+      "command": "npm run lint",
+      "status": "passed",
+      "result": "eslint completed with no errors."
+    },
+    "fullTest": {
+      "status": "not-applicable",
+      "result": "Not authorized and not run."
+    }
+  },
+  "mutationPolicyCheck": {
+    "mayCreateProposalArtifacts": true,
+    "frozenSpecsModified": false,
+    "terminalRunsModified": false,
+    "productionCodeWritten": false,
+    "testCodeWritten": false,
+    "manifestModified": false,
+    "filesWritten": [
+      "openspec/changes/policy-engine/.openspec.yaml (new)",
+      "openspec/changes/policy-engine/proposal.md (new)",
+      "openspec/changes/policy-engine/design.md (new)",
+      "openspec/changes/policy-engine/specs/flowkit-policy-engine/spec.md (new)",
+      "openspec/changes/policy-engine/tasks.md (new)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-075-propose/context.json (new Run)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-075-propose/action.md (new Run)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-075-propose/result.json (new Run)"
+    ]
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "nextAction": "review-propose",
+  "nextActionNote": "reviewer 审查 D1 proposal、design、specs、tasks。重点验证：(1) spec 是否完整覆盖 conclusion 的三函数契约、Lineage 模型、前置条件矩阵、fail-closed、owner-decision、verification blocked、统一入口解析；(2) D1-EX-001/D1-EX-002 的修复是否在 spec 中正式化为 Requirement+Scenario；(3) tasks 是否覆盖全部实现工作（9 生产文件 + 7 测试文件 + 验证）；(4) 不修改冻结 specs（B1/C1）；(5) 不自创 Action/状态；(6) openspec validate --strict 通过。如 approved 则进入 apply（需 owner 授权）；如 changes-requested 则进入 revise-propose。",
+  "blockedOn": []
+}

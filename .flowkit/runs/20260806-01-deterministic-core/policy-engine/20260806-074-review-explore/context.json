@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-074-review-explore",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "D1",
+  "changeId": "policy-engine",
+  "action": "review-explore",
+  "role": "reviewer",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-073-revise-explore/",
+  "reviewedResultRef": "content-sha256:403a638468d1b2edbbe4f43e55c9698e063094a2a63d40e77d46fc7937cb98a5",
+  "sourceReviewRun": "20260806-072-review-explore",
+  "sourceReviewVerdict": "changes-requested",
+  "inputs": [
+    ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-070-review-explore/result.json",
+    ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-071-revise-explore/context.json",
+    ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-072-review-explore/result.json",
+    ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-073-revise-explore/context.json",
+    ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-073-revise-explore/result.json",
+    ".tmp/explore/policy-engine/conclusion.md",
+    ".tmp/explore/policy-engine/evidence.json",
+    "docs/delivery-lifecycle.md",
+    "docs/core-model.md",
+    "src/facts/formal-fact-snapshot.ts",
+    "src/facts/formal-fact-reader.ts"
+  ],
+  "constraints": {
+    "readOnlyExceptCurrentRun": true,
+    "fullTestAllowed": false,
+    "mayPropose": false,
+    "mayApply": false,
+    "mayArchive": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-074-review-explore/"
+}

@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-081-revise-propose",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "D1",
+  "changeId": "policy-engine",
+  "action": "revise-propose",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "inputRef": {
+    "ref": "run-result:.flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-074-review-explore/result.json",
+    "versionFingerprint": "sha256:b1323433400ff5aa39027adc7196a9cd69492773e60630d38798e8388ad4e293"
+  },
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-080-review-propose/",
+  "sourceReviewRun": "20260806-080-review-propose",
+  "sourceReviewVerdict": "changes-requested",
+  "sourceChangeState": "D1 policy-engine: active (explore approved via 074; propose 075/077/079 reviewed by 076/078/080; 080 changes-requested D1-PR-003 + D1-PR-004; D1-PR-001/002 resolved)",
+  "triggerFindings": [
+    {
+      "id": "D1-PR-003",
+      "severity": "P1",
+      "origin": "20260806-080-review-propose",
+      "title": "Archive gate omits mandatory task completion and has no fact-availability behavior"
+    },
+    {
+      "id": "D1-PR-004",
+      "severity": "P1",
+      "origin": "20260806-080-review-propose",
+      "title": "delivery-finalize permits an unrepresentable Full Test not-applicable state"
+    }
+  ],
+  "inputRefSemantics": "inputRef cites 074-review-explore/result.json (the approved source review that authorizes the propose stage) with its actual immutable SHA-256 (b1323433...), consistent with 077/079. reviewedRun names 080-review-propose, the review whose changes-requested verdict and D1-PR-003/D1-PR-004 findings triggered this revision. 081 modifies the Proposal bundle content (spec.md, design.md, tasks.md) to add the Archive task-completion gate (D1-11) and fix delivery-finalize to require FullTestStatus=passed strictly (D1-12); proposal.md is unchanged. The explore conclusion (.tmp/explore/policy-engine/conclusion.md, gitignored scratch) is also aligned to maintain 0 cross-reference contradictions.",
+  "constraints": {
+    "mayReadFormalDocs": true,
+    "mayReadFrozenSpecs": true,
+    "mayReadRefDocs": true,
+    "mayWriteProposalArtifacts": true,
+    "mayModifyManifest": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-081-revise-propose/"
+}

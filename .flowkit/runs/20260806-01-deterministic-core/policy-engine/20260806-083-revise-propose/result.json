@@ -1,0 +1,354 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-083-revise-propose",
+  "status": "completed",
+  "summary": "D1 policy-engine revise-propose 083 resolves D1-PR-005 (full-test precondition allowed direct retry after failed Full Test). D1-PR-005 fix: restricted full-test eligibility to pre-execution FullTestStatus states (awaiting-user-decision, authorized) per frozen verification-model.md Section 4.2; added blocked:full-test-failed behavior for failed status per frozen Section 6 (fullTestStatus preserved, owner decides corrective Change or cancel, no auto-retry, no auto-create corrective Change); added full-test-already-passed rejection for passed status; added corrective-Change reset path (fullTestStatus returns not-ready). Added design decision D1-13 with full FullTestStatus × full-test behavior matrix, blocked-vs-owner-decision distinction (per D1-9), and complementarity with D1-12. Added 4 spec scenarios, 2 tasks (4.18, 10.23), updated 4.12/7.4. proposal.md unchanged; spec.md/design.md/tasks.md modified with verified hashes; conclusion.md (gitignored scratch) aligned for 0 contradictions. Full consistencyScan covers 14 dimensions with 0 contradictions. OpenSpec strict validation passed. Terminal Runs 075-082 verified unchanged. D1-PR-001/002/003/004 remain resolved.",
+  "sourceReviewRef": "082-review-propose:4172186636dc15fcdf9891e89199fa0a91c70c3e14a473e70865cfa599a80646",
+  "sourceReviewVerdict": "changes-requested",
+  "proposalBundle": {
+    "carryForward": false,
+    "note": "D1-PR-005 is a content defect. spec.md, design.md, tasks.md are modified to restrict full-test eligibility to pre-execution states and add blocked:full-test-failed behavior (D1-13). proposal.md is unchanged (no motivation/scope/impact change needed).",
+    "artifacts": {
+      "proposal": {
+        "path": "openspec/changes/policy-engine/proposal.md",
+        "sha256": "6d86964a196f76c76652b2978274ee88f2b0c4556d93830a3ebd1caef1c77cec",
+        "previousSha256": "6d86964a196f76c76652b2978274ee88f2b0c4556d93830a3ebd1caef1c77cec",
+        "modified": false
+      },
+      "design": {
+        "path": "openspec/changes/policy-engine/design.md",
+        "sha256": "1c120b9efc682c40c93ea7f68d705e41f00b8b0dc1c56526b4469ca3d0cb1170",
+        "previousSha256": "3fed2ee229238ac790b6dbd35545030e7ab9ab9750411bac70174387c32697c3",
+        "modified": true,
+        "changeSummary": "Added D1-13 (full-test eligibility restricted to pre-execution states; failed → blocked:full-test-failed). Updated D1-12 complementarity reference to D1-13."
+      },
+      "spec": {
+        "path": "openspec/changes/policy-engine/specs/flowkit-policy-engine/spec.md",
+        "sha256": "f358e2e187797c5b3540968fddd03fbf9133a3d051f20f6b390ca95c650b4b71",
+        "previousSha256": "1786d5c9db601daec3d14f369d39412a2b9442ca28854e583f29d00b040a8ee3",
+        "modified": true,
+        "changeSummary": "D1-PR-005: full-test precondition restricted to deliveryFullTestStatus ∈ {awaiting-user-decision, authorized}; added full-test failed/passed rejection scenarios; added full-test-failed blocked diagnosis scenario + corrective-Change reset scenario; updated authorize-full-test scenario precision; updated owner-decision and blocked-diagnosis descriptions with D1-13 + frozen Section 6 alignment."
+      },
+      "tasks": {
+        "path": "openspec/changes/policy-engine/tasks.md",
+        "sha256": "539e0f4724bb6b50f3cec4bf8381f24d3504b172d1a79350052d3b19dc9aae18",
+        "previousSha256": "f929545181ea007e02ec1af02eb84d576fac504522d3b786c1f320b8eaa2e622",
+        "modified": true,
+        "changeSummary": "Fixed 4.12 (full-test pre-execution states) and 7.4 (full-test-failed reason behavior); added 4.18 (full-test failed/passed rejection + blocked) and 10.23 (table-driven full-test FullTestStatus coverage + corrective-Change reset)."
+      }
+    },
+    "strictValidation": {
+      "command": "npx openspec validate policy-engine --strict",
+      "status": "passed",
+      "result": "Change 'policy-engine' is valid"
+    }
+  },
+  "findingsAddressed": [
+    {
+      "id": "D1-PR-005",
+      "severity": "P1",
+      "origin": "20260806-082-review-propose",
+      "title": "full-test precondition allows direct retry after a failed Full Test",
+      "rootCause": "The spec 'Delivery-level Action 前置条件' defined full-test as allowed when deliveryFullTestStatus != passed. Since failed != passed, failed satisfied the precondition, allowing direct full-test retry. This violated frozen verification-model.md Section 6, which requires fullTestStatus to remain failed and Policy to return an owner decision boundary or blocked diagnosis. The owner may authorize a corrective Change or cancel, and only the corrective Change resets the status to not-ready before another Full Test cycle.",
+      "fix": "Restricted full-test precondition to deliveryFullTestStatus ∈ {awaiting-user-decision, authorized} (pre-execution states per frozen Section 4.2). Added blocked:full-test-failed for failed status with suggestedOwnerActions listing corrective Change or cancel Delivery (per frozen Section 6: fullTestStatus preserved, no auto-retry, no auto-create corrective Change). Added full-test-already-passed rejection for passed status. Added corrective-Change reset path scenario (fullTestStatus returns not-ready). Added design decision D1-13 with full FullTestStatus × full-test behavior matrix, blocked-vs-owner-decision distinction (per D1-9: owner has multiple choices so blocked not owner-decision), and complementarity with D1-12. Added 4 spec scenarios, 2 tasks (4.18, 10.23), updated 4.12/7.4. Updated conclusion (scratch) Section 3.2/3.3/5/9.",
+      "verificationEvidence": "spec.md full-test precondition now says 'deliveryFullTestStatus ∈ {awaiting-user-decision, authorized}' + 'D1-13'. New scenario 'full-test 在 failed 时拒绝并返回 blocked' asserts allowed:false + full-test-already-failed + next blocked:full-test-failed + suggestedOwnerActions + MUST NOT action:full-test. New scenario 'full-test 在 passed 时拒绝' asserts allowed:false + full-test-already-passed. New scenario 'Full Test failed diagnosis' asserts diagnose reason=full-test-failed + suggestedOwnerActions + MUST NOT action:full-test + MUST NOT auto-create corrective Change. New scenario 'full-test-failed 后 corrective Change 重置 fullTestStatus' asserts reset path. design.md D1-13 documents frozen Section 4.2/6 alignment + FullTestStatus × full-test matrix + blocked-vs-owner-decision + D1-12 complementarity. tasks 4.12/4.18/7.4/10.23 enforce. verification-model.md:167-181 Section 6 cited as frozen authority."
+    }
+  ],
+  "keyFindings": [
+    "D1-PR-005 is a content defect: full-test precondition used deliveryFullTestStatus ≠ passed, which incorrectly included failed as eligible.",
+    "Frozen verification-model.md Section 4.2 defines FullTestStatus transitions: not-ready → awaiting-user-decision → authorized → passed|failed. Only awaiting-user-decision and authorized are pre-execution states where full-test can run.",
+    "Frozen verification-model.md Section 6 requires: failed status preserved, Policy returns owner-decision/blocked (not action:full-test), owner authorizes corrective Change or cancel, corrective Change resets fullTestStatus to not-ready.",
+    "full-test-failed is blocked (not owner-decision) per D1-9: owner has multiple legitimate choices (corrective Change or cancel), so system cannot determine a unique next Action. suggestedOwnerActions lists the options.",
+    "D1-13 (full-test eligibility) complements D1-12 (delivery-finalize requires passed): full-test allowed only in pre-execution states, delivery-finalize only in passed, failed → blocked:full-test-failed.",
+    "proposal.md unchanged; spec.md/design.md/tasks.md modified with verified hashes; conclusion.md (gitignored scratch) aligned for 0 contradictions; openspec validate --strict passed.",
+    "D1-PR-001 (provenance), D1-PR-002 (canRun(review-S) contradiction), D1-PR-003 (archive task gate), D1-PR-004 (delivery-finalize not-applicable) remain resolved — 079/081 fixes are intact and unmodified."
+  ],
+  "sourceFactsRead": {
+    "formalDocs": [
+      "docs/verification-model.md (Section 4.1 FullTestStatus enum, Section 4.2 state transitions: not-ready→awaiting-user-decision→authorized→passed|failed, Section 5 authorization boundary, Section 6 Full Test failed recovery: fullTestStatus preserved, owner corrective Change or cancel, corrective Change resets to not-ready)",
+      "docs/delivery-lifecycle.md (Section 2.1 Delivery 完成, Section 5 Policy inputs)"
+    ],
+    "frozenSpecs": [
+      "openspec/specs/flowkit-domain-and-state-schema/spec.md (B1)",
+      "openspec/specs/flowkit-formal-fact-reader-and-persistence/spec.md (C1)"
+    ],
+    "sourceCode": [
+      "src/domain/types.ts:49-54 (FullTestStatus = not-ready | awaiting-user-decision | authorized | passed | failed — NO not-applicable)"
+    ],
+    "exploreArtifact": [
+      ".tmp/explore/policy-engine/conclusion.md (Section 3.2 delivery actions, 3.3 owner decision boundary, 5 blocked diagnosis — all aligned)"
+    ],
+    "reviewRuns": [
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-082-review-propose/result.json (verdict: changes-requested; finding D1-PR-005; SHA-256 4172186636dc15fcdf9891e89199fa0a91c70c3e14a473e70865cfa599a80646)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-081-revise-propose/result.json (SHA-256 a077d61cc185a159b30ececdcd3d1e1761098d9baa2cae3874219bd10fed2534 — matches 082 reviewedResultRef; D1-PR-003/D1-PR-004 fix source)"
+    ]
+  },
+  "consistencyScan": {
+    "scanType": "full",
+    "triggerRun": "20260806-082-review-propose (changes-requested, D1-PR-005)",
+    "modifiedConcepts": [
+      "full-test precondition: restricted to pre-execution FullTestStatus states (D1-13)",
+      "full-test-failed: blocked behavior for deliveryFullTestStatus=failed (frozen Section 6 alignment)",
+      "full-test passed rejection: full-test-already-passed",
+      "corrective Change reset path: fullTestStatus failed→not-ready",
+      "owner-decision vs blocked distinction: full-test-failed is blocked (D1-9)"
+    ],
+    "dimensions": [
+      {
+        "id": "CS-01",
+        "name": "D1-PR-005 fix verification (full-test pre-execution states + failed blocked)",
+        "concept": "full-test allowed only in awaiting-user-decision/authorized; failed → blocked:full-test-failed; passed → rejected",
+        "checks": [
+          "spec.md 'Delivery-level Action 前置条件' description: 'deliveryFullTestStatus ∈ {awaiting-user-decision, authorized}' + 'D1-13' + frozen Section 4.2/6 reference",
+          "spec.md scenario 'full-test 前置条件': condition is 'deliveryFullTestStatus ∈ {awaiting-user-decision, authorized}'",
+          "spec.md scenario 'full-test 在 failed 时拒绝并返回 blocked': allowed:false + full-test-already-failed + next blocked:full-test-failed + suggestedOwnerActions + MUST NOT action:full-test",
+          "spec.md scenario 'full-test 在 passed 时拒绝': allowed:false + full-test-already-passed",
+          "spec.md scenario 'Full Test failed diagnosis': diagnose reason=full-test-failed + suggestedOwnerActions + MUST NOT action:full-test + MUST NOT auto-create corrective Change",
+          "spec.md scenario 'full-test-failed 后 corrective Change 重置 fullTestStatus': reset path + MUST NOT auto-retry full-test",
+          "design.md D1-13: FullTestStatus × full-test behavior matrix + frozen Section 6 alignment + blocked-vs-owner-decision + D1-12 complementarity",
+          "tasks 4.12/4.18/7.4/10.23 enforce precondition + rejection + blocked + table-driven test",
+          "verification-model.md:167-181 Section 6 is the frozen authority for failed recovery"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-02",
+        "name": "Spec internal consistency (description ↔ scenarios for full-test)",
+        "concept": "full-test description matches its scenarios across all FullTestStatus values",
+        "checks": [
+          "full-test description: deliveryFullTestStatus ∈ {awaiting-user-decision, authorized} → scenario 'full-test 前置条件' (same condition) → consistent",
+          "full-test description: MUST NOT in failed/passed/not-ready → scenario 'full-test 在 failed 时拒绝' (failed blocked) + scenario 'full-test 在 passed 时拒绝' (passed rejected) → consistent",
+          "blocked diagnosis description: full-test-failed + frozen Section 6 → scenario 'Full Test failed diagnosis' (reason=full-test-failed + suggestedOwnerActions + no auto-retry) → consistent",
+          "owner-decision description: authorize-full-test (awaiting-user-decision) + full-test-failed is blocked → scenario 'authorize-full-test' (awaiting-user-decision) + scenario 'full-test failed' (blocked) → consistent",
+          "No remaining 'deliveryFullTestStatus ≠ passed' as an accepting condition for full-test anywhere in spec"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-03",
+        "name": "Spec ↔ Design consistency (D1-13)",
+        "concept": "design decision D1-13 matches spec scenarios",
+        "checks": [
+          "design.md D1-13: full-test ∈ {awaiting-user-decision, authorized} → spec full-test description + scenario → consistent",
+          "design.md D1-13: failed → blocked:full-test-failed → spec scenario 'full-test 在 failed 时拒绝' → consistent",
+          "design.md D1-13: passed → full-test-already-passed → spec scenario 'full-test 在 passed 时拒绝' → consistent",
+          "design.md D1-13: blocked-vs-owner-decision (per D1-9) → spec owner-decision description note → consistent",
+          "design.md D1-13: D1-12 complementarity → design.md D1-12 updated reference → consistent",
+          "design.md D1-12 complementarity reference updated from '≠ passed' to 'D1-13: ∈ {awaiting-user-decision, authorized}' → consistent",
+          "design.md designDecisions count: 13 (was 12 in 081; D1-13 added)"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-04",
+        "name": "Spec ↔ Tasks consistency",
+        "concept": "tasks match spec scenarios for full-test + full-test-failed",
+        "checks": [
+          "Task 4.12: 'deliveryFullTestStatus ∈ {awaiting-user-decision, authorized}' + D1-13 → matches spec description",
+          "Task 4.18 (NEW): full-test failed/passed rejection + full-test-failed blocked → matches spec scenarios 'full-test 在 failed 时拒绝' + 'full-test 在 passed 时拒绝'",
+          "Task 4.18: MUST NOT action:full-test + MUST NOT auto-create corrective Change → matches spec scenario",
+          "Task 4.18: corrective Change reset path → matches spec scenario 'full-test-failed 后 corrective Change 重置'",
+          "Task 7.4: full-test-failed reason with suggestedOwnerActions + no auto-retry + no auto-create corrective Change → matches spec blocked diagnosis description",
+          "Task 10.23 (NEW): table-driven full-test across all FullTestStatus values + corrective-Change reset → matches spec scenarios",
+          "No task contains 'deliveryFullTestStatus ≠ passed' as an accepting condition for full-test"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-05",
+        "name": "Spec ↔ Conclusion consistency (scratch aligned)",
+        "concept": "conclusion full-test/owner-decision/blocked-table/cross-reference match revised spec",
+        "checks": [
+          "conclusion Section 3.2 full-test row: 'deliveryFullTestStatus ∈ {awaiting-user-decision, authorized}' + D1-13 + frozen Section 4.2/6 → matches spec",
+          "conclusion Section 3.3 authorize-full-test row: 'deliveryFullTestStatus = awaiting-user-decision' → matches spec scenario",
+          "conclusion Section 3.3 D1-13 note: full-test-failed is blocked (not owner-decision) → matches spec owner-decision description note",
+          "conclusion Section 5 full-test-failed row: blocked + suggestedOwnerActions + frozen Section 6 + D1-13 → matches spec blocked diagnosis description",
+          "conclusion Section 5 D1-13 修复 note: documents the fix → matches spec/design changes",
+          "conclusion Section 9: 'Full Test 生命周期 / full-test eligibility' cross-reference row added → matches spec/design/conclusion",
+          "conclusion is gitignored scratch (.tmp/ in .gitignore; untracked by git) — alignment maintains 0 spec↔conclusion contradictions"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-06",
+        "name": "Spec ↔ verification-model.md consistency (frozen Section 4.2/6)",
+        "concept": "full-test eligibility + failed recovery match frozen Full Test lifecycle",
+        "checks": [
+          "verification-model.md:94-100 Section 4.1 FullTestStatus enum = not-ready|awaiting-user-decision|authorized|passed|failed → spec cites same enum → consistent",
+          "verification-model.md:106-119 Section 4.2: not-ready→awaiting-user-decision→authorized→passed|failed; '未 authorized 时不得执行 Full Test' → spec full-test allowed only in awaiting-user-decision/authorized → consistent",
+          "verification-model.md:167-183 Section 6: failed → fullTestStatus 保持 failed; Policy 返回 owner 决策边界或 blocked; owner 授权 corrective Change 或取消; corrective Change 创建后 fullTestStatus 返回 not-ready → spec blocked:full-test-failed + suggestedOwnerActions + corrective-Change reset scenario → consistent",
+          "verification-model.md:175 'corrective Change 创建后，fullTestStatus 返回 not-ready' → spec scenario 'full-test-failed 后 corrective Change 重置' asserts this → consistent",
+          "verification-model.md:174 'Policy 返回 owner 决策边界或 blocked diagnosis，不得自动创建 Change' → spec MUST NOT auto-create corrective Change → consistent",
+          "spec does NOT allow full-test when failed → consistent with frozen Section 6 'fullTestStatus 保持 failed'"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-07",
+        "name": "Spec ↔ B1 types.ts consistency (FullTestStatus enum)",
+        "concept": "spec FullTestStatus usage matches B1 frozen type definitions",
+        "checks": [
+          "types.ts:49-54 FullTestStatus = 'not-ready' | 'awaiting-user-decision' | 'authorized' | 'passed' | 'failed' → spec cites this exact enum → consistent",
+          "spec full-test allowed in {awaiting-user-decision, authorized} — both are valid FullTestStatus values → consistent",
+          "spec full-test rejected for {not-ready, passed, failed, undefined} — all non-pre-execution values → consistent",
+          "spec does NOT use not-applicable as a FullTestStatus value (D1-12 invariant preserved) → consistent",
+          "design.md D1-13 FullTestStatus × full-test matrix covers all 5 enum values + undefined → consistent with B1 enum"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-08",
+        "name": "D1-PR-003/D1-PR-004 regression check (081 fixes intact)",
+        "concept": "archive task-completion gate + delivery-finalize FullTestStatus=passed still intact",
+        "checks": [
+          "spec.md 'Change-level Action 前置条件矩阵' archive description still contains 'Tasks 事实可用且全部完成' + 'tasks-facts-unavailable' + 'D1-11'",
+          "spec.md scenario 'Tasks 完成事实不可用时 archive blocked' still present and unmodified",
+          "spec.md 'Delivery-level Action 前置条件' delivery-finalize still requires 'deliveryFullTestStatus = passed' + 'D1-12'",
+          "spec.md scenario 'delivery-finalize 在非 passed FullTestStatus 时拒绝' still covers {not-ready, awaiting-user-decision, authorized, failed, undefined} → includes failed → consistent with D1-13 (failed blocks both full-test and delivery-finalize)",
+          "design.md D1-11 and D1-12 still present and unmodified (only D1-12 complementarity reference updated to D1-13)",
+          "081's spec/design/tasks content for D1-PR-003/D1-PR-004 is preserved (only full-test precondition/owner-decision/blocked-diagnosis sections changed in 083)"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-09",
+        "name": "D1-PR-001/D1-PR-002 regression check (079 fixes intact)",
+        "concept": "provenance + canRun(review-S) match+changes-requested blocking still intact",
+        "checks": [
+          "spec.md 'Change-level Action 前置条件矩阵' still contains D1-10 blocking clause (canRun(review-S) allowed:false on match+cr)",
+          "spec.md scenario 'review-S 在 match+changes-requested 时拒绝' still present and unmodified",
+          "grep 'OR match+changes-requested' in spec/tasks: NOT FOUND (079 fix intact)",
+          "design.md D1-10 still present and unmodified",
+          "079's spec/design/tasks content for D1-PR-002 is preserved (only full-test/delivery-level/owner-decision/blocked-diagnosis sections changed in 083)"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-10",
+        "name": "full-test-failed blocked vs owner-decision distinction (D1-9)",
+        "concept": "full-test-failed is blocked (not owner-decision) because owner has multiple choices",
+        "checks": [
+          "spec 'owner 决策边界不可绕过' description: lists authorize-full-test as owner-decision + explicitly notes full-test-failed is blocked (D1-13)",
+          "spec 'blocked diagnosis 条件' description: full-test-failed is in blocked reasons with suggestedOwnerActions",
+          "design.md D1-13: '为何 full-test-failed 是 blocked 而非 owner-decision' section cites D1-9 (owner has multiple choices → system cannot determine unique action → blocked)",
+          "design.md D1-9: blocked = system cannot determine unique action; owner-decision = system determined unique action needing authorization",
+          "spec scenario 'Full Test failed diagnosis': returns blocked (not owner-decision) + suggestedOwnerActions lists options",
+          "authorize-full-test (single authorization, awaiting-user-decision) ≠ full-test-failed (multiple choices, failed) — correctly distinguished"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-11",
+        "name": "full-test ↔ delivery-finalize complementarity (D1-12 + D1-13)",
+        "concept": "full-test and delivery-finalize form complementary Full Test lifecycle gates",
+        "checks": [
+          "full-test allowed in {awaiting-user-decision, authorized} (D1-13) — pre-execution states",
+          "delivery-finalize allowed only in {passed} (D1-12) — post-success state",
+          "failed → full-test blocked (D1-13) AND delivery-finalize blocked (D1-12, failed ≠ passed)",
+          "passed → full-test blocked (D1-13, already passed) AND delivery-finalize allowed (D1-12)",
+          "not-ready → full-test blocked (D1-13, required Changes not completed) AND delivery-finalize blocked (D1-12)",
+          "design.md D1-13 '与 D1-12 的互补关系' section documents the three-way complementarity (D1-12 + D1-13 + frozen Section 6)",
+          "spec delivery-finalize negative scenario covers {not-ready, awaiting-user-decision, authorized, failed, undefined} → all non-passed → consistent with full-test eligibility (failed appears in both negative lists — blocked from both sides)"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-12",
+        "name": "Proposal artifact integrity (SHA-256 verified)",
+        "concept": "proposal.md unchanged; spec/design/tasks modified with verified hashes",
+        "checks": [
+          "proposal.md SHA-256 = 6d86964a196f76c76652b2978274ee88f2b0c4556d93830a3ebd1caef1c77cec (== 081 hash, unchanged)",
+          "design.md SHA-256 = 1c120b9efc682c40c93ea7f68d705e41f00b8b0dc1c56526b4469ca3d0cb1170 (≠ 081 3fed2ee2..., modified — D1-13 added + D1-12 reference updated)",
+          "spec.md SHA-256 = f358e2e187797c5b3540968fddd03fbf9133a3d051f20f6b390ca95c650b4b71 (≠ 081 1786d5c9..., modified — D1-PR-005 fix)",
+          "tasks.md SHA-256 = 539e0f4724bb6b50f3cec4bf8381f24d3504b172d1a79350052d3b19dc9aae18 (≠ 081 f9295451..., modified — 4.12/4.18/7.4/10.23)",
+          "openspec validate policy-engine --strict: 'Change policy-engine is valid' → passed"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-13",
+        "name": "Terminal Run immutability (075-082 unchanged)",
+        "concept": "075/076/077/078/079/080/081/082 result.json unchanged (verified by SHA-256)",
+        "checks": [
+          "075 result.json SHA-256 = e5e46147ec22ff12cbeccb3a49dc5f034b4402bf8c2726f2322aedcc684d79de (unchanged, matches 081 CS-14)",
+          "076 result.json SHA-256 = cde8e2c8309a111ef02352ef502c1dc4245123e1c2f2a05207c566ef8aaebc1e (unchanged, matches 081 CS-14)",
+          "077 result.json SHA-256 = cd53dde29a889886716bd5b095272cf88d63108eef10757c132dd3ca1db8715f (unchanged, matches 081 CS-14)",
+          "078 result.json SHA-256 = 51eb99180d46f249095140e2553026ffb151d659af34d8fb7ca67a4b38e59d2c (unchanged, matches 081 CS-14)",
+          "079 result.json SHA-256 = 709ddb70ebd6ab5b1b8cabcc9971035e2701b213f2d5755564526309e7094ffe (unchanged, matches 081 CS-14)",
+          "080 result.json SHA-256 = c90ecf4796ef852f18020866a1a3aa8a8c34af2a0e6481869a33fb27ea8b96c5 (unchanged, matches 081 CS-14)",
+          "081 result.json SHA-256 = a077d61cc185a159b30ececdcd3d1e1761098d9baa2cae3874219bd10fed2534 (unchanged, matches 082 reviewedResultRef)",
+          "082 result.json SHA-256 = 4172186636dc15fcdf9891e89199fa0a91c70c3e14a473e70865cfa599a80646 (unchanged, 083 sourceReviewRef)",
+          "083 did not write to 075/076/077/078/079/080/081/082 directories; only created 083 directory files + modified openspec/changes/policy-engine/ + aligned .tmp/explore/policy-engine/conclusion.md (gitignored scratch)"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-14",
+        "name": "Mutation policy compliance + OpenSpec strict + lineage/next action",
+        "concept": "only proposal bundle + conclusion scratch + 083 Run files modified; next action = review-propose",
+        "checks": [
+          "Frozen specs not modified (openspec/specs/ untouched)",
+          "Manifest not modified (D1 state remains active)",
+          "No production code written (src/ untouched — types.ts only READ)",
+          "No test code written (tests/ untouched)",
+          "Terminal Runs not modified (075-082 untouched, verified in CS-13)",
+          "proposal.md not modified (carry-forward, verified in CS-12)",
+          "Modified: spec.md, design.md, tasks.md (D1-PR-005 content fix); Aligned: conclusion.md (gitignored scratch); Created: 083 context.json, action.md, result.json",
+          "openspec validate policy-engine --strict: 'Change policy-engine is valid' → passed",
+          "inputRef.versionFingerprint = sha256:b1323433... matches 074 actual SHA-256 (provenance correct, consistent with 077/079/081)",
+          "After 083 completes: Current Artifact Run (propose) = 083-revise-propose; Current Review (propose) = 082-review-propose; 082.reviewedRun = 081 ≠ 083 → no lineage match → next = review-propose"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      }
+    ],
+    "totalContradictions": 0,
+    "overallResult": "pass"
+  },
+  "specStats": {
+    "requirements": 19,
+    "scenarios": 77,
+    "tasks": 110
+  },
+  "mutationPolicyCheck": {
+    "mayCreateProposalArtifacts": true,
+    "frozenSpecsModified": false,
+    "terminalRunsModified": false,
+    "proposalBundleModified": true,
+    "proposalBundleNote": "spec.md, design.md, tasks.md modified to fix D1-PR-005 (full-test pre-execution states + blocked:full-test-failed). proposal.md unchanged.",
+    "productionCodeWritten": false,
+    "testCodeWritten": false,
+    "manifestModified": false,
+    "scratchArtifactAligned": "conclusion.md (.tmp/explore/policy-engine/, gitignored — .gitignore line 9, untracked by git) aligned to maintain 0 spec↔conclusion contradictions. This is scratch supporting material, not a formal/tracked artifact, frozen spec, terminal Run, manifest, or production/test code.",
+    "filesWritten": [
+      "openspec/changes/policy-engine/specs/flowkit-policy-engine/spec.md (modified — D1-PR-005 fix)",
+      "openspec/changes/policy-engine/design.md (modified — D1-13 added + D1-12 reference updated)",
+      "openspec/changes/policy-engine/tasks.md (modified — 4.12/7.4 fixed, 4.18/10.23 added)",
+      ".tmp/explore/policy-engine/conclusion.md (aligned — gitignored scratch, Section 3.2/3.3/5/9)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-083-revise-propose/context.json (new Run)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-083-revise-propose/action.md (new Run)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-083-revise-propose/result.json (new Run)"
+    ]
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "nextAction": "review-propose",
+  "nextActionNote": "reviewer 审查 083-revise-propose，重点验证：(1) D1-PR-005 requiredChange 是否全部满足——full-test 前置条件限制为 pre-execution states（awaiting-user-decision/authorized），failed → blocked:full-test-failed per frozen Section 6，passed → rejected，corrective Change 重置路径覆盖；(2) full-test-failed 是 blocked 而非 owner-decision（per D1-9，owner 有多个选择）；(3) D1-12/D1-13 互补关系一致（full-test pre-execution，delivery-finalize passed，failed 两边都 block）；(4) spec↔design↔tasks↔conclusion↔verification-model↔B1 types 一致；(5) D1-PR-001/002/003/004 仍 resolved（079/081 修复未变）；(6) 075-082 terminal Runs 未变；(7) openspec validate --strict 通过；(8) consistencyScan 14 维度 0 contradictions。如 approved 则进入 apply（需 owner 授权）；如 changes-requested 则进入 revise-propose。",
+  "blockedOn": []
+}

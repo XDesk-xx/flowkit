@@ -120,7 +120,7 @@ changes:
     required: true
     dependsOn:
       - formal-fact-reader-and-persistence
-    state: active
+    state: completed
     outputs:
       - Policy 引擎（canRun / next / diagnose）
       - 状态转换规则表驱动测试

@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-076-review-propose",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "D1",
+  "changeId": "policy-engine",
+  "action": "review-propose",
+  "role": "reviewer",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-075-propose/",
+  "reviewedResultRef": "content-sha256:e5e46147ec22ff12cbeccb3a49dc5f034b4402bf8c2726f2322aedcc684d79de",
+  "sourceReviewRun": "20260806-074-review-explore",
+  "sourceReviewVerdict": "approved",
+  "inputs": [
+    ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-074-review-explore/result.json",
+    ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-075-propose/context.json",
+    ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-075-propose/result.json",
+    "openspec/changes/policy-engine/proposal.md",
+    "openspec/changes/policy-engine/design.md",
+    "openspec/changes/policy-engine/specs/flowkit-policy-engine/spec.md",
+    "openspec/changes/policy-engine/tasks.md",
+    "docs/delivery-lifecycle.md",
+    "docs/core-model.md",
+    "src/facts/formal-fact-snapshot.ts",
+    "src/facts/formal-fact-reader.ts"
+  ],
+  "constraints": {
+    "readOnlyExceptCurrentRun": true,
+    "fullTestAllowed": false,
+    "mayApply": false,
+    "mayArchive": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-076-review-propose/"
+}

@@ -1,0 +1,314 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-079-revise-propose",
+  "status": "completed",
+  "summary": "D1 policy-engine revise-propose 079 resolves D1-PR-002 (canRun(review-S) permitted review-S on match+changes-requested, conflicting with lineage model's match+cr→revise-S). Fix: removed erroneous 'OR match+changes-requested' from spec description and tasks 4.3/4.6/4.9; added D1-10 design decision (canRun(review-S) blocks on match+cr); added 5 new spec scenarios (review-S blocks on match+cr, review-propose/review-apply lineage conditions, unified review blocks/restores); added tasks 4.15/9.5/10.20 for table-driven enforcement. proposal.md unchanged; spec.md/design.md/tasks.md modified with verified hashes. Full consistencyScan covers 13 dimensions with 0 contradictions. OpenSpec strict validation passed. Terminal Runs 075/076/077/078 verified unchanged.",
+  "sourceReviewRef": "078-review-propose:51eb99180d46f249095140e2553026ffb151d659af34d8fb7ca67a4b38e59d2c",
+  "sourceReviewVerdict": "changes-requested",
+  "proposalBundle": {
+    "carryForward": false,
+    "note": "D1-PR-002 is a content defect. spec.md, design.md, tasks.md are modified to fix the contradiction. proposal.md is unchanged (no motivation/scope/impact change needed).",
+    "artifacts": {
+      "proposal": {
+        "path": "openspec/changes/policy-engine/proposal.md",
+        "sha256": "6d86964a196f76c76652b2978274ee88f2b0c4556d93830a3ebd1caef1c77cec",
+        "previousSha256": "6d86964a196f76c76652b2978274ee88f2b0c4556d93830a3ebd1caef1c77cec",
+        "modified": false
+      },
+      "design": {
+        "path": "openspec/changes/policy-engine/design.md",
+        "sha256": "ebf11a9b0cd479701d8419409cc82c7635b46131df43ce4858169954fd5f65a7",
+        "previousSha256": "6a7ae7c396db11a4d035d6fbe67062f7a8ca57c53b9c8c8a146bdd5b23548a8d",
+        "modified": true,
+        "changeSummary": "Added D1-10 design decision (canRun(review-S) blocks on match+changes-requested) with relationship to D1-8."
+      },
+      "spec": {
+        "path": "openspec/changes/policy-engine/specs/flowkit-policy-engine/spec.md",
+        "sha256": "b01bab203301ebfd56bc917c998f7262743f02fd40ee72f9fa03adade6ccecf0",
+        "previousSha256": "208a0ded02048d0041a6cc47b7ddc94d801b7d77065738c0e201b6be20eb48ad",
+        "modified": true,
+        "changeSummary": "Fixed 'Change-level Action 前置条件矩阵' description (removed 'OR match+changes-requested'); added 5 scenarios (review-S blocks on match+cr, review-propose/review-apply lineage, unified review blocks/restores); updated review-apply scenario with lineage condition."
+      },
+      "tasks": {
+        "path": "openspec/changes/policy-engine/tasks.md",
+        "sha256": "308ac8816b382cf0a63d8426b1bbefb6641176087d7f364c0c3794d16d75495e",
+        "previousSha256": "8501875daf7af7c4a1cc25e48f6f66cef81fc18ef70ec88975765bb1fb95b82a",
+        "modified": true,
+        "changeSummary": "Fixed 4.3/4.6/4.9 (removed 'OR match+changes-requested', added D1-10 blocking); added 4.15/9.5/10.20 (table-driven enforcement)."
+      }
+    },
+    "strictValidation": {
+      "command": "npx openspec validate policy-engine --strict",
+      "status": "passed",
+      "result": "Change 'policy-engine' is valid"
+    }
+  },
+  "findingsAddressed": [
+    {
+      "id": "D1-PR-002",
+      "severity": "P1",
+      "origin": "20260806-078-review-propose",
+      "title": "review-S precondition permits a Review when the matching Verdict requires Revision",
+      "rootCause": "The spec 'Change-level Action 前置条件矩阵' requirement description said 'review-explore 需 ...（Current Review=null OR 无 lineage match OR match+changes-requested）'. The 'OR match+changes-requested' clause contradicted the lineage model (match+cr → revise-S) and allowed canRun(review-S) to return allowed:true when a revision was required. Tasks 4.3/4.6/4.9 carried the same error. The conclusion's concrete condition was correct (Current Review=null OR reviewedRunId ≠ Current Artifact Run.runId), but the spec/tasks inherited a contradictory wording.",
+      "fix": "Removed 'OR match+changes-requested' from the spec description and tasks 4.3/4.6/4.9. Added explicit statement that canRun(review-S) MUST return allowed:false on lineage match + changes-requested. Added design decision D1-10 formalizing next↔canRun consistency for review-S. Added 5 new spec scenarios proving: (1) review-S blocks on match+cr; (2) review-propose lineage condition; (3) review-apply lineage condition; (4) unified review blocks on match+cr; (5) unified review restores after revise-S. Added tasks 4.15/9.5/10.20 for table-driven enforcement across all 3 stages.",
+      "verificationEvidence": "Spec description no longer contains 'OR match+changes-requested'. New scenario 'review-S 在 match+changes-requested 时拒绝' explicitly asserts allowed:false + unmetPreconditions:matching-changes-requested-requires-revision. Unified review scenarios prove blocked→restore cycle. openspec validate --strict passed. Full consistencyScan (13 dimensions) verifies cross-reference consistency with 0 contradictions."
+    }
+  ],
+  "keyFindings": [
+    "D1-PR-002 is a content defect: the spec description and tasks erroneously allowed review-S on match+changes-requested, conflicting with the lineage model.",
+    "The conclusion's concrete condition was already correct; the contradiction was introduced when translating to spec/tasks.",
+    "D1-10 formalizes that next and canRun MUST apply the same review-S allowance rule: both allow review-S only on no-current-review or no-lineage-match.",
+    "Unified review delegates to canRun(review-S), so it now correctly blocks on match+cr and restores only after revise-S produces a new artifact (no match).",
+    "5 new spec scenarios + 3 new tasks enforce the fix with table-driven coverage across all 3 stages.",
+    "proposal.md unchanged; spec.md/design.md/tasks.md modified with verified hashes; openspec validate --strict passed."
+  ],
+  "sourceFactsRead": {
+    "formalDocs": [
+      "docs/delivery-lifecycle.md (Section 3.2-3.5 lifecycle, Section 4 multi-round review, Section 6/7 unified review/revise)"
+    ],
+    "frozenSpecs": [
+      "openspec/specs/flowkit-domain-and-state-schema/spec.md (B1)",
+      "openspec/specs/flowkit-formal-fact-reader-and-persistence/spec.md (C1)"
+    ],
+    "exploreArtifact": [
+      ".tmp/explore/policy-engine/conclusion.md (Section 3.0 lineage, 3.1 preconditions, 4.2 decision tree, 4.6 unified entry — concrete conditions already correct)"
+    ],
+    "reviewRuns": [
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-078-review-propose/result.json (verdict: changes-requested; finding D1-PR-002; SHA-256 51eb99180d46f249095140e2553026ffb151d659af34d8fb7ca67a4b38e59d2c)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-077-revise-propose/result.json (SHA-256 cd53dde29a889886716bd5b095272cf88d63108eef10757c132dd3ca1db8715f — matches 078 reviewedResultRef)"
+    ]
+  },
+  "consistencyScan": {
+    "scanType": "full",
+    "triggerRun": "20260806-078-review-propose (changes-requested, D1-PR-002)",
+    "modifiedConcepts": [
+      "canRun(review-S) precondition on match+changes-requested (D1-10)",
+      "Unified review entry resolution on match+changes-requested",
+      "Lineage model consistency between next and canRun"
+    ],
+    "dimensions": [
+      {
+        "id": "CS-01",
+        "name": "D1-PR-002 fix verification",
+        "concept": "'OR match+changes-requested' removed; canRun(review-S) blocks on match+cr",
+        "checks": [
+          "spec.md 'Change-level Action 前置条件矩阵' description: grep 'OR match+changes-requested' → NOT FOUND (removed)",
+          "spec.md description now states: '当 lineage match 且 Current Verdict=changes-requested 时，canRun(review-S) MUST 返回 allowed: false'",
+          "New scenario 'review-S 在 match+changes-requested 时拒绝' asserts allowed:false + unmetPreconditions:matching-changes-requested-requires-revision",
+          "tasks 4.3/4.6/4.9 no longer contain 'OR match+changes-requested'; now contain 'match+changes-requested 时返回 allowed: false（D1-10）'",
+          "D1-PR-002 requiredChange fully addressed: canRun(review-S) allowed only on no-review/no-match; match+cr allows only revise-S; contradictory condition removed; table-driven scenarios added; Design/Spec/Tasks updated consistently"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-02",
+        "name": "Spec internal consistency (description ↔ scenarios)",
+        "concept": "requirement description and scenarios no longer contradict on review-S",
+        "checks": [
+          "Description: review-S allowed only when Current Review=null OR reviewedRunId ≠ Current Artifact Run.runId",
+          "Scenario 'review-explore 允许在无 lineage match 时执行': same condition → consistent",
+          "Scenario 'review-S 在 match+changes-requested 时拒绝': asserts allowed:false on match+cr → consistent with description",
+          "Scenario 'review-propose 允许在无 lineage match 时执行': same lineage pattern → consistent",
+          "Scenario 'review-apply 允许在无 lineage match 时执行': same lineage pattern → consistent",
+          "No remaining 'OR match+changes-requested' in any spec description or scenario"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-03",
+        "name": "Lineage model ↔ canRun(review-S) consistency (next ↔ canRun)",
+        "concept": "next decision tree and canRun apply the same review-S allowance rule",
+        "checks": [
+          "Requirement 'Review/Revision lineage by reviewed Run': match+cr → next returns revise-S (unchanged)",
+          "Requirement 'Review/Revision lineage by reviewed Run': no match → next returns review-S (unchanged)",
+          "Requirement 'Change-level Action 前置条件矩阵': match+cr → canRun(review-S) allowed:false (NEW, D1-10)",
+          "Requirement 'Change-level Action 前置条件矩阵': no match → canRun(review-S) allowed:true (consistent with next)",
+          "next and canRun now agree: both allow review-S only on no-match; both require revise-S on match+cr",
+          "D1-10 design decision explicitly states 'next 和 canRun 对 review-S 的允许条件 MUST 一致'"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-04",
+        "name": "Unified review entry consistency",
+        "concept": "unified review delegates to canRun(review-S); blocks on match+cr; restores after revise-S",
+        "checks": [
+          "Requirement '统一 review/revise 入口解析': review entry delegates to canRun(review-S) (unchanged)",
+          "New scenario '统一 review 在 match+changes-requested 时 blocked': canRun(review-S) allowed:false → unified review blocked",
+          "New scenario '统一 review 在 revise-S 完成后恢复 allowed': revise-S produces new artifact (no match) → canRun(review-S) allowed:true → unified review resolves to review-S",
+          "This proves unified review cannot bypass revise-S: it stays blocked until revise-S completes",
+          "Consistent with delivery-lifecycle.md Section 4: changes-requested: revise-S → review-S (review-S only after revise-S)"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-05",
+        "name": "Spec ↔ Design consistency",
+        "concept": "D1-10 in design matches spec scenarios",
+        "checks": [
+          "design.md D1-10: 'canRun(review-S) MUST 仅在 Current Review = null 或无 lineage match 时 allowed'",
+          "spec.md description: same condition → consistent",
+          "design.md D1-10: 'match+changes-requested → allowed:false, unmetPreconditions 含 matching-changes-requested-requires-revision'",
+          "spec.md scenario 'review-S 在 match+changes-requested 时拒绝': same assertion → consistent",
+          "design.md D1-10 documents relationship to D1-8 (next lineage model); spec has both requirements aligned",
+          "design.md 'designDecisions' count: 10 (was 9 in 075; D1-10 added)"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-06",
+        "name": "Spec ↔ Tasks consistency",
+        "concept": "tasks 4.3/4.6/4.9/4.15/9.5/10.20 match spec scenarios",
+        "checks": [
+          "Task 4.3 (review-explore): 'Current Review=null OR reviewedRunId ≠ Current Artifact Run.runId; match+changes-requested 时返回 allowed: false（D1-10）' → matches spec",
+          "Task 4.6 (review-propose): same pattern → matches spec",
+          "Task 4.9 (review-apply): same pattern + Verification condition → matches spec",
+          "Task 4.15 (NEW): canRun(review-S) blocks on match+cr for all 3 stages → matches spec scenario",
+          "Task 9.5 (NEW): table-driven unified review blocking/restoring → matches spec unified review scenarios",
+          "Task 10.20 (NEW): table-driven canRun(review-S) blocking across all stages → matches spec",
+          "No task contains 'OR match+changes-requested' as an allowing condition"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-07",
+        "name": "Spec ↔ Conclusion consistency",
+        "concept": "conclusion Section 3.0/3.1/4.6 concrete conditions match revised spec",
+        "checks": [
+          "conclusion Section 3.1 review-explore: 'Current Review = null OR Current Review.reviewedRunId ≠ Current Artifact Run.runId' → spec now matches (contradictory 'OR match+changes-requested' removed)",
+          "conclusion Section 3.0 lineage: 'match + changes-requested → revise-S; no match → review-S' → spec lineage requirement matches",
+          "conclusion Section 4.2 decision tree: 'Current Review = null OR reviewedRunId ≠ Current Artifact Run.runId → review-S; match+cr → revise-S' → spec matches",
+          "conclusion Section 4.6 unified review: 'canRun(review-S) allowed → review-S; not allowed → blocked' → spec unified review scenarios match",
+          "Conclusion was already correct; spec was the source of contradiction; now aligned"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-08",
+        "name": "Spec ↔ delivery-lifecycle.md consistency",
+        "concept": "review→revise→review loop matches delivery-lifecycle.md",
+        "checks": [
+          "delivery-lifecycle.md Section 3.2: 'changes-requested: revise-explore → review-explore' (review only after revise)",
+          "spec: match+cr → revise-S only (canRun(review-S) blocked); no match (after revise-S) → review-S allowed",
+          "delivery-lifecycle.md Section 4: multi-round review allowed (review can repeat after revise)",
+          "spec: no-match → review-S allowed (supports multi-round); match+cr → revise-S (forces revision first)",
+          "No conflict: spec enforces 'revise before re-review' which is exactly delivery-lifecycle.md's loop"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-09",
+        "name": "Proposal artifact integrity",
+        "concept": "proposal.md unchanged; spec/design/tasks modified with verified hashes",
+        "checks": [
+          "proposal.md SHA-256 = 6d86964a196f76c76652b2978274ee88f2b0c4556d93830a3ebd1caef1c77cec (== previous 077 hash, unchanged)",
+          "design.md SHA-256 = ebf11a9b0cd479701d8419409cc82c7635b46131df43ce4858169954fd5f65a7 (≠ previous 6a7ae7c3..., modified — D1-10 added)",
+          "spec.md SHA-256 = b01bab203301ebfd56bc917c998f7262743f02fd40ee72f9fa03adade6ccecf0 (≠ previous 208a0ded..., modified — D1-PR-002 fix)",
+          "tasks.md SHA-256 = 308ac8816b382cf0a63d8426b1bbefb6641176087d7f364c0c3794d16d75495e (≠ previous 8501875d..., modified — 4.3/4.6/4.9/4.15/9.5/10.20)",
+          "openspec validate policy-engine --strict: 'Change policy-engine is valid' → passed"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-10",
+        "name": "Terminal Run immutability",
+        "concept": "075/076/077/078 result.json unchanged (verified by SHA-256)",
+        "checks": [
+          "075 result.json SHA-256 = e5e46147ec22ff12cbeccb3a49dc5f034b4402bf8c2726f2322aedcc684d79de (unchanged)",
+          "076 result.json SHA-256 = cde8e2c8309a111ef02352ef502c1dc4245123e1c2f2a05207c566ef8aaebc1e (unchanged)",
+          "077 result.json SHA-256 = cd53dde29a889886716bd5b095272cf88d63108eef10757c132dd3ca1db8715f (unchanged, matches 078 reviewedResultRef)",
+          "078 result.json SHA-256 = 51eb99180d46f249095140e2553026ffb151d659af34d8fb7ca67a4b38e59d2c (unchanged)",
+          "079 did not write to 075/076/077/078 directories; only created 079 directory files + modified openspec/changes/policy-engine/"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-11",
+        "name": "Mutation policy compliance",
+        "concept": "only proposal bundle (spec/design/tasks) + 079 Run files modified; no frozen spec/manifest/production/test changes",
+        "checks": [
+          "Frozen specs not modified (openspec/specs/ untouched)",
+          "Manifest not modified (D1 state remains active)",
+          "No production code written (src/ untouched)",
+          "No test code written (tests/ untouched)",
+          "Terminal Runs not modified (075/076/077/078 untouched, verified in CS-10)",
+          "proposal.md not modified (carry-forward, verified in CS-09)",
+          "Modified: spec.md, design.md, tasks.md (D1-PR-002 content fix); Created: 079 context.json, action.md, result.json"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-12",
+        "name": "OpenSpec strict validation",
+        "concept": "spec remains valid after modifications",
+        "checks": [
+          "npx openspec validate policy-engine --strict: 'Change policy-engine is valid' → passed",
+          "All 19 requirements have at least one Scenario",
+          "All requirement descriptions contain MUST or SHALL",
+          "New scenarios follow #### Scenario: format with WHEN/THEN/AND",
+          "No spec structure errors introduced by edits"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-13",
+        "name": "Lineage model consistency post-079 + cross-reference contract",
+        "concept": "conclusion Section 9 cross-reference contract still consistent; next action after 079 = review-propose",
+        "checks": [
+          "conclusion Section 9 'Review/Revision lineage' row: D1 uses reviewedRunId, allows revise→review; spec now enforces canRun(review-S) blocks on match+cr → consistent",
+          "conclusion Section 9 '统一 review/revise' row: D1 resolves review/revise; spec unified review now blocks on match+cr → consistent",
+          "conclusion Section 9 '多轮 Review 闭环' row: delivery-lifecycle.md allows multi-round; spec supports via no-match → review-S → consistent",
+          "After 079 completes: Current Artifact Run = 079-revise-propose; Current Review = 078-review-propose; 078.reviewedRun = 077 ≠ 079 → no lineage match → next = review-propose",
+          "The revise→review loop continues correctly: 079 produces new proposal artifact, 078 reviewed 077 (not 079), so review-propose is needed"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      }
+    ],
+    "totalContradictions": 0,
+    "overallResult": "pass"
+  },
+  "specStats": {
+    "requirements": 19,
+    "scenarios": 70,
+    "tasks": 104
+  },
+  "mutationPolicyCheck": {
+    "mayCreateProposalArtifacts": true,
+    "frozenSpecsModified": false,
+    "terminalRunsModified": false,
+    "proposalBundleModified": true,
+    "proposalBundleNote": "spec.md, design.md, tasks.md modified to fix D1-PR-002 content defect. proposal.md unchanged.",
+    "productionCodeWritten": false,
+    "testCodeWritten": false,
+    "manifestModified": false,
+    "filesWritten": [
+      "openspec/changes/policy-engine/specs/flowkit-policy-engine/spec.md (modified — D1-PR-002 fix)",
+      "openspec/changes/policy-engine/design.md (modified — D1-10 added)",
+      "openspec/changes/policy-engine/tasks.md (modified — 4.3/4.6/4.9 fixed, 4.15/9.5/10.20 added)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-079-revise-propose/context.json (new Run)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-079-revise-propose/action.md (new Run)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-079-revise-propose/result.json (new Run)"
+    ]
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "nextAction": "review-propose",
+  "nextActionNote": "reviewer 审查 079-revise-propose，重点验证：(1) D1-PR-002 requiredChange 是否全部满足——canRun(review-S) 仅在 no-review/no-match 时 allowed，match+cr 只允许 revise-S，矛盾条件已移除，表驱动场景已添加；(2) spec 内部 description↔scenario 不再矛盾；(3) next↔canRun 对 review-S 一致（D1-10）；(4) 统一 review 在 match+cr 时 blocked、revise-S 完成后恢复；(5) spec↔design↔tasks↔conclusion↔delivery-lifecycle 一致；(6) 075/076/077/078 terminal Runs 未变；(7) openspec validate --strict 通过；(8) consistencyScan 13 维度 0 contradictions。如 approved 则进入 apply（需 owner 授权）；如 changes-requested 则进入 revise-propose。",
+  "blockedOn": []
+}

@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-088-review-apply",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "D1",
+  "changeId": "policy-engine",
+  "action": "review-apply",
+  "role": "reviewer",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-087-apply/",
+  "reviewedResultRef": "content-sha256:7505b2a3b0d59476e34dac314c2041f0ec8b7fc8665e90aaca929f7f163a47af",
+  "sourceReviewRun": "20260806-086-review-propose",
+  "sourceReviewVerdict": "approved",
+  "inputs": [
+    ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-086-review-propose/result.json",
+    ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-087-apply/action.md",
+    ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-087-apply/context.json",
+    ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-087-apply/result.json",
+    "openspec/changes/policy-engine/specs/flowkit-policy-engine/spec.md",
+    "openspec/changes/policy-engine/tasks.md",
+    "src/policy/",
+    "tests/unit/policy/",
+    "docs/verification-model.md"
+  ],
+  "constraints": {
+    "readOnlyExceptCurrentRun": true,
+    "fullTestAllowed": false,
+    "mayApply": false,
+    "mayArchive": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-088-review-apply/"
+}

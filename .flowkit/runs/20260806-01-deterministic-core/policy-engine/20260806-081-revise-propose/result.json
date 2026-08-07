@@ -1,0 +1,367 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-081-revise-propose",
+  "status": "completed",
+  "summary": "D1 policy-engine revise-propose 081 resolves D1-PR-003 (Archive gate omitted mandatory task completion + no fail-closed behavior) and D1-PR-004 (delivery-finalize permitted unrepresentable Full Test not-applicable). D1-PR-003 fix: added Tasks completion to archive precondition (delivery-lifecycle.md Section 3.5 'Tasks 已完成'); added distinct fail-closed tasks-facts-unavailable diagnosis (D1-11) since C1 snapshot exposes only change-tasks existence, no completion status; MUST NOT infer completion from Run history/artifact existence/chat. D1-PR-004 fix: delivery-finalize now requires snapshot.deliveryFullTestStatus = passed strictly (D1-12); removed 'Full Test passed 或 not-applicable' (B1 FullTestStatus has no not-applicable; not-applicable belongs to Change VerificationStatus); added negative table-driven scenarios for all 5 non-passed values. proposal.md unchanged; spec.md/design.md/tasks.md modified with verified hashes; conclusion.md (gitignored scratch) aligned for 0 contradictions. Full consistencyScan covers 15 dimensions with 0 contradictions. OpenSpec strict validation passed. Terminal Runs 075/076/077/078/079/080 verified unchanged. D1-PR-001/002 remain resolved.",
+  "sourceReviewRef": "080-review-propose:c90ecf4796ef852f18020866a1a3aa8a8c34af2a0e6481869a33fb27ea8b96c5",
+  "sourceReviewVerdict": "changes-requested",
+  "proposalBundle": {
+    "carryForward": false,
+    "note": "D1-PR-003 and D1-PR-004 are content defects. spec.md, design.md, tasks.md are modified to add the Archive task-completion gate (D1-11) and fix delivery-finalize to require FullTestStatus=passed (D1-12). proposal.md is unchanged (no motivation/scope/impact change needed).",
+    "artifacts": {
+      "proposal": {
+        "path": "openspec/changes/policy-engine/proposal.md",
+        "sha256": "6d86964a196f76c76652b2978274ee88f2b0c4556d93830a3ebd1caef1c77cec",
+        "previousSha256": "6d86964a196f76c76652b2978274ee88f2b0c4556d93830a3ebd1caef1c77cec",
+        "modified": false
+      },
+      "design": {
+        "path": "openspec/changes/policy-engine/design.md",
+        "sha256": "3fed2ee229238ac790b6dbd35545030e7ab9ab9750411bac70174387c32697c3",
+        "previousSha256": "ebf11a9b0cd479701d8419409cc82c7635b46131df43ce4858169954fd5f65a7",
+        "modified": true,
+        "changeSummary": "Added D1-11 (Archive task-completion gate + tasks-facts-unavailable fail-closed) and D1-12 (delivery-finalize requires FullTestStatus=passed, no not-applicable)."
+      },
+      "spec": {
+        "path": "openspec/changes/policy-engine/specs/flowkit-policy-engine/spec.md",
+        "sha256": "1786d5c9db601daec3d14f369d39412a2b9442ca28854e583f29d00b040a8ee3",
+        "previousSha256": "b01bab203301ebfd56bc917c998f7262743f02fd40ee72f9fa03adade6ccecf0",
+        "modified": true,
+        "changeSummary": "D1-PR-003: added Tasks completion to archive precondition + tasks-facts-unavailable fail-closed + 2 new scenarios + tasks-facts-unavailable to blocked reasons + 1 diagnosis scenario. D1-PR-004: delivery-finalize requires deliveryFullTestStatus=passed + 1 negative table-driven scenario; removed 'Full Test passed 或 not-applicable'."
+      },
+      "tasks": {
+        "path": "openspec/changes/policy-engine/tasks.md",
+        "sha256": "f929545181ea007e02ec1af02eb84d576fac504522d3b786c1f320b8eaa2e622",
+        "previousSha256": "308ac8816b382cf0a63d8426b1bbefb6641176087d7f364c0c3794d16d75495e",
+        "modified": true,
+        "changeSummary": "Fixed 1.6/4.11/4.13/7.4 (tasks-facts-unavailable + FullTestStatus=passed); added 4.16/4.17/10.21/10.22 (archive tasks gate, delivery-finalize strict passed, table-driven tests)."
+      }
+    },
+    "strictValidation": {
+      "command": "npx openspec validate policy-engine --strict",
+      "status": "passed",
+      "result": "Change 'policy-engine' is valid"
+    }
+  },
+  "findingsAddressed": [
+    {
+      "id": "D1-PR-003",
+      "severity": "P1",
+      "origin": "20260806-080-review-propose",
+      "title": "Archive gate omits mandatory task completion and has no fact-availability behavior",
+      "rootCause": "The spec 'Change-level Action 前置条件矩阵' archive precondition listed approved review, blocking findings=0, Verification passed, and owner authorization — but omitted task completion (required by docs/delivery-lifecycle.md Section 3.5: 'Tasks 已完成'). C1 FormalFactSnapshot exposes only change-tasks existence (OpenSpecArtifactFact kind='change-tasks', exists), with no task-completion field. The Proposal therefore had neither the required gate nor a fail-closed outcome when the fact was unavailable.",
+      "fix": "Added 'Tasks 事实可用且全部完成' to the archive precondition. Added distinct fail-closed behavior: when Tasks completion facts unavailable, canRun(archive) returns allowed:false with unmetPreconditions containing 'tasks-facts-unavailable', next returns blocked:tasks-facts-unavailable. Added design decision D1-11 formalizing the gate + fail-closed handling parallel to D1-7, with strict distinction from verification-facts-unavailable. Added 2 spec scenarios (archive requires Tasks completed; Tasks unavailable → archive blocked), 1 diagnosis scenario, tasks-facts-unavailable to BlockedReason (1.6) and diagnose reasons (7.4), and table-driven test 10.21. MUST NOT infer completion from Run history / change-tasks exists / chat. Updated conclusion (scratch) archive row, apply decision tree, blocked diagnosis table, and snapshot availability matrix.",
+      "verificationEvidence": "spec.md archive description now contains 'Tasks 事实可用且全部完成' and 'tasks-facts-unavailable'. New scenario 'Tasks 完成事实不可用时 archive blocked' asserts allowed:false + tasks-facts-unavailable + next blocked + no-inference. 'blocked diagnosis 条件' lists tasks-facts-unavailable distinct from verification-facts-unavailable. design.md D1-11 documents delivery-lifecycle.md Section 3.5 requirement + C1 snapshot gap + fail-closed. tasks 1.6/4.11/7.4/4.16/10.21 enforce. delivery-lifecycle.md:137 'Tasks 已完成' cited as formal-doc authority."
+    },
+    {
+      "id": "D1-PR-004",
+      "severity": "P1",
+      "origin": "20260806-080-review-propose",
+      "title": "delivery-finalize permits an unrepresentable Full Test not-applicable state",
+      "rootCause": "The spec 'Delivery-level Action 前置条件' delivery-finalize precondition said 'Full Test passed 或 not-applicable'. B1 FullTestStatus (src/domain/types.ts:49-54) = 'not-ready' | 'awaiting-user-decision' | 'authorized' | 'passed' | 'failed' — NO not-applicable value. 'not-applicable' belongs to Change VerificationStatus (types.ts:60-64 = 'not-run' | 'passed' | 'failed' | 'not-applicable'). The Proposal conflated a Change-level concept into a Delivery-level gate, permitting an unrepresentable state.",
+      "fix": "Replaced 'Full Test passed 或 not-applicable' with 'snapshot.deliveryFullTestStatus = passed' in spec description and scenario. Added B1 FullTestStatus enum citation and statement that any non-passed value (incl. undefined) → allowed:false with 'full-test-not-passed'. Added design decision D1-12 documenting the enum, VerificationStatus distinction, complementarity with full-test action, and extensibility path. Added negative table-driven scenario covering all 5 non-passed values. Added tasks 4.13 fix, 4.17, and 10.22 (table-driven negative test). Removed 'Full Test passed 或 not-applicable' from all proposal bundle artifacts. Updated conclusion (scratch) delivery-finalize row.",
+      "verificationEvidence": "spec.md delivery-finalize description now says 'snapshot.deliveryFullTestStatus = passed' and cites B1 enum (no not-applicable). New scenario 'delivery-finalize 在非 passed FullTestStatus 时拒绝' covers {not-ready, awaiting-user-decision, authorized, failed, undefined} → allowed:false + full-test-not-passed; asserts not-applicable not accepted. grep 'passed 或 not-applicable' in proposal bundle: only design.md:135 (removal documentation) — no accepting occurrence. All 9 'not-applicable' occurrences correctly attributed to VerificationStatus or removal-doc. B1 types.ts:49-54 confirms FullTestStatus has no not-applicable."
+    }
+  ],
+  "keyFindings": [
+    "D1-PR-003 and D1-PR-004 are both content defects in the Proposal bundle, inheriting gaps from the explore conclusion.",
+    "D1-PR-003: delivery-lifecycle.md Section 3.5 requires 'Tasks 已完成' before Archive, but the spec/tasks omitted it; C1 snapshot has no task-completion field, so a distinct tasks-facts-unavailable fail-closed diagnosis is required (D1-11), parallel to D1-7's verification-facts-unavailable.",
+    "D1-PR-004: B1 FullTestStatus has no not-applicable value; not-applicable belongs to Change VerificationStatus. delivery-finalize must require deliveryFullTestStatus=passed strictly (D1-12).",
+    "tasks-facts-unavailable (archive Tasks gate) and verification-facts-unavailable (review-apply/archive Verification gate) are distinct fact dimensions; when archive faces both, unmetPreconditions lists both.",
+    "delivery-finalize (requires passed) and full-test (requires ≠ passed) are complementary gates — full-test runs when not passed, delivery-finalize proceeds only when passed.",
+    "proposal.md unchanged; spec.md/design.md/tasks.md modified with verified hashes; conclusion.md (gitignored scratch) aligned for 0 contradictions; openspec validate --strict passed.",
+    "D1-PR-001 (provenance) and D1-PR-002 (canRun(review-S) contradiction) remain resolved — 079's fixes are intact and unmodified."
+  ],
+  "sourceFactsRead": {
+    "formalDocs": [
+      "docs/delivery-lifecycle.md (Section 2.1 Delivery 完成, Section 3.5 Archive 与完成 — line 137 'Tasks 已完成', Section 5 Policy inputs)"
+    ],
+    "frozenSpecs": [
+      "openspec/specs/flowkit-domain-and-state-schema/spec.md (B1)",
+      "openspec/specs/flowkit-formal-fact-reader-and-persistence/spec.md (C1)"
+    ],
+    "sourceCode": [
+      "src/domain/types.ts:49-54 (FullTestStatus = not-ready | awaiting-user-decision | authorized | passed | failed — NO not-applicable)",
+      "src/domain/types.ts:60-64 (VerificationStatus = not-run | passed | failed | not-applicable — not-applicable is HERE)",
+      "src/facts/formal-fact-snapshot.ts:86-95 (OpenSpecArtifactFact kind='change-tasks' has only path+exists, no completion)",
+      "src/facts/formal-fact-snapshot.ts:132-151 (FormalFactSnapshot fields — no task-completion field; deliveryFullTestStatus: FullTestStatus | undefined)"
+    ],
+    "exploreArtifact": [
+      ".tmp/explore/policy-engine/conclusion.md (Section 1.3 snapshot availability matrix, 3.1 preconditions, 3.2 delivery actions, 4.2 decision tree, 5 blocked diagnosis — all aligned)"
+    ],
+    "reviewRuns": [
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-080-review-propose/result.json (verdict: changes-requested; findings D1-PR-003 + D1-PR-004; SHA-256 c90ecf4796ef852f18020866a1a3aa8a8c34af2a0e6481869a33fb27ea8b96c5)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-079-revise-propose/result.json (SHA-256 709ddb70ebd6ab5b1b8cabcc9971035e2701b213f2d5755564526309e7094ffe — matches 080 reviewedResultRef; D1-PR-002 fix source)"
+    ]
+  },
+  "consistencyScan": {
+    "scanType": "full",
+    "triggerRun": "20260806-080-review-propose (changes-requested, D1-PR-003 + D1-PR-004)",
+    "modifiedConcepts": [
+      "Archive precondition: task completion + tasks-facts-unavailable fail-closed (D1-11)",
+      "delivery-finalize precondition: deliveryFullTestStatus=passed, no not-applicable (D1-12)",
+      "Blocked diagnosis reasons: tasks-facts-unavailable added",
+      "FullTestStatus vs VerificationStatus distinction"
+    ],
+    "dimensions": [
+      {
+        "id": "CS-01",
+        "name": "D1-PR-003 fix verification (archive task completion + fail-closed)",
+        "concept": "archive requires Tasks completed; tasks-facts-unavailable when facts unavailable",
+        "checks": [
+          "spec.md 'Change-level Action 前置条件矩阵' archive description: contains 'Tasks 事实可用且全部完成' + 'tasks-facts-unavailable' + 'D1-11'",
+          "spec.md scenario 'archive 需 apply approved + ... + Tasks 完成 + owner 授权': includes 'Tasks 完成事实可用且全部完成'",
+          "spec.md scenario 'Tasks 完成事实不可用时 archive blocked': asserts allowed:false + unmetPreconditions:tasks-facts-unavailable + next blocked + no-inference from Run/artifact/chat",
+          "design.md D1-11: documents delivery-lifecycle.md Section 3.5 requirement + C1 snapshot gap + fail-closed parallel to D1-7 + distinction from verification-facts-unavailable",
+          "tasks 4.11/4.16/10.21 enforce the gate + fail-closed + table-driven test",
+          "delivery-lifecycle.md:137 'Tasks 已完成' is the formal-doc authority for the gate"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-02",
+        "name": "D1-PR-004 fix verification (delivery-finalize FullTestStatus=passed)",
+        "concept": "delivery-finalize requires deliveryFullTestStatus=passed; no not-applicable",
+        "checks": [
+          "spec.md 'Delivery-level Action 前置条件' description: 'snapshot.deliveryFullTestStatus = passed' + B1 enum citation + 'D1-12'",
+          "spec.md scenario 'delivery-finalize 前置条件': condition is 'snapshot.deliveryFullTestStatus = passed'",
+          "spec.md scenario 'delivery-finalize 在非 passed FullTestStatus 时拒绝': covers {not-ready, awaiting-user-decision, authorized, failed, undefined} → allowed:false + full-test-not-passed; asserts not-applicable not accepted",
+          "design.md D1-12: documents B1 FullTestStatus enum (no not-applicable) + VerificationStatus distinction + complementarity with full-test + extensibility",
+          "tasks 4.13/4.17/10.22 enforce strict passed + negative table-driven test",
+          "B1 types.ts:49-54 confirms FullTestStatus has no not-applicable"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-03",
+        "name": "Spec internal consistency (description ↔ scenarios)",
+        "concept": "archive and delivery-finalize descriptions match their scenarios",
+        "checks": [
+          "archive description: Tasks completion + tasks-facts-unavailable → scenario 'archive ... Tasks 完成' + scenario 'Tasks 完成事实不可用时 archive blocked' → consistent",
+          "delivery-finalize description: deliveryFullTestStatus=passed → scenario 'delivery-finalize 前置条件' (passed) + scenario 'delivery-finalize 在非 passed...拒绝' (non-passed blocked) → consistent",
+          "blocked diagnosis 条件 description: lists tasks-facts-unavailable → scenario 'Tasks 完成事实不可用 diagnosis' asserts reason=tasks-facts-unavailable → consistent",
+          "No remaining 'Full Test passed 或 not-applicable' as an accepting condition in any description or scenario"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-04",
+        "name": "Spec ↔ Design consistency (D1-11, D1-12)",
+        "concept": "design decisions match spec scenarios",
+        "checks": [
+          "design.md D1-11: archive Tasks gate + tasks-facts-unavailable → spec archive description + scenarios → consistent",
+          "design.md D1-11: distinction from verification-facts-unavailable → spec 'blocked diagnosis 条件' distinction clause → consistent",
+          "design.md D1-12: deliveryFullTestStatus=passed → spec delivery-finalize description + scenarios → consistent",
+          "design.md D1-12: B1 FullTestStatus enum (no not-applicable) → spec description cites same enum → consistent",
+          "design.md designDecisions count: 12 (was 10 in 079; D1-11 + D1-12 added)"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-05",
+        "name": "Spec ↔ Tasks consistency",
+        "concept": "tasks match spec scenarios for archive + delivery-finalize + blocked reasons",
+        "checks": [
+          "Task 1.6 BlockedReason: includes tasks-facts-unavailable → matches spec blocked diagnosis reasons",
+          "Task 4.11 archive: 'Tasks 完成事实可用且全部完成（不可用 → unmet tasks-facts-unavailable，D1-11）' → matches spec",
+          "Task 4.13 delivery-finalize: 'deliveryFullTestStatus = passed（... MUST NOT 接受 not-applicable）' → matches spec",
+          "Task 4.16 (NEW): archive Tasks gate (D1-11) → matches spec scenario",
+          "Task 4.17 (NEW): delivery-finalize strict passed (D1-12) → matches spec scenario",
+          "Task 7.4 diagnose reasons: includes tasks-facts-unavailable → matches spec",
+          "Task 10.21 (NEW): table-driven archive tasks-facts-unavailable → matches spec",
+          "Task 10.22 (NEW): table-driven delivery-finalize non-passed → matches spec",
+          "No task contains 'Full Test passed 或 not-applicable' as an accepting condition"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-06",
+        "name": "Spec ↔ Conclusion consistency (scratch aligned)",
+        "concept": "conclusion archive/delivery-finalize/decision-tree/blocked-table/availability-matrix match revised spec",
+        "checks": [
+          "conclusion Section 3.1 archive row: includes 'Tasks 完成事实可用且全部完成（D1-11）' + tasks-facts-unavailable → matches spec",
+          "conclusion Section 3.2 delivery-finalize row: 'deliveryFullTestStatus = passed（D1-12）' → matches spec",
+          "conclusion Section 4.2 apply decision tree: 'Verification passed AND Tasks 完成事实不可用 → blocked (tasks-facts-unavailable)' + 'Verification passed AND Tasks 完成 → authorize-archive' → matches spec",
+          "conclusion Section 5 blocked diagnosis table: 'tasks-facts-unavailable' row added → matches spec",
+          "conclusion Section 1.3 snapshot availability matrix: 'Tasks completion status' row added (❌ 不存在) → matches C1 snapshot + D1-11",
+          "conclusion D1-11/D1-12 修复 notes added parallel to D1-EX-002 note",
+          "conclusion is gitignored scratch (.tmp/ in .gitignore line 9; untracked by git) — alignment maintains 0 spec↔conclusion contradictions"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-07",
+        "name": "Spec ↔ delivery-lifecycle.md consistency",
+        "concept": "archive task completion + delivery-finalize match formal doc",
+        "checks": [
+          "delivery-lifecycle.md:137 'Tasks 已完成' (Section 3.5 Archive) → spec archive precondition now includes Tasks completion → consistent",
+          "delivery-lifecycle.md:132-138 Archive conditions: review-apply approved, blocking findings=0, Verification passed/not-applicable, Tasks 已完成, owner auth → spec archive covers all 5 → consistent",
+          "delivery-lifecycle.md:27-35 Delivery 完成: requires 'Delivery 验证条件满足' + owner Finalize auth → spec delivery-finalize requires deliveryFullTestStatus=passed + finalize scope → consistent (no not-applicable for Full Test at Delivery level)",
+          "delivery-lifecycle.md:136 'Change Verification 为 passed 或 not-applicable' — this not-applicable is Change Verification (Section 3.5), NOT Delivery FullTestStatus → spec correctly attributes not-applicable to VerificationStatus only → consistent"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-08",
+        "name": "Spec ↔ B1 types.ts consistency (FullTestStatus / VerificationStatus)",
+        "concept": "spec FullTestStatus usage matches B1 frozen type definitions",
+        "checks": [
+          "types.ts:49-54 FullTestStatus = 'not-ready' | 'awaiting-user-decision' | 'authorized' | 'passed' | 'failed' → spec cites this exact enum (no not-applicable) → consistent",
+          "types.ts:60-64 VerificationStatus = 'not-run' | 'passed' | 'failed' | 'not-applicable' → spec attributes not-applicable to VerificationStatus → consistent",
+          "spec delivery-finalize requires deliveryFullTestStatus=passed (a valid FullTestStatus value) → consistent",
+          "spec full-test requires deliveryFullTestStatus ≠ passed (complementary) → consistent",
+          "spec does NOT use not-applicable as a FullTestStatus value anywhere → consistent"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-09",
+        "name": "Spec ↔ C1 formal-fact-snapshot.ts consistency (snapshot fields)",
+        "concept": "spec tasks-facts-unavailable matches C1 snapshot's actual field availability",
+        "checks": [
+          "formal-fact-snapshot.ts:86-95 OpenSpecArtifactFact kind='change-tasks' has only path + exists (no completion) → spec 'openSpecArtifacts 仅暴露 change-tasks 存在性，无 completion 字段' → consistent",
+          "formal-fact-snapshot.ts:132-151 FormalFactSnapshot has NO task-completion field → spec 'snapshot 无 task-completion 字段' + tasks-facts-unavailable → consistent",
+          "formal-fact-snapshot.ts:136 deliveryFullTestStatus: FullTestStatus | undefined → spec delivery-finalize handles undefined as non-passed → consistent",
+          "spec MUST NOT infer completion from change-tasks exists → consistent with C1 'one fact, one authority' (existence ≠ completion)"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-10",
+        "name": "not-applicable attribution correctness",
+        "concept": "all not-applicable occurrences correctly attributed to VerificationStatus or removal-doc",
+        "checks": [
+          "spec.md:241 — '不含 not-applicable（not-applicable 属 Change VerificationStatus）' → correct attribution",
+          "spec.md:266 — 'MUST NOT 接受 not-applicable 作为 FullTestStatus' → correct negative assertion",
+          "tasks.md:48/52/128 — 'MUST NOT 接受 not-applicable' / '断言 not-applicable 不被接受' → correct",
+          "design.md:123/126/127/135 — D1-12 heading + '不含 not-applicable' + '属 Change VerificationStatus' + '移除 Full Test passed 或 not-applicable' → correct (removal documentation)",
+          "No occurrence uses not-applicable as an accepted FullTestStatus value"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-11",
+        "name": "tasks-facts-unavailable vs verification-facts-unavailable distinction",
+        "concept": "two distinct fact-gap diagnoses are not conflated",
+        "checks": [
+          "spec 'blocked diagnosis 条件': tasks-facts-unavailable (archive Tasks gate) vs verification-facts-unavailable (review-apply/archive Verification gate) — distinct clauses",
+          "spec scenario 'Tasks 完成事实不可用 diagnosis': MUST NOT return verification-facts-unavailable",
+          "design.md D1-11: 'tasks-facts-unavailable 与 verification-facts-unavailable 严格区分' + '当 archive 同时面临两个缺口时 unmetPreconditions MUST 同时列出两者'",
+          "task 4.16: 'tasks-facts-unavailable 与 verification-facts-unavailable 同时存在时两者都列入 unmetPreconditions'",
+          "task 10.21: 'diagnose reason=tasks-facts-unavailable 且 ≠ verification-facts-unavailable'",
+          "D1-11 (tasks, archive-only) and D1-7 (verification, review-apply/archive) are parallel but non-overlapping fact dimensions"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-12",
+        "name": "D1-PR-002 regression check (079 fix intact)",
+        "concept": "canRun(review-S) still blocks on match+changes-requested; 079's fixes unmodified",
+        "checks": [
+          "spec.md 'Change-level Action 前置条件矩阵' still contains D1-10 blocking clause (canRun(review-S) allowed:false on match+cr)",
+          "spec.md scenario 'review-S 在 match+changes-requested 时拒绝' still present",
+          "grep 'OR match+changes-requested' in spec/tasks: NOT FOUND (079 fix intact)",
+          "design.md D1-10 still present and unmodified",
+          "079's spec/design/tasks content for D1-PR-002 is preserved (only archive/delivery-finalize/blocked-reasons sections changed in 081)"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-13",
+        "name": "Proposal artifact integrity (SHA-256 verified)",
+        "concept": "proposal.md unchanged; spec/design/tasks modified with verified hashes",
+        "checks": [
+          "proposal.md SHA-256 = 6d86964a196f76c76652b2978274ee88f2b0c4556d93830a3ebd1caef1c77cec (== 079 hash, unchanged)",
+          "design.md SHA-256 = 3fed2ee229238ac790b6dbd35545030e7ab9ab9750411bac70174387c32697c3 (≠ 079 ebf11a9b..., modified — D1-11 + D1-12)",
+          "spec.md SHA-256 = 1786d5c9db601daec3d14f369d39412a2b9442ca28854e583f29d00b040a8ee3 (≠ 079 b01bab20..., modified — D1-PR-003 + D1-PR-004)",
+          "tasks.md SHA-256 = f929545181ea007e02ec1af02eb84d576fac504522d3b786c1f320b8eaa2e622 (≠ 079 308ac881..., modified — 1.6/4.11/4.13/7.4/4.16/4.17/10.21/10.22)",
+          "openspec validate policy-engine --strict: 'Change policy-engine is valid' → passed"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-14",
+        "name": "Terminal Run immutability (075-080 unchanged)",
+        "concept": "075/076/077/078/079/080 result.json unchanged (verified by SHA-256)",
+        "checks": [
+          "075 result.json SHA-256 = e5e46147ec22ff12cbeccb3a49dc5f034b4402bf8c2726f2322aedcc684d79de (unchanged)",
+          "076 result.json SHA-256 = cde8e2c8309a111ef02352ef502c1dc4245123e1c2f2a05207c566ef8aaebc1e (unchanged)",
+          "077 result.json SHA-256 = cd53dde29a889886716bd5b095272cf88d63108eef10757c132dd3ca1db8715f (unchanged, matches 078 reviewedResultRef)",
+          "078 result.json SHA-256 = 51eb99180d46f249095140e2553026ffb151d659af34d8fb7ca67a4b38e59d2c (unchanged, matches 079 sourceReviewRef)",
+          "079 result.json SHA-256 = 709ddb70ebd6ab5b1b8cabcc9971035e2701b213f2d5755564526309e7094ffe (unchanged, matches 080 reviewedResultRef)",
+          "080 result.json SHA-256 = c90ecf4796ef852f18020866a1a3aa8a8c34af2a0e6481869a33fb27ea8b96c5 (unchanged, 081 sourceReviewRef)",
+          "081 did not write to 075/076/077/078/079/080 directories; only created 081 directory files + modified openspec/changes/policy-engine/ + aligned .tmp/explore/policy-engine/conclusion.md (gitignored scratch)"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-15",
+        "name": "Mutation policy compliance + OpenSpec strict + lineage/next action",
+        "concept": "only proposal bundle + conclusion scratch + 081 Run files modified; next action = review-propose",
+        "checks": [
+          "Frozen specs not modified (openspec/specs/ untouched)",
+          "Manifest not modified (D1 state remains active)",
+          "No production code written (src/ untouched — types.ts/formal-fact-snapshot.ts only READ)",
+          "No test code written (tests/ untouched)",
+          "Terminal Runs not modified (075-080 untouched, verified in CS-14)",
+          "proposal.md not modified (carry-forward, verified in CS-13)",
+          "Modified: spec.md, design.md, tasks.md (D1-PR-003/D1-PR-004 content fix); Aligned: conclusion.md (gitignored scratch); Created: 081 context.json, action.md, result.json",
+          "openspec validate policy-engine --strict: 'Change policy-engine is valid' → passed",
+          "inputRef.versionFingerprint = sha256:b1323433... matches 074 actual SHA-256 (provenance correct, consistent with 077/079)",
+          "After 081 completes: Current Artifact Run (propose) = 081-revise-propose; Current Review (propose) = 080-review-propose; 080.reviewedRun = 079 ≠ 081 → no lineage match → next = review-propose"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      }
+    ],
+    "totalContradictions": 0,
+    "overallResult": "pass"
+  },
+  "specStats": {
+    "requirements": 19,
+    "scenarios": 73,
+    "tasks": 108
+  },
+  "mutationPolicyCheck": {
+    "mayCreateProposalArtifacts": true,
+    "frozenSpecsModified": false,
+    "terminalRunsModified": false,
+    "proposalBundleModified": true,
+    "proposalBundleNote": "spec.md, design.md, tasks.md modified to fix D1-PR-003 (archive task-completion gate + tasks-facts-unavailable) and D1-PR-004 (delivery-finalize FullTestStatus=passed). proposal.md unchanged.",
+    "productionCodeWritten": false,
+    "testCodeWritten": false,
+    "manifestModified": false,
+    "scratchArtifactAligned": "conclusion.md (.tmp/explore/policy-engine/, gitignored — .gitignore line 9, untracked by git) aligned to maintain 0 spec↔conclusion contradictions. This is scratch supporting material, not a formal/tracked artifact, frozen spec, terminal Run, manifest, or production/test code.",
+    "filesWritten": [
+      "openspec/changes/policy-engine/specs/flowkit-policy-engine/spec.md (modified — D1-PR-003 + D1-PR-004 fix)",
+      "openspec/changes/policy-engine/design.md (modified — D1-11 + D1-12 added)",
+      "openspec/changes/policy-engine/tasks.md (modified — 1.6/4.11/4.13/7.4 fixed, 4.16/4.17/10.21/10.22 added)",
+      ".tmp/explore/policy-engine/conclusion.md (aligned — gitignored scratch, archive/delivery-finalize/decision-tree/blocked-table/availability-matrix)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-081-revise-propose/context.json (new Run)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-081-revise-propose/action.md (new Run)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-081-revise-propose/result.json (new Run)"
+    ]
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "nextAction": "review-propose",
+  "nextActionNote": "reviewer 审查 081-revise-propose，重点验证：(1) D1-PR-003 requiredChange 是否全部满足——archive 含 Tasks 完成门控，tasks-facts-unavailable fail-closed 独立于 verification-facts-unavailable，不从 Run/产物/聊天推断完成；(2) D1-PR-004 requiredChange 是否全部满足——delivery-finalize 要求 deliveryFullTestStatus=passed，移除 not-applicable，5 个非 passed 值负向表驱动覆盖；(3) spec↔design↔tasks↔conclusion↔delivery-lifecycle↔B1 types↔C1 snapshot 一致；(4) tasks-facts-unavailable 与 verification-facts-unavailable 严格区分；(5) D1-PR-001/002 仍 resolved（079 修复未变）；(6) 075-080 terminal Runs 未变；(7) openspec validate --strict 通过；(8) consistencyScan 15 维度 0 contradictions。如 approved 则进入 apply（需 owner 授权）；如 changes-requested 则进入 revise-propose。",
+  "blockedOn": []
+}

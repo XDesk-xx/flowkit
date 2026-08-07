@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-091-revise-apply",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "D1",
+  "changeId": "policy-engine",
+  "action": "revise-apply",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "inputRef": "032bb814081a2466b59c0e3387517e7f419ccd00fcca2d77268720334c5b7413",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-089-revise-apply/",
+  "sourceReviewRun": "20260806-090-review-apply",
+  "sourceReviewVerdict": "changes-requested",
+  "sourceChangeState": "D1 policy-engine: active (explore 069 approved via 074; propose reviewed/approved; apply 087 reviewed by 088 changes-requested D1-RA-001, revised by 089, reviewed by 090 changes-requested D1-RA-002; D1-PR-001..006 resolved at propose stage; D1-RA-001 resolved by 089)",
+  "triggerFindings": [
+    {
+      "id": "D1-RA-002",
+      "severity": "P1",
+      "origin": "20260806-090-review-apply",
+      "title": "Verification gate conflates fact availability with a passed result"
+    }
+  ],
+  "inputRefSemantics": "inputRef cites 090-review-apply/result.json (the review whose changes-requested verdict and D1-RA-002 finding triggered this revision) with its actual immutable SHA-256 (032bb814...), matching the revise-apply precedent (089 inputRef = 088 result SHA). reviewedRun names 089-revise-apply, the latest apply artifact whose implementation is revised. 091 fixes D1-RA-002: the prior gate exposed only isVerificationFactAvailable (availability), so canRun/next treated any present Verification field as sufficient — including a future failed/not-run status. 091 replaces it with a status-aware, fail-closed VerificationGateResult shared by canRun and next. Production code (new verification-gate.ts, blocked-diagnosis.ts, preconditions.ts, next.ts) + tests (verification-gate.test.ts) modified; proposal bundle unchanged. Additionally, per owner instruction, the explore artifact is relocated from .tmp/explore/policy-engine/conclusion.md to openspec/changes/policy-engine/explore.md (matching all 8 prior archived changes). No frozen specs / terminal Runs / manifest touched.",
+  "ownerDirectedScope": {
+    "explorePathCorrection": "Owner instructed: handle the explore.md path issue directly in this revise. The D1 explore artifact was incorrectly written to .tmp/explore/policy-engine/conclusion.md (gitignored, non-recoverable per delivery-lifecycle.md). All 8 prior archived changes carry explore.md in their change directory (git-tracked). 091 restores openspec/changes/policy-engine/explore.md from the .tmp conclusion content."
+  },
+  "constraints": {
+    "mayModifyProposalArtifacts": false,
+    "mayWriteProductionCode": true,
+    "mayWriteTestCode": true,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-091-revise-apply/"
+}

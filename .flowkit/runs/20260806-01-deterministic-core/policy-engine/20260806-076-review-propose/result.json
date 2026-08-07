@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-076-review-propose",
+  "status": "completed",
+  "verdict": "changes-requested",
+  "summary": "D1 Proposal is structurally valid but cannot be approved: 075-propose identifies 074-review-explore as its source while recording the SHA-256 of 072-review-explore instead of the immutable 074 result.",
+  "reviewedResultRef": "run-result:.flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-075-propose/result.json;sha256:e5e46147ec22ff12cbeccb3a49dc5f034b4402bf8c2726f2322aedcc684d79de",
+  "blockingFindings": [
+    {
+      "id": "D1-PR-001",
+      "severity": "P1",
+      "title": "075 Proposal source fingerprint does not identify the approved 074 Review",
+      "evidence": "075 context.inputRef.ref names 074-review-explore/result.json but its versionFingerprint is sha256:c672e7621062bb95c8dba3b68a8fee38d5529d8bef6ae86cfb3e811bae8792e9. The immutable 074 result SHA-256 is sha256:b1323433400ff5aa39027adc7196a9cd69492773e60630d38798e8388ad4e293.",
+      "requiredChange": "Create a new revise-propose Run that records 074 with its actual SHA-256, preserves 075 and 076 unchanged, and carries the unchanged Proposal bundle forward only after verifying that its artifact set and strict validation still match the reviewed version. Do not edit 075 in place."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "verification": {
+    "checks": [
+      {
+        "name": "OpenSpec strict validation",
+        "status": "passed",
+        "result": "openspec validate policy-engine --strict: Change 'policy-engine' is valid."
+      },
+      {
+        "name": "Proposal source-review provenance",
+        "status": "failed",
+        "result": "075 context.inputRef.versionFingerprint does not match the immutable 074 review result."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-propose",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}
