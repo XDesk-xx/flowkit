@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-121-review-propose",
+  "status": "completed",
+  "summary": "Complete Q1 Proposal review of 120 finished with changes-requested. The generation-aware validation boundary resolves Q1-RP-003 without rewriting terminal Runs or creating an artifact history store, but the current delta itself fails strict OpenSpec validation and its produced-artifact contract permits an empty or partial initial generation. Without mandatory initial coverage, review entry can validate an empty/incomplete effective set while canonical proposal artifacts have no Core-derived content-hash binding. Both defects must be repaired before Proposal approval.",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-120-revise-propose/",
+  "reviewedResultRef": "content-sha256:c7f60429c07032bba7d77943c97151c78b5f001f46a16eeb079024dbf9484528",
+  "sourceReview": {
+    "runId": "20260806-119-review-propose",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:563f9773ac39fac5a488f3257765d5fae94433ab5c653e7cf295c2c7053c74ae"
+  },
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "Q1-RP-004",
+      "title": "The revised C1 delta does not pass its recorded strict OpenSpec validation",
+      "location": "openspec/changes/execution-model-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md:310-315",
+      "evidence": "Independent `npx openspec validate execution-model-correction --strict` fails: ADDED \"mutable Change artifact ResultRef 必须使用 generation-aware validation\" must contain SHALL or MUST. The requirement's first physical description line contains no parser-recognized MUST/SHALL; 120 nevertheless records openspecStrict=passed. Canonical `npx openspec validate --specs --strict` passes 8/0, but it does not validate this unmerged Change delta.",
+      "impact": "The Proposal's own delta is structurally invalid and its recorded validation evidence is inaccurate, so it cannot be approved.",
+      "requiredResolution": "Make the added Requirement parser-recognizable with an explicit MUST/SHALL in the Requirement description form expected by the installed OpenSpec parser, rerun `openspec validate execution-model-correction --strict`, and update the author evidence. Keep this repair limited to the affected delta and Run evidence."
+    },
+    {
+      "id": "Q1-RP-005",
+      "title": "Initial artifact generations can omit the refs that make the effective set reviewable",
+      "location": "openspec/changes/execution-model-correction/design.md:137-169, 241-249, 305-323; openspec/changes/execution-model-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md:223-242, 278-288, 317-366; openspec/changes/execution-model-correction/tasks.md:28-32, 45-68",
+      "evidence": "The contract permits only an Action/tag set: propose/revise-propose may declare proposal/design/specs/tasks, and write preflight derives and validates only declared produced refs. `producedResultRefs` remains optional. No requirement makes an initial explore generation declare explore, or an initial propose generation cover proposal, design, the complete specs namespace, and tasks. Review entry validates only the computed current effective set; an empty or partial initial set therefore passes its own validation while unrepresented canonical artifacts have no content-hash assertion. The subset overlay detects undeclared changes only when a predecessor ref exists, so it cannot repair the initial-generation gap.",
+      "impact": "A completed initial author Run can be reviewed and approved without binding all of the canonical artifacts that constitute its Explore/Proposal. This defeats the Proposal's Core-derived ResultRef and review-current-content guarantees before any revision lineage exists.",
+      "requiredResolution": "Define and enforce complete initial-generation coverage: initial explore must produce its canonical explore ref; initial propose must produce proposal, design, the complete actual specs namespace, and tasks (or an equally explicit authoritative expected-set contract). Keep revise subset overlay, but require review entry and Reader to reject an incomplete effective set. Apply the rule consistently to descriptor validation, derivation/preflight, effective-set construction, Reader/review entry, and tests, including empty/partial initial propose negative cases and an initial complete-set positive case."
+    }
+  ],
+  "nonBlockingFindings": [
+    {
+      "id": "Q1-NB-001",
+      "title": "Explore source links remain checkout-specific",
+      "location": "openspec/changes/execution-model-correction/explore.md:62, 72, 90, 98, 106, 127, 137",
+      "evidence": "The cited source links use file:///D:/Projects/flowkit absolute paths and cannot resolve in another checkout or platform.",
+      "recommendedResolution": "Convert source links to repository-relative Markdown links in a future in-scope edit. This does not block the Proposal findings above."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "120 source binding, JSON, artifact hashes, and Run numbering",
+        "status": "passed",
+        "result": "120 context/result JSON parse. Its inputRef equals the actual SHA-256 of 119 result.json; all five declared artifact hashes match; and 120 was the Delivery-wide maximum before this reviewer Run."
+      },
+      {
+        "name": "119 generation-lifecycle finding",
+        "status": "passed",
+        "result": "The bundle now defines valid review/revise lineage, revision-window and superseded scopes, subset overlay/inherited-ref validation, and final-current archive validation without terminal mutation or a snapshot registry."
+      },
+      {
+        "name": "Proposal strict validation",
+        "command": "npx openspec validate execution-model-correction --strict",
+        "status": "failed",
+        "result": "The added mutable Change artifact generation-aware validation Requirement is rejected for lacking parser-recognized MUST/SHALL in its Requirement description."
+      },
+      {
+        "name": "Canonical OpenSpec specs",
+        "command": "npx openspec validate --specs --strict",
+        "status": "passed",
+        "result": "8 canonical specs passed, 0 failed. It does not clear the Change-delta failure."
+      },
+      {
+        "name": "Initial artifact generation completeness",
+        "status": "failed",
+        "result": "Initial produce actions can omit all or part of their canonical produced refs; review-current-effective-set validation then has no complete artifact set to validate."
+      },
+      {
+        "name": "Scope and whitespace",
+        "status": "passed",
+        "result": "120 stays within the permitted Proposal bundle. Artifact JSON, explicit trailing-whitespace scan, and git diff --check passed. No production code or tests were modified."
+      },
+      {
+        "name": "Delivery Full Test",
+        "status": "not-applicable",
+        "result": "Not owner-authorized and not run; review-propose has no Full-Test authority."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-propose",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

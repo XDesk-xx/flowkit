@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-122-revise-propose",
+  "status": "completed",
+  "summary": "Q1 revise-propose resolved Q1-RP-004 and Q1-RP-005. The generation-aware Requirement now starts with an explicit Reader MUST statement and passes OpenSpec 1.7.0 Change strict validation. Initial explore/propose generations now use a Core-owned complete expected produced set rather than caller-optional tags: initial explore binds explore.md; initial propose binds proposal.md, design.md, tasks.md and every actual specs/** file. Initial completion, Reader and review entry share the same completeness contract and reject empty/partial sets or later-added unbound spec files. Revise-* keeps the previously accepted non-empty changed-tag subset overlay and inherited-ref validation. No production code, tests, Full Test, commit or push was performed.",
+  "sourceReview": {
+    "runId": "20260806-121-review-propose",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:4afb55b3c0fa188559a520ed05839ca4d00bc71cf3823660ca7efd459cf4ea8f"
+  },
+  "resolvedFindings": [
+    {
+      "id": "Q1-RP-004",
+      "result": "resolved",
+      "evidence": "The affected C1 delta Requirement body now begins with `Reader MUST ... generation-aware validation`. OpenSpec 1.7.0 CLI was actually executed against the revised Change and returned `Change 'execution-model-correction' is valid`."
+    },
+    {
+      "id": "Q1-RP-005",
+      "result": "resolved",
+      "evidence": "The Proposal/design/delta/tasks now define a Core-owned complete initial expected set. Initial explore cannot omit explore.md. Initial propose cannot omit proposal/design/tasks or any actual specs/** file; review entry compares persisted refs with the current canonical namespace and rejects later-added unbound specs. Empty/partial initial-set negative fixtures and a complete initial-propose positive fixture are required. Revise successor subset overlay remains unchanged in principle."
+    }
+  ],
+  "preflight": {
+    "fullReading": "Read both 121 Blocking Findings and their requiredResolution. Q1-RP-004 is limited to parser-recognizable Requirement wording plus real CLI evidence. Q1-RP-005 requires complete initial-generation coverage across descriptor/derivation/preflight/effective-set/Reader-review/tests.",
+    "instanceEnumeration": "Enumerated initial mutable generation entry points: initial explore and initial propose. Also checked revise-explore/revise-propose to avoid accidentally removing the accepted subset-overlay behavior.",
+    "implementability": "The initial expected set is derivable entirely from Action + context.changeId + filesystem namespace: explore has one fixed file; propose has three fixed singleton files plus Core-enumerated specs/**. No new authority, snapshot store or Policy state is required.",
+    "consistency": "Applied initial completeness to resolver semantics, terminal preflight, generation/effective-set construction, review entry/Reader and test tasks. Existing generation-aware supersession/archive rules remain intact."
+  },
+  "artifacts": [
+    {
+      "path": "openspec/changes/execution-model-correction/proposal.md",
+      "sha256": "676015c3a582c9aa52166f7ba736ab61a6144306bcb65d38e69df47dc077dddf"
+    },
+    {
+      "path": "openspec/changes/execution-model-correction/design.md",
+      "sha256": "455d8f7429a7d09918e5482f23079ff26de426a81033d63a6994c8c78ff73187"
+    },
+    {
+      "path": "openspec/changes/execution-model-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "sha256": "0973e7de089e2fed64fd3cb3cb513fc06dfc7438c9a56178c1db06c43e8f1e34"
+    },
+    {
+      "path": "openspec/changes/execution-model-correction/specs/flowkit-bootstrap-and-roadmap/spec.md",
+      "sha256": "aec413c4614e700e4974a1433207fc195e6ac3ef3b0de9e3fc8c2b9389687e84"
+    },
+    {
+      "path": "openspec/changes/execution-model-correction/tasks.md",
+      "sha256": "ca7de4a86f2bc74937412a7ef6b260fbbcbaf5b522627b76890b2e432c96c75f"
+    }
+  ],
+  "modifiedArtifacts": [
+    "openspec/changes/execution-model-correction/proposal.md",
+    "openspec/changes/execution-model-correction/design.md",
+    "openspec/changes/execution-model-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+    "openspec/changes/execution-model-correction/tasks.md"
+  ],
+  "unchangedBundleArtifact": "openspec/changes/execution-model-correction/specs/flowkit-bootstrap-and-roadmap/spec.md",
+  "scope": {
+    "productionCodeModified": false,
+    "testsModified": false,
+    "approvedExploreModified": false,
+    "priorTerminalRunsModified": false,
+    "fullTestRun": false
+  },
+  "verification": {
+    "openspecVersion": "1.7.0",
+    "openspecStrict": "passed",
+    "openspecInvocation": "node <offline-openspec-1.7.0>/bin/openspec.js validate execution-model-correction --strict",
+    "openspecResult": "Change 'execution-model-correction' is valid",
+    "whitespace": "passed",
+    "jsonValidity": "passed",
+    "deliveryFullTest": "not-run"
+  },
+  "nextActionRecommendation": "review-propose",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

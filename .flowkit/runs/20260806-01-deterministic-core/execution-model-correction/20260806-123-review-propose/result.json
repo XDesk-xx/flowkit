@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-123-review-propose",
+  "status": "completed",
+  "summary": "Complete Q1 Proposal review of 122 finished with changes-requested. 122 resolves Q1-RP-004: the revised delta passes the installed OpenSpec strict Change validation. It also closes the empty/partial initial-generation gap by making initial explore and initial propose Core-owned complete sets. However, the proposed completeness rule is limited to the initial propose and does not compare a revise-propose successor effective specs namespace with the current canonical specs namespace. A successor can add a new spec while declaring only proposal: inherited refs still match, the successor terminals, and the generic review-entry check validates only that incomplete effective set. The unbound new canonical spec can therefore be approved. Proposal approval remains blocked until completeness is enforced for every current propose effective set, including revise successors.",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-122-revise-propose/",
+  "reviewedResultRef": "content-sha256:8e2cd7d0bb36562aeba0d381642076e478446341a2f8f29d06122063bcc6766b",
+  "sourceReview": {
+    "runId": "20260806-121-review-propose",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:4afb55b3c0fa188559a520ed05839ca4d00bc71cf3823660ca7efd459cf4ea8f"
+  },
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "Q1-RP-006",
+      "title": "A revise-propose successor can introduce an unbound spec and still enter review",
+      "location": "openspec/changes/execution-model-correction/design.md:255-285; openspec/changes/execution-model-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md:244-279,399-414; openspec/changes/execution-model-correction/tasks.md:28-30,50-58",
+      "evidence": "122 makes complete namespace comparison explicit only for an initial propose (delta 244-279). For a revise-propose, the effective set is the predecessor set plus only declared tags (delta 401-406); the generic review-entry rule then checks only that effective refs resolve and hash-match (411-414). Sequence: P0 completes with complete specs {A}; R0 reviews P0 as changes-requested; P1=revise-propose declares only proposal and adds canonical specs/B. P1 inherits A, so every declared and inherited ref matches. Because P1 did not declare specs, no rule compares its effective specs set {A} against current namespace {A,B}; P1 can terminal and review-propose can bind P1 without B. The initial-only new-spec scenario (266-272) does not cover this successor sequence, while tasks 3.8/5.12 state the intended complete-namespace guarantee.",
+      "impact": "A completed revision can be approved while a canonical Proposal spec has no Core-derived content-hash binding. This recreates the initial-coverage trust gap for the normal revise path and defeats the stated current-effective-set guarantee.",
+      "requiredResolution": "Make specs-namespace completeness an invariant of every current propose effective set, not just initial propose. At revise-propose terminal preflight and review entry, compare the effective specs refs exactly with the current canonical specs/** namespace; a namespace change must require the specs tag and Core enumeration, otherwise keep the revise Run pending or reject review binding. Align the design, delta Requirement/scenarios, and tasks. Add a negative fixture P0 -> changes-requested review -> P1(proposal only plus new specs/B) that cannot terminal or enter review, alongside the positive P1 with specs declared and Core-enumerated. Preserve the accepted subset overlay for unchanged namespaces."
+    }
+  ],
+  "nonBlockingFindings": [
+    {
+      "id": "Q1-NB-001",
+      "title": "Explore source links remain checkout-specific",
+      "location": "openspec/changes/execution-model-correction/explore.md:62,72,90,98,106,127,137",
+      "evidence": "The cited source links use file:///D:/Projects/flowkit absolute paths and cannot resolve in another checkout or platform.",
+      "recommendedResolution": "Convert source links to repository-relative Markdown links in a future in-scope edit. This does not block the Proposal finding above."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "122 source binding, JSON, artifact hashes, and Run numbering",
+        "status": "passed",
+        "result": "122 context/result JSON parse. Its inputRef equals the actual SHA-256 of 121 result.json; all five declared Proposal artifact hashes match current files; and 122 was the Delivery-wide maximum before this reviewer Run."
+      },
+      {
+        "name": "Q1-RP-004 strict Change validation",
+        "command": "npx openspec validate execution-model-correction --strict",
+        "status": "passed",
+        "result": "Change 'execution-model-correction' is valid with the installed OpenSpec CLI."
+      },
+      {
+        "name": "Canonical OpenSpec specs",
+        "command": "npx openspec validate --specs --strict",
+        "status": "passed",
+        "result": "8 canonical specs passed, 0 failed. This does not prove the successor namespace lifecycle described above."
+      },
+      {
+        "name": "Initial generation completeness",
+        "status": "passed",
+        "result": "The revised design/delta require Core-derived initial explore and initial propose expected sets, reject empty/partial initial sets, and reject a spec added after an initial propose before review."
+      },
+      {
+        "name": "Successor specs namespace completeness",
+        "status": "failed",
+        "result": "A revise-propose that omits the specs tag can add a new spec not present in its inherited effective set; current rules neither reject terminal completion nor require review entry to compare the successor effective namespace with canonical specs/**."
+      },
+      {
+        "name": "Scope and whitespace",
+        "status": "passed",
+        "result": "122 stays within the permitted Proposal bundle. Reviewed JSON parses, explicit trailing-whitespace scan and git diff --check passed. No production code or tests were modified."
+      },
+      {
+        "name": "Delivery Full Test",
+        "status": "not-applicable",
+        "result": "Not owner-authorized and not run; review-propose has no Full-Test authority."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-propose",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

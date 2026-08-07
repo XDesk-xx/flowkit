@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-116-propose",
+  "status": "completed",
+  "summary": "Q1 propose completed from independently approved 115-review-explore. The proposal freezes Lean Run closed schema, Core-owned ResultRef derivation, exact review binding, completion preflight, canonical artifact paths, verification cost boundaries, and bounded Bootstrap legacy compatibility without changing D1 Policy semantics or implementing F1 scripts.",
+  "sourceReview": {
+    "runId": "20260806-115-review-explore",
+    "verdict": "approved",
+    "resultRef": "content-sha256:6ef7fafaf932d7e8b65b2a204c2cc4e16d6777a4f82b78caf7ee7127b9f2c072"
+  },
+  "artifacts": [
+    {
+      "path": "openspec/changes/execution-model-correction/proposal.md",
+      "sha256": "8c44b1ffb7beb2f1a32815810c41feee9e63265f2d29707b035114e67d5df8b0"
+    },
+    {
+      "path": "openspec/changes/execution-model-correction/design.md",
+      "sha256": "0a7901275783c58d3b24b8afe162f8acb2216c7356800552f6f30dfcdc82914e"
+    },
+    {
+      "path": "openspec/changes/execution-model-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "sha256": "628ef941581356a8a8885cdab2ce84cd7a75065ba5606007ce02cc98d33da68e"
+    },
+    {
+      "path": "openspec/changes/execution-model-correction/specs/flowkit-bootstrap-and-roadmap/spec.md",
+      "sha256": "327037516f2abfac305246f27d69a2014b354eb47daec2361b58c8f6849295c3"
+    },
+    {
+      "path": "openspec/changes/execution-model-correction/tasks.md",
+      "sha256": "30a99126c9bb2dc1307643bf29cf5c372ff471fb1c54c5a73deda8fa0151d70f"
+    }
+  ],
+  "scope": {
+    "modifiedCapabilities": [
+      "flowkit-formal-fact-reader-and-persistence",
+      "flowkit-bootstrap-and-roadmap"
+    ],
+    "productionCodeModified": false,
+    "testsModified": false,
+    "fullTestRun": false
+  },
+  "verification": {
+    "openspecStrict": "passed",
+    "openspecCommand": "openspec 1.7.0 validate execution-model-correction --strict",
+    "whitespace": "passed",
+    "jsonValidity": "passed"
+  },
+  "nextActionRecommendation": "review-propose",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

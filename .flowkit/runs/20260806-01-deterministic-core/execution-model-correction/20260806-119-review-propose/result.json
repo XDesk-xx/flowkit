@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-119-review-propose",
+  "status": "completed",
+  "summary": "Complete Q1 Proposal review of 118 finished with changes-requested. 118 correctly repairs the strict OpenSpec requirement and the archive relocation lifecycle for non-Run artifact references. However, the same stable active-canonical logical paths are deliberately overwritten by ordinary revise-propose work before archive. Earlier terminal propose Run ResultRefs must still validate their recorded content, but the proposed resolver has no per-revision immutable physical target or defined current-only validation boundary. A normal review-requested revision therefore produces replacement mismatch / FactConflict from a terminal predecessor before archive, blocking the lifecycle that Q1 must support.",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-118-revise-propose/",
+  "reviewedResultRef": "content-sha256:c35a6ce5858a4e63b67fd6d5193e8d57df699f2990c41b9ff5aa9fda39a76e71",
+  "sourceReview": {
+    "runId": "20260806-117-review-propose",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:61ff9a5afa8c39e9403522e9234c08011b77cd5c64c160be5ead6588c3d3cc44"
+  },
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "Q1-RP-003",
+      "title": "Revision overwrites the mutable target of an earlier terminal producedResultRef",
+      "location": "openspec/changes/execution-model-correction/design.md:125-201, 242-279; openspec/changes/execution-model-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md:216-361; openspec/changes/execution-model-correction/tasks.md:28-33, 47-64",
+      "evidence": "The Proposal assigns both propose and revise-propose producedArtifactTags to the same active canonical proposal/design/specs/tasks paths and requires write preflight plus Reader to use the shared resolver and content-hash validation. 118 itself replaces all five files previously recorded by terminal 116: each 116 declared SHA-256 differs from the current file SHA-256, while 116 remains immutable. The new resolver handles only active-to-archive relocation; before archive it resolves the earlier logical refs back to those overwritten active files, so their fingerprints mismatch. Because the Reference treats broken ResultRef as a formal reliability failure and the Reader is fail-closed, an ordinary changes-requested -> revise-propose cycle can conflict before a later reviewer can approve it.",
+      "impact": "Q1 makes the standard Proposal revision loop incompatible with durable terminal ResultRefs. Any Reader validation of the historical predecessor can produce FactConflict and block Policy even though the revision is the required response to a reviewer finding.",
+      "requiredResolution": "Define one complete revision-and-archive lifecycle for producedResultRefs. It must preserve an unambiguous content-verifiable target for each terminal generation, or explicitly and consistently bound which historical produced artifact refs Reader validates without weakening review lineage or replacement detection. Apply the rule to Core derivation, preflight, Reader behavior, canonical artifact/Archive handling, and tests. Cover a schemaVersion 2 propose -> review-propose changes-requested -> revise-propose sequence that changes a subset of Proposal artifacts, validation of both terminal Runs before archive, then Archive and post-archive validation; terminal Runs must not be rewritten."
+    }
+  ],
+  "nonBlockingFindings": [
+    {
+      "id": "Q1-NB-001",
+      "title": "Explore source links remain checkout-specific",
+      "location": "openspec/changes/execution-model-correction/explore.md:62, 72, 90, 98, 106, 127, 137",
+      "evidence": "The cited source links use file:///D:/Projects/flowkit absolute paths and cannot resolve in another checkout or platform.",
+      "recommendedResolution": "Convert source links to repository-relative Markdown links in a future in-scope edit. This does not block the Proposal finding above."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "118 source binding, JSON, artifact hashes, and Run numbering",
+        "status": "passed",
+        "result": "118 context/result JSON parse. Its inputRef equals the actual SHA-256 of 117 result.json; all five declared artifact hashes match; and 118 was the Delivery-wide maximum before this reviewer Run."
+      },
+      {
+        "name": "117 strict-validation finding",
+        "command": "npx openspec validate execution-model-correction --strict",
+        "status": "passed",
+        "result": "Change 'execution-model-correction' is valid. The Bootstrap legacy requirement now has parser-recognized MUST syntax."
+      },
+      {
+        "name": "Canonical OpenSpec specs",
+        "command": "npx openspec validate --specs --strict",
+        "status": "passed",
+        "result": "8 canonical specs passed, 0 failed."
+      },
+      {
+        "name": "117 archive-relocation finding",
+        "status": "passed",
+        "result": "The revised bundle defines a single archive-aware logical-to-physical resolver, preserves immutable terminal Runs, and includes post-archive validation coverage for verificationSummaryRef and producedResultRefs."
+      },
+      {
+        "name": "Proposal semantic lifecycle review",
+        "status": "failed",
+        "result": "The resolver lacks a durable rule for terminal producedResultRefs when revise-propose overwrites the same active canonical files before archive. The current 116 -> 118 artifact hash transitions demonstrate the resulting mismatch."
+      },
+      {
+        "name": "Scope and whitespace",
+        "status": "passed",
+        "result": "118 stays within the permitted Proposal bundle. Artifact JSON, explicit trailing-whitespace scan, and git diff --check passed. No production code or tests were modified."
+      },
+      {
+        "name": "Delivery Full Test",
+        "status": "not-applicable",
+        "result": "Not owner-authorized and not run; review-propose has no Full-Test authority."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-propose",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}
