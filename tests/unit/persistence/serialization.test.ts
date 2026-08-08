@@ -563,6 +563,52 @@ describe('validateContextFile', () => {
       (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
     );
   });
+
+  it('rejects a path-shaped reviewedRunId (../../run) at schema boundary (Q1-RA-005)', () => {
+    assert.throws(
+      () =>
+        validateContextFile({
+          ...validChangeContext,
+          runId: '20260806-012-review-apply',
+          action: 'review-apply',
+          role: 'reviewer',
+          reviewedRunId: '../../run',
+          runPath: '.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-012-review-apply/',
+        }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('rejects a path-shaped reviewedRunId (C:\\\\tmp\\\\run) at schema boundary (Q1-RA-005)', () => {
+    assert.throws(
+      () =>
+        validateContextFile({
+          ...validChangeContext,
+          runId: '20260806-013-review-apply',
+          action: 'review-apply',
+          role: 'reviewer',
+          reviewedRunId: 'C:\\tmp\\run',
+          runPath: '.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-013-review-apply/',
+        }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('rejects a path-shaped sourceReviewRun (../x) at schema boundary (Q1-RA-005)', () => {
+    assert.throws(
+      () =>
+        validateContextFile({
+          ...validChangeContext,
+          runId: '20260806-014-revise-propose',
+          action: 'revise-propose',
+          role: 'author',
+          sourceReviewRun: '../x',
+          sourceReviewVerdict: 'changes-requested',
+          runPath: '.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-014-revise-propose/',
+        }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------

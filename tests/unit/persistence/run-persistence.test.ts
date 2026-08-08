@@ -6,18 +6,13 @@ import { join } from 'node:path';
 import { FlowkitError } from '../../../src/shared/errors.js';
 import {
   createRun,
-  writeRunResult,
   completeRun,
   projectCurrentRun,
   isInvisibleEntry,
 } from '../../../src/persistence/run-persistence.js';
-import type { RunResultFile, ContextFile } from '../../../src/persistence/serialization.js';
+import type { ContextFile } from '../../../src/persistence/serialization.js';
 import { validateContextFile } from '../../../src/persistence/serialization.js';
-import {
-  computeResultFileHash,
-  buildArtifactResultRef,
-  VERIFICATION_SUMMARY_KIND,
-} from '../../../src/persistence/result-ref-adapter.js';
+import { computeResultFileHash } from '../../../src/persistence/result-ref-adapter.js';
 
 // ---------------------------------------------------------------------------
 // Test fixture helpers
@@ -203,10 +198,15 @@ describe('projectCurrentRun', () => {
 });
 
 // ---------------------------------------------------------------------------
-// writeRunResult (tasks 4.1-4.11, 12.9-12.11)
+// completeRun publish protocol (fs.link / assertMutable / race / RUN_TERMINAL)
 // ---------------------------------------------------------------------------
+//
+// Q1-RA-001: `writeRunResult` (raw RunResultFile publisher) is module-private
+// and NOT exported. All terminal completion enters through the descriptor-driven
+// `completeRun`. These tests exercise the shared publish protocol through the
+// public behavior of `completeRun`.
 
-describe('writeRunResult', () => {
+describe('completeRun publish protocol (fs.link / assertMutable / race)', () => {
   before(makeTempRoot);
   after(cleanupTempRoot);
 
@@ -214,37 +214,32 @@ describe('writeRunResult', () => {
     return createRun(createRunInput({ runId }));
   }
 
+  async function writeExplore(runId: string): Promise<string> {
+    const changeId = `PF-${runId}`;
+    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
+    await mkdir(changeDir, { recursive: true });
+    await writeFile(join(changeDir, 'explore.md'), '# Explore\n');
+    return createRun(
+      createRunInput({ runId, changeId, action: 'explore', role: 'author' }),
+    );
+  }
+
   it('publishes result.json via fs.link create-if-not-exists (task 4.8)', async () => {
-    const runDir = await setupRun('20260806-010-explore');
-    const result: RunResultFile = {
-      runStatus: 'completed',
-      actionResult: {
-        action: 'explore',
-        executionStatus: 'completed',
-        summary: 'done',
-      },
-    };
-    await writeRunResult(runDir, result);
+    const runDir = await writeExplore('20260806-010-explore');
+    await completeRun(runDir, { executionStatus: 'completed', summary: 'done' });
     const content = await readFile(join(runDir, 'result.json'), 'utf-8');
     const parsed = JSON.parse(content);
     assert.equal(parsed.runStatus, 'completed');
+    // runRef is derived on read, not persisted.
     assert.equal(parsed.actionResult.runRef, undefined);
   });
 
   it('second writer gets RUN_TERMINAL (task 4.9, 12.10)', async () => {
-    const runDir = await setupRun('20260806-011-explore');
-    const result: RunResultFile = {
-      runStatus: 'completed',
-      actionResult: { action: 'explore', executionStatus: 'completed', summary: 'first' },
-    };
-    await writeRunResult(runDir, result);
-    // Second write should fail with RUN_TERMINAL.
+    const runDir = await writeExplore('20260806-011-explore');
+    await completeRun(runDir, { executionStatus: 'completed', summary: 'first' });
+    // Second completeRun must fail with RUN_TERMINAL.
     await assert.rejects(
-      () =>
-        writeRunResult(runDir, {
-          runStatus: 'completed',
-          actionResult: { action: 'explore', executionStatus: 'completed', summary: 'second' },
-        }),
+      () => completeRun(runDir, { executionStatus: 'completed', summary: 'second' }),
       (e: unknown) => e instanceof FlowkitError && e.code === 'RUN_TERMINAL',
     );
     // First writer's content preserved.
@@ -254,80 +249,52 @@ describe('writeRunResult', () => {
 
   it('does not use atomicWriteFile for result.json (task 4.11)', async () => {
     const runDir = await setupRun('20260806-012-explore');
-    await writeRunResult(runDir, {
-      runStatus: 'failed',
-      failureDiagnosis: 'broken',
-    });
+    await completeRun(runDir, { failureDiagnosis: 'broken' });
     // result.json exists and has the right content.
     const content = await readFile(join(runDir, 'result.json'), 'utf-8');
     assert.equal(JSON.parse(content).runStatus, 'failed');
   });
 
-  it('accepts RunResultFile object, not JSON string (task 4.1)', async () => {
+  it('publishes a cancelled Run (task 4.1)', async () => {
     const runDir = await setupRun('20260806-013-explore');
-    const result: RunResultFile = {
-      runStatus: 'cancelled',
-      cancellationReason: 'aborted',
-    };
-    await writeRunResult(runDir, result);
+    await completeRun(runDir, { cancellationReason: 'aborted' });
     const content = await readFile(join(runDir, 'result.json'), 'utf-8');
     assert.equal(JSON.parse(content).cancellationReason, 'aborted');
   });
 
-  it('rejects invalid combination (task 4.4)', async () => {
+  it('rejects a completed Run missing executionStatus/summary (task 4.4)', async () => {
     const runDir = await setupRun('20260806-014-explore');
     await assert.rejects(
-      () =>
-        writeRunResult(runDir, {
-          runStatus: 'completed',
-        } as unknown as RunResultFile),
+      () => completeRun(runDir, {} as never),
       (e: unknown) => e instanceof FlowkitError,
     );
   });
 
   it('rejects terminal Run (result.json exists) via assertMutable (task 4.3)', async () => {
-    const runDir = await setupRun('20260806-015-explore');
-    await writeRunResult(runDir, {
-      runStatus: 'completed',
-      actionResult: { action: 'explore', executionStatus: 'completed', summary: 'done' },
-    });
+    const runDir = await writeExplore('20260806-015-explore');
+    await completeRun(runDir, { executionStatus: 'completed', summary: 'done' });
     await assert.rejects(
-      () =>
-        writeRunResult(runDir, {
-          runStatus: 'failed',
-          failureDiagnosis: 'late',
-        }),
+      () => completeRun(runDir, { failureDiagnosis: 'late' }),
       (e: unknown) => e instanceof FlowkitError && e.code === 'RUN_TERMINAL',
     );
   });
 
   it('assertMutable observes persisted terminal status BEFORE fs.link (C1-AP-002)', async () => {
-    // C1-AP-002: writeRunResult must read existing result.json and reconstruct
-    // the current Run status so assertMutable throws RUN_TERMINAL based on the
-    // persisted terminal state, not a freshly projected pending Run. The
-    // rejection MUST happen at assertMutable, before any temp-file publication.
-    const runDir = await setupRun('20260806-017-explore');
-    const result: RunResultFile = {
-      runStatus: 'completed',
-      actionResult: { action: 'explore', executionStatus: 'completed', summary: 'first' },
-    };
-    await writeRunResult(runDir, result);
+    // C1-AP-002: the publisher reads existing result.json and reconstructs the
+    // current Run status so assertMutable throws RUN_TERMINAL based on the
+    // persisted terminal state. The rejection MUST happen at assertMutable,
+    // before any temp-file publication.
+    const runDir = await writeExplore('20260806-017-explore');
+    await completeRun(runDir, { executionStatus: 'completed', summary: 'first' });
 
-    // Second write: assertMutable MUST reject because result.json exists with
-    // runStatus=completed. The error code is RUN_TERMINAL (from assertMutable,
-    // not from fs.link EEXIST — both produce the same code, but assertMutable
-    // is reached first because reconstructCurrentRun reads result.json).
+    // Second completion: assertMutable MUST reject because result.json exists
+    // with runStatus=completed.
     await assert.rejects(
-      () =>
-        writeRunResult(runDir, {
-          runStatus: 'completed',
-          actionResult: { action: 'explore', executionStatus: 'completed', summary: 'second' },
-        }),
+      () => completeRun(runDir, { executionStatus: 'completed', summary: 'second' }),
       (e: unknown) => e instanceof FlowkitError && e.code === 'RUN_TERMINAL',
     );
 
-    // First writer's content preserved (assertMutable rejected before any
-    // temp-file publication, so no partial state is possible).
+    // First writer's content preserved.
     const content = await readFile(join(runDir, 'result.json'), 'utf-8');
     assert.equal(JSON.parse(content).actionResult.summary, 'first');
 
@@ -343,52 +310,41 @@ describe('writeRunResult', () => {
     // A malformed result.json (missing/invalid runStatus) MUST NOT be silently
     // overwritten — reconstructCurrentRun throws SCHEMA_VALIDATION_FAILED.
     const runDir = await setupRun('20260806-018-explore');
+    // Provide explore.md (changeId=C1) so descriptor derivation succeeds and
+    // the preflight's reconstructCurrentRun path is reached.
+    await mkdir(join(tempRoot, 'openspec', 'changes', 'C1'), { recursive: true });
+    await writeFile(join(tempRoot, 'openspec', 'changes', 'C1', 'explore.md'), '# Explore\n');
     // Hand-write a malformed result.json (missing runStatus).
     await writeFile(join(runDir, 'result.json'), JSON.stringify({ summary: 'no status' }));
 
     await assert.rejects(
-      () =>
-        writeRunResult(runDir, {
-          runStatus: 'completed',
-          actionResult: { action: 'explore', executionStatus: 'completed', summary: 'second' },
-        }),
+      () => completeRun(runDir, { executionStatus: 'completed', summary: 'second' }),
       (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
     );
   });
 
-  it('validates ContextFile identity in write path (C1-AP-002)', async () => {
-    // writeRunResult now calls validateContextFileIdentity before publication.
+  it('validates ContextFile identity in the completion path (C1-AP-002)', async () => {
     // A context.json whose runPath does not match the actual Run directory
-    // MUST be rejected.
+    // MUST be rejected before publication.
     const runDir = await setupRun('20260806-019-explore');
-    // Tamper with context.json runPath to mismatch the actual directory.
     const contextPath = join(runDir, 'context.json');
     const ctx = JSON.parse(await readFile(contextPath, 'utf-8'));
     ctx.runPath = '.flowkit/runs/D1/C1/20260806-999-different/';
     await writeFile(contextPath, JSON.stringify(ctx, null, 2));
 
     await assert.rejects(
-      () =>
-        writeRunResult(runDir, {
-          runStatus: 'completed',
-          actionResult: { action: 'explore', executionStatus: 'completed', summary: 'done' },
-        }),
+      () => completeRun(runDir, { executionStatus: 'completed', summary: 'done' }),
       (e: unknown) => e instanceof FlowkitError,
     );
   });
 
   it('does not depend on pre-existing exists check (task 12.11)', async () => {
-    // Two concurrent writers: both call writeRunResult; only one succeeds.
-    const runDir = await setupRun('20260806-016-explore');
-    const result: RunResultFile = {
-      runStatus: 'completed',
-      actionResult: { action: 'explore', executionStatus: 'completed', summary: 'race' },
-    };
+    // Two concurrent writers: both call completeRun; only one succeeds.
+    const runDir = await writeExplore('20260806-016-explore');
     const [r1, r2] = await Promise.allSettled([
-      writeRunResult(runDir, result),
-      writeRunResult(runDir, { ...result, actionResult: { ...result.actionResult!, summary: 'race2' } }),
+      completeRun(runDir, { executionStatus: 'completed', summary: 'race' }),
+      completeRun(runDir, { executionStatus: 'completed', summary: 'race2' }),
     ]);
-    // Exactly one succeeds.
     const successes = [r1, r2].filter((r) => r.status === 'fulfilled').length;
     assert.equal(successes, 1);
   });
@@ -396,94 +352,17 @@ describe('writeRunResult', () => {
   it('non-ENOENT read error is NOT treated as absent (C1-AP-005)', async () => {
     // Create result.json as a DIRECTORY → readFile throws EISDIR (not ENOENT).
     // reconstructCurrentRun MUST throw SCHEMA_VALIDATION_FAILED, not return pending.
-    const runDir = await setupRun('20260806-020-explore');
+    const runDir = await setupRun('20260806-021-explore');
+    // Provide explore.md (changeId=C1) so derivation succeeds and the preflight
+    // reaches reconstructCurrentRun, which hits the EISDIR non-ENOENT error.
+    await mkdir(join(tempRoot, 'openspec', 'changes', 'C1'), { recursive: true });
+    await writeFile(join(tempRoot, 'openspec', 'changes', 'C1', 'explore.md'), '# Explore\n');
     await mkdir(join(runDir, 'result.json'));
 
     await assert.rejects(
-      () =>
-        writeRunResult(runDir, {
-          runStatus: 'completed',
-          actionResult: { action: 'explore', executionStatus: 'completed', summary: 'should fail' },
-        }),
+      () => completeRun(runDir, { executionStatus: 'completed', summary: 'should fail' }),
       (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
     );
-  });
-
-  it('rejects completed review-* Run missing reviewVerdict before publication (C1-AP-006)', async () => {
-    // Q1: createRun derives inputRef from reviewedRunId by reading the
-    // reviewed Run's result.json. Set up the reviewed Run first.
-    const reviewedRunDir = await createRun(
-      createRunInput({
-        runId: '20260806-020-apply',
-        action: 'apply',
-        role: 'author',
-      }),
-    );
-    await writeRunResult(reviewedRunDir, {
-      runStatus: 'completed',
-      actionResult: { action: 'apply', executionStatus: 'completed', summary: 'applied' },
-    });
-
-    // Create a review-apply Run, then try to publish a completed result
-    // WITHOUT reviewVerdict. writeRunResult MUST reject at
-    // validateReviewVerdictIntegrity, BEFORE result.json is created.
-    const runDir = await createRun(
-      createRunInput({
-        runId: '20260806-021-review-apply',
-        action: 'review-apply',
-        role: 'reviewer',
-        reviewedRunId: '20260806-020-apply',
-      }),
-    );
-
-    await assert.rejects(
-      () =>
-        writeRunResult(runDir, {
-          runStatus: 'completed',
-          actionResult: { action: 'review-apply', executionStatus: 'completed', summary: 'no verdict' },
-        }),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
-    );
-
-    // result.json MUST NOT exist (validation rejected before publication).
-    const entries = await readdir(runDir);
-    assert.ok(!entries.includes('result.json'), 'result.json must not be created when reviewVerdict validation fails');
-  });
-
-  it('accepts completed review-* Run with reviewVerdict (C1-AP-006)', async () => {
-    // Q1: createRun derives inputRef from reviewedRunId by reading the
-    // reviewed Run's result.json. Set up the reviewed Run first.
-    const reviewedRunDir = await createRun(
-      createRunInput({
-        runId: '20260806-023-apply',
-        action: 'apply',
-        role: 'author',
-      }),
-    );
-    await writeRunResult(reviewedRunDir, {
-      runStatus: 'completed',
-      actionResult: { action: 'apply', executionStatus: 'completed', summary: 'applied' },
-    });
-
-    // Create a review-apply Run, publish a completed result WITH reviewVerdict.
-    const runDir = await createRun(
-      createRunInput({
-        runId: '20260806-022-review-apply',
-        action: 'review-apply',
-        role: 'reviewer',
-        reviewedRunId: '20260806-023-apply',
-      }),
-    );
-
-    await writeRunResult(runDir, {
-      runStatus: 'completed',
-      actionResult: { action: 'review-apply', executionStatus: 'completed', summary: 'approved' },
-      reviewVerdict: 'approved',
-    });
-
-    // result.json exists and contains reviewVerdict.
-    const content = await readFile(join(runDir, 'result.json'), 'utf-8');
-    assert.equal(JSON.parse(content).reviewVerdict, 'approved');
   });
 });
 
@@ -511,18 +390,20 @@ describe('isInvisibleEntry', () => {
 // ---------------------------------------------------------------------------
 
 describe('result.json publish consistency contract (task 12.30)', () => {
-  it('writeRunResult is the sole documented result.json publish path', () => {
-    // The contract: only writeRunResult publishes result.json. adapter does
-    // not serialize/publish; createRun only writes action.md + context.json.
-    // This test asserts the exported API surface — writeRunResult is the only
-    // function that accepts a RunResultFile and writes result.json.
+  it('completeRun is the ONLY public terminal-completion entry (RA-001)', () => {
+    // Q1-RA-001: the raw RunResultFile publisher (writeRunResult) is module-
+    // private and NOT part of the exported surface. An external module cannot
+    // pass a caller-authored RunResultFile / ResultRef into the terminal
+    // publisher. The adapter (result-ref-adapter) does NOT publish; createRun
+    // only writes action.md + context.json. The only exported terminal-completion
+    // API is the descriptor-driven completeRun.
     //
-    // The adapter (result-ref-adapter) explicitly does NOT publish — it only
-    // constructs objects and performs read-time derivation.
-    assert.equal(typeof writeRunResult, 'function');
-    // No other exported function from run-persistence takes RunResultFile.
-    // createRun takes CreateRunInput (action.md content), not RunResultFile.
+    // This test asserts the exported API surface by importing only the public
+    // functions. `writeRunResult` is deliberately absent from the import list —
+    // it is not exportable, so a raw RunResultFile terminal publish is
+    // mechanically unreachable from outside the module.
     assert.equal(typeof createRun, 'function');
+    assert.equal(typeof completeRun, 'function');
   });
 });
 
@@ -534,7 +415,7 @@ describe('Bootstrap Run not modified by C1 (task 12.60)', () => {
   before(makeTempRoot);
   after(cleanupTempRoot);
 
-  it('writeRunResult rejects Bootstrap Run (schemaVersion=1) without modifying it', async () => {
+  it('completeRun rejects Bootstrap Run (schemaVersion=1) without modifying it', async () => {
     // Create a Bootstrap-style Run directory by hand (schemaVersion:1).
     const deliveryId = 'DB';
     const runDir = join(tempRoot, '.flowkit', 'runs', deliveryId, 'C1', '20260806-054-propose');
@@ -552,13 +433,9 @@ describe('Bootstrap Run not modified by C1 (task 12.60)', () => {
     };
     await writeFile(join(runDir, 'context.json'), JSON.stringify(bootstrapContext, null, 2));
 
-    // writeRunResult should reject (validateContextFile requires schemaVersion:2).
+    // completeRun should reject (validateContextFile requires schemaVersion:2).
     await assert.rejects(
-      () =>
-        writeRunResult(runDir, {
-          runStatus: 'completed',
-          actionResult: { action: 'propose', executionStatus: 'completed', summary: 'x' },
-        }),
+      () => completeRun(runDir, { executionStatus: 'completed', summary: 'x' }),
       (e: unknown) => e instanceof FlowkitError,
     );
 
@@ -705,14 +582,11 @@ describe('completeRun — Core-owned ResultRef authority (Q1-RA-001)', () => {
 
   it('review-apply Core-derives verificationSummaryRef from current verification.md', async () => {
     const changeId = 'RA-review-apply';
-    // A0: apply Run (no artifacts; writeRunResult is fine for non-artifact completed).
+    // A0: apply Run (no artifacts produced; completeRun works for non-artifact completed).
     const a0Dir = await createRun(
       createRunInput({ runId: '20260806-210-apply', changeId, action: 'apply', role: 'author' }),
     );
-    await writeRunResult(a0Dir, {
-      runStatus: 'completed',
-      actionResult: { action: 'apply', executionStatus: 'completed', summary: 'A0 apply' },
-    });
+    await completeRun(a0Dir, { executionStatus: 'completed', summary: 'A0 apply' });
 
     // verification.md exists.
     const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
@@ -750,10 +624,7 @@ describe('completeRun — Core-owned ResultRef authority (Q1-RA-001)', () => {
     const a0Dir = await createRun(
       createRunInput({ runId: '20260806-220-apply', changeId, action: 'apply', role: 'author' }),
     );
-    await writeRunResult(a0Dir, {
-      runStatus: 'completed',
-      actionResult: { action: 'apply', executionStatus: 'completed', summary: 'A0' },
-    });
+    await completeRun(a0Dir, { executionStatus: 'completed', summary: 'A0' });
     // No verification.md.
 
     const v0Dir = await createRun(
@@ -981,26 +852,26 @@ describe('completeRun — Core-owned ResultRef authority (Q1-RA-001)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Completion preflight rules (Q1-7 / Q1-9) — writeRunResult low-level API
+// Completion preflight invariants (Q1-7 / Q1-9) — product-centric
 // ---------------------------------------------------------------------------
 //
-// These rules are enforced inside publishTerminalResult (shared by completeRun
-// and writeRunResult). They are tested via the low-level writeRunResult entry
-// because they are structural preflight rules, not descriptor-derivation rules.
+// Q1-RA-001: the raw RunResultFile publisher is private, so a caller can never
+// inject a reviewVerdictRef / verificationSummaryRef into the terminal result.
+// completeRun derives every ref from descriptors and the Action. These tests
+// verify the resulting invariants hold through the public API: review-* Runs
+// carry NO reviewVerdictRef (Q1-7 self-reference), and non-review-apply Runs
+// carry NO verificationSummaryRef (Q1-9 scope).
 
-describe('completion preflight rules (Q1-7 / Q1-9)', () => {
+describe('completion preflight invariants (Q1-7 / Q1-9)', () => {
   before(makeTempRoot);
   after(cleanupTempRoot);
 
-  it('rejects reviewVerdictRef on review-* Run (self-reference, Q1-7)', async () => {
+  it('review-apply Run carries NO reviewVerdictRef (Q1-7 self-reference)', async () => {
     const changeId = 'PF-self-ref';
     const a0Dir = await createRun(
       createRunInput({ runId: '20260806-270-apply', changeId, action: 'apply', role: 'author' }),
     );
-    await writeRunResult(a0Dir, {
-      runStatus: 'completed',
-      actionResult: { action: 'apply', executionStatus: 'completed', summary: 'A0' },
-    });
+    await completeRun(a0Dir, { executionStatus: 'completed', summary: 'A0' });
     const v0Dir = await createRun(
       createRunInput({
         runId: '20260806-271-review-apply',
@@ -1010,50 +881,31 @@ describe('completion preflight rules (Q1-7 / Q1-9)', () => {
         reviewedRunId: '20260806-270-apply',
       }),
     );
-    const selfRef = {
-      ref: '.flowkit/runs/D1/PF-self-ref/20260806-271-review-apply/result.json',
-      versionFingerprint: 'deadbeef',
-      kind: 'run-result',
-    };
-    await assert.rejects(
-      () =>
-        writeRunResult(v0Dir, {
-          runStatus: 'completed',
-          actionResult: {
-            action: 'review-apply',
-            executionStatus: 'completed',
-            summary: 'self',
-            reviewVerdictRef: selfRef,
-          },
-          reviewVerdict: 'approved',
-        }),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
-    );
+    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
+    await mkdir(changeDir, { recursive: true });
+    await writeFile(join(changeDir, 'verification.md'), '# Verification\n');
+    await completeRun(v0Dir, {
+      executionStatus: 'completed',
+      summary: 'V0',
+      reviewVerdict: 'approved',
+    });
+    const result = JSON.parse(await readFile(join(v0Dir, 'result.json'), 'utf-8'));
+    // reviewVerdictRef MUST be absent — it would be a self-reference (Q1-7).
+    assert.equal(result.actionResult.reviewVerdictRef, undefined);
   });
 
-  it('rejects verificationSummaryRef on non-review-apply Run (Q1-9 scope)', async () => {
+  it('explore Run carries NO verificationSummaryRef (Q1-9 scope)', async () => {
     const changeId = 'PF-verdict-scope';
+    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
+    await mkdir(changeDir, { recursive: true });
+    await writeFile(join(changeDir, 'explore.md'), '# Explore\n');
     const runDir = await createRun(
       createRunInput({ runId: '20260806-280-explore', changeId, action: 'explore', role: 'author' }),
     );
-    const badRef = buildArtifactResultRef(
-      `openspec/changes/${changeId}/verification.md`,
-      'content',
-      VERIFICATION_SUMMARY_KIND,
-    );
-    await assert.rejects(
-      () =>
-        writeRunResult(runDir, {
-          runStatus: 'completed',
-          actionResult: {
-            action: 'explore',
-            executionStatus: 'completed',
-            summary: 'bad scope',
-            verificationSummaryRef: badRef,
-          },
-        }),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
-    );
+    await completeRun(runDir, { executionStatus: 'completed', summary: 'explore' });
+    const result = JSON.parse(await readFile(join(runDir, 'result.json'), 'utf-8'));
+    // verificationSummaryRef MUST be absent — only review-apply carries it (Q1-9).
+    assert.equal(result.actionResult.verificationSummaryRef, undefined);
   });
 });
 
@@ -1206,6 +1058,347 @@ describe('review exact binding via createRun (task 4.8)', () => {
           }),
         ),
       (e: unknown) => e instanceof FlowkitError && e.code === 'RESULT_REF_TARGET_MISSING',
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Q1-RA-005: descriptor runtime fail-closed (Run IDs + artifact tags)
+// ---------------------------------------------------------------------------
+//
+// A JS/JSON/CLI caller bypasses TypeScript unions. completeRun and createRun
+// MUST runtime-reject path-shaped Run-ID descriptors and unknown / disallowed /
+// no-op artifact tags at the descriptor boundary — never silently ignore them.
+
+describe('descriptor runtime fail-closed (Q1-RA-005)', () => {
+  before(makeTempRoot);
+  after(cleanupTempRoot);
+
+  it('rejects a path-shaped consumedRunId (../x)', async () => {
+    const changeId = 'RD-path';
+    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
+    await mkdir(changeDir, { recursive: true });
+    await writeFile(join(changeDir, 'explore.md'), '# Explore\n');
+    const runDir = await createRun(
+      createRunInput({ runId: '20260806-330-explore', changeId, action: 'explore', role: 'author' }),
+    );
+    await assert.rejects(
+      () =>
+        completeRun(runDir, {
+          executionStatus: 'completed',
+          summary: 'x',
+          consumedRunIds: ['../x'],
+        }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'RUN_ID_INVALID_FORMAT',
+    );
+    // Run stays pending — no terminal result published.
+    const entries = await readdir(runDir);
+    assert.ok(!entries.includes('result.json'));
+  });
+
+  it('rejects a path-shaped consumedRunId (a/b)', async () => {
+    const changeId = 'RD-path2';
+    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
+    await mkdir(changeDir, { recursive: true });
+    await writeFile(join(changeDir, 'explore.md'), '# Explore\n');
+    const runDir = await createRun(
+      createRunInput({ runId: '20260806-331-explore', changeId, action: 'explore', role: 'author' }),
+    );
+    await assert.rejects(
+      () =>
+        completeRun(runDir, {
+          executionStatus: 'completed',
+          summary: 'x',
+          consumedRunIds: ['a/b'],
+        }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'RUN_ID_INVALID_FORMAT',
+    );
+  });
+
+  it('rejects a path-shaped reviewedRunId (../../run) at createRun', async () => {
+    await assert.rejects(
+      () =>
+        createRun(
+          createRunInput({
+            runId: '20260806-332-review-apply',
+            changeId: 'RD-reviewed',
+            action: 'review-apply',
+            role: 'reviewer',
+            reviewedRunId: '../../run',
+          }),
+        ),
+      (e: unknown) =>
+        e instanceof FlowkitError &&
+        (e.code === 'SCHEMA_VALIDATION_FAILED' || e.code === 'RUN_ID_INVALID_FORMAT'),
+    );
+  });
+
+  it('rejects a path-shaped reviewedRunId (C:\\\\tmp\\\\run) at createRun', async () => {
+    await assert.rejects(
+      () =>
+        createRun(
+          createRunInput({
+            runId: '20260806-333-review-apply',
+            changeId: 'RD-reviewed2',
+            action: 'review-apply',
+            role: 'reviewer',
+            reviewedRunId: 'C:\\tmp\\run',
+          }),
+        ),
+      (e: unknown) =>
+        e instanceof FlowkitError &&
+        (e.code === 'SCHEMA_VALIDATION_FAILED' || e.code === 'RUN_ID_INVALID_FORMAT'),
+    );
+  });
+
+  it('rejects an unknown producedArtifactTag (xxx) for propose', async () => {
+    const changeId = 'RD-tag-unknown';
+    await writeInitialProposeArtifacts(changeId, 'v0');
+    const p0Dir = await createRun(
+      createRunInput({ runId: '20260806-340-propose', changeId, action: 'propose', role: 'author' }),
+    );
+    await assert.rejects(
+      () =>
+        completeRun(p0Dir, {
+          executionStatus: 'completed',
+          summary: 'P0',
+          producedArtifactTags: ['xxx' as never],
+        }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('rejects an Action-disallowed producedArtifactTag for revise-explore (proposal)', async () => {
+    const changeId = 'RD-tag-explore';
+    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
+    await mkdir(changeDir, { recursive: true });
+    await writeFile(join(changeDir, 'explore.md'), '# Explore\n');
+    const runDir = await createRun(
+      createRunInput({ runId: '20260806-341-revise-explore', changeId, action: 'revise-explore', role: 'author' }),
+    );
+    await assert.rejects(
+      () =>
+        completeRun(runDir, {
+          executionStatus: 'completed',
+          summary: 'x',
+          producedArtifactTags: ['proposal' as never],
+        }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('rejects producedArtifactTags on an apply Run (no artifacts to produce)', async () => {
+    const changeId = 'RD-tag-apply';
+    const a0Dir = await createRun(
+      createRunInput({ runId: '20260806-342-apply', changeId, action: 'apply', role: 'author' }),
+    );
+    await assert.rejects(
+      () =>
+        completeRun(a0Dir, {
+          executionStatus: 'completed',
+          summary: 'A0',
+          producedArtifactTags: ['proposal' as never],
+        }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('rejects revise-propose with empty producedArtifactTags (no-op revise)', async () => {
+    const changeId = 'RD-tag-nop';
+    await writeInitialProposeArtifacts(changeId, 'v0');
+    const p0Dir = await createRun(
+      createRunInput({ runId: '20260806-343-propose', changeId, action: 'propose', role: 'author' }),
+    );
+    await completeRun(p0Dir, { executionStatus: 'completed', summary: 'P0' });
+    const r0Dir = await createRun(
+      createRunInput({
+        runId: '20260806-344-review-propose',
+        changeId,
+        action: 'review-propose',
+        role: 'reviewer',
+        reviewedRunId: '20260806-343-propose',
+      }),
+    );
+    await completeRun(r0Dir, {
+      executionStatus: 'completed',
+      summary: 'CR',
+      reviewVerdict: 'changes-requested',
+      reviewFindings: [
+        { id: 'B-001', severity: 'blocking', title: 'fix', problem: 'needs work', requiredChange: 'revise' },
+      ],
+    });
+    const p1Dir = await createRun(
+      createRunInput({
+        runId: '20260806-345-revise-propose',
+        changeId,
+        action: 'revise-propose',
+        role: 'author',
+        sourceReviewRun: '20260806-344-review-propose',
+        sourceReviewVerdict: 'changes-requested',
+      }),
+    );
+    await assert.rejects(
+      () => completeRun(p1Dir, { executionStatus: 'completed', summary: 'P1', producedArtifactTags: [] }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('rejects revise-propose with undefined producedArtifactTags (no-op revise)', async () => {
+    const changeId = 'RD-tag-undef';
+    await writeInitialProposeArtifacts(changeId, 'v0');
+    const p0Dir = await createRun(
+      createRunInput({ runId: '20260806-346-propose', changeId, action: 'propose', role: 'author' }),
+    );
+    await completeRun(p0Dir, { executionStatus: 'completed', summary: 'P0' });
+    const r0Dir = await createRun(
+      createRunInput({
+        runId: '20260806-347-review-propose',
+        changeId,
+        action: 'review-propose',
+        role: 'reviewer',
+        reviewedRunId: '20260806-346-propose',
+      }),
+    );
+    await completeRun(r0Dir, {
+      executionStatus: 'completed',
+      summary: 'CR',
+      reviewVerdict: 'changes-requested',
+      reviewFindings: [
+        { id: 'B-001', severity: 'blocking', title: 'fix', problem: 'needs work', requiredChange: 'revise' },
+      ],
+    });
+    const p1Dir = await createRun(
+      createRunInput({
+        runId: '20260806-348-revise-propose',
+        changeId,
+        action: 'revise-propose',
+        role: 'author',
+        sourceReviewRun: '20260806-347-review-propose',
+        sourceReviewVerdict: 'changes-requested',
+      }),
+    );
+    await assert.rejects(
+      () => completeRun(p1Dir, { executionStatus: 'completed', summary: 'P1' }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Q1-RA-003: review-entry fails closed on empty/partial initial effective sets
+// ---------------------------------------------------------------------------
+//
+// A bad terminal initial generation (missing/empty/partial produced set) must
+// be rejected at review-entry BEFORE the review Run is published — requiredness
+// comes from the Action/stage, never from producedRefs.length > 0.
+
+describe('review-entry fails closed on empty/partial initial sets (Q1-RA-003)', () => {
+  before(makeTempRoot);
+  after(cleanupTempRoot);
+
+  it('rejects review-explore when the reviewed explore produced set is missing', async () => {
+    const changeId = 'RE-empty-explore';
+    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
+    await mkdir(changeDir, { recursive: true });
+    await writeFile(join(changeDir, 'explore.md'), '# Explore\n');
+    const e0Dir = await createRun(
+      createRunInput({ runId: '20260806-350-explore', changeId, action: 'explore', role: 'author' }),
+    );
+    // Hand-write a terminal result WITHOUT producedResultRefs (bypass legacy).
+    await writeFile(
+      join(e0Dir, 'result.json'),
+      JSON.stringify({
+        runStatus: 'completed',
+        actionResult: { action: 'explore', executionStatus: 'completed', summary: 'raw' },
+      }),
+    );
+
+    await assert.rejects(
+      () =>
+        createRun(
+          createRunInput({
+            runId: '20260806-351-review-explore',
+            changeId,
+            action: 'review-explore',
+            role: 'reviewer',
+            reviewedRunId: '20260806-350-explore',
+          }),
+        ),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+    // Review Run directory MUST NOT exist.
+    const reviewRunDir = join(deliveryRunsDir(), changeId, '20260806-351-review-explore');
+    await assert.rejects(() => readFile(join(reviewRunDir, 'context.json'), 'utf-8'));
+  });
+
+  it('rejects review-propose when proposal/design/tasks are missing from the produced set', async () => {
+    const changeId = 'RE-empty-propose';
+    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
+    await mkdir(join(changeDir, 'specs', 'cap-a'), { recursive: true });
+    await writeFile(join(changeDir, 'specs', 'cap-a', 'spec.md'), '# Spec A\n');
+    const p0Dir = await createRun(
+      createRunInput({ runId: '20260806-352-propose', changeId, action: 'propose', role: 'author' }),
+    );
+    // Hand-write a terminal result with an empty producedResultRefs (specs-only
+    // would still be missing the required singletons).
+    await writeFile(
+      join(p0Dir, 'result.json'),
+      JSON.stringify({
+        runStatus: 'completed',
+        actionResult: { action: 'propose', executionStatus: 'completed', summary: 'raw', producedResultRefs: [] },
+      }),
+    );
+
+    await assert.rejects(
+      () =>
+        createRun(
+          createRunInput({
+            runId: '20260806-353-review-propose',
+            changeId,
+            action: 'review-propose',
+            role: 'reviewer',
+            reviewedRunId: '20260806-352-propose',
+          }),
+        ),
+      // The empty producedResultRefs passes readRunProducedResultRefs (no
+      // throw), then validateReviewEntry reports the incomplete stage set as
+      // RESULT_REF_MISMATCH before the review Run is published.
+      (e: unknown) => e instanceof FlowkitError && e.code === 'RESULT_REF_MISMATCH',
+    );
+  });
+
+  it('rejects review-propose with empty specs namespace AND missing singletons (Q1-RA-003)', async () => {
+    const changeId = 'RE-empty-specs';
+    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
+    // specs/** is EMPTY (no specs directory / no files).
+    await mkdir(changeDir, { recursive: true });
+    const p0Dir = await createRun(
+      createRunInput({ runId: '20260806-354-propose', changeId, action: 'propose', role: 'author' }),
+    );
+    // Hand-write a terminal result with an empty produced set. Even though the
+    // specs namespace is legitimately empty, the required singletons
+    // (proposal/design/tasks) are still missing → MUST fail closed.
+    await writeFile(
+      join(p0Dir, 'result.json'),
+      JSON.stringify({
+        runStatus: 'completed',
+        actionResult: { action: 'propose', executionStatus: 'completed', summary: 'raw', producedResultRefs: [] },
+      }),
+    );
+
+    await assert.rejects(
+      () =>
+        createRun(
+          createRunInput({
+            runId: '20260806-355-review-propose',
+            changeId,
+            action: 'review-propose',
+            role: 'reviewer',
+            reviewedRunId: '20260806-354-propose',
+          }),
+        ),
+      // Empty specs namespace does NOT excuse missing singletons.
+      (e: unknown) => e instanceof FlowkitError && e.code === 'RESULT_REF_MISMATCH',
     );
   });
 });

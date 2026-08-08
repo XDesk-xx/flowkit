@@ -19,6 +19,8 @@ import {
   resolveArchiveAwareArtifactPath,
   validateEffectiveArtifactRefs,
   validateSpecsExactSet,
+  resolveRunResultPath,
+  validateRunIdDescriptor,
   RUN_RESULT_KIND,
   PRODUCED_ARTIFACT_KIND,
   VERIFICATION_SUMMARY_KIND,
@@ -436,5 +438,50 @@ describe('validateSpecsExactSet', () => {
     const mismatch = await validateSpecsExactSet(tempRoot, changeId, effectiveRefs);
     assert.notEqual(mismatch, null);
     assert.ok(mismatch!.effective.length < mismatch!.canonical.length);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Q1-RA-005: Run-ID path resolvers reject path-shaped descriptors
+// ---------------------------------------------------------------------------
+
+describe('resolveRunResultPath / validateRunIdDescriptor fail closed on path-shaped Run IDs (Q1-RA-005)', () => {
+  it('accepts a formal Run ID', () => {
+    assert.equal(validateRunIdDescriptor('20260806-001-explore'), '20260806-001-explore');
+  });
+
+  it('rejects ../ traversal', () => {
+    assert.throws(
+      () => validateRunIdDescriptor('../x'),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'RUN_ID_INVALID_FORMAT',
+    );
+  });
+
+  it('rejects a/b path-shaped value', () => {
+    assert.throws(
+      () => validateRunIdDescriptor('a/b'),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'RUN_ID_INVALID_FORMAT',
+    );
+  });
+
+  it('rejects a Windows absolute path', () => {
+    assert.throws(
+      () => validateRunIdDescriptor('C:\\tmp\\run'),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'RUN_ID_INVALID_FORMAT',
+    );
+  });
+
+  it('rejects an arbitrary filename (result.json)', () => {
+    assert.throws(
+      () => validateRunIdDescriptor('result.json'),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'RUN_ID_INVALID_FORMAT',
+    );
+  });
+
+  it('resolveRunResultPath rejects a path-shaped runId before concatenation', () => {
+    assert.throws(
+      () => resolveRunResultPath('.flowkit/runs', 'D1', 'C1', '../x'),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'RUN_ID_INVALID_FORMAT',
+    );
   });
 });

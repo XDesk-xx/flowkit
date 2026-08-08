@@ -54,16 +54,17 @@ import {
   resolveSingletonArtifactRef,
   resolveVerificationSummaryRef,
   enumerateSpecsNamespace,
-  extractSpecsLogicalIdentities,
   readArtifactBytes,
-  validateSpecsExactSet,
-  validateEffectiveArtifactRefs,
+  validateStageEffectiveSet,
+  validateRunIdDescriptor,
+  permittedProducedArtifactTags,
   PRODUCED_ARTIFACT_KIND,
   VERIFICATION_SUMMARY_KIND,
   type ProducedArtifactTag,
 } from './result-ref-adapter.js';
 import {
   classifyReviewedArtifactGeneration,
+  artifactStage,
   type LineageFact,
   type ReviewLineageFact,
 } from '../facts/generation-resolver.js';
@@ -247,6 +248,11 @@ async function deriveInputRef(input: CreateRunInput): Promise<ResultRef | undefi
     return undefined;
   }
 
+  // Q1-RA-005: reject any path-shaped / non-Run-ID descriptor BEFORE it can
+  // influence filesystem resolution. The formal Run-ID grammar is the only
+  // legitimate Run descriptor.
+  validateRunIdDescriptor(targetRunId);
+
   // Resolve the referenced Run's result.json filesystem path.
   // The referenced Run is in the same Delivery; it MAY be in a different
   // Change directory. Search both the same-Change path and the Delivery root.
@@ -282,6 +288,10 @@ async function readReferencedRunResult(
   changeId: string | undefined,
   runId: string,
 ): Promise<string> {
+  // Q1-RA-005 (defense-in-depth): reject path-shaped / non-Run-ID descriptors
+  // before they can inject path segments into the join below.
+  validateRunIdDescriptor(runId);
+
   // Try same-Change directory first.
   const candidates: string[] = [];
   if (changeId !== undefined) {
@@ -379,28 +389,19 @@ async function validateReviewEntry(input: CreateRunInput): Promise<void> {
     );
   }
 
-  // 4. Validate producedResultRefs against current canonical bytes.
-  if (producedRefs.length > 0) {
-    const problems = await validateEffectiveArtifactRefs(repoRoot, producedRefs);
-    if (problems.length > 0) {
+  // 4. Q1-RA-003: unconditional stage-aware effective-set completeness. The
+  //    reviewed Run's produced set MUST exactly satisfy the stage invariant
+  //    (explore → explore.md; propose → proposal+design+tasks+complete specs).
+  //    A missing/empty/partial/drifted set rejects the review BEFORE publish —
+  //    requiredness comes from the Action/stage, never from `length > 0`.
+  const stage = artifactStage(reviewedFact.action);
+  if (stage !== undefined) {
+    const setProblems = await validateStageEffectiveSet(repoRoot, changeId, stage, producedRefs);
+    if (setProblems.length > 0) {
       throw new FlowkitError(
         'RESULT_REF_MISMATCH',
-        `review-* entry: reviewed Run ${reviewedRunId} effective artifact set has drifted: ${problems.map((p) => `${p.ref}(${p.kind})`).join(', ')}`,
-        { reviewedRunId, problems },
-      );
-    }
-  }
-
-  // 5. For review-propose: exact-compare effective specs identities with
-  //    current canonical specs/**.
-  if (input.action === 'review-propose') {
-    const specsRefs = producedRefs.filter((r) => r.ref.includes('/specs/'));
-    const mismatch = await validateSpecsExactSet(repoRoot, changeId, specsRefs);
-    if (mismatch !== null) {
-      throw new FlowkitError(
-        'RESULT_REF_MISMATCH',
-        `review-propose entry: effective specs namespace drifts from current canonical (effective=[${mismatch.effective.join(',')}], canonical=[${mismatch.canonical.join(',')}])`,
-        { reviewedRunId, effective: mismatch.effective, canonical: mismatch.canonical },
+        `review-* entry: reviewed Run ${reviewedRunId} effective artifact set does not satisfy the ${stage} invariant: ${setProblems.map((p) => p.message).join('; ')}`,
+        { reviewedRunId, problems: setProblems },
       );
     }
   }
@@ -533,30 +534,70 @@ async function readSiblingLineageFacts(
 }
 
 /**
- * Read a Run's `producedResultRefs` from its result.json. Returns `[]` when
- * result.json is missing, malformed, or has no producedResultRefs.
+ * Read a Run's `producedResultRefs` from its result.json.
+ *
+ * Q1-RA-003: this MUST NOT convert missing/malformed/wrong-schema formal
+ * evidence into an empty array (that would treat "formal evidence missing" as
+ * a legal empty namespace). A `producedResultRefs` field that is absent,
+ * malformed, wrong-typed, or whose entries lack the required Core-owned fields
+ * is a fail-closed error.
+ *
+ * @throws {FlowkitError} `SCHEMA_VALIDATION_FAILED` when result.json is
+ *   missing/unreadable/malformed or producedResultRefs is absent/invalid.
  */
 async function readRunProducedResultRefs(runDir: string): Promise<ResultRef[]> {
+  let content: string;
   try {
-    const content = await readFile(join(runDir, 'result.json'), 'utf-8');
-    const result = JSON.parse(content) as Record<string, unknown>;
-    const ar = result['actionResult'];
-    if (ar === undefined || typeof ar !== 'object' || ar === null) return [];
-    const arObj = ar as Record<string, unknown>;
-    const refs = arObj['producedResultRefs'];
-    if (!Array.isArray(refs)) return [];
-    return (refs as Array<Record<string, unknown>>)
-      .filter(
-        (r) => typeof r['ref'] === 'string' && typeof r['versionFingerprint'] === 'string',
-      )
-      .map((r) => ({
-        ref: r['ref'] as string,
-        versionFingerprint: r['versionFingerprint'] as string,
-        ...(typeof r['kind'] === 'string' && { kind: r['kind'] as ResultRef['kind'] }),
-      }));
-  } catch {
-    return [];
+    content = await readFile(join(runDir, 'result.json'), 'utf-8');
+  } catch (e) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `Reviewed Run result.json missing or unreadable: ${(e as Error).message}`,
+      { runDir },
+    );
   }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(content);
+  } catch (e) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `Reviewed Run result.json is not valid JSON: ${(e as Error).message}`,
+      { runDir },
+    );
+  }
+  const result = parsed as Record<string, unknown>;
+  const ar = result['actionResult'];
+  if (ar === undefined || typeof ar !== 'object' || ar === null) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `Reviewed Run result.json has no actionResult (formal evidence missing)`,
+      { runDir },
+    );
+  }
+  const arObj = ar as Record<string, unknown>;
+  const refs = arObj['producedResultRefs'];
+  if (!Array.isArray(refs)) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `Reviewed Run producedResultRefs missing or not an array (formal evidence missing)`,
+      { runDir },
+    );
+  }
+  return (refs as Array<Record<string, unknown>>).map((r, i) => {
+    if (typeof r['ref'] !== 'string' || typeof r['versionFingerprint'] !== 'string') {
+      throw new FlowkitError(
+        'SCHEMA_VALIDATION_FAILED',
+        `Reviewed Run producedResultRefs[${i}] missing ref or versionFingerprint`,
+        { runDir, index: i },
+      );
+    }
+    return {
+      ref: r['ref'] as string,
+      versionFingerprint: r['versionFingerprint'] as string,
+      ...(typeof r['kind'] === 'string' && { kind: r['kind'] as ResultRef['kind'] }),
+    };
+  });
 }
 
 /**
@@ -615,8 +656,14 @@ export function projectCurrentRun(contextFile: ContextFile): Run {
 // ---------------------------------------------------------------------------
 
 /**
- * Write a Run's terminal result.json using the exclusive fs.link publish
- * protocol (D5).
+ * PRIVATE terminal-result publisher (Q1-RA-001).
+ *
+ * This is the low-level publish protocol (fs.link create-if-not-exists) shared
+ * by the descriptor-driven {@link completeRun}. It is intentionally NOT
+ * exported: an external caller must never be able to pass a caller-authored
+ * {@link RunResultFile} (and therefore caller-built ResultRefs) into the
+ * terminal publisher. All terminal completion MUST enter through the
+ * descriptor-driven {@link completeRun}, where Core derives every ResultRef.
  *
  * Steps:
  *   1. Read context.json → validate C1 ContextFile + identity (C1-AP-002).
@@ -643,7 +690,7 @@ export function projectCurrentRun(contextFile: ContextFile): Run {
  *   EEXIST for the concurrent-writer race).
  * @throws {FlowkitError} `SCHEMA_VALIDATION_FAILED` on validation failure.
  */
-export async function writeRunResult(
+async function writeRunResult(
   runDir: string,
   result: RunResultFile,
 ): Promise<void> {
@@ -831,14 +878,104 @@ export async function completeRun(
   const contextFile = await readContextFile(runDir);
   validateContextFileIdentity(contextFile, runDir);
 
+  // 1b. Q1-RA-005: runtime-validate every descriptor (Run IDs + artifact tags)
+  //     BEFORE any derivation / filesystem resolution. The caller's descriptors
+  //     are closed grammar — arbitrary tags / path-shaped Run IDs are rejected
+  //     here, not silently ignored.
+  validateCompleteRunInput(contextFile, input);
+
   // 2. Core-derive the full RunResultFile from typed descriptors.
   const result = await buildRunResultFromDescriptors(contextFile, runDir, input);
 
-  // 3. Publish via the shared primitive (assertMutable + validate + preflight +
+  // 3. Publish via the PRIVATE publisher (assertMutable + validate + preflight +
   //    fs.link). The preflight re-validates every Core-derived ref against
   //    current bytes as defense-in-depth and catches any drift between
   //    derivation and publish.
-  await publishTerminalResult(runDir, contextFile, result);
+  await writeRunResult(runDir, result);
+}
+
+/**
+ * Runtime-validate every descriptor in {@link CompleteRunInput} (Q1-RA-005).
+ *
+ * TypeScript's `ProducedArtifactTag` union and `string` Run IDs are compile-time
+ * only; a JS/JSON/CLI caller can bypass them. Before ANY derivation or
+ * filesystem resolution this function enforces the closed descriptor grammar:
+ *
+ *   - every `consumedRunIds[*]` MUST be a formal Run ID (reject path-shaped).
+ *   - every `producedArtifactTags[*]` MUST be permitted for the Action.
+ *   - a non-artifact Action (apply / revise-apply / archive / review-* /
+ *     delivery-*) MUST NOT carry `producedArtifactTags` (nothing to produce).
+ *   - `revise-propose` MUST carry a NON-EMPTY changed-tag subset (a no-op
+ *     revise would wrongly supersede its predecessor — lineage correctness).
+ *   - `revise-explore` MAY omit tags (Core knows it modifies `explore`); if
+ *     supplied they MUST be exactly `['explore']`.
+ *
+ * @throws {FlowkitError} `SCHEMA_VALIDATION_FAILED` on the first descriptor
+ *   violation.
+ */
+function validateCompleteRunInput(
+  contextFile: ContextFile,
+  input: CompleteRunInput,
+): void {
+  const action = contextFile.action;
+  const isArtifactAction =
+    action === 'explore' ||
+    action === 'revise-explore' ||
+    action === 'propose' ||
+    action === 'revise-propose';
+
+  // producedArtifactTags are only legal for artifact actions.
+  if (input.producedArtifactTags !== undefined) {
+    if (!isArtifactAction) {
+      throw new FlowkitError(
+        'SCHEMA_VALIDATION_FAILED',
+        `completeRun: Action ${action} does not produce artifacts and MUST NOT carry producedArtifactTags`,
+        { action, runId: contextFile.runId, producedArtifactTags: input.producedArtifactTags },
+      );
+    }
+    // Every tag must be in the Action-permitted closed set.
+    const permitted = permittedProducedArtifactTags(action);
+    for (const tag of input.producedArtifactTags) {
+      if (!(permitted as readonly string[]).includes(tag)) {
+        throw new FlowkitError(
+          'SCHEMA_VALIDATION_FAILED',
+          `completeRun: produced-artifact tag ${tag} is not permitted for Action ${action} (permitted: [${permitted.join(', ')}])`,
+          { action, runId: contextFile.runId, tag },
+        );
+      }
+    }
+  }
+
+  // revise-propose MUST declare a non-empty changed-tag subset (no-op revise
+  // would wrongly supersede the predecessor — lineage correctness).
+  if (action === 'revise-propose') {
+    const tags = input.producedArtifactTags;
+    if (tags === undefined || tags.length === 0) {
+      throw new FlowkitError(
+        'SCHEMA_VALIDATION_FAILED',
+        `completeRun: revise-propose MUST declare a non-empty producedArtifactTags changed subset (a no-op revise would wrongly supersede its predecessor)`,
+        { action, runId: contextFile.runId, producedArtifactTags: tags },
+      );
+    }
+  }
+
+  // revise-explore: if tags are supplied they MUST be exactly ['explore'].
+  if (action === 'revise-explore' && input.producedArtifactTags !== undefined) {
+    if (input.producedArtifactTags.length !== 1 || input.producedArtifactTags[0] !== 'explore') {
+      throw new FlowkitError(
+        'SCHEMA_VALIDATION_FAILED',
+        `completeRun: revise-explore producedArtifactTags MUST be exactly ['explore']`,
+        { action, runId: contextFile.runId, producedArtifactTags: input.producedArtifactTags },
+      );
+    }
+  }
+
+  // consumedRunIds: every entry MUST be a formal Run ID.
+  if (input.consumedRunIds !== undefined) {
+    for (const runId of input.consumedRunIds) {
+      validateRunIdDescriptor(runId);
+    }
+  }
 }
 
 /**
@@ -1346,12 +1483,20 @@ async function completionPreflight(
     );
   }
 
-  // Q1-9: verificationSummaryRef scope — only review-apply carries it.
+  // Q1-9: verificationSummaryRef scope — only review-apply carries it, and
+  // review-apply MUST carry it (RA-001: requiredness comes from the Action).
   const isReviewApply = action === 'review-apply';
   if (!isReviewApply && actionResult.verificationSummaryRef !== undefined) {
     throw new FlowkitError(
       'SCHEMA_VALIDATION_FAILED',
       `verificationSummaryRef is only allowed on review-apply (action=${action})`,
+      { action, runId: contextFile.runId },
+    );
+  }
+  if (isReviewApply && actionResult.verificationSummaryRef === undefined) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `review-apply terminal Run REQUIRES a Core-derived verificationSummaryRef (missing required evidence)`,
       { action, runId: contextFile.runId },
     );
   }
@@ -1361,11 +1506,54 @@ async function completionPreflight(
     await verifyRunResultRef(contextFile.inputRef, repoRoot, contextFile.runId, 'inputRef');
   }
 
-  // Validate producedResultRefs (mutable Change artifacts).
-  if (actionResult.producedResultRefs !== undefined) {
-    for (let i = 0; i < actionResult.producedResultRefs.length; i++) {
-      const ref = actionResult.producedResultRefs[i];
-      await verifyArtifactRef(ref, repoRoot, contextFile.runId, `producedResultRefs[${i}]`);
+  // Q1-RA-003: unconditional stage-aware effective-set completeness. For any
+  // artifact-PRODUCING Action (explore/revise-explore/propose/revise-propose —
+  // NOT review-* which produce a verdict, not artifacts), producedResultRefs
+  // MUST exist and exactly satisfy the stage invariant. Absence/empty/partial/
+  // extra/drift all fail closed REGARDLESS of whether the field is present —
+  // requiredness comes from the Action, not field presence.
+  const producingStage =
+    action === 'explore' || action === 'revise-explore' || action === 'propose' || action === 'revise-propose'
+      ? artifactStage(action)
+      : undefined;
+  const stage = producingStage;
+  if (stage !== undefined) {
+    const produced = actionResult.producedResultRefs;
+    if (produced === undefined) {
+      throw new FlowkitError(
+        'SCHEMA_VALIDATION_FAILED',
+        `${action} terminal Run REQUIRES producedResultRefs (complete Core-expected effective set missing)`,
+        { action, runId: contextFile.runId },
+      );
+    }
+    if (contextFile.changeId === undefined) {
+      throw new FlowkitError(
+        'SCHEMA_VALIDATION_FAILED',
+        `${action} terminal Run requires changeId to validate the effective artifact set (runId=${contextFile.runId})`,
+        { action, runId: contextFile.runId },
+      );
+    }
+    const setProblems = await validateStageEffectiveSet(
+      repoRoot,
+      contextFile.changeId,
+      stage,
+      produced,
+    );
+    if (setProblems.length > 0) {
+      // Preserve the established error-code contract: a missing target is
+      // RESULT_REF_TARGET_MISSING, a drift/ambiguity is RESULT_REF_MISMATCH,
+      // and structural incompleteness is SCHEMA_VALIDATION_FAILED.
+      const code =
+        setProblems.some((p) => p.kind === 'missing-target')
+          ? 'RESULT_REF_TARGET_MISSING'
+          : setProblems.some((p) => p.kind === 'fingerprint-mismatch' || p.kind === 'ambiguous-target')
+            ? 'RESULT_REF_MISMATCH'
+            : 'SCHEMA_VALIDATION_FAILED';
+      throw new FlowkitError(
+        code,
+        `${action} effective produced set does not satisfy the ${stage} invariant: ${setProblems.map((p) => p.message).join('; ')}`,
+        { action, runId: contextFile.runId, problems: setProblems },
+      );
     }
   }
 
@@ -1385,24 +1573,6 @@ async function completionPreflight(
   // Validate verificationSummaryRef (mutable Change artifact).
   if (actionResult.verificationSummaryRef !== undefined) {
     await verifyArtifactRef(actionResult.verificationSummaryRef, repoRoot, contextFile.runId, 'verificationSummaryRef');
-  }
-
-  // Q1-5.0: Initial artifact completeness check.
-  // Only validate when producedResultRefs is explicitly present — Core
-  // auto-derivation of the complete expected set is handled by the
-  // publishRunResult entry point (Q1-6.2/6.4). When producedResultRefs is
-  // absent, the preflight skips the completeness check (the result has no
-  // produced-artifact claims to validate).
-  if ((action === 'explore' || action === 'propose') && actionResult.producedResultRefs !== undefined) {
-    await validateInitialArtifactCompleteness(contextFile, actionResult, repoRoot);
-  }
-
-  // Q1-5.3.1 / Q1-RP-006: revise-propose specs namespace exact-set comparison.
-  // The effective specs logical-ref set MUST exactly equal the current canonical
-  // specs/** namespace. Namespace drift (new/deleted spec) without declaring
-  // `specs` → mismatch → Run stays pending.
-  if (action === 'revise-propose') {
-    await validateReviseProposeEffectiveSet(contextFile, actionResult, repoRoot);
   }
 }
 
@@ -1484,129 +1654,6 @@ async function verifyArtifactRef(
       'RESULT_REF_MISMATCH',
       `Artifact ResultRef fingerprint mismatch: ${fieldLabel} → ${ref.ref} (expected ${ref.versionFingerprint}, got ${actualHash})`,
       { ref, fieldLabel, runId, expected: ref.versionFingerprint, actual: actualHash },
-    );
-  }
-}
-
-/**
- * Q1-5.0: Validate that an initial explore/propose Run's producedResultRefs
- * covers the complete Core-enumerated expected set.
- *
- * - initial explore: MUST include exactly `openspec/changes/<changeId>/explore.md`
- * - initial propose: MUST include `proposal.md`, `design.md`, `tasks.md` +
- *   all files in `specs/**` namespace
- *
- * Missing expected refs or extra unexpected refs are rejected.
- *
- * @throws {FlowkitError} `SCHEMA_VALIDATION_FAILED` on completeness violation.
- */
-async function validateInitialArtifactCompleteness(
-  contextFile: ContextFile,
-  actionResult: ActionResultWithoutRunRef,
-  repoRoot: string,
-): Promise<void> {
-  if (contextFile.changeId === undefined) {
-    return; // Cannot validate without changeId.
-  }
-  const changeId = contextFile.changeId;
-  const action = contextFile.action;
-  const produced = actionResult.producedResultRefs ?? [];
-
-  // Build the Core-enumerated expected set.
-  const expectedRefs: string[] = [];
-  if (action === 'explore') {
-    expectedRefs.push(resolveSingletonArtifactRef('explore', 'explore', changeId));
-  } else if (action === 'propose') {
-    expectedRefs.push(resolveSingletonArtifactRef('propose', 'proposal', changeId));
-    expectedRefs.push(resolveSingletonArtifactRef('propose', 'design', changeId));
-    expectedRefs.push(resolveSingletonArtifactRef('propose', 'tasks', changeId));
-    // Enumerate specs namespace.
-    const specsRefs = await enumerateSpecsNamespace(repoRoot, changeId);
-    expectedRefs.push(...specsRefs.map((r) => r.ref));
-  }
-
-  // Compare produced refs with expected set (exact match).
-  const producedSet = new Set(produced.map((r) => r.ref));
-  const expectedSet = new Set(expectedRefs);
-
-  const missing = expectedRefs.filter((r) => !producedSet.has(r));
-  const extra = produced.filter((r) => !expectedSet.has(r.ref)).map((r) => r.ref);
-
-  if (missing.length > 0 || extra.length > 0) {
-    throw new FlowkitError(
-      'SCHEMA_VALIDATION_FAILED',
-      `Initial ${action} producedResultRefs does not match Core-expected complete set (missing: [${missing.join(', ')}], extra: [${extra.join(', ')}])`,
-      { action, runId: contextFile.runId, missing, extra },
-    );
-  }
-}
-
-/**
- * Q1-5.3 / Q1-5.3.1 / Q1-5.6 / Q1-RP-006: For revise-propose, build the
- * effective artifact set (predecessor overlay successor) and validate it at
- * terminal preflight.
- *
- * 1. **Inherited refs**: predecessor `producedResultRefs` whose logical ref is
- *    NOT overwritten by a successor declared ref MUST still match current
- *    canonical bytes. An undeclared singleton/spec content change → inherited
- *    fingerprint mismatch → Run stays pending (Q1-5.3 / task 5.11).
- * 2. **Specs namespace exact-set**: the effective specs logical-ref identities
- *    MUST exactly equal the current canonical `specs/**` namespace. Namespace
- *    drift (new/deleted spec) without declaring `specs` → mismatch → Run stays
- *    pending (Q1-5.3.1 / Q1-RP-006 / task 5.13).
- *
- * Successor declared refs are already validated by the main preflight loop
- * (`verifyArtifactRef`); this function only validates INHERITED refs and the
- * specs namespace invariant.
- *
- * @throws {FlowkitError} `RESULT_REF_TARGET_MISSING` / `RESULT_REF_MISMATCH`
- *   when an inherited ref's target is missing or its content hash no longer
- *   matches current canonical bytes.
- * @throws {FlowkitError} `SCHEMA_VALIDATION_FAILED` on specs namespace mismatch.
- */
-async function validateReviseProposeEffectiveSet(
-  contextFile: ContextFile,
-  actionResult: ActionResultWithoutRunRef,
-  repoRoot: string,
-): Promise<void> {
-  if (contextFile.changeId === undefined) {
-    return; // Cannot validate without changeId.
-  }
-  const changeId = contextFile.changeId;
-  const produced = actionResult.producedResultRefs ?? [];
-  const successorRefSet = new Set(produced.map((r) => r.ref));
-
-  // Resolve predecessor's full producedResultRefs via review/revise lineage.
-  const predecessorRefs = await resolvePredecessorProducedRefs(contextFile, repoRoot);
-
-  // 1. Validate inherited refs (predecessor refs not overwritten by successor).
-  for (const predRef of predecessorRefs) {
-    if (successorRefSet.has(predRef.ref)) {
-      continue; // Overwritten by successor — already validated as a declared ref.
-    }
-    await verifyArtifactRef(predRef, repoRoot, contextFile.runId, `inherited(${predRef.ref})`);
-  }
-
-  // 2. Specs namespace exact-set comparison.
-  const successorSpecsRefs = produced.filter((r) => r.ref.includes('/specs/'));
-  let effectiveSpecsIdentities: readonly string[];
-  if (successorSpecsRefs.length > 0) {
-    // Successor declared specs → effective = successor's specs refs.
-    effectiveSpecsIdentities = extractSpecsLogicalIdentities(successorSpecsRefs);
-  } else {
-    // Successor did not declare specs → inherit predecessor's specs refs.
-    const predecessorSpecsRefs = predecessorRefs.filter((r) => r.ref.includes('/specs/'));
-    effectiveSpecsIdentities = extractSpecsLogicalIdentities(predecessorSpecsRefs);
-  }
-
-  const canonicalRefs = await enumerateSpecsNamespace(repoRoot, changeId);
-  const canonicalIdentities = extractSpecsLogicalIdentities(canonicalRefs);
-
-  if (effectiveSpecsIdentities.join(',') !== canonicalIdentities.join(',')) {
-    throw new FlowkitError(
-      'SCHEMA_VALIDATION_FAILED',
-      `revise-propose effective specs namespace mismatch: expected [${canonicalIdentities.join(', ')}], got [${effectiveSpecsIdentities.join(', ')}]; declare 'specs' tag to re-enumerate after namespace change`,
-      { runId: contextFile.runId, effective: effectiveSpecsIdentities, canonical: canonicalIdentities },
     );
   }
 }

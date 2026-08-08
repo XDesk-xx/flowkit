@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-129-review-apply",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "Q1",
+  "changeId": "execution-model-correction",
+  "action": "review-apply",
+  "role": "reviewer",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-128-revise-apply/",
+  "reviewedResultRef": "content-sha256:9675640bd06646bb7d1b694123dcf714d36b83482c50208d5c4ce4058234938b",
+  "sourceReview": {
+    "runId": "20260806-127-review-apply",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:9797725abe5a2cce06502e1622f4ff129d8c3fd7322c7116bb0cd46295825b8d"
+  },
+  "inputs": [
+    "openspec/changes/execution-model-correction/proposal.md",
+    "openspec/changes/execution-model-correction/design.md",
+    "openspec/changes/execution-model-correction/tasks.md",
+    "openspec/changes/execution-model-correction/verification.md",
+    "openspec/changes/execution-model-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+    "src/persistence/serialization.ts",
+    "src/persistence/result-ref-adapter.ts",
+    "src/persistence/run-persistence.ts",
+    "src/facts/formal-fact-snapshot.ts",
+    "src/facts/formal-fact-reader.ts",
+    "src/facts/generation-resolver.ts",
+    "tests/unit/persistence/serialization.test.ts",
+    "tests/unit/persistence/result-ref-adapter.test.ts",
+    "tests/unit/persistence/run-persistence.test.ts",
+    "tests/unit/facts/formal-fact-reader.test.ts",
+    "tests/integration/execution-model-lifecycle.test.ts",
+    ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-127-review-apply/result.json",
+    ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-128-revise-apply/action.md",
+    ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-128-revise-apply/context.json",
+    ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-128-revise-apply/result.json"
+  ],
+  "constraints": {
+    "readOnlyExceptOwnRun": true,
+    "mayModifyReviewedArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayFullTest": false,
+    "mayCheckpoint": false,
+    "commitAllowed": false
+  }
+}

@@ -25,12 +25,17 @@ import { readGitBoundarySummaries } from './git-boundary-reader.js';
 import { discriminateRun, normalizeBootstrapRunStatus } from '../persistence/legacy-recognizer.js';
 import { validateContextFile } from '../persistence/serialization.js';
 import type { ContextFile } from '../persistence/serialization.js';
-import { resolveArchiveAwareArtifactPath } from '../persistence/result-ref-adapter.js';
+import {
+  resolveArchiveAwareArtifactPath,
+  validateStageEffectiveSet,
+} from '../persistence/result-ref-adapter.js';
 import {
   classifyArtifactGenerations,
   classifyVerificationGenerations,
+  artifactStage,
   type ReviewLineageFact,
 } from './generation-resolver.js';
+import type { ResultRef } from '../domain/types.js';
 import { FlowkitError } from '../shared/errors.js';
 import type {
   ChangeFact,
@@ -993,6 +998,23 @@ async function validateCurrentGenerationRefs(
 ): Promise<FactConflict[]> {
   const conflicts: FactConflict[] = [];
 
+  // Q1-RA-003: the stage MUST be derivable for an artifact current generation.
+  // If not (malformed RunFact), fail closed — a current artifact generation
+  // without a stage cannot be validated.
+  const stage = artifactStage(run.action);
+  if (stage === undefined) {
+    return conflicts; // Non-artifact Run — nothing to validate (no produced set).
+  }
+  if (run.changeId === undefined) {
+    conflicts.push({
+      dimension: 'artifact-effective-set-incomplete',
+      authority: run.runId,
+      message: `Current generation ${run.runId} (${run.action}) has no changeId; cannot validate the required ${stage} effective artifact set`,
+      detail: { runId: run.runId, action: run.action },
+    });
+    return conflicts;
+  }
+
   // Read the Run's result.json to get producedResultRefs.
   const runDir = resolveRunDir(repoRoot, run);
   const resultPath = join(runDir, 'result.json');
@@ -1001,6 +1023,7 @@ async function validateCurrentGenerationRefs(
     content = await readFile(resultPath, 'utf-8');
   } catch {
     // If result.json is missing, the Run isn't actually completed — skip.
+    // (readC1Run already surfaces a missing terminal result as a conflict.)
     return conflicts;
   }
 
@@ -1014,73 +1037,71 @@ async function validateCurrentGenerationRefs(
   const obj = parsed as Record<string, unknown>;
   const actionResult = obj['actionResult'];
   if (actionResult === undefined || typeof actionResult !== 'object' || actionResult === null) {
+    // Formal evidence missing: an artifact current generation MUST carry an
+    // actionResult. Fail closed (Q1-RA-003).
+    conflicts.push({
+      dimension: 'artifact-effective-set-incomplete',
+      authority: run.runId,
+      message: `Current ${stage} generation ${run.runId} has no actionResult (required produced evidence missing)`,
+      detail: { runId: run.runId, action: run.action },
+    });
     return conflicts;
   }
   const ar = actionResult as Record<string, unknown>;
-  const producedRefs = ar['producedResultRefs'];
-  if (!Array.isArray(producedRefs)) {
-    return conflicts; // No produced refs to validate.
+  const producedRefsRaw = ar['producedResultRefs'];
+  if (!Array.isArray(producedRefsRaw)) {
+    // producedResultRefs missing/not an array → required evidence absent.
+    conflicts.push({
+      dimension: 'artifact-effective-set-incomplete',
+      authority: run.runId,
+      message: `Current ${stage} generation ${run.runId} has no producedResultRefs (required effective artifact set missing)`,
+      detail: { runId: run.runId, action: run.action },
+    });
+    return conflicts;
   }
 
-  // Validate each produced ref against current canonical bytes.
-  const { createHash } = await import('node:crypto');
-  for (let i = 0; i < producedRefs.length; i++) {
-    const ref = producedRefs[i] as Record<string, unknown>;
-    const refPath = ref['ref'];
-    const refFingerprint = ref['versionFingerprint'];
-    if (typeof refPath !== 'string' || typeof refFingerprint !== 'string') {
+  // Translate raw produced refs into typed ResultRef[] for the shared validator.
+  const producedRefs: ResultRef[] = [];
+  for (let i = 0; i < producedRefsRaw.length; i++) {
+    const r = producedRefsRaw[i] as Record<string, unknown>;
+    if (typeof r['ref'] !== 'string' || typeof r['versionFingerprint'] !== 'string') {
+      conflicts.push({
+        dimension: 'artifact-effective-set-incomplete',
+        authority: run.runId,
+        message: `Current ${stage} generation ${run.runId} producedResultRefs[${i}] missing ref or versionFingerprint`,
+        detail: { runId: run.runId, index: i },
+      });
       continue;
     }
+    producedRefs.push({
+      ref: r['ref'] as string,
+      versionFingerprint: r['versionFingerprint'] as string,
+      ...(typeof r['kind'] === 'string' && { kind: r['kind'] as ResultRef['kind'] }),
+    });
+  }
 
-    // Resolve the artifact path (archive-aware: active or unique archive target,
-    // Q1-10 / task 8.3). Mirrors the preflight's `verifyArtifactRef`.
-    let artifactPath: string;
-    try {
-      artifactPath = await resolveArchiveAwareArtifactPath(repoRoot, normalizeSeparators(refPath));
-    } catch (e) {
-      // Missing (RESULT_REF_TARGET_MISSING) or ambiguous active+archive /
-      // multiple archives (SCHEMA_VALIDATION_FAILED) → fail-closed conflict.
-      const dimension =
-        e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED'
+  // Q1-RA-003: run the ONE shared stage-aware effective-set validator. It
+  // checks exact identity coverage (explore.md / proposal+design+tasks+specs),
+  // kind, byte/fingerprint, target resolution and the specs namespace — all
+  // fail closed. The Reader does not modify state; it only surfaces FactConflicts.
+  const setProblems = await validateStageEffectiveSet(repoRoot, run.changeId, stage, producedRefs);
+  for (const p of setProblems) {
+    const dimension =
+      p.kind === 'fingerprint-mismatch'
+        ? 'artifact-replaced'
+        : p.kind === 'ambiguous-target'
           ? 'artifact-archive-ambiguous'
-          : 'artifact-missing';
-      conflicts.push({
-        dimension,
-        authority: run.runId,
-        message: `Current generation ${run.runId} producedResultRefs[${i}] target ${dimension}: ${refPath}`,
-        detail: { runId: run.runId, refPath, index: i },
-      });
-      continue;
-    }
-    let artifactContent: string;
-    try {
-      artifactContent = await readFile(artifactPath, 'utf-8');
-    } catch {
-      // Artifact missing — for current generation, this is a conflict.
-      conflicts.push({
-        dimension: 'artifact-missing',
-        authority: run.runId,
-        message: `Current generation ${run.runId} producedResultRefs[${i}] target unreadable: ${refPath}`,
-        detail: { runId: run.runId, refPath, index: i, artifactPath },
-      });
-      continue;
-    }
-
-    const actualHash = createHash('sha256').update(artifactContent, 'utf8').digest('hex');
-    if (actualHash !== refFingerprint) {
-      conflicts.push({
-        dimension: 'artifact-replaced',
-        authority: run.runId,
-        message: `Current generation ${run.runId} producedResultRefs[${i}] fingerprint mismatch: ${refPath} (expected ${refFingerprint}, got ${actualHash})`,
-        detail: {
-          runId: run.runId,
-          refPath,
-          index: i,
-          expected: refFingerprint,
-          actual: actualHash,
-        },
-      });
-    }
+          : p.kind === 'missing-target'
+            ? 'artifact-missing'
+            : p.kind === 'specs-mismatch'
+              ? 'artifact-specs-drift'
+              : 'artifact-effective-set-incomplete';
+    conflicts.push({
+      dimension,
+      authority: run.runId,
+      message: `Current ${stage} generation ${run.runId} effective artifact set problem (${p.kind}): ${p.message}`,
+      detail: { runId: run.runId, kind: p.kind, ref: p.ref },
+    });
   }
 
   return conflicts;

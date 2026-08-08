@@ -30,6 +30,7 @@ import type { ChangeAction, DeliveryAction } from '../domain/actions.js';
 import { isExecutionStatus } from '../domain/schema-validator.js';
 import { FlowkitError } from '../shared/errors.js';
 import { normalizeSeparators } from '../shared/paths.js';
+import { parseRunId } from '../domain/run-id.js';
 import {
   RUN_RESULT_KIND,
   PRODUCED_ARTIFACT_KIND,
@@ -893,7 +894,23 @@ export function validateContextFile(value: unknown): ContextFile {
   }
 
   // sourceReviewRun / sourceReviewVerdict (optional).
-  const sourceReviewRun = validateOptionalString(obj, 'sourceReviewRun');
+  // Q1-RA-005: sourceReviewRun is a Run-ID descriptor — it MUST satisfy the
+  // formal Run-ID grammar (rejecting any path-shaped value) before it is ever
+  // used to resolve a sibling Run's result.json.
+  const sourceReviewRunRaw = obj['sourceReviewRun'];
+  let sourceReviewRun: string | undefined;
+  if (sourceReviewRunRaw !== undefined) {
+    const s = requireString(obj, 'sourceReviewRun');
+    try {
+      parseRunId(s);
+    } catch (e) {
+      schemaFail('sourceReviewRun must be a formal Run ID (YYYYMMDD-NNN-action)', {
+        sourceReviewRun: sourceReviewRunRaw,
+        detail: (e as FlowkitError).message,
+      });
+    }
+    sourceReviewRun = s;
+  }
   const sourceReviewVerdictRaw = obj['sourceReviewVerdict'];
   let sourceReviewVerdict: ReviewVerdictValue | undefined;
   if (sourceReviewVerdictRaw !== undefined) {
@@ -909,8 +926,22 @@ export function validateContextFile(value: unknown): ContextFile {
   }
 
   // reviewedRunId (C1-AP-004): required for review-*, absent for non-review.
-  const reviewedRunId =
-    obj['reviewedRunId'] === undefined ? undefined : requireString(obj, 'reviewedRunId');
+  // Q1-RA-005: reviewedRunId is a Run-ID descriptor — it MUST satisfy the
+  // formal Run-ID grammar (rejecting any path-shaped value) before it is used
+  // to derive context.inputRef / resolve the reviewed result.json.
+  let reviewedRunId: string | undefined;
+  if (obj['reviewedRunId'] !== undefined) {
+    const s = requireString(obj, 'reviewedRunId');
+    try {
+      parseRunId(s);
+    } catch (e) {
+      schemaFail('reviewedRunId must be a formal Run ID (YYYYMMDD-NNN-action)', {
+        reviewedRunId: obj['reviewedRunId'],
+        detail: (e as FlowkitError).message,
+      });
+    }
+    reviewedRunId = s;
+  }
 
   // constraints (optional object).
   const constraints = validateOptionalConstraints(obj['constraints']);

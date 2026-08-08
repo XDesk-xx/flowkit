@@ -23,6 +23,7 @@ import { readdir, readFile, stat } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { normalizeSeparators } from '../shared/paths.js';
 import { FlowkitError } from '../shared/errors.js';
+import { parseRunId } from '../domain/run-id.js';
 import type { ActionResult, ResultRef } from '../domain/types.js';
 import type { ActionResultWithoutRunRef } from './serialization.js';
 
@@ -355,10 +356,33 @@ export function normalizeArtifactLogicalRef(logicalRef: string): string {
 // ---------------------------------------------------------------------------
 
 /**
+ * Validate a Run-ID descriptor against the formal Run-ID grammar and reject
+ * any path-shaped value BEFORE filesystem resolution (Q1-RA-005).
+ *
+ * Caller MUST NOT pass an arbitrary string into a path resolver. Only a
+ * formal `YYYYMMDD-NNN-action` Run ID is a legitimate descriptor.
+ *
+ * @throws {FlowkitError} `RUN_ID_INVALID_FORMAT` (from {@link parseRunId}) when
+ *   the value is not a formal Run ID, including path-shaped values (`../x`,
+ *   `a/b`, `C:\\tmp`, absolute paths).
+ */
+export function validateRunIdDescriptor(value: string): string {
+  // parseRunId enforces the full grammar: ^\d{8}-\d{3}-[a-z][a-z-]*$ with NNN in
+  // 001–999. This inherently rejects slashes, backslashes, '..', absolute paths,
+  // 'result.json' and any arbitrary filename — none of those can match.
+  parseRunId(value);
+  return value;
+}
+
+/**
  * Resolve a Run ID to its `result.json` repo-relative path.
  *
  * Given a deliveryId, optional changeId, and runId, returns
  * `<runsPathPrefix>/<deliveryId>/<changeId?>/<runId>/result.json`.
+ *
+ * The `runId` MUST already be a formal Run ID (validated via
+ * {@link validateRunIdDescriptor}); this resolver does NOT sanitize caller
+ * strings — it concatenates only validated identity segments.
  */
 export function resolveRunResultPath(
   runsPathPrefix: string,
@@ -371,7 +395,8 @@ export function resolveRunResultPath(
   if (changeId !== undefined) {
     segments.push(changeId);
   }
-  segments.push(runId);
+  // Fail-closed: reject any path-shaped / non-Run-ID value before concatenation.
+  segments.push(validateRunIdDescriptor(runId));
   return `${segments.join('/')}/${RESULT_JSON}`;
 }
 
@@ -665,6 +690,147 @@ export async function validateSpecsExactSet(
     return { effective: effectiveIdentities, canonical: canonicalIdentities };
   }
   return null;
+}
+
+// ---------------------------------------------------------------------------
+// Shared stage-aware effective-set completeness validator (Q1-RA-003)
+// ---------------------------------------------------------------------------
+//
+// ONE authority for "what is the complete current effective artifact set" used
+// by terminal completion preflight (run-persistence), review-entry (createRun)
+// and Reader current-generation validation (formal-fact-reader). Requiredness
+// comes from the Action/stage, NOT from field presence: a missing, empty,
+// partial, malformed, extra, wrong-kind or drift-produced set all fail closed.
+
+/** Stage an artifact-producing Action belongs to. */
+export type ArtifactStage = 'explore' | 'propose';
+
+/** Category of an effective-set problem detected by {@link validateStageEffectiveSet}. */
+export type EffectiveSetProblemKind =
+  | 'empty-set'
+  | 'wrong-kind'
+  | 'missing-singleton'
+  | 'extra-identity'
+  | 'missing-target'
+  | 'ambiguous-target'
+  | 'fingerprint-mismatch'
+  | 'specs-mismatch';
+
+/** A single fail-closed problem in an effective produced-artifact set. */
+export interface EffectiveSetProblem {
+  readonly kind: EffectiveSetProblemKind;
+  /** Logical ref of the offending produced ref / expected identity, when applicable. */
+  readonly ref?: string;
+  readonly message: string;
+}
+
+/**
+ * Validate a produced-artifact effective set against the stage invariant.
+ *
+ * Shared by terminal completion preflight, review-entry and the Reader so the
+ * "current effective artifact set" contract has ONE authority.
+ *
+ * Semantics:
+ *   - `stage=explore`: the effective set MUST exactly bind `explore.md`
+ *     (single produced-artifact ref, kind=produced-artifact, current bytes).
+ *   - `stage=propose`: the effective set MUST exactly bind the singleton
+ *     identities `proposal.md`, `design.md`, `tasks.md` AND the complete
+ *     current canonical `specs/**` namespace.
+ *
+ * For every produced ref the function checks:
+ *   - kind MUST be `produced-artifact`;
+ *   - target MUST resolve uniquely (archive-aware) and be readable;
+ *   - fingerprint MUST match the current canonical bytes.
+ *
+ * Structural checks:
+ *   - missing field / empty array / partial set / extra identity all fail
+ *     closed (a legitimately-empty specs namespace does NOT excuse a missing
+ *     singleton — singletons and the specs namespace are validated together).
+ *
+ * @returns List of problems; empty ⇒ the effective set satisfies the stage
+ *   invariant. Callers translate these into their own error type
+ *   (`FlowkitError` for preflight/review-entry, `FactConflict` for Reader).
+ */
+export async function validateStageEffectiveSet(
+  repoRoot: string,
+  changeId: string,
+  stage: ArtifactStage,
+  producedRefs: readonly ResultRef[],
+): Promise<readonly EffectiveSetProblem[]> {
+  const problems: EffectiveSetProblem[] = [];
+
+  // Empty set is never a legal produced set for an artifact stage.
+  if (producedRefs.length === 0) {
+    problems.push({
+      kind: 'empty-set',
+      message: `${stage} produced set is empty; the complete Core-expected effective set is required`,
+    });
+  }
+
+  // Byte / target validation for every present ref (missing/ambiguous/mismatch).
+  const byteProblems = await validateEffectiveArtifactRefs(repoRoot, producedRefs);
+  for (const p of byteProblems) {
+    const kind: EffectiveSetProblemKind =
+      p.kind === 'ambiguous'
+        ? 'ambiguous-target'
+        : p.kind === 'mismatch'
+          ? 'fingerprint-mismatch'
+          : 'missing-target';
+    problems.push({
+      kind,
+      ref: p.ref,
+      message: `${kind}: ${p.ref}${p.expected !== undefined ? ` (expected ${p.expected}, got ${p.actual})` : ''}`,
+    });
+  }
+
+  // Every produced ref MUST carry the produced-artifact kind (Core-owned).
+  for (const ref of producedRefs) {
+    if (ref.kind !== PRODUCED_ARTIFACT_KIND) {
+      problems.push({
+        kind: 'wrong-kind',
+        ref: ref.ref,
+        message: `produced ref ${ref.ref} has kind ${String(ref.kind)}, expected produced-artifact`,
+      });
+    }
+  }
+
+  // Build the Core-enumerated expected identity set for the stage.
+  const expectedIdentities: string[] = [];
+  if (stage === 'explore') {
+    expectedIdentities.push(resolveSingletonArtifactRef('explore', 'explore', changeId));
+  } else {
+    expectedIdentities.push(resolveSingletonArtifactRef('propose', 'proposal', changeId));
+    expectedIdentities.push(resolveSingletonArtifactRef('propose', 'design', changeId));
+    expectedIdentities.push(resolveSingletonArtifactRef('propose', 'tasks', changeId));
+    const specsRefs = await enumerateSpecsNamespace(repoRoot, changeId);
+    expectedIdentities.push(...specsRefs.map((r) => r.ref));
+  }
+  const expectedSet = new Set(expectedIdentities);
+  const producedSet = new Set(producedRefs.map((r) => r.ref));
+
+  // Missing expected identities (singletons are never optional).
+  for (const identity of expectedIdentities) {
+    if (!producedSet.has(identity)) {
+      problems.push({
+        kind: 'missing-singleton',
+        ref: identity,
+        message: `expected produced identity missing from effective set: ${identity}`,
+      });
+    }
+  }
+
+  // Extra identities not in the Core-expected set.
+  for (const ref of producedRefs) {
+    if (!expectedSet.has(ref.ref)) {
+      problems.push({
+        kind: 'extra-identity',
+        ref: ref.ref,
+        message: `produced identity not in Core-expected set: ${ref.ref}`,
+      });
+    }
+  }
+
+  return problems;
 }
 
 // ---------------------------------------------------------------------------

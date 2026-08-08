@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-130-revise-apply",
+  "status": "completed",
+  "summary": "Q1 revise-apply resolved all three 129-review-apply Blocking Findings by closing the authority boundary at every production-reachable path. (Q1-RA-001) The raw RunResultFile terminal publisher is no longer exported: writeRunResult and publishTerminalResult are module-private, and completeRun is the only externally reachable terminal-completion API. Callers provide only typed descriptors (consumedRunIds / producedArtifactTags / reviewedRunId / reviewVerdict / reviewFindings); Core derives every ResultRef from actual target bytes. The shared completion preflight is Action-requiredness based: artifact-producing Actions (explore/revise-explore/propose/revise-propose — not review-*) unconditionally require the complete producedResultRefs, and review-apply unconditionally requires the Core-derived verificationSummaryRef; missing evidence keeps the Run pending (no terminal publication). Negative tests prove a raw or incomplete terminal publication is mechanically unavailable. (Q1-RA-003) One shared stage-aware effective-set completeness validator (validateStageEffectiveSet) is now used at terminal preflight, review entry, AND Reader current-generation validation. Initial explore must exactly bind explore.md; initial propose must bind proposal.md + design.md + tasks.md + the complete current specs namespace. readRunProducedResultRefs no longer converts missing/malformed/absent evidence to [] — it throws SCHEMA_VALIDATION_FAILED. Review entry unconditionally validates the reviewed Run's stage effective set (no length > 0 guard), and the Reader produces a FactConflict for empty/partial current-generation produced sets. (Q1-RA-005) Every descriptor is runtime-validated before filesystem resolution: validateRunIdDescriptor reuses the formal parseRunId grammar for reviewedRunId / sourceReviewRun / consumedRunIds; resolveRunResultPath and readReferencedRunResult reject path-shaped values (../x, a/b, C:\\tmp\\run, result.json); producedArtifactTags are runtime-validated against permittedProducedArtifactTags(action) with unknown/disallowed tags, empty/undefined revise changed-tag sets, and tags on non-artifact Actions rejected at the descriptor boundary. All verification checks actually executed and passed: typecheck, lint, build, 515 tests (515 pass, 0 fail), OpenSpec change strict, 8/8 canonical specs strict, git diff --check. Delivery Full Test was NOT run (no authorization for revise-apply). No contract artifacts, prior Runs, or Flowkit state were modified; no Git commit was created by this Run.",
+  "sourceReview": {
+    "runId": "20260806-129-review-apply",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:7f68d1b7092bc372ba87d77aea582691389f1617221b6c96576f1bff825931a1"
+  },
+  "resolvedFindings": [
+    {
+      "id": "Q1-RA-001",
+      "result": "resolved",
+      "evidence": "The raw RunResultFile terminal publisher is no longer a production-reachable API: src/persistence/run-persistence.ts no longer exports writeRunResult (it and publishTerminalResult are module-private; export surface is verified by the 'completeRun is the ONLY public terminal-completion entry (RA-001)' import-surface test in tests/unit/persistence/run-persistence.test.ts). All terminal completion enters through completeRun(runDir, CompleteRunInput), which accepts typed descriptors only — no ResultRef-valued fields. Core derives every ResultRef via deriveActionResult (buildRunResultRef / buildArtifactResultRef / deriveReviewVerdictRef / deriveVerificationSummaryArtifactRef). The shared completion preflight is Action-requiredness based: artifact-producing Actions unconditionally require producedResultRefs and validateStageEffectiveSet; review-apply unconditionally requires the Core-derived verificationSummaryRef; any missing evidence throws and leaves the Run pending (assertMutable + fs.link create-once preserved in the single private publisher). Negative tests prove raw caller-authored terminal completion is rejected and that completeRun requires the complete initial produced set and the review-apply verification summary."
+    },
+    {
+      "id": "Q1-RA-003",
+      "result": "resolved",
+      "evidence": "One shared stage-aware effective-set completeness validator, validateStageEffectiveSet (src/persistence/result-ref-adapter.ts), is used at all three sites: completion preflight (run-persistence.ts completionPreflight), review entry (run-persistence.ts validateReviewEntry, called unconditionally — the producedRefs.length > 0 guard is removed and requiredness comes from artifactStage(reviewedFact.action)), and Reader current-generation validation (formal-fact-reader.ts validateCurrentGenerationRefs). Initial explore exactly binds explore.md (count 1, identity, kind produced-artifact, fingerprint = current bytes); initial propose exactly binds proposal.md + design.md + tasks.md + the complete current canonical specs/** namespace. Missing, malformed, empty, or partial produced sets fail closed regardless of field presence: readRunProducedResultRefs throws SCHEMA_VALIDATION_FAILED on missing/unreadable/invalid-JSON/absent-actionResult (never converts to []), review entry rejects before publish (RESULT_REF_MISMATCH), and the Reader emits artifact-effective-set-incomplete FactConflicts (unit-tested for empty and partial propose produced sets). The empty-specs-namespace-does-not-excuse-missing-singletons edge is explicitly covered by a review-entry negative test."
+    },
+    {
+      "id": "Q1-RA-005",
+      "result": "resolved",
+      "evidence": "Every descriptor is runtime-validated before filesystem resolution. validateRunIdDescriptor (src/persistence/result-ref-adapter.ts) reuses the formal parseRunId grammar (src/domain/run-id.ts) and is applied to reviewedRunId and sourceReviewRun in validateContextFile (src/persistence/serialization.ts), to consumedRunIds and reviewedRunId/sourceReviewRun in validateCompleteRunInput (run-persistence.ts), and inside resolveRunResultPath / readReferencedRunResult so path-shaped values (../x, a/b, C:\\tmp\\run, result.json, arbitrary filenames) are rejected with RUN_ID_INVALID_FORMAT before any path.join. producedArtifactTags are runtime-validated in validateCompleteRunInput against permittedProducedArtifactTags(action): unknown tags reject, Action-disallowed tags reject (revise-explore with proposal, apply with proposal), revise-propose with empty or undefined changed-tag sets reject (no no-op inheritance), revise-explore requires exactly ['explore']. Negative tests cover all of the above, including the raw descriptor boundary (no TypeScript-only reliance)."
+    }
+  ],
+  "artifacts": [
+    { "path": "src/persistence/run-persistence.ts", "sha256": "92417ec10cd4fd7c9100c2deefba15439d5f6b28d827c51d9c07d7681b1abb09" },
+    { "path": "src/persistence/result-ref-adapter.ts", "sha256": "40e43334d029051ef1e1e9f3916d4945bdea501053684eb84a2a7064c4c72b2c" },
+    { "path": "src/persistence/serialization.ts", "sha256": "7b769c91c6ce5938ea5afa7c3481da816676e1cd614a2c297588ef4c324e6c08" },
+    { "path": "src/facts/formal-fact-reader.ts", "sha256": "0d909371efc40cfc9059eb48d071da8ab7a3a48b7080abe89c9b8c161e4283dc" },
+    { "path": "tests/unit/persistence/run-persistence.test.ts", "sha256": "beccf96f78713ffb3a4c93aeea4621fdc7554f1dcda6dff91adcdbbeeb54ed51" },
+    { "path": "tests/unit/persistence/result-ref-adapter.test.ts", "sha256": "78525741209f3dd0d9a773c5335740b66b739751663a30a31b4427c6bcf11f60" },
+    { "path": "tests/unit/persistence/serialization.test.ts", "sha256": "18069450cfc008a46faab547b86bdc7fb9cefcb94b54bf4ecb7968de13b2a2f0" },
+    { "path": "tests/unit/facts/formal-fact-reader.test.ts", "sha256": "565ceac184fca21f7d8a593dee51d2d2ac0ace7a6346118a8538e6a7b535a8a7" },
+    { "path": "tests/integration/execution-model-lifecycle.test.ts", "sha256": "a554e55b4bb7698b0ef867c7bb62a674f2e9d379119cb1f93fd86e8c3ad176b7" },
+    { "path": "openspec/changes/execution-model-correction/verification.md", "sha256": "f8178daa5283aa60c9e4d336b151eee3016d0f00408acb61b3888be290f0bdb5" }
+  ],
+  "scope": {
+    "modifiedCapabilities": [
+      "flowkit-formal-fact-reader-and-persistence"
+    ],
+    "productionCodeModified": true,
+    "testsModified": true,
+    "contractArtifactsModified": false,
+    "fullTestRun": false
+  },
+  "verification": {
+    "typecheck": "passed",
+    "lint": "passed",
+    "build": "passed",
+    "unitAndIntegrationTests": "passed (515 tests, 515 pass, 0 fail)",
+    "moduleUnitTests": "passed (serialization: closed schema / ResultRef.kind required / field-kind binding / reviewedRunId Run-ID grammar; result-ref-adapter: ResultRef construction / Run-ID descriptor fail-closed / validateStageEffectiveSet shared validator / specs enumeration / archive-aware resolution; run-persistence: completeRun sole public terminal-completion API / completion preflight Action-requiredness / review-entry unconditional stage completeness / descriptor runtime fail-closed; formal-fact-reader: exact lineage classification / empty·partial produced set → FactConflict)",
+    "lifecycleIntegrationFixtures": "passed (generation-aware Reader: legitimate revise superseded no false conflict / no-lineage fail-closed; revise-propose effective-set: namespace drift reject / subset overlay / undeclared singleton pending; verification generation-aware; archive relocation post-archive ambiguity fail-closed)",
+    "openspecStrict": "passed",
+    "openspecCommand": "openspec validate execution-model-correction --strict",
+    "canonicalSpecs": "passed (8 passed, 0 failed)",
+    "whitespace": "passed (git diff --check exit 0; benign LF/CRLF warnings only)"
+  },
+  "nextActionRecommendation": "review-apply",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

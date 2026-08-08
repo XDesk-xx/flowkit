@@ -580,4 +580,119 @@ describe('readFormalFactSnapshot', () => {
     const conflict = snapshot.conflicts.find((c) => c.dimension === 'review-verdict-linkage');
     assert.ok(conflict, 'expected review-verdict-linkage conflict');
   });
+
+  // -------------------------------------------------------------------------
+  // Q1-RA-003: Reader fails closed on empty/partial initial produced sets
+  // -------------------------------------------------------------------------
+
+  it('current-generation propose with EMPTY produced set → FactConflict (Q1-RA-003)', async () => {
+    const deliveryId = 'D-RA003-EMPTY';
+    const deliveryRunsDir = join(tempRoot, '.flowkit', 'runs', deliveryId);
+    const changeId = 'C1';
+    // Provide all current canonical artifacts so the ONLY failure is the
+    // incomplete produced set (not a byte issue).
+    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
+    await mkdir(join(changeDir, 'specs', 'cap-a'), { recursive: true });
+    await writeFile(join(changeDir, 'proposal.md'), '# Proposal\n');
+    await writeFile(join(changeDir, 'design.md'), '# Design\n');
+    await writeFile(join(changeDir, 'tasks.md'), '# Tasks\n');
+    await writeFile(join(changeDir, 'specs', 'cap-a', 'spec.md'), '# Spec A\n');
+
+    await writeRun(
+      deliveryRunsDir,
+      changeId,
+      '20260806-001-propose',
+      {
+        schemaVersion: 2,
+        runId: '20260806-001-propose',
+        deliveryId,
+        changeKey: changeId,
+        changeId,
+        action: 'propose',
+        role: 'author',
+        ownerAuthorization: 'required',
+        runPath: `.flowkit/runs/${deliveryId}/${changeId}/20260806-001-propose/`,
+      },
+      {
+        runStatus: 'completed',
+        actionResult: {
+          action: 'propose',
+          executionStatus: 'completed',
+          summary: 'P0',
+          producedResultRefs: [], // empty produced set → fail closed
+        },
+      },
+    );
+
+    const snapshot = await readFormalFactSnapshot({
+      repoRoot: tempRoot,
+      deliveryId,
+      runsPathPrefix: '.flowkit/runs',
+      openspecChangesPath: 'openspec/changes',
+      manifestPathPrefix: '.flowkit/manifests',
+    });
+    const conflict = snapshot.conflicts.find((c) => c.dimension === 'artifact-effective-set-incomplete');
+    assert.ok(conflict, `expected artifact-effective-set-incomplete conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
+  });
+
+  it('current-generation propose with PARTIAL produced set (missing design.md) → FactConflict (Q1-RA-003)', async () => {
+    const deliveryId = 'D-RA003-PARTIAL';
+    const deliveryRunsDir = join(tempRoot, '.flowkit', 'runs', deliveryId);
+    const changeId = 'C1';
+    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
+    await mkdir(join(changeDir, 'specs', 'cap-a'), { recursive: true });
+    await writeFile(join(changeDir, 'proposal.md'), '# Proposal\n');
+    await writeFile(join(changeDir, 'design.md'), '# Design\n');
+    await writeFile(join(changeDir, 'tasks.md'), '# Tasks\n');
+    await writeFile(join(changeDir, 'specs', 'cap-a', 'spec.md'), '# Spec A\n');
+
+    const { computeResultFileHash } = await import('../../../src/persistence/result-ref-adapter.js');
+    const { readFile } = await import('node:fs/promises');
+    const proposalHash = computeResultFileHash(await readFile(join(changeDir, 'proposal.md'), 'utf-8'));
+    const tasksHash = computeResultFileHash(await readFile(join(changeDir, 'tasks.md'), 'utf-8'));
+    const specHash = computeResultFileHash(await readFile(join(changeDir, 'specs', 'cap-a', 'spec.md'), 'utf-8'));
+
+    // Produced set is MISSING design.md (partial) — every present ref is current,
+    // but the stage invariant is violated.
+    await writeRun(
+      deliveryRunsDir,
+      changeId,
+      '20260806-001-propose',
+      {
+        schemaVersion: 2,
+        runId: '20260806-001-propose',
+        deliveryId,
+        changeKey: changeId,
+        changeId,
+        action: 'propose',
+        role: 'author',
+        ownerAuthorization: 'required',
+        runPath: `.flowkit/runs/${deliveryId}/${changeId}/20260806-001-propose/`,
+      },
+      {
+        runStatus: 'completed',
+        actionResult: {
+          action: 'propose',
+          executionStatus: 'completed',
+          summary: 'P0',
+          producedResultRefs: [
+            { ref: `openspec/changes/${changeId}/proposal.md`, versionFingerprint: proposalHash, kind: 'produced-artifact' },
+            { ref: `openspec/changes/${changeId}/tasks.md`, versionFingerprint: tasksHash, kind: 'produced-artifact' },
+            { ref: `openspec/changes/${changeId}/specs/cap-a/spec.md`, versionFingerprint: specHash, kind: 'produced-artifact' },
+            // design.md is MISSING from the produced set.
+          ],
+        },
+      },
+    );
+
+    const snapshot = await readFormalFactSnapshot({
+      repoRoot: tempRoot,
+      deliveryId,
+      runsPathPrefix: '.flowkit/runs',
+      openspecChangesPath: 'openspec/changes',
+      manifestPathPrefix: '.flowkit/manifests',
+    });
+    const conflict = snapshot.conflicts.find((c) => c.dimension === 'artifact-effective-set-incomplete');
+    assert.ok(conflict, `expected artifact-effective-set-incomplete conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
+  });
 });
