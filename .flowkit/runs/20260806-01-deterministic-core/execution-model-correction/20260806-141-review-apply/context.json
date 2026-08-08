@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-141-review-apply",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "Q1",
+  "changeId": "execution-model-correction",
+  "action": "review-apply",
+  "role": "reviewer",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-140-revise-apply/",
+  "reviewedResultRef": "content-sha256:3922bbea0c7e4bb766e3703a0aebc2df0ce1ddff9b156fb49115a905ea81680b",
+  "reviewedPackageRef": "content-sha256:93080e042f96a33e8d7ce5a0da2f0e94eaca73954b17150148561fa4eec54914",
+  "reviewedSeriesVersion": "v2",
+  "reviewedBaseGitHead": "44e1a64447ba63aa66c3b5653b448101713fb5b7",
+  "sourceReview": {
+    "runId": "20260806-139-review-apply",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:3da64623ba678ec96904ca0f3df67ef9b6788a16e97de077bf4c9e34a094baf1"
+  },
+  "reviewMode": "exact-base integrated-overlay + bootstrap-compatibility",
+  "constraints": {
+    "readOnlyExceptOwnRun": true,
+    "mayModifyReviewedArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayFullTest": false,
+    "mayCheckpoint": false,
+    "commitAllowed": false
+  }
+}

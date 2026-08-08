@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-137-review-apply",
+  "status": "completed",
+  "summary": "Independent complete review of 136 finished with changes-requested. Q1-RA-010 is resolved: Action-result physical requiredness now uses top-level runStatus + context.action and is shared by terminal preflight and C1 Reader admission. Q1-RA-007 is materially improved at terminal completion: revise-* source-review requiredness is Action-owned, matching review stage is enforced, and both admitted/persisted verdicts must be changes-requested. However the Reader applies the completed source-review tuple rule to pending revise Runs as well. A legitimate pending revise has sourceReviewRun/sourceReviewVerdict in context but has no terminal actionResult.reviewVerdictRef yet; validateImmutableRunResultRefs still passes requiresTuple=true and validateSourceReviewTuple therefore reports missing-reviewVerdictRef, so the bounded revision-window state itself produces a FactConflict. Conversely immutable source-review validation currently returns conflicts only; readFormalFactSnapshot then passes the same unfiltered runs array into artifact/verification generation classification. A completed revise with an invalid/missing/tampered reviewVerdictRef can therefore still be treated as a successor based only on sourceReviewRun/sourceReviewVerdict plus an admitted review, relaxing predecessor mutable validation even though that successor's immutable source-review evidence failed. This violates the approved two-stage Reader boundary: first validate immutable Run/review-revise lineage, then classify generations. 136 is formally present and exact-binds 135. Author-recorded typecheck/lint/build/584 tests/OpenSpec/diff checks are accepted as recorded. Delivery Full Test was not authorized or run.",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-136-revise-apply/",
+  "reviewedResultRef": "content-sha256:8ee16ca695c1b186a7c6ed94d0b9e1a16036e9644cb0aeab84a6379000e1daad",
+  "reviewedGitHead": "44e1a64447ba63aa66c3b5653b448101713fb5b7",
+  "sourceReview": {
+    "runId": "20260806-135-review-apply",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:fdf3954e80c5486abac71152b2cfd1209e73c123d9e84e115c8782d031cf5a62"
+  },
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "Q1-RA-007",
+      "title": "Reader source-review lineage validation is not status-aware and is not an admission boundary for generation classification",
+      "location": "src/facts/formal-fact-reader.ts: readFormalFactSnapshot, readC1Run, validateImmutableRunResultRefs, validateGenerationAwareArtifacts, validateVerificationGenerationAware; src/persistence/result-ref-adapter.ts: validateSourceReviewTuple; src/facts/generation-resolver.ts",
+      "evidence": "A pending schemaVersion 2 revise Run has no result.json and therefore no actionResult.reviewVerdictRef. readC1Run still projects sourceReviewRun/sourceReviewVerdict from context into the pending RunFact. validateImmutableRunResultRefs then calls validateSourceReviewTuple for every Run and sets requiresTuple=true solely because action is revise-explore/revise-propose/revise-apply. Because the pending Run has sourceReviewRun/sourceReviewVerdict but no terminal reviewVerdictRef, the shared tuple validator reports missing-reviewVerdictRef. This makes a legitimate pending revise revision window conflict, despite the approved design explicitly allowing pending revise-S to open the bounded revision window. In the opposite direction, validateImmutableRunResultRefs returns FactConflict[] only and does not identify which revise Runs are lineage-admitted. readFormalFactSnapshot subsequently passes the original runs array to generation-aware artifact and verification validation. classifyArtifactGenerations / classifyVerificationGenerations establish successor lineage from sourceReviewRun/sourceReviewVerdict and admitted review facts, but do not know whether the completed successor's reviewVerdictRef failed immutable tuple validation. Thus a completed revise with missing/wrong/hash-mismatched reviewVerdictRef can still influence generation classification and cause the predecessor to be treated as superseded/revision-window while a source-review conflict is reported separately.",
+      "impact": "The Reader fails in both directions around the same boundary: a legal pending revision window becomes conflicting before its terminal-only evidence can exist, while an invalid completed successor can still influence classification after its immutable lineage evidence failed. This weakens deterministic recovery and can suppress the predecessor's current mutable-byte validation. The presence of some other conflict does not satisfy the approved two-stage contract that generation classification must be based on validated review/revise lineage.",
+      "requiredResolution": "Make Reader source-review lineage validation status-aware and make successful lineage validation an actual eligibility boundary for generation classification. A legitimate pending revise must be able to prove its context-level predecessor review lineage without requiring a terminal-only reviewVerdictRef; a completed revise must prove the full immutable source-review evidence required at terminal time. Only revise Runs whose applicable lineage evidence has passed the Reader's validation may open revision-window/superseded generation semantics. Preserve matching review stage, changes-requested-only semantics, exact review admission, and immutable strictness for completed historical Runs. The Author may choose any implementation structure that establishes these outcomes.",
+      "acceptance": [
+        "A legitimate pending revise-explore/revise-propose/revise-apply sourced from the matching admitted changes-requested review produces no source-review missing-reviewVerdictRef conflict solely because result.json does not exist yet.",
+        "That legitimate pending revise still opens the intended bounded revision window.",
+        "Pending revise with missing/wrong-stage/approved/unadmitted context lineage fails closed.",
+        "Completed revise still requires and validates the full source-review tuple including reviewVerdictRef target/kind/hash.",
+        "A completed revise whose full source-review evidence is invalid is not eligible to supersede a predecessor or verification generation.",
+        "A test demonstrates that an invalid completed successor cannot hide a predecessor artifact/verification replacement conflict by causing it to be classified superseded.",
+        "Existing RA-001/003/005/006/008/009/010 behavior remains intact."
+      ]
+    }
+  ],
+  "nonBlockingFindings": [],
+  "resolvedPriorFindings": [
+    {
+      "id": "Q1-RA-010",
+      "result": "resolved",
+      "evidence": "validateActionResultApplicability now receives top-level runStatus; completed artifact-producing results structurally require producedResultRefs and completed review-apply requires verificationSummaryRef regardless of actionResult.executionStatus. The same applicability validator is used in terminal preflight and admitC1RunResult."
+    },
+    {
+      "id": "Q1-RA-006",
+      "result": "still-resolved",
+      "evidence": "Review inputRef requiredness and shared validateReviewRunBinding remain exact across terminal preflight, Reader, and sibling lineage."
+    },
+    {
+      "id": "Q1-RA-001",
+      "result": "still-resolved",
+      "evidence": "Raw terminal publisher remains private; completeRun remains descriptor-driven."
+    },
+    {
+      "id": "Q1-RA-003",
+      "result": "still-resolved",
+      "evidence": "Shared stage effective-set validation remains in preflight/review-entry/current Reader validation."
+    },
+    {
+      "id": "Q1-RA-005",
+      "result": "still-resolved",
+      "evidence": "Run-ID and produced-artifact descriptor boundaries remain runtime closed."
+    },
+    {
+      "id": "Q1-RA-008",
+      "result": "still-resolved",
+      "evidence": "Non-Run logical/archive resolver remains absolute/traversal/exact-archive fail-closed."
+    },
+    {
+      "id": "Q1-RA-009",
+      "result": "still-resolved",
+      "evidence": "Current verificationSummaryRef recovery remains presence/kind/path/target/hash fail-closed."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "136 formal Run presence",
+        "status": "passed",
+        "result": "136 action.md, context.json and result.json are present on the reviewed branch."
+      },
+      {
+        "name": "136 source-review exact binding",
+        "status": "passed",
+        "result": "136 exact-binds 135 changes-requested using content-sha256:fdf3954e80c5486abac71152b2cfd1209e73c123d9e84e115c8782d031cf5a62."
+      },
+      {
+        "name": "136 reviewed result exact hash",
+        "status": "passed",
+        "result": "136 result.json content SHA-256 = 8ee16ca695c1b186a7c6ed94d0b9e1a16036e9644cb0aeab84a6379000e1daad."
+      },
+      {
+        "name": "Author-recorded focused/affected verification",
+        "status": "passed-as-recorded",
+        "result": "typecheck, lint, build, 584/584 tests, OpenSpec Change strict, 7 canonical specs, git diff --check recorded passed."
+      },
+      {
+        "name": "Q1-RA-010 physical applicability parity",
+        "status": "passed",
+        "result": "Top-level completed required-field matrix is shared by terminal writer and C1 result admission."
+      },
+      {
+        "name": "Q1-RA-007 terminal completed source-review lineage",
+        "status": "passed",
+        "result": "Completed revise terminal preflight now enforces Action-owned tuple requiredness, matching review stage and changes-requested verdict."
+      },
+      {
+        "name": "Q1-RA-007 pending revision-window Reader behavior",
+        "status": "failed",
+        "result": "Pending revise lacks terminal actionResult.reviewVerdictRef but Reader unconditionally requires the completed tuple and reports missing-reviewVerdictRef."
+      },
+      {
+        "name": "Validated-lineage admission before generation classification",
+        "status": "failed",
+        "result": "Immutable source-review conflicts do not remove/mark ineligible revise Runs before the same runs array is passed to generation classification."
+      },
+      {
+        "name": "Delivery Full Test",
+        "status": "not-applicable",
+        "result": "Not owner-authorized and not run."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-apply",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

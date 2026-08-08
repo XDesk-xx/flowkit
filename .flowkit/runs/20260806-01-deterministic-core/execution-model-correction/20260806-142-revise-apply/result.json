@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-142-revise-apply",
+  "status": "completed",
+  "summary": "Resolved Run 141 Blocking Finding Q1-RA-011 without changing the bounded legacy recognizer contract or the public RunFact model. Reader admission now preserves an internal C1 provenance set alongside the existing RunFact collection. Only Runs admitted through schemaVersion 2/C1 participate in C1 immutable ResultRef validation, C1 artifact generation/current effective-set validation, and C1 verification generation/current verificationSummaryRef validation. schemaVersion 1 Bootstrap Runs remain visible in the final snapshot and retain their normalized legacy status/review facts, but completed legacy revise Runs such as 136/138/140 are no longer required to carry C1 sourceReviewRun/sourceReviewVerdict/reviewVerdictRef tuples; legacy explore/propose are not required to carry C1 producedResultRefs; and legacy review-apply is not promoted into a C1 verification generation. The C1 path remains unchanged in strictness: pending revise uses context predecessor proof without terminal reviewVerdictRef, completed revise requires the full immutable source-review tuple, failed/cancelled never require terminal-only evidence or become successors, and any applicable immutable inputRef/consumedInputRefs/source-review failure still disqualifies successor eligibility. Unknown numeric schema versions continue to fail closed in the existing three-way discriminator. Focused RA-011 fixtures cover real-shape legacy 136/138/140 revise Runs, legacy explore/propose, legacy review-apply, C1 completed revise strictness, and unknown schemaVersion. Delivery Full Test was not run.",
+  "sourceReview": {
+    "runId": "20260806-141-review-apply",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:bda851e4f25a230f4db5939b95fa25b5ff676f08b7d8abcf542ab3b6c39ec68b"
+  },
+  "resolvedFindings": [
+    {
+      "id": "Q1-RA-011",
+      "result": "resolved",
+      "evidence": "readRuns/readChangeRuns now retain an internal c1RunIds provenance set from readSingleRun classification. readC1Run marks admitted C1 facts and readLegacyRun marks bounded legacy facts without changing the public RunFact projection. validateImmutableRunResultRefs skips non-C1 RunFacts, and both artifact and verification generation-aware validators filter their generation candidates to c1RunIds before classification/current mutable validation. Thus Bootstrap history cannot acquire C1-only ResultRef obligations solely from action/status, while all Run-140 C1 successor-admission rules remain in force."
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "src/facts/formal-fact-reader.ts",
+      "sha256": "13ccdf1ad2a9262d1e0e304548036c9e369251cc69076e318c9a4c7894549688"
+    },
+    {
+      "path": "tests/unit/facts/formal-fact-reader-ra007-admission.test.ts",
+      "sha256": "1e25ad8982b21e69bf9f8b56ffa9ae40a8d6d7e0e7410940bc054d928c194e25"
+    },
+    {
+      "path": "tests/unit/facts/formal-fact-reader-ra011-legacy-provenance.test.ts",
+      "sha256": "843f303e9c0f6e84377d0fcc2f2334f47bff35df043c63c423e92336c4383176"
+    }
+  ],
+  "scope": {
+    "modifiedCapabilities": [
+      "flowkit-formal-fact-reader-and-persistence"
+    ],
+    "productionCodeModified": true,
+    "testsModified": true,
+    "contractArtifactsModified": false,
+    "fullTestRun": false
+  },
+  "verification": {
+    "isolatedTypeScriptParse": "passed for the final Reader and both cumulative focused test files using TypeScript transpileModule; zero syntax/transpile diagnostics",
+    "focusedRegressionCoverageAdded": "5 RA-011 cases: real-shape legacy 136/138/140 completed revise; legacy explore/propose; legacy review-apply; C1 completed revise remains strict; unknown schemaVersion remains fail-closed",
+    "priorRA007CoveragePreserved": "Run-140 cumulative RA-007 focused test file preserved unchanged",
+    "reviewChainHashChecks": "passed: uploaded v2 package hash matches Run 141 reviewedPackageRef; Run 140 result hash matches Run 141 reviewedResultRef; Run 141 result hash is exact-bound by Run 142 sourceReview",
+    "repositoryFocusedTests": "not executed because the environment does not contain a complete dependency-installed repository checkout and direct git clone is network-unavailable",
+    "deliveryFullTest": "not run; not owner-authorized"
+  },
+  "nextActionRecommendation": "review-apply",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}
