@@ -21,6 +21,9 @@ import {
   validateSpecsExactSet,
   resolveRunResultPath,
   validateRunIdDescriptor,
+  normalizeArtifactLogicalRef,
+  assertCanonicalArtifactRoot,
+  changeIdFromArchiveDirectoryName,
   RUN_RESULT_KIND,
   PRODUCED_ARTIFACT_KIND,
   VERIFICATION_SUMMARY_KIND,
@@ -482,6 +485,137 @@ describe('resolveRunResultPath / validateRunIdDescriptor fail closed on path-sha
     assert.throws(
       () => resolveRunResultPath('.flowkit/runs', 'D1', 'C1', '../x'),
       (e: unknown) => e instanceof FlowkitError && e.code === 'RUN_ID_INVALID_FORMAT',
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Q1-RA-008: non-Run logical-ref / archive resolver fail-closed
+// ---------------------------------------------------------------------------
+
+describe('non-Run logical-ref / archive resolver fail-closed (Q1-RA-008)', () => {
+  before(makeTempRoot);
+  after(cleanupTempRoot);
+
+  it('rejects a POSIX absolute logical ref BEFORE normalization (leading /)', () => {
+    assert.throws(
+      () => normalizeArtifactLogicalRef('/openspec/changes/C1/proposal.md'),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+    assert.throws(
+      () => assertCanonicalArtifactRoot('/openspec/changes/C1/proposal.md'),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('rejects a POSIX absolute logical ref with forward slashes preserved', () => {
+    assert.throws(
+      () => normalizeArtifactLogicalRef('/openspec/changes/C1/design.md'),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('rejects a Windows absolute logical ref (drive letter)', () => {
+    assert.throws(
+      () => normalizeArtifactLogicalRef('C:\\openspec\\changes\\C1\\proposal.md'),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('rejects traversal/root-mismatch in a logical ref', () => {
+    assert.throws(
+      () => assertCanonicalArtifactRoot('openspec/changes/../C1/proposal.md'),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+    // Wrong root (not openspec/changes/<changeId>/...).
+    assert.throws(
+      () => assertCanonicalArtifactRoot('docs/proposal.md'),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+    // Empty changeId segment.
+    assert.throws(
+      () => assertCanonicalArtifactRoot('openspec/changes//proposal.md'),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('rejects a result.json logical ref (non-Run target)', () => {
+    assert.throws(
+      () => normalizeArtifactLogicalRef('openspec/changes/C1/proposal/result.json'),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('accepts a canonical repository-relative logical ref', () => {
+    assert.equal(
+      normalizeArtifactLogicalRef('openspec/changes/C1/proposal.md'),
+      'openspec/changes/C1/proposal.md',
+    );
+    assert.doesNotThrow(() => assertCanonicalArtifactRoot('openspec/changes/C1/proposal.md'));
+  });
+
+  it('changeIdFromArchiveDirectoryName accepts ONLY exact YYYY-MM-DD-<changeId>', () => {
+    assert.equal(changeIdFromArchiveDirectoryName('2026-02-02-C1'), 'C1');
+    assert.equal(changeIdFromArchiveDirectoryName('2026-02-02-execution-model-correction'), 'execution-model-correction');
+    assert.equal(changeIdFromArchiveDirectoryName('2026-02-02-C1-extra'), 'C1-extra'); // changeId may itself contain '-'
+    // Non-date-prefixed / malformed archive names must NOT match.
+    assert.equal(changeIdFromArchiveDirectoryName('C1'), undefined);
+    assert.equal(changeIdFromArchiveDirectoryName('2026-02-02'), undefined);
+    assert.equal(changeIdFromArchiveDirectoryName('2026-02-02-'), undefined);
+    assert.equal(changeIdFromArchiveDirectoryName('2026-2-02-C1'), undefined);
+    assert.equal(changeIdFromArchiveDirectoryName('2026-02-2-C1'), undefined);
+    // Calendar-invalid dates are rejected (2026-13-99, 2026-02-30).
+    assert.equal(changeIdFromArchiveDirectoryName('2026-13-99-C1'), undefined);
+    assert.equal(changeIdFromArchiveDirectoryName('2026-02-30-C1'), undefined);
+  });
+
+  it('resolveArchiveAwareArtifactPath requires the canonical openspec/changes/<changeId>/ root', async () => {
+    await assert.rejects(
+      () => resolveArchiveAwareArtifactPath(tempRoot, '/openspec/changes/C1/proposal.md'),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+    await assert.rejects(
+      () => resolveArchiveAwareArtifactPath(tempRoot, 'docs/proposal.md'),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('archive discovery ignores malformed archive directory names (suffix-match bypass closed)', async () => {
+    const changeId = 'C1';
+    const archiveRoot = join(tempRoot, 'openspec', 'changes', 'archive');
+    // Malformed names that used to pass an endsWith('-C1') suffix check.
+    await mkdir(join(archiveRoot, '2026-02-02-C1-extra'), { recursive: true });
+    await mkdir(join(archiveRoot, 'C1'), { recursive: true });
+    await mkdir(join(archiveRoot, '2026-02-02'), { recursive: true });
+    await writeFile(join(archiveRoot, '2026-02-02-C1-extra', 'proposal.md'), '# x\n');
+    await writeFile(join(archiveRoot, 'C1', 'proposal.md'), '# x\n');
+    await writeFile(join(archiveRoot, '2026-02-02', 'proposal.md'), '# x\n');
+
+    // None of the malformed directories may resolve — the artifact is missing.
+    await assert.rejects(
+      () => resolveArchiveAwareArtifactPath(tempRoot, `openspec/changes/${changeId}/proposal.md`),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'RESULT_REF_TARGET_MISSING',
+    );
+
+    // Exact-grammar directory DOES resolve.
+    const exactDir = join(archiveRoot, '2026-02-02-C1');
+    await mkdir(exactDir, { recursive: true });
+    await writeFile(join(exactDir, 'proposal.md'), '# x\n');
+    const resolved = await resolveArchiveAwareArtifactPath(tempRoot, `openspec/changes/${changeId}/proposal.md`);
+    assert.equal(resolved, join(exactDir, 'proposal.md'));
+  });
+
+  it('active + exact-archive ambiguity fails closed', async () => {
+    const changeId = 'C2';
+    await mkdir(join(tempRoot, 'openspec', 'changes', changeId), { recursive: true });
+    await writeFile(join(tempRoot, 'openspec', 'changes', changeId, 'proposal.md'), '# active\n');
+    const archiveDir = join(tempRoot, 'openspec', 'changes', 'archive', '2026-02-02-C2');
+    await mkdir(archiveDir, { recursive: true });
+    await writeFile(join(archiveDir, 'proposal.md'), '# archived\n');
+
+    await assert.rejects(
+      () => resolveArchiveAwareArtifactPath(tempRoot, `openspec/changes/${changeId}/proposal.md`),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
     );
   });
 });

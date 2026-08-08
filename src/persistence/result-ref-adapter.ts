@@ -322,15 +322,30 @@ export function resolveVerificationSummaryRef(changeId: string): string {
  *     result file)
  */
 export function normalizeArtifactLogicalRef(logicalRef: string): string {
-  const normalized = normalizeSeparators(logicalRef).replace(/^\/+/, '');
-  // Reject absolute Windows paths (e.g. C:\, D:\).
-  if (/^[a-zA-Z]:/.test(normalized)) {
+  // Q1-RA-008: absolute-path evidence MUST be rejected BEFORE any normalization
+  // strips it. `normalizeSeparators` converts '\' to '/' (so a Windows path
+  // `C:\tmp\x` becomes `C:/tmp/x`), and we must reject both a POSIX leading '/'
+  // and a Windows drive letter BEFORE the leading-'/' strip below. Otherwise a
+  // POSIX absolute ref such as `/openspec/changes/C1/proposal.md` would be
+  // silently rewritten into a repository-relative-looking path.
+  const separatorNormalized = normalizeSeparators(logicalRef);
+  if (separatorNormalized.startsWith('/')) {
     throw new FlowkitError(
       'SCHEMA_VALIDATION_FAILED',
-      `Artifact logical ref must be repository-relative, not absolute: ${logicalRef}`,
+      `Artifact logical ref must be repository-relative, not an absolute POSIX path: ${logicalRef}`,
       { logicalRef },
     );
   }
+  if (/^[a-zA-Z]:/.test(separatorNormalized)) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `Artifact logical ref must be repository-relative, not an absolute Windows path: ${logicalRef}`,
+      { logicalRef },
+    );
+  }
+  // From here the value is repository-relative (no leading '/', no drive
+  // letter). Strip any remaining leading slashes defensively.
+  const normalized = separatorNormalized.replace(/^\/+/, '');
   // Reject path traversal.
   const segments = normalized.split('/');
   if (segments.some((s) => s === '..')) {
@@ -349,6 +364,99 @@ export function normalizeArtifactLogicalRef(logicalRef: string): string {
     );
   }
   return normalized;
+}
+
+/**
+ * Prove that a logical ref is a canonical Change-artifact ref with the exact
+ * root/field identity `openspec/changes/<changeId>/...` (Q1-RA-008).
+ *
+ * A non-Run artifact ref is a normalized repository-relative stable logical ref
+ * under the canonical Change root. Rejections (`SCHEMA_VALIDATION_FAILED`):
+ *   - empty / no path;
+ *   - leading `/` or Windows drive (absolute evidence);
+ *   - `..` traversal anywhere;
+ *   - first segments not exactly `openspec/changes/<changeId>/` with a
+ *     non-empty `changeId` and at least one remaining segment;
+ *   - `result.json` target.
+ *
+ * @throws {FlowkitError} `SCHEMA_VALIDATION_FAILED` when the ref is not a
+ *   canonical Change-artifact ref.
+ */
+export function assertCanonicalArtifactRoot(logicalRef: string): void {
+  // normalizeArtifactLogicalRef already rejects absolute/traversal/result.json;
+  // call it first so the same boundary rules apply everywhere.
+  const normalized = normalizeArtifactLogicalRef(logicalRef);
+  const segments = normalized.split('/');
+  if (segments.length < 4) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `Artifact logical ref must be under openspec/changes/<changeId>/: ${logicalRef}`,
+      { logicalRef },
+    );
+  }
+  if (segments[0] !== 'openspec' || segments[1] !== 'changes' || segments[2] === '') {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `Artifact logical ref must start with openspec/changes/<changeId>/: ${logicalRef}`,
+      { logicalRef },
+    );
+  }
+  // A trailing empty segment (e.g. 'openspec/changes/C1/') is not a file ref.
+  if (segments[segments.length - 1] === '') {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `Artifact logical ref must name a file: ${logicalRef}`,
+      { logicalRef },
+    );
+  }
+}
+
+/**
+ * Canonical archive directory name grammar: `YYYY-MM-DD-<changeId>`.
+ *
+ * Q1-RA-008: archive discovery MUST accept only directories whose name exactly
+ * matches `<date>-<changeId>` where `<date>` is a valid `YYYY-MM-DD` date and
+ * `<changeId>` equals the target Change id after the date prefix. Suffix-based
+ * `endsWith('-<changeId>')` matching is NOT sufficient — a directory named
+ * `2026-02-02-execution-model-correction-extra` must never match.
+ */
+export function archiveDirectoryNameOf(changeId: string, date: string): string {
+  return `${date}-${changeId}`;
+}
+
+/**
+ * Extract the Change id from an archive directory name of the exact grammar
+ * `YYYY-MM-DD-<changeId>`. Returns `undefined` when the name does not satisfy
+ * the grammar.
+ */
+export function changeIdFromArchiveDirectoryName(name: string): string | undefined {
+  const match = /^(\d{4}-\d{2}-\d{2})-(.+)$/.exec(name);
+  if (match === null) {
+    return undefined;
+  }
+  const [, dateStr, changeId] = match;
+  if (changeId.length === 0) {
+    return undefined;
+  }
+  // The date prefix MUST be a real calendar date (YYYY-MM-DD). A directory
+  // named `2026-13-99-C1` is not a valid archive directory even though it
+  // matches the digit shape.
+  const [yyyy, mm, dd] = dateStr.split('-');
+  const year = Number(yyyy);
+  const month = Number(mm);
+  const day = Number(dd);
+  if (month < 1 || month > 12 || day < 1 || day > 31) {
+    return undefined;
+  }
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return undefined; // e.g. 2026-02-30 does not exist.
+  }
+  return changeId;
 }
 
 // ---------------------------------------------------------------------------
@@ -503,6 +611,11 @@ export async function resolveArchiveAwareArtifactPath(
   repoRoot: string,
   logicalRef: string,
 ): Promise<string> {
+  // Q1-RA-008: prove the canonical `openspec/changes/<changeId>/...` root/field
+  // identity BEFORE any filesystem resolution. This rejects traversal/absolute
+  // evidence and refs that are not Change-artifact refs at the boundary.
+  assertCanonicalArtifactRoot(logicalRef);
+
   const activePath = join(repoRoot, normalizeSeparators(logicalRef));
   const activeExists = await pathExists(activePath);
 
@@ -569,8 +682,12 @@ async function findArchiveMatches(
 
   const matches: string[] = [];
   for (const entry of entries) {
-    // Archive dir name: <YYYY-MM-DD>-<changeId>
-    if (!entry.endsWith(`-${changeId}`)) {
+    // Q1-RA-008: archive discovery accepts ONLY the exact grammar
+    // `YYYY-MM-DD-<changeId>` AND the Change id must equal the target changeId
+    // after removing the date prefix. A directory named `2026-02-02-<changeId>-extra`
+    // or `2026-02-02` or a plain `<changeId>` directory MUST NOT match.
+    const entryChangeId = changeIdFromArchiveDirectoryName(entry);
+    if (entryChangeId === undefined || entryChangeId !== changeId) {
       continue;
     }
     const candidate = join(archiveDir, entry, relativePath);

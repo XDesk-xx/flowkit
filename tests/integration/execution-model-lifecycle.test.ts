@@ -219,6 +219,72 @@ describe('generation-aware Reader validation', () => {
     );
   });
 
+  it('immutable Run-result refs stay strict for a SUPERSEDED generation (Q1-RA-007)', async () => {
+    const changeId = 'LC-RA007-superseded';
+    // P0 (revise-propose) → R0(CR) → P1 (revise-propose): P0 becomes
+    // superseded. P0 carries consumedInputRefs (it is a revise action).
+    await setupInitialPropose(changeId, '20260806-040-propose');
+    await setupReviewProposeCR(changeId, '20260806-041-review-propose', '20260806-040-propose');
+    const p0Dir = await createRun(
+      createRunInput({
+        runId: '20260806-042-revise-propose',
+        changeId,
+        action: 'revise-propose',
+        role: 'author',
+        sourceReviewRun: '20260806-041-review-propose',
+        sourceReviewVerdict: 'changes-requested',
+      }),
+    );
+    await completeRun(p0Dir, {
+      executionStatus: 'completed',
+      summary: 'P1',
+      producedArtifactTags: ['proposal', 'design', 'tasks', 'specs'],
+    });
+
+    // R0b: another review-propose(P0) → changes-requested.
+    await setupReviewProposeCR(changeId, '20260806-043-review-propose', '20260806-042-revise-propose');
+    // P1b: second revise-propose supersedes P0.
+    const p1Dir = await createRun(
+      createRunInput({
+        runId: '20260806-044-revise-propose',
+        changeId,
+        action: 'revise-propose',
+        role: 'author',
+        sourceReviewRun: '20260806-043-review-propose',
+        sourceReviewVerdict: 'changes-requested',
+      }),
+    );
+    await completeRun(p1Dir, {
+      executionStatus: 'completed',
+      summary: 'P2',
+      producedArtifactTags: ['proposal', 'design', 'tasks', 'specs'],
+    });
+
+    // Tamper the SUPERSEDED P0's result.json: corrupt its reviewVerdictRef
+    // fingerprint (revise-propose always carries reviewVerdictRef pointing at
+    // its source review Run). Immutable refs MUST stay strict even for
+    // superseded generations — a tampered immutable reference can never hide
+    // behind a legitimate mutable-artifact supersession (Q1-RA-007).
+    const p0Result = JSON.parse(await readFile(join(p0Dir, 'result.json'), 'utf-8')) as Record<string, unknown>;
+    const ar = p0Result['actionResult'] as Record<string, unknown>;
+    const reviewVerdictRef = ar['reviewVerdictRef'] as Record<string, unknown>;
+    assert.ok(
+      typeof reviewVerdictRef === 'object' && reviewVerdictRef !== null,
+      'revise-propose P0 should carry reviewVerdictRef',
+    );
+    reviewVerdictRef['versionFingerprint'] = 'deadbeef';
+    await writeFile(join(p0Dir, 'result.json'), JSON.stringify(p0Result, null, 2));
+
+    const snapshot = await readSnapshot();
+    const immutableConflicts = snapshot.conflicts.filter(
+      (c) => c.dimension === 'immutable-ref-mismatch' || c.dimension === 'immutable-ref-missing' || c.dimension === 'immutable-ref-target' || c.dimension === 'immutable-ref-kind',
+    );
+    assert.ok(
+      immutableConflicts.length > 0,
+      `expected immutable-ref conflict on superseded P0, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`,
+    );
+  });
+
   it('canonical overwrite without legitimate revision lineage fails closed', async () => {
     const changeId = 'LC-failclosed';
     // P0: initial propose (complete v0 set).
@@ -234,7 +300,118 @@ describe('generation-aware Reader validation', () => {
     const replaced = snapshot.conflicts.filter((c) => c.dimension === 'artifact-replaced');
     assert.ok(
       replaced.some((c) => c.message.includes('proposal.md')),
-      `expected an artifact-replaced conflict for proposal.md, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`,
+      `expected an artifact-replaced conflict for proposal.md, got: ${JSON.stringify({
+        conflicts: snapshot.conflicts.map((c) => ({ dimension: c.dimension, message: c.message.slice(0, 140) })),
+        runs: snapshot.runs.map((r) => ({ runId: r.runId, action: r.action, status: r.status, changeId: r.changeId })),
+      }, null, 2)}`,
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 1b. Q1-RA-006: invalid review cannot open a legitimate lineage
+// ---------------------------------------------------------------------------
+
+describe('invalid review cannot open legitimate lineage (Q1-RA-006)', () => {
+  before(makeTempRoot);
+  after(cleanupTempRoot);
+
+  it('closed-schema-violating historical review is NOT admitted and cannot open a supersession lineage', async () => {
+    const changeId = 'LC-RA006-lineage';
+    // P0: initial propose (complete v0 set via completeRun).
+    await setupInitialPropose(changeId, '20260806-030-propose');
+
+    // Manually craft a review-propose result.json that violates the closed
+    // schema (heavy bookkeeping field). A real review is created normally, then
+    // its result.json is OVERWRITTEN with the malformed projection to simulate a
+    // tampered/inconsistent terminal authority.
+    const r0Dir = await createRun(
+      createRunInput({
+        runId: '20260806-031-review-propose',
+        changeId,
+        action: 'review-propose',
+        role: 'reviewer',
+        reviewedRunId: '20260806-030-propose',
+      }),
+    );
+    await writeFile(
+      join(r0Dir, 'result.json'),
+      JSON.stringify({
+        runStatus: 'completed',
+        actionResult: {
+          action: 'review-propose',
+          executionStatus: 'completed',
+          summary: 'CR',
+          reviewVerdictRef: { ref: '.flowkit/runs/D1/C1/20260806-030-propose/result.json', versionFingerprint: 'x', kind: 'run-result' },
+        },
+        reviewVerdict: 'changes-requested',
+        reviewFindings: [
+          { id: 'B-001', severity: 'blocking', title: 'fix', problem: 'needs work', requiredChange: 'revise' },
+        ],
+        // closed-schema violation: heavy bookkeeping field is rejected.
+        resolvedFindings: [],
+      }),
+    );
+
+    // Reader MUST NOT admit the verdict: closed-schema violation at Phase 1.
+    const snapshot = await readSnapshot();
+    assert.equal(
+      snapshot.reviewVerdicts.some((v) => v.reviewRunId === '20260806-031-review-propose'),
+      false,
+      'closed-schema-violating review MUST NOT be admitted as a ReviewVerdictFact',
+    );
+    const schemaConflict = snapshot.conflicts.find((c) => c.dimension === 'run-result-schema');
+    assert.ok(
+      schemaConflict,
+      `expected run-result-schema conflict for malformed review, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`,
+    );
+  });
+
+  it('exact-binding-broken historical review verdict is not admitted', async () => {
+    const changeId = 'LC-RA006-binding';
+    // P0: initial propose.
+    await setupInitialPropose(changeId, '20260806-032-propose');
+
+    // Create + complete the review NORMALLY (descriptor-driven, valid binding).
+    const r0Dir = await createRun(
+      createRunInput({
+        runId: '20260806-033-review-propose',
+        changeId,
+        action: 'review-propose',
+        role: 'reviewer',
+        reviewedRunId: '20260806-032-propose',
+      }),
+    );
+    await completeRun(r0Dir, {
+      executionStatus: 'completed',
+      summary: 'CR',
+      reviewVerdict: 'changes-requested',
+      reviewFindings: [
+        { id: 'B-001', severity: 'blocking', title: 'fix', problem: 'needs work', requiredChange: 'revise' },
+      ],
+    });
+
+    // Simulate a POST-completion tamper: rewrite context.json's inputRef with
+    // a WRONG fingerprint (the persisted exact binding is now broken).
+    const ctxPath = join(r0Dir, 'context.json');
+    const ctx = JSON.parse(await readFile(ctxPath, 'utf-8')) as Record<string, unknown>;
+    ctx['inputRef'] = {
+      ref: `.flowkit/runs/D1/${changeId}/20260806-032-propose/result.json`,
+      versionFingerprint: 'deadbeef',
+      kind: 'run-result',
+    };
+    await writeFile(ctxPath, JSON.stringify(ctx, null, 2));
+
+    const snapshot = await readSnapshot();
+    assert.equal(
+      snapshot.reviewVerdicts.some((v) => v.reviewRunId === '20260806-033-review-propose'),
+      false,
+      'exact-binding-broken review MUST NOT be admitted as a ReviewVerdictFact',
+    );
+    const bindingConflict = snapshot.conflicts.find((c) => c.dimension === 'review-binding-mismatch');
+    assert.ok(
+      bindingConflict,
+      `expected review-binding-mismatch conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`,
     );
   });
 });

@@ -4,6 +4,7 @@ import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { readFormalFactSnapshot } from '../../../src/facts/formal-fact-reader.js';
+import { computeResultFileHash } from '../../../src/persistence/result-ref-adapter.js';
 
 let tempRoot: string;
 
@@ -328,6 +329,25 @@ describe('readFormalFactSnapshot', () => {
   it('reconstructs C1 review verdict from reviewVerdict + reviewedRunId (C1-AP-004)', async () => {
     const deliveryId = 'D-REVIEW-C1';
     const deliveryRunsDir = join(tempRoot, '.flowkit', 'runs', deliveryId);
+
+    // Reviewed Run MUST exist so the C1 review's inputRef exact binding
+    // (Q1-RA-006) can be proven.
+    const reviewedResult = { runStatus: 'completed', actionResult: { action: 'apply', executionStatus: 'completed', summary: 'A0' } };
+    // writeRun serializes result.json with JSON.stringify(result, null, 2);
+    // the fingerprint MUST hash the exact persisted bytes.
+    const reviewedResultBytes = JSON.stringify(reviewedResult, null, 2);
+    await writeRun(deliveryRunsDir, 'C1', '20260806-009-apply', {
+      schemaVersion: 2,
+      runId: '20260806-009-apply',
+      deliveryId,
+      changeKey: 'C1',
+      changeId: 'C1',
+      action: 'apply',
+      role: 'author',
+      ownerAuthorization: 'not-required',
+      runPath: `.flowkit/runs/${deliveryId}/C1/20260806-009-apply/`,
+    }, reviewedResult);
+
     await writeRun(
       deliveryRunsDir,
       'C1',
@@ -342,6 +362,12 @@ describe('readFormalFactSnapshot', () => {
         role: 'reviewer',
         ownerAuthorization: 'not-required',
         reviewedRunId: '20260806-009-apply',
+        // Q1-RA-006: exact binding — inputRef over the reviewed result.json.
+        inputRef: {
+          ref: `.flowkit/runs/${deliveryId}/C1/20260806-009-apply/result.json`,
+          versionFingerprint: computeResultFileHash(reviewedResultBytes),
+          kind: 'run-result',
+        },
         runPath: `.flowkit/runs/${deliveryId}/C1/20260806-010-review-apply/`,
       },
       {
@@ -350,10 +376,23 @@ describe('readFormalFactSnapshot', () => {
           action: 'review-apply',
           executionStatus: 'completed',
           summary: 'approved',
+          // Q1-RA-009: a current review-apply MUST carry the Core-derived
+          // verificationSummaryRef over the current verification.md bytes.
+          verificationSummaryRef: {
+            ref: `openspec/changes/C1/verification.md`,
+            versionFingerprint: computeResultFileHash('# Verification\n'),
+            kind: 'verification-summary',
+          },
         },
         reviewVerdict: 'approved',
       },
     );
+
+    // Current review-apply generation REQUIRES the current verification.md
+    // (Q1-RA-009). Provide it so the valid-review fixture stays conflict-free.
+    const changeDir = join(tempRoot, 'openspec', 'changes', 'C1');
+    await mkdir(changeDir, { recursive: true });
+    await writeFile(join(changeDir, 'verification.md'), '# Verification\n');
 
     const snapshot = await readFormalFactSnapshot({
       repoRoot: tempRoot,
@@ -363,7 +402,7 @@ describe('readFormalFactSnapshot', () => {
       manifestPathPrefix: '.flowkit/manifests',
     });
 
-    assert.equal(snapshot.runs.length, 1);
+    assert.equal(snapshot.runs.length, 2);
     assert.equal(snapshot.reviewVerdicts.length, 1);
     const v = snapshot.reviewVerdicts[0]!;
     assert.equal(v.reviewRunId, '20260806-010-review-apply');
@@ -694,5 +733,782 @@ describe('readFormalFactSnapshot', () => {
     });
     const conflict = snapshot.conflicts.find((c) => c.dimension === 'artifact-effective-set-incomplete');
     assert.ok(conflict, `expected artifact-effective-set-incomplete conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
+  });
+
+  // -------------------------------------------------------------------------
+  // Q1-RA-006: closed result admission + valid verdict promotion
+  // -------------------------------------------------------------------------
+
+  it('C1 review with closed-schema-violating result → NO ReviewVerdictFact (Q1-RA-006)', async () => {
+    const deliveryId = 'D-RA006-CLOSED';
+    const deliveryRunsDir = join(tempRoot, '.flowkit', 'runs', deliveryId);
+    await writeRun(
+      deliveryRunsDir,
+      'C1',
+      '20260806-020-review-apply',
+      {
+        schemaVersion: 2,
+        runId: '20260806-020-review-apply',
+        deliveryId,
+        changeKey: 'C1',
+        changeId: 'C1',
+        action: 'review-apply',
+        role: 'reviewer',
+        ownerAuthorization: 'not-required',
+        reviewedRunId: '20260806-019-apply',
+        runPath: `.flowkit/runs/${deliveryId}/C1/20260806-020-review-apply/`,
+      },
+      {
+        runStatus: 'completed',
+        actionResult: {
+          action: 'review-apply',
+          executionStatus: 'completed',
+          summary: 'approved',
+        },
+        reviewVerdict: 'approved',
+        // closed-schema violation: heavy bookkeeping field is rejected.
+        blockingFindings: [],
+      },
+    );
+
+    const snapshot = await readFormalFactSnapshot({
+      repoRoot: tempRoot,
+      deliveryId,
+      runsPathPrefix: '.flowkit/runs',
+      openspecChangesPath: 'openspec/changes',
+      manifestPathPrefix: '.flowkit/manifests',
+    });
+    assert.equal(snapshot.reviewVerdicts.length, 0, 'closed-schema-violating review MUST NOT be admitted');
+    const schemaConflict = snapshot.conflicts.find((c) => c.dimension === 'run-result-schema');
+    assert.ok(schemaConflict, `expected run-result-schema conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
+  });
+
+  it('C1 review with invalid verdict/findings shape → NO ReviewVerdictFact (Q1-RA-006)', async () => {
+    const deliveryId = 'D-RA006-VERDICT';
+    const deliveryRunsDir = join(tempRoot, '.flowkit', 'runs', deliveryId);
+    await writeRun(
+      deliveryRunsDir,
+      'C1',
+      '20260806-021-review-apply',
+      {
+        schemaVersion: 2,
+        runId: '20260806-021-review-apply',
+        deliveryId,
+        changeKey: 'C1',
+        changeId: 'C1',
+        action: 'review-apply',
+        role: 'reviewer',
+        ownerAuthorization: 'not-required',
+        reviewedRunId: '20260806-019-apply',
+        runPath: `.flowkit/runs/${deliveryId}/C1/20260806-021-review-apply/`,
+      },
+      {
+        runStatus: 'completed',
+        actionResult: {
+          action: 'review-apply',
+          executionStatus: 'completed',
+          summary: 'cr',
+        },
+        // verdict integrity: changes-requested requires ≥1 blocking finding.
+        reviewVerdict: 'changes-requested',
+      },
+    );
+
+    const snapshot = await readFormalFactSnapshot({
+      repoRoot: tempRoot,
+      deliveryId,
+      runsPathPrefix: '.flowkit/runs',
+      openspecChangesPath: 'openspec/changes',
+      manifestPathPrefix: '.flowkit/manifests',
+    });
+    assert.equal(snapshot.reviewVerdicts.length, 0, 'verdict-integrity-violating review MUST NOT be admitted');
+    // The shared C1 admission pipeline reports any Phase-1 failure (including
+    // review verdict integrity) as run-result-schema.
+    const integrityConflict = snapshot.conflicts.find((c) => c.dimension === 'run-result-schema');
+    assert.ok(integrityConflict, `expected run-result-schema conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
+  });
+
+  it('C1 review with broken exact binding (wrong hash) → verdict NOT admitted (Q1-RA-006)', async () => {
+    const deliveryId = 'D-RA006-HASH';
+    const deliveryRunsDir = join(tempRoot, '.flowkit', 'runs', deliveryId);
+    const reviewedResult = { runStatus: 'completed', actionResult: { action: 'apply', executionStatus: 'completed', summary: 'A0' } };
+    await writeRun(deliveryRunsDir, 'C1', '20260806-022-apply', {
+      schemaVersion: 2,
+      runId: '20260806-022-apply',
+      deliveryId,
+      changeKey: 'C1',
+      changeId: 'C1',
+      action: 'apply',
+      role: 'author',
+      ownerAuthorization: 'not-required',
+      runPath: `.flowkit/runs/${deliveryId}/C1/20260806-022-apply/`,
+    }, reviewedResult);
+
+    await writeRun(
+      deliveryRunsDir,
+      'C1',
+      '20260806-023-review-apply',
+      {
+        schemaVersion: 2,
+        runId: '20260806-023-review-apply',
+        deliveryId,
+        changeKey: 'C1',
+        changeId: 'C1',
+        action: 'review-apply',
+        role: 'reviewer',
+        ownerAuthorization: 'not-required',
+        reviewedRunId: '20260806-022-apply',
+        // WRONG fingerprint — binding broken.
+        inputRef: {
+          ref: `.flowkit/runs/${deliveryId}/C1/20260806-022-apply/result.json`,
+          versionFingerprint: 'deadbeef',
+          kind: 'run-result',
+        },
+        runPath: `.flowkit/runs/${deliveryId}/C1/20260806-023-review-apply/`,
+      },
+      {
+        runStatus: 'completed',
+        actionResult: {
+          action: 'review-apply',
+          executionStatus: 'completed',
+          summary: 'approved',
+          verificationSummaryRef: {
+            ref: `openspec/changes/C1/verification.md`,
+            versionFingerprint: computeResultFileHash('# Verification\n'),
+            kind: 'verification-summary',
+          },
+        },
+        reviewVerdict: 'approved',
+      },
+    );
+    const changeDir = join(tempRoot, 'openspec', 'changes', 'C1');
+    await mkdir(changeDir, { recursive: true });
+    await writeFile(join(changeDir, 'verification.md'), '# Verification\n');
+
+    const snapshot = await readFormalFactSnapshot({
+      repoRoot: tempRoot,
+      deliveryId,
+      runsPathPrefix: '.flowkit/runs',
+      openspecChangesPath: 'openspec/changes',
+      manifestPathPrefix: '.flowkit/manifests',
+    });
+    assert.equal(snapshot.reviewVerdicts.length, 0, 'broken-binding review MUST NOT be admitted');
+    const bindingConflict = snapshot.conflicts.find((c) => c.dimension === 'review-binding-mismatch');
+    assert.ok(bindingConflict, `expected review-binding-mismatch conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
+  });
+
+  it('C1 review without inputRef → NO ReviewVerdictFact (Q1-RA-006)', async () => {
+    const deliveryId = 'D-RA006-NOINPUT';
+    const deliveryRunsDir = join(tempRoot, '.flowkit', 'runs', deliveryId);
+    await writeRun(
+      deliveryRunsDir,
+      'C1',
+      '20260806-024-review-apply',
+      {
+        schemaVersion: 2,
+        runId: '20260806-024-review-apply',
+        deliveryId,
+        changeKey: 'C1',
+        changeId: 'C1',
+        action: 'review-apply',
+        role: 'reviewer',
+        ownerAuthorization: 'not-required',
+        reviewedRunId: '20260806-019-apply',
+        // NO inputRef → cannot exact-bind.
+        runPath: `.flowkit/runs/${deliveryId}/C1/20260806-024-review-apply/`,
+      },
+      {
+        runStatus: 'completed',
+        actionResult: {
+          action: 'review-apply',
+          executionStatus: 'completed',
+          summary: 'approved',
+          verificationSummaryRef: {
+            ref: `openspec/changes/C1/verification.md`,
+            versionFingerprint: computeResultFileHash('# Verification\n'),
+            kind: 'verification-summary',
+          },
+        },
+        reviewVerdict: 'approved',
+      },
+    );
+    const changeDir = join(tempRoot, 'openspec', 'changes', 'C1');
+    await mkdir(changeDir, { recursive: true });
+    await writeFile(join(changeDir, 'verification.md'), '# Verification\n');
+
+    const snapshot = await readFormalFactSnapshot({
+      repoRoot: tempRoot,
+      deliveryId,
+      runsPathPrefix: '.flowkit/runs',
+      openspecChangesPath: 'openspec/changes',
+      manifestPathPrefix: '.flowkit/manifests',
+    });
+    assert.equal(snapshot.reviewVerdicts.length, 0, 'inputRef-less C1 review MUST NOT be admitted');
+    const missingConflict = snapshot.conflicts.find((c) => c.dimension === 'review-binding-missing');
+    assert.ok(missingConflict, `expected review-binding-missing conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
+  });
+
+  // -------------------------------------------------------------------------
+  // Q1-RA-007: immutable Run-result refs strictly validated
+  // -------------------------------------------------------------------------
+
+  it('non-ENOENT result.json read failure → FactConflict, NOT pending (Q1-RA-006)', async () => {
+    const deliveryId = 'D-RA006-EISDIR';
+    const deliveryRunsDir = join(tempRoot, '.flowkit', 'runs', deliveryId);
+    const runDir = join(deliveryRunsDir, 'C1', '20260806-025-explore');
+    await mkdir(runDir, { recursive: true });
+    await writeFile(join(runDir, 'context.json'), JSON.stringify({
+      schemaVersion: 2,
+      runId: '20260806-025-explore',
+      deliveryId,
+      changeKey: 'C1',
+      changeId: 'C1',
+      action: 'explore',
+      role: 'author',
+      ownerAuthorization: 'required',
+      runPath: `.flowkit/runs/${deliveryId}/C1/20260806-025-explore/`,
+    }, null, 2));
+    await writeFile(join(runDir, 'action.md'), '# x\n');
+    // result.json as a DIRECTORY → readFile yields EISDIR (non-ENOENT).
+    await mkdir(join(runDir, 'result.json'));
+
+    const snapshot = await readFormalFactSnapshot({
+      repoRoot: tempRoot,
+      deliveryId,
+      runsPathPrefix: '.flowkit/runs',
+      openspecChangesPath: 'openspec/changes',
+      manifestPathPrefix: '.flowkit/manifests',
+    });
+    const conflict = snapshot.conflicts.find((c) => c.dimension === 'run-result');
+    assert.ok(conflict, `expected run-result conflict for non-ENOENT failure, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
+  });
+
+  it('consumedInputRefs with wrong kind → FactConflict (Q1-RA-007)', async () => {
+    const deliveryId = 'D-RA007-KIND';
+    const deliveryRunsDir = join(tempRoot, '.flowkit', 'runs', deliveryId);
+    await writeRun(
+      deliveryRunsDir,
+      'C1',
+      '20260806-030-revise-propose',
+      {
+        schemaVersion: 2,
+        runId: '20260806-030-revise-propose',
+        deliveryId,
+        changeKey: 'C1',
+        changeId: 'C1',
+        action: 'revise-propose',
+        role: 'author',
+        ownerAuthorization: 'required',
+        runPath: `.flowkit/runs/${deliveryId}/C1/20260806-030-revise-propose/`,
+      },
+      {
+        runStatus: 'completed',
+        actionResult: {
+          action: 'revise-propose',
+          executionStatus: 'completed',
+          summary: 'P1',
+          consumedInputRefs: [
+            // wrong kind — the closed actionResult schema (field-kind binding)
+            // rejects this at Phase 1 admission (run-result-schema conflict).
+            { ref: `.flowkit/runs/${deliveryId}/C1/20260806-029-propose/result.json`, versionFingerprint: 'x', kind: 'produced-artifact' },
+          ],
+        },
+      },
+    );
+
+    const snapshot = await readFormalFactSnapshot({
+      repoRoot: tempRoot,
+      deliveryId,
+      runsPathPrefix: '.flowkit/runs',
+      openspecChangesPath: 'openspec/changes',
+      manifestPathPrefix: '.flowkit/manifests',
+    });
+    // The fail-closed result: the Run is not admitted at all (schema-level
+    // rejection happens before any RunFact is promoted), so the immutable-ref
+    // validation layer is never reached — the wrong-kind ref never leaks into
+    // formal facts.
+    const schemaConflict = snapshot.conflicts.find((c) => c.dimension === 'run-result-schema');
+    assert.ok(schemaConflict, `expected run-result-schema conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
+    assert.equal(snapshot.runs.length, 0, 'wrong-kind consumed ref Run MUST NOT be admitted');
+  });
+
+  it('consumedInputRefs with missing target → FactConflict (Q1-RA-007)', async () => {
+    const deliveryId = 'D-RA007-MISSING';
+    const deliveryRunsDir = join(tempRoot, '.flowkit', 'runs', deliveryId);
+    await writeRun(
+      deliveryRunsDir,
+      'C1',
+      '20260806-031-revise-propose',
+      {
+        schemaVersion: 2,
+        runId: '20260806-031-revise-propose',
+        deliveryId,
+        changeKey: 'C1',
+        changeId: 'C1',
+        action: 'revise-propose',
+        role: 'author',
+        ownerAuthorization: 'required',
+        runPath: `.flowkit/runs/${deliveryId}/C1/20260806-031-revise-propose/`,
+      },
+      {
+        runStatus: 'completed',
+        actionResult: {
+          action: 'revise-propose',
+          executionStatus: 'completed',
+          summary: 'P1',
+          consumedInputRefs: [
+            { ref: `.flowkit/runs/${deliveryId}/C1/20260806-029-propose/result.json`, versionFingerprint: 'x', kind: 'run-result' },
+          ],
+        },
+      },
+    );
+
+    const snapshot = await readFormalFactSnapshot({
+      repoRoot: tempRoot,
+      deliveryId,
+      runsPathPrefix: '.flowkit/runs',
+      openspecChangesPath: 'openspec/changes',
+      manifestPathPrefix: '.flowkit/manifests',
+    });
+    const conflict = snapshot.conflicts.find((c) => c.dimension === 'immutable-ref-missing');
+    assert.ok(conflict, `expected immutable-ref-missing conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
+  });
+
+  it('consumedInputRefs with fingerprint mismatch → FactConflict (Q1-RA-007)', async () => {
+    const deliveryId = 'D-RA007-HASH';
+    const deliveryRunsDir = join(tempRoot, '.flowkit', 'runs', deliveryId);
+    const consumedResult = { runStatus: 'completed', actionResult: { action: 'propose', executionStatus: 'completed', summary: 'P0' } };
+    await writeRun(deliveryRunsDir, 'C1', '20260806-033-propose', {
+      schemaVersion: 2,
+      runId: '20260806-033-propose',
+      deliveryId,
+      changeKey: 'C1',
+      changeId: 'C1',
+      action: 'propose',
+      role: 'author',
+      ownerAuthorization: 'required',
+      runPath: `.flowkit/runs/${deliveryId}/C1/20260806-033-propose/`,
+    }, consumedResult);
+
+    await writeRun(
+      deliveryRunsDir,
+      'C1',
+      '20260806-034-revise-propose',
+      {
+        schemaVersion: 2,
+        runId: '20260806-034-revise-propose',
+        deliveryId,
+        changeKey: 'C1',
+        changeId: 'C1',
+        action: 'revise-propose',
+        role: 'author',
+        ownerAuthorization: 'required',
+        runPath: `.flowkit/runs/${deliveryId}/C1/20260806-034-revise-propose/`,
+      },
+      {
+        runStatus: 'completed',
+        actionResult: {
+          action: 'revise-propose',
+          executionStatus: 'completed',
+          summary: 'P1',
+          consumedInputRefs: [
+            // kind and path are schema-valid; the fingerprint is WRONG.
+            { ref: `.flowkit/runs/${deliveryId}/C1/20260806-033-propose/result.json`, versionFingerprint: 'deadbeef', kind: 'run-result' },
+          ],
+        },
+      },
+    );
+
+    const snapshot = await readFormalFactSnapshot({
+      repoRoot: tempRoot,
+      deliveryId,
+      runsPathPrefix: '.flowkit/runs',
+      openspecChangesPath: 'openspec/changes',
+      manifestPathPrefix: '.flowkit/manifests',
+    });
+    const conflict = snapshot.conflicts.find((c) => c.dimension === 'immutable-ref-mismatch');
+    assert.ok(conflict, `expected immutable-ref-mismatch conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
+  });
+
+  it('consumedInputRefs with path-shaped target → FactConflict (Q1-RA-007)', async () => {
+    const deliveryId = 'D-RA007-PATH';
+    const deliveryRunsDir = join(tempRoot, '.flowkit', 'runs', deliveryId);
+    await writeRun(
+      deliveryRunsDir,
+      'C1',
+      '20260806-032-revise-propose',
+      {
+        schemaVersion: 2,
+        runId: '20260806-032-revise-propose',
+        deliveryId,
+        changeKey: 'C1',
+        changeId: 'C1',
+        action: 'revise-propose',
+        role: 'author',
+        ownerAuthorization: 'required',
+        runPath: `.flowkit/runs/${deliveryId}/C1/20260806-032-revise-propose/`,
+      },
+      {
+        runStatus: 'completed',
+        actionResult: {
+          action: 'revise-propose',
+          executionStatus: 'completed',
+          summary: 'P1',
+          consumedInputRefs: [
+            { ref: `../../result.json`, versionFingerprint: 'x', kind: 'run-result' },
+          ],
+        },
+      },
+    );
+
+    const snapshot = await readFormalFactSnapshot({
+      repoRoot: tempRoot,
+      deliveryId,
+      runsPathPrefix: '.flowkit/runs',
+      openspecChangesPath: 'openspec/changes',
+      manifestPathPrefix: '.flowkit/manifests',
+    });
+    const conflict = snapshot.conflicts.find((c) => c.dimension === 'immutable-ref-target');
+    assert.ok(conflict, `expected immutable-ref-target conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
+  });
+
+  // -------------------------------------------------------------------------
+  // Q1-RA-009: current verificationSummaryRef fail-closed
+  // -------------------------------------------------------------------------
+
+  it('current review-apply MISSING verificationSummaryRef → FactConflict (Q1-RA-009)', async () => {
+    const deliveryId = 'D-RA009-MISSING';
+    const deliveryRunsDir = join(tempRoot, '.flowkit', 'runs', deliveryId);
+    const reviewedResult = { runStatus: 'completed', actionResult: { action: 'apply', executionStatus: 'completed', summary: 'A0' } };
+    const reviewedResultBytes = JSON.stringify(reviewedResult, null, 2);
+    await writeRun(deliveryRunsDir, 'C1', '20260806-040-apply', {
+      schemaVersion: 2,
+      runId: '20260806-040-apply',
+      deliveryId,
+      changeKey: 'C1',
+      changeId: 'C1',
+      action: 'apply',
+      role: 'author',
+      ownerAuthorization: 'not-required',
+      runPath: `.flowkit/runs/${deliveryId}/C1/20260806-040-apply/`,
+    }, reviewedResult);
+
+    await writeRun(
+      deliveryRunsDir,
+      'C1',
+      '20260806-041-review-apply',
+      {
+        schemaVersion: 2,
+        runId: '20260806-041-review-apply',
+        deliveryId,
+        changeKey: 'C1',
+        changeId: 'C1',
+        action: 'review-apply',
+        role: 'reviewer',
+        ownerAuthorization: 'not-required',
+        reviewedRunId: '20260806-040-apply',
+        inputRef: {
+          ref: `.flowkit/runs/${deliveryId}/C1/20260806-040-apply/result.json`,
+          versionFingerprint: computeResultFileHash(reviewedResultBytes),
+          kind: 'run-result',
+        },
+        runPath: `.flowkit/runs/${deliveryId}/C1/20260806-041-review-apply/`,
+      },
+      {
+        runStatus: 'completed',
+        actionResult: {
+          action: 'review-apply',
+          executionStatus: 'completed',
+          summary: 'approved',
+          // verificationSummaryRef MISSING (Q1-RA-009 fail-closed).
+        },
+        reviewVerdict: 'approved',
+      },
+    );
+
+    const snapshot = await readFormalFactSnapshot({
+      repoRoot: tempRoot,
+      deliveryId,
+      runsPathPrefix: '.flowkit/runs',
+      openspecChangesPath: 'openspec/changes',
+      manifestPathPrefix: '.flowkit/manifests',
+    });
+    const conflict = snapshot.conflicts.find((c) => c.dimension === 'verification-summary-missing');
+    assert.ok(conflict, `expected verification-summary-missing conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
+  });
+
+  it('current review-apply MALFORMED verificationSummaryRef → FactConflict (Q1-RA-009)', async () => {
+    const deliveryId = 'D-RA009-MALFORMED';
+    const deliveryRunsDir = join(tempRoot, '.flowkit', 'runs', deliveryId);
+    const reviewedResult = { runStatus: 'completed', actionResult: { action: 'apply', executionStatus: 'completed', summary: 'A0' } };
+    const reviewedResultBytes = JSON.stringify(reviewedResult, null, 2);
+    await writeRun(deliveryRunsDir, 'C1', '20260806-046-apply', {
+      schemaVersion: 2,
+      runId: '20260806-046-apply',
+      deliveryId,
+      changeKey: 'C1',
+      changeId: 'C1',
+      action: 'apply',
+      role: 'author',
+      ownerAuthorization: 'not-required',
+      runPath: `.flowkit/runs/${deliveryId}/C1/20260806-046-apply/`,
+    }, reviewedResult);
+
+    await writeRun(
+      deliveryRunsDir,
+      'C1',
+      '20260806-047-review-apply',
+      {
+        schemaVersion: 2,
+        runId: '20260806-047-review-apply',
+        deliveryId,
+        changeKey: 'C1',
+        changeId: 'C1',
+        action: 'review-apply',
+        role: 'reviewer',
+        ownerAuthorization: 'not-required',
+        reviewedRunId: '20260806-046-apply',
+        inputRef: {
+          ref: `.flowkit/runs/${deliveryId}/C1/20260806-046-apply/result.json`,
+          versionFingerprint: computeResultFileHash(reviewedResultBytes),
+          kind: 'run-result',
+        },
+        runPath: `.flowkit/runs/${deliveryId}/C1/20260806-047-review-apply/`,
+      },
+      {
+        runStatus: 'completed',
+        actionResult: {
+          action: 'review-apply',
+          executionStatus: 'completed',
+          summary: 'approved',
+          // MALFORMED: ref is a number, versionFingerprint missing.
+          verificationSummaryRef: { ref: 42 },
+        },
+        reviewVerdict: 'approved',
+      },
+    );
+
+    const snapshot = await readFormalFactSnapshot({
+      repoRoot: tempRoot,
+      deliveryId,
+      runsPathPrefix: '.flowkit/runs',
+      openspecChangesPath: 'openspec/changes',
+      manifestPathPrefix: '.flowkit/manifests',
+    });
+    // The malformed summaryRef fails the closed actionResult schema at Phase 1
+    // (run-result-schema) — it never reaches RA-009's independent checks.
+    const schemaConflict = snapshot.conflicts.find((c) => c.dimension === 'run-result-schema');
+    assert.ok(schemaConflict, `expected run-result-schema conflict for malformed summary ref, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
+  });
+
+  it('current review-apply MISSING-TARGET verificationSummaryRef → FactConflict (Q1-RA-009)', async () => {
+    const deliveryId = 'D-RA009-NOTARGET';
+    // Dedicated changeId — the shared tempRoot already has C1/verification.md
+    // created by earlier fixtures, so a canonical ref under C1 would resolve.
+    const changeId = 'C1-RA009-mt';
+    const deliveryRunsDir = join(tempRoot, '.flowkit', 'runs', deliveryId);
+    const reviewedResult = { runStatus: 'completed', actionResult: { action: 'apply', executionStatus: 'completed', summary: 'A0' } };
+    const reviewedResultBytes = JSON.stringify(reviewedResult, null, 2);
+    await writeRun(deliveryRunsDir, changeId, '20260806-048-apply', {
+      schemaVersion: 2,
+      runId: '20260806-048-apply',
+      deliveryId,
+      changeKey: changeId,
+      changeId,
+      action: 'apply',
+      role: 'author',
+      ownerAuthorization: 'not-required',
+      runPath: `.flowkit/runs/${deliveryId}/${changeId}/20260806-048-apply/`,
+    }, reviewedResult);
+
+    await writeRun(
+      deliveryRunsDir,
+      changeId,
+      '20260806-049-review-apply',
+      {
+        schemaVersion: 2,
+        runId: '20260806-049-review-apply',
+        deliveryId,
+        changeKey: changeId,
+        changeId,
+        action: 'review-apply',
+        role: 'reviewer',
+        ownerAuthorization: 'not-required',
+        reviewedRunId: '20260806-048-apply',
+        inputRef: {
+          ref: `.flowkit/runs/${deliveryId}/${changeId}/20260806-048-apply/result.json`,
+          versionFingerprint: computeResultFileHash(reviewedResultBytes),
+          kind: 'run-result',
+        },
+        runPath: `.flowkit/runs/${deliveryId}/${changeId}/20260806-049-review-apply/`,
+      },
+      {
+        runStatus: 'completed',
+        actionResult: {
+          action: 'review-apply',
+          executionStatus: 'completed',
+          summary: 'approved',
+          // Valid kind + canonical path, but verification.md does NOT exist.
+          verificationSummaryRef: {
+            ref: `openspec/changes/${changeId}/verification.md`,
+            versionFingerprint: computeResultFileHash('# Verification\n'),
+            kind: 'verification-summary',
+          },
+        },
+        reviewVerdict: 'approved',
+      },
+    );
+    // verification.md is NOT created — target missing.
+
+    const snapshot = await readFormalFactSnapshot({
+      repoRoot: tempRoot,
+      deliveryId,
+      runsPathPrefix: '.flowkit/runs',
+      openspecChangesPath: 'openspec/changes',
+      manifestPathPrefix: '.flowkit/manifests',
+    });
+    const conflict = snapshot.conflicts.find((c) => c.dimension === 'verification-summary-missing');
+    assert.ok(conflict, `expected verification-summary-missing conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
+  });
+
+  it('current review-apply WRONG-KIND verificationSummaryRef → FactConflict (Q1-RA-009)', async () => {
+    const deliveryId = 'D-RA009-KIND';
+    const deliveryRunsDir = join(tempRoot, '.flowkit', 'runs', deliveryId);
+    const reviewedResult = { runStatus: 'completed', actionResult: { action: 'apply', executionStatus: 'completed', summary: 'A0' } };
+    const reviewedResultBytes = JSON.stringify(reviewedResult, null, 2);
+    await writeRun(deliveryRunsDir, 'C1', '20260806-042-apply', {
+      schemaVersion: 2,
+      runId: '20260806-042-apply',
+      deliveryId,
+      changeKey: 'C1',
+      changeId: 'C1',
+      action: 'apply',
+      role: 'author',
+      ownerAuthorization: 'not-required',
+      runPath: `.flowkit/runs/${deliveryId}/C1/20260806-042-apply/`,
+    }, reviewedResult);
+
+    await writeRun(
+      deliveryRunsDir,
+      'C1',
+      '20260806-043-review-apply',
+      {
+        schemaVersion: 2,
+        runId: '20260806-043-review-apply',
+        deliveryId,
+        changeKey: 'C1',
+        changeId: 'C1',
+        action: 'review-apply',
+        role: 'reviewer',
+        ownerAuthorization: 'not-required',
+        reviewedRunId: '20260806-042-apply',
+        inputRef: {
+          ref: `.flowkit/runs/${deliveryId}/C1/20260806-042-apply/result.json`,
+          versionFingerprint: computeResultFileHash(reviewedResultBytes),
+          kind: 'run-result',
+        },
+        runPath: `.flowkit/runs/${deliveryId}/C1/20260806-043-review-apply/`,
+      },
+      {
+        runStatus: 'completed',
+        actionResult: {
+          action: 'review-apply',
+          executionStatus: 'completed',
+          summary: 'approved',
+          // WRONG kind — must be verification-summary.
+          verificationSummaryRef: {
+            ref: `openspec/changes/C1/verification.md`,
+            versionFingerprint: computeResultFileHash('# Verification\n'),
+            kind: 'run-result',
+          },
+        },
+        reviewVerdict: 'approved',
+      },
+    );
+    const changeDir = join(tempRoot, 'openspec', 'changes', 'C1');
+    await mkdir(changeDir, { recursive: true });
+    await writeFile(join(changeDir, 'verification.md'), '# Verification\n');
+
+    const snapshot = await readFormalFactSnapshot({
+      repoRoot: tempRoot,
+      deliveryId,
+      runsPathPrefix: '.flowkit/runs',
+      openspecChangesPath: 'openspec/changes',
+      manifestPathPrefix: '.flowkit/manifests',
+    });
+    // The closed actionResult schema rejects the wrong-kind verificationSummaryRef
+    // at Phase 1 admission (run-result-schema), before RA-009's independent
+    // kind check can be reached — the wrong-kind summary never leaks into facts.
+    const schemaConflict = snapshot.conflicts.find((c) => c.dimension === 'run-result-schema');
+    assert.ok(schemaConflict, `expected run-result-schema conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
+  });
+
+  it('current review-apply WRONG-PATH verificationSummaryRef → FactConflict (Q1-RA-009)', async () => {
+    const deliveryId = 'D-RA009-PATH';
+    const deliveryRunsDir = join(tempRoot, '.flowkit', 'runs', deliveryId);
+    const reviewedResult = { runStatus: 'completed', actionResult: { action: 'apply', executionStatus: 'completed', summary: 'A0' } };
+    const reviewedResultBytes = JSON.stringify(reviewedResult, null, 2);
+    await writeRun(deliveryRunsDir, 'C1', '20260806-044-apply', {
+      schemaVersion: 2,
+      runId: '20260806-044-apply',
+      deliveryId,
+      changeKey: 'C1',
+      changeId: 'C1',
+      action: 'apply',
+      role: 'author',
+      ownerAuthorization: 'not-required',
+      runPath: `.flowkit/runs/${deliveryId}/C1/20260806-044-apply/`,
+    }, reviewedResult);
+
+    await writeRun(
+      deliveryRunsDir,
+      'C1',
+      '20260806-045-review-apply',
+      {
+        schemaVersion: 2,
+        runId: '20260806-045-review-apply',
+        deliveryId,
+        changeKey: 'C1',
+        changeId: 'C1',
+        action: 'review-apply',
+        role: 'reviewer',
+        ownerAuthorization: 'not-required',
+        reviewedRunId: '20260806-044-apply',
+        inputRef: {
+          ref: `.flowkit/runs/${deliveryId}/C1/20260806-044-apply/result.json`,
+          versionFingerprint: computeResultFileHash(reviewedResultBytes),
+          kind: 'run-result',
+        },
+        runPath: `.flowkit/runs/${deliveryId}/C1/20260806-045-review-apply/`,
+      },
+      {
+        runStatus: 'completed',
+        actionResult: {
+          action: 'review-apply',
+          executionStatus: 'completed',
+          summary: 'approved',
+          // WRONG path — must be openspec/changes/C1/verification.md.
+          verificationSummaryRef: {
+            ref: `openspec/changes/C1/other.md`,
+            versionFingerprint: computeResultFileHash('# x\n'),
+            kind: 'verification-summary',
+          },
+        },
+        reviewVerdict: 'approved',
+      },
+    );
+    const changeDir = join(tempRoot, 'openspec', 'changes', 'C1');
+    await mkdir(changeDir, { recursive: true });
+    await writeFile(join(changeDir, 'other.md'), '# x\n');
+
+    const snapshot = await readFormalFactSnapshot({
+      repoRoot: tempRoot,
+      deliveryId,
+      runsPathPrefix: '.flowkit/runs',
+      openspecChangesPath: 'openspec/changes',
+      manifestPathPrefix: '.flowkit/manifests',
+    });
+    const conflict = snapshot.conflicts.find((c) => c.dimension === 'verification-summary-path');
+    assert.ok(conflict, `expected verification-summary-path conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
   });
 });

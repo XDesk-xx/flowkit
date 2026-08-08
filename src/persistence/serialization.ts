@@ -608,6 +608,58 @@ export function validateRunResultFileCombination(value: RunResultFile): void {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Shared C1 terminal result admission helper (Q1-RA-006)
+// ---------------------------------------------------------------------------
+
+/**
+ * Parse + fully validate a C1 (schemaVersion 2) `result.json` bytes into a
+ * typed {@link RunResultFile}.
+ *
+ * This is the ONE admission pipeline every C1 reader (formal-fact Reader and
+ * review-entry sibling lineage) must use before ANY formal fact is promoted
+ * from a terminal result. It runs the full closed-schema stack:
+ *   1. `JSON.parse`;
+ *   2. `validateRunResultFileCombination` — runStatus × actionResult gate +
+ *      closed schema (rejects heavy bookkeeping fields);
+ *   3. `validateActionResultWithoutRunRef` — closed actionResult projection
+ *      with field-kind binding (produced-artifact / run-result /
+ *      verification-summary);
+ *   4. `validateReviewVerdictIntegrity(action, result)` — action-specific
+ *      review verdict × findings consistency.
+ *
+ * A result that fails any stage is NOT admitted — the caller MUST surface a
+ * fail-closed FactConflict and MUST NOT project a pending Run from it.
+ *
+ * @param raw - Raw JSON bytes of `result.json`.
+ * @param action - The Run's formal action (from context.json), used for the
+ *   action-specific review verdict integrity check.
+ * @returns The typed {@link RunResultFile}.
+ * @throws {FlowkitError} `SCHEMA_VALIDATION_FAILED` on any admission failure.
+ */
+export function admitC1RunResult(raw: string, action: string): RunResultFile {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (e) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `result.json is not valid JSON: ${(e as Error).message}`,
+    );
+  }
+  const result = parsed as RunResultFile;
+  // 1. runStatus × actionResult gate + closed schema.
+  validateRunResultFileCombination(result);
+  // 2. Closed actionResult projection with field-kind binding.
+  const ar = (result as { actionResult?: unknown })['actionResult'];
+  if (ar !== undefined) {
+    validateActionResultWithoutRunRef(ar);
+  }
+  // 3. Action-specific review verdict × findings integrity.
+  validateReviewVerdictIntegrity(action, result);
+  return result;
+}
+
 /**
  * Validate a single ReviewFinding entry (Q1 typed payload).
  *

@@ -40,6 +40,7 @@ import {
   validateActionResultWithoutRunRef,
   validateRunResultFileCombination,
   validateReviewVerdictIntegrity,
+  admitC1RunResult,
   type ContextFile,
   type ContextFileConstraints,
   type RunResultFile,
@@ -504,7 +505,7 @@ async function readSiblingLineageFacts(
       fact.action.startsWith('review-') &&
       fact.reviewedRunId !== undefined
     ) {
-      const verdict = await readRunVerdict(runDir);
+      const verdict = await readRunVerdict(runDir, changeDir);
       if (verdict !== undefined) {
         reviewFacts.push({
           reviewRunId: entry,
@@ -601,21 +602,81 @@ async function readRunProducedResultRefs(runDir: string): Promise<ResultRef[]> {
 }
 
 /**
- * Read a completed review-* Run's `reviewVerdict` from its result.json.
- * Returns `undefined` when result.json is missing, malformed, or has no verdict.
+ * Read a completed review-* Run's `reviewVerdict` from its result.json —
+ * ONLY when the review's immutable evidence is exact-validated.
+ *
+ * Q1-RA-006: a review Run's verdict may be consumed as lineage proof ONLY
+ * after (1) the complete result.json passes the closed physical validators
+ * (validateRunResultFileCombination + validateActionResultWithoutRunRef +
+ * validateReviewVerdictIntegrity) and (2) the review exact binding
+ * (reviewedRunId ↔ context.inputRef ↔ actual reviewed result.json bytes) is
+ * proven. Returns `undefined` (review NOT admitted as lineage) when any of
+ * those checks fail — a broken review MUST NOT influence generation
+ * classification.
  */
-async function readRunVerdict(runDir: string): Promise<ReviewVerdictValue | undefined> {
+async function readRunVerdict(
+  runDir: string,
+  changeDir: string,
+): Promise<ReviewVerdictValue | undefined> {
+  let content: string;
   try {
-    const content = await readFile(join(runDir, 'result.json'), 'utf-8');
-    const result = JSON.parse(content) as Record<string, unknown>;
-    const verdict = result['reviewVerdict'];
-    if (verdict === 'approved' || verdict === 'changes-requested') {
-      return verdict;
-    }
-    return undefined;
+    content = await readFile(join(runDir, 'result.json'), 'utf-8');
   } catch {
+    return undefined; // Missing result.json → not terminal.
+  }
+
+  // Read context for reviewedRunId + inputRef (exact binding proof).
+  let ctx: ContextFile;
+  try {
+    ctx = validateContextFile(JSON.parse(await readFile(join(runDir, 'context.json'), 'utf-8')));
+  } catch {
+    return undefined; // Malformed context → not admitted.
+  }
+  if (!ctx.action.startsWith('review-') || ctx.reviewedRunId === undefined) {
     return undefined;
   }
+
+  // Phase 1: shared closed-schema admission of the WHOLE result.json
+  // (Q1-RA-006): validateRunResultFileCombination + actionResult projection +
+  // review verdict integrity.
+  try {
+    admitC1RunResult(content, ctx.action);
+  } catch {
+    return undefined; // Malformed / closed-schema violation → not admitted.
+  }
+
+  // Phase 2: review exact binding — inputRef.ref ↔ reviewedRunId result.json
+  // path, and inputRef.versionFingerprint ↔ actual SHA-256.
+  if (ctx.inputRef !== undefined) {
+    const reviewedResultPath = join(changeDir, ctx.reviewedRunId, 'result.json');
+    try {
+      const reviewedContent = await readFile(reviewedResultPath, 'utf-8');
+      // inputRef.ref is repo-relative
+      // `<runsPathPrefix>/<deliveryId>/<changeId>/<reviewedRunId>/result.json`.
+      // Resolve the canonical expected path from ctx fields.
+      const expectedRef = resolveRunResultPath(
+        deriveRunsPathPrefix(ctx),
+        ctx.deliveryId,
+        ctx.changeId,
+        ctx.reviewedRunId,
+      );
+      const actualRef = normalizeSeparators(ctx.inputRef.ref);
+      if (actualRef !== expectedRef) {
+        return undefined; // Wrong target — binding broken.
+      }
+      if (computeResultFileHash(reviewedContent) !== ctx.inputRef.versionFingerprint) {
+        return undefined; // Hash mismatch — binding broken.
+      }
+    } catch {
+      return undefined; // Reviewed result unreadable — binding not provable.
+    }
+  }
+
+  const verdict = (JSON.parse(content) as Record<string, unknown>)['reviewVerdict'];
+  if (verdict === 'approved' || verdict === 'changes-requested') {
+    return verdict;
+  }
+  return undefined;
 }
 
 /**

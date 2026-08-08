@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-131-review-apply",
+  "status": "completed",
+  "summary": "Independent review of 130 finished with changes-requested. The three 129 findings (Q1-RA-001, Q1-RA-003, Q1-RA-005) are materially resolved: the raw terminal publisher is private, completeRun is descriptor-driven, stage completeness is shared/fail-closed at write/review-entry/current-artifact Reader paths, and Run-ID/tag descriptors are runtime closed. 130 is also formally present and exact-binds 129, and verification.md now records 130/129 with 515 passing tests. However, a complete current-stage review finds four remaining Reader/resolver contract violations that were not closed by the 129 repair: (1) schemaVersion 2 result.json is not admitted through the closed physical validators before formal facts are promoted, and an invalid exact-bound review can still remain in reviewVerdicts; (2) immutable non-review Run-result refs (normal inputRef, consumedInputRefs, reviewVerdictRef) are not actually strictly validated by Reader; (3) non-Run logical-ref/archive validation still accepts a POSIX-leading absolute ref by stripping '/' and does not require an exact YYYY-MM-DD-<changeId> archive directory match; and (4) current review-apply verification summary recovery returns without conflict when the summary ref is missing/malformed and does not require the exact canonical verification path/kind. Author-recorded typecheck/lint/build/515 tests/OpenSpec checks are accepted as recorded. Delivery Full Test was not authorized or run.",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-130-revise-apply/",
+  "reviewedResultRef": "content-sha256:680ed78436585392979031670154eb76b34efae099c454e9209b90c8dcd37ff0",
+  "sourceReview": {
+    "runId": "20260806-129-review-apply",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:7f68d1b7092bc372ba87d77aea582691389f1617221b6c96576f1bff825931a1"
+  },
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "Q1-RA-006",
+      "title": "Reader promotes schemaVersion 2 review facts before closed result validation and exact-binding acceptance",
+      "location": "src/facts/formal-fact-reader.ts: readSingleRun, readC1Run, validateReviewExactBindings; src/persistence/serialization.ts: validateRunResultFileCombination, validateActionResultWithoutRunRef, validateReviewVerdictIntegrity; src/persistence/run-persistence.ts: readSiblingLineageFacts/readRunVerdict",
+      "evidence": "readC1Run determines terminal status from the raw runStatus and constructs ReviewVerdictFact as soon as result.reviewVerdict plus context.reviewedRunId are present. The C1 Reader path does not run validateRunResultFileCombination, validateActionResultWithoutRunRef, or validateReviewVerdictIntegrity before promoting the result into formal facts. validateReviewExactBindings executes only afterwards and merely appends FactConflict entries; it does not remove the already-created verdict from snapshot.reviewVerdicts. Therefore a review with wrong target, missing target, or fingerprint mismatch can still exist as a valid-looking ReviewVerdictFact and can be consumed by generation classification. The review-entry helper has the analogous issue: readSiblingLineageFacts/readRunVerdict reads a completed review verdict without first proving that review's immutable exact binding. Additionally, readSingleRun treats any result.json read error as absence rather than distinguishing ENOENT from an unreadable/inconsistent terminal authority.",
+      "impact": "This violates Q1 task 4.6 and the approved review exact-binding contract: an invalid review MUST produce a conflict and MUST NOT become a valid ReviewVerdictFact. It also means malformed schemaVersion 2 result projections (including closed-schema or verdict/findings violations) can influence formal Reader facts instead of being rejected fail-closed.",
+      "requiredResolution": "Make C1 result admission two-phase and fail-closed. First validate the complete RunResultFile physical projection and action-specific review verdict integrity; then prove reviewedRunId ↔ inputRef target ↔ actual result bytes exact binding; only after all required immutable checks pass may a ReviewVerdictFact be added to snapshot.reviewVerdicts or used as lineage by review-entry. Non-ENOENT result read failures must create a FactConflict rather than project pending. Add negative fixtures proving wrong target, missing target, replacement hash, invalid verdict/findings shape and unreadable result never yield a valid ReviewVerdictFact."
+    },
+    {
+      "id": "Q1-RA-007",
+      "title": "Reader does not strictly validate all immutable Run-result references",
+      "location": "src/facts/formal-fact-reader.ts; src/facts/formal-fact-snapshot.ts; src/persistence/serialization.ts",
+      "evidence": "The generation-aware Reader comment states that inputRef, consumedInputRefs and reviewVerdictRef are always strictly validated, but the implementation only has concrete immutable validation for review-* context.inputRef inside validateReviewExactBindings. formal-fact-reader.ts has no operative consumedInputRefs or reviewVerdictRef validation path, and RunFact does not carry those result fields. Non-review context.inputRef is merely projected from ContextFile; validateContextFile calls the generic ResultRef projection validator but does not require inputRef.kind == run-result or prove its Core-allowed result.json target/fingerprint. Thus immutable refs outside the review exact-binding special case are not revalidated by Reader at all.",
+      "impact": "The approved Q1 generation contract explicitly keeps immutable Run-result refs strict across current, revision-window and superseded mutable generations. A tampered consumed/input/reviewVerdict reference can therefore escape Reader conflict detection even though mutable-artifact validation appears healthy.",
+      "requiredResolution": "On schemaVersion 2 Reader admission, parse validated actionResult refs and strictly validate every immutable Run-result reference independently of mutable generation class: normal context.inputRef when present, consumedInputRefs, and reviewVerdictRef. Enforce exact field kind, Core-allowed result.json logical target (including the source-review relationship where applicable), target existence/readability, and actual SHA-256. Surface any violation as FactConflict and add negative fixtures for wrong kind/path/missing target/hash on each immutable field."
+    },
+    {
+      "id": "Q1-RA-008",
+      "title": "Non-Run logical-ref and archive-path validation is still not the approved fail-closed resolver",
+      "location": "src/persistence/result-ref-adapter.ts: normalizeArtifactLogicalRef, resolveArchiveAwareArtifactPath, findArchiveMatches; tests/unit/persistence/result-ref-adapter.test.ts",
+      "evidence": "normalizeArtifactLogicalRef normalizes separators and immediately removes leading '/' before checking whether the path is absolute. Consequently a POSIX absolute ref such as '/openspec/changes/C1/proposal.md' is silently converted to a repository-relative-looking path instead of being rejected. The current absolute-path unit test covers only a Windows drive path. Separately, findArchiveMatches accepts any directory whose name endsWith('-<changeId>'); it does not require the approved exact archive form YYYY-MM-DD-<changeId>. resolveArchiveAwareArtifactPath also begins filesystem resolution from the supplied logicalRef rather than first proving the canonical openspec/changes/<context.changeId>/... root/field identity.",
+      "impact": "This directly violates task 3.4 and the archive relocation scenarios: non-Run refs are required to be normalized repository-relative stable logical refs, absolute/traversal paths must reject, and archive relocation may resolve only an exact date-prefixed directory for the same changeId. Writer, review entry and Reader therefore still do not share a truly closed physical-target resolver.",
+      "requiredResolution": "Reject POSIX-leading '/' and Windows absolute forms before stripping or normalizing away absolute-path evidence; validate traversal and the exact canonical openspec/changes/<context.changeId>/... root/field identity before filesystem access. Make archive discovery accept only directories matching the exact YYYY-MM-DD-<changeId> grammar and exact changeId after removing the date prefix. Reuse this validator in writer/preflight/review-entry/Reader. Add negative tests for POSIX absolute refs, traversal/root mismatch, malformed archive directory names, and exact archive ambiguity."
+    },
+    {
+      "id": "Q1-RA-009",
+      "title": "Current verificationSummaryRef recovery remains fail-open for missing, malformed, wrong-kind, or wrong-path evidence",
+      "location": "src/facts/formal-fact-reader.ts: validateVerificationGenerationAware, validateCurrentVerificationSummaryRef; openspec/changes/execution-model-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "evidence": "validateCurrentVerificationSummaryRef returns an empty conflict list when actionResult is absent, verificationSummaryRef is absent, or ref/path/fingerprint fields are malformed. When a ref is present it takes ref.ref as the path to resolve and checks only the target bytes; it does not require kind == verification-summary and does not require the exact Core-derived logical identity openspec/changes/<run.changeId>/verification.md. The normal completeRun preflight now prevents this shape from being newly published, but Reader recovery of a malformed/tampered schemaVersion 2 current review-apply still fails open.",
+      "impact": "The approved Q1-9 contract requires each current review-apply verification generation to carry and strictly validate the exact current verification summary ref. A missing or path-substituted summary can currently produce no FactConflict, so Reader does not fully recover the formal verification boundary.",
+      "requiredResolution": "For every current review-apply generation, require a valid actionResult and verificationSummaryRef; enforce kind=verification-summary and exact logical path derived from run.changeId before archive-aware physical resolution; then validate existence/readability and actual SHA-256. Missing/malformed/wrong-kind/wrong-path/mismatch must each produce FactConflict. Add focused Reader fixtures for all five cases and preserve legitimate superseded/revision-window behavior."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "resolvedPriorFindings": [
+    {
+      "id": "Q1-RA-001",
+      "result": "resolved",
+      "evidence": "writeRunResult/publishTerminalResult are module-private; completeRun is the descriptor-driven production terminal-completion boundary; shared preflight requires artifact-stage evidence and review-apply verificationSummaryRef."
+    },
+    {
+      "id": "Q1-RA-003",
+      "result": "resolved",
+      "evidence": "validateStageEffectiveSet is shared by completion preflight, review-entry and Reader current artifact-generation validation; missing/empty/partial stage sets fail closed."
+    },
+    {
+      "id": "Q1-RA-005",
+      "result": "resolved",
+      "evidence": "Run-ID descriptors now reuse parseRunId before filesystem resolution and producedArtifactTags are runtime-validated against Action-permitted closed sets; no-op revise-propose changed-tag sets reject."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "130 formal Run presence and source-review binding",
+        "status": "passed",
+        "result": "20260806-130-revise-apply/action.md, context.json and result.json are present. 130 sourceReview exact-binds 129-review-apply changes-requested using content-sha256:7f68d1b7092bc372ba87d77aea582691389f1617221b6c96576f1bff825931a1."
+      },
+      {
+        "name": "130 reviewed result binding",
+        "status": "passed",
+        "result": "Reviewed 20260806-130-revise-apply/result.json exact content SHA-256 680ed78436585392979031670154eb76b34efae099c454e9209b90c8dcd37ff0 (Git blob 40bd5364e3b461d76809cb58afd65721036e6adb)."
+      },
+      {
+        "name": "Author-recorded focused/affected verification",
+        "status": "passed-as-recorded",
+        "result": "Current verification.md records 130-revise-apply sourced from 129, typecheck/lint/build, 515/515 unit+integration tests, OpenSpec Change strict validation, 8/8 canonical specs and git diff --check as passed."
+      },
+      {
+        "name": "Q1-RA-001 raw terminal authority",
+        "status": "passed",
+        "result": "The raw RunResultFile publisher is no longer exported and Action-required terminal preflight is fail-closed."
+      },
+      {
+        "name": "Q1-RA-003 artifact effective-set completeness",
+        "status": "passed",
+        "result": "Shared stage-aware exact-set validation is applied at terminal preflight, review entry and Reader current artifact generation."
+      },
+      {
+        "name": "Q1-RA-005 descriptor runtime grammar",
+        "status": "passed",
+        "result": "Referenced Run IDs and produced artifact tags are runtime fail-closed."
+      },
+      {
+        "name": "Reader closed result admission and valid review-fact promotion",
+        "status": "failed",
+        "result": "C1 result physical validators/exact binding are not completed before ReviewVerdictFact promotion; invalid verdict facts remain in snapshot."
+      },
+      {
+        "name": "Reader immutable Run-result refs",
+        "status": "failed",
+        "result": "consumedInputRefs/reviewVerdictRef and non-review inputRef are not actually strictly revalidated by Reader."
+      },
+      {
+        "name": "Non-Run logical/archive resolver",
+        "status": "failed",
+        "result": "POSIX absolute logical refs can be normalized into relative refs and archive directory matching is suffix-based rather than exact date-prefix matching."
+      },
+      {
+        "name": "Current verification summary Reader recovery",
+        "status": "failed",
+        "result": "Missing/malformed/wrong-kind/wrong-path current verificationSummaryRef can return without FactConflict."
+      },
+      {
+        "name": "Delivery Full Test",
+        "status": "not-applicable",
+        "result": "Not owner-authorized and not run; review-apply has no Delivery Full Test authority."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-apply",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

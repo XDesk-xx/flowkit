@@ -83,6 +83,10 @@ export interface RunFact {
   readonly inputRef?: ResultRef;
   /** Terminal result reference, present when `status` is terminal. */
   readonly resultRef?: ResultRef;
+  /** Result refs consumed as inputs by this Run (from validated actionResult). */
+  readonly consumedInputRefs?: readonly ResultRef[];
+  /** Result ref of the reviewed Run (from validated actionResult, review-* only). */
+  readonly reviewVerdictRef?: ResultRef;
   /** Prior review being addressed by a `revise-*` Run (from context.json). */
   readonly sourceReviewRun?: string;
   /** Verdict of the prior review addressed by a `revise-*` Run. */

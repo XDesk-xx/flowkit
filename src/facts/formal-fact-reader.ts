@@ -23,11 +23,18 @@ import { normalizeSeparators } from '../shared/paths.js';
 import { parseYaml } from './yaml-parser.js';
 import { readGitBoundarySummaries } from './git-boundary-reader.js';
 import { discriminateRun, normalizeBootstrapRunStatus } from '../persistence/legacy-recognizer.js';
-import { validateContextFile } from '../persistence/serialization.js';
+import {
+  validateContextFile,
+  admitC1RunResult,
+} from '../persistence/serialization.js';
 import type { ContextFile } from '../persistence/serialization.js';
 import {
   resolveArchiveAwareArtifactPath,
   validateStageEffectiveSet,
+  resolveRunResultPath,
+  computeResultFileHash,
+  resolveVerificationSummaryRef,
+  VERIFICATION_SUMMARY_KIND,
 } from '../persistence/result-ref-adapter.js';
 import {
   classifyArtifactGenerations,
@@ -104,13 +111,30 @@ export async function readFormalFactSnapshot(
   // 6. Manifest conflicts.
   conflicts.push(...manifestResult.conflicts);
 
-  // 7. Q1: Review exact binding validation (tasks 4.5-4.6).
+  // 7. Q1: Review exact binding validation (tasks 4.5-4.6 / Q1-RA-006).
   //    For each completed review-* Run, verify inputRef.ref ↔ reviewedRunId
   //    result.json path and inputRef.versionFingerprint ↔ actual SHA-256.
+  //    A review whose binding is broken is NOT admitted into reviewVerdicts:
+  //    it cannot be consumed as lineage by generation classification.
+  const bindingResult = await validateReviewExactBindings(
+    runs,
+    reviewVerdicts,
+    input.repoRoot,
+    input.runsPathPrefix,
+  );
+  conflicts.push(...bindingResult.conflicts);
+  const admittedReviewVerdicts = bindingResult.admittedVerdicts;
+
+  // 7b. Q1-RA-007: Strict validation of immutable Run-result refs. This runs
+  //     BEFORE mutable-artifact generation classification so a tampered
+  //     consumed/input/reviewVerdict reference can never hide behind a healthy
+  //     mutable artifact set. Review inputRef is covered by step 7
+  //     (validateReviewExactBindings); non-review inputRef, consumedInputRefs
+  //     and reviewVerdictRef are validated here for every generation class.
   conflicts.push(
-    ...await validateReviewExactBindings(
+    ...await validateImmutableRunResultRefs(
       runs,
-      reviewVerdicts,
+      admittedReviewVerdicts,
       input.repoRoot,
       input.runsPathPrefix,
     ),
@@ -119,10 +143,11 @@ export async function readFormalFactSnapshot(
   // 8. Q1: Generation-aware mutable artifact validation (tasks 5.1-5.8).
   //    Classify artifact generations and validate only the current effective
   //    generation's producedResultRefs against current canonical bytes.
+  //    ONLY exact-bound reviews are used as lineage (Q1-RA-006).
   conflicts.push(
     ...await validateGenerationAwareArtifacts(
       runs,
-      reviewVerdicts,
+      admittedReviewVerdicts,
       input.repoRoot,
     ),
   );
@@ -137,7 +162,7 @@ export async function readFormalFactSnapshot(
   conflicts.push(
     ...await validateVerificationGenerationAware(
       runs,
-      reviewVerdicts,
+      admittedReviewVerdicts,
       input.repoRoot,
     ),
   );
@@ -151,7 +176,7 @@ export async function readFormalFactSnapshot(
     openSpecArtifacts,
     gitBoundaries,
     ownerAuthorizations,
-    reviewVerdicts,
+    reviewVerdicts: admittedReviewVerdicts,
     conflicts,
   };
 }
@@ -471,6 +496,10 @@ async function readSingleRun(
   }
 
   // Read result.json (if exists).
+  //
+  // Q1-RA-006: an ABSENT result.json is a pending Run; any OTHER read failure
+  // (EACCES, EISDIR, EIO, ...) is an inconsistent terminal authority and MUST
+  // surface as a FactConflict — it MUST NOT be silently treated as absence.
   const resultPath = join(runDir, 'result.json');
   let hasResult = false;
   let parsedResult: unknown = null;
@@ -487,12 +516,20 @@ async function readSingleRun(
       });
       return { conflicts };
     }
-  } catch {
+  } catch (e) {
+    if (!isErrnoENOENT(e)) {
+      conflicts.push({
+        dimension: 'run-result',
+        authority: resultPath,
+        message: `result.json unreadable (${errnoName(e)}): ${(e as Error).message}; a terminal authority that cannot be read MUST fail closed, not project pending`,
+      });
+      return { conflicts };
+    }
     hasResult = false;
   }
 
   if (classification.kind === 'c1') {
-    return readC1Run(classification.contextFile, runDir, runId, hasResult, parsedResult, conflicts);
+    return readC1Run(classification.contextFile, runDir, runId, resultPath, hasResult, parsedResult, conflicts);
   }
 
   // Legacy Bootstrap Run. Pass parsedContext so the legacy review-verdict
@@ -512,19 +549,49 @@ function readC1Run(
   contextFile: ContextFile,
   runDir: string,
   runId: string,
+  resultPath: string,
   hasResult: boolean,
   parsedResult: unknown,
   conflicts: FactConflict[],
 ): SingleRunResult {
-  // C1 Run: status from result.json existence (pending when absent; terminal
-  // values from result.json.runStatus — C1 RunResultFile uses runStatus).
+  // Q1-RA-006: C1 result admission is TWO-PHASE and fail-closed.
+  //   Phase 1 — physical validation: the complete RunResultFile projection and
+  //   action-specific review verdict integrity MUST pass
+  //   (validateRunResultFileCombination + validateActionResultWithoutRunRef +
+  //   validateReviewVerdictIntegrity) BEFORE any formal fact is promoted.
+  //   Phase 2 — exact binding: the review exact binding (reviewedRunId ↔
+  //   inputRef target ↔ actual bytes) is proven in validateReviewExactBindings
+  //   BEFORE the verdict may be consumed; readC1Run only ADMITS a verdict when
+  //   Phase 1 passed. A review with wrong/missing target or fingerprint
+  //   mismatch therefore never becomes a valid ReviewVerdictFact.
   let status: RunStatus = 'pending';
   let verdict: ReviewVerdictFact | undefined;
+  // Immutable Run-result refs from the VALIDATED actionResult (RA-007).
+  let consumedInputRefs: readonly ResultRef[] | undefined;
+  let reviewVerdictRef: ResultRef | undefined;
 
   if (hasResult && parsedResult !== null) {
-    const obj = parsedResult as Record<string, unknown>;
-    const runStatus = obj['runStatus'];
-    if (typeof runStatus === 'string' && (runStatus === 'completed' || runStatus === 'failed' || runStatus === 'cancelled')) {
+    // ---- Phase 1: complete closed-schema admission of the WHOLE result. ----
+    // Shared C1 admission pipeline (Q1-RA-006): validateRunResultFileCombination
+    // + validateActionResultWithoutRunRef + validateReviewVerdictIntegrity.
+    let admittedResult: import('../persistence/serialization.js').RunResultFile;
+    try {
+      admittedResult = admitC1RunResult(
+        JSON.stringify(parsedResult),
+        contextFile.action,
+      );
+    } catch (e) {
+      conflicts.push({
+        dimension: 'run-result-schema',
+        authority: resultPath,
+        message: `C1 result.json failed closed physical validation (${(e as FlowkitError).code ?? 'error'}): ${(e as Error).message}`,
+      });
+      return { conflicts };
+    }
+
+    // Phase 1 passed — promote only now.
+    const runStatus = admittedResult.runStatus;
+    if (runStatus === 'completed' || runStatus === 'failed' || runStatus === 'cancelled') {
       status = runStatus;
     } else {
       conflicts.push({
@@ -534,11 +601,19 @@ function readC1Run(
       });
       return { conflicts };
     }
+
+    // Carry the validated immutable refs (RA-007).
+    const admittedActionResult = admittedResult.actionResult;
+    consumedInputRefs = admittedActionResult?.consumedInputRefs;
+    reviewVerdictRef = admittedActionResult?.reviewVerdictRef;
   }
 
-  // Extract review verdict for review-* actions (C1-AP-004 canonical path).
-  // C1 review-* Runs carry `reviewVerdict` in result.json and `reviewedRunId`
-  // in context.json. Missing linkage → FactConflict (fail-closed).
+  // ---- Phase 2: review verdict admission (C1-AP-004 canonical path). ----
+  // ONLY after Phase 1 passed may a reviewVerdict become a ReviewVerdictFact.
+  // C1 review-* Runs carry `reviewVerdict` in result.json, `reviewedRunId` in
+  // context.json, and `inputRef` over the reviewed Run's result.json.
+  // Q1-RA-006: a completed C1 review without inputRef cannot be exact-bound and
+  // MUST NOT be admitted as a ReviewVerdictFact (fail-closed).
   if (contextFile.action.startsWith('review-') && hasResult && parsedResult !== null) {
     const resultObj = parsedResult as Record<string, unknown>;
     const verdictValue = resultObj['reviewVerdict'];
@@ -548,11 +623,20 @@ function readC1Run(
       typeof reviewedRunId === 'string' &&
       reviewedRunId.length > 0
     ) {
-      verdict = {
-        reviewRunId: contextFile.runId,
-        verdict: verdictValue,
-        reviewedRunId,
-      };
+      if (contextFile.inputRef === undefined) {
+        conflicts.push({
+          dimension: 'review-binding-missing',
+          authority: runDir,
+          message: `C1 review-* Run ${runId} has no inputRef; its verdict cannot be exact-bound and is not admitted`,
+          detail: { runId, action: contextFile.action },
+        });
+      } else {
+        verdict = {
+          reviewRunId: contextFile.runId,
+          verdict: verdictValue,
+          reviewedRunId,
+        };
+      }
     } else {
       conflicts.push({
         dimension: 'review-verdict-linkage',
@@ -575,6 +659,8 @@ function readC1Run(
     status,
     ...(contextFile.changeId !== undefined && { changeId: contextFile.changeId }),
     ...(contextFile.inputRef !== undefined && { inputRef: contextFile.inputRef }),
+    ...(consumedInputRefs !== undefined && { consumedInputRefs }),
+    ...(reviewVerdictRef !== undefined && { reviewVerdictRef }),
     // Q1-RA-002: carry exact persisted lineage facts so generation
     // classification can prove review/revise lineage without Run-ID inference.
     ...(contextFile.sourceReviewRun !== undefined && { sourceReviewRun: contextFile.sourceReviewRun }),
@@ -782,15 +868,18 @@ function collectOwnerAuthorizations(runs: readonly RunFact[]): {
 // ---------------------------------------------------------------------------
 
 /**
- * Q1-6: Validate review-* Run exact content binding.
+ * Q1-6 / Q1-RA-006: Validate review-* Run exact content binding and ADMIT only
+ * exact-bound reviews as `ReviewVerdictFact`s.
  *
  * For each completed review-* Run with `inputRef` and `reviewedRunId`:
  *   - Verify `inputRef.ref` matches the reviewed Run's result.json path.
  *   - Verify `inputRef.versionFingerprint` matches the actual SHA-256 of the
  *     reviewed Run's result.json content.
  *
- * Mismatches produce `FactConflict`s — the Reader MUST NOT construct a valid
- * ReviewVerdictFact for a review-* Run with a broken binding.
+ * A broken binding produces a `FactConflict` AND the verdict is NOT admitted
+ * (it is removed from the returned `admittedVerdicts`). This satisfies
+ * Q1-RA-006: an invalid review MUST NOT become a valid ReviewVerdictFact and
+ * MUST NOT be consumed as lineage by generation classification.
  *
  * This binding is **permanently valid** — it is NOT affected by mutable
  * artifact generation supersession (Q1-6: "该 exact Run-result binding 永久有效").
@@ -800,29 +889,39 @@ async function validateReviewExactBindings(
   reviewVerdicts: readonly ReviewVerdictFact[],
   repoRoot: string,
   runsPathPrefix: string,
-): Promise<FactConflict[]> {
+): Promise<{ conflicts: readonly FactConflict[]; admittedVerdicts: readonly ReviewVerdictFact[] }> {
   const conflicts: FactConflict[] = [];
+  const admitted: ReviewVerdictFact[] = [];
 
   for (const verdict of reviewVerdicts) {
     const reviewRun = runs.find((r) => r.runId === verdict.reviewRunId);
     if (reviewRun === undefined) {
-      continue; // Missing review Run is already a conflict from readC1Run.
+      // Missing review Run is already a conflict from readC1Run; its verdict
+      // must not be admitted either.
+      continue;
     }
 
-    // Only validate completed review-* Runs with inputRef.
+    // A completed C1 review Run MUST carry inputRef for exact binding proof.
+    // Bootstrap (legacy) reviews have no ResultRef — they are admitted as-is
+    // (D16: Bootstrap string-form inputRef → undefined). C1 reviews without
+    // inputRef are already rejected in readC1Run (Q1-RA-006), so here we only
+    // validate reviews that DO carry an inputRef.
     if (reviewRun.status !== 'completed' || reviewRun.inputRef === undefined) {
+      admitted.push(verdict);
       continue;
     }
 
     const reviewedRunId = verdict.reviewedRunId;
-    const expectedPath = `${runsPathPrefix}/${reviewRun.deliveryId}/${reviewRun.changeId ?? ''}/${reviewedRunId}/result.json`
-      .replace(/\/+/g, '/');
+    const expectedPath = resolveRunResultPath(
+      runsPathPrefix,
+      reviewRun.deliveryId,
+      reviewRun.changeId,
+      reviewedRunId,
+    );
+    const normalizedInputRef = normalizeSeparators(reviewRun.inputRef.ref);
+    const normalizedExpected = expectedPath;
 
-    // Verify inputRef.ref matches the reviewed Run's result.json path.
-    // The inputRef.ref may use different separator conventions; normalize both.
-    const normalizedInputRef = reviewRun.inputRef.ref.replace(/\/+/g, '/');
-    const normalizedExpected = expectedPath.replace(/\/+/g, '/');
-
+    let bindingOk = true;
     if (normalizedInputRef !== normalizedExpected) {
       conflicts.push({
         dimension: 'review-binding-target',
@@ -835,12 +934,12 @@ async function validateReviewExactBindings(
           actualRef: reviewRun.inputRef.ref,
         },
       });
-      continue; // Skip fingerprint check — target is already wrong.
+      bindingOk = false;
     }
 
     // Verify inputRef.versionFingerprint matches actual SHA-256.
-    const reviewedResultPath = join(repoRoot, reviewRun.inputRef.ref);
-    let content: string;
+    const reviewedResultPath = join(repoRoot, normalizeSeparators(reviewRun.inputRef.ref));
+    let content: string | undefined;
     try {
       content = await readFile(reviewedResultPath, 'utf-8');
     } catch {
@@ -850,27 +949,251 @@ async function validateReviewExactBindings(
         message: `review-* Run ${reviewRun.runId} reviewed Run ${reviewedRunId} result.json not found or unreadable`,
         detail: { reviewRunId: reviewRun.runId, reviewedRunId, path: reviewedResultPath },
       });
-      continue;
+      bindingOk = false;
     }
 
-    const { createHash } = await import('node:crypto');
-    const actualHash = createHash('sha256').update(content, 'utf8').digest('hex');
-    if (actualHash !== reviewRun.inputRef.versionFingerprint) {
-      conflicts.push({
-        dimension: 'review-binding-mismatch',
-        authority: reviewRun.runId,
-        message: `review-* Run ${reviewRun.runId} inputRef.versionFingerprint does not match reviewed Run ${reviewedRunId} result.json actual SHA-256`,
-        detail: {
-          reviewRunId: reviewRun.runId,
-          reviewedRunId,
-          expected: reviewRun.inputRef.versionFingerprint,
-          actual: actualHash,
-        },
-      });
+    if (bindingOk && content !== undefined) {
+      const actualHash = computeResultFileHash(content);
+      if (actualHash !== reviewRun.inputRef.versionFingerprint) {
+        conflicts.push({
+          dimension: 'review-binding-mismatch',
+          authority: reviewRun.runId,
+          message: `review-* Run ${reviewRun.runId} inputRef.versionFingerprint does not match reviewed Run ${reviewedRunId} result.json actual SHA-256`,
+          detail: {
+            reviewRunId: reviewRun.runId,
+            reviewedRunId,
+            expected: reviewRun.inputRef.versionFingerprint,
+            actual: actualHash,
+          },
+        });
+        bindingOk = false;
+      }
+    }
+
+    if (bindingOk) {
+      admitted.push(verdict);
+    }
+  }
+
+  return { conflicts, admittedVerdicts: admitted };
+}
+
+// ---------------------------------------------------------------------------
+// Q1-RA-007: Strict validation of immutable Run-result references
+// ---------------------------------------------------------------------------
+
+/**
+ * Strictly validate every immutable Run-result reference on a schemaVersion 2
+ * Run, INDEPENDENTLY of mutable artifact generation class.
+ *
+ * The approved Q1 generation contract keeps immutable Run-result refs strict
+ * across current, revision-window and superseded mutable generations. Reader
+ * MUST NOT rely on the mutable-artifact validation looking healthy.
+ *
+ * Validated references (all must be `run-result` kind pointing at an existing,
+ * readable result.json whose actual SHA-256 matches the fingerprint):
+ *   - non-review `inputRef` (review inputRef is validated by
+ *     {@link validateReviewExactBindings} with the reviewedRunId relationship);
+ *   - `consumedInputRefs[*]`;
+ *   - `reviewVerdictRef`.
+ *
+ * For every ref the Reader:
+ *   1. enforces `kind === run-result`;
+ *   2. reconstructs the Core-allowed canonical target
+ *      `<runsPathPrefix>/<deliveryId>/<changeId?>/<runId>/result.json` from the
+ *      Run ID embedded in the ref (any other target is a conflict);
+ *   3. checks the target exists and is readable;
+ *   4. checks the actual content SHA-256 equals the ref fingerprint.
+ *
+ * @returns FactConflicts (empty ⇒ all immutable refs are valid).
+ */
+async function validateImmutableRunResultRefs(
+  runs: readonly RunFact[],
+  admittedReviewVerdicts: readonly ReviewVerdictFact[],
+  repoRoot: string,
+  runsPathPrefix: string,
+): Promise<FactConflict[]> {
+  const conflicts: FactConflict[] = [];
+
+  for (const run of runs) {
+    // Non-review inputRef.
+    if (!run.action.startsWith('review-') && run.inputRef !== undefined) {
+      const targetRunId = extractRunIdFromResultRef(run.inputRef.ref);
+      conflicts.push(
+        ...await validateSingleImmutableRef(
+          run,
+          'inputRef',
+          run.inputRef,
+          targetRunId,
+          repoRoot,
+          runsPathPrefix,
+        ),
+      );
+    }
+
+    // consumedInputRefs.
+    if (run.consumedInputRefs !== undefined) {
+      for (let i = 0; i < run.consumedInputRefs.length; i++) {
+        const ref = run.consumedInputRefs[i];
+        const targetRunId = extractRunIdFromResultRef(ref.ref);
+        conflicts.push(
+          ...await validateSingleImmutableRef(
+            run,
+            `consumedInputRefs[${i}]`,
+            ref,
+            targetRunId,
+            repoRoot,
+            runsPathPrefix,
+          ),
+        );
+      }
+    }
+
+    // reviewVerdictRef.
+    if (run.reviewVerdictRef !== undefined) {
+      const targetRunId = extractRunIdFromResultRef(run.reviewVerdictRef.ref);
+      conflicts.push(
+        ...await validateSingleImmutableRef(
+          run,
+          'reviewVerdictRef',
+          run.reviewVerdictRef,
+          targetRunId,
+          repoRoot,
+          runsPathPrefix,
+        ),
+      );
+
+      // Q1-RA-007 (guide §15): reviewVerdictRef MUST point at the EXACT
+      // source review Run named by context.sourceReviewRun, and the persisted
+      // sourceReviewVerdict MUST match the referenced review Run's actual
+      // admitted verdict. A generic "some result.json hash matches" is NOT
+      // sufficient proof.
+      if (run.sourceReviewRun !== undefined) {
+        const expectedTargetRunId = run.sourceReviewRun;
+        if (targetRunId !== expectedTargetRunId) {
+          conflicts.push({
+            dimension: 'immutable-ref-target',
+            authority: run.runId,
+            message: `Run ${run.runId} reviewVerdictRef targets ${String(targetRunId)} but context.sourceReviewRun is ${expectedTargetRunId}; reviewVerdictRef MUST exact-match the source review Run`,
+            detail: { runId: run.runId, sourceReviewRun: expectedTargetRunId, targetRunId },
+          });
+        } else if (run.sourceReviewVerdict !== undefined) {
+          const reviewedVerdict = admittedReviewVerdicts.find((v) => v.reviewRunId === expectedTargetRunId);
+          if (reviewedVerdict !== undefined && reviewedVerdict.verdict !== run.sourceReviewVerdict) {
+            conflicts.push({
+              dimension: 'immutable-ref-verdict-mismatch',
+              authority: run.runId,
+              message: `Run ${run.runId} sourceReviewVerdict (${run.sourceReviewVerdict}) does not match the referenced review Run ${expectedTargetRunId} actual admitted verdict (${reviewedVerdict.verdict})`,
+              detail: { runId: run.runId, sourceReviewRun: expectedTargetRunId, expected: run.sourceReviewVerdict, actual: reviewedVerdict.verdict },
+            });
+          }
+        }
+      }
     }
   }
 
   return conflicts;
+}
+
+/**
+ * Validate a single immutable Run-result ref.
+ *
+ * `targetRunId` is the Run ID parsed from the ref's path tail; when the ref is
+ * not a canonical `.../<runId>/result.json` path, `targetRunId` is `undefined`
+ * and the ref is reported as non-Core-allowed.
+ */
+async function validateSingleImmutableRef(
+  run: RunFact,
+  field: string,
+  ref: ResultRef,
+  targetRunId: string | undefined,
+  repoRoot: string,
+  runsPathPrefix: string,
+): Promise<FactConflict[]> {
+  const conflicts: FactConflict[] = [];
+  const authority = run.runId;
+
+  // 1. Exact kind.
+  if (ref.kind !== 'run-result') {
+    conflicts.push({
+      dimension: 'immutable-ref-kind',
+      authority,
+      message: `Run ${run.runId} ${field} kind is ${String(ref.kind)}, expected run-result`,
+      detail: { runId: run.runId, field, kind: ref.kind, ref: ref.ref },
+    });
+    return conflicts;
+  }
+
+  // 2. Core-allowed canonical target.
+  if (targetRunId === undefined) {
+    conflicts.push({
+      dimension: 'immutable-ref-target',
+      authority,
+      message: `Run ${run.runId} ${field} does not point at a canonical result.json path`,
+      detail: { runId: run.runId, field, ref: ref.ref },
+    });
+    return conflicts;
+  }
+  const expectedPath = resolveRunResultPath(
+    runsPathPrefix,
+    run.deliveryId,
+    run.changeId,
+    targetRunId,
+  );
+  const normalizedActual = normalizeSeparators(ref.ref);
+  if (normalizedActual !== expectedPath) {
+    conflicts.push({
+      dimension: 'immutable-ref-target',
+      authority,
+      message: `Run ${run.runId} ${field} ref (${normalizedActual}) does not match Core-allowed target (${expectedPath})`,
+      detail: { runId: run.runId, field, expectedPath, actual: normalizedActual },
+    });
+    return conflicts;
+  }
+
+  // 3. Target exists and is readable.
+  const targetPath = join(repoRoot, normalizedActual);
+  let content: string;
+  try {
+    content = await readFile(targetPath, 'utf-8');
+  } catch {
+    conflicts.push({
+      dimension: 'immutable-ref-missing',
+      authority,
+      message: `Run ${run.runId} ${field} target result.json not found or unreadable: ${normalizedActual}`,
+      detail: { runId: run.runId, field, path: normalizedActual },
+    });
+    return conflicts;
+  }
+
+  // 4. Actual SHA-256.
+  const actualHash = computeResultFileHash(content);
+  if (actualHash !== ref.versionFingerprint) {
+    conflicts.push({
+      dimension: 'immutable-ref-mismatch',
+      authority,
+      message: `Run ${run.runId} ${field} fingerprint mismatch: ${normalizedActual} (expected ${ref.versionFingerprint}, got ${actualHash})`,
+      detail: { runId: run.runId, field, expected: ref.versionFingerprint, actual: actualHash },
+    });
+  }
+
+  return conflicts;
+}
+
+/**
+ * Extract the Run ID from a canonical result ref path
+ * `<runsPathPrefix>/<deliveryId>/<changeId?>/<runId>/result.json`.
+ *
+ * Returns `undefined` when the ref does not end in `/<runId>/result.json` with
+ * a formal Run ID.
+ */
+function extractRunIdFromResultRef(ref: string): string | undefined {
+  const normalized = normalizeSeparators(ref).replace(/\/+$/, '');
+  const match = /\/(\d{8}-\d{3}-[a-z][a-z-]*)\/result\.json$/i.exec(normalized);
+  if (match === null) {
+    return undefined;
+  }
+  return match[1];
 }
 
 // ---------------------------------------------------------------------------
@@ -1187,20 +1510,37 @@ async function validateVerificationGenerationAware(
 
 /**
  * Validate the current review-apply's `verificationSummaryRef` against the
- * current `verification.md` bytes (task 7.6).
+ * current `verification.md` bytes (task 7.6 / Q1-RA-009).
  *
- * Reads the Run's result.json `actionResult.verificationSummaryRef`. When
- * absent, no validation is performed (the preflight is the authority for
- * requiring it). When present, the referenced `verification.md` MUST exist and
- * its current SHA-256 MUST equal the ref's `versionFingerprint`; otherwise a
- * FactConflict is collected (missing → `verification-summary-missing`, hash
- * mismatch → `verification-summary-replaced`, task 7.7 fail-closed).
+ * Q1-RA-009 fail-closed: for EVERY current review-apply generation the Reader
+ * REQUIRES a valid actionResult and a well-formed `verificationSummaryRef` of
+ * kind `verification-summary` whose logical ref EXACTLY equals the Core-derived
+ * canonical identity `openspec/changes/<run.changeId>/verification.md`. The
+ * referenced file MUST resolve uniquely (archive-aware), exist, be readable,
+ * and its current SHA-256 MUST equal the ref fingerprint.
+ *
+ * Missing, malformed, wrong-kind, wrong-path, missing-target, ambiguous-target
+ * and fingerprint mismatch each produce a distinct FactConflict — recovery of a
+ * tampered/missing current verification summary NEVER fails open.
  */
 async function validateCurrentVerificationSummaryRef(
   run: RunFact,
   repoRoot: string,
 ): Promise<FactConflict[]> {
   const conflicts: FactConflict[] = [];
+  const authority = run.runId;
+  const changeId = run.changeId;
+
+  // A current review-apply generation without a changeId cannot be verified.
+  if (changeId === undefined) {
+    conflicts.push({
+      dimension: 'verification-summary-missing',
+      authority,
+      message: `Current review-apply ${run.runId} has no changeId; cannot validate the required verification summary ref`,
+      detail: { runId: run.runId },
+    });
+    return conflicts;
+  }
 
   const runDir = resolveRunDir(repoRoot, run);
   const resultPath = join(runDir, 'result.json');
@@ -1208,37 +1548,84 @@ async function validateCurrentVerificationSummaryRef(
   try {
     content = await readFile(resultPath, 'utf-8');
   } catch {
-    return conflicts; // result.json missing — handled elsewhere.
+    // result.json unreadable — readC1Run already reported the authoritative
+    // conflict; do not double-report here.
+    return conflicts;
   }
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(content);
   } catch {
-    return conflicts; // Malformed result.json is already a conflict from readC1Run.
+    return conflicts; // Malformed result.json already a conflict from readC1Run.
   }
 
+  // ---- 1. REQUIRED actionResult (Q1-RA-009: missing ⇒ fail closed). ----
   const obj = parsed as Record<string, unknown>;
   const actionResult = obj['actionResult'];
   if (actionResult === undefined || typeof actionResult !== 'object' || actionResult === null) {
+    conflicts.push({
+      dimension: 'verification-summary-missing',
+      authority,
+      message: `Current review-apply ${run.runId} has no actionResult; the required verificationSummaryRef cannot be recovered`,
+      detail: { runId: run.runId },
+    });
     return conflicts;
   }
+
+  // ---- 2. REQUIRED verificationSummaryRef (missing ⇒ fail closed). ----
   const ar = actionResult as Record<string, unknown>;
   const summaryRef = ar['verificationSummaryRef'];
   if (summaryRef === undefined || typeof summaryRef !== 'object' || summaryRef === null) {
-    return conflicts; // No verificationSummaryRef — preflight is the authority.
+    conflicts.push({
+      dimension: 'verification-summary-missing',
+      authority,
+      message: `Current review-apply ${run.runId} actionResult has no verificationSummaryRef (required for a current verification generation)`,
+      detail: { runId: run.runId },
+    });
+    return conflicts;
   }
   const ref = summaryRef as Record<string, unknown>;
   const refPath = ref['ref'];
   const refFingerprint = ref['versionFingerprint'];
+  const refKind = ref['kind'];
   if (typeof refPath !== 'string' || typeof refFingerprint !== 'string') {
+    conflicts.push({
+      dimension: 'verification-summary-malformed',
+      authority,
+      message: `Current review-apply ${run.runId} verificationSummaryRef missing string ref/versionFingerprint`,
+      detail: { runId: run.runId, refPath, versionFingerprint: refFingerprint },
+    });
     return conflicts;
   }
 
-  // Resolve verification.md via archive-aware resolution (Q1-10 / task 8.3).
+  // ---- 3. EXACT kind (Q1-RA-009: must be verification-summary). ----
+  if (refKind !== VERIFICATION_SUMMARY_KIND) {
+    conflicts.push({
+      dimension: 'verification-summary-kind',
+      authority,
+      message: `Current review-apply ${run.runId} verificationSummaryRef kind is ${String(refKind)}, expected ${VERIFICATION_SUMMARY_KIND}`,
+      detail: { runId: run.runId, kind: refKind, refPath },
+    });
+    return conflicts;
+  }
+
+  // ---- 4. EXACT Core-derived logical identity (Q1-RA-009: wrong path ⇒ fail closed). ----
+  const canonicalPath = resolveVerificationSummaryRef(changeId);
+  if (normalizeSeparators(refPath) !== canonicalPath) {
+    conflicts.push({
+      dimension: 'verification-summary-path',
+      authority,
+      message: `Current review-apply ${run.runId} verificationSummaryRef path (${refPath}) does not equal the Core-derived canonical path (${canonicalPath})`,
+      detail: { runId: run.runId, canonicalPath, actual: refPath },
+    });
+    return conflicts;
+  }
+
+  // ---- 5. Archive-aware physical resolution (missing/ambiguous ⇒ fail closed). ----
   let artifactPath: string;
   try {
-    artifactPath = await resolveArchiveAwareArtifactPath(repoRoot, normalizeSeparators(refPath));
+    artifactPath = await resolveArchiveAwareArtifactPath(repoRoot, refPath);
   } catch (e) {
     const dimension =
       e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED'
@@ -1246,7 +1633,7 @@ async function validateCurrentVerificationSummaryRef(
         : 'verification-summary-missing';
     conflicts.push({
       dimension,
-      authority: run.runId,
+      authority,
       message: `Current review-apply ${run.runId} verificationSummaryRef target ${dimension}: ${refPath}`,
       detail: { runId: run.runId, refPath },
     });
@@ -1258,19 +1645,19 @@ async function validateCurrentVerificationSummaryRef(
   } catch {
     conflicts.push({
       dimension: 'verification-summary-missing',
-      authority: run.runId,
+      authority,
       message: `Current review-apply ${run.runId} verificationSummaryRef target unreadable: ${refPath}`,
       detail: { runId: run.runId, refPath, artifactPath },
     });
     return conflicts;
   }
 
-  const { createHash } = await import('node:crypto');
-  const actualHash = createHash('sha256').update(artifactContent, 'utf8').digest('hex');
+  // ---- 6. Actual SHA-256 (mismatch ⇒ fail closed). ----
+  const actualHash = computeResultFileHash(artifactContent);
   if (actualHash !== refFingerprint) {
     conflicts.push({
       dimension: 'verification-summary-replaced',
-      authority: run.runId,
+      authority,
       message: `Current review-apply ${run.runId} verificationSummaryRef fingerprint mismatch: ${refPath} (expected ${refFingerprint}, got ${actualHash}); no legitimate revise-apply lineage superseded it`,
       detail: { runId: run.runId, refPath, expected: refFingerprint, actual: actualHash },
     });
@@ -1303,6 +1690,25 @@ async function pathExists(path: string): Promise<boolean> {
 
 function looksLikeRunId(name: string): boolean {
   return /^\d{8}-\d{3}-[a-z][a-z-]*$/.test(name);
+}
+
+/** True when the error is a Node ENOENT (file/dir absent). */
+function isErrnoENOENT(e: unknown): boolean {
+  return (
+    typeof e === 'object' &&
+    e !== null &&
+    'code' in e &&
+    (e as { code?: unknown }).code === 'ENOENT'
+  );
+}
+
+/** Best-effort errno code for a read error, for conflict messaging. */
+function errnoName(e: unknown): string {
+  if (typeof e === 'object' && e !== null && 'code' in e) {
+    const code = (e as { code?: unknown }).code;
+    return typeof code === 'string' ? code : 'unknown';
+  }
+  return 'unknown';
 }
 
 function looksLikeChangeDir(name: string): boolean {
