@@ -41,6 +41,7 @@ import {
   validateRunResultFileCombination,
   validateReviewVerdictIntegrity,
   admitC1RunResult,
+  validateActionResultApplicability,
   type ContextFile,
   type ContextFileConstraints,
   type RunResultFile,
@@ -58,6 +59,8 @@ import {
   readArtifactBytes,
   validateStageEffectiveSet,
   validateRunIdDescriptor,
+  validateReviewRunBinding,
+  validateSourceReviewTuple,
   permittedProducedArtifactTags,
   PRODUCED_ARTIFACT_KIND,
   VERIFICATION_SUMMARY_KIND,
@@ -505,7 +508,7 @@ async function readSiblingLineageFacts(
       fact.action.startsWith('review-') &&
       fact.reviewedRunId !== undefined
     ) {
-      const verdict = await readRunVerdict(runDir, changeDir);
+      const verdict = await readRunVerdict(runDir);
       if (verdict !== undefined) {
         reviewFacts.push({
           reviewRunId: entry,
@@ -616,7 +619,6 @@ async function readRunProducedResultRefs(runDir: string): Promise<ResultRef[]> {
  */
 async function readRunVerdict(
   runDir: string,
-  changeDir: string,
 ): Promise<ReviewVerdictValue | undefined> {
   let content: string;
   try {
@@ -645,31 +647,23 @@ async function readRunVerdict(
     return undefined; // Malformed / closed-schema violation → not admitted.
   }
 
-  // Phase 2: review exact binding — inputRef.ref ↔ reviewedRunId result.json
-  // path, and inputRef.versionFingerprint ↔ actual SHA-256.
-  if (ctx.inputRef !== undefined) {
-    const reviewedResultPath = join(changeDir, ctx.reviewedRunId, 'result.json');
-    try {
-      const reviewedContent = await readFile(reviewedResultPath, 'utf-8');
-      // inputRef.ref is repo-relative
-      // `<runsPathPrefix>/<deliveryId>/<changeId>/<reviewedRunId>/result.json`.
-      // Resolve the canonical expected path from ctx fields.
-      const expectedRef = resolveRunResultPath(
-        deriveRunsPathPrefix(ctx),
-        ctx.deliveryId,
-        ctx.changeId,
-        ctx.reviewedRunId,
-      );
-      const actualRef = normalizeSeparators(ctx.inputRef.ref);
-      if (actualRef !== expectedRef) {
-        return undefined; // Wrong target — binding broken.
-      }
-      if (computeResultFileHash(reviewedContent) !== ctx.inputRef.versionFingerprint) {
-        return undefined; // Hash mismatch — binding broken.
-      }
-    } catch {
-      return undefined; // Reviewed result unreadable — binding not provable.
-    }
+  // Phase 2: review exact binding — the SHARED fail-closed validator
+  // (Q1-RA-006). Core re-derives the expected target from reviewedRunId;
+  // missing / wrong-kind / wrong-target / unreadable / hash mismatch all fail
+  // closed (no verdict → the review cannot enter sibling lineage).
+  try {
+    await validateReviewRunBinding({
+      runId: ctx.runId,
+      deliveryId: ctx.deliveryId,
+      changeId: ctx.changeId,
+      action: ctx.action,
+      reviewedRunId: ctx.reviewedRunId,
+      inputRef: ctx.inputRef,
+      runsPathPrefix: deriveRunsPathPrefix(ctx),
+      repoRoot: deriveRepoRoot(runDir, ctx.runPath),
+    });
+  } catch {
+    return undefined; // Exact binding not provable → not admitted.
   }
 
   const verdict = (JSON.parse(content) as Record<string, unknown>)['reviewVerdict'];
@@ -1527,6 +1521,38 @@ function deriveRepoRoot(runDir: string, runPath: string): string {
  *   content hash does not match the stored fingerprint.
  * @throws {FlowkitError} `SCHEMA_VALIDATION_FAILED` on structural violations.
  */
+/**
+ * Q1-RA-007: Read the ADMITTED verdict of a referenced source review Run.
+ *
+ * Only a source review whose C1 result passed full closed-schema admission AND
+ * whose exact binding (reviewedRunId ↔ inputRef target ↔ actual bytes) is proven
+ * yields a verdict here (readRunVerdict returns `undefined` otherwise). The
+ * shared source-review tuple validator treats an undefined result as
+ * "source review not admitted" → conflict, never a silent skip.
+ */
+async function readAdmittedSourceReviewVerdicts(
+  contextFile: ContextFile,
+  repoRoot: string,
+): Promise<readonly { reviewRunId: string; verdict: string }[]> {
+  if (contextFile.sourceReviewRun === undefined) {
+    return [];
+  }
+  const deliveryRunsDir = deriveDeliveryRunsDir(
+    join(repoRoot, normalizeSeparators(contextFile.runPath)),
+    contextFile,
+  );
+  // The source review Run is in the same Change directory.
+  const changeDir = contextFile.changeId === undefined
+    ? deliveryRunsDir
+    : join(deliveryRunsDir, contextFile.changeId);
+  const runDir = join(changeDir, contextFile.sourceReviewRun);
+  const verdict = await readRunVerdict(runDir);
+  if (verdict === undefined) {
+    return [];
+  }
+  return [{ reviewRunId: contextFile.sourceReviewRun, verdict }];
+}
+
 async function completionPreflight(
   contextFile: ContextFile,
   actionResult: ActionResultWithoutRunRef,
@@ -1535,36 +1561,26 @@ async function completionPreflight(
   const action = contextFile.action;
   const isReviewAction = action.startsWith('review-');
 
-  // Q1-7: review-* Runs MUST NOT carry reviewVerdictRef (self-reference).
-  if (isReviewAction && actionResult.reviewVerdictRef !== undefined) {
-    throw new FlowkitError(
-      'SCHEMA_VALIDATION_FAILED',
-      `review-* Run MUST NOT carry reviewVerdictRef (self-reference, action=${action})`,
-      { action, runId: contextFile.runId },
-    );
-  }
+  // Q1-RA-010: Action-owned ResultRef applicability — action identity +
+  // field scope. This is the SAME validator used by admitC1RunResult/Reader, so
+  // the terminal writer and the Reader share the applicability semantics.
+  validateActionResultApplicability(action, actionResult);
 
-  // Q1-9: verificationSummaryRef scope — only review-apply carries it, and
-  // review-apply MUST carry it (RA-001: requiredness comes from the Action).
-  const isReviewApply = action === 'review-apply';
-  if (!isReviewApply && actionResult.verificationSummaryRef !== undefined) {
-    throw new FlowkitError(
-      'SCHEMA_VALIDATION_FAILED',
-      `verificationSummaryRef is only allowed on review-apply (action=${action})`,
-      { action, runId: contextFile.runId },
-    );
-  }
-  if (isReviewApply && actionResult.verificationSummaryRef === undefined) {
-    throw new FlowkitError(
-      'SCHEMA_VALIDATION_FAILED',
-      `review-apply terminal Run REQUIRES a Core-derived verificationSummaryRef (missing required evidence)`,
-      { action, runId: contextFile.runId },
-    );
-  }
-
-  // Q1-6: Re-verify inputRef for review-* Runs (reviewed result may have changed).
-  if (isReviewAction && contextFile.inputRef !== undefined && contextFile.reviewedRunId !== undefined) {
-    await verifyRunResultRef(contextFile.inputRef, repoRoot, contextFile.runId, 'inputRef');
+  // Q1-RA-006: unconditional shared review exact-binding proof. A schemaVersion 2
+  // review-* Run MUST carry a Core-derived inputRef over reviewedRunId/result.json;
+  // missing / wrong-kind / wrong-target (including a different readable result
+  // with a matching hash) / unreadable / hash mismatch all fail closed.
+  if (isReviewAction) {
+    await validateReviewRunBinding({
+      runId: contextFile.runId,
+      deliveryId: contextFile.deliveryId,
+      changeId: contextFile.changeId,
+      action: contextFile.action,
+      reviewedRunId: contextFile.reviewedRunId,
+      inputRef: contextFile.inputRef,
+      runsPathPrefix: deriveRunsPathPrefix(contextFile),
+      repoRoot,
+    });
   }
 
   // Q1-RA-003: unconditional stage-aware effective-set completeness. For any
@@ -1626,9 +1642,37 @@ async function completionPreflight(
     }
   }
 
-  // Validate reviewVerdictRef (immutable Run-result ref to another review Run).
-  if (actionResult.reviewVerdictRef !== undefined) {
-    await verifyRunResultRef(actionResult.reviewVerdictRef, repoRoot, contextFile.runId, 'reviewVerdictRef');
+  // Q1-RA-007: shared source-review tuple validation. Any source-review
+  // evidence (sourceReviewRun / sourceReviewVerdict / reviewVerdictRef) must be
+  // a complete, mutually-consistent immutable tuple. The referenced source
+  // review MUST be admitted (readRunVerdict only returns a verdict after full
+  // C1 admission + exact binding proof) and its verdict MUST match
+  // sourceReviewVerdict. Missing counterpart / unadmitted source review /
+  // wrong target / hash mismatch all fail closed.
+  const requiresSourceReview = action === 'revise-explore' || action === 'revise-propose' || action === 'revise-apply';
+  const tupleProblems = await validateSourceReviewTuple(
+    {
+      runId: contextFile.runId,
+      deliveryId: contextFile.deliveryId,
+      changeId: contextFile.changeId,
+      action: contextFile.action,
+      sourceReviewRun: contextFile.sourceReviewRun,
+      sourceReviewVerdict: contextFile.sourceReviewVerdict,
+      reviewVerdictRef: actionResult.reviewVerdictRef,
+      runsPathPrefix: deriveRunsPathPrefix(contextFile),
+      repoRoot,
+    },
+    {
+      requiresTuple: requiresSourceReview && contextFile.sourceReviewRun !== undefined,
+      admittedSourceReviewVerdicts: await readAdmittedSourceReviewVerdicts(contextFile, repoRoot),
+    },
+  );
+  if (tupleProblems.length > 0) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `${action} source-review tuple invalid: ${tupleProblems.map((p) => p.message).join('; ')}`,
+      { action, runId: contextFile.runId, problems: tupleProblems },
+    );
   }
 
   // Validate verificationSummaryRef (mutable Change artifact).

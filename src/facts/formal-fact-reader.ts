@@ -34,6 +34,8 @@ import {
   resolveRunResultPath,
   computeResultFileHash,
   resolveVerificationSummaryRef,
+  validateReviewRunBinding,
+  validateSourceReviewTuple,
   VERIFICATION_SUMMARY_KIND,
 } from '../persistence/result-ref-adapter.js';
 import {
@@ -904,74 +906,48 @@ async function validateReviewExactBindings(
     // A completed C1 review Run MUST carry inputRef for exact binding proof.
     // Bootstrap (legacy) reviews have no ResultRef — they are admitted as-is
     // (D16: Bootstrap string-form inputRef → undefined). C1 reviews without
-    // inputRef are already rejected in readC1Run (Q1-RA-006), so here we only
+    // inputRef are already rejected in readC1Run (Q1-RA-006) and in
+    // validateContextFile (Q1-RA-006 structural requiredness), so here we only
     // validate reviews that DO carry an inputRef.
     if (reviewRun.status !== 'completed' || reviewRun.inputRef === undefined) {
       admitted.push(verdict);
       continue;
     }
 
-    const reviewedRunId = verdict.reviewedRunId;
-    const expectedPath = resolveRunResultPath(
-      runsPathPrefix,
-      reviewRun.deliveryId,
-      reviewRun.changeId,
-      reviewedRunId,
-    );
-    const normalizedInputRef = normalizeSeparators(reviewRun.inputRef.ref);
-    const normalizedExpected = expectedPath;
-
-    let bindingOk = true;
-    if (normalizedInputRef !== normalizedExpected) {
+    // Q1-RA-006: SHARED review exact-binding validator — the SAME rule used by
+    // terminal preflight and sibling-lineage admission. Core re-derives the
+    // expected target from reviewedRunId; a different readable result with a
+    // matching hash is STILL a binding violation.
+    try {
+      await validateReviewRunBinding({
+        runId: reviewRun.runId,
+        deliveryId: reviewRun.deliveryId,
+        changeId: reviewRun.changeId,
+        action: reviewRun.action,
+        reviewedRunId: verdict.reviewedRunId,
+        inputRef: reviewRun.inputRef,
+        runsPathPrefix,
+        repoRoot,
+      });
+      admitted.push(verdict);
+    } catch (e) {
+      const err = e as FlowkitError;
+      const dimension =
+        err.code === 'RESULT_REF_TARGET_MISSING'
+          ? 'review-binding-missing'
+          : err.code === 'SCHEMA_VALIDATION_FAILED'
+            ? 'review-binding-schema'
+            : 'review-binding-mismatch';
       conflicts.push({
-        dimension: 'review-binding-target',
+        dimension,
         authority: reviewRun.runId,
-        message: `review-* Run ${reviewRun.runId} inputRef.ref (${reviewRun.inputRef.ref}) does not match reviewed Run ${reviewedRunId} result.json path (${expectedPath})`,
+        message: `review-* Run ${reviewRun.runId} exact-binding proof failed (${err.code}): ${err.message}`,
         detail: {
           reviewRunId: reviewRun.runId,
-          reviewedRunId,
-          expectedRef: expectedPath,
-          actualRef: reviewRun.inputRef.ref,
+          reviewedRunId: verdict.reviewedRunId,
+          code: err.code,
         },
       });
-      bindingOk = false;
-    }
-
-    // Verify inputRef.versionFingerprint matches actual SHA-256.
-    const reviewedResultPath = join(repoRoot, normalizeSeparators(reviewRun.inputRef.ref));
-    let content: string | undefined;
-    try {
-      content = await readFile(reviewedResultPath, 'utf-8');
-    } catch {
-      conflicts.push({
-        dimension: 'review-binding-missing',
-        authority: reviewRun.runId,
-        message: `review-* Run ${reviewRun.runId} reviewed Run ${reviewedRunId} result.json not found or unreadable`,
-        detail: { reviewRunId: reviewRun.runId, reviewedRunId, path: reviewedResultPath },
-      });
-      bindingOk = false;
-    }
-
-    if (bindingOk && content !== undefined) {
-      const actualHash = computeResultFileHash(content);
-      if (actualHash !== reviewRun.inputRef.versionFingerprint) {
-        conflicts.push({
-          dimension: 'review-binding-mismatch',
-          authority: reviewRun.runId,
-          message: `review-* Run ${reviewRun.runId} inputRef.versionFingerprint does not match reviewed Run ${reviewedRunId} result.json actual SHA-256`,
-          detail: {
-            reviewRunId: reviewRun.runId,
-            reviewedRunId,
-            expected: reviewRun.inputRef.versionFingerprint,
-            actual: actualHash,
-          },
-        });
-        bindingOk = false;
-      }
-    }
-
-    if (bindingOk) {
-      admitted.push(verdict);
     }
   }
 
@@ -1049,46 +1025,67 @@ async function validateImmutableRunResultRefs(
       }
     }
 
-    // reviewVerdictRef.
-    if (run.reviewVerdictRef !== undefined) {
-      const targetRunId = extractRunIdFromResultRef(run.reviewVerdictRef.ref);
-      conflicts.push(
-        ...await validateSingleImmutableRef(
-          run,
-          'reviewVerdictRef',
-          run.reviewVerdictRef,
-          targetRunId,
-          repoRoot,
-          runsPathPrefix,
-        ),
-      );
+    // Q1-RA-007: SHARED source-review tuple validator. Any source-review
+    // evidence (sourceReviewRun / sourceReviewVerdict / reviewVerdictRef) must
+    // be a complete, mutually-consistent immutable tuple; a missing counterpart,
+    // a non-admitted source review, a wrong target, or a verdict mismatch is a
+    // CONFLICT — never a silent skip. Immutable refs stay strict across
+    // superseded / revision-window generations because this validation is
+    // independent of mutable generation classification.
+    const requiresSourceReview =
+      run.action === 'revise-explore' || run.action === 'revise-propose' || run.action === 'revise-apply';
+    const tupleProblems = await validateSourceReviewTuple(
+      {
+        runId: run.runId,
+        deliveryId: run.deliveryId,
+        changeId: run.changeId,
+        action: run.action,
+        sourceReviewRun: run.sourceReviewRun,
+        sourceReviewVerdict: run.sourceReviewVerdict,
+        reviewVerdictRef: run.reviewVerdictRef,
+        runsPathPrefix,
+        repoRoot,
+      },
+      {
+        requiresTuple: requiresSourceReview && run.sourceReviewRun !== undefined,
+        admittedSourceReviewVerdicts: admittedReviewVerdicts.map((v) => ({
+          reviewRunId: v.reviewRunId,
+          verdict: v.verdict,
+        })),
+      },
+    );
+    for (const p of tupleProblems) {
+      const dimension =
+        p.code === 'missing-sourceReviewRun' || p.code === 'missing-sourceReviewVerdict' || p.code === 'missing-reviewVerdictRef'
+          ? 'immutable-ref-required'
+          : p.code === 'source-review-not-admitted'
+            ? 'immutable-ref-source-unadmitted'
+            : p.code === 'verdict-mismatch'
+              ? 'immutable-ref-verdict-mismatch'
+              : p.code === 'wrong-target'
+                ? 'immutable-ref-target'
+                : p.code === 'wrong-kind'
+                  ? 'immutable-ref-kind'
+                  : p.code === 'fingerprint-mismatch'
+                    ? 'immutable-ref-mismatch'
+                    : 'immutable-ref-missing';
+      conflicts.push({
+        dimension,
+        authority: run.runId,
+        message: p.message,
+        detail: { runId: run.runId, action: run.action, code: p.code },
+      });
+    }
 
-      // Q1-RA-007 (guide §15): reviewVerdictRef MUST point at the EXACT
-      // source review Run named by context.sourceReviewRun, and the persisted
-      // sourceReviewVerdict MUST match the referenced review Run's actual
-      // admitted verdict. A generic "some result.json hash matches" is NOT
-      // sufficient proof.
-      if (run.sourceReviewRun !== undefined) {
-        const expectedTargetRunId = run.sourceReviewRun;
-        if (targetRunId !== expectedTargetRunId) {
-          conflicts.push({
-            dimension: 'immutable-ref-target',
-            authority: run.runId,
-            message: `Run ${run.runId} reviewVerdictRef targets ${String(targetRunId)} but context.sourceReviewRun is ${expectedTargetRunId}; reviewVerdictRef MUST exact-match the source review Run`,
-            detail: { runId: run.runId, sourceReviewRun: expectedTargetRunId, targetRunId },
-          });
-        } else if (run.sourceReviewVerdict !== undefined) {
-          const reviewedVerdict = admittedReviewVerdicts.find((v) => v.reviewRunId === expectedTargetRunId);
-          if (reviewedVerdict !== undefined && reviewedVerdict.verdict !== run.sourceReviewVerdict) {
-            conflicts.push({
-              dimension: 'immutable-ref-verdict-mismatch',
-              authority: run.runId,
-              message: `Run ${run.runId} sourceReviewVerdict (${run.sourceReviewVerdict}) does not match the referenced review Run ${expectedTargetRunId} actual admitted verdict (${reviewedVerdict.verdict})`,
-              detail: { runId: run.runId, sourceReviewRun: expectedTargetRunId, expected: run.sourceReviewVerdict, actual: reviewedVerdict.verdict },
-            });
-          }
-        }
-      }
+    // Fallback: a reviewVerdictRef with NO source-review evidence at all is a
+    // requiredness violation (orphaned immutable evidence).
+    if (run.reviewVerdictRef !== undefined && run.sourceReviewRun === undefined && tupleProblems.length === 0) {
+      conflicts.push({
+        dimension: 'immutable-ref-required',
+        authority: run.runId,
+        message: `Run ${run.runId} carries actionResult.reviewVerdictRef but context.sourceReviewRun is absent; reviewVerdictRef MUST be backed by the source-review tuple`,
+        detail: { runId: run.runId, action: run.action },
+      });
     }
   }
 

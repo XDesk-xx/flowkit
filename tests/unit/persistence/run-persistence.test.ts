@@ -1285,6 +1285,273 @@ describe('descriptor runtime fail-closed (Q1-RA-005)', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Q1-RA-006: terminal completion rejects broken review exact binding
+// ---------------------------------------------------------------------------
+//
+// A pending review context is tampered AFTER createRun (which Core-derived a
+// valid inputRef). completeRun MUST fail closed for every broken binding shape
+// and MUST NOT publish result.json.
+
+describe('terminal completion rejects broken review exact binding (Q1-RA-006)', () => {
+  before(makeTempRoot);
+  after(cleanupTempRoot);
+
+  // Creates A0 apply Run + a review-apply Run over it with a valid Core-derived
+  // inputRef. Returns { a0Dir, v0Dir, a0ResultPath }.
+  async function setupReviewApply(changeId: string, reviewRunId: string): Promise<{ a0Dir: string; v0Dir: string; a0ResultPath: string }> {
+    const a0Dir = await createRun(
+      createRunInput({ runId: '20260806-410-apply', changeId, action: 'apply', role: 'author' }),
+    );
+    await completeRun(a0Dir, { executionStatus: 'completed', summary: 'A0' });
+    const v0Dir = await createRun(
+      createRunInput({
+        runId: reviewRunId,
+        changeId,
+        action: 'review-apply',
+        role: 'reviewer',
+        reviewedRunId: '20260806-410-apply',
+      }),
+    );
+    // Review-apply requires verification.md for the verificationSummaryRef.
+    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
+    await mkdir(changeDir, { recursive: true });
+    await writeFile(join(changeDir, 'verification.md'), '# Verification\n');
+    return {
+      a0Dir,
+      v0Dir,
+      a0ResultPath: join(deliveryRunsDir(), changeId, '20260806-410-apply', 'result.json'),
+    };
+  }
+
+  it('deleting inputRef from a pending review context → completeRun rejects, result.json NOT published', async () => {
+    const changeId = 'RA006-del';
+    const { v0Dir } = await setupReviewApply(changeId, '20260806-411-review-apply');
+    // Tamper: delete context.inputRef.
+    const ctxPath = join(v0Dir, 'context.json');
+    const ctx = JSON.parse(await readFile(ctxPath, 'utf-8')) as Record<string, unknown>;
+    delete ctx['inputRef'];
+    await writeFile(ctxPath, JSON.stringify(ctx, null, 2));
+
+    await assert.rejects(
+      () => completeRun(v0Dir, { executionStatus: 'completed', summary: 'V0', reviewVerdict: 'approved' }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+    // result.json MUST NOT exist.
+    await assert.rejects(() => readFile(join(v0Dir, 'result.json'), 'utf-8'));
+  });
+
+  it('changing inputRef kind (target/hash correct) → completeRun rejects (Q1-RA-006)', async () => {
+    const changeId = 'RA006-kind';
+    const { v0Dir, a0ResultPath } = await setupReviewApply(changeId, '20260806-412-review-apply');
+    const ctxPath = join(v0Dir, 'context.json');
+    const ctx = JSON.parse(await readFile(ctxPath, 'utf-8')) as Record<string, unknown>;
+    const inputRef = ctx['inputRef'] as Record<string, unknown>;
+    inputRef['kind'] = 'produced-artifact'; // wrong kind, target/hash otherwise correct.
+    await writeFile(ctxPath, JSON.stringify(ctx, null, 2));
+    void a0ResultPath;
+
+    await assert.rejects(
+      () => completeRun(v0Dir, { executionStatus: 'completed', summary: 'V0', reviewVerdict: 'approved' }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+    await assert.rejects(() => readFile(join(v0Dir, 'result.json'), 'utf-8'));
+  });
+
+  it('pointing inputRef at a DIFFERENT readable result with a MATCHING hash → completeRun rejects (Q1-RA-006)', async () => {
+    const changeId = 'RA006-wrongtarget';
+    // Create TWO completed target Runs A (reviewedRunId) and B.
+    const a0Dir = await createRun(
+      createRunInput({ runId: '20260806-413-apply', changeId, action: 'apply', role: 'author' }),
+    );
+    await completeRun(a0Dir, { executionStatus: 'completed', summary: 'A0' });
+    const b0Dir = await createRun(
+      createRunInput({ runId: '20260806-414-apply', changeId, action: 'apply', role: 'author' }),
+    );
+    await completeRun(b0Dir, { executionStatus: 'completed', summary: 'B0' });
+
+    // Review A (reviewedRunId=413), but tamper inputRef to point at B's
+    // result.json with B's CORRECT hash — path/hash both "valid" individually,
+    // but the binding is wrong because it does not equal the Core-derived
+    // reviewedRunId target.
+    const v0Dir = await createRun(
+      createRunInput({
+        runId: '20260806-415-review-apply',
+        changeId,
+        action: 'review-apply',
+        role: 'reviewer',
+        reviewedRunId: '20260806-413-apply',
+      }),
+    );
+    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
+    await mkdir(changeDir, { recursive: true });
+    await writeFile(join(changeDir, 'verification.md'), '# Verification\n');
+
+    const ctxPath = join(v0Dir, 'context.json');
+    const ctx = JSON.parse(await readFile(ctxPath, 'utf-8')) as Record<string, unknown>;
+    const bResult = await readFile(join(b0Dir, 'result.json'), 'utf-8');
+    const { computeResultFileHash } = await import('../../../src/persistence/result-ref-adapter.js');
+    ctx['inputRef'] = {
+      ref: `.flowkit/runs/D1/${changeId}/20260806-414-apply/result.json`,
+      versionFingerprint: computeResultFileHash(bResult),
+      kind: 'run-result',
+    };
+    await writeFile(ctxPath, JSON.stringify(ctx, null, 2));
+
+    await assert.rejects(
+      () => completeRun(v0Dir, { executionStatus: 'completed', summary: 'V0', reviewVerdict: 'approved' }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'RESULT_REF_MISMATCH',
+    );
+    await assert.rejects(() => readFile(join(v0Dir, 'result.json'), 'utf-8'));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Q1-RA-007: source-review tuple fail-closed at terminal completion
+// ---------------------------------------------------------------------------
+
+describe('source-review tuple fail-closed at terminal completion (Q1-RA-007)', () => {
+  before(makeTempRoot);
+  after(cleanupTempRoot);
+
+  async function setupCRChain(changeId: string): Promise<{ r0Dir: string; p1Dir: string }> {
+    await writeInitialProposeArtifacts(changeId, 'v0');
+    const p0Dir = await createRun(
+      createRunInput({ runId: '20260806-420-propose', changeId, action: 'propose', role: 'author' }),
+    );
+    await completeRun(p0Dir, { executionStatus: 'completed', summary: 'P0' });
+    const r0Dir = await createRun(
+      createRunInput({
+        runId: '20260806-421-review-propose',
+        changeId,
+        action: 'review-propose',
+        role: 'reviewer',
+        reviewedRunId: '20260806-420-propose',
+      }),
+    );
+    await completeRun(r0Dir, {
+      executionStatus: 'completed',
+      summary: 'CR',
+      reviewVerdict: 'changes-requested',
+      reviewFindings: [
+        { id: 'B-001', severity: 'blocking', title: 'fix', problem: 'needs work', requiredChange: 'revise' },
+      ],
+    });
+    const p1Dir = await createRun(
+      createRunInput({
+        runId: '20260806-422-revise-propose',
+        changeId,
+        action: 'revise-propose',
+        role: 'author',
+        sourceReviewRun: '20260806-421-review-propose',
+        sourceReviewVerdict: 'changes-requested',
+      }),
+    );
+    return { r0Dir, p1Dir };
+  }
+
+  it('revise-propose without sourceReviewRun → completeRun rejects (missing tuple counterpart)', async () => {
+    const changeId = 'RA007-nosrc';
+    await setupCRChain(changeId);
+    // Create revise-propose context WITHOUT sourceReviewRun (orphaned).
+    const p1Dir = await createRun(
+      createRunInput({
+        runId: '20260806-423-revise-propose',
+        changeId,
+        action: 'revise-propose',
+        role: 'author',
+      }),
+    );
+    // Tamper: inject reviewVerdictRef into the context? No — context has no
+    // sourceReview fields; the Action requires a source review, so completeRun
+    // MUST reject the missing evidence.
+    await assert.rejects(
+      () => completeRun(p1Dir, { executionStatus: 'completed', summary: 'P1', producedArtifactTags: ['proposal'] }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('revise-propose with sourceReviewVerdict missing → completeRun rejects (post-create tamper)', async () => {
+    const changeId = 'RA007-noverdict';
+    const { p1Dir } = await setupCRChain(changeId);
+    // Post-create tamper: delete sourceReviewVerdict. The schema-level pairing
+    // (sourceReviewRun requires sourceReviewVerdict) already blocks createRun;
+    // this proves completeRun ALSO fails closed when the persisted context is
+    // tampered after createRun.
+    const ctxPath = join(p1Dir, 'context.json');
+    const ctx = JSON.parse(await readFile(ctxPath, 'utf-8')) as Record<string, unknown>;
+    delete ctx['sourceReviewVerdict'];
+    await writeFile(ctxPath, JSON.stringify(ctx, null, 2));
+    await assert.rejects(
+      () => completeRun(p1Dir, { executionStatus: 'completed', summary: 'P1', producedArtifactTags: ['proposal'] }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('revise-propose with reviewVerdictRef removed from result → completeRun rejects', async () => {
+    const changeId = 'RA007-noref';
+    const { p1Dir } = await setupCRChain(changeId);
+    // deriveReviewVerdictRef derives reviewVerdictRef from sourceReviewRun.
+    // To simulate a missing reviewVerdictRef we tamper the sourceReviewRun in
+    // context so Core cannot derive it → derivation throws → Run stays pending.
+    const ctxPath = join(p1Dir, 'context.json');
+    const ctx = JSON.parse(await readFile(ctxPath, 'utf-8')) as Record<string, unknown>;
+    delete ctx['sourceReviewVerdict'];
+    await writeFile(ctxPath, JSON.stringify(ctx, null, 2));
+    await assert.rejects(
+      () => completeRun(p1Dir, { executionStatus: 'completed', summary: 'P1', producedArtifactTags: ['proposal'] }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('revise-propose whose source review is NOT admitted → completeRun rejects', async () => {
+    const changeId = 'RA007-unadmitted';
+    // Build P0, then a review whose result is malformed (not admitted), then a
+    // revise-propose pointing at that unadmitted review.
+    await writeInitialProposeArtifacts(changeId, 'v0');
+    const p0Dir = await createRun(
+      createRunInput({ runId: '20260806-425-propose', changeId, action: 'propose', role: 'author' }),
+    );
+    await completeRun(p0Dir, { executionStatus: 'completed', summary: 'P0' });
+    // Create a review normally, then corrupt its result.json (closed-schema
+    // violation) so it is NOT admitted by readRunVerdict.
+    const r0Dir = await createRun(
+      createRunInput({
+        runId: '20260806-426-review-propose',
+        changeId,
+        action: 'review-propose',
+        role: 'reviewer',
+        reviewedRunId: '20260806-425-propose',
+      }),
+    );
+    await writeFile(
+      join(r0Dir, 'result.json'),
+      JSON.stringify({
+        runStatus: 'completed',
+        actionResult: { action: 'review-propose', executionStatus: 'completed', summary: 'CR' },
+        reviewVerdict: 'changes-requested',
+        // closed-schema violation: heavy bookkeeping field.
+        blockingFindings: [],
+      }),
+    );
+    const p1Dir = await createRun(
+      createRunInput({
+        runId: '20260806-427-revise-propose',
+        changeId,
+        action: 'revise-propose',
+        role: 'author',
+        sourceReviewRun: '20260806-426-review-propose',
+        sourceReviewVerdict: 'changes-requested',
+      }),
+    );
+    await assert.rejects(
+      () => completeRun(p1Dir, { executionStatus: 'completed', summary: 'P1', producedArtifactTags: ['proposal'] }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+    await assert.rejects(() => readFile(join(p1Dir, 'result.json'), 'utf-8'));
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Q1-RA-003: review-entry fails closed on empty/partial initial effective sets
 // ---------------------------------------------------------------------------
 //

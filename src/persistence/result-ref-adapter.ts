@@ -961,3 +961,293 @@ function joinResultJson(runPath: string): string {
   const normalized = normalizeSeparators(runPath).replace(/\/+$/, '');
   return `${normalized}/${RESULT_JSON}`;
 }
+
+// ---------------------------------------------------------------------------
+// Q1-RA-006: Shared review exact-binding validator
+// ---------------------------------------------------------------------------
+//
+// ONE authority for "a schemaVersion 2 review-* Run's exact binding proof over
+// the reviewed Run's result.json". Used by terminal completion preflight
+// (run-persistence), formal Reader (formal-fact-reader) and sibling-lineage
+// admission (readRunVerdict). The expected target is ALWAYS re-derived from
+// reviewedRunId — trusting a caller-supplied inputRef.ref and checking only that
+// path's hash is NOT sufficient proof.
+
+export interface ReviewRunBindingInput {
+  readonly runId: string;
+  readonly deliveryId: string;
+  readonly changeId?: string;
+  readonly action: string;
+  readonly reviewedRunId?: string;
+  readonly inputRef?: ResultRef;
+  readonly runsPathPrefix: string;
+  readonly repoRoot: string;
+}
+
+/**
+ * Validate the exact binding of a schemaVersion 2 `review-*` Run.
+ *
+ * Rules (single source of truth):
+ *   - action MUST be `review-*`;
+ *   - `reviewedRunId` MUST exist;
+ *   - `inputRef` MUST exist (structural requiredness is also enforced by
+ *     validateContextFile);
+ *   - `inputRef.kind === 'run-result'`;
+ *   - the expected target MUST be Core-re-derived from `reviewedRunId` via
+ *     `resolveRunResultPath(runsPathPrefix, deliveryId, changeId, reviewedRunId)`;
+ *   - `inputRef.ref` MUST equal that expected target (a different readable
+ *     result with a matching hash is STILL a binding violation);
+ *   - the target MUST exist and be readable;
+ *   - actual SHA-256 of the target bytes MUST equal `inputRef.versionFingerprint`.
+ *
+ * @throws {FlowkitError} `SCHEMA_VALIDATION_FAILED` for structural violations
+ *   (missing reviewedRunId / inputRef / wrong kind / non-review action).
+ * @throws {FlowkitError} `RESULT_REF_MISMATCH` for wrong-target / hash mismatch.
+ * @throws {FlowkitError} `RESULT_REF_TARGET_MISSING` when the target is
+ *   unreadable.
+ */
+export async function validateReviewRunBinding(input: ReviewRunBindingInput): Promise<void> {
+  const { runId, action, reviewedRunId, inputRef, runsPathPrefix, deliveryId, changeId, repoRoot } = input;
+
+  if (!action.startsWith('review-')) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `validateReviewRunBinding requires a review-* action, got ${action} (Run ${runId})`,
+      { runId, action },
+    );
+  }
+  if (reviewedRunId === undefined) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `review-* Run ${runId} MUST carry reviewedRunId for exact binding`,
+      { runId, action },
+    );
+  }
+  if (inputRef === undefined) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `review-* Run ${runId} MUST carry inputRef for exact binding`,
+      { runId, action },
+    );
+  }
+  if (inputRef.kind !== RUN_RESULT_KIND) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `review-* Run ${runId} inputRef.kind MUST be ${RUN_RESULT_KIND}, got: ${String(inputRef.kind)}`,
+      { runId, kind: inputRef.kind },
+    );
+  }
+
+  // Core re-derives the expected target from reviewedRunId.
+  const expectedRef = resolveRunResultPath(runsPathPrefix, deliveryId, changeId, reviewedRunId);
+  const actualRef = normalizeSeparators(inputRef.ref);
+  if (actualRef !== expectedRef) {
+    throw new FlowkitError(
+      'RESULT_REF_MISMATCH',
+      `review-* Run ${runId} inputRef.ref (${actualRef}) does not equal the Core-derived reviewedRunId target (${expectedRef})`,
+      { runId, reviewedRunId, expectedRef, actualRef },
+    );
+  }
+
+  const targetPath = join(repoRoot, actualRef);
+  let content: string;
+  try {
+    content = await readFile(targetPath, 'utf-8');
+  } catch {
+    throw new FlowkitError(
+      'RESULT_REF_TARGET_MISSING',
+      `review-* Run ${runId} reviewed Run ${reviewedRunId} result.json not found or unreadable: ${actualRef}`,
+      { runId, reviewedRunId, targetPath },
+    );
+  }
+  const actualHash = computeResultFileHash(content);
+  if (actualHash !== inputRef.versionFingerprint) {
+    throw new FlowkitError(
+      'RESULT_REF_MISMATCH',
+      `review-* Run ${runId} inputRef.versionFingerprint does not match reviewed Run ${reviewedRunId} result.json actual SHA-256 (expected ${inputRef.versionFingerprint}, got ${actualHash})`,
+      { runId, reviewedRunId, expected: inputRef.versionFingerprint, actual: actualHash },
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Q1-RA-007: Shared source-review tuple validator
+// ---------------------------------------------------------------------------
+//
+// For schemaVersion 2 completed non-review Runs that address a prior review,
+// `sourceReviewRun + sourceReviewVerdict + actionResult.reviewVerdictRef` form
+// ONE immutable tuple. Any of them present ⇒ all three MUST be present and
+// mutually consistent. An unadmitted / unvalidated source review is a CONFLICT,
+// never a silent skip.
+
+export interface SourceReviewTupleInput {
+  readonly runId: string;
+  readonly deliveryId: string;
+  readonly changeId?: string;
+  readonly action: string;
+  readonly sourceReviewRun?: string;
+  readonly sourceReviewVerdict?: string;
+  readonly reviewVerdictRef?: ResultRef;
+  readonly runsPathPrefix: string;
+  readonly repoRoot: string;
+}
+
+export interface SourceReviewTupleProblem {
+  readonly code:
+    | 'missing-sourceReviewRun'
+    | 'missing-sourceReviewVerdict'
+    | 'missing-reviewVerdictRef'
+    | 'wrong-kind'
+    | 'wrong-target'
+    | 'target-missing'
+    | 'fingerprint-mismatch'
+    | 'source-review-not-admitted'
+    | 'verdict-mismatch';
+  readonly message: string;
+}
+
+/**
+ * Validate the complete source-review immutable tuple for a schemaVersion 2
+ * completed non-review Run.
+ *
+ * Applicability: the tuple is REQUIRED when the Action contract requires a
+ * prior review (e.g. `revise-*` Runs) AND any of the three components is
+ * present. When none of the three is present, the Run simply has no source
+ * review (initial explore/propose/apply) and validation passes.
+ *
+ * When any component is present:
+ *   - all three MUST be present (missing counterpart fails closed);
+ *   - `reviewVerdictRef.kind === 'run-result'`;
+ *   - `reviewVerdictRef.ref` MUST equal the Core-derived
+ *     `<sourceReviewRun>/result.json` path;
+ *   - the target MUST exist / be readable;
+ *   - actual SHA-256 MUST equal `reviewVerdictRef.versionFingerprint`;
+ *   - the referenced review Run MUST be present in `admittedSourceReviewVerdicts`
+ *     (a source review that itself failed schema/binding validation cannot be
+ *     legitimate lineage evidence);
+ *   - the actual admitted verdict MUST equal `sourceReviewVerdict`.
+ *
+ * This validator does NOT decide applicability from the Action alone — callers
+ * (terminal preflight / Reader) determine whether the tuple is required per the
+ * Action contract and pass `requiresTuple: true` when the Run must address a
+ * prior review. Immutable refs stay strict across superseded / revision-window
+ * generations because this validation is independent of mutable generation
+ * classification.
+ */
+export async function validateSourceReviewTuple(
+  input: SourceReviewTupleInput,
+  options: {
+    requiresTuple: boolean;
+    admittedSourceReviewVerdicts: readonly { reviewRunId: string; verdict: string }[];
+  },
+): Promise<SourceReviewTupleProblem[]> {
+  const problems: SourceReviewTupleProblem[] = [];
+  const {
+    runId,
+    deliveryId,
+    changeId,
+    sourceReviewRun,
+    sourceReviewVerdict,
+    reviewVerdictRef,
+    runsPathPrefix,
+    repoRoot,
+  } = input;
+  const { requiresTuple, admittedSourceReviewVerdicts } = options;
+
+  const hasAny = sourceReviewRun !== undefined || sourceReviewVerdict !== undefined || reviewVerdictRef !== undefined;
+  if (!hasAny) {
+    // No source-review evidence at all. If the Action requires one, that is a
+    // requiredness violation (missing reviewVerdictRef evidence).
+    if (requiresTuple) {
+      problems.push({
+        code: 'missing-reviewVerdictRef',
+        message: `Run ${runId} Action requires a source review but no sourceReviewRun/sourceReviewVerdict/reviewVerdictRef is present`,
+      });
+    }
+    return problems;
+  }
+
+  // 1. Completeness: all three MUST be present.
+  if (sourceReviewRun === undefined) {
+    problems.push({
+      code: 'missing-sourceReviewRun',
+      message: `Run ${runId} carries source-review evidence but sourceReviewRun is missing`,
+    });
+  }
+  if (sourceReviewVerdict === undefined) {
+    problems.push({
+      code: 'missing-sourceReviewVerdict',
+      message: `Run ${runId} carries source-review evidence but sourceReviewVerdict is missing`,
+    });
+  }
+  if (reviewVerdictRef === undefined) {
+    problems.push({
+      code: 'missing-reviewVerdictRef',
+      message: `Run ${runId} carries source-review evidence but actionResult.reviewVerdictRef is missing`,
+    });
+  }
+  if (sourceReviewRun === undefined || sourceReviewVerdict === undefined || reviewVerdictRef === undefined) {
+    return problems;
+  }
+
+  // 2. kind.
+  if (reviewVerdictRef.kind !== RUN_RESULT_KIND) {
+    problems.push({
+      code: 'wrong-kind',
+      message: `Run ${runId} reviewVerdictRef.kind is ${String(reviewVerdictRef.kind)}, expected run-result`,
+    });
+    return problems;
+  }
+
+  // 3. Target MUST equal Core-derived <sourceReviewRun>/result.json.
+  const expectedRef = resolveRunResultPath(runsPathPrefix, deliveryId, changeId, sourceReviewRun);
+  const actualRef = normalizeSeparators(reviewVerdictRef.ref);
+  if (actualRef !== expectedRef) {
+    problems.push({
+      code: 'wrong-target',
+      message: `Run ${runId} reviewVerdictRef (${actualRef}) does not equal the Core-derived sourceReviewRun target (${expectedRef})`,
+    });
+    return problems;
+  }
+
+  // 4. Target readable + SHA-256.
+  const targetPath = join(repoRoot, actualRef);
+  let content: string;
+  try {
+    content = await readFile(targetPath, 'utf-8');
+  } catch {
+    problems.push({
+      code: 'target-missing',
+      message: `Run ${runId} source review ${sourceReviewRun} result.json not found or unreadable: ${actualRef}`,
+    });
+    return problems;
+  }
+  const actualHash = computeResultFileHash(content);
+  if (actualHash !== reviewVerdictRef.versionFingerprint) {
+    problems.push({
+      code: 'fingerprint-mismatch',
+      message: `Run ${runId} reviewVerdictRef fingerprint mismatch for source review ${sourceReviewRun} (expected ${reviewVerdictRef.versionFingerprint}, got ${actualHash})`,
+    });
+    return problems;
+  }
+
+  // 5. The referenced review MUST be admitted.
+  const admittedVerdict = admittedSourceReviewVerdicts.find((v) => v.reviewRunId === sourceReviewRun);
+  if (admittedVerdict === undefined) {
+    problems.push({
+      code: 'source-review-not-admitted',
+      message: `Run ${runId} sourceReviewRun ${sourceReviewRun} is not an admitted completed review; a non-admitted source review cannot be legitimate lineage evidence`,
+    });
+    return problems;
+  }
+
+  // 6. Actual admitted verdict MUST equal sourceReviewVerdict.
+  if (admittedVerdict.verdict !== sourceReviewVerdict) {
+    problems.push({
+      code: 'verdict-mismatch',
+      message: `Run ${runId} sourceReviewVerdict (${sourceReviewVerdict}) does not match the admitted verdict of source review ${sourceReviewRun} (${admittedVerdict.verdict})`,
+    });
+  }
+
+  return problems;
+}

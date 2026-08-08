@@ -609,6 +609,103 @@ export function validateRunResultFileCombination(value: RunResultFile): void {
 }
 
 // ---------------------------------------------------------------------------
+// Q1-RA-010: Action-owned ResultRef applicability
+// ---------------------------------------------------------------------------
+
+/**
+ * Actions that produce Change artifacts via `producedResultRefs`.
+ *
+ * Q1-RA-010: `producedResultRefs` is owned by exactly this set. All other
+ * Actions (apply / revise-apply / review-* / archive / delivery-level) MUST NOT
+ * carry `producedResultRefs` — Core never derives it for them.
+ */
+const ARTIFACT_PRODUCING_ACTIONS = new Set([
+  'explore',
+  'revise-explore',
+  'propose',
+  'revise-propose',
+]);
+
+/**
+ * Validate that an {@link ActionResultWithoutRunRef} projection is Action-owned:
+ * the projected `action` MUST equal the Context action, and every ResultRef
+ * field MUST be applicable to that Action.
+ *
+ * Q1-RA-010: `validateActionResultWithoutRunRef` proves field shape + field-kind
+ * binding, but NOT that the Action is allowed to own the field. A well-shaped
+ * but Action-impossible projection (e.g. `review-propose` carrying
+ * `reviewVerdictRef`, `apply` carrying `verificationSummaryRef`, `archive`
+ * carrying `producedResultRefs`, or `actionResult.action != context.action`)
+ * MUST fail closed. Writer/terminal preflight and Reader/admitC1RunResult share
+ * this SAME validator so a result Core could never legally publish is never
+ * admitted as a valid C1 formal fact.
+ *
+ * Scope enforced:
+ *   - `actionResult.action === contextAction`
+ *   - `producedResultRefs` only on artifact-producing Actions (effective-set
+ *     completeness itself remains owned by `validateStageEffectiveSet` — not
+ *     duplicated here)
+ *   - `verificationSummaryRef` only on `review-apply`; a completed `review-apply`
+ *     projection MUST carry it
+ *   - `reviewVerdictRef` forbidden on `review-*` (self-reference)
+ *   - source-review applicability (`reviewVerdictRef` on applicable non-review
+ *     Runs) is governed by the Q1-RA-007 source-review tuple validator, not here
+ *
+ * @throws {FlowkitError} `SCHEMA_VALIDATION_FAILED` on any scope violation.
+ */
+export function validateActionResultApplicability(
+  contextAction: string,
+  actionResult: ActionResultWithoutRunRef,
+): void {
+  // 1. Action identity: the projected action MUST equal the Context action.
+  if (actionResult.action !== contextAction) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `actionResult.action (${actionResult.action}) does not match context.action (${contextAction})`,
+      { contextAction, projectedAction: actionResult.action },
+    );
+  }
+
+  const isReviewAction = contextAction.startsWith('review-');
+
+  // 2. producedResultRefs: only artifact-producing Actions may own it.
+  if (actionResult.producedResultRefs !== undefined && !ARTIFACT_PRODUCING_ACTIONS.has(contextAction)) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `producedResultRefs is only allowed on artifact-producing Actions (explore/revise-explore/propose/revise-propose); forbidden on ${contextAction}`,
+      { contextAction },
+    );
+  }
+
+  // 3. verificationSummaryRef: only review-apply, and required for a completed
+  //    review-apply projection.
+  const isReviewApply = contextAction === 'review-apply';
+  if (actionResult.verificationSummaryRef !== undefined && !isReviewApply) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `verificationSummaryRef is only allowed on review-apply; forbidden on ${contextAction}`,
+      { contextAction },
+    );
+  }
+  if (isReviewApply && actionResult.executionStatus === 'completed' && actionResult.verificationSummaryRef === undefined) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      'completed review-apply projection MUST carry verificationSummaryRef',
+      { contextAction },
+    );
+  }
+
+  // 4. reviewVerdictRef: forbidden on review-* (self-reference).
+  if (isReviewAction && actionResult.reviewVerdictRef !== undefined) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `review-* Run MUST NOT carry reviewVerdictRef (self-reference, action=${contextAction})`,
+      { contextAction },
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Shared C1 terminal result admission helper (Q1-RA-006)
 // ---------------------------------------------------------------------------
 
@@ -653,9 +750,12 @@ export function admitC1RunResult(raw: string, action: string): RunResultFile {
   // 2. Closed actionResult projection with field-kind binding.
   const ar = (result as { actionResult?: unknown })['actionResult'];
   if (ar !== undefined) {
-    validateActionResultWithoutRunRef(ar);
+    const validatedAr = validateActionResultWithoutRunRef(ar);
+    // 3. Q1-RA-010: Action-owned ResultRef applicability (action identity +
+    //    field scope) — the SAME semantic the terminal writer enforces.
+    validateActionResultApplicability(action, validatedAr);
   }
-  // 3. Action-specific review verdict × findings integrity.
+  // 4. Action-specific review verdict × findings integrity.
   validateReviewVerdictIntegrity(action, result);
   return result;
 }
@@ -945,6 +1045,25 @@ export function validateContextFile(value: unknown): ContextFile {
     inputRef = validateResultRefProjection(inputRefRaw);
   }
 
+  // Q1-RA-006: schemaVersion 2 review-* MUST carry inputRef with kind
+  // == run-result (the exact-binding proof over the reviewed Run's
+  // result.json). Structural requiredness here; the physical exact-binding
+  // check (target == Core-derived reviewedRunId path + actual SHA-256) is the
+  // shared validateReviewRunBinding used at terminal preflight / Reader /
+  // sibling-lineage admission.
+  if (isReviewAction) {
+    if (inputRef === undefined) {
+      schemaFail('review-* Run MUST carry inputRef (exact-binding proof over the reviewed Run result.json)', {
+        action,
+      });
+    } else if (inputRef.kind !== RUN_RESULT_KIND) {
+      schemaFail(`review-* Run inputRef.kind MUST be ${RUN_RESULT_KIND}, got: ${inputRef.kind}`, {
+        action,
+        kind: inputRef.kind,
+      });
+    }
+  }
+
   // sourceReviewRun / sourceReviewVerdict (optional).
   // Q1-RA-005: sourceReviewRun is a Run-ID descriptor — it MUST satisfy the
   // formal Run-ID grammar (rejecting any path-shaped value) before it is ever
@@ -975,6 +1094,22 @@ export function validateContextFile(value: unknown): ContextFile {
       });
     }
     sourceReviewVerdict = sourceReviewVerdictRaw;
+  }
+
+  // Q1-RA-007: source-review tuple structural requiredness. `sourceReviewRun`
+  // and `sourceReviewVerdict` are a pair: one MUST NOT exist without the other
+  // in the Context. The complete tuple (with actionResult.reviewVerdictRef and
+  // the referenced review being admitted) is enforced by the shared
+  // validateSourceReviewTuple at terminal preflight / Reader.
+  if (sourceReviewRunRaw !== undefined && sourceReviewVerdictRaw === undefined) {
+    schemaFail('sourceReviewRun requires sourceReviewVerdict (source-review tuple)', {
+      sourceReviewRun: sourceReviewRunRaw,
+    });
+  }
+  if (sourceReviewVerdictRaw !== undefined && sourceReviewRunRaw === undefined) {
+    schemaFail('sourceReviewVerdict requires sourceReviewRun (source-review tuple)', {
+      sourceReviewVerdict: sourceReviewVerdictRaw,
+    });
   }
 
   // reviewedRunId (C1-AP-004): required for review-*, absent for non-review.

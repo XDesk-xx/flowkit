@@ -9,6 +9,8 @@ import {
   validateContextFileIdentity,
   validateRunResultFileCombination,
   validateReviewVerdictIntegrity,
+  validateActionResultApplicability,
+  admitC1RunResult,
   type ContextFile,
   type RunResultFile,
 } from '../../../src/persistence/serialization.js';
@@ -527,16 +529,87 @@ describe('validateContextFile', () => {
   // non-review MUST NOT carry reviewedRunId.
   // -------------------------------------------------------------------------
 
-  it('accepts review-* Run with reviewedRunId (C1-AP-004)', () => {
+  it('accepts review-* Run with reviewedRunId + run-result inputRef (C1-AP-004 / Q1-RA-006)', () => {
     const cf = validateContextFile({
       ...validChangeContext,
       runId: '20260806-010-review-apply',
       action: 'review-apply',
       role: 'reviewer',
       reviewedRunId: '20260806-009-apply',
+      // Q1-RA-006: schemaVersion 2 review-* MUST carry a run-result inputRef.
+      inputRef: {
+        ref: '.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-009-apply/result.json',
+        versionFingerprint: 'abc123',
+        kind: 'run-result',
+      },
       runPath: '.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-010-review-apply/',
     });
     assert.equal(cf.reviewedRunId, '20260806-009-apply');
+  });
+
+  it('rejects review-* Run missing inputRef (Q1-RA-006)', () => {
+    assert.throws(
+      () =>
+        validateContextFile({
+          ...validChangeContext,
+          runId: '20260806-010-review-apply',
+          action: 'review-apply',
+          role: 'reviewer',
+          reviewedRunId: '20260806-009-apply',
+          runPath: '.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-010-review-apply/',
+        }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('rejects review-* Run with non-run-result inputRef kind (Q1-RA-006)', () => {
+    assert.throws(
+      () =>
+        validateContextFile({
+          ...validChangeContext,
+          runId: '20260806-010-review-apply',
+          action: 'review-apply',
+          role: 'reviewer',
+          reviewedRunId: '20260806-009-apply',
+          inputRef: {
+            ref: '.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-009-apply/result.json',
+            versionFingerprint: 'abc123',
+            kind: 'produced-artifact',
+          },
+          runPath: '.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-010-review-apply/',
+        }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('rejects sourceReviewRun without sourceReviewVerdict (Q1-RA-007)', () => {
+    assert.throws(
+      () =>
+        validateContextFile({
+          ...validChangeContext,
+          runId: '20260806-011-revise-propose',
+          action: 'revise-propose',
+          role: 'author',
+          sourceReviewRun: '20260806-010-review-propose',
+          runPath: '.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-011-revise-propose/',
+        }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('rejects sourceReviewVerdict without sourceReviewRun (Q1-RA-007)', () => {
+    assert.throws(
+      () =>
+        validateContextFile({
+          ...validChangeContext,
+          runId: '20260806-011-revise-propose',
+          action: 'revise-propose',
+          role: 'author',
+          sourceReviewVerdict: 'changes-requested',
+          runPath: '.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-011-revise-propose/',
+        }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
   });
 
   it('rejects review-* Run missing reviewedRunId (C1-AP-004)', () => {
@@ -813,5 +886,192 @@ describe('validateReviewVerdictIntegrity', () => {
         { id: 'B-001', severity: 'blocking', title: 'major', problem: 'broken', requiredChange: 'fix it' },
       ],
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Q1-RA-010: Action-owned ResultRef applicability (shared validator)
+// ---------------------------------------------------------------------------
+
+describe('validateActionResultApplicability (Q1-RA-010)', () => {
+  const base = {
+    action: 'explore' as const,
+    executionStatus: 'completed' as const,
+    summary: 'done',
+  };
+
+  it('accepts actionResult.action == context.action', () => {
+    validateActionResultApplicability('explore', base);
+    // No throw ⇒ pass.
+  });
+
+  it('rejects actionResult.action != context.action', () => {
+    assert.throws(
+      () => validateActionResultApplicability('explore', { ...base, action: 'propose' }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('rejects producedResultRefs on apply (non-artifact Action)', () => {
+    assert.throws(
+      () =>
+        validateActionResultApplicability('apply', {
+          ...base,
+          action: 'apply',
+          producedResultRefs: [
+            { ref: 'openspec/changes/C1/proposal.md', versionFingerprint: 'x', kind: 'produced-artifact' },
+          ],
+        }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('rejects producedResultRefs on review-propose', () => {
+    assert.throws(
+      () =>
+        validateActionResultApplicability('review-propose', {
+          action: 'review-propose',
+          executionStatus: 'completed',
+          summary: 'r',
+          producedResultRefs: [
+            { ref: 'openspec/changes/C1/proposal.md', versionFingerprint: 'x', kind: 'produced-artifact' },
+          ],
+        }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('rejects producedResultRefs on archive', () => {
+    assert.throws(
+      () =>
+        validateActionResultApplicability('archive', {
+          ...base,
+          action: 'archive',
+          producedResultRefs: [
+            { ref: 'openspec/changes/C1/proposal.md', versionFingerprint: 'x', kind: 'produced-artifact' },
+          ],
+        }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('rejects verificationSummaryRef on apply', () => {
+    assert.throws(
+      () =>
+        validateActionResultApplicability('apply', {
+          ...base,
+          action: 'apply',
+          verificationSummaryRef: {
+            ref: 'openspec/changes/C1/verification.md',
+            versionFingerprint: 'x',
+            kind: 'verification-summary',
+          },
+        }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('rejects verificationSummaryRef on revise-apply', () => {
+    assert.throws(
+      () =>
+        validateActionResultApplicability('revise-apply', {
+          ...base,
+          action: 'revise-apply',
+          verificationSummaryRef: {
+            ref: 'openspec/changes/C1/verification.md',
+            versionFingerprint: 'x',
+            kind: 'verification-summary',
+          },
+        }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('rejects completed review-apply MISSING verificationSummaryRef', () => {
+    assert.throws(
+      () =>
+        validateActionResultApplicability('review-apply', {
+          action: 'review-apply',
+          executionStatus: 'completed',
+          summary: 'approved',
+        }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('accepts completed review-apply WITH verificationSummaryRef', () => {
+    validateActionResultApplicability('review-apply', {
+      action: 'review-apply',
+      executionStatus: 'completed',
+      summary: 'approved',
+      verificationSummaryRef: {
+        ref: 'openspec/changes/C1/verification.md',
+        versionFingerprint: 'x',
+        kind: 'verification-summary',
+      },
+    });
+    // No throw ⇒ pass.
+  });
+
+  it('rejects reviewVerdictRef on review-* (self-reference)', () => {
+    assert.throws(
+      () =>
+        validateActionResultApplicability('review-propose', {
+          action: 'review-propose',
+          executionStatus: 'completed',
+          summary: 'r',
+          reviewVerdictRef: {
+            ref: '.flowkit/runs/D1/C1/20260806-009-propose/result.json',
+            versionFingerprint: 'x',
+            kind: 'run-result',
+          },
+        }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('admitC1RunResult rejects an Action-impossible projection (review-propose + reviewVerdictRef)', () => {
+    assert.throws(
+      () =>
+        admitC1RunResult(
+          JSON.stringify({
+            runStatus: 'completed',
+            actionResult: {
+              action: 'review-propose',
+              executionStatus: 'completed',
+              summary: 'r',
+              reviewVerdictRef: {
+                ref: '.flowkit/runs/D1/C1/20260806-009-propose/result.json',
+                versionFingerprint: 'x',
+                kind: 'run-result',
+              },
+            },
+            reviewVerdict: 'approved',
+          }),
+          'review-propose',
+        ),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('admitC1RunResult rejects actionResult.action mismatch', () => {
+    assert.throws(
+      () =>
+        admitC1RunResult(
+          JSON.stringify({
+            runStatus: 'completed',
+            actionResult: {
+              action: 'explore',
+              executionStatus: 'completed',
+              summary: 'x',
+              producedResultRefs: [
+                { ref: 'openspec/changes/C1/explore.md', versionFingerprint: 'x', kind: 'produced-artifact' },
+              ],
+            },
+          }),
+          'propose',
+        ),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
   });
 });
