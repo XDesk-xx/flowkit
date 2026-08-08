@@ -898,16 +898,19 @@ describe('validateActionResultApplicability (Q1-RA-010)', () => {
     action: 'explore' as const,
     executionStatus: 'completed' as const,
     summary: 'done',
+    producedResultRefs: [
+      { ref: 'openspec/changes/C1/explore.md', versionFingerprint: 'x', kind: 'produced-artifact' },
+    ],
   };
 
   it('accepts actionResult.action == context.action', () => {
-    validateActionResultApplicability('explore', base);
+    validateActionResultApplicability('explore', 'completed', base);
     // No throw ⇒ pass.
   });
 
   it('rejects actionResult.action != context.action', () => {
     assert.throws(
-      () => validateActionResultApplicability('explore', { ...base, action: 'propose' }),
+      () => validateActionResultApplicability('explore', 'completed', { ...base, action: 'propose' }),
       (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
     );
   });
@@ -915,7 +918,7 @@ describe('validateActionResultApplicability (Q1-RA-010)', () => {
   it('rejects producedResultRefs on apply (non-artifact Action)', () => {
     assert.throws(
       () =>
-        validateActionResultApplicability('apply', {
+        validateActionResultApplicability('apply', 'completed', {
           ...base,
           action: 'apply',
           producedResultRefs: [
@@ -929,7 +932,7 @@ describe('validateActionResultApplicability (Q1-RA-010)', () => {
   it('rejects producedResultRefs on review-propose', () => {
     assert.throws(
       () =>
-        validateActionResultApplicability('review-propose', {
+        validateActionResultApplicability('review-propose', 'completed', {
           action: 'review-propose',
           executionStatus: 'completed',
           summary: 'r',
@@ -944,7 +947,7 @@ describe('validateActionResultApplicability (Q1-RA-010)', () => {
   it('rejects producedResultRefs on archive', () => {
     assert.throws(
       () =>
-        validateActionResultApplicability('archive', {
+        validateActionResultApplicability('archive', 'completed', {
           ...base,
           action: 'archive',
           producedResultRefs: [
@@ -958,7 +961,7 @@ describe('validateActionResultApplicability (Q1-RA-010)', () => {
   it('rejects verificationSummaryRef on apply', () => {
     assert.throws(
       () =>
-        validateActionResultApplicability('apply', {
+        validateActionResultApplicability('apply', 'completed', {
           ...base,
           action: 'apply',
           verificationSummaryRef: {
@@ -974,7 +977,7 @@ describe('validateActionResultApplicability (Q1-RA-010)', () => {
   it('rejects verificationSummaryRef on revise-apply', () => {
     assert.throws(
       () =>
-        validateActionResultApplicability('revise-apply', {
+        validateActionResultApplicability('revise-apply', 'completed', {
           ...base,
           action: 'revise-apply',
           verificationSummaryRef: {
@@ -990,7 +993,7 @@ describe('validateActionResultApplicability (Q1-RA-010)', () => {
   it('rejects completed review-apply MISSING verificationSummaryRef', () => {
     assert.throws(
       () =>
-        validateActionResultApplicability('review-apply', {
+        validateActionResultApplicability('review-apply', 'completed', {
           action: 'review-apply',
           executionStatus: 'completed',
           summary: 'approved',
@@ -1000,7 +1003,7 @@ describe('validateActionResultApplicability (Q1-RA-010)', () => {
   });
 
   it('accepts completed review-apply WITH verificationSummaryRef', () => {
-    validateActionResultApplicability('review-apply', {
+    validateActionResultApplicability('review-apply', 'completed', {
       action: 'review-apply',
       executionStatus: 'completed',
       summary: 'approved',
@@ -1016,7 +1019,7 @@ describe('validateActionResultApplicability (Q1-RA-010)', () => {
   it('rejects reviewVerdictRef on review-* (self-reference)', () => {
     assert.throws(
       () =>
-        validateActionResultApplicability('review-propose', {
+        validateActionResultApplicability('review-propose', 'completed', {
           action: 'review-propose',
           executionStatus: 'completed',
           summary: 'r',
@@ -1072,6 +1075,145 @@ describe('validateActionResultApplicability (Q1-RA-010)', () => {
           'propose',
         ),
       (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('admitC1RunResult rejects top-level completed review-apply with executionStatus=failed and NO verificationSummaryRef (Q1-RA-010)', () => {
+    assert.throws(
+      () =>
+        admitC1RunResult(
+          JSON.stringify({
+            runStatus: 'completed',
+            actionResult: {
+              action: 'review-apply',
+              executionStatus: 'failed',
+              summary: 'x',
+            },
+            reviewVerdict: 'changes-requested',
+            reviewFindings: [
+              { id: 'B-001', severity: 'blocking', title: 'f', problem: 'p', requiredChange: 'r' },
+            ],
+          }),
+          'review-apply',
+        ),
+      // requiredness comes from top-level runStatus=completed + action=review-apply,
+      // NOT actionResult.executionStatus.
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('admitC1RunResult rejects top-level completed review-apply with executionStatus=blocked and NO verificationSummaryRef (Q1-RA-010)', () => {
+    assert.throws(
+      () =>
+        admitC1RunResult(
+          JSON.stringify({
+            runStatus: 'completed',
+            actionResult: {
+              action: 'review-apply',
+              executionStatus: 'blocked',
+              summary: 'x',
+            },
+            reviewVerdict: 'changes-requested',
+            reviewFindings: [
+              { id: 'B-001', severity: 'blocking', title: 'f', problem: 'p', requiredChange: 'r' },
+            ],
+          }),
+          'review-apply',
+        ),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('admitC1RunResult rejects top-level completed explore WITHOUT producedResultRefs (Q1-RA-010)', () => {
+    assert.throws(
+      () =>
+        admitC1RunResult(
+          JSON.stringify({
+            runStatus: 'completed',
+            actionResult: {
+              action: 'explore',
+              executionStatus: 'completed',
+              summary: 'x',
+            },
+          }),
+          'explore',
+        ),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('admitC1RunResult rejects top-level completed propose WITHOUT producedResultRefs (Q1-RA-010)', () => {
+    assert.throws(
+      () =>
+        admitC1RunResult(
+          JSON.stringify({
+            runStatus: 'completed',
+            actionResult: {
+              action: 'propose',
+              executionStatus: 'completed',
+              summary: 'x',
+            },
+          }),
+          'propose',
+        ),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('admitC1RunResult rejects top-level completed revise-propose WITHOUT producedResultRefs (Q1-RA-010)', () => {
+    assert.throws(
+      () =>
+        admitC1RunResult(
+          JSON.stringify({
+            runStatus: 'completed',
+            actionResult: {
+              action: 'revise-propose',
+              executionStatus: 'completed',
+              summary: 'x',
+            },
+          }),
+          'revise-propose',
+        ),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('admitC1RunResult accepts top-level completed explore WITH producedResultRefs (Q1-RA-010)', () => {
+    // Should not throw.
+    admitC1RunResult(
+      JSON.stringify({
+        runStatus: 'completed',
+        actionResult: {
+          action: 'explore',
+          executionStatus: 'completed',
+          summary: 'x',
+          producedResultRefs: [
+            { ref: 'openspec/changes/C1/explore.md', versionFingerprint: 'x', kind: 'produced-artifact' },
+          ],
+        },
+      }),
+      'explore',
+    );
+  });
+
+  it('admitC1RunResult accepts top-level completed review-apply WITH verificationSummaryRef (Q1-RA-010)', () => {
+    // Should not throw.
+    admitC1RunResult(
+      JSON.stringify({
+        runStatus: 'completed',
+        actionResult: {
+          action: 'review-apply',
+          executionStatus: 'completed',
+          summary: 'approved',
+          verificationSummaryRef: {
+            ref: 'openspec/changes/C1/verification.md',
+            versionFingerprint: 'x',
+            kind: 'verification-summary',
+          },
+        },
+        reviewVerdict: 'approved',
+      }),
+      'review-apply',
     );
   });
 });

@@ -814,7 +814,7 @@ async function publishTerminalResult(
   //     remains the terminal invariant (Q1-6.9).
   if (result.actionResult !== undefined) {
     const repoRoot = deriveRepoRoot(runDir, contextFile.runPath);
-    await completionPreflight(contextFile, result.actionResult, repoRoot);
+    await completionPreflight(contextFile, result.actionResult, repoRoot, result.runStatus);
   }
 
   // 4. Serialize (runRef already absent from ActionResultWithoutRunRef).
@@ -1533,7 +1533,7 @@ function deriveRepoRoot(runDir: string, runPath: string): string {
 async function readAdmittedSourceReviewVerdicts(
   contextFile: ContextFile,
   repoRoot: string,
-): Promise<readonly { reviewRunId: string; verdict: string }[]> {
+): Promise<readonly { reviewRunId: string; verdict: string; action: string }[]> {
   if (contextFile.sourceReviewRun === undefined) {
     return [];
   }
@@ -1550,21 +1550,36 @@ async function readAdmittedSourceReviewVerdicts(
   if (verdict === undefined) {
     return [];
   }
-  return [{ reviewRunId: contextFile.sourceReviewRun, verdict }];
+  // Q1-RA-007: also expose the source review Run's action so the shared tuple
+  // validator can prove the matching review stage (revise-explore→review-explore,
+  // revise-propose→review-propose, revise-apply→review-apply).
+  let action = '';
+  try {
+    const ctxRaw = await readFile(join(runDir, 'context.json'), 'utf-8');
+    const ctx = validateContextFile(JSON.parse(ctxRaw));
+    action = ctx.action;
+  } catch {
+    // Context unreadable — the review is not admissible as evidence; the
+    // validator's target-missing/source-review-not-admitted path handles it.
+    return [];
+  }
+  return [{ reviewRunId: contextFile.sourceReviewRun, verdict, action }];
 }
 
 async function completionPreflight(
   contextFile: ContextFile,
   actionResult: ActionResultWithoutRunRef,
   repoRoot: string,
+  runStatus?: string,
 ): Promise<void> {
   const action = contextFile.action;
   const isReviewAction = action.startsWith('review-');
 
   // Q1-RA-010: Action-owned ResultRef applicability — action identity +
-  // field scope. This is the SAME validator used by admitC1RunResult/Reader, so
-  // the terminal writer and the Reader share the applicability semantics.
-  validateActionResultApplicability(action, actionResult);
+  // required/forbidden field matrix keyed on the top-level runStatus. This is
+  // the SAME validator used by admitC1RunResult/Reader, so the terminal writer
+  // and the Reader share the applicability semantics.
+  validateActionResultApplicability(action, runStatus, actionResult);
 
   // Q1-RA-006: unconditional shared review exact-binding proof. A schemaVersion 2
   // review-* Run MUST carry a Core-derived inputRef over reviewedRunId/result.json;
@@ -1642,14 +1657,18 @@ async function completionPreflight(
     }
   }
 
-  // Q1-RA-007: shared source-review tuple validation. Any source-review
-  // evidence (sourceReviewRun / sourceReviewVerdict / reviewVerdictRef) must be
-  // a complete, mutually-consistent immutable tuple. The referenced source
-  // review MUST be admitted (readRunVerdict only returns a verdict after full
-  // C1 admission + exact binding proof) and its verdict MUST match
-  // sourceReviewVerdict. Missing counterpart / unadmitted source review /
-  // wrong target / hash mismatch all fail closed.
-  const requiresSourceReview = action === 'revise-explore' || action === 'revise-propose' || action === 'revise-apply';
+  // Q1-RA-007: shared source-review tuple validation. For schemaVersion 2
+  // completed revise-* (revise-explore / revise-propose / revise-apply) the
+  // complete source-review tuple is REQUIRED — requiredness comes from the
+  // Action ALONE, never from whether sourceReviewRun happens to be present.
+  // The tuple must be complete and mutually consistent; the referenced source
+  // review MUST be admitted (readRunVerdict only yields a verdict after full C1
+  // admission + exact binding proof); it MUST be the matching review stage
+  // (revise-explore→review-explore, revise-propose→review-propose,
+  // revise-apply→review-apply); and both its actual verdict and the persisted
+  // sourceReviewVerdict MUST be changes-requested. Missing counterpart /
+  // unadmitted source review / wrong stage / approved verdict / wrong target /
+  // hash mismatch all fail closed — result.json MUST NOT publish.
   const tupleProblems = await validateSourceReviewTuple(
     {
       runId: contextFile.runId,
@@ -1663,7 +1682,9 @@ async function completionPreflight(
       repoRoot,
     },
     {
-      requiresTuple: requiresSourceReview && contextFile.sourceReviewRun !== undefined,
+      // Action decides requiredness. `&& sourceReviewRun !== undefined` is the
+      // exact bypass 135 blocked — it must NOT be restored.
+      requiresTuple: action === 'revise-explore' || action === 'revise-propose' || action === 'revise-apply',
       admittedSourceReviewVerdicts: await readAdmittedSourceReviewVerdicts(contextFile, repoRoot),
     },
   );

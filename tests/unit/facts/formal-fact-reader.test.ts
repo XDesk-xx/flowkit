@@ -1220,27 +1220,30 @@ describe('readFormalFactSnapshot', () => {
   it('consumedInputRefs with missing target → FactConflict (Q1-RA-007)', async () => {
     const deliveryId = 'D-RA007-MISSING';
     const deliveryRunsDir = join(tempRoot, '.flowkit', 'runs', deliveryId);
+    // apply Run: consumedInputRefs is legal and the Run is not subject to
+    // source-review requiredness or artifact effective-set checks, so the
+    // consumed-ref immutable validation is the focused failure point.
     await writeRun(
       deliveryRunsDir,
       'C1',
-      '20260806-031-revise-propose',
+      '20260806-031-apply',
       {
         schemaVersion: 2,
-        runId: '20260806-031-revise-propose',
+        runId: '20260806-031-apply',
         deliveryId,
         changeKey: 'C1',
         changeId: 'C1',
-        action: 'revise-propose',
+        action: 'apply',
         role: 'author',
-        ownerAuthorization: 'required',
-        runPath: `.flowkit/runs/${deliveryId}/C1/20260806-031-revise-propose/`,
+        ownerAuthorization: 'not-required',
+        runPath: `.flowkit/runs/${deliveryId}/C1/20260806-031-apply/`,
       },
       {
         runStatus: 'completed',
         actionResult: {
-          action: 'revise-propose',
+          action: 'apply',
           executionStatus: 'completed',
-          summary: 'P1',
+          summary: 'A0',
           consumedInputRefs: [
             { ref: `.flowkit/runs/${deliveryId}/C1/20260806-029-propose/result.json`, versionFingerprint: 'x', kind: 'run-result' },
           ],
@@ -1278,24 +1281,24 @@ describe('readFormalFactSnapshot', () => {
     await writeRun(
       deliveryRunsDir,
       'C1',
-      '20260806-034-revise-propose',
+      '20260806-034-apply',
       {
         schemaVersion: 2,
-        runId: '20260806-034-revise-propose',
+        runId: '20260806-034-apply',
         deliveryId,
         changeKey: 'C1',
         changeId: 'C1',
-        action: 'revise-propose',
+        action: 'apply',
         role: 'author',
-        ownerAuthorization: 'required',
-        runPath: `.flowkit/runs/${deliveryId}/C1/20260806-034-revise-propose/`,
+        ownerAuthorization: 'not-required',
+        runPath: `.flowkit/runs/${deliveryId}/C1/20260806-034-apply/`,
       },
       {
         runStatus: 'completed',
         actionResult: {
-          action: 'revise-propose',
+          action: 'apply',
           executionStatus: 'completed',
-          summary: 'P1',
+          summary: 'A0',
           consumedInputRefs: [
             // kind and path are schema-valid; the fingerprint is WRONG.
             { ref: `.flowkit/runs/${deliveryId}/C1/20260806-033-propose/result.json`, versionFingerprint: 'deadbeef', kind: 'run-result' },
@@ -1321,24 +1324,24 @@ describe('readFormalFactSnapshot', () => {
     await writeRun(
       deliveryRunsDir,
       'C1',
-      '20260806-032-revise-propose',
+      '20260806-032-apply',
       {
         schemaVersion: 2,
-        runId: '20260806-032-revise-propose',
+        runId: '20260806-032-apply',
         deliveryId,
         changeKey: 'C1',
         changeId: 'C1',
-        action: 'revise-propose',
+        action: 'apply',
         role: 'author',
-        ownerAuthorization: 'required',
-        runPath: `.flowkit/runs/${deliveryId}/C1/20260806-032-revise-propose/`,
+        ownerAuthorization: 'not-required',
+        runPath: `.flowkit/runs/${deliveryId}/C1/20260806-032-apply/`,
       },
       {
         runStatus: 'completed',
         actionResult: {
-          action: 'revise-propose',
+          action: 'apply',
           executionStatus: 'completed',
-          summary: 'P1',
+          summary: 'A0',
           consumedInputRefs: [
             { ref: `../../result.json`, versionFingerprint: 'x', kind: 'run-result' },
           ],
@@ -1385,6 +1388,11 @@ describe('readFormalFactSnapshot', () => {
           action: 'revise-propose',
           executionStatus: 'completed',
           summary: 'P1',
+          // producedResultRefs present so physical Action admission passes and
+          // the immutable source-review checks are the focused failure point.
+          producedResultRefs: [
+            { ref: `openspec/changes/C1/proposal.md`, versionFingerprint: 'x', kind: 'produced-artifact' },
+          ],
           reviewVerdictRef: {
             ref: `.flowkit/runs/${deliveryId}/C1/20260806-099-review-propose/result.json`,
             versionFingerprint: 'x',
@@ -1495,6 +1503,11 @@ describe('readFormalFactSnapshot', () => {
         action: 'revise-propose',
         executionStatus: 'completed',
         summary: 'P1',
+        // producedResultRefs present so physical Action admission passes and
+        // the immutable source-review checks are the focused failure point.
+        producedResultRefs: [
+          { ref: `openspec/changes/C1/proposal.md`, versionFingerprint: 'x', kind: 'produced-artifact' },
+        ],
         reviewVerdictRef: {
           ref: `.flowkit/runs/${deliveryId}/C1/20260806-036-review-propose/result.json`,
           versionFingerprint: computeResultFileHash(JSON.stringify({ runStatus: 'completed', actionResult: { action: 'review-propose', executionStatus: 'completed', summary: 'cr' }, reviewVerdict: 'changes-requested', reviewFindings: [{ id: 'B-001', severity: 'blocking', title: 'fix', problem: 'x', requiredChange: 'revise' }] }, null, 2)),
@@ -1511,10 +1524,133 @@ describe('readFormalFactSnapshot', () => {
       openspecChangesPath: 'openspec/changes',
       manifestPathPrefix: '.flowkit/manifests',
     });
+    // sourceReviewRun=A(approved) but reviewVerdictRef→B(changes-requested):
+    // wrong target AND approved-verdict violation both fail closed.
     const conflict = snapshot.conflicts.find(
-      (c) => c.dimension === 'immutable-ref-target' || c.dimension === 'immutable-ref-verdict-mismatch',
+      (c) => c.dimension === 'immutable-ref-target' || c.dimension === 'immutable-ref-verdict-mismatch' || c.dimension === 'immutable-ref-verdict-not-cr',
     );
-    assert.ok(conflict, `expected immutable-ref-target/verdict-mismatch conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
+    assert.ok(conflict, `expected immutable-ref-target/verdict conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
+  });
+
+  it('persisted revise-explore with ENTIRE source-review tuple absent → FactConflict (Q1-RA-007)', async () => {
+    const deliveryId = 'D-RA007-EXPLORE-NOTUPLE';
+    const deliveryRunsDir = join(tempRoot, '.flowkit', 'runs', deliveryId);
+    await writeRun(
+      deliveryRunsDir,
+      'C1',
+      '20260806-038-revise-explore',
+      {
+        schemaVersion: 2,
+        runId: '20260806-038-revise-explore',
+        deliveryId,
+        changeKey: 'C1',
+        changeId: 'C1',
+        action: 'revise-explore',
+        role: 'author',
+        ownerAuthorization: 'required',
+        runPath: `.flowkit/runs/${deliveryId}/C1/20260806-038-revise-explore/`,
+      },
+      {
+        runStatus: 'completed',
+        actionResult: {
+          action: 'revise-explore',
+          executionStatus: 'completed',
+          summary: 'RE1',
+          producedResultRefs: [
+            { ref: `openspec/changes/C1/explore.md`, versionFingerprint: 'x', kind: 'produced-artifact' },
+          ],
+        },
+      },
+    );
+
+    const snapshot = await readFormalFactSnapshot({
+      repoRoot: tempRoot,
+      deliveryId,
+      runsPathPrefix: '.flowkit/runs',
+      openspecChangesPath: 'openspec/changes',
+      manifestPathPrefix: '.flowkit/manifests',
+    });
+    const conflict = snapshot.conflicts.find((c) => c.dimension === 'immutable-ref-required');
+    assert.ok(conflict, `expected immutable-ref-required conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
+  });
+
+  it('persisted revise-propose sourced from an APPROVED review → FactConflict (Q1-RA-007)', async () => {
+    const deliveryId = 'D-RA007-APPROVED-SRC';
+    const deliveryRunsDir = join(tempRoot, '.flowkit', 'runs', deliveryId);
+    const reviewedPropose = { runStatus: 'completed', actionResult: { action: 'propose', executionStatus: 'completed', summary: 'P0', producedResultRefs: [] } };
+    await writeRun(deliveryRunsDir, 'C1', '20260806-039-propose', {
+      schemaVersion: 2,
+      runId: '20260806-039-propose',
+      deliveryId,
+      changeKey: 'C1',
+      changeId: 'C1',
+      action: 'propose',
+      role: 'author',
+      ownerAuthorization: 'not-required',
+      runPath: `.flowkit/runs/${deliveryId}/C1/20260806-039-propose/`,
+    }, reviewedPropose);
+    // Review-propose → approved (admitted).
+    await writeRun(deliveryRunsDir, 'C1', '20260806-040-review-propose', {
+      schemaVersion: 2,
+      runId: '20260806-040-review-propose',
+      deliveryId,
+      changeKey: 'C1',
+      changeId: 'C1',
+      action: 'review-propose',
+      role: 'reviewer',
+      ownerAuthorization: 'not-required',
+      reviewedRunId: '20260806-039-propose',
+      inputRef: {
+        ref: `.flowkit/runs/${deliveryId}/C1/20260806-039-propose/result.json`,
+        versionFingerprint: computeResultFileHash(JSON.stringify(reviewedPropose, null, 2)),
+        kind: 'run-result',
+      },
+      runPath: `.flowkit/runs/${deliveryId}/C1/20260806-040-review-propose/`,
+    }, {
+      runStatus: 'completed',
+      actionResult: { action: 'review-propose', executionStatus: 'completed', summary: 'ok' },
+      reviewVerdict: 'approved',
+    });
+    // Revise-propose sourcing the APPROVED review — path/hash/verdict all
+    // internally consistent, but approved can never precede a revise-*.
+    await writeRun(deliveryRunsDir, 'C1', '20260806-041-revise-propose', {
+      schemaVersion: 2,
+      runId: '20260806-041-revise-propose',
+      deliveryId,
+      changeKey: 'C1',
+      changeId: 'C1',
+      action: 'revise-propose',
+      role: 'author',
+      ownerAuthorization: 'required',
+      sourceReviewRun: '20260806-040-review-propose',
+      sourceReviewVerdict: 'approved',
+      runPath: `.flowkit/runs/${deliveryId}/C1/20260806-041-revise-propose/`,
+    }, {
+      runStatus: 'completed',
+      actionResult: {
+        action: 'revise-propose',
+        executionStatus: 'completed',
+        summary: 'P1',
+        producedResultRefs: [
+          { ref: `openspec/changes/C1/proposal.md`, versionFingerprint: 'x', kind: 'produced-artifact' },
+        ],
+        reviewVerdictRef: {
+          ref: `.flowkit/runs/${deliveryId}/C1/20260806-040-review-propose/result.json`,
+          versionFingerprint: computeResultFileHash(JSON.stringify({ runStatus: 'completed', actionResult: { action: 'review-propose', executionStatus: 'completed', summary: 'ok' }, reviewVerdict: 'approved' }, null, 2)),
+          kind: 'run-result',
+        },
+      },
+    });
+
+    const snapshot = await readFormalFactSnapshot({
+      repoRoot: tempRoot,
+      deliveryId,
+      runsPathPrefix: '.flowkit/runs',
+      openspecChangesPath: 'openspec/changes',
+      manifestPathPrefix: '.flowkit/manifests',
+    });
+    const conflict = snapshot.conflicts.find((c) => c.dimension === 'immutable-ref-verdict-not-cr');
+    assert.ok(conflict, `expected immutable-ref-verdict-not-cr conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
   });
 
   // -------------------------------------------------------------------------
@@ -1861,5 +1997,76 @@ describe('readFormalFactSnapshot', () => {
     });
     const conflict = snapshot.conflicts.find((c) => c.dimension === 'verification-summary-path');
     assert.ok(conflict, `expected verification-summary-path conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
+  });
+
+  // -------------------------------------------------------------------------
+  // Q1-RA-010: superseded historical malformed physical result still conflicts
+  // -------------------------------------------------------------------------
+
+  it('superseded historical propose missing producedResultRefs → conflict at physical admission (Q1-RA-010)', async () => {
+    const deliveryId = 'D-RA010-SUPERSEDED';
+    const deliveryRunsDir = join(tempRoot, '.flowkit', 'runs', deliveryId);
+    // P0: initial propose whose top-level result is COMPLETED but carries NO
+    // producedResultRefs — a physical shape Core's writer could never publish.
+    // Even if a later R0→P1 chain would make P0 a superseded generation,
+    // physical admission MUST reject it (superseded only relaxes mutable
+    // current-byte comparison, never physical Action-result shape).
+    await writeRun(deliveryRunsDir, 'C1', '20260806-046-propose', {
+      schemaVersion: 2,
+      runId: '20260806-046-propose',
+      deliveryId,
+      changeKey: 'C1',
+      changeId: 'C1',
+      action: 'propose',
+      role: 'author',
+      ownerAuthorization: 'not-required',
+      runPath: `.flowkit/runs/${deliveryId}/C1/20260806-046-propose/`,
+    }, {
+      runStatus: 'completed',
+      actionResult: {
+        action: 'propose',
+        executionStatus: 'completed',
+        summary: 'P0',
+        // producedResultRefs MISSING — physical Action-result requiredness.
+      },
+    });
+
+    // A legal review-propose → changes-requested and a legitimate revise-propose
+    // that would supersede P0 under generation semantics.
+    await writeRun(deliveryRunsDir, 'C1', '20260806-047-review-propose', {
+      schemaVersion: 2,
+      runId: '20260806-047-review-propose',
+      deliveryId,
+      changeKey: 'C1',
+      changeId: 'C1',
+      action: 'review-propose',
+      role: 'reviewer',
+      ownerAuthorization: 'not-required',
+      reviewedRunId: '20260806-046-propose',
+      inputRef: {
+        ref: `.flowkit/runs/${deliveryId}/C1/20260806-046-propose/result.json`,
+        versionFingerprint: 'x',
+        kind: 'run-result',
+      },
+      runPath: `.flowkit/runs/${deliveryId}/C1/20260806-047-review-propose/`,
+    }, {
+      runStatus: 'completed',
+      actionResult: { action: 'review-propose', executionStatus: 'completed', summary: 'cr' },
+      reviewVerdict: 'changes-requested',
+      reviewFindings: [
+        { id: 'B-001', severity: 'blocking', title: 'fix', problem: 'x', requiredChange: 'revise' },
+      ],
+    });
+
+    const snapshot = await readFormalFactSnapshot({
+      repoRoot: tempRoot,
+      deliveryId,
+      runsPathPrefix: '.flowkit/runs',
+      openspecChangesPath: 'openspec/changes',
+      manifestPathPrefix: '.flowkit/manifests',
+    });
+    // P0 MUST be rejected at physical admission regardless of any supersession.
+    const conflict = snapshot.conflicts.find((c) => c.dimension === 'run-result-schema');
+    assert.ok(conflict, `expected run-result-schema conflict for superseded-in-shape P0, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
   });
 });

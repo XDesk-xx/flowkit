@@ -1025,15 +1025,14 @@ async function validateImmutableRunResultRefs(
       }
     }
 
-    // Q1-RA-007: SHARED source-review tuple validator. Any source-review
-    // evidence (sourceReviewRun / sourceReviewVerdict / reviewVerdictRef) must
-    // be a complete, mutually-consistent immutable tuple; a missing counterpart,
-    // a non-admitted source review, a wrong target, or a verdict mismatch is a
-    // CONFLICT — never a silent skip. Immutable refs stay strict across
+    // Q1-RA-007: SHARED source-review tuple validator. For schemaVersion 2
+    // completed revise-* the complete source-review tuple is REQUIRED — Action
+    // decides requiredness, never sourceReviewRun presence. A missing
+    // counterpart, a non-admitted source review, a wrong-stage source review,
+    // an approved-verdict source review, a wrong target, or a hash mismatch is
+    // a CONFLICT — never a silent skip. Immutable refs stay strict across
     // superseded / revision-window generations because this validation is
     // independent of mutable generation classification.
-    const requiresSourceReview =
-      run.action === 'revise-explore' || run.action === 'revise-propose' || run.action === 'revise-apply';
     const tupleProblems = await validateSourceReviewTuple(
       {
         runId: run.runId,
@@ -1047,10 +1046,15 @@ async function validateImmutableRunResultRefs(
         repoRoot,
       },
       {
-        requiresTuple: requiresSourceReview && run.sourceReviewRun !== undefined,
+        // Action decides requiredness. `&& sourceReviewRun !== undefined` is
+        // the exact bypass 135 blocked — it must NOT be restored.
+        requiresTuple: run.action === 'revise-explore' || run.action === 'revise-propose' || run.action === 'revise-apply',
         admittedSourceReviewVerdicts: admittedReviewVerdicts.map((v) => ({
           reviewRunId: v.reviewRunId,
           verdict: v.verdict,
+          // Q1-RA-007: expose the source review Run's action so the shared
+          // validator can prove the matching review stage.
+          action: runs.find((r) => r.runId === v.reviewRunId)?.action ?? '',
         })),
       },
     );
@@ -1062,13 +1066,17 @@ async function validateImmutableRunResultRefs(
             ? 'immutable-ref-source-unadmitted'
             : p.code === 'verdict-mismatch'
               ? 'immutable-ref-verdict-mismatch'
-              : p.code === 'wrong-target'
-                ? 'immutable-ref-target'
-                : p.code === 'wrong-kind'
-                  ? 'immutable-ref-kind'
-                  : p.code === 'fingerprint-mismatch'
-                    ? 'immutable-ref-mismatch'
-                    : 'immutable-ref-missing';
+              : p.code === 'wrong-review-stage'
+                ? 'immutable-ref-wrong-stage'
+                : p.code === 'verdict-not-changes-requested'
+                  ? 'immutable-ref-verdict-not-cr'
+                  : p.code === 'wrong-target'
+                    ? 'immutable-ref-target'
+                    : p.code === 'wrong-kind'
+                      ? 'immutable-ref-kind'
+                      : p.code === 'fingerprint-mismatch'
+                        ? 'immutable-ref-mismatch'
+                        : 'immutable-ref-missing';
       conflicts.push({
         dimension,
         authority: run.runId,

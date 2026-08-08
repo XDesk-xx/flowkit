@@ -628,33 +628,40 @@ const ARTIFACT_PRODUCING_ACTIONS = new Set([
 
 /**
  * Validate that an {@link ActionResultWithoutRunRef} projection is Action-owned:
- * the projected `action` MUST equal the Context action, and every ResultRef
- * field MUST be applicable to that Action.
+ * the projected `action` MUST equal the Context action, every ResultRef field
+ * MUST be applicable to that Action, and every required field for a top-level
+ * completed physical result MUST be structurally present.
  *
  * Q1-RA-010: `validateActionResultWithoutRunRef` proves field shape + field-kind
- * binding, but NOT that the Action is allowed to own the field. A well-shaped
- * but Action-impossible projection (e.g. `review-propose` carrying
+ * binding, but NOT that the Action is allowed to own the field nor that a
+ * top-level completed result carries its Action-owned required evidence.
+ * Requiredness is derived from the top-level physical `runStatus` + Context
+ * action — NEVER from `actionResult.executionStatus`. A well-shaped but
+ * Action-impossible projection (e.g. `review-propose` carrying
  * `reviewVerdictRef`, `apply` carrying `verificationSummaryRef`, `archive`
  * carrying `producedResultRefs`, or `actionResult.action != context.action`)
  * MUST fail closed. Writer/terminal preflight and Reader/admitC1RunResult share
  * this SAME validator so a result Core could never legally publish is never
  * admitted as a valid C1 formal fact.
  *
- * Scope enforced:
+ * Scope enforced (physical Action-result matrix):
  *   - `actionResult.action === contextAction`
- *   - `producedResultRefs` only on artifact-producing Actions (effective-set
- *     completeness itself remains owned by `validateStageEffectiveSet` — not
- *     duplicated here)
- *   - `verificationSummaryRef` only on `review-apply`; a completed `review-apply`
- *     projection MUST carry it
- *   - `reviewVerdictRef` forbidden on `review-*` (self-reference)
- *   - source-review applicability (`reviewVerdictRef` on applicable non-review
- *     Runs) is governed by the Q1-RA-007 source-review tuple validator, not here
+ *   - `runStatus === 'completed'` + artifact-producing Action ⇒
+ *     `producedResultRefs` MUST be structurally present (full exact-set /
+ *     current bytes remain owned by `validateStageEffectiveSet`)
+ *   - `runStatus === 'completed'` + `review-apply` ⇒ `verificationSummaryRef`
+ *     MUST be present (regardless of `actionResult.executionStatus`)
+ *   - `producedResultRefs` forbidden on non-artifact-producing Actions
+ *   - `verificationSummaryRef` only on `review-apply`
+ *   - `reviewVerdictRef` forbidden on `review-*` (self-reference); its
+ *     applicability on non-review Runs follows the Q1-RA-007 source-review
+ *     tuple validator, not here
  *
  * @throws {FlowkitError} `SCHEMA_VALIDATION_FAILED` on any scope violation.
  */
 export function validateActionResultApplicability(
   contextAction: string,
+  runStatus: string | undefined,
   actionResult: ActionResultWithoutRunRef,
 ): void {
   // 1. Action identity: the projected action MUST equal the Context action.
@@ -667,18 +674,28 @@ export function validateActionResultApplicability(
   }
 
   const isReviewAction = contextAction.startsWith('review-');
+  const isTopLevelCompleted = runStatus === 'completed';
 
-  // 2. producedResultRefs: only artifact-producing Actions may own it.
-  if (actionResult.producedResultRefs !== undefined && !ARTIFACT_PRODUCING_ACTIONS.has(contextAction)) {
+  // 2. producedResultRefs: forbidden on non-artifact-producing Actions; REQUIRED
+  //    on a top-level completed artifact-producing projection.
+  const isArtifactProducing = ARTIFACT_PRODUCING_ACTIONS.has(contextAction);
+  if (actionResult.producedResultRefs !== undefined && !isArtifactProducing) {
     throw new FlowkitError(
       'SCHEMA_VALIDATION_FAILED',
       `producedResultRefs is only allowed on artifact-producing Actions (explore/revise-explore/propose/revise-propose); forbidden on ${contextAction}`,
       { contextAction },
     );
   }
+  if (isTopLevelCompleted && isArtifactProducing && actionResult.producedResultRefs === undefined) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `top-level completed ${contextAction} projection MUST carry producedResultRefs (structural required evidence); full exact-set/bytes stay owned by validateStageEffectiveSet`,
+      { contextAction },
+    );
+  }
 
-  // 3. verificationSummaryRef: only review-apply, and required for a completed
-  //    review-apply projection.
+  // 3. verificationSummaryRef: only review-apply, and REQUIRED for a top-level
+  //    completed review-apply projection regardless of executionStatus.
   const isReviewApply = contextAction === 'review-apply';
   if (actionResult.verificationSummaryRef !== undefined && !isReviewApply) {
     throw new FlowkitError(
@@ -687,11 +704,11 @@ export function validateActionResultApplicability(
       { contextAction },
     );
   }
-  if (isReviewApply && actionResult.executionStatus === 'completed' && actionResult.verificationSummaryRef === undefined) {
+  if (isTopLevelCompleted && isReviewApply && actionResult.verificationSummaryRef === undefined) {
     throw new FlowkitError(
       'SCHEMA_VALIDATION_FAILED',
-      'completed review-apply projection MUST carry verificationSummaryRef',
-      { contextAction },
+      'top-level completed review-apply projection MUST carry verificationSummaryRef (regardless of actionResult.executionStatus)',
+      { contextAction, runStatus },
     );
   }
 
@@ -752,8 +769,9 @@ export function admitC1RunResult(raw: string, action: string): RunResultFile {
   if (ar !== undefined) {
     const validatedAr = validateActionResultWithoutRunRef(ar);
     // 3. Q1-RA-010: Action-owned ResultRef applicability (action identity +
-    //    field scope) — the SAME semantic the terminal writer enforces.
-    validateActionResultApplicability(action, validatedAr);
+    //    required/forbidden field matrix) keyed on the top-level runStatus —
+    //    the SAME semantic the terminal writer enforces.
+    validateActionResultApplicability(action, result.runStatus, validatedAr);
   }
   // 4. Action-specific review verdict × findings integrity.
   validateReviewVerdictIntegrity(action, result);

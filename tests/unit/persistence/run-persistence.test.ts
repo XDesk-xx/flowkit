@@ -1549,6 +1549,151 @@ describe('source-review tuple fail-closed at terminal completion (Q1-RA-007)', (
     );
     await assert.rejects(() => readFile(join(p1Dir, 'result.json'), 'utf-8'));
   });
+
+  it('revise-explore with ENTIRE source-review tuple absent → completeRun rejects (Q1-RA-007)', async () => {
+    const changeId = 'RA007-explore-notuple';
+    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
+    await mkdir(changeDir, { recursive: true });
+    await writeFile(join(changeDir, 'explore.md'), '# Explore\n');
+    const runDir = await createRun(
+      createRunInput({ runId: '20260806-430-revise-explore', changeId, action: 'revise-explore', role: 'author' }),
+    );
+    // Action requires the complete source-review tuple even when the context
+    // carries NO source-review fields at all.
+    await assert.rejects(
+      () => completeRun(runDir, { executionStatus: 'completed', summary: 'RE1', producedArtifactTags: ['explore'] }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+    await assert.rejects(() => readFile(join(runDir, 'result.json'), 'utf-8'));
+  });
+
+  it('revise-apply with ENTIRE source-review tuple absent → completeRun rejects (Q1-RA-007)', async () => {
+    const changeId = 'RA007-apply-notuple';
+    const runDir = await createRun(
+      createRunInput({ runId: '20260806-431-revise-apply', changeId, action: 'revise-apply', role: 'author' }),
+    );
+    await assert.rejects(
+      () => completeRun(runDir, { executionStatus: 'completed', summary: 'RA1' }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+    await assert.rejects(() => readFile(join(runDir, 'result.json'), 'utf-8'));
+  });
+
+  it('revise-propose with complete fresh produced set BUT no source-review tuple → still rejects (Q1-RA-007)', async () => {
+    const changeId = 'RA007-fresh-notuple';
+    // Provide a complete fresh effective set so the ONLY failure is the
+    // source-review requiredness (NOT artifact completeness).
+    await writeInitialProposeArtifacts(changeId, 'v1');
+    const runDir = await createRun(
+      createRunInput({ runId: '20260806-432-revise-propose', changeId, action: 'revise-propose', role: 'author' }),
+    );
+    await assert.rejects(
+      () =>
+        completeRun(runDir, {
+          executionStatus: 'completed',
+          summary: 'RP1',
+          producedArtifactTags: ['proposal', 'design', 'tasks', 'specs'],
+        }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+    await assert.rejects(() => readFile(join(runDir, 'result.json'), 'utf-8'));
+  });
+
+  it('revise-propose sourced from an APPROVED review → completeRun rejects (Q1-RA-007)', async () => {
+    const changeId = 'RA007-approved';
+    await writeInitialProposeArtifacts(changeId, 'v0');
+    const p0Dir = await createRun(
+      createRunInput({ runId: '20260806-433-propose', changeId, action: 'propose', role: 'author' }),
+    );
+    await completeRun(p0Dir, { executionStatus: 'completed', summary: 'P0' });
+    // Review-propose → approved (a valid terminal review).
+    const r0Dir = await createRun(
+      createRunInput({
+        runId: '20260806-434-review-propose',
+        changeId,
+        action: 'review-propose',
+        role: 'reviewer',
+        reviewedRunId: '20260806-433-propose',
+      }),
+    );
+    await completeRun(r0Dir, { executionStatus: 'completed', summary: 'OK', reviewVerdict: 'approved' });
+    // revise-propose sourcing the approved review.
+    const p1Dir = await createRun(
+      createRunInput({
+        runId: '20260806-435-revise-propose',
+        changeId,
+        action: 'revise-propose',
+        role: 'author',
+        sourceReviewRun: '20260806-434-review-propose',
+        sourceReviewVerdict: 'approved',
+      }),
+    );
+    // Tuple path/hash/verdict are all internally consistent (approved=approved)
+    // — but revise-* can only follow changes-requested.
+    await assert.rejects(
+      () =>
+        completeRun(p1Dir, {
+          executionStatus: 'completed',
+          summary: 'RP1',
+          producedArtifactTags: ['proposal', 'design', 'tasks', 'specs'],
+        }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+    await assert.rejects(() => readFile(join(p1Dir, 'result.json'), 'utf-8'));
+  });
+
+  it('revise-propose sourced from a WRONG-STAGE changes-requested review → completeRun rejects (Q1-RA-007)', async () => {
+    const changeId = 'RA007-wrongstage';
+    // Initial explore → review-explore changes-requested.
+    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
+    await mkdir(changeDir, { recursive: true });
+    await writeFile(join(changeDir, 'explore.md'), '# Explore\n');
+    const e0Dir = await createRun(
+      createRunInput({ runId: '20260806-436-explore', changeId, action: 'explore', role: 'author' }),
+    );
+    await completeRun(e0Dir, { executionStatus: 'completed', summary: 'E0' });
+    const r0Dir = await createRun(
+      createRunInput({
+        runId: '20260806-437-review-explore',
+        changeId,
+        action: 'review-explore',
+        role: 'reviewer',
+        reviewedRunId: '20260806-436-explore',
+      }),
+    );
+    await completeRun(r0Dir, {
+      executionStatus: 'completed',
+      summary: 'CR',
+      reviewVerdict: 'changes-requested',
+      reviewFindings: [
+        { id: 'B-001', severity: 'blocking', title: 'fix', problem: 'x', requiredChange: 'revise' },
+      ],
+    });
+    // Provide a complete propose set so the effective set is not the failure.
+    await writeInitialProposeArtifacts(changeId, 'v1');
+    const p1Dir = await createRun(
+      createRunInput({
+        runId: '20260806-438-revise-propose',
+        changeId,
+        action: 'revise-propose',
+        role: 'author',
+        sourceReviewRun: '20260806-437-review-explore',
+        sourceReviewVerdict: 'changes-requested',
+      }),
+    );
+    // review-explore is changes-requested (correct verdict) but WRONG STAGE for
+    // a revise-propose.
+    await assert.rejects(
+      () =>
+        completeRun(p1Dir, {
+          executionStatus: 'completed',
+          summary: 'RP1',
+          producedArtifactTags: ['proposal', 'design', 'tasks', 'specs'],
+        }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+    await assert.rejects(() => readFile(join(p1Dir, 'result.json'), 'utf-8'));
+  });
 });
 
 // ---------------------------------------------------------------------------

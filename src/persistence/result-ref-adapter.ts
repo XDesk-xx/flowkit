@@ -1102,8 +1102,28 @@ export interface SourceReviewTupleProblem {
     | 'target-missing'
     | 'fingerprint-mismatch'
     | 'source-review-not-admitted'
-    | 'verdict-mismatch';
+    | 'verdict-mismatch'
+    | 'wrong-review-stage'
+    | 'verdict-not-changes-requested';
   readonly message: string;
+}
+
+/**
+ * Q1-RA-007: The review Action stage a `revise-*` Action MUST consume as its
+ * source review. Action decides the required predecessor review; field presence
+ * NEVER decides requiredness.
+ */
+export function expectedSourceReviewActionFor(reviseAction: string): string | undefined {
+  switch (reviseAction) {
+    case 'revise-explore':
+      return 'review-explore';
+    case 'revise-propose':
+      return 'review-propose';
+    case 'revise-apply':
+      return 'review-apply';
+    default:
+      return undefined;
+  }
 }
 
 /**
@@ -1138,7 +1158,7 @@ export async function validateSourceReviewTuple(
   input: SourceReviewTupleInput,
   options: {
     requiresTuple: boolean;
-    admittedSourceReviewVerdicts: readonly { reviewRunId: string; verdict: string }[];
+    admittedSourceReviewVerdicts: readonly { reviewRunId: string; verdict: string; action: string }[];
   },
 ): Promise<SourceReviewTupleProblem[]> {
   const problems: SourceReviewTupleProblem[] = [];
@@ -1247,6 +1267,33 @@ export async function validateSourceReviewTuple(
       code: 'verdict-mismatch',
       message: `Run ${runId} sourceReviewVerdict (${sourceReviewVerdict}) does not match the admitted verdict of source review ${sourceReviewRun} (${admittedVerdict.verdict})`,
     });
+  }
+
+  // Q1-RA-007: Action-owned lineage — the source review MUST be the matching
+  // review stage for this revise Action, and (revise-* can only follow
+  // changes-requested) BOTH the actual admitted verdict and the persisted
+  // sourceReviewVerdict MUST be `changes-requested`. Internal tuple
+  // consistency (path/hash/verdict equal) alone is NOT sufficient proof.
+  const expectedReviewAction = expectedSourceReviewActionFor(input.action);
+  if (expectedReviewAction !== undefined) {
+    if (admittedVerdict.action !== expectedReviewAction) {
+      problems.push({
+        code: 'wrong-review-stage',
+        message: `Run ${runId} Action ${input.action} requires a source review of stage ${expectedReviewAction}, but source review ${sourceReviewRun} is ${admittedVerdict.action}`,
+      });
+    }
+    if (admittedVerdict.verdict !== 'changes-requested') {
+      problems.push({
+        code: 'verdict-not-changes-requested',
+        message: `Run ${runId} Action ${input.action} can only follow a changes-requested review, but source review ${sourceReviewRun} has admitted verdict ${admittedVerdict.verdict}`,
+      });
+    }
+    if (sourceReviewVerdict !== 'changes-requested') {
+      problems.push({
+        code: 'verdict-not-changes-requested',
+        message: `Run ${runId} Action ${input.action} requires sourceReviewVerdict changes-requested, got ${sourceReviewVerdict}`,
+      });
+    }
   }
 
   return problems;
