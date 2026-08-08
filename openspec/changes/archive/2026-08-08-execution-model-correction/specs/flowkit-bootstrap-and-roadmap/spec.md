@@ -26,11 +26,18 @@ Git 状态、archive evidence、consistency scan 与聊天记录 MUST NOT 复制
 - **AND** MUST NOT 复制完整 OpenSpec、Verification、Git、archive 或聊天事实
 - **AND** 这些事实 MUST 继续由各自 authority 拥有
 
-#### Scenario: nextActionRecommendation 不替代 Policy
+#### Scenario: context.json 不保存自引用 SHA
 
-- **WHEN** result.json 包含 `nextActionRecommendation`
-- **THEN** 它 MUST 只是交接提示
-- **AND** Flowkit MUST 重新通过 Policy 计算下一 Action
+- **WHEN** Run 创建 context.json
+- **THEN** MUST NOT 保存会因当前 Commit 自身变化而立即失效的自引用 SHA
+- **AND** 路径与字段冲突时 MUST 阻塞
+
+#### Scenario: result.json 的 nextActionRecommendation 不替代 Policy
+
+- **WHEN** result.json 包含 nextActionRecommendation
+- **THEN** 它 MUST 只能是建议
+- **AND** Flowkit MUST 通过 Policy 重新计算下一 Action
+- **AND** nextActionRecommendation MUST NOT 替代 Policy
 
 #### Scenario: schemaVersion 2 不接受人工 fingerprint
 
@@ -55,7 +62,7 @@ correction；该例外不改变 terminal result 语义，也不允许 completed 
 - **THEN** MUST 创建新 Run
 - **AND** MUST NOT 复用前一 Run
 
-#### Scenario: 三者均未改变时复用同一 pending Run
+#### Scenario: 三者均未改变时复用同一 Run
 
 - **WHEN** 正式 Action、执行角色和本次目标均未改变
 - **AND** 当前 Run 仍为 pending

@@ -139,7 +139,7 @@ changes:
     required: true
     dependsOn:
       - policy-engine
-    state: active
+    state: completed
     outputs:
       - Lean Run contract（执行信封，非审计账本）
       - machine-derived ResultRef / versionFingerprint

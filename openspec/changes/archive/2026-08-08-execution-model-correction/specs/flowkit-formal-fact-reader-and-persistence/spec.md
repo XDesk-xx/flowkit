@@ -25,6 +25,14 @@
 - **AND** Action 为 Change-level 时 `changeKey` / `changeId` MUST 存在
 - **AND** 混合形状 MUST reject（createRun）或收集为 `FactConflict`（Reader）
 
+#### Scenario: inputRef 为可选 ResultRef
+
+- **WHEN** 校验 `ContextFile.inputRef`
+- **THEN** `inputRef` MAY 缺失（explore 等无 source review 的 Run）
+- **AND** 存在时 MUST 为 `ResultRef` 对象（MUST NOT 为 string）
+- **AND** MUST 通过 C1 `validateResultRefProjection` 校验（`ref` + `versionFingerprint` 为非空 string）
+- **AND** Bootstrap Run 的 string 形 `inputRef` 不走 C1 校验（由 legacy adapter 处理）
+
 #### Scenario: 普通 Run inputRef 可缺失且只能由 Core 派生
 
 - **WHEN** 创建非 review-* Run
@@ -94,12 +102,18 @@
 `ActionResultWithoutRunRef` MUST 使用 closed validation：已知字段按 schema 校验，未知字段 MUST reject。
 `ResultRef` MUST 使用受限 kind enum 与 field-specific kind/path validation，不能只检查非空字符串。
 
-#### Scenario: ActionResult 必填字段校验
+#### Scenario: 必填字段校验
 
 - **WHEN** 校验 `ActionResultWithoutRunRef`
 - **THEN** `action` MUST 在固定 Action Catalog 中
 - **AND** `executionStatus` MUST 为合法 ExecutionStatus
 - **AND** `summary` MUST 为非空 string
+
+#### Scenario: 嵌套 ResultRef 校验
+
+- **WHEN** `ActionResultWithoutRunRef` 包含 `producedResultRefs`、`consumedInputRefs`、`verificationSummaryRef` 或 `reviewVerdictRef`
+- **THEN** 每个嵌套 `ResultRef` MUST 通过 C1 `validateResultRefProjection` 校验
+- **AND** `ref` 和 `versionFingerprint` MUST 为非空 string
 
 #### Scenario: ResultRef kind 必须在受限枚举中
 
@@ -150,6 +164,12 @@
 所有 schemaVersion 2 生产 ResultRef MUST 使用被引用目标实际文件内容的 SHA-256 作为
 `versionFingerprint`。Caller MUST NOT 成为 fingerprint、kind 或 ref path 的 authority。
 Run result 和 non-Run artifact MUST 使用不同的 Core constructor，但共享 replacement detection 语义。
+
+#### Scenario: versionFingerprint 为文件内容 SHA-256
+
+- **WHEN** 构造 ResultRef 的 `versionFingerprint`
+- **THEN** MUST 为 result.json 文件内容的 SHA-256
+- **AND** MUST NOT 为 Git Commit SHA
 
 #### Scenario: Run result ResultRef 由 Core 构造
 

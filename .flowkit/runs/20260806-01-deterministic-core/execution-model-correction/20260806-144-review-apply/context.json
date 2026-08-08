@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-144-review-apply",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "Q1",
+  "changeId": "execution-model-correction",
+  "action": "review-apply",
+  "role": "reviewer",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-142-revise-apply/",
+  "reviewedResultRef": "content-sha256:3b0cbfb9654b66448bd91fbc9d6d850a090f7515619a311d3f61ceebee847813",
+  "priorCandidateReview": {
+    "runId": "20260806-143-review-apply",
+    "verdict": "approved",
+    "scope": "candidate-overlay",
+    "formalRepositoryApproval": false,
+    "resultRef": "content-sha256:0ab5e9d66492de9d7a9ad84bc44c46991eac3bee26f1a0fb820e2e8ade76f619"
+  },
+  "repositoryReview": {
+    "currentGitHead": "a557fb6b2bace713b4e9aa11c314af9c60d005bf",
+    "appliedCodeGitHead": "44a0e77e76adf5d728fcebc8b95b15ad587b30f7",
+    "verificationBlobSha": "6b698e16741cfafd4aedba0db8447fce4c475037",
+    "deliveryManifestBlobSha": "976d02705c9c4d4feae5209fa1a563647862ab6a"
+  },
+  "reviewMode": "repository-level final review",
+  "constraints": {
+    "readOnlyExceptOwnRun": true,
+    "mayModifyReviewedArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayFullTest": false,
+    "mayArchive": false,
+    "mayCheckpoint": false,
+    "commitAllowed": false
+  }
+}
