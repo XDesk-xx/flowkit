@@ -171,7 +171,7 @@ changes:
     required: true
     dependsOn:
       - orchestration-authority-boundary-correction
-    state: planned
+    state: completed
     outputs:
       - flowkit status 命令
       - flowkit next 命令

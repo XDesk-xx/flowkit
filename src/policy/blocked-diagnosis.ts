@@ -116,6 +116,10 @@ export function tasksFactsUnavailableDiagnosis(): BlockedDiagnosis {
   ]);
 }
 
+export function tasksIncompleteDiagnosis(): BlockedDiagnosis {
+  return blockedDiagnosis('tasks-incomplete', ['tasks-incomplete']);
+}
+
 /**
  * Diagnosis for `ambiguous-state`.
  */

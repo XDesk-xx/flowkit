@@ -1,0 +1,52 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-propose",
+    "executionStatus": "completed",
+    "summary": "已按 172 Reviewer 的三个 author-actionable Blocking Findings 修订 E1 Proposal：next 现在完整冻结 owner-decision context 与 blocked conflict diagnosis；doctor 的 Reader/recovery/Policy-blocked findings 已有唯一 severity→overall→exit-code 映射；active Delivery 无 active Change 的 status/next/doctor/resume-context 已冻结为正常 Delivery-level projection。同时将 Proposal/Design/Tasks/Run 的人类可读正文统一为简体中文，保留 OpenSpec parser keywords 与机器/代码术语英文。未修改 Explore、production code、tests、Manifest、canonical specs 或 docs。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/diagnostic-cli/proposal.md",
+        "versionFingerprint": "a6984fb24809a2eb95f9307cf4a3277408c7aadf17abfed00d7f9bef4d97e2e3",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/diagnostic-cli/design.md",
+        "versionFingerprint": "7207741defbfdabab13bd89e373ef79692d3b49f530059aed57cb299cbe36ada",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/diagnostic-cli/specs/flowkit-diagnostic-cli/spec.md",
+        "versionFingerprint": "145769d63f3915d0688bc38132f7f85769eadf152be560ed6390c570f2e89ddd",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/diagnostic-cli/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "9386a8837ea6a08a90dfe51e25fd6afeded8c0c0501cd7d097d4b3efdf7ca796",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/diagnostic-cli/specs/flowkit-policy-engine/spec.md",
+        "versionFingerprint": "65296840a569f6cd4f5845745bb16fa2001727ff70a8bf0d3c2f578c12a9890d",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/diagnostic-cli/tasks.md",
+        "versionFingerprint": "30011ea5af1c35684d346d9795ed6e993694576a03ffc1f047d04209236bcf9b",
+        "kind": "produced-artifact"
+      }
+    ],
+    "consumedInputRefs": [
+      {
+        "ref": ".flowkit/runs/20260806-01-deterministic-core/diagnostic-cli/20260806-172-review-propose/result.json",
+        "versionFingerprint": "83e9e693db55013acdb9a1f33432a0bfa381c4188010967255e2ee4a953efdbe",
+        "kind": "run-result"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260806-01-deterministic-core/diagnostic-cli/20260806-172-review-propose/result.json",
+      "versionFingerprint": "83e9e693db55013acdb9a1f33432a0bfa381c4188010967255e2ee4a953efdbe",
+      "kind": "run-result"
+    }
+  }
+}

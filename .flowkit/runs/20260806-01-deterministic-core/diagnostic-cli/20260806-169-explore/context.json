@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 2,
+  "runId": "20260806-169-explore",
+  "deliveryId": "20260806-01-deterministic-core",
+  "action": "explore",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/diagnostic-cli/20260806-169-explore/",
+  "changeKey": "E1",
+  "changeId": "diagnostic-cli",
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

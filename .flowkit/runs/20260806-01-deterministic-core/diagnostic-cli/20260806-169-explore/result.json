@@ -1,0 +1,15 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "explore",
+    "executionStatus": "completed",
+    "summary": "已完成 E1 Diagnostic CLI Explore：确认现有 CLI 只有 version；四个诊断命令应复用 FormalFactSnapshot/Policy 而非复制决策；当前 snapshot 缺 Change Verification status 且 OpenSpec artifact projection 缺 explore/verification，需要 Proposal 冻结最小只读 projection；doctor 必须复用 Reader conflicts，不能成为第二套 validator；detached snapshot 缺 .git 导致本地 checkpoint facts 不可恢复，本次仅按 Owner 明确授权手工进入 E1，不修改 canonical Git authority。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/diagnostic-cli/explore.md",
+        "versionFingerprint": "25ef005aebbc70a75ef69f9deedd3749ed5b952759e97017008ef45eb6f2a4ae",
+        "kind": "produced-artifact"
+      }
+    ]
+  }
+}

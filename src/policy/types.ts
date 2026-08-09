@@ -62,6 +62,7 @@ export function isOwnerDecision(value: string): value is OwnerDecision {
  * The set of reasons the Policy may be `blocked`.
  *
  * `tasks-facts-unavailable` (archive gate) is strictly distinct from
+ * `tasks-incomplete` (completion fact available but required tasks remain) and
  * `verification-facts-unavailable` (review-apply/archive gate) — they are
  * different fact dimensions and MUST NOT be conflated (D1-11).
  *
@@ -77,6 +78,7 @@ export const BLOCKED_REASONS = [
   'verification-failed',
   'verification-not-run',
   'tasks-facts-unavailable',
+  'tasks-incomplete',
   'ambiguous-state',
   'dependency-incomplete',
   'full-test-failed',

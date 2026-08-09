@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 2,
+  "runId": "20260806-181-archive",
+  "deliveryId": "20260806-01-deterministic-core",
+  "action": "archive",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/diagnostic-cli/20260806-181-archive/",
+  "changeKey": "E1",
+  "changeId": "diagnostic-cli",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260806-01-deterministic-core/diagnostic-cli/20260806-180-review-apply/result.json",
+    "versionFingerprint": "055f8ac39287bda32c42b51a2180a4e4fb724079718745694108f51ced1052f2",
+    "kind": "run-result"
+  },
+  "constraints": {
+    "mayArchive": true,
+    "mayModifyManifest": true,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

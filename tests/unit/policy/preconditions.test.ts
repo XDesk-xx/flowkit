@@ -295,6 +295,17 @@ describe('preconditions — archive (task 4.11, D1-7, D1-11)', () => {
     assert.ok(!unmet.includes('archive-not-authorized'));
   });
 
+  it('allows the Tasks gate only when the fact is available and complete', () => {
+    const snap = applyApprovedSnapshot();
+    const complete = { ...snap, changeVerificationStatus: 'passed' as const, changeTasksComplete: true };
+    assert.deepEqual(evaluatePreconditions(complete, 'archive'), []);
+
+    const incomplete = { ...complete, changeTasksComplete: false };
+    const unmet = evaluatePreconditions(incomplete, 'archive');
+    assert.ok(unmet.includes('tasks-incomplete'));
+    assert.ok(!unmet.includes('tasks-facts-unavailable'));
+  });
+
   it('adds archive-not-authorized without archive scope', () => {
     const snap = applyApprovedSnapshot();
     const noScope = { ...snap, ownerAuthorizations: [buildAuthorization('apply')] };

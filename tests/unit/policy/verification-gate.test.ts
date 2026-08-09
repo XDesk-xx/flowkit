@@ -117,18 +117,18 @@ describe('verificationGateDiagnosis — gate → next() blocked diagnosis (D1-RA
 // readChangeVerificationStatus + evaluateVerificationGate — D1 current state
 // ---------------------------------------------------------------------------
 
-describe('evaluateVerificationGate — D1 current state (D1-7, D1-RA-002)', () => {
-  it('readChangeVerificationStatus returns undefined (C1 snapshot has no field)', () => {
-    const snap = buildSnapshot({});
-    assert.equal(readChangeVerificationStatus(snap), undefined);
+describe('evaluateVerificationGate — snapshot Verification projection', () => {
+  it('readChangeVerificationStatus reads the snapshot field and keeps undefined unavailable', () => {
+    assert.equal(readChangeVerificationStatus(buildSnapshot({})), undefined);
+    assert.equal(readChangeVerificationStatus(buildSnapshot({ changeVerificationStatus: 'passed' })), 'passed');
   });
 
-  it('evaluateVerificationGate returns unavailable for a D1 snapshot', () => {
-    // The C1 FormalFactSnapshot carries no Change Verification status field,
-    // so the gate is always `unavailable` in D1. This is the fail-closed
-    // behavior: review-apply/archive cannot proceed, mirroring canRun.
-    const snap = buildSnapshot({});
-    assert.deepEqual(evaluateVerificationGate(snap), { kind: 'unavailable' });
+  it('evaluateVerificationGate maps the real snapshot field', () => {
+    assert.deepEqual(evaluateVerificationGate(buildSnapshot({})), { kind: 'unavailable' });
+    assert.deepEqual(evaluateVerificationGate(buildSnapshot({ changeVerificationStatus: 'passed' })), { kind: 'satisfied' });
+    assert.deepEqual(evaluateVerificationGate(buildSnapshot({ changeVerificationStatus: 'not-applicable' })), { kind: 'satisfied' });
+    assert.deepEqual(evaluateVerificationGate(buildSnapshot({ changeVerificationStatus: 'failed' })), { kind: 'failed' });
+    assert.deepEqual(evaluateVerificationGate(buildSnapshot({ changeVerificationStatus: 'not-run' })), { kind: 'not-run' });
   });
 
   it('evaluateVerificationGate → unavailable → unmet verification-facts-unavailable (canRun consistency)', () => {

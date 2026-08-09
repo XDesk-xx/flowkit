@@ -412,6 +412,38 @@ describe('next — apply stage (task 6.9, D1-7, 10.8)', () => {
     }
   });
 
+  it('approved + Verification passed + Tasks complete → authorize-archive', () => {
+    const r = next({
+      ...applyApprovedSnapshot(),
+      changeVerificationStatus: 'passed',
+      changeTasksComplete: true,
+    });
+    assert.equal(r.kind, 'owner-decision');
+    if (r.kind === 'owner-decision') assert.equal(r.decision, 'authorize-archive');
+  });
+
+  it('approved + Verification passed + Tasks incomplete → blocked tasks-incomplete', () => {
+    const r = next({
+      ...applyApprovedSnapshot(),
+      changeVerificationStatus: 'passed',
+      changeTasksComplete: false,
+    });
+    assert.equal(r.kind, 'blocked');
+    if (r.kind === 'blocked') assert.equal(r.diagnosis.reason, 'tasks-incomplete');
+  });
+
+  it('approved + Verification passed + Tasks complete + archive authorization → archive', () => {
+    const base = applyApprovedSnapshot();
+    const r = next({
+      ...base,
+      changeVerificationStatus: 'passed',
+      changeTasksComplete: true,
+      ownerAuthorizations: [...base.ownerAuthorizations, buildAuthorization('archive')],
+    });
+    assert.equal(r.kind, 'action');
+    if (r.kind === 'action') assert.equal(r.action, 'archive');
+  });
+
   it('match + changes-requested → action revise-apply', () => {
     const explore = buildRun({ nnn: 1, action: 'explore' });
     const reviewE = buildRun({ nnn: 2, action: 'review-explore', role: 'reviewer' });

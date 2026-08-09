@@ -1,0 +1,24 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "已沿 E1 169→176 lineage 完成 175 Apply 独立审查。175 package/lineage、Reader/Policy projection、typecheck、lint、build、OpenSpec 1.7.0 strict 与 585/585 tests 均通过，四个诊断视图在 `node dist/bin/flowkit.js` 路径也可正常工作；但真正由 package.json `bin.flowkit=dist/bin/flowkit.js` 暴露的 `flowkit` executable 缺少 Node shebang。Reviewer 通过 npm pack→本地安装复现 `node_modules/.bin/flowkit --version` 被 shell 当作脚本解释并失败，因此当前 candidate 尚未真正提供 Proposal/Spec 所要求的 `flowkit status|next|doctor|resume-context` process surface。Blocking Findings 为 1，authority=author-actionable。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/diagnostic-cli/verification.md",
+      "versionFingerprint": "f0c608a2239d5681349b9e3e8db2b1f2074d52df94ab298399d6aab8996272c3",
+      "kind": "verification-summary"
+    }
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindings": [
+    {
+      "id": "E1-RA-001",
+      "severity": "blocking",
+      "title": "发布后的 `flowkit` bin 无法执行，process-level tests 绕过了真实 package bin",
+      "problem": "E1 的正式能力写成 `flowkit status` / `flowkit next` / `flowkit doctor` / `flowkit resume-context`，且 package.json 已把 `flowkit` 映射到 `dist/bin/flowkit.js`；但 175 的 `src/bin/flowkit.ts` 首行直接是 ESM `import`，没有 `#!/usr/bin/env node`。现有 process test 通过 `node <tsx-cli> src/bin/flowkit.ts` 启动，因此绕过了 npm bin 的真实执行方式。Reviewer 对 175 exact candidate 执行 `npm pack`、本地 `npm install` 后，`node_modules/.bin/flowkit --version` 退出 2，shell 将首行 `import` 解释为 ImageMagick `import` 命令并随后报 shell syntax error。也就是说源码/`node dist/...` 可运行，但正式 `flowkit` executable 不可运行。",
+      "location": "src/bin/flowkit.ts; package.json `bin.flowkit`; tests/integration/diagnostic-cli-process.test.ts",
+      "requiredChange": "使 package.json 暴露的真实 `flowkit` bin 在受支持 Node 环境中可直接执行，并增加覆盖真实 build/package bin invocation 的回归测试，至少证明 `flowkit --version` 与一个 diagnostic command 能从 npm-installed/等价 bin surface 正常启动、保持既有 exit/stdout/stderr contract。具体实现由 Author 决定；常见最小方案是让编译后的 bin 保留有效 Node shebang。Blocking authority: author-actionable。Acceptance：真实 `node_modules/.bin/flowkit ...`（或等价 npm bin surface）不再被 shell 误解释，且 focused/affected checks 重新通过。"
+    }
+  ]
+}

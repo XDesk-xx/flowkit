@@ -1,0 +1,15 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "archive",
+    "executionStatus": "completed",
+    "summary": "OpenSpec archive 已成功完成 E1 diagnostic-cli 的归档、artifact relocation 与 canonical spec sync（新增 12 个 Requirements、修改 1 个 Requirement）；Change 已归档为 openspec/changes/archive/2026-08-10-diagnostic-cli，归档后 9/9 OpenSpec items strict 通过。Flowkit 随后仅更新自身 Delivery Manifest：E1 state active → completed。未执行 Change Checkpoint、Delivery Full Test、Commit、Push 或 F1。",
+    "consumedInputRefs": [
+      {
+        "ref": ".flowkit/runs/20260806-01-deterministic-core/diagnostic-cli/20260806-180-review-apply/result.json",
+        "versionFingerprint": "055f8ac39287bda32c42b51a2180a4e4fb724079718745694108f51ced1052f2",
+        "kind": "run-result"
+      }
+    ]
+  }
+}

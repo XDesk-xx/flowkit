@@ -111,12 +111,9 @@ export function mapVerificationStatusToGate(
  * from Run history, OpenSpec artifacts, or chat.
  */
 export function readChangeVerificationStatus(
-  _snapshot: FormalFactSnapshot,
+  snapshot: FormalFactSnapshot,
 ): VerificationStatus | undefined {
-  // Parameter reserved for the future change that extends the snapshot with a
-  // Change Verification status field (D1-7).
-  void _snapshot;
-  return undefined;
+  return snapshot.changeVerificationStatus;
 }
 
 /**

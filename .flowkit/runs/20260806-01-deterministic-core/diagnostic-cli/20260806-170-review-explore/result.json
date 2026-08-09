@@ -1,0 +1,19 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-explore",
+    "executionStatus": "completed",
+    "summary": "已完成 E1 169 Explore 的独立审查，并将 169 固定为本 E1 review lineage 的根 target。GitHub Base/branch 一致、Q2 checkpoint ancestry 成立、package SHA256 全部通过；169 的 Manifest activation 仅为 E1 planned→active。代码基线调查与事实模型缺口均已对 exact Base 复核：CLI 仅有 version、diagnostics 为空壳、FormalFactSnapshot 尚无 Change Verification status、OpenSpec projection 尚无 explore/verification。169 materialize 后 Core Reader 无 conflicts 且 Policy next=review-explore；typecheck 通过，OpenSpec 1.7.0 能识别 diagnostic-cli。未发现 Blocking Finding。唯一 Non-blocking Finding 是 Explore §11 把 E1 激活前的 detached no-.git Policy 输出写成“当前 Reader + Policy”，未来回顾时应区分 pre-activation 与 post-candidate 状态；该表述不影响 Explore 的设计结论或进入 Proposal。",
+    "nextActionRecommendation": "propose"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindings": [
+    {
+      "id": "E1-RE-001",
+      "severity": "non-blocking",
+      "title": "detached Reader/Policy 证据缺少 pre-activation 时点标注",
+      "problem": "问题/证据：Explore §11 将 gitBoundaries=[]、next=blocked: ambiguous-state 描述为“当前 Reader + Policy”结果；该结果对应 E1 激活与 169 Run 创建之前的 detached snapshot。对 exact Base snapshot materialize 169 后，实际 Reader 返回 conflicts=[]，Policy next=review-explore。Invariant：Review lineage 中的执行证据应明确绑定其 point-in-time candidate，不能把前一时点结果误读为 current target 状态。影响：后续 Reviewer 若仅回顾 §11，可能误以为 169 candidate 自身仍被 Policy blocked。Acceptance：后续引用该证据时明确区分 pre-activation environment limitation 与 post-169 current candidate 即可，无需为此创建 revise-explore。Blocking authority：无（non-blocking）。",
+      "location": "openspec/changes/diagnostic-cli/explore.md §1 lines 13-29 / §11 lines 493-509"
+    }
+  ]
+}

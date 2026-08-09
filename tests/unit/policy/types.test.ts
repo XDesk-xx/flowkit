@@ -41,7 +41,7 @@ describe('policy types (task 1.1-1.7, 10.1)', () => {
   });
 
   describe('BlockedReason', () => {
-    it('contains all ten blocked reasons (task 1.6)', () => {
+    it('contains all eleven blocked reasons (task 1.6)', () => {
       const expected: readonly BlockedReason[] = [
         'formal-fact-conflict',
         'no-active-delivery',
@@ -50,6 +50,7 @@ describe('policy types (task 1.1-1.7, 10.1)', () => {
         'verification-failed',
         'verification-not-run',
         'tasks-facts-unavailable',
+        'tasks-incomplete',
         'ambiguous-state',
         'dependency-incomplete',
         'full-test-failed',
@@ -60,6 +61,7 @@ describe('policy types (task 1.1-1.7, 10.1)', () => {
     it('isBlockedReason guards recognized values', () => {
       assert.equal(isBlockedReason('full-test-failed'), true);
       assert.equal(isBlockedReason('tasks-facts-unavailable'), true);
+      assert.equal(isBlockedReason('tasks-incomplete'), true);
       assert.equal(isBlockedReason('not-a-reason'), false);
     });
 

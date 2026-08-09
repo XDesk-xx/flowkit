@@ -10,6 +10,7 @@
  *   - committed Runs;
  *   - reviewer Verdict;
  *   - Change Verification;
+ *   - active Change required Tasks completion;
  *   - Delivery `fullTestStatus`;
  *   - owner authorization facts;
  *   - Archive, Checkpoint and Git boundaries.
@@ -24,6 +25,7 @@ import type {
   ChangeState,
   DeliveryState,
   FullTestStatus,
+  VerificationStatus,
   ResultRef,
   ReviewVerdictValue,
   Role,
@@ -101,10 +103,12 @@ export interface RunFact {
  */
 export interface OpenSpecArtifactFact {
   readonly kind:
+    | 'change-explore'
     | 'change-proposal'
     | 'change-design'
     | 'change-spec'
     | 'change-tasks'
+    | 'change-verification'
     | 'delivery-manifest';
   readonly path: string;
   readonly exists: boolean;
@@ -156,6 +160,13 @@ export interface FormalFactSnapshot {
   readonly deliveryId: string;
   readonly deliveryState: DeliveryState | undefined;
   readonly deliveryFullTestStatus: FullTestStatus | undefined;
+  /** Current active Change Verification status projected from verification.md. */
+  readonly changeVerificationStatus?: VerificationStatus;
+  /**
+   * Whether every required task checkbox in the active Change canonical
+   * tasks.md is completed. Undefined means the completion fact is unavailable.
+   */
+  readonly changeTasksComplete?: boolean;
   /** Changes within the active Delivery. */
   readonly changes: readonly ChangeFact[];
   /** Committed Runs across the active Delivery. */

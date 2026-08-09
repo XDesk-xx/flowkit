@@ -1,11 +1,7 @@
-import { getVersion } from '../cli/version.js';
+#!/usr/bin/env node
+import { runCli } from '../cli/main.js';
 
-const args = process.argv.slice(2);
-
-if (args.includes('--version') || args.includes('-v')) {
-  console.log(getVersion());
-  process.exit(0);
-}
-
-// A1 default: output version (no other CLI commands yet)
-console.log(getVersion());
+const result = await runCli({ argv: process.argv.slice(2), cwd: process.cwd() });
+if (result.stdout !== '') process.stdout.write(result.stdout);
+if (result.stderr !== '') process.stderr.write(result.stderr);
+process.exitCode = result.exitCode;

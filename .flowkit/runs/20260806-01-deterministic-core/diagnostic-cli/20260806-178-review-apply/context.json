@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 2,
+  "runId": "20260806-178-review-apply",
+  "deliveryId": "20260806-01-deterministic-core",
+  "action": "review-apply",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/diagnostic-cli/20260806-178-review-apply/",
+  "changeKey": "E1",
+  "changeId": "diagnostic-cli",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260806-01-deterministic-core/diagnostic-cli/20260806-177-revise-apply/result.json",
+    "versionFingerprint": "fb0ee401e904eca4b20da76e09cb73c73d9c0c7008e88305b9d0f08f0cc2d363",
+    "kind": "run-result"
+  },
+  "verificationInputRef": {
+    "ref": "openspec/changes/diagnostic-cli/verification.md",
+    "versionFingerprint": "234c88af54f5637c536f82baf8fee3a0eb7a343717e383d7671c240c0d882b22",
+    "kind": "verification-summary"
+  },
+  "reviewedRunId": "20260806-177-revise-apply",
+  "constraints": {
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

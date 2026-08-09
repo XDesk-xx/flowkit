@@ -39,6 +39,7 @@ import {
   getCompletedUncheckpointedChanges,
   getRequiredChanges,
   isTasksFactAvailable,
+  areTasksComplete,
 } from './preconditions.js';
 import { hasAuthorizationScope } from './owner-decision.js';
 import {
@@ -53,6 +54,7 @@ import {
   noActionableChangeDiagnosis,
   noActiveDeliveryDiagnosis,
   tasksFactsUnavailableDiagnosis,
+  tasksIncompleteDiagnosis,
 } from './blocked-diagnosis.js';
 
 // ---------------------------------------------------------------------------
@@ -245,22 +247,16 @@ function decideApplyStage(
   if (vGate.kind !== 'satisfied') {
     return blockedResult(verificationGateDiagnosis(vGate));
   }
-  // D1-11 tasks gate (forward-compatible): when a future change makes
-  // Verification facts available and they satisfy the gate, the archive gate
-  // additionally requires Tasks completion facts. In D1 this is unreachable
-  // because Verification facts are always unavailable (the check above returns
-  // first) and `isTasksFactAvailable` is also always `false`. Included so the
-  // forward-compatible path returns `blocked: tasks-facts-unavailable` per the
-  // spec scenario "Tasks 完成事实不可用时 archive blocked" (D1-11), keeping
-  // `tasks-facts-unavailable` strictly distinct from `verification-facts-
-  // unavailable` (different fact dimensions).
+  // D1-11 + E1 owner contract reset: archive consumes the minimal Tasks
+  // completion fact projected from the active Change canonical tasks.md.
   if (!isTasksFactAvailable(snapshot)) {
     return blockedResult(tasksFactsUnavailableDiagnosis());
   }
-  // Forward-compatible branch: Verification satisfied + Tasks completed →
-  // advance to archive authorization. In D1 this is unreachable (facts always
-  // unavailable). Verification not-satisfied would block here; that path is
-  // also unreachable in D1.
+  if (!areTasksComplete(snapshot)) {
+    return blockedResult(tasksIncompleteDiagnosis());
+  }
+  // Verification satisfied + all required Tasks completed → archive owner
+  // authorization boundary.
   if (hasAuthorizationScope(snapshot.ownerAuthorizations, 'archive')) {
     return actionResult('archive');
   }

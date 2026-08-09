@@ -217,6 +217,20 @@ Full Test failed 不得自动扩张 Delivery 范围，也不提供失败结果 w
 
 Run 的 `result.json` 可以引用该记录，但不能替代它。
 
+从 E1 `diagnostic-cli` 起，新的/current active Change `verification.md` 还必须包含且只包含一个精确的 machine-readable status marker：
+
+```text
+<!-- flowkit-change-verification-status: passed -->
+```
+
+marker 的允许值与 `VerificationStatus` 一致：
+
+```text
+not-run | passed | failed | not-applicable
+```
+
+该 marker 只是 Flowkit Reader 对既有 Verification authority file 的确定性投影钩子，不是第二份 Verification 状态。Reader 不得从周围 prose、Run summary、聊天或 historical ResultRef 推断 Change Verification 状态。`verification.md` 存在但 marker 缺失、重复或非法时，Reader 必须 fail-closed 为 `change-verification-status` conflict。历史 archived Change 不要求回填 marker。
+
 ## 8. Review 与 Verification
 
 Verification 与 Review 职责不同：

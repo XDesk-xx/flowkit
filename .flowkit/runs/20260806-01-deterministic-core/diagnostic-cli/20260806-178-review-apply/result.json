@@ -1,0 +1,16 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "已沿 E1 169→178 lineage 完成 177 revise-apply 的独立完整复审。176 的唯一 Blocking Finding E1-RA-001 已关闭：正式 CLI entrypoint 增加 Node shebang，tsc 构建后保留 shebang；真实 npm pack→local install 后 node_modules/.bin/flowkit --version/status/next/doctor/resume-context 均可直接执行，安装后的 bin target 为 executable，且四命令不修改 repository facts。177 相对 175 仅修改 src/bin/flowkit.ts、diagnostic-cli-process.test.ts、verification.md 并新增 176/177 Runs；Proposal/Design/specs 与其他生产实现未发生越界修改。typecheck、lint、build、586/586 tests、OpenSpec diagnostic-cli strict 与 9/9 all strict 均真实通过；Reader conflicts=0，Change Verification=passed。未发现新的 Blocking 或 Non-blocking Apply Finding，故当前 Apply candidate verdict=approved。178 materialize 后真实 Policy 返回 blocked: tasks-facts-unavailable；即使假设已存在 archive owner authorization，canRun(archive) 仍因 tasks-facts-unavailable=false 而拒绝。因此当前尚未进入 authorize-archive owner-decision boundary，Reviewer 未执行 Archive。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/diagnostic-cli/verification.md",
+      "versionFingerprint": "234c88af54f5637c536f82baf8fee3a0eb7a343717e383d7671c240c0d882b22",
+      "kind": "verification-summary"
+    },
+    "nextActionRecommendation": "blocked: tasks-facts-unavailable"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindings": []
+}

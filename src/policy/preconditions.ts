@@ -6,13 +6,12 @@
  * list of unmet preconditions (empty ⇒ allowed, assuming no conflicts).
  *
  * Key rules:
- *   - D1-7: C1 snapshot carries no Change Verification status, so
- *     verification-gated actions (`review-apply`, `archive`) always carry
- *     `verification-facts-unavailable`. D1 MUST NOT infer Verification from
- *     Run history / OpenSpec artifacts / chat.
- *   - D1-11: snapshot carries no task-completion field, so `archive` also
- *     carries `tasks-facts-unavailable`. MUST NOT infer from `change-tasks`
- *     existence.
+ *   - D1-7 + E1: Verification-gated actions consume the current active Change
+ *     `changeVerificationStatus`; missing facts remain fail-closed. Policy MUST
+ *     NOT infer Verification from Run history / OpenSpec artifact existence / chat.
+ *   - D1-11 + E1 Owner reset: `archive` consumes `changeTasksComplete`; missing
+ *     facts map to `tasks-facts-unavailable`, while a present false value maps
+ *     to `tasks-incomplete`. Completion is never inferred from other authorities.
  *   - D1-10: `canRun(review-S)` is `allowed:false` when lineage match +
  *     changes-requested (`matching-changes-requested-requires-revision`); the
  *     only legal action then is `revise-S`.
@@ -147,20 +146,26 @@ export function allRequiredCheckpointed(snapshot: FormalFactSnapshot): boolean {
 }
 
 /**
- * Returns `true` when Tasks completion facts are available in the snapshot.
+ * Returns `true` when the active Change Tasks completion fact is available.
  *
- * D1-11: C1 `FormalFactSnapshot` carries no task-completion field
- * (`openSpecArtifacts` only exposes `change-tasks` existence, not completion).
- * This is always `false` in D1. A future change that extends the snapshot
- * updates only this function.
+ * E1 owner contract reset projects this fact from the current active Change
+ * canonical `tasks.md`. Undefined remains fail-closed and maps to
+ * `tasks-facts-unavailable`.
  */
 export function isTasksFactAvailable(
-  _snapshot: FormalFactSnapshot,
+  snapshot: FormalFactSnapshot,
 ): boolean {
-  // Parameter reserved for the future change that extends the snapshot with a
-  // task-completion field (D1-11). Referenced here to keep the signature contract.
-  void _snapshot;
-  return false;
+  return snapshot.changeTasksComplete !== undefined;
+}
+
+/**
+ * Returns `true` only when the active Change Tasks fact is available and every
+ * required task is complete.
+ */
+export function areTasksComplete(
+  snapshot: FormalFactSnapshot,
+): boolean {
+  return snapshot.changeTasksComplete === true;
 }
 
 /**
@@ -435,10 +440,12 @@ function archivePreconditions(snapshot: FormalFactSnapshot): readonly string[] {
   if (vUnmet !== null) {
     unmet.push(vUnmet);
   }
-  // D1-11: Tasks completion facts unavailable ⇒ unmet. MUST NOT infer from
-  // change-tasks existence.
+  // D1-11 + E1 owner contract reset: archive requires a canonical Tasks
+  // completion fact and every required task completed.
   if (!isTasksFactAvailable(snapshot)) {
     unmet.push('tasks-facts-unavailable');
+  } else if (!areTasksComplete(snapshot)) {
+    unmet.push('tasks-incomplete');
   }
   if (!hasAuthorizationScope(snapshot.ownerAuthorizations, 'archive')) {
     unmet.push('archive-not-authorized');

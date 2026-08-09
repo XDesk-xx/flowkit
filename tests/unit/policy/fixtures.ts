@@ -11,6 +11,7 @@ import type {
   ChangeState,
   DeliveryState,
   FullTestStatus,
+  VerificationStatus,
   ReviewVerdictValue,
   RunStatus,
 } from '../../../src/domain/types.js';
@@ -144,6 +145,8 @@ export function buildCheckpointBoundary(changeId: string = CHANGE_ID): GitBounda
 export interface SnapshotSpec {
   readonly deliveryState?: DeliveryState | undefined;
   readonly deliveryFullTestStatus?: FullTestStatus | undefined;
+  readonly changeVerificationStatus?: VerificationStatus | undefined;
+  readonly changeTasksComplete?: boolean | undefined;
   readonly changes?: readonly ChangeFact[];
   readonly runs?: readonly RunFact[];
   readonly reviewVerdicts?: readonly ReviewVerdictFact[];
@@ -158,6 +161,8 @@ export function buildSnapshot(spec: SnapshotSpec = {}): FormalFactSnapshot {
     deliveryId: DELIVERY_ID,
     deliveryState: spec.deliveryState ?? 'active',
     deliveryFullTestStatus: spec.deliveryFullTestStatus ?? undefined,
+    ...(spec.changeVerificationStatus !== undefined && { changeVerificationStatus: spec.changeVerificationStatus }),
+    ...(spec.changeTasksComplete !== undefined && { changeTasksComplete: spec.changeTasksComplete }),
     changes: spec.changes ?? [buildChange()],
     runs: spec.runs ?? [],
     reviewVerdicts: spec.reviewVerdicts ?? [],

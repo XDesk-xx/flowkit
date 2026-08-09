@@ -25,7 +25,7 @@ import {
   validateSourceReviewTuple,
   expectedSourceReviewActionFor,
 } from '../persistence/result-ref-adapter.js';
-import type { ResultRef, RunStatus } from '../domain/types.js';
+import type { ResultRef, RunStatus, VerificationStatus } from '../domain/types.js';
 import { FlowkitError } from '../shared/errors.js';
 import type {
   ChangeFact,
@@ -60,6 +60,16 @@ export async function readFormalFactSnapshot(
   const { runs, reviewVerdicts, c1RunIds, runConflicts } = await readRuns(deliveryRunsDir, activeChangeId);
   conflicts.push(...runConflicts);
   const openSpecArtifacts = await readOpenSpecArtifacts(input, manifestResult.changes);
+  const verificationProjection = await readActiveChangeVerificationStatus(
+    input,
+    activeChangeId,
+  );
+  conflicts.push(...verificationProjection.conflicts);
+  const tasksProjection = await readActiveChangeTasksCompletion(
+    input,
+    activeChangeId,
+  );
+  conflicts.push(...tasksProjection.conflicts);
 
   let gitBoundaries: GitBoundaryFact[] = [];
   try {
@@ -97,6 +107,12 @@ export async function readFormalFactSnapshot(
     deliveryId: input.deliveryId,
     deliveryState: manifestResult.deliveryState,
     deliveryFullTestStatus: manifestResult.deliveryFullTestStatus,
+    ...(verificationProjection.status !== undefined && {
+      changeVerificationStatus: verificationProjection.status,
+    }),
+    ...(tasksProjection.complete !== undefined && {
+      changeTasksComplete: tasksProjection.complete,
+    }),
     changes: manifestResult.changes,
     runs,
     openSpecArtifacts,
@@ -571,9 +587,11 @@ async function readOpenSpecArtifacts(
   for (const change of changes) {
     const changeDir = join(input.repoRoot, input.openspecChangesPath, change.id);
     for (const candidate of [
+      { kind: 'change-explore' as const, path: join(changeDir, 'explore.md') },
       { kind: 'change-proposal' as const, path: join(changeDir, 'proposal.md') },
       { kind: 'change-design' as const, path: join(changeDir, 'design.md') },
       { kind: 'change-tasks' as const, path: join(changeDir, 'tasks.md') },
+      { kind: 'change-verification' as const, path: join(changeDir, 'verification.md') },
     ]) {
       artifacts.push({
         kind: candidate.kind,
@@ -589,6 +607,139 @@ async function readOpenSpecArtifacts(
     });
   }
   return artifacts;
+}
+
+
+interface VerificationProjectionResult {
+  readonly status?: VerificationStatus;
+  readonly conflicts: readonly FactConflict[];
+}
+
+const CHANGE_VERIFICATION_MARKER =
+  /<!--\s*flowkit-change-verification-status:\s*([^\s>]+)\s*-->/g;
+const VALID_VERIFICATION_STATUSES: ReadonlySet<string> = new Set([
+  'not-run',
+  'passed',
+  'failed',
+  'not-applicable',
+]);
+
+async function readActiveChangeVerificationStatus(
+  input: ReadFormalFactSnapshotInput,
+  activeChangeId: string | undefined,
+): Promise<VerificationProjectionResult> {
+  if (activeChangeId === undefined) {
+    return { conflicts: [] };
+  }
+
+  const verificationPath = join(
+    input.repoRoot,
+    input.openspecChangesPath,
+    activeChangeId,
+    'verification.md',
+  );
+  if (!(await pathExists(verificationPath))) {
+    return { conflicts: [] };
+  }
+
+  let content: string;
+  try {
+    content = await readFile(verificationPath, 'utf-8');
+  } catch (error) {
+    return {
+      conflicts: [
+        {
+          dimension: 'change-verification-status',
+          authority: normalizeSeparators(
+            verificationPath.slice(input.repoRoot.length + 1),
+          ),
+          message: `verification.md unreadable: ${error instanceof Error ? error.message : String(error)}`,
+        },
+      ],
+    };
+  }
+
+  const matches = [...content.matchAll(CHANGE_VERIFICATION_MARKER)];
+  const authority = normalizeSeparators(
+    verificationPath.slice(input.repoRoot.length + 1),
+  );
+  if (matches.length !== 1) {
+    return {
+      conflicts: [
+        {
+          dimension: 'change-verification-status',
+          authority,
+          message:
+            matches.length === 0
+              ? 'verification.md exists but has no flowkit-change-verification-status marker'
+              : `verification.md must contain exactly one flowkit-change-verification-status marker (found ${matches.length})`,
+        },
+      ],
+    };
+  }
+
+  const raw = matches[0]?.[1];
+  if (raw === undefined || !VALID_VERIFICATION_STATUSES.has(raw)) {
+    return {
+      conflicts: [
+        {
+          dimension: 'change-verification-status',
+          authority,
+          message: `verification.md contains invalid flowkit-change-verification-status value: ${String(raw)}`,
+        },
+      ],
+    };
+  }
+
+  return { status: raw as VerificationStatus, conflicts: [] };
+}
+
+interface TasksCompletionProjectionResult {
+  readonly complete?: boolean;
+  readonly conflicts: readonly FactConflict[];
+}
+
+const REQUIRED_TASK_LINE = /^\s*-\s+\[([ xX])\]/gm;
+
+async function readActiveChangeTasksCompletion(
+  input: ReadFormalFactSnapshotInput,
+  activeChangeId: string | undefined,
+): Promise<TasksCompletionProjectionResult> {
+  if (activeChangeId === undefined) {
+    return { conflicts: [] };
+  }
+
+  const tasksPath = join(
+    input.repoRoot,
+    input.openspecChangesPath,
+    activeChangeId,
+    'tasks.md',
+  );
+  if (!(await pathExists(tasksPath))) {
+    return { conflicts: [] };
+  }
+
+  let content: string;
+  try {
+    content = await readFile(tasksPath, 'utf-8');
+  } catch (error) {
+    return {
+      conflicts: [
+        {
+          dimension: 'change-tasks-completion',
+          authority: normalizeSeparators(tasksPath.slice(input.repoRoot.length + 1)),
+          message: `tasks.md unreadable: ${error instanceof Error ? error.message : String(error)}`,
+        },
+      ],
+    };
+  }
+
+  const matches = [...content.matchAll(REQUIRED_TASK_LINE)];
+  const complete = matches.every((match) => {
+    const marker = match[1];
+    return marker === 'x' || marker === 'X';
+  });
+  return { complete, conflicts: [] };
 }
 
 async function findSpecFile(changeDir: string): Promise<string | null> {
