@@ -542,6 +542,11 @@ describe('validateContextFile', () => {
         versionFingerprint: 'abc123',
         kind: 'run-result',
       },
+      verificationInputRef: {
+        ref: 'openspec/changes/formal-fact-reader-and-persistence/verification.md',
+        versionFingerprint: 'def456',
+        kind: 'verification-summary',
+      },
       runPath: '.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-010-review-apply/',
     });
     assert.equal(cf.reviewedRunId, '20260806-009-apply');

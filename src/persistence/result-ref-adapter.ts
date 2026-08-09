@@ -411,54 +411,6 @@ export function assertCanonicalArtifactRoot(logicalRef: string): void {
   }
 }
 
-/**
- * Canonical archive directory name grammar: `YYYY-MM-DD-<changeId>`.
- *
- * Q1-RA-008: archive discovery MUST accept only directories whose name exactly
- * matches `<date>-<changeId>` where `<date>` is a valid `YYYY-MM-DD` date and
- * `<changeId>` equals the target Change id after the date prefix. Suffix-based
- * `endsWith('-<changeId>')` matching is NOT sufficient — a directory named
- * `2026-02-02-execution-model-correction-extra` must never match.
- */
-export function archiveDirectoryNameOf(changeId: string, date: string): string {
-  return `${date}-${changeId}`;
-}
-
-/**
- * Extract the Change id from an archive directory name of the exact grammar
- * `YYYY-MM-DD-<changeId>`. Returns `undefined` when the name does not satisfy
- * the grammar.
- */
-export function changeIdFromArchiveDirectoryName(name: string): string | undefined {
-  const match = /^(\d{4}-\d{2}-\d{2})-(.+)$/.exec(name);
-  if (match === null) {
-    return undefined;
-  }
-  const [, dateStr, changeId] = match;
-  if (changeId.length === 0) {
-    return undefined;
-  }
-  // The date prefix MUST be a real calendar date (YYYY-MM-DD). A directory
-  // named `2026-13-99-C1` is not a valid archive directory even though it
-  // matches the digit shape.
-  const [yyyy, mm, dd] = dateStr.split('-');
-  const year = Number(yyyy);
-  const month = Number(mm);
-  const day = Number(dd);
-  if (month < 1 || month > 12 || day < 1 || day > 31) {
-    return undefined;
-  }
-  const date = new Date(Date.UTC(year, month - 1, day));
-  if (
-    date.getUTCFullYear() !== year ||
-    date.getUTCMonth() !== month - 1 ||
-    date.getUTCDate() !== day
-  ) {
-    return undefined; // e.g. 2026-02-30 does not exist.
-  }
-  return changeId;
-}
-
 // ---------------------------------------------------------------------------
 // Run-ID → result.json path resolver
 // ---------------------------------------------------------------------------
@@ -581,139 +533,11 @@ async function collectMarkdownFiles(dir: string): Promise<string[]> {
 }
 
 // ---------------------------------------------------------------------------
-// Archive-aware artifact resolver (Q1-10)
-// ---------------------------------------------------------------------------
-
-/**
- * Resolve a non-Run artifact logical ref to its physical filesystem path,
- * accounting for archive relocation.
- *
- * Q1-10: after archive, the active `openspec/changes/<changeId>/...` path is
- * absent and the artifact lives under exactly one
- * `openspec/changes/archive/<YYYY-MM-DD>-<changeId>/...` directory.
- *
- * Resolution rules:
- *   - Active path exists → return active path.
- *   - Active path absent → search `openspec/changes/archive/` for exactly one
- *     `<date>-<changeId>` directory containing the artifact. Return that path.
- *   - Active + archive both exist → ambiguity, throw (fail-closed).
- *   - Multiple archive matches → throw (fail-closed).
- *   - No match → throw RESULT_REF_TARGET_MISSING.
- *
- * @param repoRoot - Absolute path to the Git repository root.
- * @param logicalRef - Repository-relative canonical logical ref (e.g.
- *   `openspec/changes/<changeId>/proposal.md`).
- * @returns Absolute filesystem path to the artifact.
- * @throws {FlowkitError} `RESULT_REF_TARGET_MISSING` when no target found.
- * @throws {FlowkitError} `SCHEMA_VALIDATION_FAILED` on ambiguity.
- */
-export async function resolveArchiveAwareArtifactPath(
-  repoRoot: string,
-  logicalRef: string,
-): Promise<string> {
-  // Q1-RA-008: prove the canonical `openspec/changes/<changeId>/...` root/field
-  // identity BEFORE any filesystem resolution. This rejects traversal/absolute
-  // evidence and refs that are not Change-artifact refs at the boundary.
-  assertCanonicalArtifactRoot(logicalRef);
-
-  const activePath = join(repoRoot, normalizeSeparators(logicalRef));
-  const activeExists = await pathExists(activePath);
-
-  // Search archive directories matching <date>-<changeId>.
-  const archiveMatches = await findArchiveMatches(repoRoot, logicalRef);
-
-  if (activeExists && archiveMatches.length > 0) {
-    throw new FlowkitError(
-      'SCHEMA_VALIDATION_FAILED',
-      `Artifact ${logicalRef} exists in both active and archive locations (ambiguity fail-closed)`,
-      { logicalRef, activePath, archiveMatches },
-    );
-  }
-  if (archiveMatches.length > 1) {
-    throw new FlowkitError(
-      'SCHEMA_VALIDATION_FAILED',
-      `Artifact ${logicalRef} matches multiple archive directories (fail-closed)`,
-      { logicalRef, archiveMatches },
-    );
-  }
-  if (activeExists) {
-    return activePath;
-  }
-  if (archiveMatches.length === 1) {
-    return archiveMatches[0];
-  }
-  throw new FlowkitError(
-    'RESULT_REF_TARGET_MISSING',
-    `Artifact ${logicalRef} not found in active or archive location`,
-    { logicalRef, activePath },
-  );
-}
-
-/**
- * Find all archive directories that contain the artifact identified by
- * `logicalRef`.
- *
- * The logical ref has the shape `openspec/changes/<changeId>/<relative>`.
- * Archive directories are named `<YYYY-MM-DD>-<changeId>` under
- * `openspec/changes/archive/`.
- */
-async function findArchiveMatches(
-  repoRoot: string,
-  logicalRef: string,
-): Promise<string[]> {
-  // Parse the changeId and relative path from the logical ref.
-  // Expected shape: openspec/changes/<changeId>/<relativePath>
-  const normalized = normalizeSeparators(logicalRef).replace(/^\/+/, '');
-  const parts = normalized.split('/');
-  // parts[0]='openspec', parts[1]='changes', parts[2]=<changeId>, parts[3..]=relative
-  if (parts.length < 4 || parts[0] !== 'openspec' || parts[1] !== 'changes') {
-    return [];
-  }
-  const changeId = parts[2];
-  const relativePath = parts.slice(3).join('/');
-
-  const archiveDir = join(repoRoot, 'openspec', 'changes', 'archive');
-  let entries: string[];
-  try {
-    entries = await readdir(archiveDir);
-  } catch {
-    return [];
-  }
-
-  const matches: string[] = [];
-  for (const entry of entries) {
-    // Q1-RA-008: archive discovery accepts ONLY the exact grammar
-    // `YYYY-MM-DD-<changeId>` AND the Change id must equal the target changeId
-    // after removing the date prefix. A directory named `2026-02-02-<changeId>-extra`
-    // or `2026-02-02` or a plain `<changeId>` directory MUST NOT match.
-    const entryChangeId = changeIdFromArchiveDirectoryName(entry);
-    if (entryChangeId === undefined || entryChangeId !== changeId) {
-      continue;
-    }
-    const candidate = join(archiveDir, entry, relativePath);
-    if (await pathExists(candidate)) {
-      matches.push(candidate);
-    }
-  }
-  return matches;
-}
-
-async function pathExists(path: string): Promise<boolean> {
-  try {
-    await stat(path);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Shared effective-set validation (Q1-RA-001 / Q1-RA-003)
+// Current handoff effective-set validation
 // ---------------------------------------------------------------------------
 //
 // Used by completion preflight (run-persistence), review-entry (createRun) and
-// Reader (formal-fact-reader) so the "current effective artifact set" contract
-// has ONE authority. Each caller resolves which refs are the current effective
+// Reader (formal-fact-reader) for current Action handoff/completion only. Each caller resolves which refs are the current effective
 // set; these functions validate those refs against current canonical bytes and
 // the specs namespace invariant.
 
@@ -730,23 +554,25 @@ export interface EffectiveArtifactProblem {
 }
 
 /**
- * Read the current canonical bytes for a non-Run artifact logical ref using
- * archive-aware resolution.
+ * Read current Change-artifact bytes from the canonical active OpenSpec path.
  *
- * @throws {FlowkitError} `RESULT_REF_TARGET_MISSING` / `SCHEMA_VALIDATION_FAILED`
- *   when the target cannot be uniquely resolved.
+ * Q2: this helper is used only for current Action handoff/completion. It does
+ * not search OpenSpec archive locations and therefore cannot turn a historical
+ * mutable ResultRef into future-path authority. Archive relocation remains an
+ * OpenSpec-owned operation.
  */
 export async function readArtifactBytes(
   repoRoot: string,
   logicalRef: string,
 ): Promise<string> {
-  const filePath = await resolveArchiveAwareArtifactPath(repoRoot, logicalRef);
+  assertCanonicalArtifactRoot(logicalRef);
+  const filePath = join(repoRoot, normalizeSeparators(logicalRef));
   try {
     return await readFile(filePath, 'utf-8');
   } catch {
     throw new FlowkitError(
       'RESULT_REF_TARGET_MISSING',
-      `Artifact target unreadable: ${logicalRef}`,
+      `Current artifact target unreadable: ${logicalRef}`,
       { logicalRef, filePath },
     );
   }
@@ -822,7 +648,7 @@ export async function validateSpecsExactSet(
 /** Stage an artifact-producing Action belongs to. */
 export type ArtifactStage = 'explore' | 'propose';
 
-/** Category of an effective-set problem detected by {@link validateStageEffectiveSet}. */
+/** Category of an effective-set problem detected by {@link validateCurrentStageArtifactSet}. */
 export type EffectiveSetProblemKind =
   | 'empty-set'
   | 'wrong-kind'
@@ -856,7 +682,7 @@ export interface EffectiveSetProblem {
  *
  * For every produced ref the function checks:
  *   - kind MUST be `produced-artifact`;
- *   - target MUST resolve uniquely (archive-aware) and be readable;
+ *   - target MUST resolve at the current canonical active OpenSpec path and be readable;
  *   - fingerprint MUST match the current canonical bytes.
  *
  * Structural checks:
@@ -868,7 +694,7 @@ export interface EffectiveSetProblem {
  *   invariant. Callers translate these into their own error type
  *   (`FlowkitError` for preflight/review-entry, `FactConflict` for Reader).
  */
-export async function validateStageEffectiveSet(
+export async function validateCurrentStageArtifactSet(
   repoRoot: string,
   changeId: string,
   stage: ArtifactStage,
@@ -1150,9 +976,8 @@ export function expectedSourceReviewActionFor(reviseAction: string): string | un
  * This validator does NOT decide applicability from the Action alone — callers
  * (terminal preflight / Reader) determine whether the tuple is required per the
  * Action contract and pass `requiresTuple: true` when the Run must address a
- * prior review. Immutable refs stay strict across superseded / revision-window
- * generations because this validation is independent of mutable generation
- * classification.
+ * prior review. Immutable run-result refs stay strict regardless of later mutable artifact
+ * changes; this validation is independent of historical artifact replay.
  */
 export async function validateSourceReviewTuple(
   input: SourceReviewTupleInput,

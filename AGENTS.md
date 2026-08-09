@@ -13,6 +13,8 @@
 6. Run / Action 不自动 Commit；普通 Commit 不推进 Flowkit 状态。
 7. 正式 Change artifacts 必须写入其 canonical Git-tracked 路径；`.tmp/**` 只用于可删除 scratch。
 8. 不建立第二套流程权威；不使用聊天、Memory、临时文件替代正式事实。
+9. 人类可读内容默认使用简体中文；Action 名、schema key、enum、CLI/code identifier、path、error code 等机器标识保持英文。
+10. `AGENTS.md` 只约束 Agent 操作方式，不定义 Policy、OpenSpec contract 或 owner 决策。
 
 ## Review / Revise
 
@@ -21,6 +23,8 @@
 - 分析范围可以完整，实际修改范围必须最小。
 - 小修改执行 focused checks；只有影响共享契约、公共类型或跨模块行为时才扩大到 affected checks。
 - Review / Revise 不自动运行 Delivery Full Test。
+- Reviewer 是只读审查者：只写 Reviewer-owned Run / Review artifact，不修改 Author artifacts、生产代码、测试或 Manifest；`changes-requested` 后交回 Author 修正。
+- Reviewer 不替 owner 授权 Apply、Archive、Checkpoint、Full Test 或 Finalize。
 
 ### 契约修改 preflight
 
@@ -40,5 +44,7 @@
 不要要求 Agent 手工维护或重复证明。
 
 - Run `result.json` 是 closed Core-validated schema；Agent 不得手工填写 `blockingFindings`、`verification[]`、`consistencyScan` 等重型 bookkeeping 字段。
-- 所有 ResultRef（kind / path / fingerprint）由 Core 从真实目标派生；Agent 只提供 typed target descriptor（`consumedRunId` / `reviewedRunId` / produced tag），不手工构造 ResultRef。
-- 历史 mutable artifact ref 的 replacement validation 由 Reader generation-aware 规则判定，不由 Agent 手工维护 supersession 状态。
+- 所有 ResultRef（kind / path / fingerprint）由 Core 从真实目标派生；Agent 只提供必要的 typed target descriptor（如 `consumedRunId` / `reviewedRunId`），不手工构造 ResultRef。
+- `pending` 只表示 Run 已开始但尚无 terminal result；不得把它解释为 Action 状态、revision window 或 artifact generation。
+- 当前 Action 正在消费的 handoff ref 可以 exact-bind；已经完成的 mutable artifact / verification ref 只是 point-in-time 记录，后续合法修改不得反向使历史 Run 失效。
+- 不为了“更安全”重复证明 OpenSpec、Git、Verification 或 Reviewer 已经拥有的事实；跨 authority 新增校验前必须证明它直接关系到当前 Action 的安全流转。

@@ -1,0 +1,13 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-apply",
+    "executionStatus": "completed",
+    "summary": "已按 165 Q2-RA-001 仅关闭 Owner decision provenance gate：消费本次 package 外由 Owner 直接提供的正式 Archive/Checkpoint lifecycle decision，确认其与 164 technical contract 及 canonical lifecycle docs 一致；仅更新 Proposal/Design/Tasks/Verification provenance，不修改 production/tests/canonical lifecycle docs，不新增 owner-decision persistence/schema/ResultRef/Run field。Q2 strict 与 8/8 canonical specs strict 通过；未执行 Archive、Checkpoint、Delivery Full Test、Commit 或 Push。",
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260806-01-deterministic-core/orchestration-authority-boundary-correction/20260806-165-review-apply/result.json",
+      "versionFingerprint": "38e9365201e3549d0ddd4ce8277ca9833dc808c057b40e7401ea7037503dec7e",
+      "kind": "run-result"
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "Review 160 revise-apply：transport、lineage、OpenSpec strict 与 557/557 tests 均通过，且 160 未修改 production/tests；但 Q2-RA-001 仍未关闭。160 正确区分了“Owner 直接输入才是 authority”与“Author artifact 仅记录 provenance”，却继续声称当前会话中已存在“OpenSpec archive success 即关闭 Change”的明确 Owner 决策。当前 Owner 原话只有讨论性疑问以及“重新 review 154、Reviewer 不做决策”的授权，未形成该具体 frozen lifecycle decision。因此 Author 仍在用不存在的 Owner fact 支撑 frozen contract。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/orchestration-authority-boundary-correction/verification.md",
+      "versionFingerprint": "f55aa84b31253425b38995c9e55bbcc80fa69ffdbc11546261e421918b896b7e",
+      "kind": "verification-summary"
+    }
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindings": [
+    {
+      "id": "Q2-RA-001",
+      "severity": "blocking",
+      "title": "160 仍把未发生的 Owner lifecycle decision 记录为当前直接输入",
+      "problem": "160 已把 authority 原则改成“Owner 直接输入才是 decision authority，仓库内文档仅记录 provenance”，这一原则本身正确；但 action.md、proposal.md、design.md、tasks.md、verification.md 仍明确断言当前执行会话中 Owner 已直接决定“OpenSpec archive success 即视为 Change 关闭；Checkpoint 是其后的 Flowkit/Git 下一流程”。当前会话中的 Owner 输入只有对该语义的疑问/讨论，以及随后明确授权“重新 review 154，这里不要做决策，指出问题即可重新生成 155”；没有一条明确的 Owner 决策把上述 lifecycle 选择冻结为正式事实。因此 160 只是把原来的 unsupported Owner fact 改成了 provenance note，事实来源本身仍不存在。",
+      "location": "20260806-160-revise-apply/action.md; openspec/changes/orchestration-authority-boundary-correction/proposal.md; design.md; tasks.md; verification.md",
+      "requiredChange": "不得把当前会话中尚未明确发生的 lifecycle decision 表述为 Owner 已直接决定/已冻结。若 frozen lifecycle contract 需要这项 Owner 决策，则必须由 Owner 明确给出；在此之前 Author 只能记录“decision 未提供/待 Owner 决定”或撤回依赖该决策的冻结声明。Reviewer 不指定 Owner 应选择哪种 Archive/Checkpoint 模型。"
+    }
+  ]
+}

@@ -140,13 +140,17 @@ Change 只有在以下条件全部满足时才能进入 Archive：
 随后：
 
 ```text
-archive
-→ 同步 delta specs（存在时）
-→ Change Checkpoint
-→ Change.state = completed
+Flowkit 前置 gate 通过
+→ 调用 OpenSpec archive
+→ OpenSpec 自己完成 delta spec sync / relocation，并返回 success 或 failure
+→ success 后 Flowkit 记录 Change.state = completed
+→ Change 关闭
+→ 下一 Flowkit/Git 边界：Change Checkpoint
 ```
 
-Review approved 但尚未 Archive 或 Checkpoint 时，Change 仍为 active。
+Flowkit 不在 OpenSpec archive 成功后扫描 archive 目录、重新解释 specs merge，或再次证明 OpenSpec 已经拥有的 archive 事实。
+
+Review approved 但尚未 Archive 时，Change 仍为 active。OpenSpec Archive 成功后，即使 Change Checkpoint 尚未形成，Change 也已经 completed；Checkpoint 不要求重新激活 Change，也不要求重新投影该 Change 的历史 Runs。
 
 ### 3.6 Change 取消
 
@@ -174,11 +178,13 @@ explore.md / proposal.md / design.md / specs/** / tasks.md / verification.md
 
 这些是 **mutable current-state canonical path**，不是每个 terminal Run 的 immutable history store：
 
-- 合法 `revise-explore` / `revise-propose` MAY 覆盖同一路径；历史 `producedResultRefs` 的 fingerprint 表达“该 generation 完成时的内容断言”，不要求所有历史 generation 永久匹配当前 bytes；
-- Reader 使用 **generation-aware validation**：通过合法 `review-S changes-requested → revise-S` lineage 分类 current / superseded / revision-window，只对当前 effective generation 的 mutable refs 严格验证当前 canonical bytes；没有合法 successor 的 canonical overwrite 仍 fail-closed；
-- archive 后最终 current-state artifact relocation 到唯一 `openspec/changes/archive/<date>-<changeId>/`；持久化 logical ref 不改写，archive 必须保持最终 effective bytes 不变，active/archive 歧义或多 archive 匹配 fail-closed；
+- 合法 `revise-explore` / `revise-propose` MAY 覆盖同一路径；历史 `producedResultRefs` / `verificationSummaryRef` 只表达 point-in-time 版本，不因后续合法 current bytes 变化产生历史 conflict；
+- Reader 只把当前 Policy 真正需要的 active Change Runs 投影为 Change-level facts，不通过 `current / superseded / revision-window` 重放 completed Change 的 mutable artifact 历史；
+- 当前 Review 或下一 Action handoff MAY 在 entry / review completion 边界 exact-check 当前被消费版本；一旦 handoff 成功，前序 mutable ref 不继续充当后续 Action 的 artifact authority；
+- `pending` 只属于 Run，表示尚无 terminal result；它不是 Action 状态，也不是 artifact revision window；
+- archive 的 relocation、delta spec sync 与 operation success/failure 由 OpenSpec authority 负责；Flowkit 只做 archive 前置 gate/handoff，并记录 operation 结果，不做 post-archive path replay；
 - `.tmp/**` 只作可删除 scratch，resume / review / archive 不得依赖其作为唯一事实来源；
-- terminal `result.json` 发布前的 completion preflight 验证所有 Core-owned ResultRef；preflight 失败（`RESULT_REF_TARGET_MISSING` / `RESULT_REF_MISMATCH`）不发布 result.json，Run 保持 pending，可在修正输入后重试，`assertMutable + fs.link` create-once 不变量不变。
+- terminal `result.json` 发布继续保持 Core-owned preflight 与 create-once；preflight 失败不发布 terminal result，Run 保持 `pending`，修正当前输入后可重试。
 
 ## 4. Review 与 Revision/Fix 多轮闭环
 

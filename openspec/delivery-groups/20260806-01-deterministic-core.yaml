@@ -148,13 +148,29 @@ changes:
       - Verification 分层成本边界（focused / affected / full）
       - Bootstrap legacy Run 有界兼容
 
+  - key: Q2
+    id: orchestration-authority-boundary-correction
+    goal: >
+      纠正 Flowkit 在 Reader、Run/ResultRef、Action completion 与 OpenSpec artifact lifecycle 上的职责越界，
+      恢复 thin orchestration authority：只维护安全推进当前 Action 所需的最小流程事实，
+      其余事实交还 OpenSpec、Git、Reviewer 与 Verification 等原始 authority。
+    required: true
+    dependsOn:
+      - execution-model-correction
+    state: completed
+    outputs:
+      - thin orchestration authority boundary
+      - Run / Action 最小状态与 lineage 边界
+      - Reader / ResultRef / archive 越权项收敛方案
+      - canonical spec / docs / AGENTS 的 keep / clarify / remove 清单
+
   - key: E1
     id: diagnostic-cli
     goal: >
       实现只读诊断 CLI：status / next / doctor / resume-context。
     required: true
     dependsOn:
-      - execution-model-correction
+      - orchestration-authority-boundary-correction
     state: planned
     outputs:
       - flowkit status 命令

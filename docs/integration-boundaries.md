@@ -86,9 +86,9 @@ ResultRef 是引用正式结果的逻辑抽象。
 
 ResultRef 至少满足：
 
-- 能唯一识别被引用结果；
-- 能判断结果是否被替换或失效；
-- 能让接收方读取或定位结果；
+- 能唯一识别“引用发生当时”的正式结果或版本；
+- 当它作为**当前 Action handoff** 被消费时，能 exact-check 目标是否仍是被批准/被审查的版本；
+- 能让接收方读取或定位当前需要消费的结果；
 - 不要求所有环境都使用相同 Provider；
 - 不把当前 Commit SHA 写入会因自身 Commit 而过期的状态文件。
 
@@ -96,7 +96,11 @@ ResultRef 至少满足：
 
 C1 不把 Git Commit SHA 固定为所有结果引用的唯一形式。
 
-当 ResultRef 指向的结果被替换或修改时，ResultRef 必须能判断结果已失效。依赖该结果的 Review 或续接必须标记为需要重新处理。
+ResultRef 的失效语义按 authority 和消费时点区分：
+
+- immutable `run-result` 以及**当前尚未完成的 handoff**保持 exact binding；在被消费前发生替换或 drift，当前 Review / 下一 Action 必须 fail-closed；
+- completed Run 中的 mutable `produced-artifact` / `verification-summary` 是 point-in-time 记录。后续合法 Revision、Verification 或 OpenSpec archive 改变 current path/bytes，不反向使历史 Run 或旧 Review 自动失效；
+- Flowkit 不建立全历史 mutable artifact generation registry，也不通过 archive physical path 重放旧 ResultRef。
 
 ## 6. Continuation Context
 
@@ -224,6 +228,8 @@ C1 不：
 OpenSpec 拥有 Change 契约。Flowkit 引用当前 Change 的 Explore、Proposal、Design、Specs、Tasks、Verification 和 Archive 结果。Action Package 只暴露当前 Action 所需的契约视图。
 
 OpenSpec 不得决定 Delivery、当前 Action 或 owner 授权。Flowkit 不复制 OpenSpec 全部内部状态。
+
+当未来 Change Runner 调用 OpenSpec archive 时，archive 内部的 delta spec sync、artifact relocation 以及 operation success/failure 都由 OpenSpec 定义。Flowkit 只负责调用前的流程 gate / 必要 handoff，并记录 OpenSpec 返回的执行结果；operation 成功后不再扫描 archive path 做二次 proof。
 
 ### 11.2 Git
 

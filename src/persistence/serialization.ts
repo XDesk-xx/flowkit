@@ -36,6 +36,7 @@ import {
   PRODUCED_ARTIFACT_KIND,
   VERIFICATION_SUMMARY_KIND,
   RESULT_REF_KINDS,
+  resolveVerificationSummaryRef,
 } from './result-ref-adapter.js';
 import type {
   ActionResult,
@@ -176,6 +177,13 @@ export interface ContextFile {
   readonly ownerAuthorization: string;
   /** Optional ResultRef projecting directly to `Run.inputRef`. */
   readonly inputRef?: ResultRef;
+  /**
+   * Q2/v6: review-apply entry-time binding over current verification.md.
+   * Core derives this field when the review Run is created; callers never
+   * supply it. It is required only for review-apply and survives resume so
+   * terminal completion can detect review-period drift.
+   */
+  readonly verificationInputRef?: ResultRef;
   /** Prior review being addressed by a `revise-*` Run. */
   readonly sourceReviewRun?: string;
   /** Verdict of the prior review being addressed by a `revise-*` Run. */
@@ -648,7 +656,7 @@ const ARTIFACT_PRODUCING_ACTIONS = new Set([
  *   - `actionResult.action === contextAction`
  *   - `runStatus === 'completed'` + artifact-producing Action ⇒
  *     `producedResultRefs` MUST be structurally present (full exact-set /
- *     current bytes remain owned by `validateStageEffectiveSet`)
+ *     current bytes remain owned by `validateCurrentStageArtifactSet`)
  *   - `runStatus === 'completed'` + `review-apply` ⇒ `verificationSummaryRef`
  *     MUST be present (regardless of `actionResult.executionStatus`)
  *   - `producedResultRefs` forbidden on non-artifact-producing Actions
@@ -689,7 +697,7 @@ export function validateActionResultApplicability(
   if (isTopLevelCompleted && isArtifactProducing && actionResult.producedResultRefs === undefined) {
     throw new FlowkitError(
       'SCHEMA_VALIDATION_FAILED',
-      `top-level completed ${contextAction} projection MUST carry producedResultRefs (structural required evidence); full exact-set/bytes stay owned by validateStageEffectiveSet`,
+      `top-level completed ${contextAction} projection MUST carry producedResultRefs (structural required evidence); full exact-set/bytes stay owned by validateCurrentStageArtifactSet`,
       { contextAction },
     );
   }
@@ -1082,6 +1090,40 @@ export function validateContextFile(value: unknown): ContextFile {
     }
   }
 
+  // Q2/v6: review-apply carries one additional Core-owned point-in-time
+  // verification input binding. It is required on review-apply and forbidden
+  // everywhere else. This is an entry-time context fact, distinct from the
+  // terminal actionResult.verificationSummaryRef.
+  const verificationInputRefRaw = obj['verificationInputRef'];
+  let verificationInputRef: ResultRef | undefined;
+  if (verificationInputRefRaw !== undefined) {
+    verificationInputRef = validateResultRefProjection(verificationInputRefRaw);
+  }
+  if (action === 'review-apply') {
+    if (verificationInputRef === undefined) {
+      schemaFail('review-apply Run MUST carry Core-owned verificationInputRef', { action });
+    }
+    if (verificationInputRef.kind !== VERIFICATION_SUMMARY_KIND) {
+      schemaFail(`review-apply verificationInputRef.kind MUST be ${VERIFICATION_SUMMARY_KIND}`, {
+        action,
+        kind: verificationInputRef.kind,
+      });
+    }
+    if (changeId !== undefined && normalizeSeparators(verificationInputRef.ref) !== resolveVerificationSummaryRef(changeId)) {
+      schemaFail('review-apply verificationInputRef.ref must equal the canonical verification.md path', {
+        action,
+        changeId,
+        ref: verificationInputRef.ref,
+        expected: resolveVerificationSummaryRef(changeId),
+      });
+    }
+  } else if (verificationInputRef !== undefined) {
+    schemaFail('verificationInputRef is only allowed on review-apply', {
+      action,
+      verificationInputRef,
+    });
+  }
+
   // sourceReviewRun / sourceReviewVerdict (optional).
   // Q1-RA-005: sourceReviewRun is a Run-ID descriptor — it MUST satisfy the
   // formal Run-ID grammar (rejecting any path-shaped value) before it is ever
@@ -1114,18 +1156,30 @@ export function validateContextFile(value: unknown): ContextFile {
     sourceReviewVerdict = sourceReviewVerdictRaw;
   }
 
-  // Q1-RA-007: source-review tuple structural requiredness. `sourceReviewRun`
-  // and `sourceReviewVerdict` are a pair: one MUST NOT exist without the other
-  // in the Context. The complete tuple (with actionResult.reviewVerdictRef and
-  // the referenced review being admitted) is enforced by the shared
-  // validateSourceReviewTuple at terminal preflight / Reader.
-  if (sourceReviewRunRaw !== undefined && sourceReviewVerdictRaw === undefined) {
-    schemaFail('sourceReviewRun requires sourceReviewVerdict (source-review tuple)', {
+  // Q2: source-review tuple belongs only to revise-* lineage. It is required
+  // there and forbidden everywhere else; approved forward consumers use the
+  // ordinary consumedRunId/inputRef handoff instead of growing a second review
+  // state machine.
+  const isRevisionAction =
+    action === 'revise-explore' || action === 'revise-propose' || action === 'revise-apply';
+  if (isRevisionAction) {
+    if (sourceReviewRunRaw === undefined || sourceReviewVerdictRaw === undefined) {
+      schemaFail('revise-* Run requires sourceReviewRun + sourceReviewVerdict', {
+        action,
+        sourceReviewRun: sourceReviewRunRaw,
+        sourceReviewVerdict: sourceReviewVerdictRaw,
+      });
+    }
+    if (sourceReviewVerdict !== 'changes-requested') {
+      schemaFail('revise-* sourceReviewVerdict MUST be changes-requested', {
+        action,
+        sourceReviewVerdict,
+      });
+    }
+  } else if (sourceReviewRunRaw !== undefined || sourceReviewVerdictRaw !== undefined) {
+    schemaFail('sourceReviewRun/sourceReviewVerdict are only allowed on revise-* Runs', {
+      action,
       sourceReviewRun: sourceReviewRunRaw,
-    });
-  }
-  if (sourceReviewVerdictRaw !== undefined && sourceReviewRunRaw === undefined) {
-    schemaFail('sourceReviewVerdict requires sourceReviewRun (source-review tuple)', {
       sourceReviewVerdict: sourceReviewVerdictRaw,
     });
   }
@@ -1162,6 +1216,7 @@ export function validateContextFile(value: unknown): ContextFile {
     ...(changeKey !== undefined && { changeKey }),
     ...(changeId !== undefined && { changeId }),
     ...(inputRef !== undefined && { inputRef }),
+    ...(verificationInputRef !== undefined && { verificationInputRef }),
     ...(sourceReviewRun !== undefined && { sourceReviewRun }),
     ...(sourceReviewVerdict !== undefined && { sourceReviewVerdict }),
     ...(reviewedRunId !== undefined && { reviewedRunId }),

@@ -57,20 +57,17 @@ import {
   resolveVerificationSummaryRef,
   enumerateSpecsNamespace,
   readArtifactBytes,
-  validateStageEffectiveSet,
+  validateCurrentStageArtifactSet,
   validateRunIdDescriptor,
   validateReviewRunBinding,
   validateSourceReviewTuple,
-  permittedProducedArtifactTags,
   PRODUCED_ARTIFACT_KIND,
   VERIFICATION_SUMMARY_KIND,
-  type ProducedArtifactTag,
 } from './result-ref-adapter.js';
 import {
-  classifyReviewedArtifactGeneration,
   artifactStage,
+  latestCompletedArtifactRunId,
   type LineageFact,
-  type ReviewLineageFact,
 } from '../facts/generation-resolver.js';
 import type { ReviewFinding } from './serialization.js';
 
@@ -146,6 +143,18 @@ export interface CreateRunInput {
  *   result.json does not exist or is unreadable.
  */
 export async function createRun(input: CreateRunInput): Promise<string> {
+  // Q2/v6: verificationInputRef is Core-owned. Runtime callers (including
+  // untyped JS) must not smuggle a prebuilt ref through an extra property.
+  if ('verificationInputRef' in (input as unknown as Record<string, unknown>)) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      'Caller must not provide verificationInputRef; Core derives it at review-apply entry',
+      { runId: input.runId, action: input.action },
+    );
+  }
+
+  validateCreateRunDescriptors(input);
+
   // 1. Compute the target Run directory and runPath.
   const { runDir, runPath } = computeRunPaths(
     input.deliveryRunsDir,
@@ -155,27 +164,34 @@ export async function createRun(input: CreateRunInput): Promise<string> {
     input.runId,
   );
 
-  // 2. Q1: Core-derive inputRef from typed descriptors.
-  //    - review-* actions: derive from reviewedRunId (REQUIRED).
-  //    - normal actions: derive from consumedRunId (optional).
-  //    - Neither: inputRef is absent (no input).
+  // 2. Core derives all entry-time refs from typed descriptors / current bytes.
+  //    Non-review source-review consumers fall back to sourceReviewRun when
+  //    consumedRunId is omitted, so the source review result remains exact-bound
+  //    without making the caller construct a ResultRef.
   const inputRef = await deriveInputRef(input);
+  const verificationInputRef =
+    input.action === 'review-apply'
+      ? await deriveVerificationInputRef(input)
+      : undefined;
 
-  // 2b. Q1-RA-003: Review-entry validation for review-explore/review-propose.
-  //     Before publishing, verify the reviewed Run is the current effective
-  //     generation and its producedResultRefs match current canonical bytes.
-  //     For review-propose, also verify specs namespace exact-set. On any
-  //     failure, throw BEFORE staging publish — the review Run is not created.
-  if (input.action === 'review-explore' || input.action === 'review-propose') {
-    await validateReviewEntry(input);
-  }
-
-  // 3. Build the ContextFile object (inputRef is Core-derived, not caller-supplied).
-  const contextFile = buildContextFile(input, runPath, inputRef);
-
-  // 4. Validate schema + identity (before writing anything).
+  // 3. Build + validate the ContextFile before any staged publication.
+  const contextFile = buildContextFile(input, runPath, inputRef, verificationInputRef);
   validateContextFile(contextFile);
   validateContextFileIdentity(contextFile, runDir);
+
+  // 4. Q2/v6: strictness lives at the Action entry boundary, not in an
+  //    all-history Reader replay. Reviews exact-bind their current target; every
+  //    Action that consumes a source review validates that review and the
+  //    predecessor/current artifacts it is about before the pending Run exists.
+  if (input.action.startsWith('review-')) {
+    await validateReviewEntry(input, contextFile);
+  }
+  if (isApprovedReviewConsumerAction(input.action)) {
+    await validateConsumedReviewEntry(input, contextFile);
+  }
+  if (isRevisionAction(input.action)) {
+    await validateRevisionEntry(input, contextFile);
+  }
 
   // 5. Prepare staging directory `.tmp-<runId>/`.
   const stagingDir = join(input.deliveryRunsDir, `.tmp-${input.runId}`);
@@ -242,9 +258,48 @@ export async function createRun(input: CreateRunInput): Promise<string> {
  * @throws {FlowkitError} `RESULT_REF_TARGET_MISSING` when the referenced Run's
  *   result.json does not exist or is unreadable.
  */
+function validateCreateRunDescriptors(input: CreateRunInput): void {
+  if (isRevisionAction(input.action)) {
+    if (input.consumedRunId !== undefined) {
+      throw new FlowkitError(
+        'SCHEMA_VALIDATION_FAILED',
+        `${input.action} uses sourceReviewRun for its review handoff; consumedRunId must be absent`,
+        { action: input.action, consumedRunId: input.consumedRunId },
+      );
+    }
+    if (input.sourceReviewRun === undefined || input.sourceReviewVerdict !== 'changes-requested') {
+      throw new FlowkitError(
+        'SCHEMA_VALIDATION_FAILED',
+        `${input.action} requires sourceReviewRun/sourceReviewVerdict=changes-requested`,
+        { action: input.action, sourceReviewRun: input.sourceReviewRun, sourceReviewVerdict: input.sourceReviewVerdict },
+      );
+    }
+  } else {
+    if (input.sourceReviewRun !== undefined || input.sourceReviewVerdict !== undefined) {
+      throw new FlowkitError(
+        'SCHEMA_VALIDATION_FAILED',
+        `sourceReviewRun/sourceReviewVerdict are reserved for revise-* Actions; forbidden on ${input.action}`,
+        { action: input.action },
+      );
+    }
+  }
+
+  if (isApprovedReviewConsumerAction(input.action) && input.consumedRunId === undefined) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `${input.action} requires consumedRunId for its approved Review handoff`,
+      { action: input.action },
+    );
+  }
+}
+
 async function deriveInputRef(input: CreateRunInput): Promise<ResultRef | undefined> {
   const isReviewAction = input.action.startsWith('review-');
-  const targetRunId = isReviewAction ? input.reviewedRunId : input.consumedRunId;
+  const targetRunId = isReviewAction
+    ? input.reviewedRunId
+    : isRevisionAction(input.action)
+      ? input.sourceReviewRun
+      : input.consumedRunId;
 
   if (targetRunId === undefined) {
     // review-* actions MUST have reviewedRunId — but that's enforced by
@@ -319,363 +374,488 @@ async function readReferencedRunResult(
   );
 }
 
+
 // ---------------------------------------------------------------------------
-// Q1-RA-003: Review-entry validation (review-explore / review-propose)
+// Q2: local current-handoff entry validation
 // ---------------------------------------------------------------------------
 
-/**
- * Q1-RA-003: Validate the reviewed Run's current effective generation before
- * publishing a review-explore/review-propose Run.
- *
- * Uses the SAME shared lineage/effective-set semantics as Reader
- * ({@link classifyReviewedArtifactGeneration} +
- * {@link validateEffectiveArtifactRefs} + {@link validateSpecsExactSet}) so the
- * review-entry boundary and Reader agree on "what is the current effective
- * artifact set".
- *
- * Steps:
- *   1. Read the reviewed Run's lineage fact + producedResultRefs.
- *   2. Read sibling Run lineage facts for generation classification.
- *   3. Classify the reviewed Run's generation — MUST be `current`.
- *   4. Validate producedResultRefs against current canonical bytes.
- *   5. For review-propose: exact-compare effective specs identities with
- *      current canonical specs/**.
- *
- * On any failure, throw BEFORE staging publish — the review Run is not created.
- *
- * @throws {FlowkitError} `RESULT_REF_TARGET_MISSING` when the reviewed Run's
- *   context.json is missing/unreadable.
- * @throws {FlowkitError} `RESULT_REF_MISMATCH` when the reviewed Run is not the
- *   current effective generation, or its effective artifact set has drifted.
- */
-async function validateReviewEntry(input: CreateRunInput): Promise<void> {
-  if (input.reviewedRunId === undefined || input.changeId === undefined) {
-    return; // Cannot validate without reviewedRunId or changeId.
-  }
-  const repoRoot = input.repoRoot;
-  const changeId = input.changeId;
-  const reviewedRunId = input.reviewedRunId;
-  const changeDir = join(input.deliveryRunsDir, changeId);
+function isRevisionAction(action: string): boolean {
+  return action === 'revise-explore' || action === 'revise-propose' || action === 'revise-apply';
+}
 
-  // 1. Read the reviewed Run's lineage fact + producedResultRefs.
-  const reviewedRunDir = join(changeDir, reviewedRunId);
-  const reviewedFact = await readRunLineageFact(reviewedRunDir, reviewedRunId, changeId);
-  if (reviewedFact === undefined) {
-    throw new FlowkitError(
-      'RESULT_REF_TARGET_MISSING',
-      `review-* entry: reviewed Run ${reviewedRunId} context.json missing or unreadable`,
-      { reviewedRunId, changeDir },
-    );
-  }
-  const producedRefs = await readRunProducedResultRefs(reviewedRunDir);
+function isApprovedReviewConsumerAction(action: string): boolean {
+  return action === 'propose' || action === 'apply' || action === 'archive';
+}
 
-  // 2. Read sibling lineage facts for generation classification.
-  //    Exclude the review Run being created (input.runId) — it is not on disk
-  //    yet. The reviewed Run MUST be included so its generation can be classified.
-  const { completedArtifactRuns, allReviseRuns, reviews } = await readSiblingLineageFacts(
-    changeDir,
-    input.runId,
-    changeId,
-  );
-
-  // 3. Classify the reviewed Run's generation — MUST be `current`.
-  const genClass = classifyReviewedArtifactGeneration(
-    reviewedFact,
-    completedArtifactRuns,
-    allReviseRuns,
-    reviews,
-  );
-  if (genClass !== 'current') {
-    throw new FlowkitError(
-      'RESULT_REF_MISMATCH',
-      `review-* entry: reviewed Run ${reviewedRunId} is not the current effective generation (class=${genClass ?? 'non-artifact'}); only the current generation can be reviewed`,
-      { reviewedRunId, generationClass: genClass },
-    );
-  }
-
-  // 4. Q1-RA-003: unconditional stage-aware effective-set completeness. The
-  //    reviewed Run's produced set MUST exactly satisfy the stage invariant
-  //    (explore → explore.md; propose → proposal+design+tasks+complete specs).
-  //    A missing/empty/partial/drifted set rejects the review BEFORE publish —
-  //    requiredness comes from the Action/stage, never from `length > 0`.
-  const stage = artifactStage(reviewedFact.action);
-  if (stage !== undefined) {
-    const setProblems = await validateStageEffectiveSet(repoRoot, changeId, stage, producedRefs);
-    if (setProblems.length > 0) {
-      throw new FlowkitError(
-        'RESULT_REF_MISMATCH',
-        `review-* entry: reviewed Run ${reviewedRunId} effective artifact set does not satisfy the ${stage} invariant: ${setProblems.map((p) => p.message).join('; ')}`,
-        { reviewedRunId, problems: setProblems },
-      );
-    }
+function expectedReviewHandoff(action: string): {
+  readonly reviewAction: 'review-explore' | 'review-propose' | 'review-apply';
+  readonly verdict: ReviewVerdictValue;
+  readonly stage?: 'explore' | 'propose';
+} | undefined {
+  switch (action) {
+    case 'propose':
+      return { reviewAction: 'review-explore', verdict: 'approved', stage: 'explore' };
+    case 'revise-explore':
+      return { reviewAction: 'review-explore', verdict: 'changes-requested', stage: 'explore' };
+    case 'apply':
+      return { reviewAction: 'review-propose', verdict: 'approved', stage: 'propose' };
+    case 'revise-propose':
+      return { reviewAction: 'review-propose', verdict: 'changes-requested', stage: 'propose' };
+    case 'archive':
+      return { reviewAction: 'review-apply', verdict: 'approved' };
+    case 'revise-apply':
+      return { reviewAction: 'review-apply', verdict: 'changes-requested' };
+    default:
+      return undefined;
   }
 }
 
-/**
- * Read a single Run's {@link LineageFact} from its context.json + result.json.
- *
- * Determines `status` from result.json existence (pending when absent; terminal
- * `runStatus` when present). Returns `undefined` when context.json is missing
- * or unreadable.
- */
+/** Core-owned review-apply entry binding over the current verification.md. */
+async function deriveVerificationInputRef(input: CreateRunInput): Promise<ResultRef> {
+  if (input.changeId === undefined) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      'review-apply requires changeId to derive verificationInputRef',
+      { action: input.action, runId: input.runId },
+    );
+  }
+  const logicalRef = resolveVerificationSummaryRef(input.changeId);
+  const content = await readArtifactBytes(input.repoRoot, logicalRef);
+  return buildArtifactResultRef(logicalRef, content, VERIFICATION_SUMMARY_KIND);
+}
+
+interface AdmittedReviewDescriptor {
+  readonly context: ContextFile;
+  readonly verdict: ReviewVerdictValue;
+  readonly resultContent: string;
+  readonly result: RunResultFile;
+}
+
+/** Read and exact-bind one completed review Run. */
+async function readAdmittedReviewDescriptor(
+  repoRoot: string,
+  runsPathPrefix: string,
+  changeDir: string,
+  reviewRunId: string,
+): Promise<AdmittedReviewDescriptor> {
+  validateRunIdDescriptor(reviewRunId);
+  const runDir = join(changeDir, reviewRunId);
+  let context: ContextFile;
+  let resultContent: string;
+  try {
+    context = validateContextFile(JSON.parse(await readFile(join(runDir, 'context.json'), 'utf-8')));
+    resultContent = await readFile(join(runDir, 'result.json'), 'utf-8');
+  } catch (error) {
+    if (error instanceof FlowkitError) throw error;
+    throw new FlowkitError(
+      'RESULT_REF_TARGET_MISSING',
+      `Review ${reviewRunId} context/result is missing or unreadable`,
+      { reviewRunId, changeDir },
+    );
+  }
+  if (!context.action.startsWith('review-') || context.reviewedRunId === undefined) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `Run ${reviewRunId} is not an admissible review Run`,
+      { reviewRunId, action: context.action },
+    );
+  }
+  const result = admitC1RunResult(resultContent, context.action);
+  if (result.runStatus !== 'completed') {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `Review ${reviewRunId} must be completed`,
+      { reviewRunId, runStatus: result.runStatus },
+    );
+  }
+  if (result.reviewVerdict !== 'approved' && result.reviewVerdict !== 'changes-requested') {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `Review ${reviewRunId} has no terminal verdict`,
+      { reviewRunId },
+    );
+  }
+  await validateReviewRunBinding({
+    runId: context.runId,
+    deliveryId: context.deliveryId,
+    changeId: context.changeId,
+    action: context.action,
+    reviewedRunId: context.reviewedRunId,
+    inputRef: context.inputRef,
+    runsPathPrefix,
+    repoRoot,
+  });
+  return { context, verdict: result.reviewVerdict, resultContent, result };
+}
+
+function assertRefEquals(actual: ResultRef | undefined, expected: ResultRef, label: string): void {
+  if (
+    actual === undefined ||
+    actual.kind !== expected.kind ||
+    normalizeSeparators(actual.ref) !== normalizeSeparators(expected.ref) ||
+    actual.versionFingerprint !== expected.versionFingerprint
+  ) {
+    throw new FlowkitError(
+      'RESULT_REF_MISMATCH',
+      `${label} does not equal the Core-derived expected ResultRef`,
+      { label, actual, expected },
+    );
+  }
+}
+
+/** Read a single persisted Run as the minimal lineage fact needed at entry. */
 async function readRunLineageFact(
   runDir: string,
   runId: string,
   changeId: string,
 ): Promise<LineageFact | undefined> {
-  let ctxContent: string;
+  let contextRaw: string;
   try {
-    ctxContent = await readFile(join(runDir, 'context.json'), 'utf-8');
+    contextRaw = await readFile(join(runDir, 'context.json'), 'utf-8');
   } catch {
     return undefined;
   }
-  let ctx: Record<string, unknown>;
+  let context: Record<string, unknown>;
   try {
-    ctx = JSON.parse(ctxContent) as Record<string, unknown>;
+    context = JSON.parse(contextRaw) as Record<string, unknown>;
   } catch {
     return undefined;
   }
 
-  const action = typeof ctx['action'] === 'string' ? ctx['action'] : '';
-
-  // Determine status from result.json existence.
   let status: RunStatus = 'pending';
   try {
-    const resultContent = await readFile(join(runDir, 'result.json'), 'utf-8');
-    const result = JSON.parse(resultContent) as Record<string, unknown>;
-    const runStatus = result['runStatus'];
-    if (runStatus === 'completed' || runStatus === 'failed' || runStatus === 'cancelled') {
-      status = runStatus;
-    }
+    const result = JSON.parse(await readFile(join(runDir, 'result.json'), 'utf-8')) as Record<string, unknown>;
+    const terminal = result['runStatus'];
+    if (terminal === 'completed' || terminal === 'failed' || terminal === 'cancelled') status = terminal;
   } catch {
-    // result.json missing → pending.
+    // result.json absent => pending
   }
 
-  const sourceReviewRun = ctx['sourceReviewRun'];
-  const sourceReviewVerdict = ctx['sourceReviewVerdict'];
-  const reviewedRunId = ctx['reviewedRunId'];
-
-  const fact: LineageFact = {
+  const action = typeof context['action'] === 'string' ? context['action'] : '';
+  const sourceReviewRun = context['sourceReviewRun'];
+  const sourceReviewVerdict = context['sourceReviewVerdict'];
+  const reviewedRunId = context['reviewedRunId'];
+  return {
     runId,
     changeId,
     action,
     status,
     ...(typeof sourceReviewRun === 'string' && { sourceReviewRun }),
-    ...((sourceReviewVerdict === 'approved' || sourceReviewVerdict === 'changes-requested') && {
-      sourceReviewVerdict,
-    }),
+    ...((sourceReviewVerdict === 'approved' || sourceReviewVerdict === 'changes-requested') && { sourceReviewVerdict }),
     ...(typeof reviewedRunId === 'string' && { reviewedRunId }),
   };
-  return fact;
 }
 
-/**
- * Read all sibling Run lineage facts in a Change directory for generation
- * classification. Excludes staging/temp entries and the Run being created.
- *
- * Returns:
- *   - `completedArtifactRuns`: completed explore/revise-explore/propose/revise-propose.
- *   - `allReviseRuns`: all revise-explore/revise-propose (completed + pending).
- *   - `reviews`: completed review-* Run lineage facts (with verdict).
- */
 async function readSiblingLineageFacts(
   changeDir: string,
   excludeRunId: string,
   changeId: string,
-): Promise<{
-  readonly completedArtifactRuns: readonly LineageFact[];
-  readonly allReviseRuns: readonly LineageFact[];
-  readonly reviews: readonly ReviewLineageFact[];
-}> {
+): Promise<readonly LineageFact[]> {
   const entries = await readVisibleEntries(changeDir);
   const facts: LineageFact[] = [];
-  const reviewFacts: ReviewLineageFact[] = [];
-
   for (const entry of entries) {
-    if (entry === excludeRunId) continue;
-    if (!looksLikeRunIdEntry(entry)) continue;
-
+    if (entry === excludeRunId || !looksLikeRunIdEntry(entry)) continue;
     const runDir = join(changeDir, entry);
     if (!(await existsDirectory(runDir))) continue;
-
     const fact = await readRunLineageFact(runDir, entry, changeId);
-    if (fact === undefined) continue;
-    facts.push(fact);
-
-    // If completed review-* Run with reviewedRunId, read verdict for lineage proof.
-    if (
-      fact.status === 'completed' &&
-      fact.action.startsWith('review-') &&
-      fact.reviewedRunId !== undefined
-    ) {
-      const verdict = await readRunVerdict(runDir);
-      if (verdict !== undefined) {
-        reviewFacts.push({
-          reviewRunId: entry,
-          verdict,
-          reviewedRunId: fact.reviewedRunId,
-          reviewAction: fact.action,
-          reviewStatus: fact.status,
-          changeId,
-        });
-      }
-    }
+    if (fact !== undefined) facts.push(fact);
   }
-
-  const completedArtifactRuns = facts.filter(
-    (f) =>
-      f.status === 'completed' &&
-      (f.action === 'explore' ||
-        f.action === 'revise-explore' ||
-        f.action === 'propose' ||
-        f.action === 'revise-propose'),
-  );
-  const allReviseRuns = facts.filter(
-    (f) => f.action === 'revise-explore' || f.action === 'revise-propose',
-  );
-
-  return { completedArtifactRuns, allReviseRuns, reviews: reviewFacts };
+  return facts;
 }
 
-/**
- * Read a Run's `producedResultRefs` from its result.json.
- *
- * Q1-RA-003: this MUST NOT convert missing/malformed/wrong-schema formal
- * evidence into an empty array (that would treat "formal evidence missing" as
- * a legal empty namespace). A `producedResultRefs` field that is absent,
- * malformed, wrong-typed, or whose entries lack the required Core-owned fields
- * is a fail-closed error.
- *
- * @throws {FlowkitError} `SCHEMA_VALIDATION_FAILED` when result.json is
- *   missing/unreadable/malformed or producedResultRefs is absent/invalid.
- */
+/** Read a producer Run's complete Core-owned producedResultRefs. */
 async function readRunProducedResultRefs(runDir: string): Promise<ResultRef[]> {
   let content: string;
   try {
     content = await readFile(join(runDir, 'result.json'), 'utf-8');
-  } catch (e) {
+  } catch (error) {
     throw new FlowkitError(
       'SCHEMA_VALIDATION_FAILED',
-      `Reviewed Run result.json missing or unreadable: ${(e as Error).message}`,
+      `Reviewed Run result.json missing or unreadable: ${(error as Error).message}`,
       { runDir },
     );
   }
   let parsed: unknown;
   try {
     parsed = JSON.parse(content);
-  } catch (e) {
+  } catch (error) {
     throw new FlowkitError(
       'SCHEMA_VALIDATION_FAILED',
-      `Reviewed Run result.json is not valid JSON: ${(e as Error).message}`,
+      `Reviewed Run result.json is not valid JSON: ${(error as Error).message}`,
       { runDir },
     );
   }
-  const result = parsed as Record<string, unknown>;
-  const ar = result['actionResult'];
-  if (ar === undefined || typeof ar !== 'object' || ar === null) {
-    throw new FlowkitError(
-      'SCHEMA_VALIDATION_FAILED',
-      `Reviewed Run result.json has no actionResult (formal evidence missing)`,
-      { runDir },
-    );
+  const actionResult = (parsed as Record<string, unknown>)['actionResult'];
+  if (actionResult === undefined || typeof actionResult !== 'object' || actionResult === null) {
+    throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'Reviewed producer has no actionResult', { runDir });
   }
-  const arObj = ar as Record<string, unknown>;
-  const refs = arObj['producedResultRefs'];
+  const refs = (actionResult as Record<string, unknown>)['producedResultRefs'];
   if (!Array.isArray(refs)) {
-    throw new FlowkitError(
-      'SCHEMA_VALIDATION_FAILED',
-      `Reviewed Run producedResultRefs missing or not an array (formal evidence missing)`,
-      { runDir },
-    );
+    throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'Reviewed producer has no producedResultRefs array', { runDir });
   }
-  return (refs as Array<Record<string, unknown>>).map((r, i) => {
-    if (typeof r['ref'] !== 'string' || typeof r['versionFingerprint'] !== 'string') {
+  return (refs as Array<Record<string, unknown>>).map((ref, index) => {
+    if (typeof ref['ref'] !== 'string' || typeof ref['versionFingerprint'] !== 'string') {
       throw new FlowkitError(
         'SCHEMA_VALIDATION_FAILED',
-        `Reviewed Run producedResultRefs[${i}] missing ref or versionFingerprint`,
-        { runDir, index: i },
+        `Reviewed producer producedResultRefs[${index}] is malformed`,
+        { runDir, index },
       );
     }
     return {
-      ref: r['ref'] as string,
-      versionFingerprint: r['versionFingerprint'] as string,
-      ...(typeof r['kind'] === 'string' && { kind: r['kind'] as ResultRef['kind'] }),
+      ref: ref['ref'] as string,
+      versionFingerprint: ref['versionFingerprint'] as string,
+      ...(typeof ref['kind'] === 'string' && { kind: ref['kind'] as ResultRef['kind'] }),
     };
   });
 }
 
 /**
- * Read a completed review-* Run's `reviewVerdict` from its result.json —
- * ONLY when the review's immutable evidence is exact-validated.
- *
- * Q1-RA-006: a review Run's verdict may be consumed as lineage proof ONLY
- * after (1) the complete result.json passes the closed physical validators
- * (validateRunResultFileCombination + validateActionResultWithoutRunRef +
- * validateReviewVerdictIntegrity) and (2) the review exact binding
- * (reviewedRunId ↔ context.inputRef ↔ actual reviewed result.json bytes) is
- * proven. Returns `undefined` (review NOT admitted as lineage) when any of
- * those checks fail — a broken review MUST NOT influence generation
- * classification.
+ * Current-stage handoff check. It is local to entry/review completion and does
+ * not persist a generation class or replay historical refs in future snapshots.
  */
-async function readRunVerdict(
-  runDir: string,
-): Promise<ReviewVerdictValue | undefined> {
+async function validateReviewedStageCurrentBytes(
+  repoRoot: string,
+  changeDir: string,
+  changeId: string,
+  reviewedRunId: string,
+  expectedStage: 'explore' | 'propose',
+  excludeRunId = '',
+): Promise<void> {
+  const reviewedDir = join(changeDir, reviewedRunId);
+  const reviewed = await readRunLineageFact(reviewedDir, reviewedRunId, changeId);
+  if (
+    reviewed === undefined ||
+    reviewed.status !== 'completed' ||
+    artifactStage(reviewed.action) !== expectedStage
+  ) {
+    throw new FlowkitError(
+      'RESULT_REF_MISMATCH',
+      `Reviewed Run ${reviewedRunId} is not a completed ${expectedStage} producer`,
+      { reviewedRunId, expectedStage, action: reviewed?.action, status: reviewed?.status },
+    );
+  }
+
+  const siblings = await readSiblingLineageFacts(changeDir, excludeRunId, changeId);
+  const latest = latestCompletedArtifactRunId(siblings, changeId, expectedStage);
+  if (latest !== reviewedRunId) {
+    throw new FlowkitError(
+      'RESULT_REF_MISMATCH',
+      `Reviewed Run ${reviewedRunId} is not the latest completed ${expectedStage} producer`,
+      { reviewedRunId, latestRunId: latest, expectedStage },
+    );
+  }
+
+  const refs = await readRunProducedResultRefs(reviewedDir);
+  const problems = await validateCurrentStageArtifactSet(repoRoot, changeId, expectedStage, refs);
+  if (problems.length > 0) {
+    throw new FlowkitError(
+      'RESULT_REF_MISMATCH',
+      `Reviewed ${expectedStage} producer ${reviewedRunId} no longer matches current OpenSpec bytes: ${problems.map((problem) => problem.message).join('; ')}`,
+      { reviewedRunId, expectedStage, problems },
+    );
+  }
+}
+
+async function validateReviewedRunAction(
+  changeDir: string,
+  changeId: string,
+  reviewedRunId: string,
+  allowedActions: readonly string[],
+): Promise<void> {
+  const fact = await readRunLineageFact(join(changeDir, reviewedRunId), reviewedRunId, changeId);
+  if (fact === undefined || fact.status !== 'completed' || !allowedActions.includes(fact.action)) {
+    throw new FlowkitError(
+      'RESULT_REF_MISMATCH',
+      `Reviewed Run ${reviewedRunId} must be a completed ${allowedActions.join('/')} Run`,
+      { reviewedRunId, action: fact?.action, status: fact?.status },
+    );
+  }
+}
+
+async function validateReviewVerificationSummaryCurrent(
+  descriptor: AdmittedReviewDescriptor,
+  repoRoot: string,
+): Promise<void> {
+  const ref = descriptor.result.actionResult?.verificationSummaryRef;
+  if (ref === undefined) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `review-apply ${descriptor.context.runId} has no verificationSummaryRef`,
+      { reviewRunId: descriptor.context.runId },
+    );
+  }
+  await verifyArtifactRef(ref, repoRoot, descriptor.context.runId, 'verificationSummaryRef');
+}
+
+/** Review entry: exact-bind immutable target; artifact reviews also bind current bytes. */
+async function validateReviewEntry(input: CreateRunInput, contextFile: ContextFile): Promise<void> {
+  if (input.reviewedRunId === undefined || input.changeId === undefined) return;
+
+  await validateReviewRunBinding({
+    runId: contextFile.runId,
+    deliveryId: contextFile.deliveryId,
+    changeId: contextFile.changeId,
+    action: contextFile.action,
+    reviewedRunId: contextFile.reviewedRunId,
+    inputRef: contextFile.inputRef,
+    runsPathPrefix: input.runsPathPrefix,
+    repoRoot: input.repoRoot,
+  });
+
+  const changeDir = join(input.deliveryRunsDir, input.changeId);
+  if (input.action === 'review-explore' || input.action === 'review-propose') {
+    await validateReviewedStageCurrentBytes(
+      input.repoRoot,
+      changeDir,
+      input.changeId,
+      input.reviewedRunId,
+      input.action === 'review-explore' ? 'explore' : 'propose',
+      input.runId,
+    );
+    return;
+  }
+
+  if (input.action === 'review-apply') {
+    await validateReviewedRunAction(changeDir, input.changeId, input.reviewedRunId, ['apply', 'revise-apply']);
+    if (contextFile.verificationInputRef === undefined) {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'review-apply missing verificationInputRef', { runId: input.runId });
+    }
+    await verifyArtifactRef(contextFile.verificationInputRef, input.repoRoot, input.runId, 'verificationInputRef');
+  }
+}
+
+/** Approved Review → propose/apply/archive one-shot entry handoff. */
+async function validateConsumedReviewEntry(input: CreateRunInput, contextFile: ContextFile): Promise<void> {
+  if (!isApprovedReviewConsumerAction(input.action)) return;
+  const contract = expectedReviewHandoff(input.action)!;
+  if (input.changeId === undefined || input.consumedRunId === undefined) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `${input.action} requires consumedRunId for its approved Review handoff`,
+      { action: input.action, consumedRunId: input.consumedRunId },
+    );
+  }
+  const changeDir = join(input.deliveryRunsDir, input.changeId);
+  const review = await readAdmittedReviewDescriptor(
+    input.repoRoot,
+    input.runsPathPrefix,
+    changeDir,
+    input.consumedRunId,
+  );
+  if (review.context.action !== contract.reviewAction || review.verdict !== contract.verdict) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `${input.action} must consume ${contract.reviewAction}/${contract.verdict}`,
+      { action: input.action, consumedRunId: input.consumedRunId, reviewAction: review.context.action, verdict: review.verdict },
+    );
+  }
+  const expectedRef = buildRunResultRef(
+    resolveRunResultPath(input.runsPathPrefix, input.deliveryId, input.changeId, input.consumedRunId).replace(/\/result\.json$/, ''),
+    review.resultContent,
+  );
+  assertRefEquals(contextFile.inputRef, expectedRef, `${input.action}.inputRef/consumedRunId`);
+
+  if (contract.stage !== undefined) {
+    await validateReviewedStageCurrentBytes(
+      input.repoRoot,
+      changeDir,
+      input.changeId,
+      review.context.reviewedRunId!,
+      contract.stage,
+      input.runId,
+    );
+  } else {
+    await validateReviewVerificationSummaryCurrent(review, input.repoRoot);
+  }
+}
+
+/** changes-requested Review → revise-* entry handoff. */
+async function validateRevisionEntry(input: CreateRunInput, contextFile: ContextFile): Promise<void> {
+  if (!isRevisionAction(input.action)) return;
+  const contract = expectedReviewHandoff(input.action)!;
+  if (
+    input.changeId === undefined ||
+    input.sourceReviewRun === undefined ||
+    input.sourceReviewVerdict !== 'changes-requested'
+  ) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `${input.action} requires matching sourceReviewRun/sourceReviewVerdict=changes-requested`,
+      { action: input.action, sourceReviewRun: input.sourceReviewRun, sourceReviewVerdict: input.sourceReviewVerdict },
+    );
+  }
+  const changeDir = join(input.deliveryRunsDir, input.changeId);
+  const review = await readAdmittedReviewDescriptor(
+    input.repoRoot,
+    input.runsPathPrefix,
+    changeDir,
+    input.sourceReviewRun,
+  );
+  if (
+    review.context.action !== contract.reviewAction ||
+    review.verdict !== 'changes-requested' ||
+    contextFile.sourceReviewVerdict !== 'changes-requested'
+  ) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `${input.action} source review must be ${contract.reviewAction}/changes-requested`,
+      { action: input.action, sourceReviewRun: input.sourceReviewRun, reviewAction: review.context.action, verdict: review.verdict },
+    );
+  }
+  const expectedRef = buildRunResultRef(
+    resolveRunResultPath(input.runsPathPrefix, input.deliveryId, input.changeId, input.sourceReviewRun).replace(/\/result\.json$/, ''),
+    review.resultContent,
+  );
+  assertRefEquals(contextFile.inputRef, expectedRef, `${input.action}.inputRef/sourceReviewRun`);
+
+  if (contract.stage !== undefined) {
+    await validateReviewedStageCurrentBytes(
+      input.repoRoot,
+      changeDir,
+      input.changeId,
+      review.context.reviewedRunId!,
+      contract.stage,
+      input.runId,
+    );
+  } else {
+    await validateReviewVerificationSummaryCurrent(review, input.repoRoot);
+  }
+}
+
+/** Read an admitted review verdict for source-review tuple completion validation. */
+async function readRunVerdict(runDir: string): Promise<ReviewVerdictValue | undefined> {
   let content: string;
   try {
     content = await readFile(join(runDir, 'result.json'), 'utf-8');
   } catch {
-    return undefined; // Missing result.json → not terminal.
-  }
-
-  // Read context for reviewedRunId + inputRef (exact binding proof).
-  let ctx: ContextFile;
-  try {
-    ctx = validateContextFile(JSON.parse(await readFile(join(runDir, 'context.json'), 'utf-8')));
-  } catch {
-    return undefined; // Malformed context → not admitted.
-  }
-  if (!ctx.action.startsWith('review-') || ctx.reviewedRunId === undefined) {
     return undefined;
   }
-
-  // Phase 1: shared closed-schema admission of the WHOLE result.json
-  // (Q1-RA-006): validateRunResultFileCombination + actionResult projection +
-  // review verdict integrity.
+  let context: ContextFile;
   try {
-    admitC1RunResult(content, ctx.action);
+    context = validateContextFile(JSON.parse(await readFile(join(runDir, 'context.json'), 'utf-8')));
   } catch {
-    return undefined; // Malformed / closed-schema violation → not admitted.
+    return undefined;
   }
-
-  // Phase 2: review exact binding — the SHARED fail-closed validator
-  // (Q1-RA-006). Core re-derives the expected target from reviewedRunId;
-  // missing / wrong-kind / wrong-target / unreadable / hash mismatch all fail
-  // closed (no verdict → the review cannot enter sibling lineage).
+  if (!context.action.startsWith('review-') || context.reviewedRunId === undefined) return undefined;
   try {
+    admitC1RunResult(content, context.action);
     await validateReviewRunBinding({
-      runId: ctx.runId,
-      deliveryId: ctx.deliveryId,
-      changeId: ctx.changeId,
-      action: ctx.action,
-      reviewedRunId: ctx.reviewedRunId,
-      inputRef: ctx.inputRef,
-      runsPathPrefix: deriveRunsPathPrefix(ctx),
-      repoRoot: deriveRepoRoot(runDir, ctx.runPath),
+      runId: context.runId,
+      deliveryId: context.deliveryId,
+      changeId: context.changeId,
+      action: context.action,
+      reviewedRunId: context.reviewedRunId,
+      inputRef: context.inputRef,
+      runsPathPrefix: deriveRunsPathPrefix(context),
+      repoRoot: deriveRepoRoot(runDir, context.runPath),
     });
   } catch {
-    return undefined; // Exact binding not provable → not admitted.
+    return undefined;
   }
-
   const verdict = (JSON.parse(content) as Record<string, unknown>)['reviewVerdict'];
-  if (verdict === 'approved' || verdict === 'changes-requested') {
-    return verdict;
-  }
-  return undefined;
+  return verdict === 'approved' || verdict === 'changes-requested' ? verdict : undefined;
 }
 
-/**
- * Check whether a directory entry looks like a Run ID (`YYYYMMDD-NNN-action`).
- */
 function looksLikeRunIdEntry(name: string): boolean {
   return /^\d{8}-\d{3}-[a-z][a-z-]*$/.test(name);
 }
@@ -860,27 +1040,11 @@ async function publishTerminalResult(
 // ---------------------------------------------------------------------------
 
 /**
- * Descriptor-driven terminal completion input (Q1-RA-001).
+ * Descriptor-driven terminal completion input.
  *
- * This is the PRODUCTION terminal-write entry shape. The caller describes
- * intent with typed descriptors; Core derives every {@link ResultRef} from
- * actual target bytes. The caller MUST NOT supply `ResultRef` objects, paths,
- * kinds, or fingerprints — that authority belongs to Core alone.
- *
- * Field → Core-derived ResultRef mapping:
- *   - `consumedRunIds` → `consumedInputRefs` (kind `run-result`)
- *   - `context.sourceReviewRun` (non-review actions) → `reviewVerdictRef`
- *     (kind `run-result`)
- *   - `producedArtifactTags` (revise-* only) + Core-expected set →
- *     `producedResultRefs` (kind `produced-artifact`). Initial explore/propose
- *     ignore caller tags and unconditionally build the complete Core-expected
- *     set; revise-propose applies a subset overlay over the predecessor
- *     effective set.
- *   - `review-apply` action → `verificationSummaryRef` (kind
- *     `verification-summary`), Core-derived from current `verification.md`.
- *
- * Reviewer-owned payload (`reviewVerdict`, `reviewFindings`) is carried
- * verbatim for completed `review-*` Runs; Core validates its shape.
+ * Q2: callers describe only terminal intent and immutable Run inputs. Core
+ * derives every ResultRef from current authority bytes; callers cannot declare
+ * artifact subsets or construct refs/fingerprints themselves.
  */
 export interface CompleteRunInput {
   /** ActionResult.executionStatus. Required for `completed` Runs. */
@@ -889,12 +1053,6 @@ export interface CompleteRunInput {
   readonly summary?: string;
   /** Typed descriptors: Run IDs whose `result.json` is consumed as input. */
   readonly consumedRunIds?: readonly string[];
-  /**
-   * Typed descriptors: produced-artifact tags the caller declares as changed.
-   * Only meaningful for `revise-propose` (subset overlay). Ignored for initial
-   * explore/propose, which Core builds unconditionally.
-   */
-  readonly producedArtifactTags?: readonly ProducedArtifactTag[];
   /** Reviewer-owned verdict (completed `review-*` Runs only). */
   readonly reviewVerdict?: ReviewVerdictValue;
   /** Reviewer-owned findings (completed `review-*` Runs only). */
@@ -906,126 +1064,39 @@ export interface CompleteRunInput {
 }
 
 /**
- * Descriptor-driven terminal completion (Q1-RA-001 production API).
+ * Descriptor-driven terminal completion.
  *
- * Reads `context.json`, derives ALL applicable {@link ResultRef}s from typed
- * descriptors + actual target bytes, builds the {@link RunResultFile}
- * internally, then publishes via the shared {@link publishTerminalResult}.
- *
- * The caller never constructs a `ResultRef`. Initial explore/propose ALWAYS
- * derive the complete Core-expected produced set (ignoring caller tags);
- * missing target → `RESULT_REF_TARGET_MISSING` (Run stays pending, retryable).
- * `review-apply` ALWAYS derives `verificationSummaryRef` from current
- * `verification.md`; missing/unreadable/ambiguous → Run stays pending.
- *
- * @param runDir - Absolute path to the Run directory.
- * @param input - Descriptor-driven completion intent (no ResultRef objects).
- * @throws {FlowkitError} `RUN_TERMINAL` when result.json already exists.
- * @throws {FlowkitError} `RESULT_REF_TARGET_MISSING` when a derived target is
- *   missing/unreadable (Run stays pending).
- * @throws {FlowkitError} `SCHEMA_VALIDATION_FAILED` on validation failure.
+ * Artifact-producing Actions always persist a complete point-in-time output
+ * set from current OpenSpec bytes. `review-apply` derives its terminal
+ * verificationSummaryRef from the same verification.md generation frozen in
+ * context.verificationInputRef at review entry.
  */
 export async function completeRun(
   runDir: string,
   input: CompleteRunInput,
 ): Promise<void> {
-  // 1. Read context.json → validate C1 schema + identity (C1-AP-002).
   const contextFile = await readContextFile(runDir);
   validateContextFileIdentity(contextFile, runDir);
-
-  // 1b. Q1-RA-005: runtime-validate every descriptor (Run IDs + artifact tags)
-  //     BEFORE any derivation / filesystem resolution. The caller's descriptors
-  //     are closed grammar — arbitrary tags / path-shaped Run IDs are rejected
-  //     here, not silently ignored.
   validateCompleteRunInput(contextFile, input);
-
-  // 2. Core-derive the full RunResultFile from typed descriptors.
   const result = await buildRunResultFromDescriptors(contextFile, runDir, input);
-
-  // 3. Publish via the PRIVATE publisher (assertMutable + validate + preflight +
-  //    fs.link). The preflight re-validates every Core-derived ref against
-  //    current bytes as defense-in-depth and catches any drift between
-  //    derivation and publish.
   await writeRunResult(runDir, result);
 }
 
-/**
- * Runtime-validate every descriptor in {@link CompleteRunInput} (Q1-RA-005).
- *
- * TypeScript's `ProducedArtifactTag` union and `string` Run IDs are compile-time
- * only; a JS/JSON/CLI caller can bypass them. Before ANY derivation or
- * filesystem resolution this function enforces the closed descriptor grammar:
- *
- *   - every `consumedRunIds[*]` MUST be a formal Run ID (reject path-shaped).
- *   - every `producedArtifactTags[*]` MUST be permitted for the Action.
- *   - a non-artifact Action (apply / revise-apply / archive / review-* /
- *     delivery-*) MUST NOT carry `producedArtifactTags` (nothing to produce).
- *   - `revise-propose` MUST carry a NON-EMPTY changed-tag subset (a no-op
- *     revise would wrongly supersede its predecessor — lineage correctness).
- *   - `revise-explore` MAY omit tags (Core knows it modifies `explore`); if
- *     supplied they MUST be exactly `['explore']`.
- *
- * @throws {FlowkitError} `SCHEMA_VALIDATION_FAILED` on the first descriptor
- *   violation.
- */
+/** Runtime-validate caller descriptors before filesystem resolution. */
 function validateCompleteRunInput(
   contextFile: ContextFile,
   input: CompleteRunInput,
 ): void {
-  const action = contextFile.action;
-  const isArtifactAction =
-    action === 'explore' ||
-    action === 'revise-explore' ||
-    action === 'propose' ||
-    action === 'revise-propose';
-
-  // producedArtifactTags are only legal for artifact actions.
-  if (input.producedArtifactTags !== undefined) {
-    if (!isArtifactAction) {
-      throw new FlowkitError(
-        'SCHEMA_VALIDATION_FAILED',
-        `completeRun: Action ${action} does not produce artifacts and MUST NOT carry producedArtifactTags`,
-        { action, runId: contextFile.runId, producedArtifactTags: input.producedArtifactTags },
-      );
-    }
-    // Every tag must be in the Action-permitted closed set.
-    const permitted = permittedProducedArtifactTags(action);
-    for (const tag of input.producedArtifactTags) {
-      if (!(permitted as readonly string[]).includes(tag)) {
-        throw new FlowkitError(
-          'SCHEMA_VALIDATION_FAILED',
-          `completeRun: produced-artifact tag ${tag} is not permitted for Action ${action} (permitted: [${permitted.join(', ')}])`,
-          { action, runId: contextFile.runId, tag },
-        );
-      }
-    }
+  // Q2 removes caller-owned changed-artifact bookkeeping entirely. Reject the
+  // legacy field even from untyped JS callers instead of silently ignoring it.
+  if ('producedArtifactTags' in (input as unknown as Record<string, unknown>)) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      'completeRun: producedArtifactTags is removed; Core derives the complete current artifact set',
+      { action: contextFile.action, runId: contextFile.runId },
+    );
   }
 
-  // revise-propose MUST declare a non-empty changed-tag subset (no-op revise
-  // would wrongly supersede the predecessor — lineage correctness).
-  if (action === 'revise-propose') {
-    const tags = input.producedArtifactTags;
-    if (tags === undefined || tags.length === 0) {
-      throw new FlowkitError(
-        'SCHEMA_VALIDATION_FAILED',
-        `completeRun: revise-propose MUST declare a non-empty producedArtifactTags changed subset (a no-op revise would wrongly supersede its predecessor)`,
-        { action, runId: contextFile.runId, producedArtifactTags: tags },
-      );
-    }
-  }
-
-  // revise-explore: if tags are supplied they MUST be exactly ['explore'].
-  if (action === 'revise-explore' && input.producedArtifactTags !== undefined) {
-    if (input.producedArtifactTags.length !== 1 || input.producedArtifactTags[0] !== 'explore') {
-      throw new FlowkitError(
-        'SCHEMA_VALIDATION_FAILED',
-        `completeRun: revise-explore producedArtifactTags MUST be exactly ['explore']`,
-        { action, runId: contextFile.runId, producedArtifactTags: input.producedArtifactTags },
-      );
-    }
-  }
-
-  // consumedRunIds: every entry MUST be a formal Run ID.
   if (input.consumedRunIds !== undefined) {
     for (const runId of input.consumedRunIds) {
       validateRunIdDescriptor(runId);
@@ -1033,13 +1104,6 @@ function validateCompleteRunInput(
   }
 }
 
-/**
- * Build a {@link RunResultFile} entirely from typed descriptors (Q1-RA-001).
- *
- * Determines `runStatus` from the input shape, then — for `completed` Runs —
- * derives every applicable ResultRef via the Core-owned constructors. No
- * caller-supplied ResultRef ever enters the persisted model.
- */
 async function buildRunResultFromDescriptors(
   contextFile: ContextFile,
   runDir: string,
@@ -1048,7 +1112,6 @@ async function buildRunResultFromDescriptors(
   const action = contextFile.action;
   const isReviewAction = action.startsWith('review-');
 
-  // Determine runStatus from the input shape.
   let runStatus: TerminalRunStatus;
   if (input.failureDiagnosis !== undefined) {
     runStatus = 'failed';
@@ -1058,18 +1121,14 @@ async function buildRunResultFromDescriptors(
     runStatus = 'completed';
   }
 
-  // failed / cancelled: no actionResult, no review payload.
   if (runStatus !== 'completed') {
-    const failedResult: RunResultFile = {
+    return {
       runStatus,
       ...(runStatus === 'failed' && { failureDiagnosis: input.failureDiagnosis }),
       ...(runStatus === 'cancelled' && { cancellationReason: input.cancellationReason }),
     };
-    return failedResult;
   }
 
-  // completed: actionResult required. Validate the caller supplied the
-  // minimal intent fields.
   if (input.executionStatus === undefined || input.summary === undefined) {
     throw new FlowkitError(
       'SCHEMA_VALIDATION_FAILED',
@@ -1080,27 +1139,15 @@ async function buildRunResultFromDescriptors(
 
   const repoRoot = deriveRepoRoot(runDir, contextFile.runPath);
   const actionResult = await deriveActionResult(contextFile, runDir, repoRoot, input);
-
-  const result: RunResultFile = {
+  return {
     runStatus: 'completed',
     actionResult,
-    // Reviewer-owned payload (completed review-* Runs only). Non-review Runs
-    // MUST NOT carry these (validateReviewVerdictIntegrity enforces).
     ...(isReviewAction && input.reviewVerdict !== undefined && { reviewVerdict: input.reviewVerdict }),
     ...(isReviewAction && input.reviewFindings !== undefined && { reviewFindings: input.reviewFindings }),
   };
-  return result;
 }
 
-/**
- * Derive the complete {@link ActionResultWithoutRunRef} from typed descriptors.
- *
- * Core owns every ResultRef:
- *   - `producedResultRefs`: explore/revise-explore/propose/revise-propose only.
- *   - `consumedInputRefs`: from `consumedRunIds`.
- *   - `reviewVerdictRef`: from `context.sourceReviewRun` (non-review actions).
- *   - `verificationSummaryRef`: `review-apply` only, from `verification.md`.
- */
+/** Derive the complete ActionResult from Core-owned authority bytes. */
 async function deriveActionResult(
   contextFile: ContextFile,
   runDir: string,
@@ -1110,41 +1157,30 @@ async function deriveActionResult(
   const action = contextFile.action;
   const isReviewAction = action.startsWith('review-');
 
-  // producedResultRefs — Core-expected complete set for artifact actions.
   let producedResultRefs: readonly ResultRef[] | undefined;
   if (action === 'explore' || action === 'revise-explore') {
     producedResultRefs = await deriveExploreProducedRefs(contextFile, repoRoot);
-  } else if (action === 'propose') {
+  } else if (action === 'propose' || action === 'revise-propose') {
     producedResultRefs = await deriveProposeProducedRefs(contextFile, repoRoot);
-  } else if (action === 'revise-propose') {
-    producedResultRefs = await deriveReviseProposeProducedRefs(
-      contextFile,
-      repoRoot,
-      input.producedArtifactTags,
-    );
   }
-  // apply / revise-apply / archive / review-* / delivery-* → no producedResultRefs.
 
-  // consumedInputRefs — from typed Run IDs.
   let consumedInputRefs: readonly ResultRef[] | undefined;
   if (input.consumedRunIds !== undefined && input.consumedRunIds.length > 0) {
     consumedInputRefs = await deriveConsumedInputRefs(contextFile, runDir, input.consumedRunIds);
   }
 
-  // reviewVerdictRef — from context.sourceReviewRun (non-review actions only).
-  // review-* Runs MUST NOT carry reviewVerdictRef (self-reference, Q1-7).
+  // sourceReviewRun belongs only to revise-* and is immutable lineage evidence.
   let reviewVerdictRef: ResultRef | undefined;
-  if (!isReviewAction && contextFile.sourceReviewRun !== undefined) {
+  if (!isReviewAction && isRevisionAction(action) && contextFile.sourceReviewRun !== undefined) {
     reviewVerdictRef = await deriveReviewVerdictRef(contextFile, runDir);
   }
 
-  // verificationSummaryRef — review-apply only, Core-derived from verification.md.
   let verificationSummaryRef: ResultRef | undefined;
   if (action === 'review-apply') {
     verificationSummaryRef = await deriveVerificationSummaryArtifactRef(contextFile, repoRoot);
   }
 
-  const actionResult: ActionResultWithoutRunRef = {
+  return {
     action: action as ChangeAction | DeliveryAction,
     executionStatus: input.executionStatus!,
     summary: input.summary!,
@@ -1153,17 +1189,9 @@ async function deriveActionResult(
     ...(reviewVerdictRef !== undefined && { reviewVerdictRef }),
     ...(verificationSummaryRef !== undefined && { verificationSummaryRef }),
   };
-  return actionResult;
 }
 
-/**
- * Derive the produced-artifact ref set for `explore` / `revise-explore`.
- *
- * Core unconditionally resolves `explore.md` and builds a single
- * `produced-artifact` ref from its current bytes. Caller tags are ignored —
- * there is exactly one explore artifact. Missing `explore.md` →
- * `RESULT_REF_TARGET_MISSING` (Run stays pending).
- */
+/** Complete point-in-time output set for explore/revise-explore. */
 async function deriveExploreProducedRefs(
   contextFile: ContextFile,
   repoRoot: string,
@@ -1179,96 +1207,23 @@ async function deriveExploreProducedRefs(
 }
 
 /**
- * Derive the COMPLETE Core-expected produced set for initial `propose`.
- *
- * Core unconditionally builds: `proposal.md` + `design.md` + `tasks.md` + the
- * complete current `specs/**` namespace. Caller tags are ignored — the initial
- * set is not shrinkable. Any missing target → `RESULT_REF_TARGET_MISSING`.
+ * Complete point-in-time output set for propose/revise-propose.
+ * No predecessor inheritance, changed-tag subset, or generation overlay exists.
  */
 async function deriveProposeProducedRefs(
   contextFile: ContextFile,
   repoRoot: string,
 ): Promise<ResultRef[]> {
-  requireChangeId(contextFile, 'propose');
+  requireChangeId(contextFile, contextFile.action);
   const changeId = contextFile.changeId!;
+  const action = contextFile.action;
   const refs: ResultRef[] = [];
-  refs.push(await buildSingletonArtifactRef('propose', 'proposal', changeId, repoRoot));
-  refs.push(await buildSingletonArtifactRef('propose', 'design', changeId, repoRoot));
-  refs.push(await buildSingletonArtifactRef('propose', 'tasks', changeId, repoRoot));
-  const specsRefs = await enumerateSpecsNamespace(repoRoot, changeId);
-  refs.push(...specsRefs);
+  refs.push(await buildSingletonArtifactRef(action, 'proposal', changeId, repoRoot));
+  refs.push(await buildSingletonArtifactRef(action, 'design', changeId, repoRoot));
+  refs.push(await buildSingletonArtifactRef(action, 'tasks', changeId, repoRoot));
+  refs.push(...await enumerateSpecsNamespace(repoRoot, changeId));
   refs.sort((a, b) => a.ref.localeCompare(b.ref));
   return refs;
-}
-
-/**
- * Derive the effective produced set for `revise-propose` via subset overlay.
- *
- * `successor effective set = predecessor effective set, with declared tags
- * replaced`. Declared singletons (proposal/design/tasks) replace the
- * predecessor ref of the same logical identity with a fresh Core-derived ref
- * (current bytes). Declared `specs` replaces ALL predecessor specs refs with a
- * fresh Core-enumerated canonical namespace. Non-declared refs are inherited
- * as-is from the predecessor (their fingerprint is preserved; the preflight
- * validates they still match current bytes, catching undeclared drift).
- *
- * Caller supplies ONLY changed tags — Core enumerates and hashes.
- */
-async function deriveReviseProposeProducedRefs(
-  contextFile: ContextFile,
-  repoRoot: string,
-  declaredTags: readonly ProducedArtifactTag[] | undefined,
-): Promise<ResultRef[]> {
-  requireChangeId(contextFile, 'revise-propose');
-  const changeId = contextFile.changeId!;
-  const declared = new Set(declaredTags ?? []);
-
-  // Fresh Core-derived refs for declared tags.
-  const freshRefs: ResultRef[] = [];
-  const freshLogicalRefs = new Set<string>();
-  if (declared.has('proposal')) {
-    const r = await buildSingletonArtifactRef('revise-propose', 'proposal', changeId, repoRoot);
-    freshRefs.push(r);
-    freshLogicalRefs.add(r.ref);
-  }
-  if (declared.has('design')) {
-    const r = await buildSingletonArtifactRef('revise-propose', 'design', changeId, repoRoot);
-    freshRefs.push(r);
-    freshLogicalRefs.add(r.ref);
-  }
-  if (declared.has('tasks')) {
-    const r = await buildSingletonArtifactRef('revise-propose', 'tasks', changeId, repoRoot);
-    freshRefs.push(r);
-    freshLogicalRefs.add(r.ref);
-  }
-  const declaredSpecs = declared.has('specs');
-  if (declaredSpecs) {
-    const specsRefs = await enumerateSpecsNamespace(repoRoot, changeId);
-    freshRefs.push(...specsRefs);
-    for (const r of specsRefs) {
-      freshLogicalRefs.add(r.ref);
-    }
-  }
-
-  // Inherit predecessor refs not overwritten by declared tags.
-  const predecessorRefs = await resolvePredecessorProducedRefs(contextFile, repoRoot);
-  const inherited: ResultRef[] = [];
-  for (const predRef of predecessorRefs) {
-    const isSpec = predRef.ref.includes('/specs/');
-    // Declared 'specs' overwrites ALL predecessor specs refs.
-    if (isSpec && declaredSpecs) {
-      continue;
-    }
-    // Declared singleton overwrites the predecessor ref of the same logical ref.
-    if (freshLogicalRefs.has(predRef.ref)) {
-      continue;
-    }
-    inherited.push(predRef);
-  }
-
-  const all = [...inherited, ...freshRefs];
-  all.sort((a, b) => a.ref.localeCompare(b.ref));
-  return all;
 }
 
 /**
@@ -1335,7 +1290,7 @@ async function deriveReviewVerdictRef(
 /**
  * Derive `verificationSummaryRef` for `review-apply` from current
  * `verification.md`. Core resolves `openspec/changes/<changeId>/verification.md`
- * via archive-aware resolution, reads its bytes, and builds a
+ * from the current canonical path, reads its bytes, and builds a
  * `verification-summary` ref. Missing/unreadable/ambiguous →
  * `RESULT_REF_TARGET_MISSING` (Run stays pending).
  */
@@ -1355,11 +1310,11 @@ async function deriveVerificationSummaryArtifactRef(
 
 /**
  * Build a singleton produced-artifact ref: resolve the tag → logical ref, read
- * current bytes (archive-aware), construct a `produced-artifact` ResultRef.
+ * current bytes, construct a `produced-artifact` ResultRef.
  */
 async function buildSingletonArtifactRef(
   action: string,
-  tag: Exclude<ProducedArtifactTag, 'specs'>,
+  tag: 'explore' | 'proposal' | 'design' | 'tasks',
   changeId: string,
   repoRoot: string,
 ): Promise<ResultRef> {
@@ -1566,6 +1521,50 @@ async function readAdmittedSourceReviewVerdicts(
   return [{ reviewRunId: contextFile.sourceReviewRun, verdict, action }];
 }
 
+
+async function validateReviewCompletionArtifacts(
+  contextFile: ContextFile,
+  repoRoot: string,
+): Promise<void> {
+  if (contextFile.changeId === undefined || contextFile.reviewedRunId === undefined) return;
+  const deliveryRunsDir = deriveDeliveryRunsDir(
+    join(repoRoot, normalizeSeparators(contextFile.runPath)),
+    contextFile,
+  );
+  const changeDir = join(deliveryRunsDir, contextFile.changeId);
+
+  if (contextFile.action === 'review-explore' || contextFile.action === 'review-propose') {
+    await validateReviewedStageCurrentBytes(
+      repoRoot,
+      changeDir,
+      contextFile.changeId,
+      contextFile.reviewedRunId,
+      contextFile.action === 'review-explore' ? 'explore' : 'propose',
+      contextFile.runId,
+    );
+    return;
+  }
+
+  if (contextFile.action === 'review-apply') {
+    if (contextFile.verificationInputRef === undefined) {
+      throw new FlowkitError(
+        'SCHEMA_VALIDATION_FAILED',
+        `review-apply ${contextFile.runId} has no persisted verificationInputRef`,
+        { runId: contextFile.runId },
+      );
+    }
+    // Q2: this binding lives only for this review's entry→completion window.
+    // It proves the Reviewer completes against the same verification.md bytes
+    // it saw at entry; it is not replayed by future Actions.
+    await verifyArtifactRef(
+      contextFile.verificationInputRef,
+      repoRoot,
+      contextFile.runId,
+      'verificationInputRef',
+    );
+  }
+}
+
 async function completionPreflight(
   contextFile: ContextFile,
   actionResult: ActionResultWithoutRunRef,
@@ -1598,6 +1597,13 @@ async function completionPreflight(
     });
   }
 
+  // Q2/v6: repeat only the local current bindings that must remain stable
+  // across the Action's own execution window. This replaces historical Reader
+  // replay with explicit entry/completion boundaries.
+  if (isReviewAction) {
+    await validateReviewCompletionArtifacts(contextFile, repoRoot);
+  }
+
   // Q1-RA-003: unconditional stage-aware effective-set completeness. For any
   // artifact-PRODUCING Action (explore/revise-explore/propose/revise-propose —
   // NOT review-* which produce a verdict, not artifacts), producedResultRefs
@@ -1625,7 +1631,7 @@ async function completionPreflight(
         { action, runId: contextFile.runId },
       );
     }
-    const setProblems = await validateStageEffectiveSet(
+    const setProblems = await validateCurrentStageArtifactSet(
       repoRoot,
       contextFile.changeId,
       stage,
@@ -1684,7 +1690,7 @@ async function completionPreflight(
     {
       // Action decides requiredness. `&& sourceReviewRun !== undefined` is the
       // exact bypass 135 blocked — it must NOT be restored.
-      requiresTuple: action === 'revise-explore' || action === 'revise-propose' || action === 'revise-apply',
+      requiresTuple: isRevisionAction(action),
       admittedSourceReviewVerdicts: await readAdmittedSourceReviewVerdicts(contextFile, repoRoot),
     },
   );
@@ -1737,8 +1743,8 @@ async function verifyRunResultRef(
 
 /**
  * Verify a produced-artifact or verification-summary ResultRef against the
- * actual artifact file content. Uses archive-aware resolution for non-Run
- * artifacts.
+ * current canonical artifact file content. This is only used for current
+ * Action handoff/completion and never searches OpenSpec archive locations.
  *
  * @throws {FlowkitError} `RESULT_REF_TARGET_MISSING` when the file does not exist.
  * @throws {FlowkitError} `RESULT_REF_MISMATCH` when the content hash mismatches.
@@ -1749,11 +1755,9 @@ async function verifyArtifactRef(
   runId: string,
   fieldLabel: string,
 ): Promise<void> {
-  let filePath: string;
+  let content: string;
   try {
-    // Use archive-aware resolver for non-Run artifacts.
-    const { resolveArchiveAwareArtifactPath } = await import('./result-ref-adapter.js');
-    filePath = await resolveArchiveAwareArtifactPath(repoRoot, ref.ref);
+    content = await readArtifactBytes(repoRoot, ref.ref);
   } catch (e) {
     if (e instanceof FlowkitError && e.code === 'RESULT_REF_TARGET_MISSING') {
       throw new FlowkitError(
@@ -1764,16 +1768,6 @@ async function verifyArtifactRef(
     }
     throw e;
   }
-  let content: string;
-  try {
-    content = await readFile(filePath, 'utf-8');
-  } catch {
-    throw new FlowkitError(
-      'RESULT_REF_TARGET_MISSING',
-      `Artifact ResultRef target unreadable: ${fieldLabel} → ${ref.ref} (Run ${runId})`,
-      { ref, fieldLabel, runId, filePath },
-    );
-  }
   const actualHash = computeResultFileHash(content);
   if (actualHash !== ref.versionFingerprint) {
     throw new FlowkitError(
@@ -1782,76 +1776,6 @@ async function verifyArtifactRef(
       { ref, fieldLabel, runId, expected: ref.versionFingerprint, actual: actualHash },
     );
   }
-}
-
-/**
- * Resolve the predecessor's full `producedResultRefs` by tracing the
- * review/revise lineage: `sourceReviewRun` → review context.json
- * `reviewedRunId` → predecessor result.json `producedResultRefs`.
- *
- * Returns `[]` when the lineage cannot be traced (missing review/predecessor
- * result). The caller treats an empty predecessor set as "no inherited refs",
- * which keeps the specs namespace exact-set check correct (empty effective
- * specs ≠ non-empty canonical → fail-closed).
- */
-async function resolvePredecessorProducedRefs(
-  contextFile: ContextFile,
-  repoRoot: string,
-): Promise<ResultRef[]> {
-  if (contextFile.sourceReviewRun === undefined) {
-    return [];
-  }
-
-  // Read review Run's context.json to get reviewedRunId (predecessor).
-  const reviewRunDir = resolveSiblingRunDir(repoRoot, contextFile.runPath, contextFile.sourceReviewRun);
-  let reviewedRunId: string | undefined;
-  try {
-    const reviewCtxContent = await readFile(join(reviewRunDir, 'context.json'), 'utf-8');
-    const reviewCtx = JSON.parse(reviewCtxContent) as Record<string, unknown>;
-    reviewedRunId = typeof reviewCtx['reviewedRunId'] === 'string' ? reviewCtx['reviewedRunId'] : undefined;
-  } catch {
-    return [];
-  }
-  if (reviewedRunId === undefined) {
-    return [];
-  }
-
-  // Read predecessor's result.json → producedResultRefs.
-  const predecessorRunDir = resolveSiblingRunDir(repoRoot, contextFile.runPath, reviewedRunId);
-  try {
-    const predResultContent = await readFile(join(predecessorRunDir, 'result.json'), 'utf-8');
-    const predResult = JSON.parse(predResultContent) as Record<string, unknown>;
-    const ar = predResult['actionResult'];
-    if (ar === undefined || typeof ar !== 'object' || ar === null) {
-      return [];
-    }
-    const arObj = ar as Record<string, unknown>;
-    const refs = arObj['producedResultRefs'];
-    if (!Array.isArray(refs)) {
-      return [];
-    }
-    return (refs as Array<Record<string, unknown>>)
-      .filter((r) => typeof r['ref'] === 'string' && typeof r['versionFingerprint'] === 'string')
-      .map((r) => ({
-        ref: r['ref'] as string,
-        versionFingerprint: r['versionFingerprint'] as string,
-        ...(typeof r['kind'] === 'string' && { kind: r['kind'] as ResultRef['kind'] }),
-      }));
-  } catch {
-    return [];
-  }
-}
-
-/**
- * Resolve a sibling Run's directory (same delivery/change directory as the
- * current Run) from `runPath` + `siblingRunId`. `runPath` ends with
- * `/<currentRunId>/`; this strips the last segment and appends `siblingRunId`.
- */
-function resolveSiblingRunDir(repoRoot: string, runPath: string, siblingRunId: string): string {
-  const normalized = normalizeSeparators(runPath).replace(/\/+$/, '');
-  const idx = normalized.lastIndexOf('/');
-  const base = idx >= 0 ? normalized.slice(0, idx) : normalized;
-  return join(repoRoot, base, siblingRunId);
 }
 
 // ---------------------------------------------------------------------------
@@ -1881,6 +1805,7 @@ function buildContextFile(
   input: CreateRunInput,
   runPath: string,
   inputRef: ResultRef | undefined,
+  verificationInputRef: ResultRef | undefined,
 ): ContextFile {
   const contextFile: ContextFile = {
     schemaVersion: 2,
@@ -1893,6 +1818,7 @@ function buildContextFile(
     ...(input.changeKey !== undefined && { changeKey: input.changeKey }),
     ...(input.changeId !== undefined && { changeId: input.changeId }),
     ...(inputRef !== undefined && { inputRef }),
+    ...(verificationInputRef !== undefined && { verificationInputRef }),
     ...(input.sourceReviewRun !== undefined && { sourceReviewRun: input.sourceReviewRun }),
     ...(input.sourceReviewVerdict !== undefined && { sourceReviewVerdict: input.sourceReviewVerdict }),
     ...(input.reviewedRunId !== undefined && { reviewedRunId: input.reviewedRunId }),

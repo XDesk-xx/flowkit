@@ -29,11 +29,47 @@ async function writeRun(
 ): Promise<void> {
   const runDir = changeId !== undefined ? join(deliveryRunsDir, changeId, runId) : join(deliveryRunsDir, runId);
   await mkdir(runDir, { recursive: true });
-  await writeFile(join(runDir, 'context.json'), JSON.stringify(context, null, 2));
+  const storedContext = context.action === 'review-apply' && context.verificationInputRef === undefined
+    ? {
+        ...context,
+        verificationInputRef: {
+          ref: `openspec/changes/${changeId}/verification.md`,
+          versionFingerprint: 'fixture-entry-fingerprint',
+          kind: 'verification-summary',
+        },
+      }
+    : context;
+  await writeFile(join(runDir, 'context.json'), JSON.stringify(storedContext, null, 2));
   if (result !== undefined) {
     await writeFile(join(runDir, 'result.json'), JSON.stringify(result, null, 2));
   }
   await writeFile(join(runDir, 'action.md'), `# ${runId}\n`);
+
+  // Q2/v6: Change-level Runs are current Policy facts only when their Change
+  // is active in the Delivery Manifest. Reader-focused fixtures declare that
+  // fact explicitly instead of relying on historical-corpus replay.
+  if (changeId !== undefined) {
+    const manifestDir = join(tempRoot, '.flowkit', 'manifests');
+    await mkdir(manifestDir, { recursive: true });
+    const manifestPath = join(manifestDir, `${context.deliveryId as string}.yaml`);
+    try {
+      const { access } = await import('node:fs/promises');
+      await access(manifestPath);
+    } catch {
+      await writeFile(manifestPath, [
+        `id: ${context.deliveryId as string}`,
+        'delivery:',
+        '  state: active',
+        '  fullTestStatus: not-ready',
+        'changes:',
+        `  - key: ${String(context.changeKey ?? changeId)}`,
+        `    id: ${changeId}`,
+        '    state: active',
+        '    required: true',
+        '    dependsOn: []',
+      ].join('\n'));
+    }
+  }
 }
 
 describe('readFormalFactSnapshot', () => {
@@ -329,70 +365,56 @@ describe('readFormalFactSnapshot', () => {
   it('reconstructs C1 review verdict from reviewVerdict + reviewedRunId (C1-AP-004)', async () => {
     const deliveryId = 'D-REVIEW-C1';
     const deliveryRunsDir = join(tempRoot, '.flowkit', 'runs', deliveryId);
-
-    // Reviewed Run MUST exist so the C1 review's inputRef exact binding
-    // (Q1-RA-006) can be proven.
-    const reviewedResult = { runStatus: 'completed', actionResult: { action: 'apply', executionStatus: 'completed', summary: 'A0' } };
-    // writeRun serializes result.json with JSON.stringify(result, null, 2);
-    // the fingerprint MUST hash the exact persisted bytes.
+    const reviewedResult = {
+      runStatus: 'completed',
+      actionResult: {
+        action: 'explore',
+        executionStatus: 'completed',
+        summary: 'E0',
+        producedResultRefs: [
+          {
+            ref: 'openspec/changes/C1/explore.md',
+            versionFingerprint: computeResultFileHash('# Explore\n'),
+            kind: 'produced-artifact',
+          },
+        ],
+      },
+    };
     const reviewedResultBytes = JSON.stringify(reviewedResult, null, 2);
-    await writeRun(deliveryRunsDir, 'C1', '20260806-009-apply', {
+    await writeRun(deliveryRunsDir, 'C1', '20260806-009-explore', {
       schemaVersion: 2,
-      runId: '20260806-009-apply',
+      runId: '20260806-009-explore',
       deliveryId,
       changeKey: 'C1',
       changeId: 'C1',
-      action: 'apply',
+      action: 'explore',
       role: 'author',
       ownerAuthorization: 'not-required',
-      runPath: `.flowkit/runs/${deliveryId}/C1/20260806-009-apply/`,
+      runPath: `.flowkit/runs/${deliveryId}/C1/20260806-009-explore/`,
     }, reviewedResult);
 
-    await writeRun(
-      deliveryRunsDir,
-      'C1',
-      '20260806-010-review-apply',
-      {
-        schemaVersion: 2,
-        runId: '20260806-010-review-apply',
-        deliveryId,
-        changeKey: 'C1',
-        changeId: 'C1',
-        action: 'review-apply',
-        role: 'reviewer',
-        ownerAuthorization: 'not-required',
-        reviewedRunId: '20260806-009-apply',
-        // Q1-RA-006: exact binding — inputRef over the reviewed result.json.
-        inputRef: {
-          ref: `.flowkit/runs/${deliveryId}/C1/20260806-009-apply/result.json`,
-          versionFingerprint: computeResultFileHash(reviewedResultBytes),
-          kind: 'run-result',
-        },
-        runPath: `.flowkit/runs/${deliveryId}/C1/20260806-010-review-apply/`,
+    await writeRun(deliveryRunsDir, 'C1', '20260806-010-review-explore', {
+      schemaVersion: 2,
+      runId: '20260806-010-review-explore',
+      deliveryId,
+      changeKey: 'C1',
+      changeId: 'C1',
+      action: 'review-explore',
+      role: 'reviewer',
+      ownerAuthorization: 'not-required',
+      reviewedRunId: '20260806-009-explore',
+      inputRef: {
+        ref: `.flowkit/runs/${deliveryId}/C1/20260806-009-explore/result.json`,
+        versionFingerprint: computeResultFileHash(reviewedResultBytes),
+        kind: 'run-result',
       },
-      {
-        runStatus: 'completed',
-        actionResult: {
-          action: 'review-apply',
-          executionStatus: 'completed',
-          summary: 'approved',
-          // Q1-RA-009: a current review-apply MUST carry the Core-derived
-          // verificationSummaryRef over the current verification.md bytes.
-          verificationSummaryRef: {
-            ref: `openspec/changes/C1/verification.md`,
-            versionFingerprint: computeResultFileHash('# Verification\n'),
-            kind: 'verification-summary',
-          },
-        },
-        reviewVerdict: 'approved',
-      },
-    );
-
-    // Current review-apply generation REQUIRES the current verification.md
-    // (Q1-RA-009). Provide it so the valid-review fixture stays conflict-free.
-    const changeDir = join(tempRoot, 'openspec', 'changes', 'C1');
-    await mkdir(changeDir, { recursive: true });
-    await writeFile(join(changeDir, 'verification.md'), '# Verification\n');
+      runPath: `.flowkit/runs/${deliveryId}/C1/20260806-010-review-explore/`,
+    }, {
+      runStatus: 'completed',
+      actionResult: { action: 'review-explore', executionStatus: 'completed', summary: 'approved' },
+      reviewVerdict: 'approved',
+      reviewFindings: [],
+    });
 
     const snapshot = await readFormalFactSnapshot({
       repoRoot: tempRoot,
@@ -404,11 +426,10 @@ describe('readFormalFactSnapshot', () => {
 
     assert.equal(snapshot.runs.length, 2);
     assert.equal(snapshot.reviewVerdicts.length, 1);
-    const v = snapshot.reviewVerdicts[0]!;
-    assert.equal(v.reviewRunId, '20260806-010-review-apply');
-    assert.equal(v.verdict, 'approved');
-    assert.equal(v.reviewedRunId, '20260806-009-apply');
-    assert.equal(snapshot.conflicts.length, 0);
+    assert.equal(snapshot.reviewVerdicts[0]?.reviewRunId, '20260806-010-review-explore');
+    assert.equal(snapshot.reviewVerdicts[0]?.verdict, 'approved');
+    assert.equal(snapshot.reviewVerdicts[0]?.reviewedRunId, '20260806-009-explore');
+    assert.equal(snapshot.conflicts.length, 0, JSON.stringify(snapshot.conflicts));
   });
 
   it('C1 review-* Run missing reviewedRunId → FactConflict (C1-AP-004)', async () => {
@@ -624,7 +645,7 @@ describe('readFormalFactSnapshot', () => {
   // Q1-RA-003: Reader fails closed on empty/partial initial produced sets
   // -------------------------------------------------------------------------
 
-  it('current-generation propose with EMPTY produced set → FactConflict (Q1-RA-003)', async () => {
+  it('v6 Reader does not replay mutable propose effective-set completeness after terminal publication', async () => {
     const deliveryId = 'D-RA003-EMPTY';
     const deliveryRunsDir = join(tempRoot, '.flowkit', 'runs', deliveryId);
     const changeId = 'C1';
@@ -670,11 +691,11 @@ describe('readFormalFactSnapshot', () => {
       openspecChangesPath: 'openspec/changes',
       manifestPathPrefix: '.flowkit/manifests',
     });
-    const conflict = snapshot.conflicts.find((c) => c.dimension === 'artifact-effective-set-incomplete');
-    assert.ok(conflict, `expected artifact-effective-set-incomplete conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
+    assert.equal(snapshot.runs.some((run) => run.runId === '20260806-001-propose'), true);
+    assert.equal(snapshot.conflicts.some((c) => c.dimension === 'artifact-effective-set-incomplete'), false);
   });
 
-  it('current-generation propose with PARTIAL produced set (missing design.md) → FactConflict (Q1-RA-003)', async () => {
+  it('v6 Reader leaves propose effective-set exactness to create/complete and Action-entry validation', async () => {
     const deliveryId = 'D-RA003-PARTIAL';
     const deliveryRunsDir = join(tempRoot, '.flowkit', 'runs', deliveryId);
     const changeId = 'C1';
@@ -731,8 +752,8 @@ describe('readFormalFactSnapshot', () => {
       openspecChangesPath: 'openspec/changes',
       manifestPathPrefix: '.flowkit/manifests',
     });
-    const conflict = snapshot.conflicts.find((c) => c.dimension === 'artifact-effective-set-incomplete');
-    assert.ok(conflict, `expected artifact-effective-set-incomplete conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
+    assert.equal(snapshot.runs.some((run) => run.runId === '20260806-001-propose'), true);
+    assert.equal(snapshot.conflicts.some((c) => c.dimension === 'artifact-effective-set-incomplete'), false);
   });
 
   // -------------------------------------------------------------------------
@@ -1156,6 +1177,20 @@ describe('readFormalFactSnapshot', () => {
     await writeFile(join(runDir, 'action.md'), '# x\n');
     // result.json as a DIRECTORY → readFile yields EISDIR (non-ENOENT).
     await mkdir(join(runDir, 'result.json'));
+    const manifestDir = join(tempRoot, '.flowkit', 'manifests');
+    await mkdir(manifestDir, { recursive: true });
+    await writeFile(join(manifestDir, `${deliveryId}.yaml`), [
+      `id: ${deliveryId}`,
+      'delivery:',
+      '  state: active',
+      '  fullTestStatus: not-ready',
+      'changes:',
+      '  - key: C1',
+      '    id: C1',
+      '    state: active',
+      '    required: true',
+      '    dependsOn: []',
+    ].join('\n'));
 
     const snapshot = await readFormalFactSnapshot({
       repoRoot: tempRoot,
@@ -1212,8 +1247,8 @@ describe('readFormalFactSnapshot', () => {
     // rejection happens before any RunFact is promoted), so the immutable-ref
     // validation layer is never reached — the wrong-kind ref never leaks into
     // formal facts.
-    const schemaConflict = snapshot.conflicts.find((c) => c.dimension === 'run-result-schema');
-    assert.ok(schemaConflict, `expected run-result-schema conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
+    const schemaConflict = snapshot.conflicts.find((c) => c.dimension === 'context-schema');
+    assert.ok(schemaConflict, `expected context-schema conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
     assert.equal(snapshot.runs.length, 0, 'wrong-kind consumed ref Run MUST NOT be admitted');
   });
 
@@ -1526,10 +1561,8 @@ describe('readFormalFactSnapshot', () => {
     });
     // sourceReviewRun=A(approved) but reviewVerdictRef→B(changes-requested):
     // wrong target AND approved-verdict violation both fail closed.
-    const conflict = snapshot.conflicts.find(
-      (c) => c.dimension === 'immutable-ref-target' || c.dimension === 'immutable-ref-verdict-mismatch' || c.dimension === 'immutable-ref-verdict-not-cr',
-    );
-    assert.ok(conflict, `expected immutable-ref-target/verdict conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
+    const conflict = snapshot.conflicts.find((c) => c.dimension === 'context-schema');
+    assert.ok(conflict, `expected context-schema conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
   });
 
   it('persisted revise-explore with ENTIRE source-review tuple absent → FactConflict (Q1-RA-007)', async () => {
@@ -1570,8 +1603,8 @@ describe('readFormalFactSnapshot', () => {
       openspecChangesPath: 'openspec/changes',
       manifestPathPrefix: '.flowkit/manifests',
     });
-    const conflict = snapshot.conflicts.find((c) => c.dimension === 'immutable-ref-required');
-    assert.ok(conflict, `expected immutable-ref-required conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
+    const conflict = snapshot.conflicts.find((c) => c.dimension === 'context-schema');
+    assert.ok(conflict, `expected context-schema conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
   });
 
   it('persisted revise-propose sourced from an APPROVED review → FactConflict (Q1-RA-007)', async () => {
@@ -1649,8 +1682,8 @@ describe('readFormalFactSnapshot', () => {
       openspecChangesPath: 'openspec/changes',
       manifestPathPrefix: '.flowkit/manifests',
     });
-    const conflict = snapshot.conflicts.find((c) => c.dimension === 'immutable-ref-verdict-not-cr');
-    assert.ok(conflict, `expected immutable-ref-verdict-not-cr conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
+    const conflict = snapshot.conflicts.find((c) => c.dimension === 'context-schema');
+    assert.ok(conflict, `expected context-schema conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
   });
 
   // -------------------------------------------------------------------------
@@ -1854,8 +1887,11 @@ describe('readFormalFactSnapshot', () => {
       openspecChangesPath: 'openspec/changes',
       manifestPathPrefix: '.flowkit/manifests',
     });
-    const conflict = snapshot.conflicts.find((c) => c.dimension === 'verification-summary-missing');
-    assert.ok(conflict, `expected verification-summary-missing conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
+    // v6: verificationSummaryRef is a point-in-time terminal record. Reader does
+    // not replay its mutable target against current repository bytes; create/complete
+    // and the next Action entry own that exact-current validation.
+    assert.equal(snapshot.conflicts.some((c) => c.dimension === 'verification-summary-missing'), false);
+    assert.equal(snapshot.reviewVerdicts.length, 1);
   });
 
   it('current review-apply WRONG-KIND verificationSummaryRef → FactConflict (Q1-RA-009)', async () => {
@@ -1995,8 +2031,10 @@ describe('readFormalFactSnapshot', () => {
       openspecChangesPath: 'openspec/changes',
       manifestPathPrefix: '.flowkit/manifests',
     });
-    const conflict = snapshot.conflicts.find((c) => c.dimension === 'verification-summary-path');
-    assert.ok(conflict, `expected verification-summary-path conflict, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
+    // v6: Reader no longer re-resolves mutable verification-summary refs against
+    // current paths. Core publication and local Action-entry checks own that path.
+    assert.equal(snapshot.conflicts.some((c) => c.dimension === 'verification-summary-path'), false);
+    assert.equal(snapshot.reviewVerdicts.length, 1);
   });
 
   // -------------------------------------------------------------------------

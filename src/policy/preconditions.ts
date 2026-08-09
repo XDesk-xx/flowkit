@@ -89,22 +89,61 @@ export function allRequiredCompleted(snapshot: FormalFactSnapshot): boolean {
 }
 
 /**
- * Returns `true` when the number of `change-checkpoint` Git boundaries is at
- * least the number of required Changes.
+ * Return completed required Changes that do not yet have their Change
+ * Checkpoint Git boundary.
  *
- * Snapshot limitation: `GitBoundaryFact` does not link a checkpoint to a
- * specific Change, so D1 uses a count-based check. This is the best available
- * signal from the frozen C1 snapshot contract.
+ * Archive closes the Change first. Checkpoint is the following Git/Flowkit
+ * boundary, so this fact is recovered from Manifest Change state + Git
+ * checkpoint identity, never by replaying the closed Change's Run corpus.
+ */
+export function getCompletedUncheckpointedChanges(
+  snapshot: FormalFactSnapshot,
+): readonly ChangeFact[] {
+  const completed = getRequiredChanges(snapshot).filter(
+    (c) => c.state === 'completed',
+  );
+  const checkpoints = snapshot.gitBoundaries.filter(
+    (b) => b.kind === 'change-checkpoint',
+  );
+  const checkpointedChangeIds = new Set(
+    checkpoints
+      .filter((b) => b.changeId !== undefined)
+      .map((b) => b.changeId as string),
+  );
+
+  // Legacy checkpoints carry no changeId. Keep their bounded count-based
+  // compatibility even after newer structured boundaries appear: apply the
+  // legacy count to the earliest completed Changes not already identified by
+  // a structured boundary. This prevents a previously checkpointed legacy
+  // Change from becoming pending again merely because a new structured
+  // checkpoint was added later.
+  const legacyCheckpointCount = checkpoints.filter(
+    (b) => b.changeId === undefined,
+  ).length;
+  const legacyCheckpointedChangeIds = new Set(
+    completed
+      .filter((change) => !checkpointedChangeIds.has(change.id))
+      .slice(0, legacyCheckpointCount)
+      .map((change) => change.id),
+  );
+
+  return completed.filter(
+    (change) =>
+      !checkpointedChangeIds.has(change.id) &&
+      !legacyCheckpointedChangeIds.has(change.id),
+  );
+}
+
+/**
+ * Returns `true` when every required Change is both closed (`completed`) and
+ * represented by a Change Checkpoint Git boundary.
  */
 export function allRequiredCheckpointed(snapshot: FormalFactSnapshot): boolean {
   const required = getRequiredChanges(snapshot);
-  if (required.length === 0) {
+  if (required.length === 0 || !required.every((c) => c.state === 'completed')) {
     return false;
   }
-  const checkpointCount = snapshot.gitBoundaries.filter(
-    (b) => b.kind === 'change-checkpoint',
-  ).length;
-  return checkpointCount >= required.length;
+  return getCompletedUncheckpointedChanges(snapshot).length === 0;
 }
 
 /**

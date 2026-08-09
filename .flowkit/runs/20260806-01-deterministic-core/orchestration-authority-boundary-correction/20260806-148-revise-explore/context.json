@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 2,
+  "runId": "20260806-148-revise-explore",
+  "deliveryId": "20260806-01-deterministic-core",
+  "action": "revise-explore",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/orchestration-authority-boundary-correction/20260806-148-revise-explore/",
+  "changeKey": "Q2",
+  "changeId": "orchestration-authority-boundary-correction",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260806-01-deterministic-core/orchestration-authority-boundary-correction/20260806-147-review-explore/result.json",
+    "versionFingerprint": "e56d8ca2e968e9492b0ea1d3c2e69353c6a0c6ccfbcbed7a5280a9fdf1ccadf6",
+    "kind": "run-result"
+  },
+  "sourceReviewRun": "20260806-147-review-explore",
+  "sourceReviewVerdict": "changes-requested",
+  "constraints": {
+    "mayModifyExplore": true,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

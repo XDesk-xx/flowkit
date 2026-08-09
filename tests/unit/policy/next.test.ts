@@ -109,6 +109,50 @@ describe('next — blocked precedence (task 6.2, 6.3, 6.12, 10.16)', () => {
   });
 });
 
+describe('next — Archive closes Change, Checkpoint follows', () => {
+  it('completed Change without checkpoint → owner-decision authorize-checkpoint', () => {
+    const snap = buildSnapshot({
+      changes: [buildChange({ key: 'Q2', id: 'q2', state: 'completed', required: true })],
+    });
+    const r = next(snap);
+    assert.equal(r.kind, 'owner-decision');
+    if (r.kind === 'owner-decision') {
+      assert.equal(r.decision, 'authorize-checkpoint');
+      assert.equal(r.context.changeKey, 'Q2');
+    }
+  });
+
+  it('crash/resume: closed Q2 stays checkpoint-pending without re-projecting Q2 Runs; after checkpoint E1 may activate', () => {
+    const changes = [
+      buildChange({ key: 'Q1', id: 'q1', state: 'completed', required: true }),
+      buildChange({ key: 'Q2', id: 'q2', state: 'completed', required: true, dependsOn: ['Q1'] }),
+      buildChange({ key: 'E1', id: 'e1', state: 'planned', required: true, dependsOn: ['Q2'] }),
+    ];
+
+    const beforeCheckpoint = next(buildSnapshot({
+      changes,
+      runs: [],
+      gitBoundaries: [buildCheckpointBoundary('q1')],
+    }));
+    assert.equal(beforeCheckpoint.kind, 'owner-decision');
+    if (beforeCheckpoint.kind === 'owner-decision') {
+      assert.equal(beforeCheckpoint.decision, 'authorize-checkpoint');
+      assert.equal(beforeCheckpoint.context.changeKey, 'Q2');
+    }
+
+    const afterCheckpoint = next(buildSnapshot({
+      changes,
+      runs: [],
+      gitBoundaries: [buildCheckpointBoundary('q1'), buildCheckpointBoundary('q2')],
+    }));
+    assert.equal(afterCheckpoint.kind, 'owner-decision');
+    if (afterCheckpoint.kind === 'owner-decision') {
+      assert.equal(afterCheckpoint.decision, 'activate-change');
+      assert.equal(afterCheckpoint.context.changeKey, 'E1');
+    }
+  });
+});
+
 describe('next — no active Change (task 6.4, 6.5, 10.16)', () => {
   it('planned required Change with deps met → owner-decision activate-change', () => {
     const snap = buildSnapshot({
@@ -391,7 +435,7 @@ describe('next — apply stage (task 6.9, D1-7, 10.8)', () => {
 });
 
 describe('next — archive stage (task 6.10)', () => {
-  it('archive completed → owner-decision authorize-checkpoint', () => {
+  it('archive Run completed while Change still active → blocked ambiguous-state', () => {
     const explore = buildRun({ nnn: 1, action: 'explore' });
     const reviewE = buildRun({ nnn: 2, action: 'review-explore', role: 'reviewer' });
     const propose = buildRun({ nnn: 3, action: 'propose' });
@@ -409,9 +453,9 @@ describe('next — archive stage (task 6.10)', () => {
         [buildAuthorization('apply'), buildAuthorization('archive')],
       ),
     );
-    assert.equal(r.kind, 'owner-decision');
-    if (r.kind === 'owner-decision') {
-      assert.equal(r.decision, 'authorize-checkpoint');
+    assert.equal(r.kind, 'blocked');
+    if (r.kind === 'blocked') {
+      assert.equal(r.diagnosis.reason, 'ambiguous-state');
     }
   });
 });

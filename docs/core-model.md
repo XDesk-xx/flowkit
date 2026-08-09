@@ -35,7 +35,7 @@ Delivery 是完整交付主线和最终验收边界，至少承载：
 
 Change 是 Delivery 内边界明确、可独立实施和审查的变更单元。
 
-每个 Change 必须属于一个 Delivery，并在该 Delivery 中完成 Explore、Propose、Apply、Review、Archive 和 Checkpoint 闭环。
+每个 Change 必须属于一个 Delivery，并在该 Delivery 中完成 Explore、Propose、Apply、Review 和 Archive 生命周期。OpenSpec archive operation 成功后，由 Flowkit 记录 Change 为 `completed`，该 Change 随即关闭；Change Checkpoint 是关闭后的 Flowkit/Git 正式边界，不属于 Change 完成条件。
 
 ### 2.3 Action
 
@@ -78,7 +78,7 @@ cancelled
 
 - `planned`：属于当前 Delivery，但尚未激活；
 - `active`：当前唯一正在推进的 Change；
-- `completed`：已完成 Review、Verification、Archive 和 Change Checkpoint；
+- `completed`：已完成 Review、Verification，且 OpenSpec archive operation 已成功并由 Flowkit 记录关闭；Change Checkpoint 可在其后尚未形成；
 - `cancelled`：owner 明确终止，不再推进。
 
 不使用 `reviewing`、`revising`、`verifying` 或 `ready` 作为 Change 主状态。
@@ -139,7 +139,7 @@ Review、Revision/Fix、Verification 和 Checkpoint 不形成额外 Phase 实体
 - Review：独立判断当前 Action 的完整结果；
 - Revision：处理 `changes-requested` Verdict；
 - Verification：确认 Apply/Revision 后的适用检查；
-- Checkpoint：Change 完成所需的 Git 正式边界。
+- Checkpoint：Change 已由 Archive 关闭后的 Git 正式边界，用于持久化/同步/恢复；它不反向决定 Change 是否 completed。
 
 Review 是正式生命周期边界。Revision 只在对应 Review 返回 `changes-requested` 时适用；Review `approved` 时不创建 skipped 状态或空 Run。
 

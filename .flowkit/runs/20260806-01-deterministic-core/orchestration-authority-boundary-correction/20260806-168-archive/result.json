@@ -1,0 +1,15 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "archive",
+    "executionStatus": "completed",
+    "summary": "OpenSpec archive 已成功完成 Q2 orchestration-authority-boundary-correction 的归档、relocation 与 spec sync（+6/~11/-4）；归档后 8/8 canonical specs strict 通过。Flowkit 随后仅更新自身 Delivery Manifest：Q2 state active → completed。未执行 Change Checkpoint、Delivery Full Test、Commit 或 Push。",
+    "consumedInputRefs": [
+      {
+        "ref": ".flowkit/runs/20260806-01-deterministic-core/orchestration-authority-boundary-correction/20260806-167-review-apply/result.json",
+        "versionFingerprint": "b526a5486974b2eebda154d16d47e1e947bc1f036cacde3c452e81c8ba2f50f9",
+        "kind": "run-result"
+      }
+    ]
+  }
+}

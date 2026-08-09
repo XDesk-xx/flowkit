@@ -1,0 +1,27 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-explore",
+    "executionStatus": "completed",
+    "summary": "已完成新 Q2 146 Explore 的独立审查。Authority reset、pending 仅属 RunStatus、historical mutable artifact replay / generation-resolver / archive-aware 二次证明的 REMOVE/NARROW 调查方向与 Base 源码一致；但 AGENTS 的 Proposal 输入仍遗漏两个本次 reset 必须显式冻结的仓库级 Agent 行为约束：人类可读内容默认简体中文，以及 Reviewer 只能审查并产出 Finding/Verdict、不得修改 Author artifacts/production/tests 或替 Owner 推进边界。该缺口会使重新设计后仍可能靠会话记忆而非仓库规则防越权，因此当前 Explore 需要最小 revise。"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindings": [
+    {
+      "id": "Q2-RE-001",
+      "severity": "blocking",
+      "title": "AGENTS 中文默认规则未纳入新 Q2 的正式同步输入",
+      "problem": "Frozen v6 已明确面向人的说明性内容默认使用简体中文，但 146 Explore 的 AGENTS keep/clarify/remove 分类未记录这一规则，Proposal questions 也未要求把它同步到仓库 AGENTS。当前 Base AGENTS 虽以中文书写，却没有把“human-readable default = 简体中文”冻结为 Agent 行为约束；若继续依赖会话/角色文档记忆，新的 detached session 仍可能漂移。",
+      "location": "openspec/changes/orchestration-authority-boundary-correction/explore.md §5 / §6 Q2-E6",
+      "requiredChange": "在 Explore 的 AGENTS keep/clarify/remove 输入中显式保留/新增语言规则：action.md、Explore/Proposal/Design/Tasks、Review summary/Findings、verification summary 等人类可读说明默认简体中文；Action 名、schema key、CLI、代码标识符、路径、error code、enum 保持英文。并明确该规则只约束呈现/Agent 行为，不成为 Policy/OpenSpec 的流程 authority。"
+    },
+    {
+      "id": "Q2-RE-002",
+      "severity": "blocking",
+      "title": "AGENTS 尚未把 Reviewer mutation boundary 作为本次越权 reset 的显式防线",
+      "problem": "本次 Q2 reset 的直接背景包含 Reviewer 越权参与 Author/执行侧工作，但 146 Explore 对 AGENTS 仅称“前八条基本规则整体正确”，没有识别当前仓库规则缺少“Reviewer 不得修改 Author artifact / production code / tests，不得替 Author 实现修复，也不得替 Owner 授权 Archive/Checkpoint/Full Test”等显式 mutation boundary。只依赖“Author 不自审/Review 独立”不足以阻止 Reviewer 反向跨角色写入。",
+      "location": "openspec/changes/orchestration-authority-boundary-correction/explore.md §5 AGENTS.md / §6 Q2-E6",
+      "requiredChange": "把 AGENTS 的角色防越权同步列为 Proposal 必答项：Reviewer 只读审查 reviewed candidate，除 Reviewer-owned Run/Review artifact 外不得修改 Author artifacts、生产代码、测试或 Manifest；发现问题只能 changes-requested 并交回 Author；Owner-only boundaries 仍由 Owner/Policy 决定。必须同时说明 AGENTS 只是 Agent 操作约束，不拥有下一 Action、Change contract 或 owner decision，以免修复越权时再创造第二流程 authority。"
+    }
+  ]
+}

@@ -1,12 +1,13 @@
 /**
  * C1 formal-fact-reader-and-persistence: formal-fact Reader (D1, D2, D3).
  *
- * Q1-RA-007 / Q1-RA-011 recovery rules:
- * - pending C1 revise-* Runs prove only context-level predecessor review lineage;
- * - completed C1 revise-* Runs prove the complete immutable source-review tuple;
- * - only integrity-admitted C1 revise Runs may participate in C1 generation classification;
- * - schemaVersion 1 Bootstrap Runs retain bounded legacy semantics and are never
- *   retroactively required to synthesize C1 ResultRef evidence.
+ * Q2 orchestration-authority-boundary-correction:
+ * - current Policy projection reads the active Change plus Delivery-level Runs;
+ * - completed/checkpointed Change Run corpora remain Git history, not current
+ *   mutable-artifact replay input;
+ * - active schemaVersion 2 Runs keep strict identity, closed-schema and
+ *   immutable run-result/source-review lineage validation;
+ * - pending/failed/cancelled Runs are validated only for status-applicable facts.
  */
 
 import { readdir, readFile, stat } from 'node:fs/promises';
@@ -18,21 +19,12 @@ import { discriminateRun, normalizeBootstrapRunStatus } from '../persistence/leg
 import { validateContextFile, admitC1RunResult } from '../persistence/serialization.js';
 import type { ContextFile } from '../persistence/serialization.js';
 import {
-  resolveArchiveAwareArtifactPath,
-  validateStageEffectiveSet,
   resolveRunResultPath,
   computeResultFileHash,
-  resolveVerificationSummaryRef,
   validateReviewRunBinding,
   validateSourceReviewTuple,
-  VERIFICATION_SUMMARY_KIND,
+  expectedSourceReviewActionFor,
 } from '../persistence/result-ref-adapter.js';
-import {
-  classifyArtifactGenerations,
-  classifyVerificationGenerations,
-  artifactStage,
-  type ReviewLineageFact,
-} from './generation-resolver.js';
 import type { ResultRef, RunStatus } from '../domain/types.js';
 import { FlowkitError } from '../shared/errors.js';
 import type {
@@ -55,8 +47,6 @@ export interface ReadFormalFactSnapshotInput {
 
 interface ImmutableValidationResult {
   readonly conflicts: readonly FactConflict[];
-  /** pending/completed revise-* Runs whose ALL status-applicable immutable evidence passed. */
-  readonly integrityAdmittedReviseRunIds: ReadonlySet<string>;
 }
 
 export async function readFormalFactSnapshot(
@@ -66,7 +56,8 @@ export async function readFormalFactSnapshot(
   const deliveryRunsDir = join(input.repoRoot, input.runsPathPrefix, input.deliveryId);
 
   const manifestResult = await readDeliveryManifest(input);
-  const { runs, reviewVerdicts, c1RunIds, runConflicts } = await readRuns(deliveryRunsDir);
+  const activeChangeId = manifestResult.changes.find((change) => change.state === 'active')?.id;
+  const { runs, reviewVerdicts, c1RunIds, runConflicts } = await readRuns(deliveryRunsDir, activeChangeId);
   conflicts.push(...runConflicts);
   const openSpecArtifacts = await readOpenSpecArtifacts(input, manifestResult.changes);
 
@@ -89,9 +80,8 @@ export async function readFormalFactSnapshot(
   conflicts.push(...bindingResult.conflicts);
   const admittedReviewVerdicts = bindingResult.admittedVerdicts;
 
-  // Q1-RA-007: immutable/predecessor validation is an ADMISSION boundary,
-  // not merely another source of conflicts. Generation classification below
-  // may consume only the admitted revise Run IDs returned here.
+  // Immutable run-result and current source-review lineage remain fail-closed
+  // for the Runs that participate in the current Policy projection.
   const immutableValidation = await validateImmutableRunResultRefs(
     runs,
     admittedReviewVerdicts,
@@ -101,25 +91,7 @@ export async function readFormalFactSnapshot(
   );
   conflicts.push(...immutableValidation.conflicts);
 
-  conflicts.push(
-    ...await validateGenerationAwareArtifacts(
-      runs,
-      admittedReviewVerdicts,
-      immutableValidation.integrityAdmittedReviseRunIds,
-      c1RunIds,
-      input.repoRoot,
-    ),
-  );
 
-  conflicts.push(
-    ...await validateVerificationGenerationAware(
-      runs,
-      admittedReviewVerdicts,
-      immutableValidation.integrityAdmittedReviseRunIds,
-      c1RunIds,
-      input.repoRoot,
-    ),
-  );
 
   return {
     deliveryId: input.deliveryId,
@@ -274,7 +246,7 @@ interface RunsResult {
   readonly runConflicts: readonly FactConflict[];
 }
 
-async function readRuns(deliveryRunsDir: string): Promise<RunsResult> {
+async function readRuns(deliveryRunsDir: string, activeChangeId?: string): Promise<RunsResult> {
   const runs: RunFact[] = [];
   const reviewVerdicts: ReviewVerdictFact[] = [];
   const c1RunIds = new Set<string>();
@@ -292,11 +264,16 @@ async function readRuns(deliveryRunsDir: string): Promise<RunsResult> {
     if (!(await isDirectory(entryPath))) continue;
 
     if (looksLikeChangeDir(entry)) {
-      const nested = await readChangeRuns(entryPath);
-      runs.push(...nested.runs);
-      reviewVerdicts.push(...nested.reviewVerdicts);
-      for (const runId of nested.c1RunIds) c1RunIds.add(runId);
-      conflicts.push(...nested.runConflicts);
+      // v6/Q2: Change-level Runs are current Policy facts only for the one
+      // active Change. Completed/cancelled/planned Change corpora remain Git
+      // history and are deliberately not replayed into the current snapshot.
+      if (activeChangeId !== undefined && entry === activeChangeId) {
+        const nested = await readChangeRuns(entryPath);
+        runs.push(...nested.runs);
+        reviewVerdicts.push(...nested.reviewVerdicts);
+        for (const runId of nested.c1RunIds) c1RunIds.add(runId);
+        conflicts.push(...nested.runConflicts);
+      }
       continue;
     }
 
@@ -465,7 +442,7 @@ function readC1Run(
     reviewVerdictRef = admittedResult.actionResult?.reviewVerdictRef;
   }
 
-  if (contextFile.action.startsWith('review-') && hasResult && parsedResult !== null) {
+  if (contextFile.action.startsWith('review-') && status === 'completed' && hasResult && parsedResult !== null) {
     const resultObj = parsedResult as Record<string, unknown>;
     const verdictValue = resultObj['reviewVerdict'];
     const reviewedRunId = contextFile.reviewedRunId;
@@ -536,7 +513,7 @@ function readLegacyRun(
   };
 
   let verdict: ReviewVerdictFact | undefined;
-  if (run.action.startsWith('review-') && hasResult && parsedResult !== null) {
+  if (run.action.startsWith('review-') && statusResult.status === 'completed' && hasResult && parsedResult !== null) {
     const resultObj = parsedResult as Record<string, unknown>;
     const verdictValue = resultObj['verdict'];
     const reviewedRunId = extractLegacyReviewedRunId(parsedContext);
@@ -680,46 +657,119 @@ async function validateReviewExactBindings(
   return { conflicts, admittedVerdicts: admitted };
 }
 
-function isReviseAction(action: string): boolean {
+function isRevisionAction(action: string): boolean {
   return action === 'revise-explore' || action === 'revise-propose' || action === 'revise-apply';
 }
 
-function expectedSourceReviewAction(action: string): string | undefined {
-  if (action === 'revise-explore') return 'review-explore';
-  if (action === 'revise-propose') return 'review-propose';
-  if (action === 'revise-apply') return 'review-apply';
-  return undefined;
+function approvedReviewHandoffFor(action: string): 'review-explore' | 'review-propose' | 'review-apply' | undefined {
+  switch (action) {
+    case 'propose': return 'review-explore';
+    case 'apply': return 'review-propose';
+    case 'archive': return 'review-apply';
+    default: return undefined;
+  }
 }
 
 /**
- * Validate only predecessor facts that are available before result.json exists.
- * This deliberately does NOT look for reviewVerdictRef.
+ * Q2 current persisted handoff recovery. Forward Actions do not carry the
+ * revise-only sourceReview tuple; their context.inputRef itself points at the
+ * approved Review result consumed at entry. Reader validates only this current
+ * immutable handoff, not any mutable OpenSpec bytes from historical Runs.
  */
-function validateRevisePredecessorLineage(
+function validateApprovedReviewHandoff(
+  run: RunFact,
+  runs: readonly RunFact[],
+  admittedReviewVerdicts: readonly ReviewVerdictFact[],
+): FactConflict[] {
+  const expectedAction = approvedReviewHandoffFor(run.action);
+  if (expectedAction === undefined) return [];
+  if (run.inputRef === undefined) {
+    return [{
+      dimension: 'immutable-ref-required',
+      authority: run.runId,
+      message: `${run.status} ${run.action} Run ${run.runId} is missing its approved Review inputRef handoff`,
+      detail: { runId: run.runId, action: run.action, expectedReviewAction: expectedAction },
+    }];
+  }
+  const reviewRunId = extractRunIdFromResultRef(run.inputRef.ref);
+  if (reviewRunId === undefined || run.inputRef.kind !== 'run-result') {
+    return [{
+      dimension: 'immutable-ref-target',
+      authority: run.runId,
+      message: `${run.action} Run ${run.runId} inputRef must target an immutable review result`,
+      detail: { runId: run.runId, action: run.action, inputRef: run.inputRef },
+    }];
+  }
+  const reviewRun = runs.find((candidate) => candidate.runId === reviewRunId);
+  if (reviewRun === undefined || reviewRun.action !== expectedAction) {
+    return [{
+      dimension: 'immutable-ref-wrong-stage',
+      authority: run.runId,
+      message: `${run.action} Run ${run.runId} requires ${expectedAction}; got ${reviewRun?.action ?? 'missing'}`,
+      detail: { runId: run.runId, action: run.action, reviewRunId, expectedAction, actualAction: reviewRun?.action },
+    }];
+  }
+  const verdict = admittedReviewVerdicts.find((candidate) => candidate.reviewRunId === reviewRunId);
+  if (verdict === undefined) {
+    return [{
+      dimension: 'immutable-ref-source-unadmitted',
+      authority: run.runId,
+      message: `${run.action} Run ${run.runId} consumes review ${reviewRunId}, but that review is not admitted`,
+      detail: { runId: run.runId, action: run.action, reviewRunId },
+    }];
+  }
+  if (verdict.verdict !== 'approved') {
+    return [{
+      dimension: 'immutable-ref-verdict-mismatch',
+      authority: run.runId,
+      message: `${run.action} Run ${run.runId} requires an approved ${expectedAction}; got ${verdict.verdict}`,
+      detail: { runId: run.runId, action: run.action, reviewRunId, verdict: verdict.verdict },
+    }];
+  }
+  return [];
+}
+
+/**
+ * Validate predecessor facts available from context.json before terminal result
+ * publication. Q2/v6 applies this to every source-review consumer, not only
+ * revise-* Actions.
+ */
+function validateSourceReviewPredecessorLineage(
   run: RunFact,
   runs: readonly RunFact[],
   admittedReviewVerdicts: readonly ReviewVerdictFact[],
 ): FactConflict[] {
   const conflicts: FactConflict[] = [];
-  const expectedAction = expectedSourceReviewAction(run.action);
+  const expectedAction = expectedSourceReviewActionFor(run.action);
   if (expectedAction === undefined) return conflicts;
+  const expectedVerdict = 'changes-requested' as const;
 
-  if (run.sourceReviewRun === undefined || run.sourceReviewVerdict === undefined) {
+  if (run.sourceReviewRun === undefined || run.sourceReviewVerdict === undefined || run.inputRef === undefined) {
     conflicts.push({
       dimension: 'immutable-ref-required',
       authority: run.runId,
-      message: `${run.status} ${run.action} Run ${run.runId} is missing required context predecessor lineage (sourceReviewRun/sourceReviewVerdict)`,
+      message: `${run.status} ${run.action} Run ${run.runId} is missing required source-review context binding`,
       detail: { runId: run.runId, action: run.action },
     });
     return conflicts;
   }
 
-  if (run.sourceReviewVerdict !== 'changes-requested') {
+  if (run.sourceReviewVerdict !== expectedVerdict) {
     conflicts.push({
-      dimension: 'immutable-ref-verdict-not-cr',
+      dimension: 'immutable-ref-verdict-mismatch',
       authority: run.runId,
-      message: `${run.status} ${run.action} Run ${run.runId} sourceReviewVerdict must be changes-requested`,
+      message: `${run.status} ${run.action} Run ${run.runId} sourceReviewVerdict must be ${expectedVerdict}`,
       detail: { runId: run.runId, action: run.action, sourceReviewVerdict: run.sourceReviewVerdict },
+    });
+  }
+
+  const sourceRunId = extractRunIdFromResultRef(run.inputRef.ref);
+  if (sourceRunId !== run.sourceReviewRun || run.inputRef.kind !== 'run-result') {
+    conflicts.push({
+      dimension: 'immutable-ref-target',
+      authority: run.runId,
+      message: `${run.status} ${run.action} Run ${run.runId} inputRef must exact-bind sourceReviewRun ${run.sourceReviewRun}`,
+      detail: { runId: run.runId, action: run.action, sourceReviewRun: run.sourceReviewRun, inputRef: run.inputRef.ref },
     });
   }
 
@@ -734,16 +784,16 @@ function validateRevisePredecessorLineage(
     return conflicts;
   }
 
-  if (admittedVerdict.verdict !== 'changes-requested') {
+  if (admittedVerdict.verdict !== expectedVerdict) {
     conflicts.push({
-      dimension: 'immutable-ref-verdict-not-cr',
+      dimension: 'immutable-ref-verdict-mismatch',
       authority: run.runId,
-      message: `${run.status} ${run.action} Run ${run.runId} source review ${run.sourceReviewRun} verdict must be changes-requested`,
+      message: `${run.status} ${run.action} Run ${run.runId} requires source review verdict ${expectedVerdict}; got ${admittedVerdict.verdict}`,
       detail: { runId: run.runId, action: run.action, reviewVerdict: admittedVerdict.verdict },
     });
   }
 
-  const sourceReviewRun = runs.find((r) => r.runId === run.sourceReviewRun);
+  const sourceReviewRun = runs.find((candidate) => candidate.runId === run.sourceReviewRun);
   if (sourceReviewRun === undefined || sourceReviewRun.action !== expectedAction) {
     conflicts.push({
       dimension: 'immutable-ref-wrong-stage',
@@ -799,7 +849,6 @@ async function validateImmutableRunResultRefs(
   c1RunIds: ReadonlySet<string>,
 ): Promise<ImmutableValidationResult> {
   const conflicts: FactConflict[] = [];
-  const integrityAdmittedReviseRunIds = new Set<string>();
   const admittedSourceReviewVerdicts = admittedReviewVerdicts.map((v) => ({
     reviewRunId: v.reviewRunId,
     verdict: v.verdict,
@@ -807,17 +856,14 @@ async function validateImmutableRunResultRefs(
   }));
 
   for (const run of runs) {
-    // Q1-RA-011 / Run 142: the bounded legacy recognizer deliberately emits
-    // only a minimal Bootstrap RunFact. C1 ResultRef/source-review physical
-    // invariants are therefore applicable ONLY to Runs that retained C1
-    // provenance through Reader admission. Unknown schema versions never enter
-    // this set because discriminateRun fails them closed.
+    // C1 ResultRef/source-review physical invariants apply only to Runs that
+    // retained schemaVersion 2 provenance through admission. Historical
+    // completed-Change corpora are excluded before this validation boundary.
     if (!c1RunIds.has(run.runId)) continue;
 
-    // Q1-RA-007 / Run 139: admission is PER RUN. Every immutable problem that
-    // is applicable to this physical Run state is accumulated here first. A
-    // pending/completed revise may alter generation classification only when
-    // this complete per-Run set is empty.
+    // Admission is per Run: accumulate every status-applicable immutable
+    // problem for the current projection before deciding whether Policy can use
+    // the fact.
     const runConflicts: FactConflict[] = [];
 
     // Context-level non-review inputRef exists independently of terminal state,
@@ -854,17 +900,14 @@ async function validateImmutableRunResultRefs(
       }
     }
 
-    if (isReviseAction(run.action)) {
+    runConflicts.push(...validateApprovedReviewHandoff(run, runs, admittedReviewVerdicts));
+
+    if (isRevisionAction(run.action)) {
+      runConflicts.push(
+        ...validateSourceReviewPredecessorLineage(run, runs, admittedReviewVerdicts),
+      );
+
       if (run.status === 'pending') {
-        // Pending has no result.json, therefore reviewVerdictRef cannot exist.
-        // Validate only predecessor facts available in context plus any other
-        // context-level immutable refs already accumulated above.
-        runConflicts.push(
-          ...validateRevisePredecessorLineage(run, runs, admittedReviewVerdicts),
-        );
-        if (runConflicts.length === 0) {
-          integrityAdmittedReviseRunIds.add(run.runId);
-        }
         conflicts.push(...runConflicts);
         continue;
       }
@@ -893,9 +936,6 @@ async function validateImmutableRunResultRefs(
 
         // Eligibility requires ALL applicable immutable evidence to pass: the
         // source-review tuple AND inputRef/consumedInputRefs above.
-        if (runConflicts.length === 0) {
-          integrityAdmittedReviseRunIds.add(run.runId);
-        }
         conflicts.push(...runConflicts);
         continue;
       }
@@ -906,21 +946,16 @@ async function validateImmutableRunResultRefs(
       // If predecessor context evidence survived from createRun, validate only
       // that context lineage; absence is not turned into terminal tuple
       // requiredness at this Reader layer.
-      if (
-        run.status === 'failed' ||
-        run.status === 'cancelled'
-      ) {
-        if (run.sourceReviewRun !== undefined || run.sourceReviewVerdict !== undefined) {
-          runConflicts.push(
-            ...validateRevisePredecessorLineage(run, runs, admittedReviewVerdicts),
-          );
-        }
+      if (run.status === 'failed' || run.status === 'cancelled') {
+        // Terminal status does not add completed-only refs; the persisted entry
+        // context still retains the source-review binding established at create.
         conflicts.push(...runConflicts);
         continue;
       }
     }
 
-    // Non-revise Runs keep the historical optional source-review consistency
+    // Actions that do not consume a review keep optional source-review
+    // consistency for any legacy evidence that is actually present.
     // rule. requiresTuple=false means no tuple is invented merely from action,
     // while any evidence that is actually present must remain self-consistent.
     const tupleProblems = await validateSourceReviewTuple(
@@ -958,7 +993,7 @@ async function validateImmutableRunResultRefs(
     conflicts.push(...runConflicts);
   }
 
-  return { conflicts, integrityAdmittedReviseRunIds };
+  return { conflicts };
 }
 
 async function validateSingleImmutableRef(
@@ -1032,333 +1067,6 @@ function extractRunIdFromResultRef(ref: string): string | undefined {
   const normalized = normalizeSeparators(ref).replace(/\/+$/, '');
   const match = /\/(\d{8}-\d{3}-[a-z][a-z-]*)\/result\.json$/i.exec(normalized);
   return match === null ? undefined : match[1];
-}
-
-async function validateGenerationAwareArtifacts(
-  runs: readonly RunFact[],
-  reviewVerdicts: readonly ReviewVerdictFact[],
-  integrityAdmittedReviseRunIds: ReadonlySet<string>,
-  c1RunIds: ReadonlySet<string>,
-  repoRoot: string,
-): Promise<FactConflict[]> {
-  const conflicts: FactConflict[] = [];
-
-  // Invalid completed revise Runs are not generations. Keeping them out of
-  // BOTH candidate sets prevents bad terminal evidence from creating a second
-  // current generation or superseding the predecessor.
-  const completedArtifactRuns = runs.filter(
-    (r) =>
-      c1RunIds.has(r.runId) &&
-      r.status === 'completed' &&
-      r.changeId !== undefined &&
-      (r.action === 'explore' ||
-        r.action === 'propose' ||
-        ((r.action === 'revise-explore' || r.action === 'revise-propose') &&
-          integrityAdmittedReviseRunIds.has(r.runId))),
-  );
-
-  const allReviseRuns = runs.filter(
-    (r) =>
-      c1RunIds.has(r.runId) &&
-      r.changeId !== undefined &&
-      (r.action === 'revise-explore' || r.action === 'revise-propose') &&
-      (r.status === 'pending' || r.status === 'completed') &&
-      integrityAdmittedReviseRunIds.has(r.runId),
-  );
-
-  const classification = classifyArtifactGenerations(
-    completedArtifactRuns,
-    allReviseRuns,
-    buildReviewLineageFacts(runs, reviewVerdicts),
-  );
-
-  for (const run of completedArtifactRuns) {
-    if (classification.get(run.runId) === 'current') {
-      conflicts.push(...await validateCurrentGenerationRefs(run, repoRoot));
-    }
-  }
-  return conflicts;
-}
-
-function buildReviewLineageFacts(
-  runs: readonly RunFact[],
-  reviewVerdicts: readonly ReviewVerdictFact[],
-): ReviewLineageFact[] {
-  const facts: ReviewLineageFact[] = [];
-  for (const verdict of reviewVerdicts) {
-    const reviewRun = runs.find((r) => r.runId === verdict.reviewRunId);
-    if (reviewRun === undefined) continue;
-    facts.push({
-      reviewRunId: verdict.reviewRunId,
-      verdict: verdict.verdict,
-      reviewedRunId: verdict.reviewedRunId,
-      reviewAction: reviewRun.action,
-      reviewStatus: reviewRun.status,
-      ...(reviewRun.changeId !== undefined && { changeId: reviewRun.changeId }),
-    });
-  }
-  return facts;
-}
-
-async function validateCurrentGenerationRefs(run: RunFact, repoRoot: string): Promise<FactConflict[]> {
-  const conflicts: FactConflict[] = [];
-  const stage = artifactStage(run.action);
-  if (stage === undefined) return conflicts;
-  if (run.changeId === undefined) {
-    conflicts.push({
-      dimension: 'artifact-effective-set-incomplete',
-      authority: run.runId,
-      message: `Current generation ${run.runId} (${run.action}) has no changeId; cannot validate the required ${stage} effective artifact set`,
-      detail: { runId: run.runId, action: run.action },
-    });
-    return conflicts;
-  }
-
-  let content: string;
-  try {
-    content = await readFile(join(resolveRunDir(repoRoot, run), 'result.json'), 'utf-8');
-  } catch {
-    return conflicts;
-  }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(content);
-  } catch {
-    return conflicts;
-  }
-
-  const actionResult = (parsed as Record<string, unknown>)['actionResult'];
-  if (actionResult === undefined || typeof actionResult !== 'object' || actionResult === null) {
-    conflicts.push({
-      dimension: 'artifact-effective-set-incomplete',
-      authority: run.runId,
-      message: `Current ${stage} generation ${run.runId} has no actionResult (required produced evidence missing)`,
-      detail: { runId: run.runId, action: run.action },
-    });
-    return conflicts;
-  }
-
-  const producedRefsRaw = (actionResult as Record<string, unknown>)['producedResultRefs'];
-  if (!Array.isArray(producedRefsRaw)) {
-    conflicts.push({
-      dimension: 'artifact-effective-set-incomplete',
-      authority: run.runId,
-      message: `Current ${stage} generation ${run.runId} has no producedResultRefs (required effective artifact set missing)`,
-      detail: { runId: run.runId, action: run.action },
-    });
-    return conflicts;
-  }
-
-  const producedRefs: ResultRef[] = [];
-  for (let i = 0; i < producedRefsRaw.length; i++) {
-    const raw = producedRefsRaw[i];
-    if (typeof raw !== 'object' || raw === null) {
-      conflicts.push({
-        dimension: 'artifact-effective-set-incomplete',
-        authority: run.runId,
-        message: `Current ${stage} generation ${run.runId} producedResultRefs[${i}] malformed`,
-        detail: { runId: run.runId, index: i },
-      });
-      continue;
-    }
-    const r = raw as Record<string, unknown>;
-    if (typeof r['ref'] !== 'string' || typeof r['versionFingerprint'] !== 'string') {
-      conflicts.push({
-        dimension: 'artifact-effective-set-incomplete',
-        authority: run.runId,
-        message: `Current ${stage} generation ${run.runId} producedResultRefs[${i}] missing ref or versionFingerprint`,
-        detail: { runId: run.runId, index: i },
-      });
-      continue;
-    }
-    producedRefs.push({
-      ref: r['ref'],
-      versionFingerprint: r['versionFingerprint'],
-      ...(typeof r['kind'] === 'string' && { kind: r['kind'] as ResultRef['kind'] }),
-    });
-  }
-
-  const setProblems = await validateStageEffectiveSet(repoRoot, run.changeId, stage, producedRefs);
-  for (const p of setProblems) {
-    const dimension =
-      p.kind === 'fingerprint-mismatch'
-        ? 'artifact-replaced'
-        : p.kind === 'ambiguous-target'
-          ? 'artifact-archive-ambiguous'
-          : p.kind === 'missing-target'
-            ? 'artifact-missing'
-            : p.kind === 'specs-mismatch'
-              ? 'artifact-specs-drift'
-              : 'artifact-effective-set-incomplete';
-    conflicts.push({
-      dimension,
-      authority: run.runId,
-      message: `Current ${stage} generation ${run.runId} effective artifact set problem (${p.kind}): ${p.message}`,
-      detail: { runId: run.runId, kind: p.kind, ref: p.ref },
-    });
-  }
-  return conflicts;
-}
-
-function resolveRunDir(repoRoot: string, run: RunFact): string {
-  const segments = [repoRoot, '.flowkit', 'runs', run.deliveryId];
-  if (run.changeId !== undefined) segments.push(run.changeId);
-  segments.push(run.runId);
-  return join(...segments);
-}
-
-async function validateVerificationGenerationAware(
-  runs: readonly RunFact[],
-  reviewVerdicts: readonly ReviewVerdictFact[],
-  integrityAdmittedReviseRunIds: ReadonlySet<string>,
-  c1RunIds: ReadonlySet<string>,
-  repoRoot: string,
-): Promise<FactConflict[]> {
-  const conflicts: FactConflict[] = [];
-  const completedReviewApplyRuns = runs.filter(
-    (r) => c1RunIds.has(r.runId) && r.status === 'completed' && r.changeId !== undefined && r.action === 'review-apply',
-  );
-  const allReviseApplyRuns = runs.filter(
-    (r) =>
-      c1RunIds.has(r.runId) &&
-      r.changeId !== undefined &&
-      r.action === 'revise-apply' &&
-      (r.status === 'pending' || r.status === 'completed') &&
-      integrityAdmittedReviseRunIds.has(r.runId),
-  );
-  const classification = classifyVerificationGenerations(
-    completedReviewApplyRuns,
-    allReviseApplyRuns,
-    buildReviewLineageFacts(runs, reviewVerdicts),
-  );
-  for (const run of completedReviewApplyRuns) {
-    if (classification.get(run.runId) === 'current') {
-      conflicts.push(...await validateCurrentVerificationSummaryRef(run, repoRoot));
-    }
-  }
-  return conflicts;
-}
-
-async function validateCurrentVerificationSummaryRef(
-  run: RunFact,
-  repoRoot: string,
-): Promise<FactConflict[]> {
-  const conflicts: FactConflict[] = [];
-  const changeId = run.changeId;
-  if (changeId === undefined) {
-    conflicts.push({
-      dimension: 'verification-summary-missing',
-      authority: run.runId,
-      message: `Current review-apply ${run.runId} has no changeId; cannot validate the required verification summary ref`,
-      detail: { runId: run.runId },
-    });
-    return conflicts;
-  }
-
-  let content: string;
-  try {
-    content = await readFile(join(resolveRunDir(repoRoot, run), 'result.json'), 'utf-8');
-  } catch {
-    return conflicts;
-  }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(content);
-  } catch {
-    return conflicts;
-  }
-  const actionResult = (parsed as Record<string, unknown>)['actionResult'];
-  if (actionResult === undefined || typeof actionResult !== 'object' || actionResult === null) {
-    conflicts.push({
-      dimension: 'verification-summary-missing',
-      authority: run.runId,
-      message: `Current review-apply ${run.runId} has no actionResult; the required verificationSummaryRef cannot be recovered`,
-      detail: { runId: run.runId },
-    });
-    return conflicts;
-  }
-  const summaryRef = (actionResult as Record<string, unknown>)['verificationSummaryRef'];
-  if (summaryRef === undefined || typeof summaryRef !== 'object' || summaryRef === null) {
-    conflicts.push({
-      dimension: 'verification-summary-missing',
-      authority: run.runId,
-      message: `Current review-apply ${run.runId} actionResult has no verificationSummaryRef (required for a current verification generation)`,
-      detail: { runId: run.runId },
-    });
-    return conflicts;
-  }
-  const ref = summaryRef as Record<string, unknown>;
-  const refPath = ref['ref'];
-  const refFingerprint = ref['versionFingerprint'];
-  const refKind = ref['kind'];
-  if (typeof refPath !== 'string' || typeof refFingerprint !== 'string') {
-    conflicts.push({
-      dimension: 'verification-summary-malformed',
-      authority: run.runId,
-      message: `Current review-apply ${run.runId} verificationSummaryRef missing string ref/versionFingerprint`,
-      detail: { runId: run.runId, refPath, versionFingerprint: refFingerprint },
-    });
-    return conflicts;
-  }
-  if (refKind !== VERIFICATION_SUMMARY_KIND) {
-    conflicts.push({
-      dimension: 'verification-summary-kind',
-      authority: run.runId,
-      message: `Current review-apply ${run.runId} verificationSummaryRef kind is ${String(refKind)}, expected ${VERIFICATION_SUMMARY_KIND}`,
-      detail: { runId: run.runId, kind: refKind, refPath },
-    });
-    return conflicts;
-  }
-  const canonicalPath = resolveVerificationSummaryRef(changeId);
-  if (normalizeSeparators(refPath) !== canonicalPath) {
-    conflicts.push({
-      dimension: 'verification-summary-path',
-      authority: run.runId,
-      message: `Current review-apply ${run.runId} verificationSummaryRef path (${refPath}) does not equal the Core-derived canonical path (${canonicalPath})`,
-      detail: { runId: run.runId, canonicalPath, actual: refPath },
-    });
-    return conflicts;
-  }
-
-  let artifactPath: string;
-  try {
-    artifactPath = await resolveArchiveAwareArtifactPath(repoRoot, refPath);
-  } catch (e) {
-    const dimension =
-      e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED'
-        ? 'verification-summary-archive-ambiguous'
-        : 'verification-summary-missing';
-    conflicts.push({
-      dimension,
-      authority: run.runId,
-      message: `Current review-apply ${run.runId} verificationSummaryRef target ${dimension}: ${refPath}`,
-      detail: { runId: run.runId, refPath },
-    });
-    return conflicts;
-  }
-
-  let artifactContent: string;
-  try {
-    artifactContent = await readFile(artifactPath, 'utf-8');
-  } catch {
-    conflicts.push({
-      dimension: 'verification-summary-missing',
-      authority: run.runId,
-      message: `Current review-apply ${run.runId} verificationSummaryRef target unreadable: ${refPath}`,
-      detail: { runId: run.runId, refPath, artifactPath },
-    });
-    return conflicts;
-  }
-  const actualHash = computeResultFileHash(artifactContent);
-  if (actualHash !== refFingerprint) {
-    conflicts.push({
-      dimension: 'verification-summary-replaced',
-      authority: run.runId,
-      message: `Current review-apply ${run.runId} verificationSummaryRef fingerprint mismatch: ${refPath} (expected ${refFingerprint}, got ${actualHash}); no legitimate revise-apply lineage superseded it`,
-      detail: { runId: run.runId, refPath, expected: refFingerprint, actual: actualHash },
-    });
-  }
-  return conflicts;
 }
 
 async function isDirectory(path: string): Promise<boolean> {

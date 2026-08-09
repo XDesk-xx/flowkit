@@ -1,0 +1,15 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "apply",
+    "executionStatus": "completed",
+    "summary": "已完成 Q2 orchestration authority boundary Apply：Reader 只投影当前 active Change facts；删除 global generation/revision-window 与 archive-aware historical replay；artifact producer 由 Core 记录完整 point-in-time 输出；保留最小 review/next-action exact handoff、Run closed schema 与 terminal create-once；同步 AGENTS 与边界文档。Change Verification 549/549 tests、typecheck、lint、build、Q2 strict 与 8/8 canonical specs strict 全部通过；未运行 Delivery Full Test、Archive、Checkpoint、Commit 或 Push。",
+    "consumedInputRefs": [
+      {
+        "ref": ".flowkit/runs/20260806-01-deterministic-core/orchestration-authority-boundary-correction/20260806-153-review-propose/result.json",
+        "versionFingerprint": "a1a9f1c11c6621d26aa51a1d1a37ed376900951afd5e0b42363228426c305d63",
+        "kind": "run-result"
+      }
+    ]
+  }
+}

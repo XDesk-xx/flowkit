@@ -175,13 +175,15 @@ Run 状态：`pending / completed / failed / cancelled`。
 
 Run 进入 terminal 状态后保留原记录。需要重试时创建新 Run，不把失败 Run 改写成成功 Run。
 
-### 3.7 Canonical artifact revision 语义
+### 3.7 Canonical artifact 与 point-in-time 引用
 
-`openspec/changes/<changeId>/` 下的 `explore.md / proposal.md / design.md / specs/** / tasks.md / verification.md` 是 **current-state canonical path**：
+`openspec/changes/<changeId>/` 下的 `explore.md / proposal.md / design.md / specs/** / tasks.md / verification.md` 是 OpenSpec 的 **current-state canonical path**：
 
-- 合法 `revise-*` MAY 覆盖同一路径；Bootstrap 阶段手工执行同一套 generation-aware 语义——历史 terminal Run 的 `producedResultRefs` 不要求永久匹配当前 bytes，只在合法 `review-S changes-requested → revise-S` lineage 下停止对已 superseded 的 mutable ref 重新验证；
+- 合法 `revise-*` MAY 覆盖同一路径；历史 terminal Run 的 mutable artifact / verification ResultRef 只表达“该 Run 当时引用的版本”，不要求未来 current path 永久保持相同 bytes；
+- 当前 Review 或下一 Action 真正消费某一版本时，Core MAY 在该 handoff 边界做 exact check；handoff 成功后，不把 predecessor ref 延伸成未来 artifact authority；
+- `pending` 只表示 Run 尚未 terminal，不产生 revision-window / supersession / generation class；
 - 不建立 `.flowkit/artifacts/`、`openspec/.history/` 或其他 per-Run artifact snapshot store；
-- archive 后最终 current-state artifact relocation 到唯一 `openspec/changes/archive/<date>-<changeId>/`，terminal Run 不重写。
+- archive 的 relocation / spec sync / operation success-failure 由 OpenSpec 自己负责；Flowkit 不在 operation 成功后按 archive path 再证明一次历史 ResultRef。
 
 ### 3.8 Legacy metadata-only 有界例外
 
@@ -324,7 +326,7 @@ chore(flowkit): start <delivery-id>
 
 ### 5.4 Change Checkpoint Commit
 
-每个完成的 Change 一次。
+每个完成的 Change 一次。OpenSpec 只负责 archive operation 的 success/failure、relocation 与 spec sync；operation success 后由 Flowkit 记录自己的 Change 状态为 `completed`。Checkpoint 是随后独立的 Flowkit/Git 正式边界，不参与 Change 的 `active → completed` 判定。
 
 前置条件：
 
@@ -343,6 +345,8 @@ Archive Run 已完成
 ```text
 chore(flowkit): checkpoint <change-id>
 ```
+
+Checkpoint recovery 必须限定在当前 Delivery 的 Git boundary scope：Reader 以 Delivery Start 的 Git 拓扑归属过滤 checkpoint；其他 Delivery 的同名 `<change-id>` 不得被当前 Delivery 消费。历史 legacy checkpoint 没有结构化 `changeId` 时，只保留有界兼容，并与后续 structured checkpoint 同时生效。
 
 Checkpoint Commit 应尽量包含真实收尾变化，例如 OpenSpec Archive、Manifest 状态更新和 Archive Run，不为了边界创建无意义空 Commit。
 

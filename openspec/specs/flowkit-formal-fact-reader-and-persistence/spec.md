@@ -21,7 +21,7 @@ C1 MUST 定义 `FormalFactSnapshot` 作为 Policy 输入的只读事实视图。
 
 ### Requirement: 正式事实 Reader 遵循 One fact, one authority
 
-Reader MUST 遵循 `One fact, one authority` 原则：每个正式事实从唯一权威来源读取。Reader MUST NOT 做跨权威交叉推断。冲突 MUST 收集为 `FactConflict[]`，Reader MUST NOT 自动择优。
+Reader MUST 遵循 `One fact, one authority` 原则：每个当前 Policy 所需正式事实从唯一权威来源读取。Reader MUST NOT 做跨权威交叉推断，也 MUST NOT 把 Run 历史记录提升为 OpenSpec、Git、Verification 或 current repository bytes 的持续 authority。只有当前 Policy relevance 范围内的 authority fact 自相矛盾、required fact 缺失、当前 Run schema/identity 无效或当前 immutable lineage binding 错误时，冲突 MUST 收集为 `FactConflict[]`；Reader MUST NOT 自动择优。
 
 #### Scenario: 每个事实从唯一权威读取
 
@@ -31,7 +31,7 @@ Reader MUST 遵循 `One fact, one authority` 原则：每个正式事实从唯�
 
 #### Scenario: 冲突收集不择优
 
-- **WHEN** Reader 检测到事实冲突
+- **WHEN** Reader 检测到当前 Policy relevance 范围内的正式事实冲突
 - **THEN** 冲突 MUST 收集到 `FormalFactSnapshot.conflicts`
 - **AND** Reader MUST NOT 自动选择其中一个来源
 - **AND** Policy 在 `conflicts` 非空时 MUST blocked
@@ -41,6 +41,13 @@ Reader MUST 遵循 `One fact, one authority` 原则：每个正式事实从唯�
 - **WHEN** Reader 读取 OpenSpec 相关事实
 - **THEN** MUST 只读取 OpenSpec 目录结构的文件系统事实（存在性、状态摘要）
 - **AND** MUST NOT 调用 `openspec` CLI 命令
+
+#### Scenario: 非当前 Policy 历史 Run 不成为 blocking authority
+
+- **WHEN** 已 completed/cancelled/planned Change 的历史 Run 存在旧 schema 差异或 historical mutable ResultRef 无法与 today/current path bytes 对齐
+- **AND** 当前 Policy 不消费该 Change 的 Run lineage 来决定当前 Action
+- **THEN** Reader MUST NOT 仅因该历史辅助记录问题产生 current blocking `FactConflict`
+- **AND** MUST NOT 为此扩张 legacy/generation compatibility authority
 
 ### Requirement: Run 创建使用 staging + atomic publish
 
@@ -257,30 +264,28 @@ result.json 物理序列化 MUST 省略 `actionResult.runRef`。`versionFingerpr
 
 ### Requirement: ResultRef versionFingerprint 使用 content hash
 
-所有 schemaVersion 2 生产 ResultRef MUST 使用被引用目标实际文件内容的 SHA-256 作为
-`versionFingerprint`。Caller MUST NOT 成为 fingerprint、kind 或 ref path 的 authority。
-Run result 和 non-Run artifact MUST 使用不同的 Core constructor，但共享 replacement detection 语义。
+所有 schemaVersion 2 生产 ResultRef MUST 使用**建立该引用时**真实目标文件内容的 SHA-256 作为 `versionFingerprint`。Caller MUST NOT 成为 fingerprint、kind 或 ref path 的 authority。`run-result` 与当前 Action 正在消费的 handoff binding 必须 exact；completed historical `produced-artifact` 与 terminal `verification-summary` 是 point-in-time external reference，MUST NOT 被 Reader 解释为 future/current path 的永久 immutability authority。`review-apply` 的 `context.verificationInputRef` 是仅在该 current/pending Review entry→completion 生命周期内 exact 的临时 handoff binding。
 
 #### Scenario: versionFingerprint 为文件内容 SHA-256
 
-- **WHEN** 构造 ResultRef 的 `versionFingerprint`
-- **THEN** MUST 为 result.json 文件内容的 SHA-256
+- **WHEN** Core 构造 ResultRef 的 `versionFingerprint`
+- **THEN** MUST 为目标文件当时实际内容的 SHA-256
 - **AND** MUST NOT 为 Git Commit SHA
 
 #### Scenario: Run result ResultRef 由 Core 构造
 
-- **WHEN** Core 为 Run `result.json` 创建 ResultRef
-- **THEN** MUST 使用 `buildRunResultRef(runPath, fileContent)`
-- **AND** kind MUST 为 `run-result`
+- **WHEN** Core 为 Run `result.json` 创建或消费 ResultRef
+- **THEN** MUST 使用 `kind=run-result`
 - **AND** versionFingerprint MUST 为该 `result.json` 内容 SHA-256
+- **AND** 在当前 handoff/Review lineage 被消费时 MUST 对 create-once `result.json` 做 exact hash 验证
 
 #### Scenario: non-Run artifact ResultRef 由 Core 构造
 
 - **WHEN** Core 为 produced artifact 或 verification summary 创建 ResultRef
-- **THEN** MUST 使用 non-Run artifact constructor
-- **AND** kind MUST 由 owning result field 在 Core 内部选择
-- **AND** versionFingerprint MUST 为目标 artifact 文件内容 SHA-256
+- **THEN** kind MUST 由 owning result field 在 Core 内部选择
+- **AND** versionFingerprint MUST 为本次 Action 建立引用时目标 artifact 的实际 SHA-256
 - **AND** constructor MUST NOT 自动追加 `result.json`
+- **AND** 当该 ref 已不再被当前 Action 作为 handoff 消费时，后续合法 lifecycle 修改同一路径 MUST NOT 反向使该历史 ResultRef 本身无效
 
 #### Scenario: caller 不能提供 versionFingerprint
 
@@ -290,10 +295,15 @@ Run result 和 non-Run artifact MUST 使用不同的 Core constructor，但共�
 
 #### Scenario: verifyResultRef 检测替换
 
-- **WHEN** preflight 或 Reader 验证 immutable Run-result ref，或验证当前 effective mutable artifact ref
-- **THEN** MUST 比对 `versionFingerprint` 与当前应解析目标的实际内容 SHA-256
-- **AND** 不匹配 MUST 返回 replacement signal、`RESULT_REF_MISMATCH` 或 `FactConflict`（按调用层）
-- **AND** 已由合法 revision lineage 证明 superseded 的 historical mutable artifact ref MUST 按 generation-aware validation requirement 处理，MUST NOT 再绑定当前 canonical bytes
+- **WHEN** 某 ResultRef 或其覆盖 generation 正被当前 Action 作为明确 handoff 消费
+- **THEN** entry/completion contract MUST 对仍要求不变的 target bytes 做 exact check
+- **AND** mismatch MUST fail closed
+
+#### Scenario: historical mutable ResultRef 不做 future current-path replay
+
+- **WHEN** historical `produced-artifact` 或 `verification-summary` ResultRef 的 logical path 在后续合法 Action 中内容变化或发生 OpenSpec archive relocation
+- **THEN** Reader MUST NOT 仅因 future/current physical bytes 与 historical fingerprint 不同产生 `FactConflict`
+- **AND** current exact validation MUST 仅发生在拥有明确当前 Action correctness 目的的 entry/completion 边界
 - **AND** MUST NOT 使用 Git Commit SHA 替代内容 hash
 
 ### Requirement: Run ID 文件系统集成
@@ -746,51 +756,38 @@ initial coverage。Initial completion preflight、Reader 与 review entry MUST �
 
 ### Requirement: 每个 current propose effective set 必须精确覆盖当前 specs namespace
 
-Core MUST 对每个 current `propose` effective generation（initial `propose` 或任意合法 `revise-propose`
-successor）强制执行完整 `specs/**` namespace invariant。Terminal preflight 与 `review-propose` entry
-MUST 将 effective specs logical-ref set 与当前 canonical `specs/**` namespace 做精确集合比对；该规则
-MUST NOT 只覆盖 initial propose。
+每个 terminal `propose` 与 `revise-propose` Run MUST 由 Core 从**该 Action terminal 时的当前 OpenSpec state**重新派生完整 Proposal bundle，不得通过 predecessor ResultRef inheritance 或 caller changed-tag subset 构造 effective set。完整集合 MUST 包含 `proposal.md`、`design.md`、`tasks.md` 与当时完整 `specs/**` namespace。
 
 #### Scenario: revise-propose 未声明 specs 且 namespace 未变化可继承
 
-- **WHEN** P0 的 effective specs set 为 `{A}`
-- **AND** matching `review-propose` 对 P0 给出 `changes-requested`
-- **AND** P1=`revise-propose` 只声明 `proposal`
-- **AND** 当前 canonical specs namespace 仍精确为 `{A}`
-- **THEN** P1 MAY 继承 P0 的 A ref
-- **AND** P1 terminal preflight MUST 验证 inherited A fingerprint
-- **AND** effective specs set 与 canonical namespace exact-set comparison MUST pass
+- **WHEN** initial `propose` terminal completion
+- **THEN** Core MUST 派生 proposal、design、tasks 与完整 current `specs/**` refs
+- **AND** singleton 缺失或 specs 枚举失败 MUST 阻止 terminal publication
 
 #### Scenario: revise-propose 未声明 specs 但新增 spec 必须拒绝 terminal
 
-- **WHEN** P0 的 effective specs set 为 `{A}`
-- **AND** matching `review-propose` 对 P0 给出 `changes-requested`
-- **AND** P1=`revise-propose` 只声明 `proposal`
-- **BUT** P1 revision window 内 canonical `specs/**` 新增 `B`
-- **THEN** P1 的 inherited effective specs set `{A}` 与 current namespace `{A,B}` MUST 判定不完整
-- **AND** Core MUST 要求本次 revision 声明 `specs` namespace replacement
-- **AND** P1 result.json MUST 不发布
-- **AND** P1 MUST 保持 pending
+- **WHEN** matching changes-requested review 后执行 `revise-propose`
+- **THEN** Core MUST 在 terminal completion 重新读取当前 proposal、design、tasks 与完整 `specs/**`
+- **AND** MUST 为完整 current bundle 派生新的 point-in-time refs
+- **AND** MUST NOT 从 predecessor Run 继承未声明 artifact refs
+- **AND** Caller MUST NOT 通过 changed-tag subset 缩小本次 produced set
 
 #### Scenario: revise-propose 声明 specs 后 Core 绑定完整 successor namespace
 
-- **WHEN** 上述 P1 同时声明 `specs`
-- **THEN** Core MUST 重新枚举完整 current `specs/**` namespace `{A,B}`
-- **AND** MUST 以 `{A,B}` 的 Core-derived refs 整体替换 predecessor specs set
-- **AND** 每个 spec fingerprint 均匹配时 P1 MAY terminal
+- **WHEN** `propose` 或 `revise-propose` 准备 terminal publish
+- **THEN** produced specs logical-ref set MUST 与当前 `specs/**` namespace 精确相等
+- **AND** namespace 新增/删除 MUST 直接反映在本次完整 produced set
+- **AND** MUST NOT 需要 revision-window 或 predecessor effective-set merge 才能表达该变化
 
 #### Scenario: successor terminal 后 review entry 仍拒绝未绑定 namespace drift
 
-- **WHEN** current `revise-propose` generation P1 已 terminal
-- **AND** 在创建 `review-propose` 前 canonical `specs/**` namespace 相比 P1 effective specs set 新增或删除文件
-- **THEN** review entry exact-set comparison MUST fail
-- **AND** MUST NOT 创建有效 reviewed Run binding
-- **AND** MUST fail closed，而不是只验证 P1 已有 effective refs
+- **WHEN** 创建或完成 `review-propose`
+- **THEN** 被审查 producer Run 的完整 produced set MUST 与当前 proposal、design、tasks、`specs/**` bytes/namespace 精确匹配
+- **AND** mismatch MUST fail closed
 
 ### Requirement: review Run 必须精确绑定被审查 result 内容
 
-review-* Run MUST 通过 Core-derived `context.inputRef` 精确绑定 `reviewedRunId` 的实际 result.json。
-reviewVerdict 与 reviewFindings 只有在该 binding 成功后才可 terminal publish。
+review-* Run MUST 通过 Core-derived `context.inputRef` 精确绑定 `reviewedRunId` 的实际 terminal `result.json`。该 immutable binding 在 review entry 与 completion 都 MUST 保持一致。`review-explore` / `review-propose` 还 MUST 在 entry 与 completion 对被审查 producer Run 的完整 OpenSpec artifact 输出做 current exact binding；`review-apply` 不因此获得 Proposal/OpenSpec historical replay authority，但 MUST 通过 Core-owned `context.verificationInputRef` 精确绑定 entry 时的 current `verification.md`，并在 completion 重验同一 generation。
 
 #### Scenario: createRun 建立 reviewed result exact binding
 
@@ -809,7 +806,7 @@ reviewVerdict 与 reviewFindings 只有在该 binding 成功后才可 terminal p
 
 #### Scenario: Reader 对 review binding fail-closed
 
-- **WHEN** Reader 读取 schemaVersion 2 review-* Run
+- **WHEN** Reader 读取 current Policy projection 中 schemaVersion 2 review-* Run
 - **AND** inputRef 缺失、目标与 reviewedRunId 不一致、目标不可读或 fingerprint 不匹配
 - **THEN** MUST 收集 `FactConflict`
 - **AND** MUST NOT 构造有效 `ReviewVerdictFact`
@@ -821,266 +818,220 @@ reviewVerdict 与 reviewFindings 只有在该 binding 成功后才可 terminal p
 - **AND** reviewer verdict/findings MUST 直接使用 typed top-level payload
 - **AND** MUST NOT 构造引用当前 result.json 自身 SHA-256 的 ResultRef
 
+#### Scenario: review-explore 与 review-propose 精确绑定当前 artifact 输出
+
+- **WHEN** 创建或完成 `review-explore` / `review-propose`
+- **THEN** `reviewedRunId` MUST 指向该 stage 当前最新 completed producer Run
+- **AND** 该 producer 的完整 produced refs MUST 与 current OpenSpec artifact bytes 精确匹配
+- **AND** `review-propose` MUST 同时验证 current `specs/**` namespace exact-set
+- **AND** mismatch MUST 阻止 entry 或 terminal publication
+
+#### Scenario: review-apply 以 verificationInputRef 绑定 entry-time verification
+
+- **WHEN** 创建 `review-apply`
+- **THEN** MUST exact-bind reviewed Apply/Revise-Apply terminal result
+- **AND** Core MUST 从 current `verification.md` 派生 `context.verificationInputRef`
+- **AND** Caller MUST NOT 提供该 ref 的 path/kind/fingerprint
+- **AND** `verificationInputRef` MUST 只允许存在于 `review-apply` context
+- **AND** MUST NOT 因此新增 Proposal bundle generation registry、archive path resolver 或 historical OpenSpec mutable ref replay
+
+#### Scenario: review-apply completion 检测 verification drift
+
+- **WHEN** pending `review-apply` 在 completion 前 current `verification.md` 与 persisted `verificationInputRef` 不匹配
+- **THEN** completion MUST fail closed
+- **AND** reviewer terminal result/verdict MUST 不发布
+- **AND** Run MUST 保持 pending
+
 ### Requirement: Run completion preflight 在 terminal publish 前验证所有引用
 
-`writeRunResult` MUST 在 terminal serialization/temp-file/fs.link 之前验证所有适用 Core-created ResultRef。
-preflight MUST 使用与 Core resolver 相同的 target 解析规则。失败 MUST 保持当前 Run 为 pending，且 MUST NOT
-削弱既有 `assertMutable + fs.link` terminal create-once 协议。
+`writeRunResult` MUST 在 terminal serialization/temp-file/fs.link 之前验证**当前 Run 本次发布所需**的 Core-created references 与 Action-owned complete output set。preflight MUST NOT 扫描并重新验证其他 historical Runs 的 mutable artifact/verification refs。失败 MUST 保持当前 Run 为 pending，且 MUST NOT 削弱既有 `assertMutable + fs.link` terminal create-once 协议。
 
 #### Scenario: preflight 成功后才进入 terminal publish
 
-- **WHEN** 所有适用引用目标存在、可读且 fingerprint 匹配
-- **AND** initial artifact Run 的 expected produced set 已完整覆盖
-- **AND** revise artifact Run 的 successor/inherited effective set 已完整验证
+- **WHEN** 当前 Run 所需 immutable targets 存在、可读且 fingerprint 匹配
+- **AND** artifact-producing Run 的本次完整 Action-owned output set 已从 current OpenSpec state 派生并验证
 - **THEN** `writeRunResult` MAY 进入 serialize → temp → fs.link
 - **AND** 既有 create-if-not-exists 并发协议 MUST 保持
 
 #### Scenario: target 缺失保持 pending
 
-- **WHEN** 任一必须引用的目标缺失或不可读
+- **WHEN** 当前 Run 本次 terminal contract 必需的目标缺失或不可读
 - **THEN** MUST 返回 `RESULT_REF_TARGET_MISSING`
 - **AND** MUST NOT 写 terminal result.json
 - **AND** 同一 Run MUST 保持 pending
 
 #### Scenario: fingerprint mismatch 保持 pending
 
-- **WHEN** 任一已由 Core 构造的 ResultRef 与当前真实目标 SHA-256 不一致
+- **WHEN** 当前 Run 本次需要 exact binding 的 immutable/current-review ResultRef 与真实目标 SHA-256 不一致
 - **THEN** MUST 返回 `RESULT_REF_MISMATCH`
 - **AND** MUST NOT 写 terminal result.json
 - **AND** 同一 Run MUST 保持 pending
+
+#### Scenario: historical mutable ref 不属于当前 completion preflight
+
+- **WHEN** 当前 Run terminal completion
+- **THEN** preflight MUST NOT 为完成当前 Run扫描其他 historical Runs 的 produced-artifact / verification-summary refs
+- **AND** MUST NOT 要求 predecessor effective-set inheritance 或 generation classification
 
 #### Scenario: terminal Run 仍不可重开
 
 - **WHEN** result.json 已存在且 Run 为 terminal
 - **THEN** 既有 `assertMutable` / `fs.link` 规则 MUST 拒绝再次完成
-- **AND** Q1 MUST NOT 将 terminal Run 恢复为 pending
+- **AND** terminal Run MUST NOT 恢复为 pending
 
-### Requirement: mutable Change artifact ResultRef 必须使用 generation-aware validation
+### Requirement: Reader 必须按当前 Policy relevance 选择 Run scope
 
-Reader MUST 对 `produced-artifact` 与 `verification-summary` 指向的 mutable canonical OpenSpec Change artifacts
-执行 generation-aware validation。Reader MUST 根据合法 review/revise lineage 区分 current、revision-window
-与 superseded generation，MUST NOT 将所有历史 mutable artifact refs 永久重新绑定到当前 canonical bytes。
-该边界 MUST NOT 弱化 immutable Run-result binding、review exact binding 或 current effective artifact
-replacement detection。
+Reader MUST 在解析 Change-level Run 内容前先根据 Delivery Manifest 选择当前 Policy relevance。最多一个 `state=active` Change 的 Run 目录进入 Change-level projection；Delivery-level Run 目录按 Delivery 级 Policy 需求读取。
 
-#### Scenario: initial generation effective set 必须先通过 completeness validation
+#### Scenario: active Change 只投影自身 Runs
 
-- **WHEN** Reader 构建没有 predecessor 的 initial `explore` 或 `propose` generation
-- **THEN** MUST 先按 Action-owned expected-set contract 验证完整性
-- **AND** initial `explore` MUST 覆盖 canonical explore ref
-- **AND** initial `propose` MUST 覆盖 proposal、design、tasks 与完整实际 specs namespace
-- **AND** empty 或 partial initial effective set MUST 产生 `FactConflict` 或阻止 terminal/review entry
+- **WHEN** Manifest 中 Q1 completed、Q2 active、E1 planned
+- **THEN** Reader MUST 将 Q2 Run 目录作为 Change-level Policy input
+- **AND** MUST NOT replay Q1/E1 Change-level Run corpus 作为 Q2 lineage/conflict input
 
-#### Scenario: 无合法 successor 时 current generation 严格验证
+#### Scenario: active Change malformed current Run 仍阻塞
 
-- **WHEN** completed `explore|revise-explore|propose|revise-propose` artifact generation 不存在合法 revision successor
-- **THEN** 该 generation MUST 为当前 stage generation
-- **AND** Reader MUST 严格解析并验证其 current effective artifact refs
-- **AND** 任一 canonical artifact fingerprint mismatch MUST 产生 `FactConflict`
+- **WHEN** active Change 中存在 schemaVersion 2 Run
+- **AND** 其 context/result 违反适用 closed schema、identity 或 required immutable lineage
+- **THEN** Reader MUST 收集 `FactConflict`
+- **AND** Policy MUST 继续 fail-closed
 
-#### Scenario: 合法 revision successor 必须由完整 lineage 证明
+#### Scenario: 无 active Change 时历史 Runs 不替代 manifest/Git
 
-- **WHEN** Reader 判定 generation G0 被 revise-S supersede
-- **THEN** MUST 存在 matching completed `review-S` Run R
-- **AND** `R.reviewedRunId == G0.runId`
-- **AND** `R.verdict == changes-requested`
-- **AND** successor G1 MUST 为 `revise-S`
-- **AND** `G1.sourceReviewRun == R.runId`
-- **AND** `G1.sourceReviewVerdict == changes-requested`
-- **AND** MUST NOT 仅凭较新 Run ID、mtime 或 Action 名称推断 supersession
+- **WHEN** 当前不存在 active Change
+- **THEN** Change completion/dependency/checkpoint facts MUST 继续来自 Manifest/Git authority
+- **AND** MUST NOT replay completed Change 全部 Runs 来重新证明这些事实
 
-#### Scenario: pending revise 建立有界 revision window
+#### Scenario: Archive 后 Checkpoint pending 不重新投影 closed Change Runs
 
-- **WHEN** matching changes-requested review 后已存在合法 pending `revise-S` Run
-- **THEN** Reader MUST 允许该 Action 修改其 stage-owned canonical artifacts
-- **AND** MUST NOT 仅因 predecessor mutable produced refs 与正在修改的 canonical bytes 不同产生 `FactConflict`
-- **AND** predecessor 的 immutable terminal result、review binding 与 source-review lineage MUST 继续严格验证
-- **AND** revision window MUST NOT 允许其他 Action 或无 lineage 修改获得同样豁免
+- **WHEN** OpenSpec archive operation success 后 Flowkit 已记录 Change state=`completed`
+- **AND** 该 Change 尚无对应 `change-checkpoint` Git boundary
+- **THEN** Reader MUST 保持该 closed Change 的 Change-level Run corpus 不进入 current Policy projection
+- **AND** Checkpoint-pending MUST 由 Manifest completed state + Git boundary authority 表达
+- **AND** MUST NOT 为获得 Checkpoint 上下文重新提升 historical Run authority
 
-#### Scenario: completed successor 使 predecessor mutable refs superseded
+### Requirement: Run pending 只表示 non-terminal execution status
 
-- **WHEN** 合法 `revise-S` successor terminal 完成
-- **THEN** predecessor generation 的被 successor 覆盖 mutable artifact refs MUST 标记为 superseded validation scope
-- **AND** Reader MUST NOT 再将这些 historical refs 与当前 canonical bytes 比较
-- **AND** predecessor terminal Run MUST NOT 被重写或删除
-- **AND** immutable Run-result refs 与 review exact bindings MUST 继续严格验证
+`pending` MUST 只表示 Run 已创建但 terminal `result.json` 尚未发布。Action 与 Change MUST NOT 获得 `pending` 主状态；Reader/persistence MUST NOT 从 pending 推导 artifact revision-window、generation ownership 或 external authority lifecycle。
 
-#### Scenario: subset revision 构建 effective artifact set
+#### Scenario: pending Run 只需要 non-terminal context
 
-- **WHEN** `revise-propose` 只声明 Proposal bundle 的部分 produced artifact tags
-- **THEN** successor effective artifact set MUST 以 predecessor effective set 为基底
-- **AND** successor 声明的 `proposal`、`design`、`tasks` tag MUST 替换对应单一 logical ref
-- **AND** successor 声明 `specs` tag 时 MUST 以当前实际 `specs/**` 全集合替换 predecessor 的整个 specs namespace
-- **AND** 未声明 tag MUST 继承 predecessor refs
-- **AND** successor terminal preflight MUST 验证 successor refs 与全部 inherited refs
-- **AND** 对 `revise-propose`，Core MUST 无条件比较 successor effective specs logical-ref set 与当前 canonical `specs/**` namespace
-- **AND** specs namespace 新增/删除但 successor 未声明 `specs` 时 MUST 判定 exact-set mismatch 并保持 pending
-- **AND** 若未声明的 singleton artifact 实际已被修改，inherited fingerprint mismatch MUST 使 successor 保持 pending
+- **WHEN** Run 有合法 `action.md/context.json` 且 result.json 不存在
+- **THEN** Run MUST 投影为 `pending`
+- **AND** MUST NOT 要求 terminal-only actionResult / reviewVerdict / ResultRef
 
-#### Scenario: review 前验证 current effective artifact set
+#### Scenario: pending revise 不创建 artifact revision-window authority
 
-- **WHEN** 创建 `review-explore` 或 `review-propose`
-- **THEN** Core/Reader MUST 先确认被审查 generation 的 current effective artifact set 全部可唯一解析且 fingerprint 匹配
-- **AND** 当 Action 为 `review-propose` 时 MUST 额外确认 effective specs logical-ref set 与当前 canonical `specs/**` namespace 精确相等
-- **AND** 验证通过后 review Run 才可通过 Core-derived inputRef 绑定该 generation 的 immutable result.json
-- **AND** current effective artifact invalid 或 specs namespace incomplete 时 MUST 不允许形成有效 review binding
+- **WHEN** matching review 后创建 pending `revise-explore` / `revise-propose` / `revise-apply`
+- **THEN** pending 只表示该 Revision 尚未 terminal
+- **AND** Reader MUST NOT 因此建立 `revision-window` generation class
+- **AND** historical mutable refs 本来就 MUST NOT 被持续绑定 current path
 
-#### Scenario: 无合法 revision lineage 的 overwrite 仍 fail-closed
+### Requirement: Review 到下一 Action 必须保留最小 current exact handoff
 
-- **WHEN** current canonical artifact bytes 改变
-- **AND** 不存在 matching `changes-requested → pending/completed revise-S` lineage
-- **THEN** Reader MUST 将 current generation fingerprint mismatch 记录为 `FactConflict`
-- **AND** MUST NOT 以“可能正在 revise”为由猜测性忽略
+删除 historical mutable replay 时，Flowkit MUST 仍保证下一 Action 消费的是刚刚被 Review 覆盖的 current generation。该校验 MUST 在下一 Action 的 pending Run 正式 publish 前由 Core 完成；Action-owned 合法 mutation MAY 只在该 entry check 成功后发生。该机制 MUST 是局部 handoff，不得恢复 global generation registry。
 
-### Requirement: current effective Change artifact ResultRef 必须跨 archive relocation 保持可验证
+对于 `propose`、`apply`、`archive`，Q2 MUST NOT 强制新增 `sourceReviewRun/sourceReviewVerdict` tuple；它们 MUST 使用本次 Action 的 `consumedRunId` 指向实际消费的 completed Review，Core MUST 读取真实 Review verdict/context/reviewedRunId 并完成 handoff 校验。
 
-generation-aware classification MUST 先确定 current effective artifact set；archive-aware resolver MUST 再将这些
-persisted logical refs 解析到唯一物理目标。纯 archive relocation MUST NOT 修改 terminal Run 或 ResultRef。
+#### Scenario: approved review-explore 到 propose 的 current handoff
 
-#### Scenario: archive 前解析 current effective active artifact
+- **WHEN** `propose` 消费 completed approved `review-explore`
+- **THEN** pending publish 前 Core MUST 追到该 Review 的 `reviewedRunId`
+- **AND** current `explore.md` MUST 与被审 explore generation 精确匹配
+- **AND** drift MUST 阻止 propose Run publish
+- **AND** entry 成功后 propose MAY 创建/修改其 Action-owned Proposal artifacts
 
-- **WHEN** current effective logical ref 对应 active Change artifact
-- **AND** active target 存在
-- **AND** 不存在同一 changeId archived candidate
-- **THEN** resolver MUST 选择 active target
-- **AND** MUST 以实际内容验证 current effective fingerprint
+#### Scenario: changes-requested review-explore 到 revise-explore 的 current handoff
 
-#### Scenario: archive 后解析唯一 final archived artifact
+- **WHEN** `revise-explore` 消费 matching changes-requested `review-explore`
+- **THEN** pending publish 前 current `explore.md` MUST 仍与被审 generation 精确匹配
+- **AND** entry 成功后 revise-explore MAY 修改 `explore.md`
 
-- **WHEN** active target 已因正常 archive relocation 不存在
-- **AND** `openspec/changes/archive/` 下恰好一个目录在移除 `YYYY-MM-DD-` 前缀后与 `context.changeId` 完全相等
-- **AND** archived final artifact 存在且可读
-- **THEN** resolver MUST 选择该 archived physical target
-- **AND** persisted current logical ref MUST 保持 active canonical identity 不变
-- **AND** MUST 以 archived final bytes 验证 current effective fingerprint
+#### Scenario: review-propose 到 apply 或 revise-propose 的 current handoff
 
-#### Scenario: archive relocation 保持 final effective bytes
+- **WHEN** `apply` 消费 approved `review-propose` 或 `revise-propose` 消费 matching changes-requested `review-propose`
+- **THEN** pending publish 前 current `proposal.md + design.md + tasks.md + specs/**` MUST 与被审 proposal generation 精确匹配
+- **AND** specs namespace MUST exact-set
+- **AND** drift MUST fail closed
+- **AND** entry 成功后当前 Action MAY 仅按自身 ownership 执行合法 mutation
 
-- **WHEN** archive relocation 移动 Change canonical artifacts
-- **THEN** MUST 保持 final current effective artifact bytes 不变
-- **AND** MUST NOT 为新物理路径重写任何 terminal Run 或 ResultRef
-- **AND** final effective content 改变 MUST fail-closed
+#### Scenario: review-apply 到 revise-apply 或 archive 的 current handoff
 
-#### Scenario: artifact resolver 歧义 fail-closed
+- **WHEN** `revise-apply` 消费 changes-requested `review-apply` 或 `archive` 消费 approved `review-apply`
+- **THEN** pending publish 前 Core MUST exact-bind该 Review immutable result
+- **AND** current `verification.md` MUST 与该 completed Review 的 terminal `verificationSummaryRef` 精确匹配
+- **AND** archive 的该检查 MUST 发生在调用 OpenSpec archive 之前
+- **AND** OpenSpec archive 成功后 MUST NOT 再做 relocation/path replay
 
-- **WHEN** active target 与 archived target 同时存在
-- **OR** 存在多个 archive directory 精确匹配同一 `changeId`
-- **THEN** resolver MUST NOT 静默选择任一目标
-- **AND** write/preflight MUST reject
-- **AND** Reader MUST 记录 `FactConflict`
+#### Scenario: review 后下一 Action 前发生 drift 必须阻止旧 verdict 被复用
 
-#### Scenario: superseded generation 不因 archive 恢复为 current validation
+- **WHEN** Review terminal 后、下一 Action pending publish 前，被 Review 覆盖且仍要求保持不变的 current artifact/verification bytes 发生变化
+- **THEN** Core MUST fail closed
+- **AND** MUST NOT 用旧 approved/changes-requested verdict 推进新的 generation
+- **AND** MUST NOT 通过 global historical replay 实现该检查
 
-- **WHEN** historical produced artifact ref 已由合法 revision lineage 标记为 superseded
-- **AND** Change 后续 archive
-- **THEN** Reader MUST 继续按 superseded validation scope 处理
-- **AND** MUST NOT 将 archived final bytes 与 historical superseded fingerprint 比较
-- **AND** terminal history 与 review lineage MUST 保持可读且不可改写
+### Requirement: Revision Run 必须精确绑定 matching changes-requested source review
 
-### Requirement: verificationSummaryRef 使用 generation-aware logical ref 与 Action-owned inclusion
+`revise-explore`、`revise-propose`、`revise-apply` MUST 通过 `sourceReviewRun` + `sourceReviewVerdict=changes-requested` 绑定 matching stage 的 completed Reviewer result。该 lineage 只用于保证 Finding 被修到正确 reviewed Run，不得推广为所有非-review Action 的第二套 source-review state machine。
 
-`verificationSummaryRef` MUST 使用当前 Run 的 `context.changeId` 派生逻辑 ref
-`openspec/changes/<context.changeId>/verification.md`。只有 `review-apply` 可以新建该 ref。
-由于 `verification.md` 会在合法 `revise-apply → Change Verification` 后更新，Reader MUST 对其应用与
-produced artifact 同源的 generation-aware validation boundary。
+#### Scenario: matching source review 才允许 Revision
 
-#### Scenario: review-apply 包含当前 verification summary
+- **WHEN** 创建或读取 `revise-<stage>` Run
+- **THEN** `sourceReviewRun` MUST 指向 matching `review-<stage>` completed Run
+- **AND** source review verdict MUST 为 `changes-requested`
+- **AND** source review 的 `reviewedRunId` MUST 对应 Policy 当前 stage producer Run
+- **AND** mismatch MUST fail closed
 
-- **WHEN** Action 为 `review-apply`
-- **AND** shared artifact resolver 能唯一解析当前 `verification.md` 且文件可读
-- **THEN** Core MUST 构造 kind=`verification-summary` 的 ResultRef
-- **AND** persisted ref MUST 为 `openspec/changes/<context.changeId>/verification.md`
-- **AND** versionFingerprint MUST 来自当前 verification bytes
+#### Scenario: propose/apply/archive 不强制 sourceReview tuple
+
+- **WHEN** Action 为 `propose`、`apply` 或 `archive`
+- **THEN** Q2 MUST NOT 因 Revision lineage 规则强制新增 `sourceReviewRun/sourceReviewVerdict`
+- **AND** 其合法性继续由 Policy、Owner authorization 与各自 Action contract 决定
+- **AND** 若该 Action 消费 Review，MUST 通过 `consumedRunId` + Core entry validation 完成上述局部 exact handoff
+
+### Requirement: review-apply 必须区分 entry verification binding 与 terminal point-in-time summary
+
+`review-apply` create entry MUST 由 Core 从 current `verification.md` 派生 `context.verificationInputRef`，用于冻结本次 Review 实际审查的 Verification generation；completion MUST exact-check persisted input ref。只有 completed `review-apply` MAY 新建 `verificationSummaryRef`，其 fingerprint MUST 由 Core 从 terminal 时当前 `verification.md` bytes 派生。`verificationInputRef` 与 `verificationSummaryRef` 都不得形成跨后续 Revision/Archive 的 global generation authority。
+
+#### Scenario: review-apply entry 记录可 resume 的 verification binding
+
+- **WHEN** 创建 `review-apply`
+- **AND** current `verification.md` 存在且可读
+- **THEN** Core MUST 在 context 写入 `verificationInputRef`
+- **AND** versionFingerprint MUST 来自 entry 时当前 bytes
+- **AND** Caller MUST NOT 提供该 ref
+
+#### Scenario: review-apply terminal 记录当前 verification summary
+
+- **WHEN** `review-apply` completed
+- **AND** current `verification.md` 仍与 `verificationInputRef` 精确匹配
+- **THEN** Core MUST 构造 `kind=verification-summary` 的 point-in-time ResultRef
+- **AND** versionFingerprint MUST 来自 terminal 时当前 bytes
 
 #### Scenario: review-apply 缺 verification record 保持 pending
 
-- **WHEN** Action 为 `review-apply`
-- **AND** shared artifact resolver 无法解析唯一且可读的 verification target
-- **THEN** MUST 返回 `RESULT_REF_TARGET_MISSING` 或对应 invalid-target error
-- **AND** review-apply Run MUST 保持 pending
+- **WHEN** `review-apply` create/completion 所需 current `verification.md` 不存在或不可读
+- **THEN** MUST 返回当前 Action contract 的 target-missing error
+- **AND** review-apply MUST 不发布 terminal result
 
-#### Scenario: changes-requested review-apply 后允许 verification generation supersede
+#### Scenario: review 期间 Verification drift 保持 pending
 
-- **WHEN** review-apply V0 的 verdict 为 `changes-requested`
-- **AND** 存在合法 `revise-apply` successor sourced from V0
-- **THEN** V0 的 verificationSummaryRef MAY 进入 superseded/revision-window validation scope
-- **AND** 后续 Change Verification 合法更新 `verification.md` MUST NOT 使 V0 产生 historical false `FactConflict`
-- **AND** V0 的 terminal result、reviewedRun exact binding 与 verdict MUST 继续严格验证
+- **WHEN** `review-apply` 已 pending
+- **AND** current `verification.md` 与 persisted `verificationInputRef` 不匹配
+- **THEN** completion MUST 返回 mismatch error
+- **AND** MUST NOT 发布 verdict/result
+- **AND** 同一 Run MUST 保持 pending，可在恢复正确 generation 后继续 completion
 
-#### Scenario: 新 review-apply 建立新的 current verification generation
+#### Scenario: 后续 Verification 更新不反向使历史 ref 冲突
 
-- **WHEN** `revise-apply` 后 Change Verification 已更新 `verification.md`
-- **AND** 创建下一 `review-apply` V1
-- **THEN** Core MUST 从当前 verification bytes 构造 V1 的 verificationSummaryRef
-- **AND** V1 MUST 成为 current verification generation
-- **AND** V1 fingerprint mismatch MUST fail-closed
+- **WHEN** completed Review 之后合法 `revise-apply` 更新 `verification.md`
+- **THEN** 旧 `verificationInputRef` / `verificationSummaryRef` MUST 保持 point-in-time 历史记录
+- **AND** Reader MUST NOT 将新 bytes 与旧 fingerprint 比较并产生 historical `FactConflict`
 
-#### Scenario: apply 和 revise-apply 不产生 verificationSummaryRef
+#### Scenario: 其他 Action 不拥有 verification binding/summary
 
-- **WHEN** Action 为 `apply` 或 `revise-apply`
-- **THEN** `verificationSummaryRef` MUST absent
-- **AND** MUST NOT 在 Change Verification 执行前要求 verification.md 存在
-
-#### Scenario: archive 不新建 verificationSummaryRef
-
-- **WHEN** Action 为 `archive`
-- **THEN** archive Run 的 `verificationSummaryRef` MUST absent
-- **AND** final current verification generation MUST 由 archive-aware resolver 在 relocation 后继续验证
-- **AND** historical superseded verification refs MUST 不与 archived final bytes 重新比较
-- **AND** archive MUST NOT 修改既有 terminal Run
-
-### Requirement: Reader 必须覆盖 revision 到 archive 的完整 generation lifecycle
-
-Reader MUST 以两阶段方式处理 schemaVersion 2 mutable artifact refs：先读取并校验 immutable Run facts /
-review-revise lineage，再建立 generation classification 与 effective sets，最后验证 current effective refs。
-MUST NOT 在 lineage 尚未建立前逐 Run 将 historical mutable ref mismatch 直接升级为 `FactConflict`。
-
-#### Scenario: propose revision subset 在 archive 前后都可恢复
-
-- **WHEN** schemaVersion 2 `propose` P0 terminal
-- **AND** `review-propose` R0 exact-bind P0 且 verdict=`changes-requested`
-- **AND** `revise-propose` P1 sourced from R0，只修改并声明 `proposal` 与 `design`
-- **THEN** P1 completion MUST 验证新 proposal/design refs
-- **AND** MUST 验证继承自 P0 的 specs/tasks refs 仍匹配
-- **AND** P0 terminal Run MUST 保持不变
-- **AND** archive 前 Reader MUST 同时读取 P0 与 P1 而不因 P0 overwritten proposal/design refs 产生 `FactConflict`
-- **AND** P1 effective set MUST 对当前 canonical bytes 全部验证通过
-
-#### Scenario: revision 后 archive 只验证 final effective set
-
-- **WHEN** 上述 P1 后续被 approved 并正常 archive
-- **THEN** post-archive Reader MUST 将 P1 final effective set 解析到唯一 archived Change directory
-- **AND** final fingerprints MUST 匹配 archived bytes
-- **AND** P0 superseded refs MUST 保持 historical scope，不得要求 terminal rewrite 或历史 snapshot
-
-#### Scenario: 未声明 subset 修改阻止 revise terminal
-
-- **WHEN** P1 声明只修改 `proposal`
-- **BUT** canonical `design.md` 也被修改
-- **THEN** inherited P0 design ref validation MUST mismatch
-- **AND** P1 result.json MUST 不发布
-- **AND** P1 MUST 保持 pending
-
-#### Scenario: successor 新增未声明 spec 阻止 revise terminal
-
-- **WHEN** P0 effective specs namespace 为 `{A}`
-- **AND** matching changes-requested review 后 P1=`revise-propose` 只声明 `proposal`
-- **BUT** P1 revision window 内 canonical specs namespace 变为 `{A,B}`
-- **THEN** P1 terminal preflight MUST 比较 effective specs `{A}` 与 canonical namespace `{A,B}`
-- **AND** MUST 因 exact-set mismatch 拒绝 terminal publication
-- **AND** P1 MUST 保持 pending
-- **AND** 后续 `review-propose` MUST NOT 能为该 incomplete generation 建立有效 binding
-
-#### Scenario: successor 声明 specs 后完整 namespace 可以通过
-
-- **WHEN** 上述 P1 同时声明 `specs`
-- **THEN** Core MUST 枚举 `{A,B}` 并建立完整 successor specs refs
-- **AND** successor/inherited singleton refs 与完整 specs refs 均通过验证时 P1 MAY terminal
-- **AND** `review-propose` entry 重新 exact-compare `{A,B}` 后 MAY 绑定 P1 result.json
-
-#### Scenario: 无 revision lineage 的历史 overwrite 产生冲突
-
-- **WHEN** P0 terminal 后 proposal.md 被修改
-- **AND** 不存在 matching changes-requested review 与 revise-propose window
-- **THEN** Reader MUST 对 P0 current effective ref 产生 `FactConflict`
+- **WHEN** Action 不是 `review-apply`
+- **THEN** `context.verificationInputRef` MUST absent
+- **AND** `apply`、`revise-apply`、`archive` 的 `verificationSummaryRef` MUST absent
+- **AND** archive MUST NOT 为 historical ref 引入 archive-aware resolver
 

@@ -1,0 +1,27 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "已完成 150 Proposal 的独立审查。新的 Q2 在 Reader scope、historical mutable ResultRef point-in-time、pending minimal semantics、完整 producer output set、AGENTS 中文/Reviewer mutation boundary 等方向正确，但仍有两个 Blocking contract gap：其一，flowkit-integration-boundaries 的通用 ResultRef requirement/docs 仍保留“目标变化即 ResultRef 失效并要求续接重处理”的旧总语义，与 Q2 point-in-time 规则冲突；其二，删除 global replay 时同时删掉了 approved/changes-requested review 到下一 Action 的 current exact handoff，且 review-apply 未绑定 entry-time verification，允许 review 后或 review 期间 current artifact/verification drift 在旧 verdict 下继续推进。需要 revise-propose 后重新 review。"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindings": [
+    {
+      "id": "Q2-RP-001",
+      "severity": "blocking",
+      "title": "通用 ResultRef 契约仍与 point-in-time 语义冲突",
+      "location": "openspec/changes/orchestration-authority-boundary-correction/specs/flowkit-integration-boundaries/spec.md; docs/integration-boundaries.md",
+      "problem": "Q2 只在 formal-fact delta 中把 produced-artifact / verification-summary 定义为 point-in-time，却没有修改 flowkit-integration-boundaries 的通用 ResultRef requirement 和 docs/integration-boundaries.md。现有 canonical 文本仍要求 ResultRef 指向的结果被替换/修改时判失效，并要求依赖它的 Review/续接重新处理。Apply 后若按该旧总定义实现，合法 mutable artifact 变化仍可能被重新解释为历史 ref 失效，直接重开本次 Q2 要删除的 global replay authority。",
+      "requiredChange": "在 Proposal/Design/flowkit-integration-boundaries delta/tasks 中显式统一 ResultRef 分层语义，并把 docs/integration-boundaries.md 纳入最小同步：run-result/current handoff 继续 exact-invalidating；produced-artifact/verification-summary historical refs 是 point-in-time，不因 future合法 current-path 变化自行失效。必须说明“当前仍被某 Action 消费的 ref mismatch”与“已结束历史 mutable ref 的 future drift”是不同语义。"
+    },
+    {
+      "id": "Q2-RP-002",
+      "severity": "blocking",
+      "title": "删除 historical replay 时误删了 current review-to-next-action exact handoff",
+      "location": "openspec/changes/orchestration-authority-boundary-correction/design.md Decisions 5-7; formal-fact delta review/revision requirements; tasks 4/5/7",
+      "problem": "150 只在 review-explore/review-propose 的 entry/completion 校验当前 artifacts，Revision 只校验 source review Run/verdict，并明确 propose/apply/archive 不承担 source-review tuple；review-apply 还明确不保存 entry-time verification binding。于是 review 完成后到下一 Action 开始前，explore/proposal/specs 或 verification.md 可以漂移，而 Policy 仍看到旧 approved/changes-requested verdict。删除 Reader historical mutable replay 后，没有任何 current boundary 会确认“下一 Action 消费的仍是刚刚被审查的 generation”。这违反 v6 ResultRef 用于绑定近邻 Action/确认 Reviewer 审查 generation 的冻结用途。",
+      "requiredChange": "不要恢复 global generation model，也不必把 sourceReviewRun/sourceReviewVerdict 强制推广到所有 Action；改为冻结一个最小 current-boundary invariant：凡下一 Action 消费某 review 所覆盖的 mutable current artifact/verification generation，在该 Action pending publish 前必须由 Core 从 source review/reviewed producer 找到被审 generation并与仍需保持不变的 current authority bytes exact-check；合法 mutation 只能在 entry check 之后发生。至少覆盖 approved review-explore→propose、changes-requested review-explore→revise-explore、approved review-propose→apply、changes-requested review-propose→revise-propose；review-apply 必须以 Core-owned、可 resume 的 entry-time verification binding（或等价机制）保证 completion verdict 对应同一 verification generation。若 archive 消费 latest approved review-apply 的 verification，检查必须发生在调用 OpenSpec archive 之前，不能恢复 post-archive relocation replay。补 stale-after-review/pre-next-action 与 review-period verification drift 负例。"
+    }
+  ]
+}

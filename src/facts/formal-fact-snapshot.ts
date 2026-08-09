@@ -66,10 +66,11 @@ export interface ChangeFact {
 /**
  * Read-only summary of a committed Run.
  *
- * Q1-RA-002: lineage facts (`sourceReviewRun`, `sourceReviewVerdict`,
- * `reviewedRunId`) are carried on `RunFact` so generation classification can
- * prove exact review/revise lineage instead of inferring from Run ID order.
- * These are read directly from `context.json` (one fact, one authority).
+ * Current/near-neighbour lineage facts (`sourceReviewRun`,
+ * `sourceReviewVerdict`, `reviewedRunId`) are carried on `RunFact` so Policy
+ * and Reader can validate exact source/review bindings without treating Run ID
+ * ordering or historical mutable artifact bytes as authority. These are read
+ * directly from `context.json` (one fact, one authority).
  */
 export interface RunFact {
   readonly runId: string;
@@ -116,6 +117,12 @@ export interface GitBoundaryFact {
   readonly kind: 'delivery-start' | 'change-checkpoint' | 'delivery-final';
   readonly commitSha: string;
   readonly summary: string;
+  /**
+   * Change identity carried by a Change Checkpoint commit subject
+   * (`chore(flowkit): checkpoint <change-id>`). Absent for Delivery-level
+   * boundaries and legacy/unstructured checkpoint subjects.
+   */
+  readonly changeId?: string;
 }
 
 /**

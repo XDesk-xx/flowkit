@@ -445,1372 +445,204 @@ describe('Bootstrap Run not modified by C1 (task 12.60)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// completeRun — Core-owned ResultRef authority (Q1-RA-001)
+// Q2 current authority boundary
 // ---------------------------------------------------------------------------
-//
-// The descriptor-driven production terminal-write entry. Callers provide only
-// typed descriptors (consumedRunIds, producedArtifactTags, reviewVerdict);
-// Core derives every ResultRef from actual target bytes. Caller NEVER
-// constructs a ResultRef. Initial explore/propose unconditionally build the
-// complete Core-expected produced set; review-apply unconditionally derives
-// verificationSummaryRef from current verification.md.
 
-/**
- * Write the complete initial-propose artifact set (proposal/design/tasks + one
- * spec) to disk. completeRun reads these bytes and derives the produced refs.
- */
-async function writeInitialProposeArtifacts(
-  changeId: string,
-  version: 'v0' | 'v1',
-): Promise<{ proposal: string; design: string; tasks: string; specA: string }> {
-  const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
-  await mkdir(join(changeDir, 'specs', 'cap-a'), { recursive: true });
-  const proposal = `# Proposal ${version}\n`;
-  const design = `# Design ${version}\n`;
-  const tasks = `# Tasks ${version}\n`;
-  const specA = `# Spec A ${version}\n`;
-  await writeFile(join(changeDir, 'proposal.md'), proposal);
-  await writeFile(join(changeDir, 'design.md'), design);
-  await writeFile(join(changeDir, 'tasks.md'), tasks);
-  await writeFile(join(changeDir, 'specs', 'cap-a', 'spec.md'), specA);
-  return { proposal, design, tasks, specA };
+async function writeExploreArtifact(changeId: string, text = '# Explore\n'): Promise<void> {
+  const dir = join(tempRoot, 'openspec', 'changes', changeId);
+  await mkdir(dir, { recursive: true });
+  await writeFile(join(dir, 'explore.md'), text);
 }
 
-describe('completeRun — Core-owned ResultRef authority (Q1-RA-001)', () => {
+async function writeProposalArtifacts(changeId: string, suffix = ''): Promise<void> {
+  const dir = join(tempRoot, 'openspec', 'changes', changeId);
+  await mkdir(join(dir, 'specs', 'cap-a'), { recursive: true });
+  await writeFile(join(dir, 'proposal.md'), `# Proposal${suffix}\n`);
+  await writeFile(join(dir, 'design.md'), `# Design${suffix}\n`);
+  await writeFile(join(dir, 'tasks.md'), `# Tasks${suffix}\n`);
+  await writeFile(join(dir, 'specs', 'cap-a', 'spec.md'), `# Spec${suffix}\n`);
+}
+
+async function setupApprovedExplore(changeId: string): Promise<void> {
+  await writeExploreArtifact(changeId);
+  const e = await createRun(createRunInput({ runId: '20260806-201-explore', changeId, action: 'explore', role: 'author' }));
+  await completeRun(e, { executionStatus: 'completed', summary: 'explore' });
+  const r = await createRun(createRunInput({
+    runId: '20260806-202-review-explore', changeId, action: 'review-explore', role: 'reviewer',
+    reviewedRunId: '20260806-201-explore',
+  }));
+  await completeRun(r, { executionStatus: 'completed', summary: 'approved', reviewVerdict: 'approved', reviewFindings: [] });
+}
+
+async function setupApprovedProposal(changeId: string): Promise<void> {
+  await setupApprovedExplore(changeId);
+  const p = await createRun(createRunInput({
+    runId: '20260806-203-propose', changeId, action: 'propose', role: 'author',
+    consumedRunId: '20260806-202-review-explore',
+  }));
+  await writeProposalArtifacts(changeId);
+  await completeRun(p, { executionStatus: 'completed', summary: 'proposal' });
+  const r = await createRun(createRunInput({
+    runId: '20260806-204-review-propose', changeId, action: 'review-propose', role: 'reviewer',
+    reviewedRunId: '20260806-203-propose',
+  }));
+  await completeRun(r, { executionStatus: 'completed', summary: 'approved', reviewVerdict: 'approved', reviewFindings: [] });
+}
+
+describe('Q2 current authority boundary', () => {
   before(makeTempRoot);
   after(cleanupTempRoot);
 
-  it('Core-derives produced refs for initial explore (caller provides no ResultRefs)', async () => {
-    const changeId = 'RA-explore';
-    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
-    await mkdir(changeDir, { recursive: true });
-    const exploreContent = '# Explore\n';
-    await writeFile(join(changeDir, 'explore.md'), exploreContent);
-
-    const runDir = await createRun(
-      createRunInput({ runId: '20260806-200-explore', changeId, action: 'explore', role: 'author' }),
-    );
-    await completeRun(runDir, { executionStatus: 'completed', summary: 'explore done' });
-
-    const result = JSON.parse(await readFile(join(runDir, 'result.json'), 'utf-8'));
-    assert.equal(result.runStatus, 'completed');
-    const refs = result.actionResult.producedResultRefs;
-    assert.equal(refs.length, 1);
-    assert.equal(refs[0].ref, `openspec/changes/${changeId}/explore.md`);
-    assert.equal(refs[0].kind, 'produced-artifact');
-    assert.equal(refs[0].versionFingerprint, computeResultFileHash(exploreContent));
+  it('Core derives explore produced ref from current bytes', async () => {
+    const c = 'Q2-explore-ref';
+    const bytes = '# Explore exact\n';
+    await writeExploreArtifact(c, bytes);
+    const run = await createRun(createRunInput({ runId: '20260806-201-explore', changeId: c, action: 'explore' }));
+    await completeRun(run, { executionStatus: 'completed', summary: 'done' });
+    const result = JSON.parse(await readFile(join(run, 'result.json'), 'utf-8'));
+    assert.deepEqual(result.actionResult.producedResultRefs, [{
+      ref: `openspec/changes/${c}/explore.md`,
+      versionFingerprint: computeResultFileHash(bytes),
+      kind: 'produced-artifact',
+    }]);
   });
 
-  it('Core-derives complete produced set for initial propose (proposal+design+tasks+specs)', async () => {
-    const changeId = 'RA-propose';
-    const { proposal } = await writeInitialProposeArtifacts(changeId, 'v0');
-
-    const runDir = await createRun(
-      createRunInput({ runId: '20260806-201-propose', changeId, action: 'propose', role: 'author' }),
-    );
-    await completeRun(runDir, { executionStatus: 'completed', summary: 'propose done' });
-
-    const result = JSON.parse(await readFile(join(runDir, 'result.json'), 'utf-8'));
-    const refs = result.actionResult.producedResultRefs;
-    assert.equal(refs.length, 4);
-    assert.equal(refs[0].kind, 'produced-artifact');
-    // Sorted by ref: design, proposal, specs/cap-a/spec.md, tasks
-    const refPaths = refs.map((r: { ref: string }) => r.ref);
-    assert.ok(refPaths.includes(`openspec/changes/${changeId}/proposal.md`));
-    assert.ok(refPaths.includes(`openspec/changes/${changeId}/design.md`));
-    assert.ok(refPaths.includes(`openspec/changes/${changeId}/tasks.md`));
-    assert.ok(refPaths.includes(`openspec/changes/${changeId}/specs/cap-a/spec.md`));
-    // Fingerprints match current bytes.
-    const proposalRef = refs.find((r: { ref: string }) => r.ref.endsWith('proposal.md'));
-    assert.equal(proposalRef.versionFingerprint, computeResultFileHash(proposal));
+  it('propose requires an approved review-explore handoff via consumedRunId', async () => {
+    const c = 'Q2-propose-handoff';
+    await setupApprovedExplore(c);
+    const run = await createRun(createRunInput({
+      runId: '20260806-203-propose', changeId: c, action: 'propose',
+      consumedRunId: '20260806-202-review-explore',
+    }));
+    const ctx = JSON.parse(await readFile(join(run, 'context.json'), 'utf-8'));
+    assert.equal(ctx.sourceReviewRun, undefined);
+    assert.equal(ctx.inputRef.ref, `.flowkit/runs/D1/${c}/20260806-202-review-explore/result.json`);
   });
 
-  it('Core auto-includes all specs in the namespace (caller cannot shrink the set)', async () => {
-    const changeId = 'RA-propose-allspecs';
-    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
-    await mkdir(join(changeDir, 'specs', 'cap-a'), { recursive: true });
-    await mkdir(join(changeDir, 'specs', 'cap-b'), { recursive: true });
-    await writeFile(join(changeDir, 'proposal.md'), '# Proposal\n');
-    await writeFile(join(changeDir, 'design.md'), '# Design\n');
-    await writeFile(join(changeDir, 'tasks.md'), '# Tasks\n');
-    await writeFile(join(changeDir, 'specs', 'cap-a', 'spec.md'), '# Spec A\n');
-    await writeFile(join(changeDir, 'specs', 'cap-b', 'spec.md'), '# Spec B\n');
-
-    const runDir = await createRun(
-      createRunInput({ runId: '20260806-202-propose', changeId, action: 'propose', role: 'author' }),
-    );
-    await completeRun(runDir, { executionStatus: 'completed', summary: 'propose' });
-
-    const result = JSON.parse(await readFile(join(runDir, 'result.json'), 'utf-8'));
-    const refPaths = result.actionResult.producedResultRefs.map((r: { ref: string }) => r.ref);
-    assert.ok(refPaths.includes(`openspec/changes/${changeId}/specs/cap-a/spec.md`));
-    assert.ok(refPaths.includes(`openspec/changes/${changeId}/specs/cap-b/spec.md`));
-  });
-
-  it('initial explore with missing explore.md stays pending (RESULT_REF_TARGET_MISSING)', async () => {
-    const changeId = 'RA-explore-missing';
-    const runDir = await createRun(
-      createRunInput({ runId: '20260806-203-explore', changeId, action: 'explore', role: 'author' }),
-    );
+  it('non-revise Actions reject sourceReviewRun/sourceReviewVerdict', async () => {
     await assert.rejects(
-      () => completeRun(runDir, { executionStatus: 'completed', summary: 'empty explore' }),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'RESULT_REF_TARGET_MISSING',
-    );
-    const entries = await readdir(runDir);
-    assert.ok(!entries.includes('result.json'));
-  });
-
-  it('initial propose with missing design.md stays pending (RESULT_REF_TARGET_MISSING)', async () => {
-    const changeId = 'RA-propose-missing';
-    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
-    await mkdir(join(changeDir, 'specs', 'cap-a'), { recursive: true });
-    await writeFile(join(changeDir, 'proposal.md'), '# Proposal\n');
-    await writeFile(join(changeDir, 'tasks.md'), '# Tasks\n');
-    await writeFile(join(changeDir, 'specs', 'cap-a', 'spec.md'), '# Spec A\n');
-    // design.md deliberately absent.
-
-    const runDir = await createRun(
-      createRunInput({ runId: '20260806-204-propose', changeId, action: 'propose', role: 'author' }),
-    );
-    await assert.rejects(
-      () => completeRun(runDir, { executionStatus: 'completed', summary: 'partial' }),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'RESULT_REF_TARGET_MISSING',
-    );
-    const entries = await readdir(runDir);
-    assert.ok(!entries.includes('result.json'));
-  });
-
-  it('review-apply Core-derives verificationSummaryRef from current verification.md', async () => {
-    const changeId = 'RA-review-apply';
-    // A0: apply Run (no artifacts produced; completeRun works for non-artifact completed).
-    const a0Dir = await createRun(
-      createRunInput({ runId: '20260806-210-apply', changeId, action: 'apply', role: 'author' }),
-    );
-    await completeRun(a0Dir, { executionStatus: 'completed', summary: 'A0 apply' });
-
-    // verification.md exists.
-    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
-    await mkdir(changeDir, { recursive: true });
-    const verificationContent = '# Verification\n';
-    await writeFile(join(changeDir, 'verification.md'), verificationContent);
-
-    // V0: review-apply(A0) via completeRun — Core derives verificationSummaryRef.
-    const v0Dir = await createRun(
-      createRunInput({
-        runId: '20260806-211-review-apply',
-        changeId,
-        action: 'review-apply',
-        role: 'reviewer',
-        reviewedRunId: '20260806-210-apply',
-      }),
-    );
-    await completeRun(v0Dir, {
-      executionStatus: 'completed',
-      summary: 'V0 approved',
-      reviewVerdict: 'approved',
-    });
-
-    const result = JSON.parse(await readFile(join(v0Dir, 'result.json'), 'utf-8'));
-    assert.equal(result.reviewVerdict, 'approved');
-    const summaryRef = result.actionResult.verificationSummaryRef;
-    assert.ok(summaryRef, 'verificationSummaryRef must be Core-derived');
-    assert.equal(summaryRef.kind, 'verification-summary');
-    assert.equal(summaryRef.ref, `openspec/changes/${changeId}/verification.md`);
-    assert.equal(summaryRef.versionFingerprint, computeResultFileHash(verificationContent));
-  });
-
-  it('review-apply with missing verification.md stays pending (RESULT_REF_TARGET_MISSING)', async () => {
-    const changeId = 'RA-review-apply-missing';
-    const a0Dir = await createRun(
-      createRunInput({ runId: '20260806-220-apply', changeId, action: 'apply', role: 'author' }),
-    );
-    await completeRun(a0Dir, { executionStatus: 'completed', summary: 'A0' });
-    // No verification.md.
-
-    const v0Dir = await createRun(
-      createRunInput({
-        runId: '20260806-221-review-apply',
-        changeId,
-        action: 'review-apply',
-        role: 'reviewer',
-        reviewedRunId: '20260806-220-apply',
-      }),
-    );
-    await assert.rejects(
-      () => completeRun(v0Dir, { executionStatus: 'completed', summary: 'V0', reviewVerdict: 'approved' }),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'RESULT_REF_TARGET_MISSING',
-    );
-    const entries = await readdir(v0Dir);
-    assert.ok(!entries.includes('result.json'));
-  });
-
-  it('revise-propose subset overlay: declared proposal replaces, others inherited (completeRun)', async () => {
-    const changeId = 'RA-revise-overlay';
-    await writeInitialProposeArtifacts(changeId, 'v0');
-
-    // P0: initial propose via completeRun.
-    const p0Dir = await createRun(
-      createRunInput({ runId: '20260806-230-propose', changeId, action: 'propose', role: 'author' }),
-    );
-    await completeRun(p0Dir, { executionStatus: 'completed', summary: 'P0' });
-
-    // R0: review-propose(P0) → changes-requested.
-    const r0Dir = await createRun(
-      createRunInput({
-        runId: '20260806-231-review-propose',
-        changeId,
-        action: 'review-propose',
-        role: 'reviewer',
-        reviewedRunId: '20260806-230-propose',
-      }),
-    );
-    await completeRun(r0Dir, {
-      executionStatus: 'completed',
-      summary: 'CR',
-      reviewVerdict: 'changes-requested',
-      reviewFindings: [
-        { id: 'B-001', severity: 'blocking', title: 'fix', problem: 'needs work', requiredChange: 'revise proposal' },
-      ],
-    });
-
-    // P1: revise-propose declares only proposal (subset overlay).
-    const proposalV1 = '# Proposal v1\n';
-    await writeFile(join(tempRoot, 'openspec', 'changes', changeId, 'proposal.md'), proposalV1);
-    const p1Dir = await createRun(
-      createRunInput({
-        runId: '20260806-232-revise-propose',
-        changeId,
-        action: 'revise-propose',
-        role: 'author',
-        sourceReviewRun: '20260806-231-review-propose',
-        sourceReviewVerdict: 'changes-requested',
-      }),
-    );
-    await completeRun(p1Dir, {
-      executionStatus: 'completed',
-      summary: 'P1',
-      producedArtifactTags: ['proposal'],
-    });
-
-    const result = JSON.parse(await readFile(join(p1Dir, 'result.json'), 'utf-8'));
-    assert.equal(result.runStatus, 'completed');
-    const refPaths = result.actionResult.producedResultRefs.map((r: { ref: string }) => r.ref);
-    // proposal (v1 fresh) + inherited design + tasks + spec-a.
-    assert.ok(refPaths.includes(`openspec/changes/${changeId}/proposal.md`));
-    assert.ok(refPaths.includes(`openspec/changes/${changeId}/design.md`));
-    assert.ok(refPaths.includes(`openspec/changes/${changeId}/tasks.md`));
-    assert.ok(refPaths.includes(`openspec/changes/${changeId}/specs/cap-a/spec.md`));
-  });
-
-  it('revise-propose specs namespace drift (new spec, undeclared) stays pending', async () => {
-    const changeId = 'RA-revise-specs-drift';
-    await writeInitialProposeArtifacts(changeId, 'v0');
-
-    const p0Dir = await createRun(
-      createRunInput({ runId: '20260806-240-propose', changeId, action: 'propose', role: 'author' }),
-    );
-    await completeRun(p0Dir, { executionStatus: 'completed', summary: 'P0' });
-
-    const r0Dir = await createRun(
-      createRunInput({
-        runId: '20260806-241-review-propose',
-        changeId,
-        action: 'review-propose',
-        role: 'reviewer',
-        reviewedRunId: '20260806-240-propose',
-      }),
-    );
-    await completeRun(r0Dir, {
-      executionStatus: 'completed',
-      summary: 'CR',
-      reviewVerdict: 'changes-requested',
-      reviewFindings: [
-        { id: 'B-001', severity: 'blocking', title: 'add spec', problem: 'needs B', requiredChange: 'add B' },
-      ],
-    });
-
-    // Namespace drift: add spec B without declaring specs.
-    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
-    await mkdir(join(changeDir, 'specs', 'cap-b'), { recursive: true });
-    await writeFile(join(changeDir, 'specs', 'cap-b', 'spec.md'), '# Spec B\n');
-    await writeFile(join(changeDir, 'proposal.md'), '# Proposal v1\n');
-
-    const p1Dir = await createRun(
-      createRunInput({
-        runId: '20260806-242-revise-propose',
-        changeId,
-        action: 'revise-propose',
-        role: 'author',
-        sourceReviewRun: '20260806-241-review-propose',
-        sourceReviewVerdict: 'changes-requested',
-      }),
-    );
-    await assert.rejects(
-      () =>
-        completeRun(p1Dir, {
-          executionStatus: 'completed',
-          summary: 'P1',
-          producedArtifactTags: ['proposal'],
-        }),
+      () => createRun(createRunInput({
+        runId: '20260806-203-propose', changeId: 'Q2-source-scope', action: 'propose',
+        sourceReviewRun: '20260806-202-review-explore', sourceReviewVerdict: 'approved',
+      })),
       (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
     );
-    const entries = await readdir(p1Dir);
-    assert.ok(!entries.includes('result.json'));
   });
 
-  it('revise-propose undeclared singleton drift (design changed, not declared) stays pending', async () => {
-    const changeId = 'RA-revise-singleton-drift';
-    await writeInitialProposeArtifacts(changeId, 'v0');
-
-    const p0Dir = await createRun(
-      createRunInput({ runId: '20260806-250-propose', changeId, action: 'propose', role: 'author' }),
-    );
-    await completeRun(p0Dir, { executionStatus: 'completed', summary: 'P0' });
-
-    const r0Dir = await createRun(
-      createRunInput({
-        runId: '20260806-251-review-propose',
-        changeId,
-        action: 'review-propose',
-        role: 'reviewer',
-        reviewedRunId: '20260806-250-propose',
-      }),
-    );
-    await completeRun(r0Dir, {
-      executionStatus: 'completed',
-      summary: 'CR',
-      reviewVerdict: 'changes-requested',
-      reviewFindings: [
-        { id: 'B-001', severity: 'blocking', title: 'fix', problem: 'needs work', requiredChange: 'revise' },
-      ],
-    });
-
-    // P1 declares only proposal, but design.md is also modified on disk.
-    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
-    await writeFile(join(changeDir, 'proposal.md'), '# Proposal v1\n');
-    await writeFile(join(changeDir, 'design.md'), '# Design v1\n');
-
-    const p1Dir = await createRun(
-      createRunInput({
-        runId: '20260806-252-revise-propose',
-        changeId,
-        action: 'revise-propose',
-        role: 'author',
-        sourceReviewRun: '20260806-251-review-propose',
-        sourceReviewVerdict: 'changes-requested',
-      }),
+  it('revise-* requires changes-requested source review at entry', async () => {
+    await assert.rejects(
+      () => createRun(createRunInput({ runId: '20260806-205-revise-propose', changeId: 'Q2-revise-source', action: 'revise-propose' })),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
     );
     await assert.rejects(
-      () =>
-        completeRun(p1Dir, {
-          executionStatus: 'completed',
-          summary: 'P1',
-          producedArtifactTags: ['proposal'],
-        }),
+      () => createRun(createRunInput({
+        runId: '20260806-205-revise-propose', changeId: 'Q2-revise-source', action: 'revise-propose',
+        sourceReviewRun: '20260806-204-review-propose', sourceReviewVerdict: 'approved',
+      })),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('revise-propose records a complete current proposal bundle with no predecessor overlay', async () => {
+    const c = 'Q2-revise-full';
+    await setupApprovedExplore(c);
+    const p = await createRun(createRunInput({
+      runId: '20260806-203-propose', changeId: c, action: 'propose', consumedRunId: '20260806-202-review-explore',
+    }));
+    await writeProposalArtifacts(c);
+    await completeRun(p, { executionStatus: 'completed', summary: 'P0' });
+    const review = await createRun(createRunInput({
+      runId: '20260806-204-review-propose', changeId: c, action: 'review-propose', role: 'reviewer', reviewedRunId: '20260806-203-propose',
+    }));
+    await completeRun(review, {
+      executionStatus: 'completed', summary: 'CR', reviewVerdict: 'changes-requested',
+      reviewFindings: [{ id: 'F1', severity: 'blocking', title: 'fix', problem: 'x', requiredChange: 'revise' }],
+    });
+    const revise = await createRun(createRunInput({
+      runId: '20260806-205-revise-propose', changeId: c, action: 'revise-propose',
+      sourceReviewRun: '20260806-204-review-propose', sourceReviewVerdict: 'changes-requested',
+    }));
+    // Entry exact-binds the reviewed predecessor; only after pending publish may
+    // the revise Action mutate its owned proposal artifacts.
+    await writeProposalArtifacts(c, ' v2');
+    await completeRun(revise, { executionStatus: 'completed', summary: 'P1' });
+    const result = JSON.parse(await readFile(join(revise, 'result.json'), 'utf-8'));
+    const paths = result.actionResult.producedResultRefs.map((x: { ref: string }) => x.ref);
+    assert.deepEqual(paths, [
+      `openspec/changes/${c}/design.md`,
+      `openspec/changes/${c}/proposal.md`,
+      `openspec/changes/${c}/specs/cap-a/spec.md`,
+      `openspec/changes/${c}/tasks.md`,
+    ]);
+  });
+
+  it('legacy producedArtifactTags is rejected instead of creating subset authority', async () => {
+    const c = 'Q2-no-tags';
+    await writeExploreArtifact(c);
+    const run = await createRun(createRunInput({ runId: '20260806-201-explore', changeId: c, action: 'explore' }));
+    await assert.rejects(
+      () => completeRun(run, {
+        executionStatus: 'completed', summary: 'bad', producedArtifactTags: ['explore'],
+      } as unknown as Parameters<typeof completeRun>[1]),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+    assert.equal((await readdir(run)).includes('result.json'), false);
+  });
+
+  it('review entry exact-binds current producer bytes', async () => {
+    const c = 'Q2-review-exact';
+    await writeExploreArtifact(c);
+    const e = await createRun(createRunInput({ runId: '20260806-201-explore', changeId: c, action: 'explore' }));
+    await completeRun(e, { executionStatus: 'completed', summary: 'E0' });
+    await writeExploreArtifact(c, '# drift\n');
+    await assert.rejects(
+      () => createRun(createRunInput({
+        runId: '20260806-202-review-explore', changeId: c, action: 'review-explore', role: 'reviewer', reviewedRunId: '20260806-201-explore',
+      })),
       (e: unknown) => e instanceof FlowkitError && e.code === 'RESULT_REF_MISMATCH',
     );
-    const entries = await readdir(p1Dir);
-    assert.ok(!entries.includes('result.json'));
   });
 
-  it('allows retry after preflight failure (completeRun, Q1-6.8)', async () => {
-    const changeId = 'RA-retry';
-    const runDir = await createRun(
-      createRunInput({ runId: '20260806-260-explore', changeId, action: 'explore', role: 'author' }),
-    );
-    // First attempt: explore.md missing → pending.
+  it('review-apply persists verificationInputRef and refuses verification drift at completion', async () => {
+    const c = 'Q2-review-verification';
+    await setupApprovedProposal(c);
+    const apply = await createRun(createRunInput({
+      runId: '20260806-205-apply', changeId: c, action: 'apply', consumedRunId: '20260806-204-review-propose',
+    }));
+    await completeRun(apply, { executionStatus: 'completed', summary: 'apply' });
+    const verification = join(tempRoot, 'openspec', 'changes', c, 'verification.md');
+    await writeFile(verification, '# V1\n');
+    const review = await createRun(createRunInput({
+      runId: '20260806-206-review-apply', changeId: c, action: 'review-apply', role: 'reviewer', reviewedRunId: '20260806-205-apply',
+    }));
+    const ctx = JSON.parse(await readFile(join(review, 'context.json'), 'utf-8'));
+    assert.equal(ctx.verificationInputRef.kind, 'verification-summary');
+    await writeFile(verification, '# V2\n');
     await assert.rejects(
-      () => completeRun(runDir, { executionStatus: 'completed', summary: 'fail' }),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'RESULT_REF_TARGET_MISSING',
+      () => completeRun(review, { executionStatus: 'completed', summary: 'review', reviewVerdict: 'approved', reviewFindings: [] }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'RESULT_REF_MISMATCH',
     );
-    // Write explore.md, retry.
-    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
-    await mkdir(changeDir, { recursive: true });
-    await writeFile(join(changeDir, 'explore.md'), '# Explore\n');
-    await completeRun(runDir, { executionStatus: 'completed', summary: 'retry success' });
-    const result = JSON.parse(await readFile(join(runDir, 'result.json'), 'utf-8'));
-    assert.equal(result.actionResult.summary, 'retry success');
+    assert.equal((await readdir(review)).includes('result.json'), false);
   });
 
-  it('caller never supplies ResultRef objects — descriptor-only input', () => {
-    // Static contract: CompleteRunInput has no ResultRef-valued fields. The
-    // caller provides executionStatus, summary, consumedRunIds, producedArtifactTags,
-    // reviewVerdict, reviewFindings, failureDiagnosis, cancellationReason — none
-    // of which is a ResultRef. This is the RA-001 invariant.
-    const input = {
-      executionStatus: 'completed' as const,
-      summary: 'done',
-      consumedRunIds: ['20260806-001-explore'],
-      producedArtifactTags: ['proposal' as const],
-    };
-    // No ResultRef-shaped field exists on the input.
-    assert.equal(typeof input.executionStatus, 'string');
-    assert.equal(typeof input.summary, 'string');
-    assert.ok(Array.isArray(input.consumedRunIds));
-    assert.ok(Array.isArray(input.producedArtifactTags));
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Completion preflight invariants (Q1-7 / Q1-9) — product-centric
-// ---------------------------------------------------------------------------
-//
-// Q1-RA-001: the raw RunResultFile publisher is private, so a caller can never
-// inject a reviewVerdictRef / verificationSummaryRef into the terminal result.
-// completeRun derives every ref from descriptors and the Action. These tests
-// verify the resulting invariants hold through the public API: review-* Runs
-// carry NO reviewVerdictRef (Q1-7 self-reference), and non-review-apply Runs
-// carry NO verificationSummaryRef (Q1-9 scope).
-
-describe('completion preflight invariants (Q1-7 / Q1-9)', () => {
-  before(makeTempRoot);
-  after(cleanupTempRoot);
-
-  it('review-apply Run carries NO reviewVerdictRef (Q1-7 self-reference)', async () => {
-    const changeId = 'PF-self-ref';
-    const a0Dir = await createRun(
-      createRunInput({ runId: '20260806-270-apply', changeId, action: 'apply', role: 'author' }),
-    );
-    await completeRun(a0Dir, { executionStatus: 'completed', summary: 'A0' });
-    const v0Dir = await createRun(
-      createRunInput({
-        runId: '20260806-271-review-apply',
-        changeId,
-        action: 'review-apply',
-        role: 'reviewer',
-        reviewedRunId: '20260806-270-apply',
-      }),
-    );
-    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
-    await mkdir(changeDir, { recursive: true });
-    await writeFile(join(changeDir, 'verification.md'), '# Verification\n');
-    await completeRun(v0Dir, {
-      executionStatus: 'completed',
-      summary: 'V0',
-      reviewVerdict: 'approved',
-    });
-    const result = JSON.parse(await readFile(join(v0Dir, 'result.json'), 'utf-8'));
-    // reviewVerdictRef MUST be absent — it would be a self-reference (Q1-7).
-    assert.equal(result.actionResult.reviewVerdictRef, undefined);
-  });
-
-  it('explore Run carries NO verificationSummaryRef (Q1-9 scope)', async () => {
-    const changeId = 'PF-verdict-scope';
-    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
-    await mkdir(changeDir, { recursive: true });
-    await writeFile(join(changeDir, 'explore.md'), '# Explore\n');
-    const runDir = await createRun(
-      createRunInput({ runId: '20260806-280-explore', changeId, action: 'explore', role: 'author' }),
-    );
-    await completeRun(runDir, { executionStatus: 'completed', summary: 'explore' });
-    const result = JSON.parse(await readFile(join(runDir, 'result.json'), 'utf-8'));
-    // verificationSummaryRef MUST be absent — only review-apply carries it (Q1-9).
+  it('apply does not own verificationSummaryRef', async () => {
+    const c = 'Q2-apply-ownership';
+    await setupApprovedProposal(c);
+    const apply = await createRun(createRunInput({
+      runId: '20260806-205-apply', changeId: c, action: 'apply', consumedRunId: '20260806-204-review-propose',
+    }));
+    await completeRun(apply, { executionStatus: 'completed', summary: 'apply' });
+    const result = JSON.parse(await readFile(join(apply, 'result.json'), 'utf-8'));
     assert.equal(result.actionResult.verificationSummaryRef, undefined);
   });
-});
 
-// ---------------------------------------------------------------------------
-// Review-entry validation (Q1-RA-003)
-// ---------------------------------------------------------------------------
-//
-// createRun(review-explore/review-propose) validates the reviewed Run's current
-// effective generation + effective artifact set BEFORE publishing the review
-// Run. On drift/missing/namespace mismatch, the review Run is NOT created.
-
-describe('review-entry validation (Q1-RA-003)', () => {
-  before(makeTempRoot);
-  after(cleanupTempRoot);
-
-  it('Core exact-binds reviewed result.json when effective set is current (positive)', async () => {
-    const changeId = 'RE-positive';
-    await writeInitialProposeArtifacts(changeId, 'v0');
-    const p0Dir = await createRun(
-      createRunInput({ runId: '20260806-290-propose', changeId, action: 'propose', role: 'author' }),
-    );
-    await completeRun(p0Dir, { executionStatus: 'completed', summary: 'P0' });
-
-    // createRun(review-propose) should succeed — P0 is current, effective set matches.
-    const r0Dir = await createRun(
-      createRunInput({
-        runId: '20260806-291-review-propose',
-        changeId,
-        action: 'review-propose',
-        role: 'reviewer',
-        reviewedRunId: '20260806-290-propose',
-      }),
-    );
-    // context.json has Core-derived inputRef exact-binding P0 result.json.
-    const ctx = JSON.parse(await readFile(join(r0Dir, 'context.json'), 'utf-8'));
-    assert.ok(ctx.inputRef, 'inputRef must be Core-derived');
-    assert.equal(
-      ctx.inputRef.ref,
-      '.flowkit/runs/D1/RE-positive/20260806-290-propose/result.json',
-    );
-    assert.equal(ctx.inputRef.kind, 'run-result');
-    const p0Result = await readFile(join(p0Dir, 'result.json'), 'utf-8');
-    assert.equal(ctx.inputRef.versionFingerprint, computeResultFileHash(p0Result));
-  });
-
-  it('post-terminal proposal drift rejects review-propose before Run publish', async () => {
-    const changeId = 'RE-drift';
-    await writeInitialProposeArtifacts(changeId, 'v0');
-    const p0Dir = await createRun(
-      createRunInput({ runId: '20260806-300-propose', changeId, action: 'propose', role: 'author' }),
-    );
-    await completeRun(p0Dir, { executionStatus: 'completed', summary: 'P0' });
-
-    // Drift: modify proposal.md after P0 terminal.
-    await writeFile(join(tempRoot, 'openspec', 'changes', changeId, 'proposal.md'), '# Proposal tampered\n');
-
-    // createRun(review-propose) MUST reject before publish — review Run not created.
+  it('path-shaped Run descriptors fail before filesystem resolution', async () => {
+    const c = 'Q2-descriptor';
+    await writeExploreArtifact(c);
+    const run = await createRun(createRunInput({ runId: '20260806-201-explore', changeId: c, action: 'explore' }));
     await assert.rejects(
-      () =>
-        createRun(
-          createRunInput({
-            runId: '20260806-301-review-propose',
-            changeId,
-            action: 'review-propose',
-            role: 'reviewer',
-            reviewedRunId: '20260806-300-propose',
-          }),
-        ),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'RESULT_REF_MISMATCH',
-    );
-    // Review Run directory must NOT exist.
-    const changeRunDir = join(deliveryRunsDir(), changeId, '20260806-301-review-propose');
-    await assert.rejects(() => readFile(join(changeRunDir, 'context.json'), 'utf-8'));
-  });
-
-  it('specs namespace drift rejects review-propose before Run publish', async () => {
-    const changeId = 'RE-specs-drift';
-    await writeInitialProposeArtifacts(changeId, 'v0');
-    const p0Dir = await createRun(
-      createRunInput({ runId: '20260806-310-propose', changeId, action: 'propose', role: 'author' }),
-    );
-    await completeRun(p0Dir, { executionStatus: 'completed', summary: 'P0' });
-
-    // Namespace drift: add spec B after P0 terminal. P0 effective specs={A},
-    // canonical specs={A,B}.
-    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
-    await mkdir(join(changeDir, 'specs', 'cap-b'), { recursive: true });
-    await writeFile(join(changeDir, 'specs', 'cap-b', 'spec.md'), '# Spec B\n');
-
-    await assert.rejects(
-      () =>
-        createRun(
-          createRunInput({
-            runId: '20260806-311-review-propose',
-            changeId,
-            action: 'review-propose',
-            role: 'reviewer',
-            reviewedRunId: '20260806-310-propose',
-          }),
-        ),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'RESULT_REF_MISMATCH',
-    );
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Review exact binding via createRun (task 4.8)
-// ---------------------------------------------------------------------------
-
-describe('review exact binding via createRun (task 4.8)', () => {
-  before(makeTempRoot);
-  after(cleanupTempRoot);
-
-  it('derives inputRef from reviewedRunId and binds to actual result.json', async () => {
-    const changeId = 'RB-bind';
-    await writeInitialProposeArtifacts(changeId, 'v0');
-    const reviewedRunDir = await createRun(
-      createRunInput({ runId: '20260806-320-propose', changeId, action: 'propose', role: 'author' }),
-    );
-    await completeRun(reviewedRunDir, { executionStatus: 'completed', summary: 'proposal' });
-
-    const reviewRunDir = await createRun(
-      createRunInput({
-        runId: '20260806-321-review-propose',
-        changeId,
-        action: 'review-propose',
-        role: 'reviewer',
-        reviewedRunId: '20260806-320-propose',
-      }),
-    );
-
-    const ctx = JSON.parse(await readFile(join(reviewRunDir, 'context.json'), 'utf-8'));
-    assert.ok(ctx.inputRef, 'inputRef must be derived by Core');
-    assert.equal(ctx.inputRef.ref, '.flowkit/runs/D1/RB-bind/20260806-320-propose/result.json');
-    assert.equal(ctx.inputRef.kind, 'run-result');
-    const reviewedContent = await readFile(join(reviewedRunDir, 'result.json'), 'utf-8');
-    assert.equal(ctx.inputRef.versionFingerprint, computeResultFileHash(reviewedContent));
-  });
-
-  it('throws RESULT_REF_TARGET_MISSING when reviewed Run result.json does not exist', async () => {
-    await assert.rejects(
-      () =>
-        createRun(
-          createRunInput({
-            runId: '20260806-322-review-propose',
-            changeId: 'RB-missing',
-            action: 'review-propose',
-            role: 'reviewer',
-            reviewedRunId: '20260806-999-nonexistent',
-          }),
-        ),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'RESULT_REF_TARGET_MISSING',
-    );
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Q1-RA-005: descriptor runtime fail-closed (Run IDs + artifact tags)
-// ---------------------------------------------------------------------------
-//
-// A JS/JSON/CLI caller bypasses TypeScript unions. completeRun and createRun
-// MUST runtime-reject path-shaped Run-ID descriptors and unknown / disallowed /
-// no-op artifact tags at the descriptor boundary — never silently ignore them.
-
-describe('descriptor runtime fail-closed (Q1-RA-005)', () => {
-  before(makeTempRoot);
-  after(cleanupTempRoot);
-
-  it('rejects a path-shaped consumedRunId (../x)', async () => {
-    const changeId = 'RD-path';
-    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
-    await mkdir(changeDir, { recursive: true });
-    await writeFile(join(changeDir, 'explore.md'), '# Explore\n');
-    const runDir = await createRun(
-      createRunInput({ runId: '20260806-330-explore', changeId, action: 'explore', role: 'author' }),
-    );
-    await assert.rejects(
-      () =>
-        completeRun(runDir, {
-          executionStatus: 'completed',
-          summary: 'x',
-          consumedRunIds: ['../x'],
-        }),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'RUN_ID_INVALID_FORMAT',
-    );
-    // Run stays pending — no terminal result published.
-    const entries = await readdir(runDir);
-    assert.ok(!entries.includes('result.json'));
-  });
-
-  it('rejects a path-shaped consumedRunId (a/b)', async () => {
-    const changeId = 'RD-path2';
-    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
-    await mkdir(changeDir, { recursive: true });
-    await writeFile(join(changeDir, 'explore.md'), '# Explore\n');
-    const runDir = await createRun(
-      createRunInput({ runId: '20260806-331-explore', changeId, action: 'explore', role: 'author' }),
-    );
-    await assert.rejects(
-      () =>
-        completeRun(runDir, {
-          executionStatus: 'completed',
-          summary: 'x',
-          consumedRunIds: ['a/b'],
-        }),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'RUN_ID_INVALID_FORMAT',
-    );
-  });
-
-  it('rejects a path-shaped reviewedRunId (../../run) at createRun', async () => {
-    await assert.rejects(
-      () =>
-        createRun(
-          createRunInput({
-            runId: '20260806-332-review-apply',
-            changeId: 'RD-reviewed',
-            action: 'review-apply',
-            role: 'reviewer',
-            reviewedRunId: '../../run',
-          }),
-        ),
-      (e: unknown) =>
-        e instanceof FlowkitError &&
-        (e.code === 'SCHEMA_VALIDATION_FAILED' || e.code === 'RUN_ID_INVALID_FORMAT'),
-    );
-  });
-
-  it('rejects a path-shaped reviewedRunId (C:\\\\tmp\\\\run) at createRun', async () => {
-    await assert.rejects(
-      () =>
-        createRun(
-          createRunInput({
-            runId: '20260806-333-review-apply',
-            changeId: 'RD-reviewed2',
-            action: 'review-apply',
-            role: 'reviewer',
-            reviewedRunId: 'C:\\tmp\\run',
-          }),
-        ),
-      (e: unknown) =>
-        e instanceof FlowkitError &&
-        (e.code === 'SCHEMA_VALIDATION_FAILED' || e.code === 'RUN_ID_INVALID_FORMAT'),
-    );
-  });
-
-  it('rejects an unknown producedArtifactTag (xxx) for propose', async () => {
-    const changeId = 'RD-tag-unknown';
-    await writeInitialProposeArtifacts(changeId, 'v0');
-    const p0Dir = await createRun(
-      createRunInput({ runId: '20260806-340-propose', changeId, action: 'propose', role: 'author' }),
-    );
-    await assert.rejects(
-      () =>
-        completeRun(p0Dir, {
-          executionStatus: 'completed',
-          summary: 'P0',
-          producedArtifactTags: ['xxx' as never],
-        }),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
-    );
-  });
-
-  it('rejects an Action-disallowed producedArtifactTag for revise-explore (proposal)', async () => {
-    const changeId = 'RD-tag-explore';
-    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
-    await mkdir(changeDir, { recursive: true });
-    await writeFile(join(changeDir, 'explore.md'), '# Explore\n');
-    const runDir = await createRun(
-      createRunInput({ runId: '20260806-341-revise-explore', changeId, action: 'revise-explore', role: 'author' }),
-    );
-    await assert.rejects(
-      () =>
-        completeRun(runDir, {
-          executionStatus: 'completed',
-          summary: 'x',
-          producedArtifactTags: ['proposal' as never],
-        }),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
-    );
-  });
-
-  it('rejects producedArtifactTags on an apply Run (no artifacts to produce)', async () => {
-    const changeId = 'RD-tag-apply';
-    const a0Dir = await createRun(
-      createRunInput({ runId: '20260806-342-apply', changeId, action: 'apply', role: 'author' }),
-    );
-    await assert.rejects(
-      () =>
-        completeRun(a0Dir, {
-          executionStatus: 'completed',
-          summary: 'A0',
-          producedArtifactTags: ['proposal' as never],
-        }),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
-    );
-  });
-
-  it('rejects revise-propose with empty producedArtifactTags (no-op revise)', async () => {
-    const changeId = 'RD-tag-nop';
-    await writeInitialProposeArtifacts(changeId, 'v0');
-    const p0Dir = await createRun(
-      createRunInput({ runId: '20260806-343-propose', changeId, action: 'propose', role: 'author' }),
-    );
-    await completeRun(p0Dir, { executionStatus: 'completed', summary: 'P0' });
-    const r0Dir = await createRun(
-      createRunInput({
-        runId: '20260806-344-review-propose',
-        changeId,
-        action: 'review-propose',
-        role: 'reviewer',
-        reviewedRunId: '20260806-343-propose',
-      }),
-    );
-    await completeRun(r0Dir, {
-      executionStatus: 'completed',
-      summary: 'CR',
-      reviewVerdict: 'changes-requested',
-      reviewFindings: [
-        { id: 'B-001', severity: 'blocking', title: 'fix', problem: 'needs work', requiredChange: 'revise' },
-      ],
-    });
-    const p1Dir = await createRun(
-      createRunInput({
-        runId: '20260806-345-revise-propose',
-        changeId,
-        action: 'revise-propose',
-        role: 'author',
-        sourceReviewRun: '20260806-344-review-propose',
-        sourceReviewVerdict: 'changes-requested',
-      }),
-    );
-    await assert.rejects(
-      () => completeRun(p1Dir, { executionStatus: 'completed', summary: 'P1', producedArtifactTags: [] }),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
-    );
-  });
-
-  it('rejects revise-propose with undefined producedArtifactTags (no-op revise)', async () => {
-    const changeId = 'RD-tag-undef';
-    await writeInitialProposeArtifacts(changeId, 'v0');
-    const p0Dir = await createRun(
-      createRunInput({ runId: '20260806-346-propose', changeId, action: 'propose', role: 'author' }),
-    );
-    await completeRun(p0Dir, { executionStatus: 'completed', summary: 'P0' });
-    const r0Dir = await createRun(
-      createRunInput({
-        runId: '20260806-347-review-propose',
-        changeId,
-        action: 'review-propose',
-        role: 'reviewer',
-        reviewedRunId: '20260806-346-propose',
-      }),
-    );
-    await completeRun(r0Dir, {
-      executionStatus: 'completed',
-      summary: 'CR',
-      reviewVerdict: 'changes-requested',
-      reviewFindings: [
-        { id: 'B-001', severity: 'blocking', title: 'fix', problem: 'needs work', requiredChange: 'revise' },
-      ],
-    });
-    const p1Dir = await createRun(
-      createRunInput({
-        runId: '20260806-348-revise-propose',
-        changeId,
-        action: 'revise-propose',
-        role: 'author',
-        sourceReviewRun: '20260806-347-review-propose',
-        sourceReviewVerdict: 'changes-requested',
-      }),
-    );
-    await assert.rejects(
-      () => completeRun(p1Dir, { executionStatus: 'completed', summary: 'P1' }),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
-    );
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Q1-RA-006: terminal completion rejects broken review exact binding
-// ---------------------------------------------------------------------------
-//
-// A pending review context is tampered AFTER createRun (which Core-derived a
-// valid inputRef). completeRun MUST fail closed for every broken binding shape
-// and MUST NOT publish result.json.
-
-describe('terminal completion rejects broken review exact binding (Q1-RA-006)', () => {
-  before(makeTempRoot);
-  after(cleanupTempRoot);
-
-  // Creates A0 apply Run + a review-apply Run over it with a valid Core-derived
-  // inputRef. Returns { a0Dir, v0Dir, a0ResultPath }.
-  async function setupReviewApply(changeId: string, reviewRunId: string): Promise<{ a0Dir: string; v0Dir: string; a0ResultPath: string }> {
-    const a0Dir = await createRun(
-      createRunInput({ runId: '20260806-410-apply', changeId, action: 'apply', role: 'author' }),
-    );
-    await completeRun(a0Dir, { executionStatus: 'completed', summary: 'A0' });
-    const v0Dir = await createRun(
-      createRunInput({
-        runId: reviewRunId,
-        changeId,
-        action: 'review-apply',
-        role: 'reviewer',
-        reviewedRunId: '20260806-410-apply',
-      }),
-    );
-    // Review-apply requires verification.md for the verificationSummaryRef.
-    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
-    await mkdir(changeDir, { recursive: true });
-    await writeFile(join(changeDir, 'verification.md'), '# Verification\n');
-    return {
-      a0Dir,
-      v0Dir,
-      a0ResultPath: join(deliveryRunsDir(), changeId, '20260806-410-apply', 'result.json'),
-    };
-  }
-
-  it('deleting inputRef from a pending review context → completeRun rejects, result.json NOT published', async () => {
-    const changeId = 'RA006-del';
-    const { v0Dir } = await setupReviewApply(changeId, '20260806-411-review-apply');
-    // Tamper: delete context.inputRef.
-    const ctxPath = join(v0Dir, 'context.json');
-    const ctx = JSON.parse(await readFile(ctxPath, 'utf-8')) as Record<string, unknown>;
-    delete ctx['inputRef'];
-    await writeFile(ctxPath, JSON.stringify(ctx, null, 2));
-
-    await assert.rejects(
-      () => completeRun(v0Dir, { executionStatus: 'completed', summary: 'V0', reviewVerdict: 'approved' }),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
-    );
-    // result.json MUST NOT exist.
-    await assert.rejects(() => readFile(join(v0Dir, 'result.json'), 'utf-8'));
-  });
-
-  it('changing inputRef kind (target/hash correct) → completeRun rejects (Q1-RA-006)', async () => {
-    const changeId = 'RA006-kind';
-    const { v0Dir, a0ResultPath } = await setupReviewApply(changeId, '20260806-412-review-apply');
-    const ctxPath = join(v0Dir, 'context.json');
-    const ctx = JSON.parse(await readFile(ctxPath, 'utf-8')) as Record<string, unknown>;
-    const inputRef = ctx['inputRef'] as Record<string, unknown>;
-    inputRef['kind'] = 'produced-artifact'; // wrong kind, target/hash otherwise correct.
-    await writeFile(ctxPath, JSON.stringify(ctx, null, 2));
-    void a0ResultPath;
-
-    await assert.rejects(
-      () => completeRun(v0Dir, { executionStatus: 'completed', summary: 'V0', reviewVerdict: 'approved' }),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
-    );
-    await assert.rejects(() => readFile(join(v0Dir, 'result.json'), 'utf-8'));
-  });
-
-  it('pointing inputRef at a DIFFERENT readable result with a MATCHING hash → completeRun rejects (Q1-RA-006)', async () => {
-    const changeId = 'RA006-wrongtarget';
-    // Create TWO completed target Runs A (reviewedRunId) and B.
-    const a0Dir = await createRun(
-      createRunInput({ runId: '20260806-413-apply', changeId, action: 'apply', role: 'author' }),
-    );
-    await completeRun(a0Dir, { executionStatus: 'completed', summary: 'A0' });
-    const b0Dir = await createRun(
-      createRunInput({ runId: '20260806-414-apply', changeId, action: 'apply', role: 'author' }),
-    );
-    await completeRun(b0Dir, { executionStatus: 'completed', summary: 'B0' });
-
-    // Review A (reviewedRunId=413), but tamper inputRef to point at B's
-    // result.json with B's CORRECT hash — path/hash both "valid" individually,
-    // but the binding is wrong because it does not equal the Core-derived
-    // reviewedRunId target.
-    const v0Dir = await createRun(
-      createRunInput({
-        runId: '20260806-415-review-apply',
-        changeId,
-        action: 'review-apply',
-        role: 'reviewer',
-        reviewedRunId: '20260806-413-apply',
-      }),
-    );
-    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
-    await mkdir(changeDir, { recursive: true });
-    await writeFile(join(changeDir, 'verification.md'), '# Verification\n');
-
-    const ctxPath = join(v0Dir, 'context.json');
-    const ctx = JSON.parse(await readFile(ctxPath, 'utf-8')) as Record<string, unknown>;
-    const bResult = await readFile(join(b0Dir, 'result.json'), 'utf-8');
-    const { computeResultFileHash } = await import('../../../src/persistence/result-ref-adapter.js');
-    ctx['inputRef'] = {
-      ref: `.flowkit/runs/D1/${changeId}/20260806-414-apply/result.json`,
-      versionFingerprint: computeResultFileHash(bResult),
-      kind: 'run-result',
-    };
-    await writeFile(ctxPath, JSON.stringify(ctx, null, 2));
-
-    await assert.rejects(
-      () => completeRun(v0Dir, { executionStatus: 'completed', summary: 'V0', reviewVerdict: 'approved' }),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'RESULT_REF_MISMATCH',
-    );
-    await assert.rejects(() => readFile(join(v0Dir, 'result.json'), 'utf-8'));
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Q1-RA-007: source-review tuple fail-closed at terminal completion
-// ---------------------------------------------------------------------------
-
-describe('source-review tuple fail-closed at terminal completion (Q1-RA-007)', () => {
-  before(makeTempRoot);
-  after(cleanupTempRoot);
-
-  async function setupCRChain(changeId: string): Promise<{ r0Dir: string; p1Dir: string }> {
-    await writeInitialProposeArtifacts(changeId, 'v0');
-    const p0Dir = await createRun(
-      createRunInput({ runId: '20260806-420-propose', changeId, action: 'propose', role: 'author' }),
-    );
-    await completeRun(p0Dir, { executionStatus: 'completed', summary: 'P0' });
-    const r0Dir = await createRun(
-      createRunInput({
-        runId: '20260806-421-review-propose',
-        changeId,
-        action: 'review-propose',
-        role: 'reviewer',
-        reviewedRunId: '20260806-420-propose',
-      }),
-    );
-    await completeRun(r0Dir, {
-      executionStatus: 'completed',
-      summary: 'CR',
-      reviewVerdict: 'changes-requested',
-      reviewFindings: [
-        { id: 'B-001', severity: 'blocking', title: 'fix', problem: 'needs work', requiredChange: 'revise' },
-      ],
-    });
-    const p1Dir = await createRun(
-      createRunInput({
-        runId: '20260806-422-revise-propose',
-        changeId,
-        action: 'revise-propose',
-        role: 'author',
-        sourceReviewRun: '20260806-421-review-propose',
-        sourceReviewVerdict: 'changes-requested',
-      }),
-    );
-    return { r0Dir, p1Dir };
-  }
-
-  it('revise-propose without sourceReviewRun → completeRun rejects (missing tuple counterpart)', async () => {
-    const changeId = 'RA007-nosrc';
-    await setupCRChain(changeId);
-    // Create revise-propose context WITHOUT sourceReviewRun (orphaned).
-    const p1Dir = await createRun(
-      createRunInput({
-        runId: '20260806-423-revise-propose',
-        changeId,
-        action: 'revise-propose',
-        role: 'author',
-      }),
-    );
-    // Tamper: inject reviewVerdictRef into the context? No — context has no
-    // sourceReview fields; the Action requires a source review, so completeRun
-    // MUST reject the missing evidence.
-    await assert.rejects(
-      () => completeRun(p1Dir, { executionStatus: 'completed', summary: 'P1', producedArtifactTags: ['proposal'] }),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
-    );
-  });
-
-  it('revise-propose with sourceReviewVerdict missing → completeRun rejects (post-create tamper)', async () => {
-    const changeId = 'RA007-noverdict';
-    const { p1Dir } = await setupCRChain(changeId);
-    // Post-create tamper: delete sourceReviewVerdict. The schema-level pairing
-    // (sourceReviewRun requires sourceReviewVerdict) already blocks createRun;
-    // this proves completeRun ALSO fails closed when the persisted context is
-    // tampered after createRun.
-    const ctxPath = join(p1Dir, 'context.json');
-    const ctx = JSON.parse(await readFile(ctxPath, 'utf-8')) as Record<string, unknown>;
-    delete ctx['sourceReviewVerdict'];
-    await writeFile(ctxPath, JSON.stringify(ctx, null, 2));
-    await assert.rejects(
-      () => completeRun(p1Dir, { executionStatus: 'completed', summary: 'P1', producedArtifactTags: ['proposal'] }),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
-    );
-  });
-
-  it('revise-propose with reviewVerdictRef removed from result → completeRun rejects', async () => {
-    const changeId = 'RA007-noref';
-    const { p1Dir } = await setupCRChain(changeId);
-    // deriveReviewVerdictRef derives reviewVerdictRef from sourceReviewRun.
-    // To simulate a missing reviewVerdictRef we tamper the sourceReviewRun in
-    // context so Core cannot derive it → derivation throws → Run stays pending.
-    const ctxPath = join(p1Dir, 'context.json');
-    const ctx = JSON.parse(await readFile(ctxPath, 'utf-8')) as Record<string, unknown>;
-    delete ctx['sourceReviewVerdict'];
-    await writeFile(ctxPath, JSON.stringify(ctx, null, 2));
-    await assert.rejects(
-      () => completeRun(p1Dir, { executionStatus: 'completed', summary: 'P1', producedArtifactTags: ['proposal'] }),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
-    );
-  });
-
-  it('revise-propose whose source review is NOT admitted → completeRun rejects', async () => {
-    const changeId = 'RA007-unadmitted';
-    // Build P0, then a review whose result is malformed (not admitted), then a
-    // revise-propose pointing at that unadmitted review.
-    await writeInitialProposeArtifacts(changeId, 'v0');
-    const p0Dir = await createRun(
-      createRunInput({ runId: '20260806-425-propose', changeId, action: 'propose', role: 'author' }),
-    );
-    await completeRun(p0Dir, { executionStatus: 'completed', summary: 'P0' });
-    // Create a review normally, then corrupt its result.json (closed-schema
-    // violation) so it is NOT admitted by readRunVerdict.
-    const r0Dir = await createRun(
-      createRunInput({
-        runId: '20260806-426-review-propose',
-        changeId,
-        action: 'review-propose',
-        role: 'reviewer',
-        reviewedRunId: '20260806-425-propose',
-      }),
-    );
-    await writeFile(
-      join(r0Dir, 'result.json'),
-      JSON.stringify({
-        runStatus: 'completed',
-        actionResult: { action: 'review-propose', executionStatus: 'completed', summary: 'CR' },
-        reviewVerdict: 'changes-requested',
-        // closed-schema violation: heavy bookkeeping field.
-        blockingFindings: [],
-      }),
-    );
-    const p1Dir = await createRun(
-      createRunInput({
-        runId: '20260806-427-revise-propose',
-        changeId,
-        action: 'revise-propose',
-        role: 'author',
-        sourceReviewRun: '20260806-426-review-propose',
-        sourceReviewVerdict: 'changes-requested',
-      }),
-    );
-    await assert.rejects(
-      () => completeRun(p1Dir, { executionStatus: 'completed', summary: 'P1', producedArtifactTags: ['proposal'] }),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
-    );
-    await assert.rejects(() => readFile(join(p1Dir, 'result.json'), 'utf-8'));
-  });
-
-  it('revise-explore with ENTIRE source-review tuple absent → completeRun rejects (Q1-RA-007)', async () => {
-    const changeId = 'RA007-explore-notuple';
-    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
-    await mkdir(changeDir, { recursive: true });
-    await writeFile(join(changeDir, 'explore.md'), '# Explore\n');
-    const runDir = await createRun(
-      createRunInput({ runId: '20260806-430-revise-explore', changeId, action: 'revise-explore', role: 'author' }),
-    );
-    // Action requires the complete source-review tuple even when the context
-    // carries NO source-review fields at all.
-    await assert.rejects(
-      () => completeRun(runDir, { executionStatus: 'completed', summary: 'RE1', producedArtifactTags: ['explore'] }),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
-    );
-    await assert.rejects(() => readFile(join(runDir, 'result.json'), 'utf-8'));
-  });
-
-  it('revise-apply with ENTIRE source-review tuple absent → completeRun rejects (Q1-RA-007)', async () => {
-    const changeId = 'RA007-apply-notuple';
-    const runDir = await createRun(
-      createRunInput({ runId: '20260806-431-revise-apply', changeId, action: 'revise-apply', role: 'author' }),
-    );
-    await assert.rejects(
-      () => completeRun(runDir, { executionStatus: 'completed', summary: 'RA1' }),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
-    );
-    await assert.rejects(() => readFile(join(runDir, 'result.json'), 'utf-8'));
-  });
-
-  it('revise-propose with complete fresh produced set BUT no source-review tuple → still rejects (Q1-RA-007)', async () => {
-    const changeId = 'RA007-fresh-notuple';
-    // Provide a complete fresh effective set so the ONLY failure is the
-    // source-review requiredness (NOT artifact completeness).
-    await writeInitialProposeArtifacts(changeId, 'v1');
-    const runDir = await createRun(
-      createRunInput({ runId: '20260806-432-revise-propose', changeId, action: 'revise-propose', role: 'author' }),
-    );
-    await assert.rejects(
-      () =>
-        completeRun(runDir, {
-          executionStatus: 'completed',
-          summary: 'RP1',
-          producedArtifactTags: ['proposal', 'design', 'tasks', 'specs'],
-        }),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
-    );
-    await assert.rejects(() => readFile(join(runDir, 'result.json'), 'utf-8'));
-  });
-
-  it('revise-propose sourced from an APPROVED review → completeRun rejects (Q1-RA-007)', async () => {
-    const changeId = 'RA007-approved';
-    await writeInitialProposeArtifacts(changeId, 'v0');
-    const p0Dir = await createRun(
-      createRunInput({ runId: '20260806-433-propose', changeId, action: 'propose', role: 'author' }),
-    );
-    await completeRun(p0Dir, { executionStatus: 'completed', summary: 'P0' });
-    // Review-propose → approved (a valid terminal review).
-    const r0Dir = await createRun(
-      createRunInput({
-        runId: '20260806-434-review-propose',
-        changeId,
-        action: 'review-propose',
-        role: 'reviewer',
-        reviewedRunId: '20260806-433-propose',
-      }),
-    );
-    await completeRun(r0Dir, { executionStatus: 'completed', summary: 'OK', reviewVerdict: 'approved' });
-    // revise-propose sourcing the approved review.
-    const p1Dir = await createRun(
-      createRunInput({
-        runId: '20260806-435-revise-propose',
-        changeId,
-        action: 'revise-propose',
-        role: 'author',
-        sourceReviewRun: '20260806-434-review-propose',
-        sourceReviewVerdict: 'approved',
-      }),
-    );
-    // Tuple path/hash/verdict are all internally consistent (approved=approved)
-    // — but revise-* can only follow changes-requested.
-    await assert.rejects(
-      () =>
-        completeRun(p1Dir, {
-          executionStatus: 'completed',
-          summary: 'RP1',
-          producedArtifactTags: ['proposal', 'design', 'tasks', 'specs'],
-        }),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
-    );
-    await assert.rejects(() => readFile(join(p1Dir, 'result.json'), 'utf-8'));
-  });
-
-  it('revise-propose sourced from a WRONG-STAGE changes-requested review → completeRun rejects (Q1-RA-007)', async () => {
-    const changeId = 'RA007-wrongstage';
-    // Initial explore → review-explore changes-requested.
-    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
-    await mkdir(changeDir, { recursive: true });
-    await writeFile(join(changeDir, 'explore.md'), '# Explore\n');
-    const e0Dir = await createRun(
-      createRunInput({ runId: '20260806-436-explore', changeId, action: 'explore', role: 'author' }),
-    );
-    await completeRun(e0Dir, { executionStatus: 'completed', summary: 'E0' });
-    const r0Dir = await createRun(
-      createRunInput({
-        runId: '20260806-437-review-explore',
-        changeId,
-        action: 'review-explore',
-        role: 'reviewer',
-        reviewedRunId: '20260806-436-explore',
-      }),
-    );
-    await completeRun(r0Dir, {
-      executionStatus: 'completed',
-      summary: 'CR',
-      reviewVerdict: 'changes-requested',
-      reviewFindings: [
-        { id: 'B-001', severity: 'blocking', title: 'fix', problem: 'x', requiredChange: 'revise' },
-      ],
-    });
-    // Provide a complete propose set so the effective set is not the failure.
-    await writeInitialProposeArtifacts(changeId, 'v1');
-    const p1Dir = await createRun(
-      createRunInput({
-        runId: '20260806-438-revise-propose',
-        changeId,
-        action: 'revise-propose',
-        role: 'author',
-        sourceReviewRun: '20260806-437-review-explore',
-        sourceReviewVerdict: 'changes-requested',
-      }),
-    );
-    // review-explore is changes-requested (correct verdict) but WRONG STAGE for
-    // a revise-propose.
-    await assert.rejects(
-      () =>
-        completeRun(p1Dir, {
-          executionStatus: 'completed',
-          summary: 'RP1',
-          producedArtifactTags: ['proposal', 'design', 'tasks', 'specs'],
-        }),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
-    );
-    await assert.rejects(() => readFile(join(p1Dir, 'result.json'), 'utf-8'));
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Q1-RA-003: review-entry fails closed on empty/partial initial effective sets
-// ---------------------------------------------------------------------------
-//
-// A bad terminal initial generation (missing/empty/partial produced set) must
-// be rejected at review-entry BEFORE the review Run is published — requiredness
-// comes from the Action/stage, never from producedRefs.length > 0.
-
-describe('review-entry fails closed on empty/partial initial sets (Q1-RA-003)', () => {
-  before(makeTempRoot);
-  after(cleanupTempRoot);
-
-  it('rejects review-explore when the reviewed explore produced set is missing', async () => {
-    const changeId = 'RE-empty-explore';
-    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
-    await mkdir(changeDir, { recursive: true });
-    await writeFile(join(changeDir, 'explore.md'), '# Explore\n');
-    const e0Dir = await createRun(
-      createRunInput({ runId: '20260806-350-explore', changeId, action: 'explore', role: 'author' }),
-    );
-    // Hand-write a terminal result WITHOUT producedResultRefs (bypass legacy).
-    await writeFile(
-      join(e0Dir, 'result.json'),
-      JSON.stringify({
-        runStatus: 'completed',
-        actionResult: { action: 'explore', executionStatus: 'completed', summary: 'raw' },
-      }),
-    );
-
-    await assert.rejects(
-      () =>
-        createRun(
-          createRunInput({
-            runId: '20260806-351-review-explore',
-            changeId,
-            action: 'review-explore',
-            role: 'reviewer',
-            reviewedRunId: '20260806-350-explore',
-          }),
-        ),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
-    );
-    // Review Run directory MUST NOT exist.
-    const reviewRunDir = join(deliveryRunsDir(), changeId, '20260806-351-review-explore');
-    await assert.rejects(() => readFile(join(reviewRunDir, 'context.json'), 'utf-8'));
-  });
-
-  it('rejects review-propose when proposal/design/tasks are missing from the produced set', async () => {
-    const changeId = 'RE-empty-propose';
-    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
-    await mkdir(join(changeDir, 'specs', 'cap-a'), { recursive: true });
-    await writeFile(join(changeDir, 'specs', 'cap-a', 'spec.md'), '# Spec A\n');
-    const p0Dir = await createRun(
-      createRunInput({ runId: '20260806-352-propose', changeId, action: 'propose', role: 'author' }),
-    );
-    // Hand-write a terminal result with an empty producedResultRefs (specs-only
-    // would still be missing the required singletons).
-    await writeFile(
-      join(p0Dir, 'result.json'),
-      JSON.stringify({
-        runStatus: 'completed',
-        actionResult: { action: 'propose', executionStatus: 'completed', summary: 'raw', producedResultRefs: [] },
-      }),
-    );
-
-    await assert.rejects(
-      () =>
-        createRun(
-          createRunInput({
-            runId: '20260806-353-review-propose',
-            changeId,
-            action: 'review-propose',
-            role: 'reviewer',
-            reviewedRunId: '20260806-352-propose',
-          }),
-        ),
-      // The empty producedResultRefs passes readRunProducedResultRefs (no
-      // throw), then validateReviewEntry reports the incomplete stage set as
-      // RESULT_REF_MISMATCH before the review Run is published.
-      (e: unknown) => e instanceof FlowkitError && e.code === 'RESULT_REF_MISMATCH',
-    );
-  });
-
-  it('rejects review-propose with empty specs namespace AND missing singletons (Q1-RA-003)', async () => {
-    const changeId = 'RE-empty-specs';
-    const changeDir = join(tempRoot, 'openspec', 'changes', changeId);
-    // specs/** is EMPTY (no specs directory / no files).
-    await mkdir(changeDir, { recursive: true });
-    const p0Dir = await createRun(
-      createRunInput({ runId: '20260806-354-propose', changeId, action: 'propose', role: 'author' }),
-    );
-    // Hand-write a terminal result with an empty produced set. Even though the
-    // specs namespace is legitimately empty, the required singletons
-    // (proposal/design/tasks) are still missing → MUST fail closed.
-    await writeFile(
-      join(p0Dir, 'result.json'),
-      JSON.stringify({
-        runStatus: 'completed',
-        actionResult: { action: 'propose', executionStatus: 'completed', summary: 'raw', producedResultRefs: [] },
-      }),
-    );
-
-    await assert.rejects(
-      () =>
-        createRun(
-          createRunInput({
-            runId: '20260806-355-review-propose',
-            changeId,
-            action: 'review-propose',
-            role: 'reviewer',
-            reviewedRunId: '20260806-354-propose',
-          }),
-        ),
-      // Empty specs namespace does NOT excuse missing singletons.
-      (e: unknown) => e instanceof FlowkitError && e.code === 'RESULT_REF_MISMATCH',
+      () => completeRun(run, { executionStatus: 'completed', summary: 'x', consumedRunIds: ['../bad'] }),
+      (e: unknown) => e instanceof FlowkitError,
     );
   });
 });

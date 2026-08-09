@@ -1,0 +1,52 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-propose",
+    "executionStatus": "completed",
+    "summary": "已按 151 Reviewer 的两个 Blocking Findings 修订 Q2 Proposal：统一 ResultRef 的 current-handoff exact-invalidating 与 historical mutable point-in-time 分层语义；恢复最小 review→next-action entry exact handoff，并为 review-apply 增加 Core-owned、可 resume 的 verificationInputRef，同时保持 archive 检查只发生在 OpenSpec operation 前、operation 后不做 relocation replay。未修改 production code、tests、AGENTS 或 docs。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/orchestration-authority-boundary-correction/design.md",
+        "versionFingerprint": "91932e1e59af65186246b070a72d58fb744a899c41b47173a780eb30f9ea359c",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/orchestration-authority-boundary-correction/proposal.md",
+        "versionFingerprint": "d312d5e7719b5af9bafae4dfd742960706974620f2788896e2ec0016749d2352",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/orchestration-authority-boundary-correction/specs/flowkit-bootstrap-and-roadmap/spec.md",
+        "versionFingerprint": "8e7f1e48be9c16ae5e34d87002b19ff853de1eaa5c7a539f4dcd11aa996963c8",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/orchestration-authority-boundary-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "6c598adaed8a293cb9c4c449476e8367aadf9f4de9561e30b044644725746de0",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/orchestration-authority-boundary-correction/specs/flowkit-integration-boundaries/spec.md",
+        "versionFingerprint": "290938e9d04842e44163ceb9c8955e1abd263268f71919d73302aa72c7e25744",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/orchestration-authority-boundary-correction/tasks.md",
+        "versionFingerprint": "70e0a43f03153dc64f730377ec8856e1d13a87bf0cceb574af52c191401f1056",
+        "kind": "produced-artifact"
+      }
+    ],
+    "consumedInputRefs": [
+      {
+        "ref": ".flowkit/runs/20260806-01-deterministic-core/orchestration-authority-boundary-correction/20260806-151-review-propose/result.json",
+        "versionFingerprint": "235a75bbf2e39228ee6a631c2519c9502de546937fed293c77dc129f3743661c",
+        "kind": "run-result"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260806-01-deterministic-core/orchestration-authority-boundary-correction/20260806-151-review-propose/result.json",
+      "versionFingerprint": "235a75bbf2e39228ee6a631c2519c9502de546937fed293c77dc129f3743661c",
+      "kind": "run-result"
+    }
+  }
+}

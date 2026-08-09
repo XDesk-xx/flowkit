@@ -1,0 +1,10 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "已完成 152 revised Proposal 的独立审查。151 的两个 Blocking Findings 均已关闭：ResultRef 已在 integration/formal-fact 契约中统一为 current handoff exact-invalidating 与 historical mutable point-in-time 两层语义；Review→下一 Action 的局部 exact handoff 已覆盖 propose/revise-explore/apply/revise-propose/revise-apply/archive，review-apply 以 Core-owned、可 resume 的 verificationInputRef 绑定 entry→completion，archive 仅在 OpenSpec operation 前检查 current verification，不恢复 post-archive replay。未发现新的 Blocking 或 Non-blocking Finding。"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindings": []
+}

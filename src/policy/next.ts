@@ -36,6 +36,7 @@ import {
   allRequiredCompleted,
   countActiveChanges,
   getActiveChange,
+  getCompletedUncheckpointedChanges,
   getRequiredChanges,
   isTasksFactAvailable,
 } from './preconditions.js';
@@ -140,13 +141,15 @@ function decideActiveChange(
     case 'apply':
       return decideApplyStage(snapshot, change, lineage);
     case 'archive':
-      // Archive completed → advance to the Change Checkpoint Git boundary
-      // (6.10). The checkpoint is a formal Git boundary, not a formal Action,
-      // and requires owner authorization.
-      return ownerDecisionResult('authorize-checkpoint', {
-        changeKey: change.key,
-        detail: 'archive stage complete; Change Checkpoint Git boundary awaits owner authorization',
-      });
+      // OpenSpec archive success closes the Change. Seeing a completed archive
+      // Run while the Manifest still says active is therefore an inconsistent
+      // intermediate snapshot, not the Checkpoint state. Checkpoint is decided
+      // only after the Change is completed and no longer active.
+      return blockedResult(
+        ambiguousStateDiagnosis(
+          `archive completed for ${change.key} but Change is still active; archive success must close the Change before Checkpoint`,
+        ),
+      );
   }
 }
 
@@ -279,6 +282,25 @@ function decideApplyStage(
  * eligible Change.
  */
 function decideNoActiveChange(snapshot: FormalFactSnapshot): PolicyResult {
+  // OpenSpec archive success closes the Change. The next Flowkit/Git boundary
+  // is Checkpoint, recovered from Manifest completed state + Git boundary facts
+  // without re-projecting the closed Change's historical Runs.
+  const checkpointPending = getCompletedUncheckpointedChanges(snapshot);
+  if (checkpointPending.length === 1) {
+    const change = checkpointPending[0]!;
+    return ownerDecisionResult('authorize-checkpoint', {
+      changeKey: change.key,
+      detail: 'Change is closed by OpenSpec archive; Change Checkpoint Git boundary awaits owner authorization',
+    });
+  }
+  if (checkpointPending.length > 1) {
+    return blockedResult(
+      ambiguousStateDiagnosis(
+        `multiple completed Changes await Checkpoint: ${checkpointPending.map((c) => c.key).join(', ')}`,
+      ),
+    );
+  }
+
   if (allRequiredCompleted(snapshot)) {
     return decideFullTestLifecycle(snapshot);
   }

@@ -128,11 +128,12 @@ export function buildAuthorization(scope: string): OwnerAuthorizationFact {
 // Git boundary
 // ---------------------------------------------------------------------------
 
-export function buildCheckpointBoundary(): GitBoundaryFact {
+export function buildCheckpointBoundary(changeId: string = CHANGE_ID): GitBoundaryFact {
   return {
     kind: 'change-checkpoint',
-    commitSha: 'abc123',
-    summary: 'chore(flowkit): checkpoint',
+    commitSha: `checkpoint-${changeId}`,
+    summary: `chore(flowkit): checkpoint ${changeId}`,
+    changeId,
   };
 }
 

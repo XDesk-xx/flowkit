@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { evaluatePreconditions } from '../../../src/policy/preconditions.js';
+import { evaluatePreconditions, getCompletedUncheckpointedChanges } from '../../../src/policy/preconditions.js';
 import {
   buildChange,
   buildRun,
@@ -416,5 +416,56 @@ describe('preconditions — delivery-finalize (task 4.13, 4.17, D1-12, 10.22)', 
       authorizations: [],
     });
     assert.ok(evaluatePreconditions(snap, 'delivery-finalize').includes('finalize-not-authorized'));
+  });
+});
+
+
+describe('checkpoint recovery boundary — archive closes Change', () => {
+  it('identifies completed Change without checkpoint from Manifest + Git only', () => {
+    const snap = buildSnapshot({
+      changes: [
+        buildChange({ key: 'Q1', id: 'q1', state: 'completed', required: true }),
+        buildChange({ key: 'Q2', id: 'q2', state: 'completed', required: true }),
+      ],
+      runs: [],
+      gitBoundaries: [buildCheckpointBoundary('q1')],
+    });
+    assert.deepEqual(getCompletedUncheckpointedChanges(snap).map((c) => c.key), ['Q2']);
+  });
+
+  it('keeps legacy and structured checkpoint facts together during migration', () => {
+    const snap = buildSnapshot({
+      changes: [
+        buildChange({ key: 'Q1', id: 'q1', state: 'completed', required: true }),
+        buildChange({ key: 'Q2', id: 'q2', state: 'completed', required: true }),
+      ],
+      runs: [],
+      gitBoundaries: [
+        {
+          kind: 'change-checkpoint',
+          commitSha: 'legacy-q1',
+          summary: 'legacy checkpoint Q1',
+        },
+        buildCheckpointBoundary('q2'),
+      ],
+    });
+    assert.deepEqual(getCompletedUncheckpointedChanges(snap), []);
+  });
+
+  it('does not let a later structured checkpoint make a legacy checkpointed Change pending again', () => {
+    const snap = buildSnapshot({
+      changes: [
+        buildChange({ key: 'A1', id: 'a1', state: 'completed', required: true }),
+        buildChange({ key: 'Q1', id: 'q1', state: 'completed', required: true }),
+        buildChange({ key: 'Q2', id: 'q2', state: 'completed', required: true }),
+      ],
+      runs: [],
+      gitBoundaries: [
+        { kind: 'change-checkpoint', commitSha: 'legacy-a1', summary: 'legacy checkpoint A1' },
+        { kind: 'change-checkpoint', commitSha: 'legacy-q1', summary: 'legacy checkpoint Q1' },
+        buildCheckpointBoundary('q2'),
+      ],
+    });
+    assert.deepEqual(getCompletedUncheckpointedChanges(snap), []);
   });
 });

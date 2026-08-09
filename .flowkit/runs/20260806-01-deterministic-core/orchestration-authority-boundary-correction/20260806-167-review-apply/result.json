@@ -1,0 +1,15 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "复核 166：Owner 已在 package 外独立输入中明确确认 164 的 Archive/Checkpoint lifecycle 模型；166 仅记录该 provenance，未修改 production code/tests/canonical lifecycle docs，也未新增 owner-decision persistence。146–165 历史 Run 保持 byte-for-byte；typecheck/lint/build、557/557 tests、Q2 strict 与 8/8 canonical specs strict 均通过。165 的唯一 Blocking Finding Q2-RA-001 已关闭，未发现新的 Blocking 或 Non-blocking Finding。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/orchestration-authority-boundary-correction/verification.md",
+      "versionFingerprint": "1553af0c9732a287520e862b73f7cefc3fbef79135a4fec65b407b95578362d4",
+      "kind": "verification-summary"
+    }
+  },
+  "reviewVerdict": "approved",
+  "reviewFindings": []
+}
