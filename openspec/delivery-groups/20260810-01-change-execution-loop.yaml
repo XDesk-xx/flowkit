@@ -1,0 +1,274 @@
+id: 20260810-01-change-execution-loop
+createdAt: "2026-08-10"
+branch: delivery/20260810-01-change-execution-loop
+
+goal: >
+  在已完成的 Deterministic Core 基础上交付完整 Change Execution Loop：
+  让 Flowkit 能够从 planned Change 开始，经过 Owner 授权、正式 Change Action、
+  Lean Run、Author / Reviewer、Change Verification、OpenSpec archive，
+  确定性地把 Change 关闭为 completed，并进入 Git Change Checkpoint boundary。
+  本 Delivery 不实现 Delivery Full Test / Delivery Finalize executor、
+  Archify runtime、stable Agent runtime 或自动 Author / Reviewer 循环。
+
+delivery:
+  state: active
+  fullTestStatus: not-ready
+
+technicalBaseline:
+  language: TypeScript
+  moduleSystem: ESM
+  runtime: Node.js
+  nodeVersion: ">=22.0.0"
+  sourceExtension: .ts
+  compiledOutput: dist/**/*.js
+  cliBin: dist/bin/flowkit.js
+  constraints:
+    - 继承 Deterministic Core 的 Lean Run 与 machine-derived ResultRef
+    - 继承 focused / affected / full Verification 分层与 Quality Guard
+    - 新增手写生产源码和测试源码继续使用 .ts
+    - 不新增手写 .mjs 生产源码、测试源码或 CLI 启动壳
+    - Windows CLI / process 路径继续使用 platform launcher
+    - Change Checkpoint 前执行 git diff --check，staging 后执行 git diff --cached --check
+    - 不建立 Registry / Evidence / Receipt / generic plugin platform
+    - 不实现自动 Commit / Push / Merge
+
+scope:
+  included:
+    - Q1 canonical contract alignment
+    - Delivery / Change creation
+    - Owner decision ingestion / provenance
+    - Change activation
+    - Lean Run lifecycle
+    - Action Package
+    - Action Result admission
+    - ResultRef validation
+    - OpenSpec 1.7 thin integration
+    - Review / typed Findings / Verdict
+    - blockingAuthority
+    - Finding convergence
+    - non-author facts 到位后的 direct re-review
+    - no-op revise rejection
+    - actualChangeSet
+    - verificationScope
+    - focused / affected Change Verification
+    - OpenSpec archive
+    - Change completed transition
+    - Checkpoint readiness / recognition / Git handoff
+    - Change CLI
+    - resume-context
+    - Change E2E
+    - performance / Run-size observation
+
+  excluded:
+    - Delivery Full Test execution implementation
+    - Delivery Findings full loop
+    - Delivery Finalize executor
+    - Delivery-level Run
+    - Archify runtime / architecture assets
+    - stable Agent Adapter
+    - automatic Author / Reviewer loop
+    - bounded auto-continue
+    - automatic corrective Change
+    - automatic Commit / Push / Merge
+    - mandatory CodeGraph integration
+    - Registry / Evidence platform
+
+architecture:
+  impact: true
+  archifyPlan: deferred-to-03
+  rationale: >
+    本 Delivery 会新增完整 Change Execution Plane，具有架构影响。
+    但 Archify 是 Delivery-level external architecture authority，
+    正式 Archify CLI contract、System / Planned / Actual Architecture lifecycle
+    由下一条 Delivery Execution Loop Delivery（03）实现。
+    本 Delivery 只保留 architectureImpact / architecture decision 语义，
+    不调用 Archify runtime，不生成或回填正式 architecture asset。
+
+changes:
+  - key: Q1
+    id: core-contract-alignment
+    goal: >
+      对当前 canonical Core 做最小 contract alignment：
+      机器化 changes-requested ≠ revise-required、blocking authority、
+      no-op revise prohibition，并把 Standard Run 收敛为 Change-only Action；
+      不重新打开或重做已完成的 Deterministic Core。
+    required: true
+    dependsOn: []
+    state: planned
+    outputs:
+      - canonical blocker-authority contract alignment
+      - Change-only Standard Run / Action boundary
+      - non-author blocker direct re-review 与 no-op revise contract
+      - docs / specs / code / AGENTS 的最小一致性修正
+
+  - key: A1
+    id: delivery-change-creation-and-owner-input
+    goal: >
+      实现 Delivery / Change 创建、显式 Owner decision / authorization provenance
+      的安全接纳，以及满足依赖和 Owner 授权后的 Change activation。
+    required: true
+    dependsOn:
+      - core-contract-alignment
+    state: planned
+    outputs:
+      - Delivery creation
+      - Change creation
+      - Owner decision / authorization provenance ingestion
+      - planned → active Change activation boundary
+
+  - key: B1
+    id: lean-run-and-action-package
+    goal: >
+      完成 Lean Run lifecycle、Action Package、Action Result admission
+      与 ResultRef validation，使一个已确定的 Change Action
+      能通过轻量 execution envelope 被安全执行、恢复和接纳。
+    required: true
+    dependsOn:
+      - delivery-change-creation-and-owner-input
+    state: planned
+    outputs:
+      - Lean Run lifecycle 与 Delivery-wide monotonic Run ID
+      - Action Package
+      - Action Result validation / admission
+      - machine-derived / validated ResultRef
+      - pending Run resume / same-Run continuation contract
+
+  - key: C1
+    id: openspec-1-7-thin-integration
+    goal: >
+      建立 OpenSpec 1.7 thin integration，让 OpenSpec 继续拥有 Change contract、
+      artifact lifecycle 和 archive semantics，Flowkit 只消费结构化 context、
+      path、validation 与 archive operation result。
+    required: true
+    dependsOn:
+      - lean-run-and-action-package
+    state: planned
+    outputs:
+      - OpenSpec 1.7 thin adapter
+      - structured planningHome / changeRoot / artifactPaths / contextFiles 消费
+      - formal Change artifact lifecycle integration
+      - archive handoff / result consumption
+
+  - key: D1
+    id: review-findings-and-blocker-authority
+    goal: >
+      实现 typed Findings、稳定 Finding identity、blockingAuthority、
+      finding convergence，以及 changes-requested 后按 authority
+      确定下一 boundary 的 Review 闭环。
+    required: true
+    dependsOn:
+      - openspec-1-7-thin-integration
+    state: planned
+    outputs:
+      - typed Finding model
+      - blockingAuthority: author / owner / verification / external
+      - resolved / still-open / superseded / new convergence
+      - non-author fact direct re-review
+      - no-op revise rejection
+
+  - key: E1
+    id: change-verification-selection-and-change-set
+    goal: >
+      基于 canonical Git boundary、actualChangeSet、确定性 module ownership /
+      dependency mapping 与 OpenSpec affected capability，
+      生成最小 verificationScope 并执行 Change Verification。
+    required: true
+    dependsOn:
+      - review-findings-and-blocker-authority
+    state: planned
+    outputs:
+      - actualChangeSet
+      - change-set classification
+      - deterministic verificationScope
+      - focused / affected Change Verification selection
+      - formal verification.md result projection
+
+  - key: F1
+    id: archive-and-checkpoint-boundary
+    goal: >
+      在 review-apply approved、Blocking=0、Change Verification 满足、
+      tasks complete、正式事实一致且 Owner authorize archive 后，
+      通过 OpenSpec archive 关闭 Change，并暴露后续 Git Change Checkpoint boundary。
+    required: true
+    dependsOn:
+      - change-verification-selection-and-change-set
+    state: planned
+    outputs:
+      - archive precondition enforcement
+      - OpenSpec archive result integration
+      - Change.state = completed transition
+      - checkpoint readiness / recognition
+      - Git checkpoint handoff / deterministic preflight
+
+  - key: G1
+    id: change-cli-end-to-end-and-performance
+    goal: >
+      收口 Change CLI、resume-context、完整 Change E2E 与性能观测，
+      证明正常 Change 可以从 planned 确定性执行到 completed
+      并恢复到 checkpoint boundary。
+    required: true
+    dependsOn:
+      - archive-and-checkpoint-boundary
+    state: planned
+    outputs:
+      - Change CLI surface
+      - Change E2E matrix
+      - checkout / resume recovery
+      - Action Package / Run size observation
+      - focused / affected verification timing observation
+      - review convergence observation
+
+verification:
+  change:
+    requireApplicableChecks: true
+
+  fullTest:
+    requiresOwnerAuthorization: true
+    plan:
+      - Deterministic Core inherited suite
+      - Q1 contract alignment
+      - Delivery / Change creation and Owner provenance
+      - Lean Run / Action Package / Action Result / ResultRef
+      - OpenSpec 1.7 thin integration
+      - typed Findings / blockingAuthority
+      - no-op revise rejection
+      - non-author fact direct re-review
+      - actualChangeSet / verificationScope
+      - Change Verification selection
+      - archive / completed / checkpoint boundary
+      - Change CLI E2E
+      - resume / checkout recovery
+      - quality hard guards
+      - typecheck
+      - lint
+      - build
+      - OpenSpec strict validation
+      - Windows launcher regression
+      - whitespace preflight contract
+
+acceptance:
+  - 所有 required Changes 的 state 均为 completed
+  - 所有 required Changes 均已形成 Git Change Checkpoint
+  - Q1 只做最小 canonical contract alignment，没有重做 Deterministic Core
+  - canonical product contract 已吸收 blocking authority
+  - Standard Run 只覆盖 Change Actions
+  - Delivery Full Test / Delivery Finalize 不创建 Standard Run
+  - Owner decision provenance 可安全接纳，且只能来自 Owner 独立明确输入
+  - 一个 Change 可从 planned 确定性执行到 completed
+  - OpenSpec archive success 即关闭 Change，Checkpoint 不反向成为 Change completion condition
+  - Run 保持 Lean，不重新拥有 OpenSpec / Git / Verification / Reviewer 专业事实
+  - OpenSpec 1.7 thin integration 可用
+  - typed Finding + blockingAuthority 可用
+  - changes-requested ≠ revise-required 已机器化
+  - non-author blocker 在 bytes 不变时可 direct re-review
+  - no-op revise 可被拒绝
+  - actualChangeSet / verificationScope 可确定性生成
+  - Change Verification 可用，且任何 Change path 不自动运行 Delivery Full Test
+  - Change CLI / resume-context 可用
+  - Delivery Full Test 仅在 Owner explicit authorization 后执行并通过
+  - Delivery Finalize 仅在 Owner independent authorization 后进行
+  - 未实现 Delivery executor
+  - 未实现 Archify runtime
+  - 未实现 stable Agent runtime
+  - 未实现 automatic Author / Reviewer loop 或 bounded auto-continue
+  - 未引入 Registry / Evidence platform
