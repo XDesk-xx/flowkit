@@ -9,8 +9,8 @@ goal: >
   编译为 dist/ 下的 Node.js ESM .js，不再新增手写 .mjs。
 
 delivery:
-  state: active
-  fullTestStatus: not-ready
+  state: completed
+  fullTestStatus: passed
 
 technicalBaseline:
   language: TypeScript
