@@ -1,0 +1,42 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-propose",
+    "executionStatus": "completed",
+    "summary": "已按 187 Reviewer 的 3 个 author-actionable Blocking Findings 修订 F1 Proposal artifacts，并与 184 Explore 对齐：shared 被冻结为 broad affected 而非 full suite；新增 verification scope 确定覆盖 F1 verification/quality tooling；maintainability metrics 在 Proposal/Design/Spec/Tasks 中统一为 required warning-only Soft Guard，并冻结 deterministic metric definition。未修改 Manifest scope、Explore、production code、tests 或 Delivery Full Test authority。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/core-hardening-and-release-candidate/design.md",
+        "versionFingerprint": "f0719b86a9397f7cdeff3ae2b68e5e820b48522f3b38187e307011feb7d587ca",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/core-hardening-and-release-candidate/proposal.md",
+        "versionFingerprint": "be3b3209a907e3a8ec8127564447417693c41a30b1eff3711034cdc32a501bb6",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/core-hardening-and-release-candidate/specs/flowkit-core-hardening-and-release-candidate/spec.md",
+        "versionFingerprint": "b254b3ff45b219330882a0ef7a3a9684ff9c68fe3eb08edff2b6d12c032ef39f",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/core-hardening-and-release-candidate/tasks.md",
+        "versionFingerprint": "3761f641d80b76da7308d660b5cf820950ac286e94fc21168fedc6784afcc69c",
+        "kind": "produced-artifact"
+      }
+    ],
+    "consumedInputRefs": [
+      {
+        "ref": ".flowkit/runs/20260806-01-deterministic-core/core-hardening-and-release-candidate/20260806-187-review-propose/result.json",
+        "versionFingerprint": "3e9326431f9eeea40a190ca97184f75488347a42f32185dfcd4bc454b129ce36",
+        "kind": "run-result"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260806-01-deterministic-core/core-hardening-and-release-candidate/20260806-187-review-propose/result.json",
+      "versionFingerprint": "3e9326431f9eeea40a190ca97184f75488347a42f32185dfcd4bc454b129ce36",
+      "kind": "run-result"
+    }
+  }
+}

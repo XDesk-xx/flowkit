@@ -1,0 +1,25 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "已沿 182 建立的 F1 审查链完成 192 revise-apply Review。191 的 F1-RA-001 与 F1-RA-002 均已按 acceptance 关闭：TypeScript import-equals filesystem bypass 在真实 NodeNext typecheck 下会被 Quality Guard non-zero 拒绝；final full step 的可控 non-zero regression 会输出 failed status/duration 并保留 exit code。192 transport/hash、191 Reviewer-owned bytes、verify:change -- verification、OpenSpec strict、typecheck/lint/build、test:full 三批 3/3 + 2/2 + 606/606（总计 611/611）均通过；`verify:step full` 也能完成并输出 `step: full status=passed duration=...`。但 public `npm run verify:full` / direct `verification.ts verify:full` 在 exact candidate 上多次无法完成：前五步均通过后进入 final full suite，随后在 process-heavy/full batch 中长期停滞，120s/180s/240s reviewer executions 均未产生 terminal result；与独立 `test:full` 和 `verify:step full` 可完成形成可重复差异。因此当前 F1 required public full verification command 仍存在 1 个 author-actionable reliability blocker，不能进入 Archive authorization boundary。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/core-hardening-and-release-candidate/verification.md",
+      "versionFingerprint": "0e10b5474648eedebc3b59ccb2d609c7b39188c0b8b900dea434624d6ceebf64",
+      "kind": "verification-summary"
+    },
+    "nextActionRecommendation": "revise-apply"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindings": [
+    {
+      "id": "F1-RA-003",
+      "severity": "blocking",
+      "title": "public verify:full 在完整聚合路径中无法可靠完成 final full step",
+      "problem": "问题：192 为关闭 F1-RA-002 将 public `verify:full` 收敛为单一 `verification.ts verify:full` runner，并把 `full` step 从独立 `npm run test:full` 子进程改为在同一长期 verification runner 内直接调用 `runNodeTests(resolveAllTests(...))`。在 exact 192 candidate + 当前 Linux Node 22 detached environment 中，独立 `npm run test:full` 可稳定完成 611/611，`verification.ts verify:step full` 也可完成并输出 terminal passed/duration；但完整 `npm run verify:full` 以及直接 `verification.ts verify:full` 在 quality/typecheck/lint/build/OpenSpec 全部通过后进入 final full 时，多次长期停滞，分别在 full batch 2 或 batch 3 无后续 terminal result。Reviewer 以 120s、180s、240s 上限重复执行均未完成。Invariant：188 approved contract 将 `npm run verify:full` 定义为 F1/Delivery 共用的完整 Core verification public entrypoint；它必须按固定顺序 fail-fast 并最终返回明确 exit code/status/duration，不能只有拆开的 constituent commands 能完成。Evidence：exact 192 materialization 上 `npm run test:full` 三批 3/3、2/2、606/606 总计 611/611 passed；`verify:step full` exit 0 且输出 `step: full status=passed duration=32.073s`；相同 candidate 的完整 `verify:full` 多次在 `step: full status=running` 后停止推进并被 reviewer execution limit 终止。Impact：F1 最终要交付的 Full Test Plan public command 在实际聚合场景下不具备可重复完成性，后续 Owner-authorized Delivery Full Test 若复用该入口可能无法获得 terminal verification result。Blocking authority：author-actionable。",
+      "location": "package.json scripts.verify:full; scripts/verification.ts executeProjectStep('full')/runVerificationPlan()/runNodeTests(); tests/integration/verification-commands.test.ts; F1 Design §9 / delta Spec `verify:full 必须固定 Full Test Plan...`",
+      "requiredChange": "使 public `npm run verify:full` 在完整前置步骤 + final full suite 的真实组合路径中可重复完成，并继续满足 fixed order、fail-fast、final success/failure status+duration、611-test full-set equivalence 与不创造 Owner/FullTestStatus authority。Reviewer 不限定必须让 final full 重新运行于独立子进程，或采用其他资源/生命周期隔离方式。Acceptance：在与当前 detached verification 等价的环境中，完整 public `npm run verify:full` 能在合理时间内返回 terminal exit code；成功路径包含 `step: full status=passed duration=...`，可控失败路径包含 `step: full status=failed duration=...`；独立 `test:full`/full set contract 保持不变。"
+    }
+  ]
+}

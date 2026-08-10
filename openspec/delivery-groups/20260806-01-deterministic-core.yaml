@@ -185,7 +185,7 @@ changes:
     required: true
     dependsOn:
       - diagnostic-cli
-    state: planned
+    state: completed
     outputs:
       - 单元测试 / fixture 集成测试 / CLI 契约测试 / 恢复测试
       - 固定 Full Test Plan

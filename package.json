@@ -11,7 +11,13 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
-    "test": "node --import tsx --test \"tests/unit/**/*.test.ts\" \"tests/integration/**/*.test.ts\"",
+    "test": "npm run test:full",
+    "test:focused": "node --import tsx scripts/verification.ts test:focused",
+    "test:affected": "node --import tsx scripts/verification.ts test:affected",
+    "test:full": "node --import tsx scripts/verification.ts test:full",
+    "quality": "node --import tsx scripts/quality.ts",
+    "verify:change": "node --import tsx scripts/verification.ts verify:change",
+    "verify:full": "node --import tsx scripts/verification.ts verify:full",
     "lint": "eslint ."
   },
   "devDependencies": {

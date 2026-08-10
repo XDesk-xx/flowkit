@@ -1,0 +1,8 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "archive",
+    "executionStatus": "completed",
+    "summary": "OpenSpec archive 已成功完成 F1 core-hardening-and-release-candidate 的归档、artifact relocation 与 canonical spec sync（新增 11 个 Requirements）；Change 已归档为 openspec/changes/archive/2026-08-10-core-hardening-and-release-candidate。对 OpenSpec 生成的 canonical F1 spec 仅执行 EOF whitespace normalization，随后 10/10 OpenSpec items strict、text hygiene、typecheck、lint、build 均通过。Flowkit 最后仅更新 Delivery Manifest：F1 state active → completed。未执行 Change Checkpoint、Delivery Full Test、Commit、Push 或 Delivery Finalize。"
+  }
+}

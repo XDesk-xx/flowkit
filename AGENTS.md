@@ -38,6 +38,11 @@
    - 排除自引用、循环依赖、不可执行约束和与现有实现冲突的假设。
 4. 修改后只对受影响概念做一致性检查。
 
+## 跨平台与文本卫生
+
+- CLI / process 集成测试必须覆盖真实的平台 launcher 语义。Windows 下的 `.cmd` / `.bat` 不能默认按 POSIX 普通 executable 处理；调用 npm-installed CLI 或脚本时必须使用 Windows 可执行的 launcher 路径/command processor，并保留对应回归测试。
+- Change Checkpoint 前必须执行 whitespace preflight：工作区检查使用 `git diff --check`；进入 checkpoint 暂存后必须再执行 `git diff --cached --check`。新增或生成的文本 artifact 不得包含 trailing whitespace 或 EOF 多余空白行；纯格式 defect 只做最小 normalization，不得借机修改 artifact 语义。
+
 ## 原则
 
 能由 Core、类型、Policy、Git 或验证工具确定的事实，

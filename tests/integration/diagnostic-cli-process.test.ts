@@ -5,6 +5,8 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 
+import { resolvePlatformCommand } from '../../scripts/platform-command.js';
+
 import { createTempDir } from '../fixtures/helpers.js';
 
 const thisDir = dirname(fileURLToPath(import.meta.url));
@@ -12,6 +14,7 @@ const projectRoot = resolve(thisDir, '../..');
 const binPath = resolve(projectRoot, 'src/bin/flowkit.ts');
 const tsxCliPath = resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs');
 const npmExecutable = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+const tscPath = resolve(projectRoot, 'node_modules/typescript/bin/tsc');
 let roots: string[] = [];
 
 afterEach(async () => {
@@ -62,13 +65,13 @@ async function runProcess(
   executable: string,
   args: readonly string[],
   cwd: string,
+  env: NodeJS.ProcessEnv = process.env,
 ): Promise<{ code: number; stdout: string; stderr: string }> {
   return new Promise((resolveResult, reject) => {
-    const shell = process.platform === 'win32' && executable.toLowerCase().endsWith('.cmd');
-    const child = spawn(executable, args, {
+    const command = resolvePlatformCommand(executable, args);
+    const child = spawn(command.executable, command.args, {
       cwd,
-      env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' },
-      shell,
+      env: { ...env, FORCE_COLOR: '0', NO_COLOR: '1' },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     let stdout = '';
@@ -86,19 +89,37 @@ async function run(root: string, command: string): Promise<{ code: number; stdou
   return runProcess(process.execPath, [tsxCliPath, binPath, command], root);
 }
 
+async function runNpm(
+  args: readonly string[],
+  cwd: string,
+  env: NodeJS.ProcessEnv,
+): Promise<{ code: number; stdout: string; stderr: string }> {
+  const npmExecPath = process.env.FLOWKIT_NPM_EXEC_PATH ?? process.env.npm_execpath;
+  if (npmExecPath) {
+    return runProcess(process.execPath, [npmExecPath, ...args], cwd, env);
+  }
+  return runProcess(npmExecutable, args, cwd, env);
+}
+
 async function installPackedFlowkitBin(): Promise<string> {
   const packageRoot = await createTempDir();
   const installRoot = await createTempDir();
-  roots.push(packageRoot, installRoot);
+  const npmCacheRoot = await createTempDir();
+  roots.push(packageRoot, installRoot, npmCacheRoot);
+  const npmEnv: NodeJS.ProcessEnv = {
+    ...process.env,
+    NPM_CONFIG_CACHE: npmCacheRoot,
+    NPM_CONFIG_UPDATE_NOTIFIER: 'false',
+  };
   await writeFile(join(installRoot, 'package.json'), '{\n  "private": true\n}\n');
 
-  const build = await runProcess(npmExecutable, ['run', 'build'], projectRoot);
+  const build = await runProcess(process.execPath, [tscPath], projectRoot);
   assert.equal(build.code, 0, build.stderr);
 
-  const packed = await runProcess(
-    npmExecutable,
+  const packed = await runNpm(
     ['pack', '--json', '--ignore-scripts', '--pack-destination', packageRoot],
     projectRoot,
+    npmEnv,
   );
   assert.equal(packed.code, 0, packed.stderr);
   const packResult = JSON.parse(packed.stdout) as Array<{ filename?: unknown }>;
@@ -106,10 +127,10 @@ async function installPackedFlowkitBin(): Promise<string> {
   assert.equal(typeof packResult[0]?.filename, 'string');
   const tarball = join(packageRoot, packResult[0]!.filename as string);
 
-  const installed = await runProcess(
-    npmExecutable,
-    ['install', '--ignore-scripts', '--no-audit', '--no-fund', '--no-package-lock', '--no-save', tarball],
+  const installed = await runNpm(
+    ['install', '--offline', '--ignore-scripts', '--no-audit', '--no-fund', '--no-package-lock', '--no-save', tarball],
     installRoot,
+    npmEnv,
   );
   assert.equal(installed.code, 0, installed.stderr);
 

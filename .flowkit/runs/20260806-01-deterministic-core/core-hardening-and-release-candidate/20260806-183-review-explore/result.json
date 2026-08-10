@@ -1,0 +1,28 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-explore",
+    "executionStatus": "completed",
+    "summary": "已以 182 为 F1 审查链根完成独立 Explore Review。182 的 baseline 调查总体可信：canonical Base OpenSpec strict 9/9、41 个生产 TypeScript 文件、现有大型 legacy debt、无 src/tests 手写 .mjs、domain/policy 无直接 fs import、现有 scripts 缺 focused/affected/full/quality/verify:change 等事实与 snapshot 基本一致；182 package SHA、producedResultRef、typecheck/lint 与 materialized Reader/Policy 入口也正常。但 Explore 仍有两个会在 Proposal 阶段制造 authority/lifecycle 错误的 blocker：其一把 reference-only Quality/performance scope 是否升级为正式 F1 scope 的决定交给 Proposal，而 Delivery scope/Manifest expansion 属于 Owner authority；其二 §13 建议在 owner-authorized Delivery Full Test 通过后才形成内部 Core RC，与“所有 required Changes completed + checkpointed 后才能进入 Delivery Full Test”形成 F1 自阻塞环。两个 blocker 均为 author-actionable 的 Explore contract 修订，不需要 Reviewer替 Owner作具体 scope/RC实现决定。",
+    "nextActionRecommendation": "revise-explore"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindings": [
+    {
+      "id": "F1-RE-001",
+      "severity": "blocking",
+      "title": "F1 scope reconciliation 把 Delivery scope expansion 错交给 Proposal/Author决定",
+      "problem": "问题/证据：182 §2.1 正确识别 canonical Manifest 的 F1 goal/outputs 比实现参考更窄，但随后要求 Proposal 决定哪些 quality/performance 项进入 F1 并在需要时同步更新 Manifest goal/outputs。实现参考自己明确不是 authority，而 v7 authority model 冻结 Delivery scope / frozen decision 属于 Owner。当前 Owner 只授权进入 F1 Explore 和同步两条 AGENTS 工程规则，并未授权 Author 扩大 F1 Delivery scope。Invariant：OpenSpec Proposal 可以细化当前已授权 Change contract，但不得通过自行修改 Delivery Manifest/goal/outputs 创造新的 Owner scope decision。影响：若按当前 Explore 直接进入 Proposal，Author 可以仅凭参考文档把 Quality Guard、performance budget 等从设计输入升级为 Delivery formal scope，造成 Proposal/Manifest 反向创造 Owner authority。Blocking authority：author-actionable（当前只需修正 Explore 的 authority classification；若后续确需扩大 Delivery scope，届时 blocker authority 才是 Owner）。",
+      "location": "openspec/changes/core-hardening-and-release-candidate/explore.md §2.1 / §11 F1-E1 / §14",
+      "requiredChange": "修订 Explore 的 Proposal boundary：允许 Proposal说明哪些内容只是现有 F1 goal 的必要细化、哪些属于候选扩展；一旦某项需要实质改变 Manifest goal/outputs 或 Delivery scope，必须明确标记为 owner-decision-required，并在获得 Owner 独立决定前不得把它冻结成正式 scope。不得由 Reviewer指定 Owner 最终应选哪些项目。Acceptance：Explore 不再授权 Proposal/Author自行扩张 Manifest；能从文字中明确判断“现有 scope 的解释/细化可继续 Proposal，实质 scope expansion 必须先停在 Owner boundary”。"
+    },
+    {
+      "id": "F1-RE-002",
+      "severity": "blocking",
+      "title": "Core RC 建议顺序与 Delivery Full Test 前置条件形成生命周期自阻塞",
+      "problem": "问题/证据：182 §13 将建议主线写成“在 Owner-authorized Delivery Full Test 通过后形成内部 Core RC”；但 canonical Manifest 把 `core release candidate` 列为 F1 required output，而 Delivery Full Test 的冻结前置条件是所有 required Changes（包括 F1）completed + archived + checkpointed。于是若 F1 必须等 Delivery Full Test 通过后才能形成 RC，F1 无法完成/checkpoint；而 Full Test 又因 F1 未完成/checkpoint 无法被授权执行。Invariant：一个 required Change 的完成条件不得依赖只有在该 Change completed/checkpointed 之后才合法发生的 Delivery-level Action。影响：若 Proposal沿用 §13 顺序，会复制 E1 之前暴露的 lifecycle closure defect：F1 等 Full Test，Full Test 等 F1，导致当前 Delivery 无法合法收口。Blocking authority：author-actionable（在不改变现有 Delivery Full Test lifecycle 的前提下可通过 Explore contract 修订关闭；若要改 Full Test lifecycle，则需 Owner decision）。",
+      "location": "openspec/changes/core-hardening-and-release-candidate/explore.md §10 / §13 item 7; openspec/delivery-groups/20260806-01-deterministic-core.yaml F1 outputs + acceptance/fullTest prerequisites",
+      "requiredChange": "修订 Explore，撤销或改写会形成循环依赖的“Full Test 通过后才形成 RC”建议，并把“RC 形成/声明、F1 Change completion、Delivery Full Test、Delivery final acceptance”的先后关系列为 Proposal 必须证明无环的 contract 问题。具体 RC artifact/version/publish 方案由 Author在既有 authority内设计；若要改变冻结的 Delivery Full Test lifecycle，则必须另行进入 Owner decision boundary。Acceptance：Explore 的推荐主线和 Proposal questions 不再要求 F1 在 Delivery Full Test 之后才完成其 required RC output；可以给出满足现有 Full Test 前置条件且无循环的 lifecycle ordering。"
+    }
+  ]
+}
