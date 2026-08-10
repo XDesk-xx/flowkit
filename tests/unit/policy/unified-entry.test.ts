@@ -187,7 +187,7 @@ describe('resolveReview — blocked cases (task 9.3, 10.17)', () => {
 // D1-10 table-driven: match + changes-requested blocks review (task 9.5, 10.20)
 // ---------------------------------------------------------------------------
 
-describe('resolveReview — D1-10 match+changes-requested blocks review (task 10.20)', () => {
+describe('resolveReview — authority-aware matching changes-requested (task 10.20)', () => {
   for (const stage of ['explore', 'propose', 'apply'] as const) {
     it(`canRun(review-${stage}) allowed:false and unified review blocked on match+cr`, () => {
       const { runs, verdicts } = matchChangesRequested(stage);
@@ -196,8 +196,8 @@ describe('resolveReview — D1-10 match+changes-requested blocks review (task 10
       const cr = canRun(snap, `review-${stage}` as ChangeAction);
       assert.equal(cr.allowed, false);
       assert.ok(
-        cr.unmetPreconditions.includes('matching-changes-requested-requires-revision'),
-        `review-${stage} must carry matching-changes-requested-requires-revision`,
+        cr.unmetPreconditions.includes('matching-author-only-changes-requested-requires-revision'),
+        `review-${stage} must carry matching-author-only-changes-requested-requires-revision`,
       );
       // Unified review entry MUST be blocked.
       const r = resolveReview(snap);
@@ -233,7 +233,7 @@ describe('resolveReview — D1-10 revise-S restores review-S (task 10.20)', () =
     const cr = canRun(snap, 'review-apply');
     assert.equal(cr.allowed, false);
     assert.ok(cr.unmetPreconditions.includes('verification-facts-unavailable'));
-    assert.ok(!cr.unmetPreconditions.includes('matching-changes-requested-requires-revision'));
+    assert.ok(!cr.unmetPreconditions.includes('matching-author-only-changes-requested-requires-revision'));
     const r = resolveReview(snap);
     assert.equal(r.kind, 'blocked');
   });

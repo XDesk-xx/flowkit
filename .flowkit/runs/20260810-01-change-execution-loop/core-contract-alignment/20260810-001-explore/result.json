@@ -1,0 +1,16 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "explore",
+    "executionStatus": "completed",
+    "summary": "已完成 Q1 Core Contract Alignment Explore：确认 canonical Core 仍存在两条真实代码级 drift。其一，Policy/AGENTS/docs/specs 仍把 matching changes-requested 机械映射为 revise-*；现有 typed reviewFindings 只有 requiredChange 且 ReviewVerdictFact 不投影 Findings，Policy 无法消费 author/owner/verification/external blockingAuthority，因此 direct re-review 被禁止且 no-op revise 无法机器阻止。其二，Domain/Policy/Persistence/Reader 仍把 full-test 与 delivery-finalize 建模为 FormalAction/Delivery-level Run，与 v8 Change-only Standard Run 冲突。Q1 应只补最小 authority contract、修 Policy 边界并移除新 Delivery Standard Run 要求；完整 Finding convergence 留 D1，Delivery behavior machine model 留 03 A1；历史旧 Delivery Runs 只允许 bounded legacy compatibility，不删除/改写。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/core-contract-alignment/explore.md",
+        "versionFingerprint": "c2adbad83271d94770ba983344d363dbf92438605392d54b85496221e9925c36",
+        "kind": "produced-artifact"
+      }
+    ],
+    "nextActionRecommendation": "review-explore"
+  }
+}

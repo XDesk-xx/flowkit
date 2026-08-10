@@ -75,15 +75,26 @@ describe('validateRun', () => {
     assert.equal(run.status, 'pending');
   });
 
-  it('accepts a Delivery-level Run without changeId', () => {
-    const run = validateRun({
-      runId: '20260806-002-full-test',
-      deliveryId: '20260806-01-deterministic-core',
-      action: 'full-test',
-      role: 'owner',
-      status: 'pending',
-    });
-    assert.equal(run.changeId, undefined);
+  it('rejects retired Delivery behavior as a current Run action', () => {
+    assert.throws(
+      () => validateRun({
+        runId: '20260806-002-full-test',
+        deliveryId: '20260806-01-deterministic-core',
+        changeId: 'not-a-delivery-run',
+        action: 'full-test',
+        role: 'owner',
+        status: 'pending',
+      }),
+      (err: unknown) => err instanceof FlowkitError && err.code === 'UNKNOWN_ACTION',
+    );
+  });
+
+  it('requires changeId on every current Run', () => {
+    const withoutChange = Object.fromEntries(Object.entries(validRun).filter(([key]) => key !== 'changeId'));
+    assert.throws(
+      () => validateRun(withoutChange),
+      (err: unknown) => err instanceof FlowkitError && err.code === 'SCHEMA_VALIDATION_FAILED',
+    );
   });
 
   it('accepts a Run with inputRef as ResultRef (B1-RA-003)', () => {

@@ -19,14 +19,13 @@
  *     gate (executionStatus single-source-of-truth).
  */
 
+import { createHash } from 'node:crypto';
 import {
   isFormalAction,
   isChangeAction,
-  isDeliveryAction,
   CHANGE_ACTIONS,
-  DELIVERY_ACTIONS,
 } from '../domain/actions.js';
-import type { ChangeAction, DeliveryAction } from '../domain/actions.js';
+import type { ChangeAction } from '../domain/actions.js';
 import { isExecutionStatus } from '../domain/schema-validator.js';
 import { FlowkitError } from '../shared/errors.js';
 import { normalizeSeparators } from '../shared/paths.js';
@@ -43,7 +42,9 @@ import type {
   ResultRef,
   ReviewVerdictValue,
   Role,
+  BlockingAuthority,
 } from '../domain/types.js';
+import { BLOCKING_AUTHORITIES } from '../domain/types.js';
 
 // ---------------------------------------------------------------------------
 // TerminalRunStatus + ActionResultWithoutRunRef
@@ -72,9 +73,8 @@ export type ActionResultWithoutRunRef = Omit<ActionResult, 'runRef'>;
  * free-text findings arrays (`blockingFindings`, `nonBlockingFindings`) are
  * rejected by the closed schema.
  *
- * Q1 design Q1-2: each finding has a minimal structure. `severity=blocking`
- * findings MUST have a non-empty `requiredChange` when the verdict is
- * `changes-requested`.
+ * Q1: blocking findings declare exactly one `blockingAuthority`. Author-owned
+ * blockers also declare `requiredChange`; non-author blockers MUST NOT.
  */
 export interface ReviewFinding {
   /** Non-empty stable finding ID (e.g. "Q1-RP-001"). */
@@ -87,7 +87,9 @@ export interface ReviewFinding {
   readonly problem: string;
   /** Optional location reference (file path, line range, or section). */
   readonly location?: string;
-  /** Required for `blocking` severity: what the author must change. */
+  /** Required for blocking severity; absent for non-blocking findings. */
+  readonly blockingAuthority?: BlockingAuthority;
+  /** Required only when blockingAuthority=author. */
   readonly requiredChange?: string;
 }
 
@@ -168,11 +170,10 @@ export interface ContextFile {
   readonly schemaVersion: 2;
   readonly runId: string;
   readonly deliveryId: string;
-  /** C1-specific; required for Change-level Runs, MUST be absent for Delivery-level. */
-  readonly changeKey?: string;
-  /** Maps to B1 `Run.changeId`; required for Change-level Runs, MUST be absent for Delivery-level. */
-  readonly changeId?: string;
-  readonly action: ChangeAction | DeliveryAction;
+  /** Every current schemaVersion 2 Run is Change-scoped. */
+  readonly changeKey: string;
+  readonly changeId: string;
+  readonly action: ChangeAction;
   readonly role: Role;
   readonly ownerAuthorization: string;
   /** Optional ResultRef projecting directly to `Run.inputRef`. */
@@ -402,7 +403,7 @@ export function validateActionResultWithoutRunRef(
   const nextActionRecommendation = validateOptionalString(obj, 'nextActionRecommendation');
 
   const result: ActionResultWithoutRunRef = {
-    action: action as ChangeAction | DeliveryAction,
+    action: action as ChangeAction,
     executionStatus,
     summary,
     ...(producedResultRefs !== undefined && { producedResultRefs }),
@@ -786,6 +787,96 @@ export function admitC1RunResult(raw: string, action: string): RunResultFile {
   return result;
 }
 
+export interface ReaderRunResultProvenance {
+  readonly runId: string;
+  readonly deliveryId: string;
+  readonly changeId: string;
+}
+
+interface PreQ1ReviewResultCompatibility extends ReaderRunResultProvenance {
+  readonly action: 'review-explore' | 'review-propose';
+  readonly sha256: string;
+}
+
+/** Exact immutable Q1 bootstrap Reviews that predate blockingAuthority. */
+const PRE_Q1_REVIEW_RESULT_COMPATIBILITY: readonly PreQ1ReviewResultCompatibility[] = [
+  {
+    runId: '20260810-002-review-explore',
+    deliveryId: '20260810-01-change-execution-loop',
+    changeId: 'core-contract-alignment',
+    action: 'review-explore',
+    sha256: '09a0da2b699269f8915f88632d6a21cfa494988dd7e4beed4a969b761e8b1a05',
+  },
+  {
+    runId: '20260810-006-review-propose',
+    deliveryId: '20260810-01-change-execution-loop',
+    changeId: 'core-contract-alignment',
+    action: 'review-propose',
+    sha256: 'ecb18b20011d56e99a293c4aa804345bf32fff9dd11fa921467360e6f4835972',
+  },
+  {
+    runId: '20260810-008-review-propose',
+    deliveryId: '20260810-01-change-execution-loop',
+    changeId: 'core-contract-alignment',
+    action: 'review-propose',
+    sha256: '95e71ff2dab4b5abc2fa594323c363cfd4d8cd3ba9f227e6b1267bf0273a0795',
+  },
+] as const;
+
+function rawSha256(raw: string): string {
+  return createHash('sha256').update(raw, 'utf8').digest('hex');
+}
+
+/**
+ * Reader-only compatibility for immutable pre-Q1 typed Review findings.
+ *
+ * Strict admission always runs first. Compatibility is possible only when the
+ * caller supplies persisted Run provenance AND the exact raw-byte SHA-256
+ * matches one of the known immutable Q1 bootstrap Review results. Shape alone
+ * is never sufficient. New/current schemaVersion 2 Reviews therefore remain
+ * strict and fail closed when blockingAuthority is missing. No bytes are
+ * rewritten.
+ */
+export function admitC1RunResultForReader(
+  raw: string,
+  action: string,
+  provenance?: ReaderRunResultProvenance,
+): RunResultFile {
+  try {
+    return admitC1RunResult(raw, action);
+  } catch (strictError) {
+    if (provenance === undefined) throw strictError;
+    const fingerprint = rawSha256(raw);
+    const compatible = PRE_Q1_REVIEW_RESULT_COMPATIBILITY.some((entry) =>
+      entry.sha256 === fingerprint &&
+      entry.action === action &&
+      entry.runId === provenance.runId &&
+      entry.deliveryId === provenance.deliveryId &&
+      entry.changeId === provenance.changeId
+    );
+    if (!compatible) throw strictError;
+
+    let parsed: unknown;
+    try { parsed = JSON.parse(raw); } catch { throw strictError; }
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) throw strictError;
+    const obj = parsed as Record<string, unknown>;
+    if (obj['runStatus'] !== 'completed' || obj['reviewVerdict'] !== 'changes-requested' || !Array.isArray(obj['reviewFindings'])) throw strictError;
+
+    let normalized = false;
+    const reviewFindings = obj['reviewFindings'].map((value) => {
+      if (typeof value !== 'object' || value === null || Array.isArray(value)) return value;
+      const finding = value as Record<string, unknown>;
+      if (finding['severity'] === 'blocking' && finding['blockingAuthority'] === undefined && typeof finding['requiredChange'] === 'string' && finding['requiredChange'].trim() !== '') {
+        normalized = true;
+        return { ...finding, blockingAuthority: 'author' };
+      }
+      return finding;
+    });
+    if (!normalized) throw strictError;
+    return admitC1RunResult(JSON.stringify({ ...obj, reviewFindings }), action);
+  }
+}
+
 /**
  * Validate a single ReviewFinding entry (Q1 typed payload).
  *
@@ -801,7 +892,7 @@ function validateReviewFinding(value: unknown, index: number): void {
   const obj = asObject(value, `reviewFindings[${index}]`);
 
   // Closed schema for ReviewFinding.
-  const knownFields = new Set(['id', 'severity', 'title', 'problem', 'location', 'requiredChange']);
+  const knownFields = new Set(['id', 'severity', 'title', 'problem', 'location', 'blockingAuthority', 'requiredChange']);
   for (const key of Object.keys(obj)) {
     if (!knownFields.has(key)) {
       schemaFail(`reviewFindings[${index}] contains unknown field: ${key}`, {
@@ -837,14 +928,31 @@ function validateReviewFinding(value: unknown, index: number): void {
     }
   }
 
-  // Optional requiredChange — required for blocking severity.
+  const authorityRaw = obj['blockingAuthority'];
   const requiredChangeRaw = obj['requiredChange'];
-  if (requiredChangeRaw !== undefined) {
-    if (typeof requiredChangeRaw !== 'string' || requiredChangeRaw.trim() === '') {
-      schemaFail(`reviewFindings[${index}].requiredChange must be a non-empty string`, {
-        requiredChange: requiredChangeRaw,
+  if (severityRaw === 'blocking') {
+    if (typeof authorityRaw !== 'string' || !(BLOCKING_AUTHORITIES as readonly string[]).includes(authorityRaw)) {
+      schemaFail(`reviewFindings[${index}].blockingAuthority must be author|owner|verification|external`, {
+        blockingAuthority: authorityRaw,
         index,
       });
+    }
+    if (authorityRaw === 'author') {
+      if (typeof requiredChangeRaw !== 'string' || requiredChangeRaw.trim() === '') {
+        schemaFail(`author blocking reviewFindings[${index}] must have non-empty requiredChange`, { index });
+      }
+    } else if (requiredChangeRaw !== undefined) {
+      schemaFail(`non-author blocking reviewFindings[${index}] MUST NOT carry requiredChange`, {
+        blockingAuthority: authorityRaw,
+        index,
+      });
+    }
+  } else {
+    if (authorityRaw !== undefined) {
+      schemaFail(`non-blocking reviewFindings[${index}] MUST NOT carry blockingAuthority`, { index });
+    }
+    if (requiredChangeRaw !== undefined) {
+      schemaFail(`non-blocking reviewFindings[${index}] MUST NOT carry requiredChange`, { index });
     }
   }
 }
@@ -949,19 +1057,6 @@ export function validateReviewVerdictIntegrity(
         { action, runStatus: result.runStatus, reviewVerdict: result.reviewVerdict },
       );
     }
-    // Each blocking finding MUST have non-empty requiredChange.
-    for (let i = 0; i < findings.length; i++) {
-      const f = findings[i];
-      if (f.severity === 'blocking') {
-        if (f.requiredChange === undefined || f.requiredChange.trim() === '') {
-          throw new FlowkitError(
-            'SCHEMA_VALIDATION_FAILED',
-            `blocking reviewFindings[${i}] MUST have non-empty requiredChange (action=${action})`,
-            { action, index: i, findingId: f.id },
-          );
-        }
-      }
-    }
   } else if (result.reviewVerdict === 'approved') {
     // approved MUST NOT have any blocking finding.
     if (blockingFindings.length > 0) {
@@ -985,8 +1080,7 @@ export function validateReviewVerdictIntegrity(
  *   - `schemaVersion === 2`
  *   - required fields: `runId`, `deliveryId`, `action`, `role`, `ownerAuthorization`, `runPath`
  *   - `action` in B1 Action Catalog; `role` ∈ {owner, author, reviewer}
- *   - Action-scope rules: `action ∈ DELIVERY_ACTIONS` ⇒ `changeKey`/`changeId`
- *     absent; `action ∈ CHANGE_ACTIONS` ⇒ `changeKey`/`changeId` present.
+ *   - current Action MUST be in the Change-only catalog and `changeKey`/`changeId` are required.
  *   - `inputRef` (optional): MUST be a ResultRef object (not string), validated
  *     via {@link validateResultRefProjection}.
  *   - `constraints` (optional): must be an object with valid field types.
@@ -1015,25 +1109,16 @@ export function validateContextFile(value: unknown): ContextFile {
   const ownerAuthorization = requireString(obj, 'ownerAuthorization');
   const runPath = requireNonEmptyString(obj, 'runPath');
 
-  // Action-scope rules (C1-PR-008).
-  const hasChangeKey = obj['changeKey'] !== undefined;
-  const hasChangeId = obj['changeId'] !== undefined;
-  if (isDeliveryAction(action)) {
-    if (hasChangeKey || hasChangeId) {
-      schemaFail('Delivery-level Run must not carry changeKey/changeId', {
-        action,
-        changeKey: obj['changeKey'],
-        changeId: obj['changeId'],
-      });
-    }
-  } else if (isChangeAction(action)) {
-    if (!hasChangeKey || !hasChangeId) {
-      schemaFail('Change-level Run must carry changeKey and changeId', {
-        action,
-        changeKey: obj['changeKey'],
-        changeId: obj['changeId'],
-      });
-    }
+  // Current schemaVersion 2 Standard Runs are Change-only.
+  if (!isChangeAction(action)) {
+    throw new FlowkitError('UNKNOWN_ACTION', `Unknown Change action: ${action}`, { action });
+  }
+  if (obj['changeKey'] === undefined || obj['changeId'] === undefined) {
+    schemaFail('Current Run must carry changeKey and changeId', {
+      action,
+      changeKey: obj['changeKey'],
+      changeId: obj['changeId'],
+    });
   }
 
   // Review-scope rules (C1-AP-004): review-* actions MUST carry reviewedRunId
@@ -1054,10 +1139,8 @@ export function validateContextFile(value: unknown): ContextFile {
     });
   }
 
-  const changeKey =
-    obj['changeKey'] === undefined ? undefined : requireString(obj, 'changeKey');
-  const changeId =
-    obj['changeId'] === undefined ? undefined : requireString(obj, 'changeId');
+  const changeKey = requireNonEmptyString(obj, 'changeKey');
+  const changeId = requireNonEmptyString(obj, 'changeId');
 
   // inputRef: optional ResultRef object (MUST NOT be string).
   const inputRefRaw = obj['inputRef'];
@@ -1109,7 +1192,7 @@ export function validateContextFile(value: unknown): ContextFile {
         kind: verificationInputRef.kind,
       });
     }
-    if (changeId !== undefined && normalizeSeparators(verificationInputRef.ref) !== resolveVerificationSummaryRef(changeId)) {
+    if (normalizeSeparators(verificationInputRef.ref) !== resolveVerificationSummaryRef(changeId)) {
       schemaFail('review-apply verificationInputRef.ref must equal the canonical verification.md path', {
         action,
         changeId,
@@ -1209,12 +1292,12 @@ export function validateContextFile(value: unknown): ContextFile {
     schemaVersion: 2,
     runId,
     deliveryId,
-    action: action as ChangeAction | DeliveryAction,
+    action: action as ChangeAction,
     role: role as Role,
     ownerAuthorization,
     runPath,
-    ...(changeKey !== undefined && { changeKey }),
-    ...(changeId !== undefined && { changeId }),
+    changeKey,
+    changeId,
     ...(inputRef !== undefined && { inputRef }),
     ...(verificationInputRef !== undefined && { verificationInputRef }),
     ...(sourceReviewRun !== undefined && { sourceReviewRun }),
@@ -1274,8 +1357,7 @@ function validateOptionalConstraints(
  * Checks:
  *   - `contextFile.runId` matches the Run directory basename.
  *   - `contextFile.deliveryId` appears as a path segment.
- *   - Change-level Run: `contextFile.changeId` appears as a path segment.
- *   - Delivery-level Run: skip changeId segment check.
+ *   - `contextFile.changeId` appears as a path segment.
  *   - `contextFile.runPath` is consistent with `expectedRunDir` (normalized).
  *
  * @throws {FlowkitError} `SCHEMA_VALIDATION_FAILED` on any identity mismatch.
@@ -1302,15 +1384,11 @@ export function validateContextFileIdentity(
     });
   }
 
-  // Change-level Run: changeId MUST appear as a path segment.
-  // Delivery-level Run: changeId absent ⇒ skip.
-  if (contextFile.changeId !== undefined) {
-    if (!segments.includes(contextFile.changeId)) {
-      schemaFail('ContextFile.changeId must match a Change-level path segment', {
-        changeId: contextFile.changeId,
-        segments,
-      });
-    }
+  if (!segments.includes(contextFile.changeId)) {
+    schemaFail('ContextFile.changeId must match a Change-level path segment', {
+      changeId: contextFile.changeId,
+      segments,
+    });
   }
 
   // runPath consistency: the normalized runPath must be a suffix of (or equal
@@ -1334,4 +1412,4 @@ export function validateContextFileIdentity(
 // Re-exports for downstream convenience
 // ---------------------------------------------------------------------------
 
-export { CHANGE_ACTIONS, DELIVERY_ACTIONS };
+export { CHANGE_ACTIONS };

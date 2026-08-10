@@ -1,0 +1,15 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "apply",
+    "executionStatus": "completed",
+    "summary": "根据 010 approved Proposal 与 Owner 明确 Apply 授权，实现 Q1 canonical contract alignment：Change-only FormalAction/Standard Run、blockingAuthority 与 author-only revise、non-author/mixed explicit same-stage re-review、Q1→03 Delivery behavior blocked bridge、diagnostic projection，以及对应 canonical docs/specs/tests。Change Verification 通过；未运行 Delivery Full Test。",
+    "consumedInputRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/core-contract-alignment/20260810-010-review-propose/result.json",
+        "versionFingerprint": "336e2cbcb0f016a4fb444f5827c217cf808a389ce0314a62e4012ed2dd8b7c22",
+        "kind": "run-result"
+      }
+    ]
+  }
+}

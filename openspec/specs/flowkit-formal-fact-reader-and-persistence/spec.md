@@ -5,20 +5,20 @@
 ## Requirements
 ### Requirement: FormalFactSnapshot 只读视图
 
-C1 MUST 定义 `FormalFactSnapshot` 作为 Policy 输入的只读事实视图。`FormalFactSnapshot` MUST 包含 `conflicts: FactConflict[]` 字段，使 fail-closed 冲突检测显式化。
+C1 MUST 提供只读 `FormalFactSnapshot`，用于 Policy 消费 active Delivery/Change、dependencies、OpenSpec artifacts、current Change Runs、Reviewer Verdict 与最小 blocking-authority projection、Change Verification、Tasks completion、Delivery `fullTestStatus`、owner authorization、Archive/Checkpoint/Git boundary 和 conflicts。Snapshot MUST NOT 把完整 Reviewer Finding corpus 复制为第二数据库；Policy 所需 blocking authority MUST 从当前 matching Reviewer result 派生。
 
-#### Scenario: FormalFactSnapshot 包含 conflicts 字段
+#### Scenario: Reviewer authority 只投影 Policy 所需最小集合
 
-- **WHEN** 构造 `FormalFactSnapshot`
-- **THEN** MUST 包含 `conflicts: FactConflict[]` 字段
-- **AND** `conflicts` 可能为空数组（无冲突）或包含 `FactConflict` 对象
+- **WHEN** Reader 读取 completed `review-*` result
+- **THEN** `ReviewVerdictFact` MUST 包含 `reviewRunId`、`verdict`、`reviewedRunId`
+- **AND** MUST 包含从 blocking `reviewFindings` 派生的去重 `blockingAuthorities`
+- **AND** 完整 Finding 正文仍 MUST 由 Reviewer result.json 拥有
 
-#### Scenario: FormalFactSnapshot 字段映射 Policy 输入
+#### Scenario: conflicts 保持 fail-closed
 
-- **WHEN** 读取 `FormalFactSnapshot` 字段
-- **THEN** 字段 MUST 直接映射 `docs/delivery-lifecycle.md` Section 5 的 Policy 输入清单
-- **AND** 包含 Delivery 状态、Change 状态、Run 结果、OpenSpec 目录结构事实
-
+- **WHEN** Reader 发现当前 Policy relevant formal fact 自相矛盾或不可解析
+- **THEN** MUST 收集 `FactConflict`
+- **AND** Policy MUST NOT 猜测 authority 或下一 Action
 ### Requirement: 正式事实 Reader 遵循 One fact, one authority
 
 Reader MUST 遵循 `One fact, one authority` 原则：每个当前 Policy 所需正式事实从唯一权威来源读取。Reader MUST NOT 做跨权威交叉推断，也 MUST NOT 把 Run 历史记录提升为 OpenSpec、Git、Verification 或 current repository bytes 的持续 authority。只有当前 Policy relevance 范围内的 authority fact 自相矛盾、required fact 缺失、当前 Run schema/identity 无效或当前 immutable lineage binding 错误时，冲突 MUST 收集为 `FactConflict[]`；Reader MUST NOT 自动择优。
@@ -362,163 +362,58 @@ C1 MUST 手写最小子集 YAML 解析器解析 Delivery Manifest。MUST NOT 引
 
 ### Requirement: context.json 物理 schema + 确定性投影 + 身份校验
 
-持久化层 MUST 定义 `ContextFile` 物理 schema 作为 `createRun` 创建的 Run 输入上下文和确定性 current-Run
-投影。schemaVersion 2 Run MUST 使用 Core-derived ResultRef；caller MUST NOT 直接提供带
-`versionFingerprint` 的 `inputRef`。`changeKey` / `changeId` 的存在性由 Action-scope 规则决定。
-非 review Run 的 `inputRef` MAY 缺失；review-* Run 的 `inputRef` MUST 存在并由 Core 从
-`reviewedRunId` 的实际 `result.json` 派生。
+持久化层 MUST 定义 `ContextFile` 物理 schema 作为 `createRun` 创建的 current Standard Run 输入上下文和确定性 current-Run 投影。schemaVersion 2 current Run MUST 只允许 Change Action，MUST 使用 Core-derived ResultRef，并 MUST 携带 `changeKey` / `changeId`。review-* Run 的 `inputRef` MUST 由 Core 从 `reviewedRunId` 实际 result.json 派生。
 
 #### Scenario: ContextFile 必填字段
 
-- **WHEN** 校验 `ContextFile`
+- **WHEN** 校验新建 schemaVersion 2 `ContextFile`
 - **THEN** `schemaVersion` MUST 等于 `2`
-- **AND** MUST 包含 `runId`、`deliveryId`、`action`、`role`、`ownerAuthorization`、`runPath`
-- **AND** `action` MUST 在固定 Action Catalog 中
-- **AND** `changeKey` / `changeId` 的存在性 MUST 符合 Action-scope 规则
+- **AND** MUST 包含 `runId`、`deliveryId`、`changeKey`、`changeId`、`action`、`role`、`ownerAuthorization`、`runPath`
+- **AND** `action` MUST 在 10 个 Change-only Standard Action Catalog 中
 
-#### Scenario: Action-scope 规则 changeKey/changeId 存在性
+#### Scenario: 新 current Run 不允许 Delivery-level shape
 
-- **WHEN** Action 为 Delivery-level
-- **THEN** `changeKey` / `changeId` MUST 缺失
-- **AND** Action 为 Change-level 时 `changeKey` / `changeId` MUST 存在
-- **AND** 混合形状 MUST reject（createRun）或收集为 `FactConflict`（Reader）
-
-#### Scenario: inputRef 为可选 ResultRef
-
-- **WHEN** 校验 `ContextFile.inputRef`
-- **THEN** `inputRef` MAY 缺失（explore 等无 source review 的 Run）
-- **AND** 存在时 MUST 为 `ResultRef` 对象（MUST NOT 为 string）
-- **AND** MUST 通过 C1 `validateResultRefProjection` 校验（`ref` + `versionFingerprint` 为非空 string）
-- **AND** Bootstrap Run 的 string 形 `inputRef` 不走 C1 校验（由 legacy adapter 处理）
-
-#### Scenario: 普通 Run inputRef 可缺失且只能由 Core 派生
-
-- **WHEN** 创建非 review-* Run
-- **THEN** caller MAY 提供 consumed Run ID 等 typed descriptor
-- **AND** caller MUST NOT 提供 `ResultRef.ref`、`ResultRef.kind` 或 `versionFingerprint`
-- **AND** 有 descriptor 时 Core MUST 读取实际目标并构造 `context.inputRef`
-- **AND** 无 consumed target 的 Action MAY 不写 `inputRef`
+- **WHEN** `createRun` 输入缺失 `changeKey` / `changeId`
+- **OR** action 为历史 `full-test` / `delivery-finalize`
+- **THEN** MUST reject
+- **AND** MUST NOT publish pending Run
 
 #### Scenario: review Run inputRef 必须绑定 reviewedRunId
 
-- **WHEN** 创建 `review-explore`、`review-propose` 或 `review-apply` Run
+- **WHEN** 创建 `review-explore`、`review-propose` 或 `review-apply`
 - **THEN** `reviewedRunId` MUST 存在
-- **AND** Core MUST 从 `reviewedRunId` 对应的实际 `result.json` 构造 `context.inputRef`
-- **AND** `context.inputRef.ref` MUST 精确指向该 `result.json`
-- **AND** `context.inputRef.versionFingerprint` MUST 等于该文件实际 SHA-256
-- **AND** 目标缺失或不可读时 `createRun` MUST 在正式 Run publish 前失败
+- **AND** Core MUST 从对应实际 `result.json` 构造 immutable `context.inputRef`
+- **AND** 目标缺失、不可读或 fingerprint 不匹配 MUST 在 Run publish 前 fail closed
 
-#### Scenario: createRun 拒绝 caller-supplied ResultRef authority
+#### Scenario: context 身份必须匹配 Change path
 
-- **WHEN** caller 尝试为 schemaVersion 2 Run 直接提供 `versionFingerprint`、任意 ref path 或 kind
-- **THEN** `createRun` MUST reject
-- **AND** MUST NOT 把 caller-supplied ResultRef 写入 context.json
-
-#### Scenario: createRun 写入前校验
-
-- **WHEN** `createRun` 写入 context.json
-- **THEN** MUST 先完成 target resolution / ResultRef derivation
-- **AND** MUST 通过 `validateContextFile` 与 `validateContextFileIdentity`
-- **AND** 校验通过后才写入 staging
-
-#### Scenario: 确定性 current-Run 投影
-
-- **WHEN** `writeRunResult` 构造当前 Run
-- **THEN** `runId`、`deliveryId`、`changeId`、`action`、`role` MUST 来自 `ContextFile`
-- **AND** 在 result.json 不存在时 status MUST 为 `pending`
-- **AND** `Run.inputRef` MUST 映射已由 Core 派生并持久化的 `ContextFile.inputRef`
-- **AND** 构造的 Run MUST 通过领域校验
-
-#### Scenario: 身份校验 runId 匹配目录名
-
-- **WHEN** 校验 `contextFile.runId`
-- **THEN** `runId` MUST 匹配 Run 目录名
-- **AND** 不匹配时 MUST reject 或收集为 `FactConflict`
-
-#### Scenario: 身份校验 deliveryId 匹配路径
-
-- **WHEN** 校验 `contextFile.deliveryId`
-- **THEN** `deliveryId` MUST 匹配 Delivery 路径段
-- **AND** 不匹配时 MUST reject 或收集为 `FactConflict`
-
-#### Scenario: 身份校验 changeId 匹配路径
-
-- **WHEN** Run 为 Change-level
-- **THEN** `contextFile.changeId` MUST 匹配 Change 路径段
-- **AND** 不匹配时 MUST reject 或收集为 `FactConflict`
-- **AND** Delivery-level Run MUST 跳过此校验
-
-#### Scenario: 身份校验 runPath 一致
-
-- **WHEN** 校验 `contextFile.runPath`
-- **THEN** `runPath` MUST 与实际 Run 目录一致
-- **AND** 不一致时 MUST reject 或收集为 `FactConflict`
-
+- **WHEN** 校验 schemaVersion 2 current Run
+- **THEN** `deliveryId`、`changeId`、`runId` 与 `runPath` MUST 和实际目录一致
+- **AND** 任一不一致 MUST reject 或收集 `FactConflict`
 ### Requirement: Bootstrap Run 兼容性 + 三路判别器
 
-Reader MUST 兼容 Bootstrap Run。判别器为三路：`schemaVersion === 2` → C1 Run 路径（`validateContextFile` + `validateContextFileIdentity`，任一失败 → `FactConflict` fail-closed，MUST NOT 降级为 Bootstrap）；`schemaVersion === 1` 或缺失 → legacy 路径（bounded legacy recognizer）；其他 `schemaVersion` 值 → `FactConflict`。MUST NOT 使用 `validateContextFile` 失败作为降级路径。`createRun` 和 `writeRunResult` MUST NOT 修改、迁移或重写 Bootstrap Run。
+Reader MUST 兼容既有 Bootstrap/legacy Run。schemaVersion 2 current Change Run MUST 走严格 current schema，验证失败 MUST fail closed，MUST NOT 泛化降级。schemaVersion 1 或缺失 MUST 走 bounded legacy recognizer；该 recognizer MAY 识别历史 `full-test` / `delivery-finalize` Delivery-level Run，但只用于历史读取/Run-ID 兼容，MUST NOT 将其提升为 current `FormalAction`、current Policy Run 或新 Run 创建能力。其他 schemaVersion MUST fail closed。
 
-#### Scenario: C1 Run 判别器 schemaVersion 等于 2
+#### Scenario: schemaVersion 2 current Change Run 严格校验
 
-- **WHEN** Reader 读取 `context.json` 的 `schemaVersion`
-- **AND** `schemaVersion === 2`
-- **THEN** MUST 进入 C1 Run 路径
-- **AND** MUST 执行 `validateContextFile`（C1 schema）+ `validateContextFileIdentity`
-- **AND** 两步通过 → 完整 C1 Run
+- **WHEN** Reader 读取 `schemaVersion=2` 的 current Change Run
+- **THEN** MUST 使用 Change-only `ContextFile` schema + identity validation
+- **AND** malformed current Run MUST 收集 `FactConflict`
+- **AND** MUST NOT 因失败退回 legacy best-effort
 
-#### Scenario: malformed C1 Run fail-closed
+#### Scenario: legacy recognizer 可识别历史 Delivery Action
 
-- **WHEN** `schemaVersion === 2` 但 `validateContextFile` 或 `validateContextFileIdentity` 失败
-- **THEN** MUST 收集为 `FactConflict`（fail-closed）
-- **AND** MUST NOT 降级为 Bootstrap Run best-effort 读取
-- **AND** MUST NOT throw 中断 Reader
+- **WHEN** Reader/NNN enumeration 遇到 `schemaVersion=1` 或缺失的历史 Run
+- **AND** action 为 `full-test` 或 `delivery-finalize`
+- **THEN** MAY 识别为 bounded legacy Delivery Run
+- **AND** MUST NOT 将该 action 加回 current Action Catalog
+- **AND** MUST NOT 允许 `createRun` / `writeRunResult` 新建或继续该模型
 
-#### Scenario: legacy 判别器 schemaVersion 等于 1 或缺失
+#### Scenario: legacy terminal bytes 不迁移
 
-- **WHEN** Reader 读取 `context.json` 的 `schemaVersion`
-- **AND** `schemaVersion === 1` 或 `schemaVersion` 缺失
-- **THEN** MUST 进入 legacy 路径
-- **AND** MUST 执行 bounded legacy recognizer（MUST NOT 调用 C1 `validateContextFile`）
-
-#### Scenario: legacy recognizer 形状校验
-
-- **WHEN** legacy recognizer 校验 `context.json`
-- **THEN** MUST 检查 B1 Run 最小必填字段：`runId`、`deliveryId`、`action`、`role`
-- **AND** `action` MUST 在 B1 `CHANGE_ACTIONS` 或 `DELIVERY_ACTIONS` 中
-- **AND** `role` MUST 为 `owner`/`author`/`reviewer`
-- **AND** `changeId` 可选（与 B1 `Run.changeId?` 一致），其他字段缺失用默认值
-- **AND** 满足最小形状 → Bootstrap Run（best-effort 读取）
-- **AND** 不满足最小形状 → `FactConflict`（fail-closed）
-
-#### Scenario: 未知 schemaVersion fail-closed
-
-- **WHEN** `schemaVersion` 为 2 以外的已知数值（如 0、3、负数）
-- **THEN** MUST 收集为 `FactConflict`（未知格式，fail-closed）
-- **AND** MUST NOT 识别为 C1 Run 或 Bootstrap Run
-
-#### Scenario: Bootstrap Run string 形 inputRef 不走 C1 投影
-
-- **WHEN** legacy recognizer 读取 Bootstrap Run 的 `inputRef`
-- **AND** `inputRef` 为 string 形（Bootstrap 习惯）
-- **THEN** legacy adapter MUST best-effort 读取为 `Run.inputRef = undefined`
-- **AND** MUST NOT 构造 `ResultRef`（string 无 `versionFingerprint`）
-- **AND** C1 `validateResultRefProjection` MUST NOT 对 legacy 记录调用
-
-#### Scenario: Bootstrap Run runStatus 归一化为 B1 TerminalRunStatus
-
-- **WHEN** Reader 读取 Bootstrap Run 的 `result.json`
-- **AND** `result.json` 不存在
-- **THEN** `runStatus` MUST 为 `pending`
-- **AND** `result.json` 存在时 MUST 从 `result.json.status` 读取并归一化为 B1 `TerminalRunStatus`（`completed`/`failed`/`cancelled`）
-- **AND** MUST NOT 降级为无差别的 `terminal`
-- **AND** `result.json.status` 缺失或值不在枚举内时 MUST fail closed 收集为 `FactConflict`
-
-#### Scenario: Bootstrap Run 不被修改
-
-- **WHEN** `createRun` 或 `writeRunResult` 遇到 Bootstrap Run
-- **THEN** MUST NOT 修改、迁移或重写 Bootstrap Run
-- **AND** 新 Run（由 C1 `createRun` 创建）MUST 使用 `schemaVersion: 2` + 完整 C1 schema 校验 + `validateContextFileIdentity` 身份校验
-
+- **WHEN** bounded legacy reader 识别历史 Delivery-level Run
+- **THEN** MUST NOT 修改、迁移或重写其 `context.json` / `result.json`
+- **AND** current Policy MUST 从 Delivery Manifest/Verification/Owner/Git facts 读取 Delivery lifecycle，而不是 replay 该 Run
 ### Requirement: Delivery Manifest 嵌套 delivery 状态读取 + fail-closed
 
 Reader MUST 从 Delivery Manifest 的嵌套 `delivery:` mapping 读取 `state` 和 `fullTestStatus`（实际 Manifest 形状见 `openspec/delivery-groups/*.yaml`）。MUST NOT 从顶层 `state`/`fullTestStatus` 读取。Manifest 存在但 `delivery:` mapping 缺失、或 `delivery.state`/`delivery.fullTestStatus` 缺失/无效时 MUST 收集为 `FactConflict`（fail-closed），MUST NOT 静默返回 `undefined`。Manifest 完全不存在时返回 `undefined`（bootstrap-only Delivery，由 Policy 决定是否阻塞）。
@@ -560,51 +455,37 @@ Reader MUST 从 Delivery Manifest 的嵌套 `delivery:` mapping 读取 `state` �
 
 ### Requirement: Review verdict 重建 + reviewed-Run 连接
 
-Reader MUST 从 review-* Run 重建 `ReviewVerdictFact`（`reviewRunId` + `verdict` + `reviewedRunId`）。C1 Run 使用 canonical payload：`ContextFile.reviewedRunId`（被审查的 Run ID）+ `RunResultFile.reviewVerdict`（verdict 值）。Bootstrap Run 从 `result.json.verdict`（顶层）+ `context.json` 的多种字段名（`reviewedRun` path、`input.reviewedRunId`、`sourceRevisionRun`、`sourceApplyRun` 等）重建。review-* Run 缺失 verdict 或 reviewed-Run 连接时 MUST 收集为 `FactConflict`（fail-closed），MUST NOT 返回空 `reviewedRunId`。
+Reader MUST 从 review-* Run 重建 `ReviewVerdictFact`（`reviewRunId` + `verdict` + `reviewedRunId` + `blockingAuthorities`）。对 current schemaVersion 2 completed Review，`blockingAuthorities` MUST 从 Reviewer-owned `reviewFindings` 中 severity=`blocking` 的 `blockingAuthority` 派生、按固定 authority catalog 去重排序。`approved` MUST 投影空集合；`changes-requested` MUST 至少投影一个 authority。review-* Run 缺失 verdict、reviewed-Run linkage 或无法形成合法 blocking authority 时 MUST fail closed。
 
-#### Scenario: C1 review-* Run canonical verdict 重建
+为保持 Q1 前 immutable terminal Review 可读，Reader MAY 对**已持久化且缺少 `blockingAuthority` 的旧 typed blocking finding**做有界 read compatibility：若旧 finding 含合法 `requiredChange`，MAY 仅在 Reader projection 中将其解释为 `author`；新 terminal publish MUST NOT 再省略 `blockingAuthority`。
 
-- **WHEN** Reader 读取 C1 review-* Run（`schemaVersion: 2`）
-- **AND** `context.json` 包含 `reviewedRunId`
-- **AND** `result.json` 包含 `reviewVerdict`（`approved` 或 `changes-requested`）
-- **THEN** MUST 重建 `ReviewVerdictFact`（`reviewRunId` + `verdict` + `reviewedRunId`）
-- **AND** MUST NOT 从 `sourceReviewRun` 读取 reviewedRunId（那是 revise-* 的前序 review）
+#### Scenario: current review 重建 blocking authorities
 
-#### Scenario: C1 review-* Run 缺失 reviewedRunId 校验拒绝
+- **WHEN** Reader 读取 completed schemaVersion 2 review-* Run
+- **AND** `reviewVerdict=changes-requested`
+- **AND** blocking findings 均有合法 `blockingAuthority`
+- **THEN** MUST 重建 matching `ReviewVerdictFact`
+- **AND** `blockingAuthorities` MUST 是当前 blocking findings authority 的 deterministic 去重集合
 
-- **WHEN** `validateContextFile` 校验 C1 review-* Run
-- **AND** `reviewedRunId` 缺失
-- **THEN** MUST reject（`createRun`）或 `FactConflict`（Reader，dimension=`context-schema`）
+#### Scenario: approved Review authority 集合为空
 
-#### Scenario: C1 非 review Run 携带 reviewedRunId 拒绝
+- **WHEN** `reviewVerdict=approved`
+- **THEN** `blockingAuthorities` MUST 为空
+- **AND** blocking finding 不得存在
 
-- **WHEN** `validateContextFile` 校验 C1 非 review Run
-- **AND** `reviewedRunId` 存在
-- **THEN** MUST reject 或 `FactConflict`
+#### Scenario: 旧 immutable finding 缺 authority 有界映射为 author
 
-#### Scenario: C1 review-* Run 缺失 reviewVerdict fail-closed
+- **WHEN** 已存在 terminal Review 的 blocking finding 缺失 `blockingAuthority`
+- **AND** 其旧 schema 具有合法非空 `requiredChange`
+- **THEN** Reader MAY 在 Policy projection 中映射为 `author`
+- **AND** MUST NOT 回写或迁移原 result.json
+- **AND** 新 terminal Review MUST NOT 使用该兼容形状
 
-- **WHEN** Reader 读取 C1 review-* Run
-- **AND** `result.json` 存在但 `reviewVerdict` 缺失或值无效
-- **THEN** MUST 收集 `FactConflict`（dimension=`review-verdict-linkage`）
-- **AND** MUST NOT 返回空 verdict
+#### Scenario: 无法确定 authority 必须 fail-closed
 
-#### Scenario: Bootstrap review-* Run 从 result.verdict + context 连接重建
-
-- **WHEN** Reader 读取 Bootstrap review-* Run（`schemaVersion: 1`）
-- **AND** `result.json` 包含顶层 `verdict`
-- **AND** `context.json` 包含 reviewed-Run 连接（`reviewedRun` path、`input.reviewedRunId`、`sourceRevisionRun`、`sourceApplyRun` 之一）
-- **THEN** MUST 从 `result.json.verdict` 读取 verdict 值
-- **AND** MUST 从 `context.json` 提取 reviewedRunId（path 形式取 basename）
-- **AND** MUST 重建 `ReviewVerdictFact`
-
-#### Scenario: Bootstrap review-* Run 缺失连接 fail-closed
-
-- **WHEN** Reader 读取 Bootstrap review-* Run
-- **AND** `result.json.verdict` 缺失或 `context.json` 无任何已知连接字段
-- **THEN** MUST 收集 `FactConflict`（dimension=`review-verdict-linkage`）
-- **AND** MUST NOT 返回空 `reviewedRunId` 的 `ReviewVerdictFact`
-
+- **WHEN** `changes-requested` Review 的 blocking finding 既无合法 `blockingAuthority` 又不满足旧 author-compatible 形状
+- **THEN** MUST 收集 `FactConflict`
+- **AND** MUST NOT 默认为 owner/verification/external 或任意推进
 ### Requirement: Review verdict 完整性在 terminal 发布前校验（C1-AP-006）
 
 `writeRunResult` MUST 在发布 result.json 前调用 `validateReviewVerdictIntegrity(action, result)` 校验 review verdict 完整性。MUST NOT 依赖 Reader 在事后检测缺失的 review verdict——result.json 一旦 terminal 发布即不可变，缺失 verdict 的 review-* Run 是不可恢复的 Policy 输入缺失。规则：`completed` + `review-*` → `reviewVerdict` MUST 存在且为有效 `ReviewVerdictValue`；`failed`/`cancelled` + `review-*` → `reviewVerdict` MUST 缺失；任何状态 + 非 `review-*` → `reviewVerdict` MUST 缺失。
@@ -660,36 +541,40 @@ C1 MUST 创建 `openspec/changes/formal-fact-reader-and-persistence/verification
 
 ### Requirement: RunResultFile 使用 Lean closed allowlist 与 typed reviewFindings
 
-schemaVersion 2 `RunResultFile` MUST 只持久化执行、交接与恢复所需的 closed allowlist。完整 Verification、
-Git、OpenSpec、archive evidence 或 consistency scan MUST NOT 被复制到 Run。completed review-* Run MAY
-携带 Reviewer-owned `reviewVerdict` 与 typed `reviewFindings`；非 review Run MUST NOT 携带二者。
-
-#### Scenario: 未知重型 bookkeeping 字段被拒绝
-
-- **WHEN** schemaVersion 2 result 输入包含 `blockingFindings`、`nonBlockingFindings`、`resolvedFindings`、`verification`、`archiveResults`、`manifestUpdate`、`policyRoute`、`commitPolicy`、`consistencyScan` 或其他未知字段
-- **THEN** validator MUST reject
-- **AND** MUST NOT 将其写入 result.json
+schemaVersion 2 `RunResultFile` MUST 只持久化执行、交接与恢复所需的 closed allowlist。completed review-* Run MAY 携带 Reviewer-owned `reviewVerdict` 与 typed `reviewFindings`；非 review Run MUST NOT 携带二者。新 terminal Review 的 blocking finding MUST 使用 `blockingAuthority: author | owner | verification | external`。`requiredChange` 仅用于 Author-actionable blocking finding；non-author blocker MUST NOT 伪造 Author requiredChange。
 
 #### Scenario: reviewFindings 最小结构
 
-- **WHEN** completed review-* Run 写入 `reviewFindings`
+- **WHEN** 新 completed review-* Run 写入 `reviewFindings`
 - **THEN** 每项 MUST 包含非空 `id`、`title`、`problem`
 - **AND** `severity` MUST 为 `blocking` 或 `non-blocking`
 - **AND** `location` MAY 为非空 string
-- **AND** blocking finding 的 `requiredChange` MUST 为非空 string
+- **AND** blocking finding MUST 包含 `blockingAuthority ∈ {author, owner, verification, external}`
+- **AND** non-blocking finding MUST NOT 参与 blocking authority projection
+
+#### Scenario: author blocker 必须提供 requiredChange
+
+- **WHEN** finding 为 `severity=blocking` 且 `blockingAuthority=author`
+- **THEN** `requiredChange` MUST 为非空 string
+
+#### Scenario: non-author blocker 不伪造 requiredChange
+
+- **WHEN** finding 为 `severity=blocking` 且 `blockingAuthority ∈ {owner, verification, external}`
+- **THEN** `requiredChange` MUST absent
+- **AND** Author MUST NOT 通过修改 candidate 来伪造该 authority fact
 
 #### Scenario: review verdict 与 findings 一致
 
-- **WHEN** `reviewVerdict = changes-requested`
-- **THEN** MUST 至少存在一个 blocking `reviewFindings`
-- **AND** `reviewVerdict = approved` 时 MUST 不存在 blocking finding
+- **WHEN** `reviewVerdict=changes-requested`
+- **THEN** MUST 至少存在一个 blocking finding
+- **AND** 新 terminal blocking finding MUST 具有合法 `blockingAuthority`
+- **AND** `reviewVerdict=approved` 时 MUST 不存在 blocking finding
 
 #### Scenario: 非 review Run 不复制 Reviewer payload
 
 - **WHEN** Run Action 不是 review-*
 - **THEN** `reviewVerdict` 与 `reviewFindings` MUST absent
-- **AND** 如需消费 reviewer 结果 MUST 通过 `reviewVerdictRef` 引用 review Run result.json
-
+- **AND** 如需消费 reviewer 结果 MUST 通过 review Run result reference / Reader projection
 ### Requirement: Core 拥有 ResultRef field-kind-path resolver
 
 Core MUST 使用唯一 resolver 将 typed target descriptor 映射为受控 path 和 kind。Caller MUST NOT 提供
@@ -881,7 +766,7 @@ review-* Run MUST 通过 Core-derived `context.inputRef` 精确绑定 `reviewedR
 
 ### Requirement: Reader 必须按当前 Policy relevance 选择 Run scope
 
-Reader MUST 在解析 Change-level Run 内容前先根据 Delivery Manifest 选择当前 Policy relevance。最多一个 `state=active` Change 的 Run 目录进入 Change-level projection；Delivery-level Run 目录按 Delivery 级 Policy 需求读取。
+Reader MUST 在解析 Run 内容前根据 Delivery Manifest 选择 current Policy relevance。最多一个 `state=active` Change 的 Change-level Run 目录进入 current Run/Review projection。历史 Delivery-level Run MUST NOT 进入 current Policy Run projection；Delivery Full Test / Finalize 事实继续来自 Delivery Manifest、Owner authorization、Verification 与 Git authority。历史 Delivery-level Run MAY 仅由 bounded legacy reader/Run-ID enumeration 使用。
 
 #### Scenario: active Change 只投影自身 Runs
 
@@ -889,27 +774,17 @@ Reader MUST 在解析 Change-level Run 内容前先根据 Delivery Manifest 选�
 - **THEN** Reader MUST 将 Q2 Run 目录作为 Change-level Policy input
 - **AND** MUST NOT replay Q1/E1 Change-level Run corpus 作为 Q2 lineage/conflict input
 
-#### Scenario: active Change malformed current Run 仍阻塞
+#### Scenario: historical Delivery Run 不决定 Delivery behavior
 
-- **WHEN** active Change 中存在 schemaVersion 2 Run
-- **AND** 其 context/result 违反适用 closed schema、identity 或 required immutable lineage
-- **THEN** Reader MUST 收集 `FactConflict`
-- **AND** Policy MUST 继续 fail-closed
+- **WHEN** current active Delivery 的 Run tree 含历史 `full-test` / `delivery-finalize` Run
+- **THEN** MUST NOT 把该 Run 加入 current `snapshot.runs`
+- **AND** MUST NOT 因该 Run 推导 Full Test / Finalize next behavior
 
-#### Scenario: 无 active Change 时历史 Runs 不替代 manifest/Git
+#### Scenario: 无 active Change 时 completion/checkpoint 来自 Manifest/Git
 
 - **WHEN** 当前不存在 active Change
-- **THEN** Change completion/dependency/checkpoint facts MUST 继续来自 Manifest/Git authority
-- **AND** MUST NOT replay completed Change 全部 Runs 来重新证明这些事实
-
-#### Scenario: Archive 后 Checkpoint pending 不重新投影 closed Change Runs
-
-- **WHEN** OpenSpec archive operation success 后 Flowkit 已记录 Change state=`completed`
-- **AND** 该 Change 尚无对应 `change-checkpoint` Git boundary
-- **THEN** Reader MUST 保持该 closed Change 的 Change-level Run corpus 不进入 current Policy projection
-- **AND** Checkpoint-pending MUST 由 Manifest completed state + Git boundary authority 表达
-- **AND** MUST NOT 为获得 Checkpoint 上下文重新提升 historical Run authority
-
+- **THEN** Change completion/dependency/checkpoint facts MUST 来自 Manifest/Git authority
+- **AND** MUST NOT replay completed Change 或 historical Delivery Run corpus 重新证明这些事实
 ### Requirement: Run pending 只表示 non-terminal execution status
 
 `pending` MUST 只表示 Run 已创建但 terminal `result.json` 尚未发布。Action 与 Change MUST NOT 获得 `pending` 主状态；Reader/persistence MUST NOT 从 pending 推导 artifact revision-window、generation ownership 或 external authority lifecycle。
@@ -972,23 +847,22 @@ Reader MUST 在解析 Change-level Run 内容前先根据 Delivery Manifest 选�
 
 ### Requirement: Revision Run 必须精确绑定 matching changes-requested source review
 
-`revise-explore`、`revise-propose`、`revise-apply` MUST 通过 `sourceReviewRun` + `sourceReviewVerdict=changes-requested` 绑定 matching stage 的 completed Reviewer result。该 lineage 只用于保证 Finding 被修到正确 reviewed Run，不得推广为所有非-review Action 的第二套 source-review state machine。
+`revise-explore`、`revise-propose`、`revise-apply` MUST 通过 `sourceReviewRun` + `sourceReviewVerdict=changes-requested` 绑定 matching stage 的 completed Reviewer result，并且该 Review 的 current blocking authority projection MUST 为 author-only。该 lineage 只用于保证 Author 修订的是正确 reviewed target；non-author blocker MUST NOT 创建 Revision Run。
 
-#### Scenario: matching source review 才允许 Revision
+#### Scenario: matching author-only source review 才允许 Revision
 
 - **WHEN** 创建或读取 `revise-<stage>` Run
-- **THEN** `sourceReviewRun` MUST 指向 matching `review-<stage>` completed Run
+- **THEN** `sourceReviewRun` MUST 指向 matching completed `review-<stage>`
 - **AND** source review verdict MUST 为 `changes-requested`
-- **AND** source review 的 `reviewedRunId` MUST 对应 Policy 当前 stage producer Run
-- **AND** mismatch MUST fail closed
+- **AND** source review 的 `reviewedRunId` MUST 对应当前 stage producer Run
+- **AND** source review 的 blocking authorities MUST 非空且全部为 `author`
+- **AND** 任一 mismatch 或 non-author authority MUST fail closed
 
-#### Scenario: propose/apply/archive 不强制 sourceReview tuple
+#### Scenario: non-author blocker 不建立 source revision tuple
 
-- **WHEN** Action 为 `propose`、`apply` 或 `archive`
-- **THEN** Q2 MUST NOT 因 Revision lineage 规则强制新增 `sourceReviewRun/sourceReviewVerdict`
-- **AND** 其合法性继续由 Policy、Owner authorization 与各自 Action contract 决定
-- **AND** 若该 Action 消费 Review，MUST 通过 `consumedRunId` + Core entry validation 完成上述局部 exact handoff
-
+- **WHEN** matching Review 的任一 blocking authority 为 `owner`、`verification` 或 `external`
+- **THEN** MUST NOT 创建 `revise-*` Run
+- **AND** MUST NOT 用 `sourceReviewRun/sourceReviewVerdict` 伪装 authority resolution
 ### Requirement: review-apply 必须区分 entry verification binding 与 terminal point-in-time summary
 
 `review-apply` create entry MUST 由 Core 从 current `verification.md` 派生 `context.verificationInputRef`，用于冻结本次 Review 实际审查的 Verification generation；completion MUST exact-check persisted input ref。只有 completed `review-apply` MAY 新建 `verificationSummaryRef`，其 fingerprint MUST 由 Core 从 terminal 时当前 `verification.md` bytes 派生。`verificationInputRef` 与 `verificationSummaryRef` 都不得形成跨后续 Revision/Archive 的 global generation authority。
@@ -1106,4 +980,3 @@ Reader MUST 只从当前 active Change canonical `tasks.md` 投影 `FormalFactSn
 - **WHEN** Reader 投影 Tasks completion
 - **THEN** MUST NOT 创建 Task Registry、Task 状态数据库或 Task execution engine
 - **AND** `tasks.md` MUST 保持 current required Tasks 的唯一 OpenSpec authority
-

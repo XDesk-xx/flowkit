@@ -90,8 +90,6 @@ export function isPendingRunResumable(
     const actionByDecision: Partial<Record<typeof policy.decision, string>> = {
       'authorize-apply': 'apply',
       'authorize-archive': 'archive',
-      'authorize-full-test': 'full-test',
-      'authorize-delivery-finalize': 'delivery-finalize',
     };
     return actionByDecision[policy.decision] === run.action;
   }

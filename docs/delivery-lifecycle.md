@@ -9,7 +9,7 @@ Flowkit 必须保持：
 3. 当前合法下一 Action 由 Policy 根据正式事实计算；
 4. 不持久化 `currentAction`、current pointer 或并列流程状态；
 5. Review 是正式边界；
-6. Revision/Fix 仅在 `changes-requested` 时合法；
+6. Revision/Fix 仅在 matching `changes-requested` 的 blocking authorities 非空且全部为 `author` 时合法；
 7. owner 授权不能被 reviewer、Skill 或验证工具替代。
 
 ## 2. Delivery 生命周期
@@ -83,12 +83,14 @@ planned → active
 explore
 → review-explore
 → approved: propose
-→ changes-requested: revise-explore → review-explore
+→ changes-requested + author-only blockers: revise-explore → review-explore
+→ changes-requested + any non-author blocker: blocked authority boundary
+   └─ explicit same-stage review-explore 合法；next() 不自动触发
 ```
 
 Review 前，owner 与 author 对同一份 Explore 的讨论和收敛仍属于同一次 `explore`。
 
-只有 reviewer 返回 `changes-requested` 后，`revise-explore` 才合法。
+`changes-requested` 本身不等价于 revise-required。只有当前 matching Review 的 blocking authorities 非空且全部为 `author` 时，`revise-explore` 才合法；存在任一 non-author blocker 时 Author revise 不合法。
 
 ### 3.3 Propose
 
@@ -96,7 +98,9 @@ Review 前，owner 与 author 对同一份 Explore 的讨论和收敛仍属于�
 propose
 → review-propose
 → approved: 等待 owner 授权 apply
-→ changes-requested: revise-propose → review-propose
+→ changes-requested + author-only blockers: revise-propose → review-propose
+→ changes-requested + any non-author blocker: blocked authority boundary
+   └─ explicit same-stage review-propose 合法；next() 不自动触发
 ```
 
 `review-propose` approved 只表示 Proposal 合法，不自动开始 Apply。
@@ -113,19 +117,32 @@ apply
 → Change Verification
 → review-apply
 → approved: 等待 owner 授权 archive
-→ changes-requested: revise-apply
-→ Change Verification
-→ review-apply
+→ changes-requested + author-only blockers: revise-apply
+   → Change Verification
+   → review-apply
+→ changes-requested + any non-author blocker: blocked authority boundary
+   └─ explicit same-stage review-apply 合法；next() 不自动触发
 ```
 
 规则：
 
 - Apply/Revision 后必须执行适用的 focused、affected、lint、typecheck 或文档检查；
 - Verification 为 failed 或 not-run 时不能进入 review-apply；
-- `revise-apply` 必须只处理当前 `review-apply` Findings，不得扩张 Change 范围；
+- `revise-apply` 仅在 matching Review 为 author-only blocking 时合法，并且必须只处理当前 `review-apply` Findings，不得扩张 Change 范围；
 - `fix-review-findings` 是 `revise-apply` 的 goal，而不是正式 Action；
 - 修订后必须重新验证；
 - Apply、Revision、Review 和 Archive 都不得自动运行 Full Test。
+
+
+### 3.4.1 Non-author blocker 与显式 re-review
+
+对于任一阶段的 matching `changes-requested` Review：
+
+- blocking authorities 全部为 `author`：Author revise 合法，Policy 可推导对应 `revise-*`；
+- 包含任一 `owner / verification / external`：Author revise 不合法，`next()` 必须保持 blocked 在 non-author authority boundary；
+- 在后一种情况下，explicit same-stage `review-*` 在 Policy 层必须合法，unchanged target 也可进入新的 Reviewer execution / Review generation；
+- 每次显式 re-review 都由 Reviewer 使用执行时最新可用 authority facts 重新判断 Findings / Verdict；
+- Policy 只判断 Action 是否合法，不机器证明“现在是否值得重审”，也不自动调度或触发 re-review。
 
 ### 3.5 Archive 与完成
 

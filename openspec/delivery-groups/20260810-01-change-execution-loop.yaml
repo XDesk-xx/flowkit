@@ -94,7 +94,7 @@ changes:
       不重新打开或重做已完成的 Deterministic Core。
     required: true
     dependsOn: []
-    state: planned
+    state: completed
     outputs:
       - canonical blocker-authority contract alignment
       - Change-only Standard Run / Action boundary

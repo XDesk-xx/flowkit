@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 2,
+  "runId": "20260810-002-review-explore",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "review-explore",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/core-contract-alignment/20260810-002-review-explore/",
+  "changeKey": "Q1",
+  "changeId": "core-contract-alignment",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/core-contract-alignment/20260810-001-explore/result.json",
+    "versionFingerprint": "51b0458436918b3de995bcbefa835e5a90806f7ac92ddae3821c246ce34cc259",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260810-001-explore",
+  "constraints": {
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

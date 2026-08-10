@@ -1,8 +1,7 @@
 /**
  * D1 policy-engine: owner-decision boundary judgments (D1-5, D1-9).
  *
- * Authorization-gated actions (`apply`, `archive`, `full-test`,
- * `delivery-finalize`) require an owner authorization with the matching scope.
+ * Authorization-gated Change Actions (`apply`, `archive`); Delivery Full Test / Finalize authorizations remain Delivery-behavior facts require an owner authorization with the matching scope.
  * When `snapshot.ownerAuthorizations` is empty (C1 Reader's current
  * placeholder behaviour) the gated action returns `owner-decision` — this is
  * correct fail-closed behaviour, NOT `blocked` (D1-7, spec:
@@ -47,8 +46,6 @@ export type AuthorizationScope = (typeof AUTHORIZATION_SCOPES)[number];
 const ACTION_SCOPE: Readonly<Record<string, AuthorizationScope>> = {
   apply: 'apply',
   archive: 'archive',
-  'full-test': 'full-test',
-  'delivery-finalize': 'finalize',
 };
 
 /**

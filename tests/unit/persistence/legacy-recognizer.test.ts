@@ -1,10 +1,13 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 import {
   recognizeLegacyRun,
   normalizeBootstrapRunStatus,
   discriminateRun,
+  discriminateRunForReader,
 } from '../../../src/persistence/legacy-recognizer.js';
 
 // ---------------------------------------------------------------------------
@@ -49,6 +52,31 @@ describe('discriminateRun — three-way discriminator', () => {
     if (result.kind === 'conflict') {
       assert.equal(result.conflict.dimension, 'context-identity');
     }
+  });
+
+  it('reader-only exact Q1 pre-contract revise context compatibility is byte-bounded', () => {
+    const repoRoot = process.cwd();
+    const historicalRunDir = join(
+      repoRoot,
+      '.flowkit/runs/20260810-01-change-execution-loop/core-contract-alignment/20260810-003-revise-explore',
+    );
+    const raw = readFileSync(join(historicalRunDir, 'context.json'), 'utf8');
+    const parsed = JSON.parse(raw) as unknown;
+
+    const strict = discriminateRun(parsed, historicalRunDir);
+    assert.equal(strict.kind, 'conflict');
+
+    const compatible = discriminateRunForReader(raw, parsed, historicalRunDir);
+    assert.equal(compatible.kind, 'c1');
+    if (compatible.kind === 'c1') {
+      assert.equal(compatible.contextFile.sourceReviewRun, '20260810-002-review-explore');
+      assert.equal(compatible.contextFile.sourceReviewVerdict, 'changes-requested');
+    }
+
+    // Same semantic shape with any byte mutation is NOT historical provenance.
+    const mutatedRaw = `${raw} `;
+    const mutated = discriminateRunForReader(mutatedRaw, parsed, historicalRunDir);
+    assert.equal(mutated.kind, 'conflict');
   });
 
   it('schemaVersion === 1 → legacy path, does not call validateContextFile (task 12.49)', () => {

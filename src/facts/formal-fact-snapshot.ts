@@ -30,8 +30,9 @@ import type {
   ReviewVerdictValue,
   Role,
   RunStatus,
+  BlockingAuthority,
 } from '../domain/types.js';
-import type { ChangeAction, DeliveryAction } from '../domain/actions.js';
+import type { FormalAction } from '../domain/actions.js';
 
 /**
  * A single conflict detected while reading formal facts.
@@ -77,9 +78,9 @@ export interface ChangeFact {
 export interface RunFact {
   readonly runId: string;
   readonly deliveryId: string;
-  /** Present for Change-level Runs; absent for Delivery-level Runs. */
-  readonly changeId?: string;
-  readonly action: ChangeAction | DeliveryAction;
+  /** Every current Standard Run is bound to a Change. */
+  readonly changeId: string;
+  readonly action: FormalAction;
   readonly role: Role;
   readonly status: RunStatus;
   /** Present when the Run consumed a prior result as input. */
@@ -146,6 +147,8 @@ export interface ReviewVerdictFact {
   readonly verdict: ReviewVerdictValue;
   /** Run reviewed by this review Run. */
   readonly reviewedRunId: string;
+  /** Fixed-order, deduplicated authority projection for blocking findings. */
+  readonly blockingAuthorities: readonly BlockingAuthority[];
 }
 
 /**

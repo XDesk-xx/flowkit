@@ -184,8 +184,7 @@ export function validateRun(value: unknown): Run {
     });
   }
 
-  const changeId =
-    obj['changeId'] === undefined ? undefined : requireString(obj, 'changeId');
+  const changeId = requireString(obj, 'changeId');
   const inputRef =
     obj['inputRef'] === undefined ? undefined : validateResultRef(obj['inputRef']);
 

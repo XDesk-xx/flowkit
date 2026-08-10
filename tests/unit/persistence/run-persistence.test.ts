@@ -121,20 +121,14 @@ describe('createRun', () => {
     assert.ok(entries.every((e) => !e.startsWith('.tmp-20260806-006')));
   });
 
-  it('supports Delivery-level Run (no changeId, task 12.34)', async () => {
-    const runDir = await createRun(
-      createRunInput({
+  it('rejects retired Delivery behavior as a current Run', async () => {
+    await assert.rejects(
+      () => createRun(createRunInput({
         runId: '20260806-007-full-test',
-        changeKey: undefined,
-        changeId: undefined,
-        action: 'full-test',
-        role: 'owner',
-      }),
+        action: 'full-test' as never,
+      })),
+      (e: unknown) => e instanceof FlowkitError,
     );
-    const contextJson = await readFile(join(runDir, 'context.json'), 'utf-8');
-    const ctx = JSON.parse(contextJson);
-    assert.equal(ctx.changeId, undefined);
-    assert.equal(ctx.changeKey, undefined);
   });
 });
 
@@ -543,6 +537,35 @@ describe('Q2 current authority boundary', () => {
     );
   });
 
+  it('revise-propose rejects a matching non-author changes-requested Review at persistence entry', async () => {
+    const c = 'Q2-revise-owner-blocker';
+    await setupApprovedExplore(c);
+    const p = await createRun(createRunInput({
+      runId: '20260806-203-propose', changeId: c, action: 'propose', consumedRunId: '20260806-202-review-explore',
+    }));
+    await writeProposalArtifacts(c);
+    await completeRun(p, { executionStatus: 'completed', summary: 'P0' });
+    const review = await createRun(createRunInput({
+      runId: '20260806-204-review-propose', changeId: c, action: 'review-propose', role: 'reviewer', reviewedRunId: '20260806-203-propose',
+    }));
+    await completeRun(review, {
+      executionStatus: 'completed', summary: 'CR', reviewVerdict: 'changes-requested',
+      reviewFindings: [{ id: 'F-owner', severity: 'blocking', blockingAuthority: 'owner', title: 'owner decision', problem: 'needs owner fact' }],
+    });
+    await assert.rejects(
+      () => createRun(createRunInput({
+        runId: '20260806-205-revise-propose', changeId: c, action: 'revise-propose',
+        sourceReviewRun: '20260806-204-review-propose', sourceReviewVerdict: 'changes-requested',
+      })),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED' && /author-only/.test(e.message),
+    );
+    const rereview = await createRun(createRunInput({
+      runId: '20260806-205-review-propose', changeId: c, action: 'review-propose', role: 'reviewer', reviewedRunId: '20260806-203-propose',
+    }));
+    const rereviewContext = JSON.parse(await readFile(join(rereview, 'context.json'), 'utf-8'));
+    assert.equal(rereviewContext.reviewedRunId, '20260806-203-propose');
+  });
+
   it('revise-propose records a complete current proposal bundle with no predecessor overlay', async () => {
     const c = 'Q2-revise-full';
     await setupApprovedExplore(c);
@@ -556,7 +579,7 @@ describe('Q2 current authority boundary', () => {
     }));
     await completeRun(review, {
       executionStatus: 'completed', summary: 'CR', reviewVerdict: 'changes-requested',
-      reviewFindings: [{ id: 'F1', severity: 'blocking', title: 'fix', problem: 'x', requiredChange: 'revise' }],
+      reviewFindings: [{ id: 'F1', severity: 'blocking', blockingAuthority: 'author', title: 'fix', problem: 'x', requiredChange: 'revise' }],
     });
     const revise = await createRun(createRunInput({
       runId: '20260806-205-revise-propose', changeId: c, action: 'revise-propose',

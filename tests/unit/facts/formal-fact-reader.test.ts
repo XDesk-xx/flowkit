@@ -1,9 +1,10 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { readFormalFactSnapshot } from '../../../src/facts/formal-fact-reader.js';
+import { next } from '../../../src/policy/next.js';
 import { computeResultFileHash } from '../../../src/persistence/result-ref-adapter.js';
 
 let tempRoot: string;
@@ -1515,7 +1516,7 @@ describe('readFormalFactSnapshot', () => {
       actionResult: { action: 'review-propose', executionStatus: 'completed', summary: 'cr' },
       reviewVerdict: 'changes-requested',
       reviewFindings: [
-        { id: 'B-001', severity: 'blocking', title: 'fix', problem: 'x', requiredChange: 'revise' },
+        { id: 'B-001', severity: 'blocking', blockingAuthority: 'author', title: 'fix', problem: 'x', requiredChange: 'revise' },
       ],
     });
     // Revise-propose: sourceReviewRun = A (035, approved), but reviewVerdictRef
@@ -1545,7 +1546,7 @@ describe('readFormalFactSnapshot', () => {
         ],
         reviewVerdictRef: {
           ref: `.flowkit/runs/${deliveryId}/C1/20260806-036-review-propose/result.json`,
-          versionFingerprint: computeResultFileHash(JSON.stringify({ runStatus: 'completed', actionResult: { action: 'review-propose', executionStatus: 'completed', summary: 'cr' }, reviewVerdict: 'changes-requested', reviewFindings: [{ id: 'B-001', severity: 'blocking', title: 'fix', problem: 'x', requiredChange: 'revise' }] }, null, 2)),
+          versionFingerprint: computeResultFileHash(JSON.stringify({ runStatus: 'completed', actionResult: { action: 'review-propose', executionStatus: 'completed', summary: 'cr' }, reviewVerdict: 'changes-requested', reviewFindings: [{ id: 'B-001', severity: 'blocking', blockingAuthority: 'author', title: 'fix', problem: 'x', requiredChange: 'revise' }] }, null, 2)),
           kind: 'run-result',
         },
         consumedInputRefs: [],
@@ -2092,7 +2093,7 @@ describe('readFormalFactSnapshot', () => {
       actionResult: { action: 'review-propose', executionStatus: 'completed', summary: 'cr' },
       reviewVerdict: 'changes-requested',
       reviewFindings: [
-        { id: 'B-001', severity: 'blocking', title: 'fix', problem: 'x', requiredChange: 'revise' },
+        { id: 'B-001', severity: 'blocking', blockingAuthority: 'author', title: 'fix', problem: 'x', requiredChange: 'revise' },
       ],
     });
 
@@ -2107,4 +2108,63 @@ describe('readFormalFactSnapshot', () => {
     const conflict = snapshot.conflicts.find((c) => c.dimension === 'run-result-schema');
     assert.ok(conflict, `expected run-result-schema conflict for superseded-in-shape P0, got: ${JSON.stringify(snapshot.conflicts.map((c) => c.dimension))}`);
   });
+
+  it('reads the exact immutable Q1 001→010 pre-contract corpus without historical context conflicts', async () => {
+    const deliveryId = '20260810-01-change-execution-loop';
+    const changeId = 'core-contract-alignment';
+    const sourceChangeDir = join(
+      process.cwd(),
+      '.flowkit/runs',
+      deliveryId,
+      changeId,
+    );
+    const deliveryRunsDir = join(tempRoot, '.flowkit', 'runs', deliveryId);
+    const targetChangeDir = join(deliveryRunsDir, changeId);
+    await mkdir(targetChangeDir, { recursive: true });
+
+    for (const run of [
+      '20260810-001-explore',
+      '20260810-002-review-explore',
+      '20260810-003-revise-explore',
+      '20260810-004-review-explore',
+      '20260810-005-propose',
+      '20260810-006-review-propose',
+      '20260810-007-revise-propose',
+      '20260810-008-review-propose',
+      '20260810-009-revise-propose',
+      '20260810-010-review-propose',
+    ]) {
+      await cp(join(sourceChangeDir, run), join(targetChangeDir, run), { recursive: true });
+    }
+
+    const manifestDir = join(tempRoot, '.flowkit', 'manifests');
+    await mkdir(manifestDir, { recursive: true });
+    await writeFile(join(manifestDir, `${deliveryId}.yaml`), [
+      `id: ${deliveryId}`,
+      'delivery:',
+      '  state: active',
+      '  fullTestStatus: not-ready',
+      'changes:',
+      '  - key: Q1',
+      `    id: ${changeId}`,
+      '    state: active',
+      '    required: true',
+      '    dependsOn: []',
+    ].join('\n'));
+
+    const snapshot = await readFormalFactSnapshot({
+      repoRoot: tempRoot,
+      deliveryId,
+      runsPathPrefix: '.flowkit/runs',
+      openspecChangesPath: 'openspec/changes',
+      manifestPathPrefix: '.flowkit/manifests',
+    });
+
+    assert.deepEqual(snapshot.conflicts, []);
+    const decision = next(snapshot);
+    if (decision.kind === 'blocked') {
+      assert.notEqual(decision.diagnosis.reason, 'formal-fact-conflict');
+    }
+  });
+
 });

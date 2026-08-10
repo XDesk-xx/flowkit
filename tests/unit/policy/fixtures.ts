@@ -6,7 +6,7 @@
  * snapshots without repeating boilerplate.
  */
 
-import type { ChangeAction, DeliveryAction } from '../../../src/domain/actions.js';
+import type { ChangeAction } from '../../../src/domain/actions.js';
 import type {
   ChangeState,
   DeliveryState,
@@ -57,7 +57,7 @@ export function buildChange(spec: ChangeSpec = {}): ChangeFact {
 
 export interface RunSpec {
   readonly nnn: number;
-  readonly action: ChangeAction | DeliveryAction;
+  readonly action: ChangeAction;
   readonly status?: RunStatus;
   readonly changeId?: string;
   readonly role?: 'owner' | 'author' | 'reviewer';
@@ -73,11 +73,7 @@ export function buildRun(spec: RunSpec): RunFact {
   return {
     runId: `20260806-${nnnStr}-${action}`,
     deliveryId: DELIVERY_ID,
-    ...(spec.changeId === undefined
-      ? { changeId: CHANGE_ID }
-      : spec.changeId === ''
-        ? {}
-        : { changeId: spec.changeId }),
+    changeId: spec.changeId ?? CHANGE_ID,
     action: spec.action,
     role: spec.role ?? 'author',
     status: spec.status ?? 'completed',
@@ -92,6 +88,7 @@ export interface VerdictSpec {
   readonly reviewNnn: number;
   readonly reviewedRunId: string;
   readonly verdict?: ReviewVerdictValue;
+  readonly blockingAuthorities?: ReviewVerdictFact['blockingAuthorities'];
 }
 
 export function buildVerdict(spec: VerdictSpec): ReviewVerdictFact {
@@ -101,6 +98,7 @@ export function buildVerdict(spec: VerdictSpec): ReviewVerdictFact {
     reviewRunId: `20260806-${nnnStr}-${action}`,
     verdict: spec.verdict ?? 'approved',
     reviewedRunId: spec.reviewedRunId,
+    blockingAuthorities: spec.blockingAuthorities ?? ((spec.verdict ?? 'approved') === 'changes-requested' ? ['author'] : []),
   };
 }
 

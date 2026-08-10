@@ -5,7 +5,7 @@ import { renderStatus } from '../../../src/diagnostics/status.js';
 import { formatPolicyResult } from '../../../src/diagnostics/next.js';
 import { diagnoseRepository, renderDoctor } from '../../../src/diagnostics/doctor.js';
 import { renderResumeContext } from '../../../src/diagnostics/resume-context.js';
-import { buildChange, buildConflict, buildRun, buildSnapshot, buildVerdict } from '../policy/fixtures.js';
+import { buildAuthorization, buildChange, buildCheckpointBoundary, buildConflict, buildRun, buildSnapshot, buildVerdict } from '../policy/fixtures.js';
 
 const change = buildChange({ key: 'E1', id: 'diagnostic-cli' });
 
@@ -92,6 +92,37 @@ describe('diagnostic views', () => {
     assert.ok(report.findings.some((finding) => finding.code === 'reader-conflict:yaml-parse' && finding.severity === 'error'));
     assert.ok(report.findings.some((finding) => finding.code === 'ambiguous-pending-runs' && finding.severity === 'error'));
     assert.doesNotMatch(renderDoctor(snapshot), /policy-blocked:formal-fact-conflict/);
+  });
+
+  it('maps Q1 non-author review blocker to doctor warning without inventing an Action', () => {
+    const explore = buildRun({ nnn: 169, action: 'explore', changeId: 'diagnostic-cli' });
+    const review = buildRun({ nnn: 170, action: 'review-explore', changeId: 'diagnostic-cli', role: 'reviewer' });
+    const snapshot = buildSnapshot({
+      changes: [change],
+      runs: [explore, review],
+      reviewVerdicts: [buildVerdict({
+        reviewNnn: 170,
+        reviewedRunId: explore.runId,
+        verdict: 'changes-requested',
+        blockingAuthorities: ['owner'],
+      })],
+      openSpecArtifacts: [artifact('change-explore', 'openspec/changes/diagnostic-cli/explore.md')],
+    });
+    const report = diagnoseRepository(snapshot);
+    assert.equal(report.overall, 'warning');
+    assert.ok(report.findings.some((finding) => finding.code === 'policy-blocked:non-author-review-blocker' && finding.severity === 'warning'));
+  });
+
+  it('maps Q1→03 Delivery behavior bridge to doctor warning', () => {
+    const snapshot = buildSnapshot({
+      changes: [buildChange({ key: 'E1', id: 'diagnostic-cli', state: 'completed', required: true })],
+      gitBoundaries: [buildCheckpointBoundary('diagnostic-cli')],
+      deliveryFullTestStatus: 'authorized',
+      ownerAuthorizations: [buildAuthorization('full-test')],
+    });
+    const report = diagnoseRepository(snapshot);
+    assert.equal(report.overall, 'warning');
+    assert.ok(report.findings.some((finding) => finding.code === 'policy-blocked:delivery-behavior-not-implemented' && finding.severity === 'warning'));
   });
 
   it('reports one non-resumable pending Run as warning', () => {

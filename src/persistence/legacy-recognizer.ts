@@ -19,10 +19,11 @@
  * `inputRef` is read as `Run.inputRef = undefined` (no ResultRef constructed).
  */
 
+import { createHash } from 'node:crypto';
 import { isFormalAction } from '../domain/actions.js';
-import type { Run, RunStatus } from '../domain/types.js';
+import type { ResultRef, RunStatus } from '../domain/types.js';
 import type { Role } from '../domain/types.js';
-import type { ChangeAction, DeliveryAction } from '../domain/actions.js';
+import type { FormalAction } from '../domain/actions.js';
 import {
   validateContextFile,
   validateContextFileIdentity,
@@ -34,9 +35,23 @@ import type { FactConflict } from '../facts/formal-fact-snapshot.js';
 // Legacy recognition result
 // ---------------------------------------------------------------------------
 
+export const LEGACY_DELIVERY_ACTIONS = ['full-test', 'delivery-finalize'] as const;
+export type LegacyDeliveryAction = (typeof LEGACY_DELIVERY_ACTIONS)[number];
+export type LegacyAction = FormalAction | LegacyDeliveryAction;
+
+export interface LegacyRun {
+  readonly runId: string;
+  readonly deliveryId: string;
+  readonly changeId?: string;
+  readonly action: LegacyAction;
+  readonly role: Role;
+  readonly status: RunStatus;
+  readonly inputRef?: ResultRef;
+}
+
 export interface LegacyRecognitionSuccess {
   readonly ok: true;
-  readonly run: Run;
+  readonly run: LegacyRun;
 }
 
 export interface LegacyRecognitionFailure {
@@ -48,6 +63,96 @@ export type LegacyRecognitionResult =
   | LegacyRecognitionSuccess
   | LegacyRecognitionFailure;
 
+
+
+interface PreQ1RevisionContextCompatibility {
+  readonly runId: string;
+  readonly deliveryId: string;
+  readonly changeId: string;
+  readonly action: 'revise-explore' | 'revise-propose';
+  readonly sourceReviewRun: string;
+  readonly sha256: string;
+}
+
+/**
+ * Exact immutable Q1 bootstrap revision contexts created before Q1 froze the
+ * source-review tuple requirement. This is intentionally a byte-fingerprint
+ * allowlist, not a shape-based downgrade path. It exists only so the formal
+ * fact Reader can read the already-persisted Q1 bootstrap corpus without
+ * rewriting history. New/current schemaVersion 2 contexts remain strict.
+ */
+const PRE_Q1_REVISION_CONTEXT_COMPATIBILITY: readonly PreQ1RevisionContextCompatibility[] = [
+  {
+    runId: '20260810-003-revise-explore',
+    deliveryId: '20260810-01-change-execution-loop',
+    changeId: 'core-contract-alignment',
+    action: 'revise-explore',
+    sourceReviewRun: '20260810-002-review-explore',
+    sha256: '2063182ccc686ed57cb336a5488b11efb89db179fedf62e97ed7accdaf2f9253',
+  },
+  {
+    runId: '20260810-007-revise-propose',
+    deliveryId: '20260810-01-change-execution-loop',
+    changeId: 'core-contract-alignment',
+    action: 'revise-propose',
+    sourceReviewRun: '20260810-006-review-propose',
+    sha256: '7f7072eed2f5e58d811dbb85e72e5ec7c8b806234f9f86703d4f3a3fe2a66fa1',
+  },
+  {
+    runId: '20260810-009-revise-propose',
+    deliveryId: '20260810-01-change-execution-loop',
+    changeId: 'core-contract-alignment',
+    action: 'revise-propose',
+    sourceReviewRun: '20260810-008-review-propose',
+    sha256: '6bd055d3054064ca164e9f1c4ee48a32da94735b7cc037347d3518164d97622b',
+  },
+] as const;
+
+function sha256Utf8(raw: string): string {
+  return createHash('sha256').update(raw, 'utf8').digest('hex');
+}
+
+/**
+ * Reader-only discriminator with one exact, immutable pre-Q1 compatibility
+ * seam. Strict discrimination always runs first. A schemaVersion 2 failure is
+ * normalized only when BOTH the formal identity and raw-byte SHA-256 match one
+ * of the known Q1 bootstrap contexts. No caller outside the formal Reader uses
+ * this function, so current writers/entry validation never inherit the seam.
+ */
+export function discriminateRunForReader(
+  rawContext: string,
+  contextJson: unknown,
+  expectedRunDir: string,
+): RunClassification {
+  const strict = discriminateRun(contextJson, expectedRunDir);
+  if (strict.kind !== 'conflict') return strict;
+  if (readSchemaVersion(contextJson) !== 2) return strict;
+  if (typeof contextJson !== 'object' || contextJson === null || Array.isArray(contextJson)) return strict;
+
+  const obj = contextJson as Record<string, unknown>;
+  const fingerprint = sha256Utf8(rawContext);
+  const match = PRE_Q1_REVISION_CONTEXT_COMPATIBILITY.find((entry) =>
+    entry.sha256 === fingerprint &&
+    obj['runId'] === entry.runId &&
+    obj['deliveryId'] === entry.deliveryId &&
+    obj['changeId'] === entry.changeId &&
+    obj['action'] === entry.action
+  );
+  if (match === undefined) return strict;
+
+  try {
+    const normalized = validateContextFile({
+      ...obj,
+      sourceReviewRun: match.sourceReviewRun,
+      sourceReviewVerdict: 'changes-requested',
+    });
+    validateContextFileIdentity(normalized, expectedRunDir);
+    return { kind: 'c1', contextFile: normalized, readerCompatibility: 'pre-q1-revision-context' };
+  } catch {
+    return strict;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // recognizeLegacyRun
 // ---------------------------------------------------------------------------
@@ -57,8 +162,7 @@ export type LegacyRecognitionResult =
  * MUST NOT call C1 `validateContextFile`. Satisfying the minimal shape yields
  * a Bootstrap Run (best-effort); failure yields a `FactConflict`.
  *
- * Minimal required fields: `runId`, `deliveryId`, `action` (in B1 Action
- * Catalog), `role` (`owner`/`author`/`reviewer`). `changeId` is optional.
+ * Minimal required fields: `runId`, `deliveryId`, `action` (current Change Action or bounded legacy Delivery Action), `role` (`owner`/`author`/`reviewer`). `changeId` is optional.
  * String-form `inputRef` → `Run.inputRef = undefined` (no ResultRef).
  */
 export function recognizeLegacyRun(contextJson: unknown): LegacyRecognitionResult {
@@ -78,8 +182,8 @@ export function recognizeLegacyRun(contextJson: unknown): LegacyRecognitionResul
   }
 
   const action = obj['action'];
-  if (typeof action !== 'string' || !isFormalAction(action)) {
-    return fail('legacy-action', 'context.json action not in B1 Action Catalog', { action });
+  if (typeof action !== 'string' || (!isFormalAction(action) && !isLegacyDeliveryAction(action))) {
+    return fail('legacy-action', 'context.json action must be a current Change Action or bounded legacy Delivery Action', { action });
   }
 
   const role = obj['role'];
@@ -99,10 +203,10 @@ export function recognizeLegacyRun(contextJson: unknown): LegacyRecognitionResul
   const inputRef = undefined;
   void inputRefRaw;
 
-  const run: Run = {
+  const run: LegacyRun = {
     runId,
     deliveryId,
-    action: action as ChangeAction | DeliveryAction,
+    action: action as LegacyAction,
     role: role as Role,
     status: 'pending', // will be normalized by normalizeBootstrapRunStatus
     ...(changeId !== undefined && { changeId }),
@@ -172,9 +276,13 @@ export function normalizeBootstrapRunStatus(
 // ---------------------------------------------------------------------------
 
 export type RunClassification =
-  | { readonly kind: 'c1'; readonly contextFile: ContextFile }
-  | { readonly kind: 'legacy'; readonly run: Run }
+  | { readonly kind: 'c1'; readonly contextFile: ContextFile; readonly readerCompatibility?: 'pre-q1-revision-context' }
+  | { readonly kind: 'legacy'; readonly run: LegacyRun }
   | { readonly kind: 'conflict'; readonly conflict: FactConflict };
+
+export function isLegacyDeliveryAction(value: string): value is LegacyDeliveryAction {
+  return (LEGACY_DELIVERY_ACTIONS as readonly string[]).includes(value);
+}
 
 /**
  * Three-way discriminator (D16, C1-PR-006). Classifies a parsed `context.json`

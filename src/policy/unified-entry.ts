@@ -23,7 +23,6 @@ import {
   blockedResult,
 } from './types.js';
 import { canRun } from './can-run.js';
-import { computeLineage } from './lineage.js';
 import { detectStage, reviewAction, reviseAction } from './stage-detector.js';
 import type { Stage } from './stage-detector.js';
 import { getActiveChange } from './preconditions.js';
@@ -89,18 +88,12 @@ export function resolveRevise(snapshot: FormalFactSnapshot): PolicyResult {
       ambiguousStateDiagnosis(`revise: stage ${stage} has no revise action`),
     );
   }
-  const lineage = computeLineage(
-    snapshot.runs,
-    snapshot.reviewVerdicts,
-    change.id,
-    stage,
-  );
-  if (lineage.match && lineage.verdict === 'changes-requested') {
-    return actionResult(reviseAction(stage));
-  }
+  const action = reviseAction(stage);
+  const result = canRun(snapshot, action);
+  if (result.allowed) return actionResult(action);
   return blockedResult(
     ambiguousStateDiagnosis(
-      `revise: stage ${stage} has no matching changes-requested verdict`,
+      `revise: canRun(${action}) not allowed: ${result.unmetPreconditions.join(', ')}`,
     ),
   );
 }

@@ -150,14 +150,16 @@ conflict[0]: dimension=<dimension>; authority=<authority>; message=<message>
 owner-actions: <suggestedOwnerActions | none>
 ```
 
-`unmetPreconditions` 与 `suggestedOwnerActions` MUST 保留 Policy 原顺序。`conflict[i]` MUST 保留 `dimension / authority / message`，并按 `(dimension, authority, message)` 升序排序后编号。CLI MUST NOT 丢弃 owner-decision context 或 blocked conflict diagnosis。
+`unmetPreconditions` 与 `suggestedOwnerActions` MUST 保留 Policy 原顺序。`conflict[i]` MUST 保留 `dimension / authority / message`，并按 `(dimension, authority, message)` 升序排序后编号。CLI MUST NOT 丢弃 owner-decision context 或 blocked conflict diagnosis。Q1 新增的 `non-author-review-blocker` 与 `delivery-behavior-not-implemented` MUST 作为普通 `BlockedReason` 通过同一格式稳定呈现；CLI MUST NOT 为二者新增独立 decision branch，也 MUST NOT 把它们转换为 `review-*`、`full-test` 或 `delivery-finalize` Action。
 
 #### Scenario: next 返回 action
+
 - **WHEN** Policy `next(snapshot)` 返回 `kind=action`
 - **THEN** CLI MUST 输出 `kind` 与该 action
 - **AND** MUST NOT 执行该 action
 
 #### Scenario: next 返回带 context 的 owner-decision
+
 - **WHEN** Policy 返回 `kind=owner-decision`
 - **THEN** CLI MUST 输出 owner decision 类型
 - **AND** MUST 输出 `context-change / context-eligible-changes / context-full-test / context-detail`
@@ -165,6 +167,7 @@ owner-actions: <suggestedOwnerActions | none>
 - **AND** MUST NOT 替 Owner 记录 authorization
 
 #### Scenario: activate-change owner-decision 保留候选上下文
+
 - **WHEN** Policy 返回 `decision=activate-change`
 - **AND** context 携带 `changeKey` 与 `eligibleChangeKeys`
 - **THEN** stdout MUST 包含对应 `context-change`
@@ -172,12 +175,19 @@ owner-actions: <suggestedOwnerActions | none>
 - **AND** 相同 PolicyResult MUST 产生 byte-stable 输出
 
 #### Scenario: next 返回带 conflicts 的 blocked
+
 - **WHEN** Policy 返回 `kind=blocked`
 - **AND** diagnosis 包含一个或多个 conflicts
 - **THEN** CLI MUST 输出 blocked reason、unmet、conflict count 与每个 conflict 的 dimension/authority/message
 - **AND** MUST 输出 suggested owner actions 或 `none`
 - **AND** blocked MUST 被视为合法诊断结果而不是自动 repair 信号
 
+#### Scenario: Q1 新 blocked reason 只做稳定呈现
+
+- **WHEN** Policy 返回 `reason=non-author-review-blocker` 或 `reason=delivery-behavior-not-implemented`
+- **THEN** `flowkit next` MUST 使用既有 `kind=blocked` 格式原样输出该 reason
+- **AND** MUST 保留 Policy 提供的 unmet/conflicts/owner-actions
+- **AND** CLI MUST NOT 自行选择 direct re-review、Author revise、Delivery Full Test 或 Delivery Finalize
 ### Requirement: doctor 只汇总 authority-owned conflicts 与最小恢复检查
 
 `flowkit doctor` MUST 汇总当前 Reader conflicts、Policy blocked diagnosis 与少量 E1 专属只读恢复检查。若某问题属于 Reader admission invariant，doctor MUST 消费 Reader conflict 而不是复制对应 validator。pending Run 本身 MUST NOT 被视为错误；completed historical mutable refs MUST NOT 被重放成永久一致性要求。
@@ -204,9 +214,11 @@ tasks-facts-unavailable → warning
 tasks-incomplete        → warning
 dependency-incomplete → warning
 full-test-failed      → warning
+non-author-review-blocker → warning
+delivery-behavior-not-implemented → warning
 ```
 
-Policy finding code MUST 为 `policy-blocked:<reason>`。`overall` MUST 唯一由 findings 决定：任一 error → `error`；否则任一 warning → `warning`；否则 → `ok`。doctor findings MUST 按 `severity(error before warning) → code → message` 的确定顺序输出。
+Policy finding code MUST 为 `policy-blocked:<reason>`。`overall` MUST 唯一由 findings 决定：任一 error → `error`；否则任一 warning → `warning`；否则 → `ok`。doctor findings MUST 按 `severity(error before warning) → code → message` 的确定顺序输出。`flowkit doctor` MUST 只消费 Policy 返回的新 blocked reason，不得复制 mixed-authority/direct-re-review 或 Delivery behavior decision tree。
 
 #### Scenario: Reader conflict 成为 doctor error
 - **WHEN** `FormalFactSnapshot.conflicts` 非空
@@ -259,6 +271,19 @@ Policy finding code MUST 为 `policy-blocked:<reason>`。`overall` MUST 唯一�
 - **THEN** doctor MUST NOT 因无 active Change 创建 finding
 - **AND** `overall` MUST 为 `ok`
 
+#### Scenario: non-author Review blocker 是 warning
+
+- **WHEN** Policy blocked diagnosis 的 `reason=non-author-review-blocker`
+- **THEN** doctor MUST 输出 `policy-blocked:non-author-review-blocker`
+- **AND** severity MUST 为 `warning`
+- **AND** doctor MUST NOT 自动发起 direct re-review 或 Author Revision
+
+#### Scenario: Delivery behavior 尚未实现是 warning
+
+- **WHEN** Policy blocked diagnosis 的 `reason=delivery-behavior-not-implemented`
+- **THEN** doctor MUST 输出 `policy-blocked:delivery-behavior-not-implemented`
+- **AND** severity MUST 为 `warning`
+- **AND** doctor MUST NOT 把该 finding 转成 `full-test` 或 `delivery-finalize` Action
 ### Requirement: resume-context 生成最小可恢复视图并覆盖 Delivery-level 状态
 
 `flowkit resume-context` MUST 输出当前 Delivery、active Change、current stage、last formal artifact、last relevant Run、latest valid Review、Change Verification 与 Policy next。`last formal artifact` MUST 根据当前 stage 与 active Change canonical OpenSpec paths 派生；MUST NOT 根据 historical ResultRef replay、`.tmp/**`、聊天记录或 Provider session 决定。

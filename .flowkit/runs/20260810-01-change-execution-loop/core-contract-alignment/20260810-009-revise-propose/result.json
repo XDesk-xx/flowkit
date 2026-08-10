@@ -1,0 +1,43 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-propose",
+    "executionStatus": "completed",
+    "summary": "已按 Owner 冻结决策关闭 008 唯一 blocker Q1-RP-001：Policy 明确区分 Action 合法性与当前是否值得执行。matching changes-requested 只要包含任一 non-author blockingAuthority，Author revise 必须拒绝且 next 继续返回 non-author blocked boundary；同时 explicit same-stage review-S 的 canRun admission 必须确定性 allowed，unchanged target 可进入新的 Reviewer generation，且 Policy 不再把 non-author authority fact 是否已到位作为 machine prerequisite。每次显式 re-review 创建新的 Reviewer execution，由 Reviewer 使用执行时最新可用 authority facts 重评完整 target；Policy 不自动调度 re-review。Proposal/Design/flowkit-policy-engine delta 已收敛，并同步 core-model delta/tasks 消除残留 MAY/fact-arrival admission。Q1-RP-002 的 flowkit-diagnostic-cli delta 原样保留。OpenSpec 1.7 strict validation 通过；未修改 production/tests/canonical docs/specs，未运行 Delivery Full Test。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/core-contract-alignment/proposal.md",
+        "versionFingerprint": "de0afb6019a45cd8363bea8082e95bb8b3ffc7b7b41484a146cf39f39f469b70",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/core-contract-alignment/design.md",
+        "versionFingerprint": "0d7ffe40b839841442a89120d4565dc302dd6de86049fbc8bd082d98cbcf4e9e",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/core-contract-alignment/tasks.md",
+        "versionFingerprint": "6a12f9f28196bc98aa8bb5846d910dd25985c984df7ba7ff0946850aa1d7cc15",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/core-contract-alignment/specs/flowkit-core-model/spec.md",
+        "versionFingerprint": "db1a40eb4def4624825c6d34f5978ce786587cd40eb0faf3b79aaaf152ff8ff2",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/core-contract-alignment/specs/flowkit-policy-engine/spec.md",
+        "versionFingerprint": "b66ce190ac15398dfb699e0c81dec6bc015bfd946c9676e57a635bd95d787fd3",
+        "kind": "produced-artifact"
+      }
+    ],
+    "consumedInputRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/core-contract-alignment/20260810-008-review-propose/result.json",
+        "versionFingerprint": "95e71ff2dab4b5abc2fa594323c363cfd4d8cd3ba9f227e6b1267bf0273a0795",
+        "kind": "run-result"
+      }
+    ],
+    "nextActionRecommendation": "review-propose"
+  }
+}

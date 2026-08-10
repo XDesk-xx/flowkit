@@ -68,8 +68,8 @@ function compareRunIdDesc(a: string, b: string): number {
 /**
  * Return the completed Runs of the active Change, newest-first.
  *
- * Delivery-level Runs (`changeId` absent) and Runs of other Changes are
- * excluded. Only `completed` Runs participate in stage detection —
+ * Historical Delivery-level Runs are excluded by the formal-fact Reader; Runs
+ * of other Changes are excluded here. Only `completed` Runs participate in stage detection —
  * `failed`/`cancelled` Runs do not advance the stage.
  */
 export function completedRunsForChange(

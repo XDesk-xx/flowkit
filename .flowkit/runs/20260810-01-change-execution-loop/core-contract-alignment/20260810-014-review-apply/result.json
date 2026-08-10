@@ -1,0 +1,15 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "013 已逐项关闭 012 的 Q1-RA-001/Q1-RA-002：真实 001→013 cumulative corpus 在新 Reader 下无 FactConflict，pre-Q1 revise context 与旧 Review finding compatibility 均收窄为 exact persisted identity + raw SHA-256 reader-only seam；current/new malformed schemaVersion 2 仍严格 fail closed。独立 affected 560/560、typecheck、lint、build、quality、OpenSpec Change strict 与 canonical specs 10/10 strict 全部通过，未发现新的 Apply blocker。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/core-contract-alignment/verification.md",
+      "versionFingerprint": "5b92d14f0ffd89702969e7a0007987abb6b2e74482424b6573851ba58a39a6f2",
+      "kind": "verification-summary"
+    }
+  },
+  "reviewVerdict": "approved",
+  "reviewFindings": []
+}

@@ -28,8 +28,9 @@ import { link, mkdir, readFile, readdir, rename, rm, stat, unlink, writeFile } f
 import { dirname, join } from 'node:path';
 import { assertMutable } from '../domain/terminal.js';
 import { validateRun } from '../domain/schema-validator.js';
-import type { Run } from '../domain/types.js';
-import type { ChangeAction, DeliveryAction } from '../domain/actions.js';
+import type { Run, BlockingAuthority } from '../domain/types.js';
+import { BLOCKING_AUTHORITIES } from '../domain/types.js';
+import type { ChangeAction } from '../domain/actions.js';
 import type { ExecutionStatus, ResultRef, ReviewVerdictValue, Role, RunStatus } from '../domain/types.js';
 import { FlowkitError } from '../shared/errors.js';
 import { atomicWriteFile } from '../shared/atomic-write.js';
@@ -40,8 +41,8 @@ import {
   validateActionResultWithoutRunRef,
   validateRunResultFileCombination,
   validateReviewVerdictIntegrity,
-  admitC1RunResult,
   validateActionResultApplicability,
+  admitC1RunResult,
   type ContextFile,
   type ContextFileConstraints,
   type RunResultFile,
@@ -87,11 +88,10 @@ import type { ReviewFinding } from './serialization.js';
 export interface CreateRunInput {
   readonly runId: string;
   readonly deliveryId: string;
-  /** Required for Change-level actions; MUST be absent for Delivery-level. */
-  readonly changeKey?: string;
-  /** Required for Change-level actions; MUST be absent for Delivery-level. */
-  readonly changeId?: string;
-  readonly action: ChangeAction | DeliveryAction;
+  /** Every current Standard Run is Change-scoped. */
+  readonly changeKey: string;
+  readonly changeId: string;
+  readonly action: ChangeAction;
   readonly role: Role;
   readonly ownerAuthorization: string;
   /**
@@ -344,34 +344,20 @@ async function deriveInputRef(input: CreateRunInput): Promise<ResultRef | undefi
  */
 async function readReferencedRunResult(
   deliveryRunsDir: string,
-  changeId: string | undefined,
+  changeId: string,
   runId: string,
 ): Promise<string> {
-  // Q1-RA-005 (defense-in-depth): reject path-shaped / non-Run-ID descriptors
-  // before they can inject path segments into the join below.
   validateRunIdDescriptor(runId);
-
-  // Try same-Change directory first.
-  const candidates: string[] = [];
-  if (changeId !== undefined) {
-    candidates.push(join(deliveryRunsDir, changeId, runId, 'result.json'));
+  const candidate = join(deliveryRunsDir, changeId, runId, 'result.json');
+  try {
+    return await readFile(candidate, 'utf-8');
+  } catch {
+    throw new FlowkitError(
+      'RESULT_REF_TARGET_MISSING',
+      `Referenced Run ${runId} result.json not found or unreadable in Change ${changeId}`,
+      { runId, changeId, candidate },
+    );
   }
-  // Try Delivery root (Delivery-level Run).
-  candidates.push(join(deliveryRunsDir, runId, 'result.json'));
-
-  for (const candidate of candidates) {
-    try {
-      return await readFile(candidate, 'utf-8');
-    } catch {
-      // Try next candidate.
-    }
-  }
-
-  throw new FlowkitError(
-    'RESULT_REF_TARGET_MISSING',
-    `Referenced Run ${runId} result.json not found or unreadable (searched ${candidates.length} locations)`,
-    { runId, changeId, candidates },
-  );
 }
 
 
@@ -769,7 +755,7 @@ async function validateConsumedReviewEntry(input: CreateRunInput, contextFile: C
   }
 }
 
-/** changes-requested Review → revise-* entry handoff. */
+/** Author-only changes-requested Review → revise-* entry handoff. */
 async function validateRevisionEntry(input: CreateRunInput, contextFile: ContextFile): Promise<void> {
   if (!isRevisionAction(input.action)) return;
   const contract = expectedReviewHandoff(input.action)!;
@@ -802,6 +788,14 @@ async function validateRevisionEntry(input: CreateRunInput, contextFile: Context
       { action: input.action, sourceReviewRun: input.sourceReviewRun, reviewAction: review.context.action, verdict: review.verdict },
     );
   }
+  const blockingAuthorities = deriveBlockingAuthoritiesFromReviewResult(review.result);
+  if (blockingAuthorities.length === 0 || blockingAuthorities.some((authority) => authority !== 'author')) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `${input.action} requires an author-only changes-requested source review`,
+      { action: input.action, sourceReviewRun: input.sourceReviewRun, blockingAuthorities },
+    );
+  }
   const expectedRef = buildRunResultRef(
     resolveRunResultPath(input.runsPathPrefix, input.deliveryId, input.changeId, input.sourceReviewRun).replace(/\/result\.json$/, ''),
     review.resultContent,
@@ -820,6 +814,15 @@ async function validateRevisionEntry(input: CreateRunInput, contextFile: Context
   } else {
     await validateReviewVerificationSummaryCurrent(review, input.repoRoot);
   }
+}
+
+function deriveBlockingAuthoritiesFromReviewResult(result: RunResultFile): readonly BlockingAuthority[] {
+  if (result.reviewVerdict !== 'changes-requested') return [];
+  const seen = new Set<BlockingAuthority>();
+  for (const finding of result.reviewFindings ?? []) {
+    if (finding.severity === 'blocking' && finding.blockingAuthority !== undefined) seen.add(finding.blockingAuthority);
+  }
+  return BLOCKING_AUTHORITIES.filter((authority) => seen.has(authority));
 }
 
 /** Read an admitted review verdict for source-review tuple completion validation. */
@@ -878,7 +881,7 @@ export function projectCurrentRun(contextFile: ContextFile): Run {
     action: contextFile.action,
     role: contextFile.role,
     status: 'pending',
-    ...(contextFile.changeId !== undefined && { changeId: contextFile.changeId }),
+    changeId: contextFile.changeId,
     ...(contextFile.inputRef !== undefined && { inputRef: contextFile.inputRef }),
   };
   // MUST pass B1 validateRun.
@@ -1181,7 +1184,7 @@ async function deriveActionResult(
   }
 
   return {
-    action: action as ChangeAction | DeliveryAction,
+    action: action as ChangeAction,
     executionStatus: input.executionStatus!,
     summary: input.summary!,
     ...(producedResultRefs !== undefined && { producedResultRefs }),
@@ -1235,7 +1238,7 @@ async function deriveConsumedInputRefs(
   runDir: string,
   consumedRunIds: readonly string[],
 ): Promise<ResultRef[]> {
-  const deliveryRunsDir = deriveDeliveryRunsDir(runDir, contextFile);
+  const deliveryRunsDir = deriveDeliveryRunsDir(runDir);
   const runsPathPrefix = deriveRunsPathPrefix(contextFile);
   const refs: ResultRef[] = [];
   for (const runId of consumedRunIds) {
@@ -1271,7 +1274,7 @@ async function deriveReviewVerdictRef(
       { action: contextFile.action, runId: contextFile.runId },
     );
   }
-  const deliveryRunsDir = deriveDeliveryRunsDir(runDir, contextFile);
+  const deliveryRunsDir = deriveDeliveryRunsDir(runDir);
   const runsPathPrefix = deriveRunsPathPrefix(contextFile);
   const content = await readReferencedRunResult(
     deliveryRunsDir,
@@ -1340,13 +1343,12 @@ function requireChangeId(contextFile: ContextFile, action: string): void {
  * Derive the Delivery runs directory (parent of all Run directories for this
  * Delivery) from the absolute Run directory + ContextFile.
  *
- * - Change-level Run (`changeId` present): `runDir = <deliveryRunsDir>/<changeId>/<runId>`.
- * - Delivery-level Run: `runDir = <deliveryRunsDir>/<runId>`.
+ * Current ContextFile is Change-only, so `runDir` is always
+ * `<deliveryRunsDir>/<changeId>/<runId>`. Historical Delivery-level layouts
+ * are handled by bounded legacy readers, not by current result persistence.
  */
-function deriveDeliveryRunsDir(runDir: string, contextFile: ContextFile): string {
-  return contextFile.changeId !== undefined
-    ? dirname(dirname(runDir))
-    : dirname(runDir);
+function deriveDeliveryRunsDir(runDir: string): string {
+  return dirname(dirname(runDir));
 }
 
 /**
@@ -1494,7 +1496,6 @@ async function readAdmittedSourceReviewVerdicts(
   }
   const deliveryRunsDir = deriveDeliveryRunsDir(
     join(repoRoot, normalizeSeparators(contextFile.runPath)),
-    contextFile,
   );
   // The source review Run is in the same Change directory.
   const changeDir = contextFile.changeId === undefined
@@ -1529,7 +1530,6 @@ async function validateReviewCompletionArtifacts(
   if (contextFile.changeId === undefined || contextFile.reviewedRunId === undefined) return;
   const deliveryRunsDir = deriveDeliveryRunsDir(
     join(repoRoot, normalizeSeparators(contextFile.runPath)),
-    contextFile,
   );
   const changeDir = join(deliveryRunsDir, contextFile.changeId);
 
@@ -1786,17 +1786,12 @@ function computeRunPaths(
   deliveryRunsDir: string,
   runsPathPrefix: string,
   deliveryId: string,
-  changeId: string | undefined,
+  changeId: string,
   runId: string,
 ): { runDir: string; runPath: string } {
-  const segments = [deliveryId];
-  if (changeId !== undefined) {
-    segments.push(changeId);
-  }
-  segments.push(runId);
-
+  const segments = [deliveryId, changeId, runId];
   const relativePart = segments.join('/');
-  const runDir = join(deliveryRunsDir, ...(changeId !== undefined ? [changeId, runId] : [runId]));
+  const runDir = join(deliveryRunsDir, changeId, runId);
   const runPath = `${normalizeSeparators(runsPathPrefix).replace(/\/+$/, '')}/${relativePart}/`;
   return { runDir, runPath };
 }
@@ -1815,8 +1810,8 @@ function buildContextFile(
     role: input.role,
     ownerAuthorization: input.ownerAuthorization,
     runPath,
-    ...(input.changeKey !== undefined && { changeKey: input.changeKey }),
-    ...(input.changeId !== undefined && { changeId: input.changeId }),
+    changeKey: input.changeKey,
+    changeId: input.changeId,
     ...(inputRef !== undefined && { inputRef }),
     ...(verificationInputRef !== undefined && { verificationInputRef }),
     ...(input.sourceReviewRun !== undefined && { sourceReviewRun: input.sourceReviewRun }),

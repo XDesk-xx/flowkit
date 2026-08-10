@@ -166,7 +166,7 @@ openspec validate --all --strict
 test:full
 ```
 
-该命令只是项目完整 Core verification 工具。只有当所有 required Changes completed + checkpointed、Owner 明确授权并进入正式 `full-test` Action 后，这次执行结果才可被 Delivery lifecycle 消费为 Delivery Full Test。Author/Reviewer 在 F1 自身验收中运行相同命令，只产生 Change evidence。
+该命令只是项目完整 Core verification 工具。只有当所有 required Changes completed + checkpointed、Owner 明确授权 Delivery Full Test，并由 Delivery-level verification behavior 正式执行后，这次结果才可被 Delivery lifecycle 消费为 Delivery Full Test。Delivery Full Test 不是 Standard Formal Action，也不创建 Standard Run。Author/Reviewer 在 Change 验收中运行相同底层命令只产生 Change evidence，不能取得 Delivery Full Test lifecycle 语义。
 
 F1 timing reference budget：focused `2s/5s`、affected `30s/60s`、full `30s/60s`、typecheck/lint/build 各 `10s/20s`（target/warning）。超预算只输出 diagnosis，不改变 correctness result。
 
@@ -216,17 +216,11 @@ Bootstrap 阶段：
 - Flowkit 的 Delivery 状态成为唯一流程权威；
 - 具体字段 Schema、序列化路径和 Adapter 由 C1 或后续实现定义。
 
-Delivery 级 Run 可以记录一次授权、执行或结果消费过程，但不是 `fullTestStatus` 的权威。
+Delivery Full Test / Finalize 不使用 Standard Run。历史仓库中已经存在的 Delivery-level Run 只允许 bounded read / Run-ID compatibility，不进入 current Policy projection，也不得作为新 Run 创建能力。
 
-### 4.4 Delivery 级 Run
+### 4.4 Delivery behavior 与 Standard Run 分离
 
-Full Test 等 Delivery 级动作使用：
-
-```text
-.flowkit/runs/<delivery-id>/_delivery/<run-id>/
-```
-
-Run 保存执行上下文和结果摘要；完整 Full Test 结果仍归项目验证工具。
+Delivery Full Test 是 Owner-authorized Delivery verification behavior，不是 Change Action、Standard Formal Action、Reviewer Action 或 Standard Run。Q1→03 过渡期间，Owner authorization 仍是合法正式事实；当行为已授权但 03 尚未实现 Delivery executor 时，Policy 必须 fail-closed 在 `delivery-behavior-not-implemented`，不得伪造 `full-test` Run。
 
 ## 5. Full Test 授权边界
 

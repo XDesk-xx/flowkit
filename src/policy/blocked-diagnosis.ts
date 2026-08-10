@@ -156,3 +156,19 @@ export function fullTestFailedDiagnosis(): BlockedDiagnosis {
     FULL_TEST_FAILED_OWNER_ACTIONS,
   );
 }
+
+export function nonAuthorReviewBlockerDiagnosis(
+  authorities: readonly string[],
+): BlockedDiagnosis {
+  return blockedDiagnosis('non-author-review-blocker', [
+    `blocking-authorities:${authorities.join(',')}`,
+  ]);
+}
+
+export function deliveryBehaviorNotImplementedDiagnosis(
+  behavior: 'full-test' | 'delivery-finalize',
+): BlockedDiagnosis {
+  return blockedDiagnosis('delivery-behavior-not-implemented', [
+    `delivery-behavior-not-implemented:${behavior}`,
+  ]);
+}

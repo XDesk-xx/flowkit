@@ -83,31 +83,32 @@ B1 MUST 为 Delivery、Change、Run 三个实体分别定义结构状态转换�
 
 ### Requirement: 固定 Action Catalog
 
-B1 MUST 定义固定 Action Catalog：10 个 Change Action（explore、review-explore、revise-explore、propose、review-propose、revise-propose、apply、review-apply、revise-apply、archive）+ 2 个 Delivery Action（full-test、delivery-finalize）。Catalog MUST NOT 包含 `review`、`revise` 或 `change-checkpoint`。
+B1 MUST 定义固定的 Standard Formal Action Catalog，且 Catalog MUST 只包含 10 个 Change Action：`explore`、`review-explore`、`revise-explore`、`propose`、`review-propose`、`revise-propose`、`apply`、`review-apply`、`revise-apply`、`archive`。`full-test` 与 `delivery-finalize` MUST NOT 是 Standard Formal Action；`review`、`revise` 与 `change-checkpoint` 也 MUST NOT 进入 Catalog。Delivery Full Test / Finalize 的 Delivery behavior machine representation 后置到 Delivery Execution Loop，不得通过保留 Delivery Action 兼容当前模型。
 
-#### Scenario: CHANGE_ACTIONS 包含 10 个 Change Action
+#### Scenario: CHANGE_ACTIONS 包含且仅包含 10 个 Change Action
 
-- **WHEN** 检查 `CHANGE_ACTIONS` 常量
-- **THEN** MUST 包含 10 项：explore、review-explore、revise-explore、propose、review-propose、revise-propose、apply、review-apply、revise-apply、archive
-- **AND** MUST 使用 `as const`
+- **WHEN** 检查 Standard Formal Action Catalog
+- **THEN** MUST 包含且仅包含 10 项：`explore`、`review-explore`、`revise-explore`、`propose`、`review-propose`、`revise-propose`、`apply`、`review-apply`、`revise-apply`、`archive`
+- **AND** MUST 使用 `const` 数组 + `as const`
+- **AND** `FormalAction` MUST 等价于 Change Action union
 
-#### Scenario: DELIVERY_ACTIONS 包含 2 个 Delivery Action
+#### Scenario: Delivery behavior 不进入 Standard Action Catalog
 
-- **WHEN** 检查 `DELIVERY_ACTIONS` 常量
-- **THEN** MUST 包含 2 项：full-test、delivery-finalize
-- **AND** MUST 使用 `as const`
+- **WHEN** 检查 Standard Formal Action Catalog
+- **THEN** MUST NOT 包含 `full-test` 或 `delivery-finalize`
+- **AND** MUST NOT 通过另一个 current `DELIVERY_ACTIONS` Catalog 把二者重新并入 `FormalAction`
+- **AND** Delivery Full Test / Finalize MUST NOT 因兼容历史而获得新的 Standard Run
 
-#### Scenario: Catalog 不含 review/revise/change-checkpoint
+#### Scenario: Catalog 不含统一入口与 Git boundary
 
-- **WHEN** 检查 `CHANGE_ACTIONS` 和 `DELIVERY_ACTIONS`
+- **WHEN** 检查 Standard Formal Action Catalog
 - **THEN** MUST NOT 包含 `review`、`revise` 或 `change-checkpoint`
 
 #### Scenario: Action Catalog 不使用 enum
 
-- **WHEN** 检查 `src/domain/actions.ts`
+- **WHEN** 检查领域 Action 定义
 - **THEN** MUST 使用 `const` 数组 + `as const`
 - **AND** MUST NOT 使用 `enum`
-
 ### Requirement: Run ID 纯函数契约
 
 B1 MUST 提供 Run ID 纯解析/校验/分配契约，包含 `parseRunId`、`validateRunIdUniqueness`、`allocateNextNnn`、`validateCandidateNnn` 四个纯函数。B1 MUST 操作传入的 Run-ID 字符串 fixture，MUST NOT 执行文件系统遍历（文件系统遍历和持久化属于 C1）。
@@ -299,4 +300,3 @@ B1 MUST NOT 实现 Policy 引擎、FormalFactSnapshot、fact reader、原子持�
 
 - **WHEN** 检查 `package.json` dependencies
 - **THEN** B1 MUST NOT 新增外部运行时依赖（如 Zod、JSON Schema 库）
-

@@ -7,7 +7,7 @@
  * Run-ID allocation logic.
  *
  * Run-ID grammar: `YYYYMMDD-NNN-action` (B1-owned). NNN is Delivery-scoped and
- * shared across Change-level and Delivery-level Runs.
+ * shared across current Change Runs and bounded historical Delivery-level Runs.
  */
 
 import { readdir, stat } from 'node:fs/promises';
@@ -33,9 +33,9 @@ export interface AllocatedRunId {
  *
  * Layout:
  *   `<runsRoot>/<deliveryId>/<changeId>/<runId>/`  (Change-level)
- *   `<runsRoot>/<deliveryId>/<runId>/`             (Delivery-level)
+ *   `<runsRoot>/<deliveryId>/<runId>/`             (historical Delivery-level compatibility)
  *
- * Both levels share the same NNN space within a Delivery. Staging directories
+ * Both shapes retain the same NNN space within a Delivery. New Runs are Change-level only. Staging directories
  * (`.tmp-<run-id>/`) are skipped.
  *
  * @param deliveryRunsDir - Absolute path to `<runsRoot>/<deliveryId>/`.
@@ -67,7 +67,7 @@ export async function collectRunIds(deliveryRunsDir: string): Promise<string[]> 
       continue;
     }
 
-    // Delivery-level Run: entry itself is a Run directory.
+    // Historical Delivery-level Run: retain only for bounded NNN compatibility.
     if (looksLikeRunId(entry)) {
       runIds.push(entry);
     }

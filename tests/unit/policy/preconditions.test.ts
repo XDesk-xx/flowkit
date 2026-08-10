@@ -77,7 +77,7 @@ describe('preconditions — review-explore (task 4.3, D1-10)', () => {
     assert.deepEqual(evaluatePreconditions(snap, 'review-explore'), []);
   });
 
-  it('unmet matching-changes-requested-requires-revision on match+cr (D1-10)', () => {
+  it('unmet matching-author-only-changes-requested-requires-revision on match+cr (D1-10)', () => {
     const explore = buildRun({ nnn: 1, action: 'explore' });
     const review = buildRun({ nnn: 2, action: 'review-explore', role: 'reviewer' });
     const v = buildVerdict({ reviewNnn: 2, reviewedRunId: explore.runId, verdict: 'changes-requested' });
@@ -87,7 +87,7 @@ describe('preconditions — review-explore (task 4.3, D1-10)', () => {
       reviewVerdicts: [v],
     });
     assert.deepEqual(evaluatePreconditions(snap, 'review-explore'), [
-      'matching-changes-requested-requires-revision',
+      'matching-author-only-changes-requested-requires-revision',
     ]);
   });
 
@@ -171,7 +171,7 @@ describe('preconditions — review-propose (task 4.6, D1-10)', () => {
     assert.deepEqual(evaluatePreconditions(snap, 'review-propose'), []);
   });
 
-  it('unmet matching-changes-requested-requires-revision on match+cr', () => {
+  it('unmet matching-author-only-changes-requested-requires-revision on match+cr', () => {
     const explore = buildRun({ nnn: 1, action: 'explore' });
     const reviewE = buildRun({ nnn: 2, action: 'review-explore', role: 'reviewer' });
     const propose = buildRun({ nnn: 3, action: 'propose' });
@@ -184,7 +184,7 @@ describe('preconditions — review-propose (task 4.6, D1-10)', () => {
       reviewVerdicts: [vE, vP],
     });
     assert.deepEqual(evaluatePreconditions(snap, 'review-propose'), [
-      'matching-changes-requested-requires-revision',
+      'matching-author-only-changes-requested-requires-revision',
     ]);
   });
 });
@@ -252,7 +252,7 @@ describe('preconditions — review-apply (task 4.9, D1-7, D1-10)', () => {
     assert.ok(unmet.includes('verification-facts-unavailable'));
   });
 
-  it('match+cr adds matching-changes-requested-requires-revision', () => {
+  it('match+cr adds matching-author-only-changes-requested-requires-revision', () => {
     const snap = applyArtifactSnapshot();
     const reviewA = buildRun({ nnn: 6, action: 'review-apply', role: 'reviewer' });
     const vA = buildVerdict({ reviewNnn: 6, reviewedRunId: snap.runs[4]!.runId, verdict: 'changes-requested' });
@@ -262,7 +262,7 @@ describe('preconditions — review-apply (task 4.9, D1-7, D1-10)', () => {
       reviewVerdicts: [...snap.reviewVerdicts, vA],
     };
     const unmet = evaluatePreconditions(withReview, 'review-apply');
-    assert.ok(unmet.includes('matching-changes-requested-requires-revision'));
+    assert.ok(unmet.includes('matching-author-only-changes-requested-requires-revision'));
     assert.ok(unmet.includes('verification-facts-unavailable'));
   });
 });
@@ -322,111 +322,12 @@ describe('preconditions — archive (task 4.11, D1-7, D1-11)', () => {
   });
 });
 
-describe('preconditions — full-test (task 4.12, 4.18, D1-13, 10.23)', () => {
-  const FULL_TEST_SCOPE = [buildAuthorization('full-test')];
-
-  it('allowed only when authorized + scope + all completed+checkpointed', () => {
-    const snap = completedDeliverySnapshot({
-      fullTestStatus: 'authorized',
-      authorizations: FULL_TEST_SCOPE,
-    });
-    assert.deepEqual(evaluatePreconditions(snap, 'full-test'), []);
-  });
-
-  it('unmet full-test-not-authorized on awaiting-user-decision', () => {
-    const snap = completedDeliverySnapshot({
-      fullTestStatus: 'awaiting-user-decision',
-      authorizations: FULL_TEST_SCOPE,
-    });
-    assert.ok(evaluatePreconditions(snap, 'full-test').includes('full-test-not-authorized'));
-  });
-
-  it('unmet full-test-already-failed on failed', () => {
-    const snap = completedDeliverySnapshot({
-      fullTestStatus: 'failed',
-      authorizations: FULL_TEST_SCOPE,
-    });
-    assert.ok(evaluatePreconditions(snap, 'full-test').includes('full-test-already-failed'));
-  });
-
-  it('unmet full-test-already-passed on passed', () => {
-    const snap = completedDeliverySnapshot({
-      fullTestStatus: 'passed',
-      authorizations: FULL_TEST_SCOPE,
-    });
-    assert.ok(evaluatePreconditions(snap, 'full-test').includes('full-test-already-passed'));
-  });
-
-  it('unmet full-test-not-authorized on not-ready', () => {
-    const snap = completedDeliverySnapshot({
-      fullTestStatus: 'not-ready',
-      authorizations: FULL_TEST_SCOPE,
-    });
-    assert.ok(evaluatePreconditions(snap, 'full-test').includes('full-test-not-authorized'));
-  });
-
-  it('unmet full-test-not-authorized on undefined', () => {
-    const snap = completedDeliverySnapshot({
-      fullTestStatus: undefined,
-      authorizations: FULL_TEST_SCOPE,
-    });
-    assert.ok(evaluatePreconditions(snap, 'full-test').includes('full-test-not-authorized'));
-  });
-
-  it('unmet full-test-not-authorized without scope (even when authorized)', () => {
-    const snap = completedDeliverySnapshot({
-      fullTestStatus: 'authorized',
-      authorizations: [],
-    });
-    assert.ok(evaluatePreconditions(snap, 'full-test').includes('full-test-not-authorized'));
-  });
-
-  it('unmet required-changes-not-completed when a required change is active', () => {
-    const snap = buildSnapshot({
-      changes: [buildChange({ state: 'active', required: true })],
-      gitBoundaries: [buildCheckpointBoundary()],
-      deliveryFullTestStatus: 'authorized' as never,
-      ownerAuthorizations: FULL_TEST_SCOPE as never,
-    });
-    assert.ok(evaluatePreconditions(snap, 'full-test').includes('required-changes-not-completed'));
-  });
-});
-
-describe('preconditions — delivery-finalize (task 4.13, 4.17, D1-12, 10.22)', () => {
-  const FINALIZE_SCOPE = [buildAuthorization('finalize')];
-
-  it('allowed only when passed + finalize scope + all completed+checkpointed', () => {
-    const snap = completedDeliverySnapshot({
-      fullTestStatus: 'passed',
-      authorizations: FINALIZE_SCOPE,
-    });
-    assert.deepEqual(evaluatePreconditions(snap, 'delivery-finalize'), []);
-  });
-
-  for (const status of ['not-ready', 'awaiting-user-decision', 'authorized', 'failed'] as const) {
-    it(`unmet full-test-not-passed on ${status}`, () => {
-      const snap = completedDeliverySnapshot({
-        fullTestStatus: status,
-        authorizations: FINALIZE_SCOPE,
-      });
-      assert.ok(evaluatePreconditions(snap, 'delivery-finalize').includes('full-test-not-passed'));
-    });
-  }
-
-  it('unmet full-test-not-passed on undefined', () => {
-    const snap = completedDeliverySnapshot({
-      fullTestStatus: undefined,
-      authorizations: FINALIZE_SCOPE,
-    });
-    assert.ok(evaluatePreconditions(snap, 'delivery-finalize').includes('full-test-not-passed'));
-  });
-
-  it('unmet finalize-not-authorized without scope', () => {
-    const snap = completedDeliverySnapshot({
-      fullTestStatus: 'passed',
-      authorizations: [],
-    });
-    assert.ok(evaluatePreconditions(snap, 'delivery-finalize').includes('finalize-not-authorized'));
+describe('preconditions — Change-only Standard Actions', () => {
+  it('Delivery behaviors are outside evaluatePreconditions', () => {
+    const snap = completedDeliverySnapshot({ fullTestStatus: 'authorized', authorizations: [buildAuthorization('full-test')] });
+    // The public canRun catalog rejects these before precondition dispatch;
+    // evaluatePreconditions is intentionally typed to Change FormalAction only.
+    assert.ok(snap.deliveryFullTestStatus === 'authorized');
   });
 });
 

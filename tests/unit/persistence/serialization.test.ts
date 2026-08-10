@@ -1,5 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 import { FlowkitError } from '../../../src/shared/errors.js';
 import {
@@ -11,6 +13,7 @@ import {
   validateReviewVerdictIntegrity,
   validateActionResultApplicability,
   admitC1RunResult,
+  admitC1RunResultForReader,
   type ContextFile,
   type RunResultFile,
 } from '../../../src/persistence/serialization.js';
@@ -431,10 +434,11 @@ describe('validateContextFile', () => {
     assert.equal(cf.changeId, 'formal-fact-reader-and-persistence');
   });
 
-  it('accepts a valid Delivery-level ContextFile (task 10.5, 12.34)', () => {
-    const cf = validateContextFile(validDeliveryContext);
-    assert.equal(cf.changeId, undefined);
-    assert.equal(cf.changeKey, undefined);
+  it('rejects retired Delivery behavior as a current schemaVersion 2 ContextFile', () => {
+    assert.throws(
+      () => validateContextFile(validDeliveryContext),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'UNKNOWN_ACTION',
+    );
   });
 
   it('rejects schemaVersion !== 2 (task 12.16)', () => {
@@ -465,15 +469,10 @@ describe('validateContextFile', () => {
     );
   });
 
-  it('rejects Delivery action carrying changeId (task 10.5, 12.32)', () => {
+  it('rejects retired Delivery action even if a caller adds Change identity', () => {
     assert.throws(
-      () =>
-        validateContextFile({
-          ...validDeliveryContext,
-          changeId: 'some-change',
-          changeKey: 'X',
-        }),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+      () => validateContextFile({ ...validDeliveryContext, changeId: 'some-change', changeKey: 'X' }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'UNKNOWN_ACTION',
     );
   });
 
@@ -748,24 +747,6 @@ describe('validateContextFileIdentity', () => {
     );
   });
 
-  it('skips changeId check for Delivery-level Run (task 12.42)', () => {
-    const deliveryCf: ContextFile = {
-      schemaVersion: 2,
-      runId: '20260806-002-full-test',
-      deliveryId: '20260806-01-deterministic-core',
-      action: 'full-test',
-      role: 'owner',
-      ownerAuthorization: 'required',
-      runPath: '.flowkit/runs/20260806-01-deterministic-core/20260806-002-full-test/',
-    };
-    assert.doesNotThrow(() =>
-      validateContextFileIdentity(
-        deliveryCf,
-        '/repo/.flowkit/runs/20260806-01-deterministic-core/20260806-002-full-test',
-      ),
-    );
-  });
-
   it('rejects runPath inconsistent with filesystem (task 12.43)', () => {
     const badCf: ContextFile = {
       ...cf,
@@ -874,7 +855,7 @@ describe('validateReviewVerdictIntegrity', () => {
           actionResult: { action: 'review-propose', executionStatus: 'completed', summary: 'review' },
           reviewVerdict: 'approved',
           reviewFindings: [
-            { id: 'B-001', severity: 'blocking', title: 'major', problem: 'broken', requiredChange: 'fix it' },
+            { id: 'B-001', severity: 'blocking', blockingAuthority: 'author', title: 'major', problem: 'broken', requiredChange: 'fix it' },
           ],
         }),
       (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
@@ -888,7 +869,7 @@ describe('validateReviewVerdictIntegrity', () => {
       actionResult: { action: 'review-propose', executionStatus: 'completed', summary: 'review' },
       reviewVerdict: 'changes-requested',
       reviewFindings: [
-        { id: 'B-001', severity: 'blocking', title: 'major', problem: 'broken', requiredChange: 'fix it' },
+        { id: 'B-001', severity: 'blocking', blockingAuthority: 'author', title: 'major', problem: 'broken', requiredChange: 'fix it' },
       ],
     });
   });
@@ -1096,7 +1077,7 @@ describe('validateActionResultApplicability (Q1-RA-010)', () => {
             },
             reviewVerdict: 'changes-requested',
             reviewFindings: [
-              { id: 'B-001', severity: 'blocking', title: 'f', problem: 'p', requiredChange: 'r' },
+              { id: 'B-001', severity: 'blocking', blockingAuthority: 'author', title: 'f', problem: 'p', requiredChange: 'r' },
             ],
           }),
           'review-apply',
@@ -1120,7 +1101,7 @@ describe('validateActionResultApplicability (Q1-RA-010)', () => {
             },
             reviewVerdict: 'changes-requested',
             reviewFindings: [
-              { id: 'B-001', severity: 'blocking', title: 'f', problem: 'p', requiredChange: 'r' },
+              { id: 'B-001', severity: 'blocking', blockingAuthority: 'author', title: 'f', problem: 'p', requiredChange: 'r' },
             ],
           }),
           'review-apply',
@@ -1220,5 +1201,72 @@ describe('validateActionResultApplicability (Q1-RA-010)', () => {
       }),
       'review-apply',
     );
+  });
+});
+
+
+describe('Q1 blockingAuthority writer and reader compatibility', () => {
+  const base = {
+    runStatus: 'completed' as const,
+    actionResult: { action: 'review-propose' as const, executionStatus: 'completed' as const, summary: 'review' },
+    reviewVerdict: 'changes-requested' as const,
+  };
+
+  it('new writer rejects blocking finding without blockingAuthority', () => {
+    assert.throws(() => admitC1RunResult(JSON.stringify({ ...base, reviewFindings: [
+      { id: 'B1', severity: 'blocking', title: 'fix', problem: 'x', requiredChange: 'revise' },
+    ] }), 'review-propose'), (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED');
+  });
+
+  it('author blocker requires requiredChange while non-author blocker forbids it', () => {
+    assert.doesNotThrow(() => admitC1RunResult(JSON.stringify({ ...base, reviewFindings: [
+      { id: 'B1', severity: 'blocking', blockingAuthority: 'author', title: 'fix', problem: 'x', requiredChange: 'revise' },
+    ] }), 'review-propose'));
+    assert.doesNotThrow(() => admitC1RunResult(JSON.stringify({ ...base, reviewFindings: [
+      { id: 'B2', severity: 'blocking', blockingAuthority: 'owner', title: 'decision', problem: 'x' },
+    ] }), 'review-propose'));
+    assert.throws(() => admitC1RunResult(JSON.stringify({ ...base, reviewFindings: [
+      { id: 'B3', severity: 'blocking', blockingAuthority: 'owner', title: 'decision', problem: 'x', requiredChange: 'wrong' },
+    ] }), 'review-propose'));
+  });
+
+  it('reader-only compatibility requires exact persisted pre-Q1 Review identity + bytes', () => {
+    const runId = '20260810-006-review-propose';
+    const raw = readFileSync(join(
+      process.cwd(),
+      `.flowkit/runs/20260810-01-change-execution-loop/core-contract-alignment/${runId}/result.json`,
+    ), 'utf8');
+
+    assert.throws(() => admitC1RunResult(raw, 'review-propose'));
+    assert.throws(() => admitC1RunResultForReader(raw, 'review-propose'));
+
+    const admitted = admitC1RunResultForReader(raw, 'review-propose', {
+      runId,
+      deliveryId: '20260810-01-change-execution-loop',
+      changeId: 'core-contract-alignment',
+    });
+    assert.equal(admitted.reviewFindings?.[0]?.blockingAuthority, 'author');
+
+    assert.throws(() => admitC1RunResultForReader(`${raw} `, 'review-propose', {
+      runId,
+      deliveryId: '20260810-01-change-execution-loop',
+      changeId: 'core-contract-alignment',
+    }));
+    assert.throws(() => admitC1RunResultForReader(raw, 'review-propose', {
+      runId: '20260810-999-review-propose',
+      deliveryId: '20260810-01-change-execution-loop',
+      changeId: 'core-contract-alignment',
+    }));
+  });
+
+  it('new/current malformed Review with old requiredChange shape still fails closed in Reader', () => {
+    const raw = JSON.stringify({ ...base, reviewFindings: [
+      { id: 'CURRENT', severity: 'blocking', title: 'malformed', problem: 'x', requiredChange: 'revise' },
+    ] });
+    assert.throws(() => admitC1RunResultForReader(raw, 'review-propose', {
+      runId: '20260810-999-review-propose',
+      deliveryId: '20260810-01-change-execution-loop',
+      changeId: 'core-contract-alignment',
+    }), (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED');
   });
 });

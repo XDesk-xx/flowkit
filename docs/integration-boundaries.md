@@ -20,7 +20,7 @@ C1 继承 B1 已冻结的以下事实，不重新定义：
 - 正式角色：`owner / author / reviewer`；不因工具组合增加"远程 Author""本地 Materializer"等核心角色；
 - Policy 权威：当前唯一合法的下一 Action 由 Policy 根据正式事实计算，不持久化 `currentAction`；
 - 事实权威：`One fact, one authority`；
-- Review 与 Revision：`review-* → approved → 向前推进`；`review-* → changes-requested → revise-* → 重新 Review`；
+- Review 与 Revision：`review-* → approved → 向前推进`；`changes-requested` 只表示 target 不可批准，author-only blockers 才进入 `revise-*`；含任一 non-author blocker 时 Author revise 禁止、`next()` blocked，但 explicit same-stage re-review 合法且不由 Policy 自动触发；
 - Run 基础结构：`.flowkit/runs/<delivery-id>/<change-id>/<run-id>/`。
 
 ## 3. Action Definition 与 Action Package
@@ -48,7 +48,7 @@ Action Package 至少需要让执行者知道：
 哪些 owner 授权已存在或尚未存在
 ```
 
-当当前 Action 需要 owner 授权（如 Apply、Archive、Full Test）时，Action Package 必须标明哪些授权已存在、哪些尚未存在。执行者不得自行授予缺失的授权。
+当当前 Change Action 需要 owner 授权（如 Apply、Archive）时，Action Package 必须标明哪些授权已存在、哪些尚未存在。Delivery Full Test / Finalize 的 Owner authorization 属 Delivery behavior boundary，不是 Standard Change Action Package。执行者不得自行授予缺失的授权。
 
 ## 4. Action Result
 

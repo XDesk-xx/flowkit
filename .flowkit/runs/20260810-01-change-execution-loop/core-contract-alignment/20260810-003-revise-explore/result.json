@@ -1,0 +1,16 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-explore",
+    "executionStatus": "completed",
+    "summary": "已按 002 Reviewer 的两个 blocking findings 修订 Q1 Explore。Q1-RE-001：确认 flowkit-bootstrap-and-roadmap 仍是 active canonical affected capability，其 Reviewer/Revision requirement 继续冻结 changes-requested→Author revise；Explore 已纳入该 surface，并要求 Proposal 先做 repo-wide canonical conflict scan 再冻结最终 affected capability/file set，避免把当前表格误当 whitelist。Q1-RE-002：Explore 已新增 Q1→03 Policy 过渡契约问题，要求 Proposal 明确定义移除 full-test/delivery-finalize FormalAction 后、03 A1 尚未实现前 no-active-change Delivery 状态的 deterministic/fail-closed 输出；不得返回伪 Delivery FormalAction、不得创建 Delivery Run、不得提前实现 03 的完整 Delivery behavior model/executor。未进入 Proposal 或代码修改。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/core-contract-alignment/explore.md",
+        "versionFingerprint": "42128a97ddc8fdd589a11925f700d7ff3d40cd2f96ef79b1272d1ba9926ccc6a",
+        "kind": "produced-artifact"
+      }
+    ],
+    "nextActionRecommendation": "review-explore"
+  }
+}

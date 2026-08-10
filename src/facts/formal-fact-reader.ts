@@ -2,7 +2,7 @@
  * C1 formal-fact-reader-and-persistence: formal-fact Reader (D1, D2, D3).
  *
  * Q2 orchestration-authority-boundary-correction:
- * - current Policy projection reads the active Change plus Delivery-level Runs;
+ * - current Policy projection reads only Runs of the active Change;
  * - completed/checkpointed Change Run corpora remain Git history, not current
  *   mutable-artifact replay input;
  * - active schemaVersion 2 Runs keep strict identity, closed-schema and
@@ -13,10 +13,12 @@
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { normalizeSeparators } from '../shared/paths.js';
+import { isFormalAction } from '../domain/actions.js';
 import { parseYaml } from './yaml-parser.js';
 import { readGitBoundarySummaries } from './git-boundary-reader.js';
-import { discriminateRun, normalizeBootstrapRunStatus } from '../persistence/legacy-recognizer.js';
-import { validateContextFile, admitC1RunResult } from '../persistence/serialization.js';
+import { discriminateRunForReader, normalizeBootstrapRunStatus } from '../persistence/legacy-recognizer.js';
+import type { LegacyRun } from '../persistence/legacy-recognizer.js';
+import { validateContextFile, admitC1RunResultForReader } from '../persistence/serialization.js';
 import type { ContextFile } from '../persistence/serialization.js';
 import {
   resolveRunResultPath,
@@ -25,7 +27,8 @@ import {
   validateSourceReviewTuple,
   expectedSourceReviewActionFor,
 } from '../persistence/result-ref-adapter.js';
-import type { ResultRef, RunStatus, VerificationStatus } from '../domain/types.js';
+import { BLOCKING_AUTHORITIES } from '../domain/types.js';
+import type { BlockingAuthority, ResultRef, RunStatus, VerificationStatus } from '../domain/types.js';
 import { FlowkitError } from '../shared/errors.js';
 import type {
   ChangeFact,
@@ -294,13 +297,9 @@ async function readRuns(deliveryRunsDir: string, activeChangeId?: string): Promi
     }
 
     if (looksLikeRunId(entry)) {
-      const result = await readSingleRun(entryPath, entry);
-      if (result.run !== undefined) {
-        runs.push(result.run);
-        if (result.verdict !== undefined) reviewVerdicts.push(result.verdict);
-        if (result.format === 'c1') c1RunIds.add(result.run.runId);
-      }
-      conflicts.push(...result.conflicts);
+      // Historical Delivery-level Run directories are retained only for
+      // bounded legacy/NNN compatibility. They are not current Policy facts.
+      continue;
     }
   }
   return { runs, reviewVerdicts, c1RunIds, runConflicts: conflicts };
@@ -337,7 +336,7 @@ interface SingleRunResult {
   readonly run?: RunFact;
   readonly verdict?: ReviewVerdictFact;
   /** Kept internal to the Reader so C1-only validators never consume bounded legacy projections. */
-  readonly format?: 'c1' | 'legacy';
+  readonly format?: 'c1' | 'c1-pre-q1-compat' | 'legacy';
   readonly conflicts: readonly FactConflict[];
 }
 
@@ -364,7 +363,7 @@ async function readSingleRun(runDir: string, runId: string): Promise<SingleRunRe
     return { conflicts };
   }
 
-  const classification = discriminateRun(parsedContext, runDir);
+  const classification = discriminateRunForReader(contextContent, parsedContext, runDir);
   if (classification.kind === 'conflict') {
     conflicts.push({ ...classification.conflict, authority: runDir });
     return { conflicts };
@@ -373,8 +372,10 @@ async function readSingleRun(runDir: string, runId: string): Promise<SingleRunRe
   const resultPath = join(runDir, 'result.json');
   let hasResult = false;
   let parsedResult: unknown = null;
+  let rawResultContent: string | undefined;
   try {
     const resultContent = await readFile(resultPath, 'utf-8');
+    rawResultContent = resultContent;
     hasResult = true;
     try {
       parsedResult = JSON.parse(resultContent);
@@ -398,7 +399,17 @@ async function readSingleRun(runDir: string, runId: string): Promise<SingleRunRe
   }
 
   if (classification.kind === 'c1') {
-    return readC1Run(classification.contextFile, runDir, runId, resultPath, hasResult, parsedResult, conflicts);
+    return readC1Run(
+      classification.contextFile,
+      runDir,
+      runId,
+      resultPath,
+      hasResult,
+      parsedResult,
+      rawResultContent,
+      conflicts,
+      classification.readerCompatibility,
+    );
   }
 
   return readLegacyRun(
@@ -419,17 +430,23 @@ function readC1Run(
   resultPath: string,
   hasResult: boolean,
   parsedResult: unknown,
+  rawResultContent: string | undefined,
   conflicts: FactConflict[],
+  readerCompatibility?: 'pre-q1-revision-context',
 ): SingleRunResult {
   let status: RunStatus = 'pending';
   let verdict: ReviewVerdictFact | undefined;
   let consumedInputRefs: readonly ResultRef[] | undefined;
   let reviewVerdictRef: ResultRef | undefined;
+  let admittedResult: import('../persistence/serialization.js').RunResultFile | undefined;
 
   if (hasResult && parsedResult !== null) {
-    let admittedResult: import('../persistence/serialization.js').RunResultFile;
     try {
-      admittedResult = admitC1RunResult(JSON.stringify(parsedResult), contextFile.action);
+      admittedResult = admitC1RunResultForReader(rawResultContent ?? JSON.stringify(parsedResult), contextFile.action, {
+        runId: contextFile.runId,
+        deliveryId: contextFile.deliveryId,
+        changeId: contextFile.changeId,
+      });
     } catch (e) {
       conflicts.push({
         dimension: 'run-result-schema',
@@ -440,11 +457,11 @@ function readC1Run(
     }
 
     if (
-      admittedResult.runStatus === 'completed' ||
-      admittedResult.runStatus === 'failed' ||
-      admittedResult.runStatus === 'cancelled'
+      admittedResult!.runStatus === 'completed' ||
+      admittedResult!.runStatus === 'failed' ||
+      admittedResult!.runStatus === 'cancelled'
     ) {
-      status = admittedResult.runStatus;
+      status = admittedResult!.runStatus;
     } else {
       conflicts.push({
         dimension: 'run-result-status',
@@ -454,8 +471,8 @@ function readC1Run(
       return { conflicts };
     }
 
-    consumedInputRefs = admittedResult.actionResult?.consumedInputRefs;
-    reviewVerdictRef = admittedResult.actionResult?.reviewVerdictRef;
+    consumedInputRefs = admittedResult!.actionResult?.consumedInputRefs;
+    reviewVerdictRef = admittedResult!.actionResult?.reviewVerdictRef;
   }
 
   if (contextFile.action.startsWith('review-') && status === 'completed' && hasResult && parsedResult !== null) {
@@ -475,7 +492,16 @@ function readC1Run(
           detail: { runId, action: contextFile.action },
         });
       } else {
-        verdict = { reviewRunId: contextFile.runId, verdict: verdictValue, reviewedRunId };
+        const blockingAuthorities = deriveBlockingAuthorities(admittedResult);
+        if (verdictValue === 'changes-requested' && blockingAuthorities.length === 0) {
+          conflicts.push({
+            dimension: 'review-blocking-authority',
+            authority: runDir,
+            message: `C1 review ${runId} has changes-requested without blocking authority projection`,
+          });
+        } else {
+          verdict = { reviewRunId: contextFile.runId, verdict: verdictValue, reviewedRunId, blockingAuthorities };
+        }
       }
     } else {
       conflicts.push({
@@ -493,7 +519,7 @@ function readC1Run(
     action: contextFile.action,
     role: contextFile.role,
     status,
-    ...(contextFile.changeId !== undefined && { changeId: contextFile.changeId }),
+    changeId: contextFile.changeId,
     ...(contextFile.inputRef !== undefined && { inputRef: contextFile.inputRef }),
     ...(consumedInputRefs !== undefined && { consumedInputRefs }),
     ...(reviewVerdictRef !== undefined && { reviewVerdictRef }),
@@ -501,11 +527,16 @@ function readC1Run(
     ...(contextFile.sourceReviewVerdict !== undefined && { sourceReviewVerdict: contextFile.sourceReviewVerdict }),
     ...(contextFile.reviewedRunId !== undefined && { reviewedRunId: contextFile.reviewedRunId }),
   };
-  return { run, verdict, format: 'c1', conflicts };
+  return {
+    run,
+    verdict,
+    format: readerCompatibility === 'pre-q1-revision-context' ? 'c1-pre-q1-compat' : 'c1',
+    conflicts,
+  };
 }
 
 function readLegacyRun(
-  run: import('../domain/types.js').Run,
+  run: LegacyRun,
   runDir: string,
   runId: string,
   hasResult: boolean,
@@ -513,6 +544,10 @@ function readLegacyRun(
   parsedContext: unknown,
   conflicts: FactConflict[],
 ): SingleRunResult {
+  if (run.changeId === undefined || !isFormalAction(run.action)) {
+    // Historical Delivery-level legacy Runs stay outside current Policy.
+    return { conflicts };
+  }
   const statusResult = normalizeBootstrapRunStatus(parsedResult, hasResult);
   if (!statusResult.ok) {
     conflicts.push({ ...statusResult.conflict, authority: runDir });
@@ -525,7 +560,7 @@ function readLegacyRun(
     action: run.action,
     role: run.role,
     status: statusResult.status,
-    ...(run.changeId !== undefined && { changeId: run.changeId }),
+    changeId: run.changeId,
   };
 
   let verdict: ReviewVerdictFact | undefined;
@@ -537,7 +572,12 @@ function readLegacyRun(
       (verdictValue === 'approved' || verdictValue === 'changes-requested') &&
       reviewedRunId !== undefined
     ) {
-      verdict = { reviewRunId: runId, verdict: verdictValue, reviewedRunId };
+      verdict = {
+        reviewRunId: runId,
+        verdict: verdictValue,
+        reviewedRunId,
+        blockingAuthorities: verdictValue === 'changes-requested' ? ['author'] : [],
+      };
     } else {
       conflicts.push({
         dimension: 'review-verdict-linkage',
@@ -548,6 +588,17 @@ function readLegacyRun(
     }
   }
   return { run: runFact, verdict, format: 'legacy', conflicts };
+}
+
+function deriveBlockingAuthorities(
+  result: import('../persistence/serialization.js').RunResultFile | undefined,
+): readonly BlockingAuthority[] {
+  if (result?.reviewVerdict !== 'changes-requested') return [];
+  const seen = new Set<BlockingAuthority>();
+  for (const finding of result.reviewFindings ?? []) {
+    if (finding.severity === 'blocking' && finding.blockingAuthority !== undefined) seen.add(finding.blockingAuthority);
+  }
+  return BLOCKING_AUTHORITIES.filter((authority) => seen.has(authority));
 }
 
 function extractLegacyReviewedRunId(parsedContext: unknown): string | undefined {

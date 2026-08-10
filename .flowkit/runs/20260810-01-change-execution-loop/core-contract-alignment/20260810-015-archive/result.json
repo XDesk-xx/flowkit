@@ -1,0 +1,15 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "archive",
+    "executionStatus": "completed",
+    "summary": "Owner 已明确授权 archive；OpenSpec 1.7 archive 成功将 core-contract-alignment relocation 为 openspec/changes/archive/2026-08-10-core-contract-alignment，archive operation 确认 specsUpdated=false、canonical specs 无 hash 变化。Flowkit 随后仅将 Delivery Manifest 中 Q1 state 从 active 更新为 completed。未执行 Change Checkpoint、Delivery Full Test、Commit 或 Push。",
+    "consumedInputRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/core-contract-alignment/20260810-014-review-apply/result.json",
+        "versionFingerprint": "a01668326be1da874aeae94d8508e8032e52b9c6601c41ebe2a6c4b86ca17005",
+        "kind": "run-result"
+      }
+    ]
+  }
+}

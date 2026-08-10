@@ -53,8 +53,8 @@ describe('domain object types compile (B1-RE-004)', () => {
     assert.deepEqual([...(change.outputs ?? [])], ['src/domain/types.ts']);
   });
 
-  it('Run type is usable with and without changeId', () => {
-    const runWithChange: Run = {
+  it('Run type is Change-scoped', () => {
+    const run: Run = {
       runId: '20260806-001-explore',
       deliveryId: '20260806-01-deterministic-core',
       changeId: 'domain-and-state-schema',
@@ -62,15 +62,7 @@ describe('domain object types compile (B1-RE-004)', () => {
       role: 'author',
       status: 'pending',
     };
-    const runDelivery: Run = {
-      runId: '20260806-002-full-test',
-      deliveryId: '20260806-01-deterministic-core',
-      action: 'full-test',
-      role: 'owner',
-      status: 'pending',
-    };
-    assert.equal(runWithChange.changeId, 'domain-and-state-schema');
-    assert.equal(runDelivery.changeId, undefined);
+    assert.equal(run.changeId, 'domain-and-state-schema');
   });
 
   it('ActionDefinition has integration-boundaries fields', () => {

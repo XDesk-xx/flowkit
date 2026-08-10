@@ -41,7 +41,7 @@ describe('policy types (task 1.1-1.7, 10.1)', () => {
   });
 
   describe('BlockedReason', () => {
-    it('contains all eleven blocked reasons (task 1.6)', () => {
+    it('contains all current blocked reasons (task 1.6)', () => {
       const expected: readonly BlockedReason[] = [
         'formal-fact-conflict',
         'no-active-delivery',
@@ -54,6 +54,8 @@ describe('policy types (task 1.1-1.7, 10.1)', () => {
         'ambiguous-state',
         'dependency-incomplete',
         'full-test-failed',
+        'non-author-review-blocker',
+        'delivery-behavior-not-implemented',
       ];
       assert.deepEqual([...BLOCKED_REASONS], [...expected]);
     });

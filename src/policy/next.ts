@@ -51,6 +51,8 @@ import {
   conflictDiagnosis,
   dependencyIncompleteDiagnosis,
   fullTestFailedDiagnosis,
+  nonAuthorReviewBlockerDiagnosis,
+  deliveryBehaviorNotImplementedDiagnosis,
   noActionableChangeDiagnosis,
   noActiveDeliveryDiagnosis,
   tasksFactsUnavailableDiagnosis,
@@ -155,6 +157,25 @@ function decideActiveChange(
   }
 }
 
+function decideChangesRequested(
+  stage: 'explore' | 'propose' | 'apply',
+  lineage: ReturnType<typeof computeLineage>,
+): PolicyResult {
+  const authorities = lineage.review?.blockingAuthorities ?? [];
+  if (authorities.length === 0) {
+    return blockedResult(ambiguousStateDiagnosis(`changes-requested ${stage} review has no blocking authority projection`));
+  }
+  if (authorities.every((authority) => authority === 'author')) {
+    const revise: Record<typeof stage, FormalAction> = {
+      explore: 'revise-explore',
+      propose: 'revise-propose',
+      apply: 'revise-apply',
+    };
+    return actionResult(revise[stage]);
+  }
+  return blockedResult(nonAuthorReviewBlockerDiagnosis(authorities));
+}
+
 /**
  * explore stage: null artifact → explore; no match → review-explore;
  * match+approved → propose; match+cr → revise-explore.
@@ -173,8 +194,7 @@ function decideExploreStage(
   if (lineage.verdict === 'approved') {
     return actionResult('propose');
   }
-  // verdict === 'changes-requested'
-  return actionResult('revise-explore');
+  return decideChangesRequested('explore', lineage);
 }
 
 /**
@@ -201,8 +221,7 @@ function decideProposeStage(
       detail: 'review-propose approved; apply awaits owner authorization',
     });
   }
-  // verdict === 'changes-requested'
-  return actionResult('revise-propose');
+  return decideChangesRequested('propose', lineage);
 }
 
 /**
@@ -237,7 +256,7 @@ function decideApplyStage(
     return actionResult('review-apply');
   }
   if (lineage.verdict === 'changes-requested') {
-    return actionResult('revise-apply');
+    return decideChangesRequested('apply', lineage);
   }
   // verdict === 'approved' → verification gate (D1-7, D1-RA-002, D1-RA-003).
   // Status-aware and fail-closed, shared with canRun(archive) via
@@ -317,23 +336,17 @@ function decideFullTestLifecycle(snapshot: FormalFactSnapshot): PolicyResult {
 
     case 'passed':
       if (hasAuthorizationScope(snapshot.ownerAuthorizations, 'finalize')) {
-        return actionResult('delivery-finalize');
+        return blockedResult(deliveryBehaviorNotImplementedDiagnosis('delivery-finalize'));
       }
       return ownerDecisionResult('authorize-delivery-finalize', {
         deliveryFullTestStatus: status,
-        detail: 'Full Test passed; delivery-finalize awaits owner authorization',
+        detail: 'Full Test passed; Delivery Finalize awaits owner authorization',
       });
 
     case 'authorized':
-      // owner has authorized; if scope present, run full-test; else defensive
-      // owner-decision (D1-13 fail-closed on fact inconsistency).
-      if (hasAuthorizationScope(snapshot.ownerAuthorizations, 'full-test')) {
-        return actionResult('full-test');
-      }
-      return ownerDecisionResult('authorize-full-test', {
-        deliveryFullTestStatus: status,
-        detail: 'deliveryFullTestStatus=authorized but full-test scope absent; defensive fail-closed',
-      });
+      // Q1→03 bridge: authorization remains a legal Owner fact, but the
+      // Delivery behavior executor is deliberately not a Standard Action/Run.
+      return blockedResult(deliveryBehaviorNotImplementedDiagnosis('full-test'));
 
     case 'awaiting-user-decision':
       // Pre-authorization state: owner must authorize full-test (D1-13).

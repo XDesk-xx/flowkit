@@ -7,7 +7,7 @@
  * schema-validator), not on the objects themselves.
  */
 
-import type { ChangeAction, DeliveryAction } from './actions.js';
+import type { FormalAction } from './actions.js';
 
 // ---------------------------------------------------------------------------
 // Frozen state union types
@@ -77,6 +77,9 @@ export type ReviewVerdictValue = 'approved' | 'changes-requested';
  * Finding severity.
  */
 export type FindingSeverity = 'blocking' | 'non-blocking';
+
+export const BLOCKING_AUTHORITIES = ['author', 'owner', 'verification', 'external'] as const;
+export type BlockingAuthority = (typeof BLOCKING_AUTHORITIES)[number];
 
 // ---------------------------------------------------------------------------
 // Supporting types
@@ -152,9 +155,9 @@ export interface Change {
 export interface Run {
   readonly runId: string;
   readonly deliveryId: string;
-  /** Present when the Run is bound to a Change; absent for Delivery-level Runs. */
-  readonly changeId?: string;
-  readonly action: ChangeAction | DeliveryAction;
+  /** Every current Standard Run is bound to a Change. */
+  readonly changeId: string;
+  readonly action: FormalAction;
   readonly role: Role;
   readonly status: RunStatus;
   readonly inputRef?: ResultRef;
@@ -172,7 +175,7 @@ export interface Run {
  * Field contract aligned with integration-boundaries.md Section 3.1.
  */
 export interface ActionDefinition {
-  readonly action: ChangeAction | DeliveryAction;
+  readonly action: FormalAction;
   readonly role: Role;
   readonly goal: string;
   readonly preconditions: readonly string[];
@@ -188,7 +191,7 @@ export interface ActionDefinition {
  */
 export interface ActionResult {
   readonly runRef: ResultRef;
-  readonly action: ChangeAction | DeliveryAction;
+  readonly action: FormalAction;
   readonly executionStatus: ExecutionStatus;
   readonly summary: string;
   readonly producedResultRefs?: readonly ResultRef[];
@@ -288,13 +291,13 @@ export interface OwnerAuthorizationRef {
 export interface ContinuationContext {
   readonly deliveryId: string;
   readonly changeId?: string;
-  readonly lastCompletedAction?: ChangeAction | DeliveryAction;
+  readonly lastCompletedAction?: FormalAction;
   readonly lastActionResultRef?: ResultRef;
   readonly activeVerdict?: ReviewVerdictValue;
   readonly pendingNonBlockingFindings: readonly FindingSummary[];
   readonly validOwnerAuthorizations: readonly OwnerAuthorizationRef[];
   readonly currentConstraints: Readonly<Record<string, unknown>>;
   /** Computed by Policy (D1), not by ContinuationContext itself. */
-  readonly nextAllowedAction: ChangeAction | DeliveryAction;
+  readonly nextAllowedAction: FormalAction;
   readonly nextActionInputRefs: readonly ResultRef[];
 }

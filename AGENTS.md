@@ -7,7 +7,7 @@
 
 1. 执行 Action 前先读取当前正式事实，并由 Flowkit Policy 确认合法 Action。
 2. 不重新打开已 Checkpoint Change；新问题通过当前合法流程或新的 corrective Change 处理。
-3. `approved` 才向前推进；只有 `changes-requested` 才执行对应 `revise-*`。
+3. `approved` 才向前推进；`changes-requested` 只表示当前 target 不可批准。只有 blocking findings 全部属于 `blockingAuthority=author` 时才执行对应 `revise-*`；存在任一 `owner / verification / external` blocker 时 Author revise 不合法。
 4. Author 不自审；Review 必须由独立 Reviewer 完成。
 5. Full Test、Archive、Checkpoint、Finalize 等 owner 边界不得自行授权。
 6. Run / Action 不自动 Commit；普通 Commit 不推进 Flowkit 状态。
@@ -23,7 +23,7 @@
 - 分析范围可以完整，实际修改范围必须最小。
 - 小修改执行 focused checks；只有影响共享契约、公共类型或跨模块行为时才扩大到 affected checks。
 - Review / Revise 不自动运行 Delivery Full Test。
-- Reviewer 是只读审查者：只写 Reviewer-owned Run / Review artifact，不修改 Author artifacts、生产代码、测试或 Manifest；`changes-requested` 后交回 Author 修正。
+- Reviewer 是只读审查者：只写 Reviewer-owned Run / Review artifact，不修改 Author artifacts、生产代码、测试或 Manifest；`changes-requested` 后必须按 `blockingAuthority` 分流：author-only 才交回 Author 修正，存在任一 non-author blocker 时停在对应 authority boundary。显式 same-stage re-review 在 Policy 层保持合法，但不得由 `next()` 自动触发。
 - Reviewer 不替 owner 授权 Apply、Archive、Checkpoint、Full Test 或 Finalize。
 
 ### 契约修改 preflight
