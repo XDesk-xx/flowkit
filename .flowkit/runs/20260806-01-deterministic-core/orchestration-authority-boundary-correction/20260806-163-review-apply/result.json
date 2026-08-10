@@ -1,0 +1,24 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "Review 162 revise-apply：transport、lineage、557/557 tests 与 OpenSpec strict 均通过，且 162 未修改 production/tests；但 Q2-RA-001 仍未关闭。162 已撤回“Owner 已决定/已冻结”的错误断言，却明确保留并继续应用依赖该 decision 的 candidate lifecycle contract。当前仍没有独立 Owner 输入提供这项 lifecycle 决策，因此缺失的 decision authority 没有因为撤回 provenance 话术而自动成立。无新增技术级 Blocking Finding。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/orchestration-authority-boundary-correction/verification.md",
+      "versionFingerprint": "2c149c268d3f2eb3e29a4c4113f8a04cfe48e5a36eafe59dee0dcd89c4eda665",
+      "kind": "verification-summary"
+    }
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindings": [
+    {
+      "id": "Q2-RA-001",
+      "severity": "blocking",
+      "title": "162 撤回了错误的 Owner 断言，但仍保留依赖该决策的 frozen lifecycle contract",
+      "problem": "162 已正确删除 Proposal/Design/Tasks/Verification 中“Owner 已直接决定/已冻结当前 Archive/Checkpoint lifecycle”的 Author 断言，但同时明确保留 candidate lifecycle contract 本身，并继续保留对应的 flowkit-core-model / bootstrap delta、正式 docs 与既有实现：OpenSpec archive success 后 Change 进入 completed/closed，Checkpoint 作为其后的 Flowkit/Git boundary。161 的 Finding 要求在没有明确 Owner decision fact 时，只能记录 decision 未提供/待决定，或撤回依赖该 decision 的 frozen-contract 声明。当前会话仍没有独立 Owner 输入明确冻结这项 lifecycle 选择，因此 162 只是修正了 provenance 表述，没有补齐该 frozen-contract 修改所缺失的 decision authority。",
+      "location": "20260806-162-revise-apply/action.md; openspec/changes/orchestration-authority-boundary-correction/proposal.md; design.md; tasks.md; specs/flowkit-core-model/spec.md; specs/flowkit-bootstrap-and-roadmap/spec.md; docs/core-model.md; docs/delivery-lifecycle.md; docs/bootstrap-reference.md",
+      "requiredChange": "关闭缺失的 lifecycle decision authority：若继续保留依赖该决策的 frozen-contract 修改，必须由独立 Owner 输入明确提供相应 decision；若没有该 decision，则不得把依赖它的 contract 作为已可 Apply 的冻结修改继续保留。Reviewer 不指定 Owner 应选择哪种 Archive/Checkpoint 模型，也不要求新增 owner-decision persistence。"
+    }
+  ]
+}

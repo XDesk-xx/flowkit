@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-098-explore",
+  "status": "completed",
+  "actionResult": {
+    "action": "explore",
+    "executionStatus": "completed",
+    "summary": "Q1 explore 调查 D1 开发过程暴露的执行模型问题。基于 A1-D1 实际代码调查（serialization.ts / run-persistence.ts / result-ref-adapter.ts / terminal.ts / formal-fact-snapshot.ts），确认 6 个问题：1) Run result.json 实际承载远超 Core RunResultFile schema 的 Agent 自由文本字段；2) inputRef fingerprint 由 Agent 手工维护，Core 不验证；3) 无 Run completion preflight；4) terminal create-once 已正确（保持）；5) FormalFactSnapshot 已精简（Policy 侧无问题）；6) Verification 分层脚本缺失。推荐方案：Lean Run contract（formal authority vs Agent notes 分层）、machine-derived inputRef 验证、completion preflight、artifact path 冻结、verification 分层 scripts、legacy 有界兼容。产出 openspec/changes/execution-model-correction/explore.md。"
+  },
+  "notes": {
+    "investigatedFiles": [
+      "src/persistence/serialization.ts (RunResultFile schema L75-85, validators L356-414)",
+      "src/persistence/run-persistence.ts (createRun L84-146, writeRunResult L207-275)",
+      "src/persistence/result-ref-adapter.ts (computeResultFileHash L34, buildRunResultRef L44, verifyResultRef L79)",
+      "src/domain/terminal.ts (isTerminal, assertMutable)",
+      "src/facts/formal-fact-snapshot.ts (RunFact L69-81, FormalFactSnapshot L132-151)",
+      "096-review-apply/result.json (heavy Agent-authored fields example)",
+      "097-archive/result.json (heavy Agent-authored fields example)"
+    ],
+    "keyFindings": [
+      "RunResultFile formal schema is lean but actual result.json carries 10+ unvalidated Agent-authored fields",
+      "Core has computeResultFileHash/verifyResultRef but does not verify inputRef at createRun time",
+      "writeRunResult has no inputRef fingerprint preflight",
+      "terminal create-once (assertMutable + fs.link) is correct and should be preserved",
+      "FormalFactSnapshot.RunFact already only carries lean formal fields — Policy side is correct",
+      "All 8 archived changes carry git-tracked explore.md — path convention is correct, needs doc freeze"
+    ],
+    "producedArtifact": "openspec/changes/execution-model-correction/explore.md",
+    "nextAction": "review-explore"
+  },
+  "commitPolicy": "No commit, checkpoint, or Full Test was authorized or performed by this explore Run."
+}

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-055-review-propose",
+  "status": "completed",
+  "verdict": "changes-requested",
+  "summary": "Proposal review found three P1 blockers: the YAML parser contract is not frozen, context.json lacks a versioned physical schema, and existing Bootstrap Run compatibility is undefined.",
+  "findings": [
+    {
+      "id": "C1-PR-001",
+      "severity": "P1",
+      "title": "YAML manifest parsing contract is not frozen",
+      "disposition": "changes-requested"
+    },
+    {
+      "id": "C1-PR-002",
+      "severity": "P1",
+      "title": "context.json has no physical schema or validation contract",
+      "disposition": "changes-requested"
+    },
+    {
+      "id": "C1-PR-003",
+      "severity": "P1",
+      "title": "no compatibility boundary for existing formal Bootstrap Runs",
+      "disposition": "changes-requested"
+    }
+  ],
+  "verification": [
+    {
+      "command": "npx openspec validate formal-fact-reader-and-persistence --strict",
+      "status": "passed",
+      "note": "Structural validation only."
+    },
+    {
+      "command": "proposal contract review",
+      "status": "completed",
+      "note": "Three P1 findings remain."
+    },
+    {
+      "command": "full test",
+      "status": "not-run",
+      "note": "No owner authorization; proposal review does not authorize it."
+    }
+  ],
+  "nextAction": "revise-propose"
+}

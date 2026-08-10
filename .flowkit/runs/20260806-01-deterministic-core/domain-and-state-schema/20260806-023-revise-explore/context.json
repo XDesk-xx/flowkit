@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-023-revise-explore",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "B1",
+  "changeId": "domain-and-state-schema",
+  "action": "revise-explore",
+  "role": "author",
+  "inputRef": "eb8d8ca96c69d65ba6fd252791a0f6a677c53265e247237dd2610867516e9877",
+  "sourceReviewRun": "20260806-022-review-explore",
+  "sourceReviewVerdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "B1-RE-006",
+      "title": "State-transition contract covers Change only, not Delivery and Run",
+      "requiredResolution": "Extend Q6 and acceptance/test plan with separate typed transition tables and exhaustive valid/invalid matrix tests for all three entities. Delivery: active -> completed | cancelled. Change: as currently stated. Run: pending -> completed | failed | cancelled. Terminal states have no outgoing edges. B1 owns structural edges only; semantic prerequisites belong to D1 Policy."
+    }
+  ],
+  "resolvedFindingsFromPriorRevisions": [
+    {
+      "id": "B1-RE-001",
+      "resolvedIn": "20260806-015-revise-explore",
+      "resolution": "Action Catalog follows frozen core-model spec's ten formal Actions."
+    },
+    {
+      "id": "B1-RE-002",
+      "resolvedIn": "20260806-015-revise-explore",
+      "resolution": "ResultRef is provider-neutral without mandatory runPath."
+    },
+    {
+      "id": "B1-RE-003",
+      "resolvedIn": "20260806-017-revise-explore",
+      "resolution": "Review focus item 4 updated to ten Change Actions."
+    },
+    {
+      "id": "B1-RE-004",
+      "resolvedIn": "20260806-019-revise-explore",
+      "resolution": "Section 5.1 object-contract matrix covers all eleven objects."
+    },
+    {
+      "id": "B1-RE-005",
+      "resolvedIn": "20260806-021-revise-explore",
+      "resolution": "RunStatus matches frozen four-value set; in-progress limited to ExecutionStatus."
+    }
+  ],
+  "constraints": {
+    "mayModifyExplore": true,
+    "mayModifyCode": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/domain-and-state-schema/20260806-023-revise-explore/"
+}

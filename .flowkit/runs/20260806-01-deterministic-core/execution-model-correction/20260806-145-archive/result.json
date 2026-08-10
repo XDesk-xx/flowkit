@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-145-archive",
+  "status": "completed",
+  "summary": "Q1 execution-model-correction 已归档。openspec archive 将 delta specs 同步到 canonical specs（flowkit-bootstrap-and-roadmap +3/~2，flowkit-formal-fact-reader-and-persistence +10/~3，总计 +13 added / ~5 modified / -0 removed），change 移动到 openspec/changes/archive/2026-08-08-execution-model-correction/。Manifest Q1 state 从 active 更新为 completed。归档前对 delta spec 做机械性 scenario-name 刷新（5 个 MODIFIED requirement 保留 canonical scenario 名），不改变 Q1 契约意图。冻结 specs 验证 8 passed。未创建 Git Commit。",
+  "sourceReview": {
+    "runId": "20260806-144-review-apply",
+    "verdict": "approved",
+    "resultRef": "content-sha256:fa7154ef336d97e9757d0171456e6cb6f89bb244d426bf1fe8695e86b14f4a90"
+  },
+  "archiveResults": {
+    "command": "npx openspec archive execution-model-correction -y",
+    "specDeltas": {
+      "flowkit-bootstrap-and-roadmap": { "added": 3, "modified": 2, "removed": 0 },
+      "flowkit-formal-fact-reader-and-persistence": { "added": 10, "modified": 3, "removed": 0 }
+    },
+    "totals": { "added": 13, "modified": 5, "removed": 0, "moved": 0 },
+    "changeArchivedTo": "openspec/changes/archive/2026-08-08-execution-model-correction/",
+    "archivedArtifacts": [
+      ".openspec.yaml",
+      "explore.md",
+      "proposal.md",
+      "design.md",
+      "tasks.md",
+      "verification.md",
+      "specs/flowkit-bootstrap-and-roadmap/spec.md",
+      "specs/flowkit-formal-fact-reader-and-persistence/spec.md"
+    ]
+  },
+  "deltaRefreshBeforeArchive": {
+    "scope": "mechanical scenario-name preservation (no contract intent change)",
+    "specs": [
+      {
+        "spec": "flowkit-bootstrap-and-roadmap",
+        "modifiedRequirements": [
+          {
+            "requirement": "Run 文件必须保存最低内容且不保存完整对话",
+            "restoredCanonicalScenarios": ["context.json 不保存自引用 SHA", "result.json 的 nextActionRecommendation 不替代 Policy"],
+            "note": "Q1 delta 重命名了 nextActionRecommendation scenario；恢复 canonical 名 + 保留 Q1 新增 scenario"
+          },
+          {
+            "requirement": "Run 创建边界必须包含目标改变",
+            "restoredCanonicalScenarios": ["三者均未改变时复用同一 Run"],
+            "note": "Q1 delta 用了 '...同一 pending Run'；恢复 canonical 名 + 保留 Q1 pending 细化条件"
+          }
+        ]
+      },
+      {
+        "spec": "flowkit-formal-fact-reader-and-persistence",
+        "modifiedRequirements": [
+          {
+            "requirement": "context.json 物理 schema + 确定性投影 + 身份校验",
+            "restoredCanonicalScenarios": ["inputRef 为可选 ResultRef"],
+            "note": "Q1 delta 用新 scenario 表达 Core-derivation；恢复 canonical 'inputRef 为可选 ResultRef' + 保留 Q1 新增 scenario"
+          },
+          {
+            "requirement": "C1 拥有物理投影校验器",
+            "restoredCanonicalScenarios": ["必填字段校验", "嵌套 ResultRef 校验"],
+            "note": "Q1 delta 重命名 'ActionResult 必填字段校验' 为 canonical '必填字段校验' + 补 '嵌套 ResultRef 校验'"
+          },
+          {
+            "requirement": "ResultRef versionFingerprint 使用 content hash",
+            "restoredCanonicalScenarios": ["versionFingerprint 为文件内容 SHA-256"],
+            "note": "补 canonical 'versionFingerprint 为文件内容 SHA-256' + 保留 Q1 新增 Core-constructor scenario"
+          }
+        ]
+      }
+    ]
+  },
+  "manifestUpdate": {
+    "file": "openspec/delivery-groups/20260806-01-deterministic-core.yaml",
+    "change": "Q1 state: active → completed"
+  },
+  "verificationResults": {
+    "frozenSpecsExist": true,
+    "changeMovedToArchive": true,
+    "oldChangeDirGone": true,
+    "openspecValidateSpecs": "8 passed, 0 failed",
+    "openspecValidateChanges": "No active changes to validate (Q1 was the only active change and is now archived)"
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit. Change Checkpoint is a separate formal Git boundary requiring owner authorization."
+  },
+  "nextAction": "change-checkpoint",
+  "nextActionNote": "Change Checkpoint 需 owner 明确授权 Git Commit。Checkpoint 后 Q1 正式完成，可激活 E1 (diagnostic-cli)。",
+  "blockedOn": []
+}

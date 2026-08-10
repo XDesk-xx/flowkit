@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-127-review-apply",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "Q1",
+  "changeId": "execution-model-correction",
+  "action": "review-apply",
+  "role": "reviewer",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-126-apply/",
+  "reviewedResultRef": "content-sha256:8da79043abf292685055f91b5b7df86f5baa4b72d60e43209021d7be410af340",
+  "sourceReview": {
+    "runId": "20260806-125-review-propose",
+    "verdict": "approved",
+    "resultRef": "content-sha256:2374ecf5fd9516fc2fe3fd178c2f138150a15dd17af71f43c7d9af0dfb46fc03"
+  },
+  "inputs": [
+    "AGENTS.md",
+    "docs/core-model.md",
+    "docs/delivery-lifecycle.md",
+    "docs/verification-model.md",
+    "docs/bootstrap-reference.md",
+    "openspec/delivery-groups/20260806-01-deterministic-core.yaml",
+    "openspec/changes/execution-model-correction/proposal.md",
+    "openspec/changes/execution-model-correction/design.md",
+    "openspec/changes/execution-model-correction/tasks.md",
+    "openspec/changes/execution-model-correction/verification.md",
+    "openspec/changes/execution-model-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+    "openspec/changes/execution-model-correction/specs/flowkit-bootstrap-and-roadmap/spec.md",
+    "src/persistence/serialization.ts",
+    "src/persistence/result-ref-adapter.ts",
+    "src/persistence/run-persistence.ts",
+    "src/facts/formal-fact-reader.ts",
+    "tests/unit/persistence/q1-execution-model.test.ts",
+    "tests/unit/persistence/run-persistence.test.ts",
+    ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-126-apply/context.json",
+    ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-126-apply/result.json"
+  ],
+  "constraints": {
+    "readOnlyExceptOwnRun": true,
+    "mayModifyReviewedArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayFullTest": false,
+    "mayCheckpoint": false,
+    "commitAllowed": false
+  }
+}

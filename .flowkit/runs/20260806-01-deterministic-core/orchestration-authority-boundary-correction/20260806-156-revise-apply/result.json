@@ -1,0 +1,13 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-apply",
+    "executionStatus": "completed",
+    "summary": "已按 155 Blocking Finding 与 Owner 决策修正 Archive/Checkpoint 生命周期：OpenSpec archive success 即关闭 Change；Checkpoint 作为 completed Change 之后的 Flowkit/Git 下一边界，由 Manifest completed + Git checkpoint boundary 确定性恢复，不重新投影 closed Change 历史 Runs。同步 core-model/policy-engine delta、最小 docs 与回归测试；553/553 tests、typecheck/lint/build、Q2 strict、8/8 canonical specs 均通过。",
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260806-01-deterministic-core/orchestration-authority-boundary-correction/20260806-155-review-apply/result.json",
+      "versionFingerprint": "1fb8c76228c556dd9c3a164be9d1baa07319490b230d46044ab07b3e279b011e",
+      "kind": "run-result"
+    }
+  }
+}

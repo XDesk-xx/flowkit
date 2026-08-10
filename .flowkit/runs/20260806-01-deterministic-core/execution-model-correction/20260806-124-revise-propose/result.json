@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-124-revise-propose",
+  "status": "completed",
+  "summary": "Q1 revise-propose resolved Q1-RP-006. Complete specs namespace coverage is now an invariant of every current propose effective generation, not only initial propose. A revise-propose successor always exact-compares its effective specs logical-ref set with the current canonical specs/** namespace at terminal preflight and again at review entry. Namespace additions/deletions without the specs tag keep the successor pending; declaring specs makes Core re-enumerate and replace the whole namespace. The accepted subset overlay remains valid when the specs namespace is unchanged. OpenSpec 1.7.0 strict Change validation passed. No production code, tests, Full Test, commit or push was performed.",
+  "sourceReview": {
+    "runId": "20260806-123-review-propose",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:b8936761511310fb98ceebd623f9ba510d96b832a61eddc6249ca64ad58eb5d6"
+  },
+  "resolvedFindings": [
+    {
+      "id": "Q1-RP-006",
+      "result": "resolved",
+      "evidence": "Proposal/design/C1 delta/tasks now require exact current specs namespace comparison for every current propose effective generation. Negative fixture P0({A}) -> review CR -> P1(proposal only + new specs/B) cannot terminal or enter review; the positive P1 with specs declared re-enumerates and binds {A,B}. Namespace-unchanged proposal-only subset overlay remains allowed."
+    }
+  ],
+  "preflight": {
+    "fullReading": "Read Q1-RP-006 evidence, impact and requiredResolution from corrected 123. The issue is successor namespace completeness, not content hash validation of already-bound refs.",
+    "instanceEnumeration": "Checked all propose-generation boundaries where namespace drift can occur: initial propose terminal, revise-propose terminal overlay, post-terminal/pre-review drift, and review-propose entry.",
+    "implementability": "Core can enumerate canonical specs/** from immutable context.changeId at both terminal preflight and review entry. No new authority, snapshot store, Policy state or Run status is required.",
+    "consistency": "Applied the invariant to Proposal, design overlay semantics, C1 delta Requirements/scenarios, review-entry contract and implementation/test tasks."
+  },
+  "artifacts": [
+    {
+      "path": "openspec/changes/execution-model-correction/proposal.md",
+      "sha256": "c449d5b4510f5695233f5dec26ce969a53d14b63d6f45f826583086cba715f72"
+    },
+    {
+      "path": "openspec/changes/execution-model-correction/design.md",
+      "sha256": "c8312f662c43c54f41ee51b6057bf687cfb4ffae015e60e038be52e8de7265c5"
+    },
+    {
+      "path": "openspec/changes/execution-model-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "sha256": "4273946639fd1a13898fff18c536cf37932fba9bc9f355d92beabad9629522ff"
+    },
+    {
+      "path": "openspec/changes/execution-model-correction/specs/flowkit-bootstrap-and-roadmap/spec.md",
+      "sha256": "aec413c4614e700e4974a1433207fc195e6ac3ef3b0de9e3fc8c2b9389687e84"
+    },
+    {
+      "path": "openspec/changes/execution-model-correction/tasks.md",
+      "sha256": "7731848bcce3f2952b9c3f262cc18bb6cc1d29fc92e9d780c59335fabf9ef52c"
+    }
+  ],
+  "modifiedArtifacts": [
+    "openspec/changes/execution-model-correction/proposal.md",
+    "openspec/changes/execution-model-correction/design.md",
+    "openspec/changes/execution-model-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+    "openspec/changes/execution-model-correction/tasks.md"
+  ],
+  "unchangedBundleArtifact": "openspec/changes/execution-model-correction/specs/flowkit-bootstrap-and-roadmap/spec.md",
+  "scope": {
+    "productionCodeModified": false,
+    "testsModified": false,
+    "approvedExploreModified": false,
+    "priorTerminalRunsModified": false,
+    "fullTestRun": false
+  },
+  "verification": {
+    "openspecVersion": "1.7.0",
+    "openspecStrict": "passed",
+    "openspecInvocation": "node <offline-openspec-1.7.0>/bin/openspec.js validate execution-model-correction --strict",
+    "openspecResult": "Change 'execution-model-correction' is valid",
+    "whitespace": "passed",
+    "jsonValidity": "passed",
+    "deliveryFullTest": "not-run"
+  },
+  "nextActionRecommendation": "review-propose",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

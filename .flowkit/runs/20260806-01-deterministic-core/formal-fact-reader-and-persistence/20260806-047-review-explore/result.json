@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-047-review-explore",
+  "status": "completed",
+  "summary": "C1 Explore review requests changes. Revision 046 defines a validator for the physical ActionResult projection, but RunResultFile duplicates executionStatus at the envelope and actionResult levels without an equality invariant. A file can satisfy the current pair table with one top-level status while embedding a different valid ActionResult executionStatus, leaving Policy-facing reconstructed facts inconsistent.",
+  "reviewedResultRef": "run-result:.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-046-revise-explore/result.json;sha256:dc8dd7d1e217a862ec11405fb0347083f4a69e134e96fcd5835c3b73c2a28c1c",
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "C1-EX-008",
+      "title": "Duplicated executionStatus lacks a cross-field consistency rule",
+      "severity": "P1",
+      "evidence": "RunResultFile has an optional top-level executionStatus and its required actionResult projection also has executionStatus. The allowed-combination table checks only runStatus plus the top-level value; validateActionResultWithoutRunRef checks only that the nested value is valid. No write/read rule requires equality, so completed plus top-level completed and nested actionResult.executionStatus failed is accepted.",
+      "requiredChange": "Make execution status single-source-of-truth in the physical schema: either remove the top-level field and derive it from actionResult, or require exact equality whenever actionResult exists. Enforce the invariant before write and on read, define how the allowed-combination table uses the canonical value, and add mismatch fixtures that fail closed."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "resolvedFindings": [
+    {
+      "id": "C1-EX-007",
+      "resolution": "Resolved by revision 046: C1 now owns and specifies validation for the physical ActionResultWithoutRunRef projection."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "Formal schema-consistency review",
+        "status": "passed",
+        "result": "Reviewed RunResultFile envelope and nested ActionResultWithoutRunRef fields for cross-field invariants."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

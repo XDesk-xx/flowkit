@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-092-review-apply",
+  "status": "completed",
+  "verdict": "changes-requested",
+  "summary": "091 correctly replaces the availability-only gate with a shared status-aware gate and resolves D1-RA-002 for unavailable, passed, failed, and not-run states. It incorrectly maps Change VerificationStatus=not-applicable to not-run and blocks it. Frozen verification-model.md permits passed or not-applicable before review-apply, and delivery-lifecycle.md permits either result for Archive. The new test explicitly encodes the incorrect mapping. The owner-authorized Explore artifact migration was reviewed as in scope and is not a finding.",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-091-revise-apply/",
+  "reviewedResultRef": "content-sha256:aa5b231e7c66788a1688a472a8fd56035e32f51bc51815220548503bbfef109e",
+  "sourceReview": {
+    "runId": "20260806-090-review-apply",
+    "verdict": "changes-requested",
+    "resultSha256": "032bb814081a2466b59c0e3387517e7f419ccd00fcca2d77268720334c5b7413"
+  },
+  "blockingFindings": [
+    {
+      "id": "D1-RA-003",
+      "severity": "P1",
+      "title": "not-applicable Verification is incorrectly blocked as not-run",
+      "location": "src/policy/verification-gate.ts:52-69; tests/unit/policy/verification-gate.test.ts:31-36",
+      "problem": "mapVerificationStatusToGate maps not-applicable to { kind: 'not-run' }. verificationGateUnmet and verificationGateDiagnosis then block review-apply and archive with verification-not-run. The D1 Proposal repeats the same passed-only restriction, so both the active Change contract and implementation diverge from the frozen Verification lifecycle.",
+      "evidence": "docs/verification-model.md:60 requires an explicit not-applicable record when no check applies, and lines 71-77 permit passed | not-applicable before review-apply while blocking only not-run or failed. docs/delivery-lifecycle.md:123-136 likewise bars only failed/not-run before review-apply and permits passed or not-applicable for Archive. The 091 test named 'not-applicable → not-run' confirms the contradiction rather than detecting it.",
+      "impact": "A Change whose verification is correctly recorded as not-applicable cannot be reviewed or archived, even though the frozen lifecycle declares that state sufficient. This causes a false block and prevents a valid Change from completing.",
+      "requiredChange": "Treat not-applicable as a satisfied Change Verification result for review-apply and archive, while preserving distinct blocks for unavailable, failed, and not-run. Update the active D1 Proposal spec/design/tasks where they require passed only so they align with the frozen verification-model and delivery-lifecycle contracts; do not modify frozen documents. Replace the incorrect test expectation with coverage that passed and not-applicable both release the gate, and that failed/not-run remain blocked."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "resolvedFindings": [
+    "D1-RA-001",
+    "D1-RA-002"
+  ],
+  "verification": [
+    {
+      "name": "Revision provenance",
+      "result": "passed",
+      "evidence": "091 result.json SHA-256 is aa5b231e7c66788a1688a472a8fd56035e32f51bc51815220548503bbfef109e, matching this Run's reviewedResultRef."
+    },
+    {
+      "name": "D1-RA-002 status-aware gate",
+      "result": "passed",
+      "evidence": "091 uses one status-aware gate for canRun and next; unavailable, failed, and not-run retain distinct fail-closed outcomes."
+    },
+    {
+      "name": "Owner-authorized Explore artifact migration",
+      "result": "passed",
+      "evidence": "The migration is owner-authorized. explore.md exists in the formal Change directory and matches the former scratch content by SHA-256."
+    },
+    {
+      "name": "Ordinary unit suite",
+      "command": "npm test",
+      "result": "passed",
+      "evidence": "423 tests passed; the new not-applicable test encodes the incorrect behavior described in D1-RA-003."
+    },
+    {
+      "name": "Typecheck",
+      "command": "npm run typecheck",
+      "result": "passed"
+    },
+    {
+      "name": "Lint",
+      "command": "npm run lint",
+      "result": "passed"
+    },
+    {
+      "name": "Build",
+      "command": "npm run build",
+      "result": "passed"
+    },
+    {
+      "name": "OpenSpec strict validation",
+      "command": "npx openspec validate policy-engine --strict",
+      "result": "passed",
+      "evidence": "Change 'policy-engine' is valid."
+    },
+    {
+      "name": "Delivery Full Test",
+      "result": "not-applicable",
+      "evidence": "Not owner-authorized and not run; Apply Review does not authorize Delivery Full Test."
+    }
+  ],
+  "policyRoute": {
+    "basis": "091 is the latest apply artifact Run and 092 returns changes-requested against it. The required revision action is revise-apply.",
+    "nextAction": "revise-apply"
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Action/Run completion does not create a Git commit."
+  },
+  "nextAction": "revise-apply",
+  "nextActionNote": "Author must create a new revise-apply Run that resolves D1-RA-003; do not modify 090, 091, or 092 in place.",
+  "blockedOn": []
+}

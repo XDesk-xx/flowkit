@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-140-revise-apply",
+  "status": "completed",
+  "summary": "Resolved Run 139 Blocking Finding Q1-RA-007 without changing the approved contract. Reader immutable validation is now a per-Run admission outcome: non-review context.inputRef and actionResult.consumedInputRefs are accumulated together with status-appropriate revise lineage validation before successor eligibility is granted. Pending revise-* validates context predecessor lineage and never requires terminal-only reviewVerdictRef. Completed revise-* still requires the complete validateSourceReviewTuple evidence, but is admitted only when the tuple and every other applicable immutable ref on the same Run pass. Failed/cancelled revise-* are handled as legal no-actionResult physical projections: terminal reviewVerdictRef is not required, optional surviving predecessor context is validated without inventing terminal evidence, and these statuses are never added to successor eligibility. Focused regression coverage now includes failed revise-apply, cancelled revise-apply, failed revise-propose, pending valid-lineage plus invalid context.inputRef, and completed valid tuple plus invalid consumedInputRefs; invalid-successor cases assert predecessor verification/artifact replacement conflicts remain visible. Delivery Full Test was not run.",
+  "sourceReview": {
+    "runId": "20260806-139-review-apply",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:3da64623ba678ec96904ca0f3df67ef9b6788a16e97de077bf4c9e34a094baf1"
+  },
+  "resolvedFindings": [
+    {
+      "id": "Q1-RA-007",
+      "result": "resolved",
+      "evidence": "validateImmutableRunResultRefs now accumulates a runConflicts set for each Run. Pending revise eligibility requires zero context inputRef + predecessor-lineage conflicts; completed revise eligibility requires zero inputRef/consumedInputRefs + full source-review tuple conflicts. Failed/cancelled revise skips terminal tuple requiredness because schema forbids actionResult for those statuses and never enters integrityAdmittedReviseRunIds. Artifact/verification generation validators continue to consume only integrityAdmittedReviseRunIds, so any applicable immutable failure leaves the predecessor current and replacement validation active."
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "src/facts/formal-fact-reader.ts",
+      "sha256": "f9d6e4c0417328e60b7f58fab58e81e0e883a0dd1b9881972cc01b3e652c97df"
+    },
+    {
+      "path": "tests/unit/facts/formal-fact-reader-ra007-admission.test.ts",
+      "sha256": "1e25ad8982b21e69bf9f8b56ffa9ae40a8d6d7e0e7410940bc054d928c194e25"
+    }
+  ],
+  "scope": {
+    "modifiedCapabilities": [
+      "flowkit-formal-fact-reader-and-persistence"
+    ],
+    "productionCodeModified": true,
+    "testsModified": true,
+    "contractArtifactsModified": false,
+    "fullTestRun": false
+  },
+  "verification": {
+    "isolatedTypeScriptParse": "passed for both changed TypeScript files using TypeScript transpileModule",
+    "focusedRegressionCoverageAdded": "8 focused RA-007 cases total: 3 retained from Run 138 + 5 Run-139 acceptance/regression cases",
+    "repositoryFocusedTests": "not executed because the working environment contains the repair overlay, not a complete dependency-installed repository checkout",
+    "deliveryFullTest": "not run; not owner-authorized"
+  },
+  "nextActionRecommendation": "review-apply",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

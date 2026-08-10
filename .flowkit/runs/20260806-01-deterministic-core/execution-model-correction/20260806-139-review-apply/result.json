@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-139-review-apply",
+  "status": "completed",
+  "summary": "Independent integrated-overlay review of 138 completed with changes-requested. The candidate was evaluated against the exact current branch baseline 44e1a64447ba63aa66c3b5653b448101713fb5b7 and the unchanged Q1 persistence/generation contracts. 138 correctly fixes the central Run-137 cases: a valid pending revise no longer requires terminal-only reviewVerdictRef; pending predecessor lineage is checked against an admitted matching-stage changes-requested review; completed revise source-review tuple failure excludes that successor from artifact/verification generation classification. However Q1-RA-007 is still incomplete in two same-invariant edges. First, failed/cancelled revise Runs are legal terminal projections with no actionResult and therefore can never carry reviewVerdictRef, while their context may retain sourceReviewRun/sourceReviewVerdict from createRun. The candidate falls through to validateSourceReviewTuple with requiresTuple=false; because sourceReview fields are present, the unchanged shared validator still requires reviewVerdictRef and creates a false immutable-ref-required conflict. Second, the new integrityAdmittedReviseRunIds set is based only on pending predecessor lineage conflicts or completed source-review tupleProblems. Generic immutable Run-result validation failures on the same revise Run (for example a bad non-review context.inputRef or consumedInputRefs target/fingerprint) are added to conflicts but do not disqualify the Run from the eligibility set. Such a pending/completed revise can therefore still open revision-window or superseded semantics after another immutable fact on that successor failed, which remains weaker than the approved two-stage Reader boundary: validate immutable Run facts / review-revise lineage first, then classify generations. The three new focused tests cover valid pending, unadmitted pending and completed missing reviewVerdictRef, but do not cover failed/cancelled revise or a source-lineage-valid revise with another immutable ref conflict. Q1-RA-010 remains resolved and no regression was found in the reviewed RA-006/008/009 boundaries. Delivery Full Test was not authorized or run.",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-138-revise-apply/",
+  "reviewedResultRef": "content-sha256:36566d38b618c90f30c1f5b8819a1421cc7bd382ec3aef268c99780ea4b2394c",
+  "reviewedPackageRef": "content-sha256:964925dc5dffb9e5358203d294baf0acfe1b96284a9b07723d38763144bf006b",
+  "reviewedBaseGitHead": "44e1a64447ba63aa66c3b5653b448101713fb5b7",
+  "sourceReview": {
+    "runId": "20260806-137-review-apply",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:56336f6d205e3008bebac9564ab5137cafd36854ec8a8bba37f4349c42d1f7a3"
+  },
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "Q1-RA-007",
+      "title": "Revise integrity admission is still incomplete across terminal status and all immutable Run facts",
+      "problem": "138 introduces an explicit integrityAdmittedReviseRunIds boundary and correctly distinguishes pending from completed source-review evidence, but the boundary is not yet equivalent to the approved Reader invariant. For failed/cancelled revise Runs, readC1Run projects the persisted sourceReviewRun/sourceReviewVerdict from context while the legal RunResultFile has no actionResult/reviewVerdictRef. The candidate still calls validateSourceReviewTuple. Setting requiresTuple=false does not make existing partial evidence optional: the unchanged tuple validator's hasAny branch requires all three fields, so these legal failed/cancelled Runs acquire a false missing-reviewVerdictRef conflict. Separately, non-review inputRef and consumedInputRefs are validated before the source-review check, but those conflicts are only appended to the global conflict list. Pending revise eligibility is granted when lineageConflicts is empty; completed revise eligibility is granted when tupleProblems is empty. Neither decision incorporates immutable-ref problems already found for that same Run. Therefore a revise successor with valid source-review lineage but a corrupted inputRef or consumedInputRefs can remain eligible for generation classification.",
+      "location": "138 payload `src/facts/formal-fact-reader.ts`, especially validateImmutableRunResultRefs around candidate lines 794-860; unchanged `src/persistence/result-ref-adapter.ts` validateSourceReviewTuple; unchanged RunResultFile failed/cancelled projection in serialization/run-persistence.",
+      "impact": "The first edge causes a legitimate terminal failure/cancellation to look inconsistent merely because terminal-only evidence is impossible for that status. The second edge permits a successor that already failed another immutable Run-result check to relax predecessor mutable validation by opening revision-window/superseded classification. A global Policy block from the immutable conflict is not sufficient: the approved Reader contract requires generation classification itself to consume only validated immutable/review-revise lineage.",
+      "requiredOutcome": "Make revise lineage/admission status-correct for pending, completed, failed and cancelled projections, and ensure generation eligibility represents success of all immutable validation that is applicable to that successor, not only the source-review sub-check. Failed/cancelled revise Runs must not be classified as successors and must not be forced to carry terminal actionResult evidence that their physical schema forbids. Pending revise must retain the Run-137 fix: context-level matching changes-requested predecessor proof without requiring reviewVerdictRef. Completed revise must retain the full immutable source-review tuple proof. Any applicable immutable inputRef/consumedInputRefs/source-review failure on a pending/completed revise must make that Run ineligible to open revision-window or supersession.",
+      "acceptance": [
+        "A legitimate failed revise-* created with sourceReviewRun/sourceReviewVerdict and a legal failed result without actionResult does not receive a false missing-reviewVerdictRef conflict and does not participate as a generation successor.",
+        "The same holds for a legitimate cancelled revise-*.",
+        "A valid pending revise still opens the bounded revision window without terminal reviewVerdictRef.",
+        "A completed revise still requires the full reviewVerdictRef source-review tuple.",
+        "A pending revise with valid source-review lineage but an invalid optional context.inputRef is not eligible to open revision-window.",
+        "A completed revise with a valid source-review tuple but an invalid consumedInputRefs entry is not eligible to supersede its predecessor.",
+        "Artifact and verification variants both demonstrate that invalid immutable successor evidence cannot hide predecessor current-byte replacement conflicts.",
+        "Existing matching-stage/changes-requested-only behavior and RA-006/008/009/010 remain intact."
+      ]
+    }
+  ],
+  "nonBlockingFindings": [],
+  "resolvedPriorFindings": [
+    {
+      "id": "Q1-RA-010",
+      "result": "still-resolved",
+      "evidence": "The candidate does not modify serialization/action applicability; the 136 top-level runStatus + Action required/forbidden matrix remains the current repository authority."
+    },
+    {
+      "id": "Q1-RA-006",
+      "result": "still-resolved",
+      "evidence": "Review verdict admission still depends on exact-bound admitted review facts; 138 reuses those admittedReviewVerdicts for pending lineage."
+    },
+    {
+      "id": "Q1-RA-008",
+      "result": "still-resolved",
+      "evidence": "138 does not modify the non-Run logical/archive resolver."
+    },
+    {
+      "id": "Q1-RA-009",
+      "result": "still-resolved",
+      "evidence": "138 filters revise-apply successors before verification generation classification without weakening current verificationSummaryRef checks."
+    },
+    {
+      "id": "Q1-RA-001",
+      "result": "still-resolved",
+      "evidence": "138 does not reopen the raw terminal publication boundary."
+    },
+    {
+      "id": "Q1-RA-003",
+      "result": "still-resolved",
+      "evidence": "138 leaves shared effective-set validation ownership unchanged."
+    },
+    {
+      "id": "Q1-RA-005",
+      "result": "still-resolved",
+      "evidence": "138 leaves runtime Run-ID/tag descriptor closure unchanged."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "Exact repository baseline",
+        "status": "passed",
+        "result": "Current delivery branch HEAD is 44e1a64447ba63aa66c3b5653b448101713fb5b7; candidate manifest targets the same HEAD."
+      },
+      {
+        "name": "Baseline overwrite target identity",
+        "status": "passed",
+        "result": "Current GitHub formal-fact-reader.ts blob is 8336cf3d596257a61298d580c10eb4a81700eba6; 138 supplies complete replacement SHA-256 df4216f2d46a412ccdbda2b37db58c731be16b4f5606939ef636ae5e8528c4fe."
+      },
+      {
+        "name": "Source review exact package binding",
+        "status": "passed",
+        "result": "Payload carries 137 result SHA-256 56336f6d205e3008bebac9564ab5137cafd36854ec8a8bba37f4349c42d1f7a3 and 138 sourceReview binds the same value."
+      },
+      {
+        "name": "138 result exact hash",
+        "status": "passed",
+        "result": "138 result.json SHA-256 = 36566d38b618c90f30c1f5b8819a1421cc7bd382ec3aef268c99780ea4b2394c."
+      },
+      {
+        "name": "Candidate changed-file TypeScript syntax parse",
+        "status": "passed",
+        "result": "TypeScript transpile parse returned zero syntax diagnostics for the replacement Reader and new focused test file."
+      },
+      {
+        "name": "Run-137 valid pending revision-window case",
+        "status": "passed-by-code-review",
+        "result": "Pending revise takes context-only predecessor validation and no longer requires terminal reviewVerdictRef."
+      },
+      {
+        "name": "Run-137 invalid completed successor gating",
+        "status": "passed-by-code-review",
+        "result": "Completed revise with source-review tupleProblems is excluded from the new successor eligibility set."
+      },
+      {
+        "name": "Failed/cancelled revise status behavior",
+        "status": "failed",
+        "result": "Candidate still invokes validateSourceReviewTuple; persisted context source-review fields make hasAny=true, causing reviewVerdictRef requiredness even though failed/cancelled RunResultFile forbids actionResult."
+      },
+      {
+        "name": "All-immutable-facts eligibility boundary",
+        "status": "failed",
+        "result": "inputRef/consumedInputRefs conflicts do not feed the decision that adds a pending/completed revise Run to integrityAdmittedReviseRunIds."
+      },
+      {
+        "name": "Candidate focused regression coverage",
+        "status": "incomplete",
+        "result": "New test file SHA-256 4ea0b5146b89b251bb28e2cf9b4663f5dbe0dafe2c667fffa0af353569eede9a covers three central 137 cases but has no failed/cancelled revise case and no valid-source-lineage + other-immutable-ref-failure eligibility case."
+      },
+      {
+        "name": "Repository full command suite",
+        "status": "not-run",
+        "result": "The uploaded candidate is an overlay package, not a full checkout. The authenticated GitHub connector was used to verify the exact baseline and unchanged dependent contracts, but it does not expose the private repository archive as local bytes for npm execution. The deterministic blocking findings above are sufficient for changes-requested; no approval is inferred from unrun commands."
+      },
+      {
+        "name": "Delivery Full Test",
+        "status": "not-applicable",
+        "result": "Not owner-authorized and not run."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-apply",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

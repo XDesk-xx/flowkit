@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-082-review-propose",
+  "status": "completed",
+  "verdict": "changes-requested",
+  "summary": "D1-PR-003 and D1-PR-004 are resolved, but the Proposal still makes full-test runnable whenever deliveryFullTestStatus is not passed. That includes failed, whereas frozen Full Test recovery requires an owner corrective/cancel decision and preserves failed until a corrective Change resets it.",
+  "reviewedResultRef": "run-result:.flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-081-revise-propose/result.json;sha256:a077d61cc185a159b30ececdcd3d1e1761098d9baa2cae3874219bd10fed2534",
+  "blockingFindings": [
+    {
+      "id": "D1-PR-005",
+      "severity": "P1",
+      "title": "full-test precondition allows direct retry after a failed Full Test",
+      "evidence": "The Proposal defines full-test as allowed when all required Changes are completed/checkpointed, authorization exists, and deliveryFullTestStatus != passed. Thus failed satisfies the precondition. Frozen verification-model.md requires fullTestStatus to remain failed and Policy to return an owner decision boundary or blocked diagnosis; the owner may authorize a corrective Change or cancel, and only the corrective Change resets the status to not-ready before another Full Test cycle.",
+      "requiredChange": "Limit full-test eligibility to the pre-execution states defined by the frozen Full Test lifecycle (awaiting-user-decision or explicitly authorized, as appropriate to the action boundary); failed must return full-test-failed owner-decision/blocked behavior, never action full-test. Add table-driven coverage for failed preserving the status and for the corrective-Change reset path. Update Design, Spec, Tasks, and the next/diagnose rules consistently."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "resolvedFindings": [
+    {
+      "id": "D1-PR-003",
+      "resolution": "Archive now requires task completion and fails closed with tasks-facts-unavailable while the snapshot cannot provide that fact."
+    },
+    {
+      "id": "D1-PR-004",
+      "resolution": "delivery-finalize now requires deliveryFullTestStatus=passed and does not accept Change Verification not-applicable."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "081 source-review provenance",
+        "status": "passed",
+        "result": "081's reviewed source and upstream approved-review reference hashes are valid."
+      },
+      {
+        "name": "D1-PR-003 and D1-PR-004 semantic repair",
+        "status": "passed",
+        "result": "Archive task facts now fail closed; delivery-finalize accepts only FullTestStatus=passed."
+      },
+      {
+        "name": "OpenSpec strict validation",
+        "status": "passed",
+        "result": "openspec validate policy-engine --strict: Change 'policy-engine' is valid."
+      },
+      {
+        "name": "Full Test failed recovery review",
+        "status": "failed",
+        "result": "D1-PR-005: full-test remains allowed for deliveryFullTestStatus=failed."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-propose",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

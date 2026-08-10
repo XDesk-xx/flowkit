@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 2,
+  "runId": "20260806-172-review-propose",
+  "deliveryId": "20260806-01-deterministic-core",
+  "action": "review-propose",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/diagnostic-cli/20260806-172-review-propose/",
+  "changeKey": "E1",
+  "changeId": "diagnostic-cli",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260806-01-deterministic-core/diagnostic-cli/20260806-171-propose/result.json",
+    "versionFingerprint": "3595a8126b4ba5cf2077ad41c2663ed4f8f50ef15fd9f4b4257d0524c9940625",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260806-171-propose",
+  "constraints": {
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

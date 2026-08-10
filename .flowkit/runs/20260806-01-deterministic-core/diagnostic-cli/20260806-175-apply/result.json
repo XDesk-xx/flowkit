@@ -1,0 +1,15 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "apply",
+    "executionStatus": "completed",
+    "summary": "已按 174 approved Proposal 完成 E1 diagnostic-cli Apply：实现共享只读 context loader、status/next/doctor/resume-context 四个确定性 CLI 视图，扩展 Reader 的最小 explore/verification 与 Change Verification status 投影，并把既有 Policy Verification gate 接到 snapshot field；完成 focused/affected Change Verification，npm test 585/585、typecheck、lint、build、OpenSpec strict 均通过；未运行 Delivery Full Test、Archive、Checkpoint、Commit、Push，也未访问 GitHub。",
+    "consumedInputRefs": [
+      {
+        "ref": ".flowkit/runs/20260806-01-deterministic-core/diagnostic-cli/20260806-174-review-propose/result.json",
+        "versionFingerprint": "a4be2b3b967fc874dc8d5e79692597830615d3ee536615b838047345b1bd585c",
+        "kind": "run-result"
+      }
+    ]
+  }
+}

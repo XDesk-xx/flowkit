@@ -1,0 +1,24 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "Review 158 revise-apply：Q2-RA-002 已关闭，Checkpoint recovery 对真实 Base 的 legacy + structured 混合与 cross-Delivery identity 已确定性通过；但 Q2-RA-001 仍未关闭——158 继续把“Owner 已明确决定 OpenSpec archive success 即关闭 Change”作为 frozen lifecycle 修改前提，而当前正式 Owner 输入仍没有该具体 decision fact。基础验证与当前 generation admission 均通过，无新增代码级 Blocking Finding。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/orchestration-authority-boundary-correction/verification.md",
+      "versionFingerprint": "584c24436754086340dce8d55ebdc3b2f96bc7695460627191f87a20d034aae1",
+      "kind": "verification-summary"
+    }
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindings": [
+    {
+      "id": "Q2-RA-001",
+      "severity": "blocking",
+      "title": "158 仍以未提供的 Owner lifecycle decision 作为 frozen contract 修改前提",
+      "problem": "158 的 action.md、proposal.md、design.md、tasks.md 与 verification.md 明确声称 Owner 已在 155 后决定并在 157 后继续维持“OpenSpec archive success 即视为 Change 关闭；Checkpoint 为后续 Flowkit/Git 流程”，并据此保留对 frozen lifecycle contract 的修改。但当前正式 Owner 输入只授权重新 Review 154，并明确要求 Reviewer 不做该 lifecycle 决策；没有提供这项具体 Owner decision fact。158 package 也没有携带可验证的 Owner decision/authorization artifact。因此该 candidate 仍把未成立的 authority fact 当作实现前提。",
+      "location": "20260806-158-revise-apply/action.md; openspec/changes/orchestration-authority-boundary-correction/proposal.md; design.md; tasks.md; verification.md; affected lifecycle delta specs",
+      "requiredChange": "使 frozen lifecycle 修改具备合法、可验证的 decision authority；在没有明确 Owner decision fact 时，不得把该选择表述为 Owner 已决定/已冻结，也不得据此宣称关闭该 Finding。Reviewer 不指定应采用哪种 Archive/Checkpoint 状态模型。"
+    }
+  ]
+}

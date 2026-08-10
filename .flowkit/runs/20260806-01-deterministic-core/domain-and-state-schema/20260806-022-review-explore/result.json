@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-022-review-explore",
+  "status": "completed",
+  "summary": "B1 revised Explore review completed with changes-requested. B1-RE-005 is resolved: RunStatus now exactly matches the frozen four-value set and in-progress is limited to ActionResult.ExecutionStatus. The state-transition design remains incomplete, however. Q6 defines and tests only Change transitions even though B1 explicitly includes Delivery, Change, and Run state schemas and transition tables. Delivery and Run transitions would otherwise be invented at Proposal/Apply time.",
+  "reviewedResultRef": "content-sha256:eb8d8ca96c69d65ba6fd252791a0f6a677c53265e247237dd2610867516e9877",
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "B1-RE-006",
+      "title": "State-transition contract covers Change only, not Delivery and Run",
+      "location": "openspec/changes/domain-and-state-schema/explore.md:109-125, Q6; docs/delivery-lifecycle.md:14-44; docs/core-model.md:50-93",
+      "evidence": "B1 In scope promises Delivery / Change / Run primary-state schemas and transition tables, and states.ts is described as the home for primary-state union types plus transition tables. Q6 supplies only CHANGE_STATE_TRANSITIONS and a canTransition(ChangeState, ChangeState) example. No Delivery or Run transition table, validator, or matrix-test plan is specified.",
+      "impact": "Later code would have to invent whether Delivery active may become completed/cancelled and whether a pending Run may become completed/failed/cancelled. That leaves B1's declared deterministic state schema incomplete and risks treating terminal Run immutability as a substitute for a transition contract.",
+      "requiredResolution": "Extend Q6 and the acceptance/test plan with separate typed transition tables and exhaustive valid/invalid matrix tests for all three entities. Freeze the structural edges as Delivery active -> completed | cancelled (terminal Delivery states have no outgoing edges), Change as currently stated, and Run pending -> completed | failed | cancelled (terminal Run states have no outgoing edges). Keep semantic prerequisites such as owner authorization, verification, and completed dependencies in D1 Policy; B1 only owns these structural state edges and unknown-state rejection."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "resolvedFindings": [
+    {
+      "id": "B1-RE-005",
+      "resolution": "RunStatus now contains only pending, completed, failed, and cancelled; the Explore explicitly requires schema rejection of in-progress as a Run state."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "reviewed Explore artifact hash",
+        "status": "passed",
+        "result": "SHA-256 is eb8d8ca96c69d65ba6fd252791a0f6a677c53265e247237dd2610867516e9877 and matches the completed 021-revise-explore Run."
+      },
+      {
+        "name": "frozen Run-state boundary",
+        "status": "passed",
+        "result": "RunStatus exactly matches the frozen four-value set, and in-progress is tested as an unknown Run state."
+      },
+      {
+        "name": "three-entity state-transition coverage",
+        "status": "failed",
+        "result": "Only Change transitions are defined; Delivery and Run structural transition tables and exhaustive matrix tests are absent."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run; this is review-explore."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

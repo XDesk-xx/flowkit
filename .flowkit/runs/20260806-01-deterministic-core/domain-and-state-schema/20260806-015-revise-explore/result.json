@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-015-revise-explore",
+  "status": "completed",
+  "summary": "依据 014-review-explore 的 2 个 Blocking Findings 修订 B1 Explore。B1-RE-001：从 CHANGE_ACTIONS 移除 change-checkpoint（10 个 Change Action），记录源冲突解决——冻结 core-model spec 是权威，实现参考 Section 6.3 与冻结 spec 冲突时以冻结 spec 为准。B1-RE-002：ResultRef 改为 provider-neutral 逻辑引用（ref + versionFingerprint + kind?），移除 mandatory runPath，具体序列化 schema 和 adapter 映射由 C1 定义。更新了 Q5、Q9、Section 6.5、验收标准和结论。未创建 Git Commit。",
+  "findingsResolved": [
+    {
+      "id": "B1-RE-001",
+      "title": "The proposed fixed Action Catalog conflicts with the frozen core-model contract",
+      "resolution": "从 CHANGE_ACTIONS 移除 change-checkpoint（10 个 Change Action）。在 Q5 添加源冲突解决说明：冻结 core-model spec 列 10 个正式 Action（4 主 + 6 辅助），不含 change-checkpoint；实现参考 Section 6.3 含 11 个。冲突时冻结 spec 是权威。change-checkpoint 是 Git 正式边界（AGENTS.md 规则 #7），不是正式 Action。更新 Section 6.5、验收标准 4、结论 5 和 9。",
+      "changes": [
+        "Q5: CHANGE_ACTIONS 从 11 项减为 10 项，移除 change-checkpoint",
+        "Q5: 添加源冲突解决说明段落",
+        "Section 6.5: 标题改为'不是正式 Action'，内容记录源冲突解决",
+        "验收标准 4: 11 个改为 10 个，添加 change-checkpoint 排除",
+        "结论 5: 添加'10 个 Change Action'",
+        "结论 9: 新增 change-checkpoint 源冲突解决结论"
+      ]
+    },
+    {
+      "id": "B1-RE-002",
+      "title": "ResultRef is prematurely fixed to a Run-path transport format",
+      "resolution": "ResultRef 改为 provider-neutral 逻辑引用。移除 mandatory runPath 和 sha256 字段。新接口：ref（稳定标识）+ versionFingerprint（变更检测）+ kind?（可选类型标记）。按 integration-boundaries.md Section 5 定义能力边界。具体序列化 schema 和 adapter 映射由 C1 定义。更新 Q9、验收标准 10、结论 10。",
+      "changes": [
+        "Q9: ResultRef 从 { runPath, sha256 } 改为 { ref, versionFingerprint, kind? }",
+        "Q9: 添加 provider-neutral 说明和理由",
+        "验收标准 10: 添加 provider-neutral 标注",
+        "结论 10: 新增 ResultRef provider-neutral 结论"
+      ]
+    }
+  ],
+  "exploreArtifact": {
+    "path": "openspec/changes/domain-and-state-schema/explore.md",
+    "sha256": "c322ff653f434a7d83b85dd58185ee3a3f4ce4a5e0abd65e789d7ed2192963bb"
+  },
+  "scopePreserved": {
+    "b1Scope": "unchanged (domain types + schema validation + Run ID + terminal checks)",
+    "manifestNotModified": true,
+    "terminalRunsPreserved": true,
+    "noCode": true
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "nextAction": "review-explore",
+  "blockedOn": []
+}

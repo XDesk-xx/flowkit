@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-097-archive",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "D1",
+  "changeId": "policy-engine",
+  "action": "archive",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "inputRef": "957f02da9f546517e3f6bd45d40db59732c13acbd4742ce2d527587fa54b1346",
+  "sourceReviewRun": "20260806-096-review-apply",
+  "sourceReviewVerdict": "approved",
+  "constraints": {
+    "mayArchive": true,
+    "mayModifyManifest": true,
+    "mayRunOpenSpecArchive": true,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-097-archive/"
+}

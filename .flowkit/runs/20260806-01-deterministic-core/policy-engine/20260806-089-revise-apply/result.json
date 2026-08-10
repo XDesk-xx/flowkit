@@ -1,0 +1,290 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-089-revise-apply",
+  "status": "completed",
+  "summary": "D1 policy-engine revise-apply 089 resolves D1-RA-001 (P1): next() bypassed the Verification-facts gate before review-apply. Root cause: src/policy/next.ts decideApplyStage returned action: review-apply on the no-lineage-match branch without checking isVerificationFactAvailable, while canRun(review-apply) correctly rejected with verification-facts-unavailable. Fix: added the verification gate to that branch only — unavailable → blocked: verification-facts-unavailable, never action: review-apply. The gate is NOT hoisted above the revise-apply branch, because canRun(revise-apply) does not require Verification facts (hoisting would create a new next/canRun inconsistency). Updated two next.test.ts assertions that encoded the old wrong behavior (apply-no-review → blocked; lifecycle Step 6 → blocked, Step 7 removed as unreachable in D1). proposal/design/spec/tasks unchanged; preconditions.ts (canRun path) unchanged; frozen specs / B1 states.ts / 069-088 terminal Runs unchanged. typecheck/build/lint/test(406)/openspec strict all pass. Full consistencyScan covers 12 dimensions with 0 contradictions. Next action: review-apply.",
+  "inputRef": "c49495cebbffbd52d8b220e6772534f9d6bda17ef5cc0454e10c18753b3dc27d",
+  "inputRefNote": "SHA-256 of 20260806-088-review-apply/result.json (the review whose changes-requested verdict + D1-RA-001 triggered this revision). Verified by hashing 088 result.json. Matches the revise-apply precedent: 066-revise-apply inputRef = 065-review-apply result SHA.",
+  "sourceReviewRef": "088-review-apply:c49495cebbffbd52d8b220e6772534f9d6bda17ef5cc0454e10c18753b3dc27d",
+  "sourceReviewVerdict": "changes-requested",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-087-apply/",
+  "findingsAddressed": [
+    {
+      "id": "D1-RA-001",
+      "severity": "P1",
+      "origin": "20260806-088-review-apply",
+      "title": "next() bypasses the Verification-facts gate before review-apply",
+      "rootCause": "src/policy/next.ts decideApplyStage: the !lineage.match branch returned actionResult('review-apply') without calling isVerificationFactAvailable(snapshot). In the C1 snapshot (no Change Verification status), canRun(review-apply) via preconditions.reviewSPreconditions adds 'verification-facts-unavailable' for the apply stage (line 271-273), so canRun correctly rejects. But next() returned action: review-apply, contradicting its own canRun contract. The approved-review archive branch already had the verification gate (after the revise-apply branch), but the no-lineage review-apply branch did not.",
+      "fix": "Added the verification gate to the !lineage.match branch in decideApplyStage: if (!isVerificationFactAvailable(snapshot)) return blockedResult(verificationFactsUnavailableDiagnosis()); else return actionResult('review-apply'). The gate mirrors canRun(review-apply) exactly. Critically, the gate is placed ONLY on the !lineage.match branch — NOT hoisted above the revise-apply (match+changes-requested) branch — because canRun(revise-apply) (reviseSPreconditions) does not require Verification facts, and hoisting would make next() block revise-apply while canRun(revise-apply) allows it (a new inconsistency). The approved-review archive gate (after the revise-apply branch) is unchanged.",
+      "verificationEvidence": "next.ts:214-226: !lineage.match branch now checks isVerificationFactAvailable → blocked: verification-facts-unavailable before action: review-apply. next.test.ts:340-361 'apply artifact, no review → blocked verification-facts-unavailable (D1-7)' asserts blocked (was action). next.test.ts:460-518 lifecycle Step 6 asserts blocked (was action: review-apply); Step 7 removed (unreachable in D1 since Step 6 is blocked). preconditions.ts unchanged (canRun path already correct per 088). 406/406 tests pass. In D1, isVerificationFactAvailable always false → next() always returns blocked for the review-apply path, matching canRun(review-apply).allowed=false."
+    }
+  ],
+  "modifiedFiles": [
+    {
+      "path": "src/policy/next.ts",
+      "sha256": "c7ed6f3d886b35cb386d8c15ffd752ca186a55bdafbd8f21e46db09562675b34",
+      "previousSha256": "2268826a7a863d20df9158e4c1920f54643719bcdd41e320a7bd0216d79d7bf2",
+      "modified": true,
+      "changeSummary": "decideApplyStage !lineage.match branch: added isVerificationFactAvailable gate → blocked: verification-facts-unavailable before action: review-apply (D1-RA-001 fix). Gate scoped to this branch only; revise-apply and archive branches unchanged."
+    },
+    {
+      "path": "tests/unit/policy/next.test.ts",
+      "sha256": "ed2f58edcb3dec0da01dcb7d609a025c19ad098daf45e37ca97f804579c057fa",
+      "previousSha256": "55ff6138e3b39fd6c6fbf350b1824d88afdbc6d8ba8da61c9c032c3351f93b9e",
+      "modified": true,
+      "changeSummary": "Test 1 (apply-no-review): asserts blocked: verification-facts-unavailable (was action: review-apply). Lifecycle test: Step 6 asserts blocked (was action); Step 7 removed (unreachable in D1); title updated to '... → apply → verification gate (D1-7 boundary)'."
+    }
+  ],
+  "consistencyScan": {
+    "scanType": "focused",
+    "triggerRun": "20260806-088-review-apply (changes-requested, D1-RA-001)",
+    "modifiedConcepts": [
+      "next() decideApplyStage !lineage.match branch: now gates on isVerificationFactAvailable before returning action: review-apply (D1-RA-001 fix)",
+      "next.test.ts: two assertions updated from action: review-apply to blocked: verification-facts-unavailable"
+    ],
+    "dimensions": [
+      {
+        "id": "CS-01",
+        "name": "D1-RA-001 fix correctness (review-apply branch now gates verification)",
+        "concept": "next() !lineage.match branch returns blocked: verification-facts-unavailable when facts unavailable; never action: review-apply from unavailable facts",
+        "checks": [
+          "next.ts:214-226: !lineage.match → if (!isVerificationFactAvailable) blockedResult(verificationFactsUnavailableDiagnosis()); else actionResult('review-apply')",
+          "next.test.ts:340-361: apply artifact no review → blocked, diagnosis.reason='verification-facts-unavailable' — pass",
+          "next.test.ts:460-518 lifecycle Step 6: apply completed → blocked verification-facts-unavailable — pass",
+          "In D1 isVerificationFactAvailable always false → next() always blocked for review-apply path (never action: review-apply) — matches 088 requiredChange"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-02",
+        "name": "next() ↔ canRun(review-apply) consistency (D1-7 gate aligned)",
+        "concept": "next() and canRun(review-apply) now enforce the same Verification gate for the apply stage",
+        "checks": [
+          "canRun(review-apply) via preconditions.reviewSPreconditions: stage==='apply' && !isVerificationFactAvailable → 'verification-facts-unavailable' (preconditions.ts:271-273, unchanged)",
+          "next() decideApplyStage !lineage.match: !isVerificationFactAvailable → blocked: verification-facts-unavailable (next.ts:223-225, new)",
+          "Both return blocked/reject when facts unavailable; both would allow review-apply when facts available (forward-compat, symmetric)",
+          "preconditions.ts NOT modified (088 confirmed canRun path correct) — no divergence introduced",
+          "406/406 tests pass — no next/canRun contradiction remains"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-03",
+        "name": "revise-apply branch NOT affected (no new inconsistency)",
+        "concept": "canRun(revise-apply) does not require Verification facts; next() revise-apply branch must also not gate verification",
+        "checks": [
+          "canRun(revise-apply) via reviseSPreconditions: checks review≠null, lineage.match, verdict=changes-requested — NO verification check (preconditions.ts:281-307)",
+          "next.ts:228-229: match + changes-requested → actionResult('revise-apply') — NO verification gate (unchanged)",
+          "Gate is on !lineage.match branch ONLY, placed BEFORE the revise-apply branch is reached via the match path — revise-apply path does not pass through the new gate",
+          "next.test.ts:367+ 'match + changes-requested → action revise-apply' still passes (revise-apply not blocked)",
+          "No new inconsistency: next() and canRun(revise-apply) both allow revise-apply without verification facts"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-04",
+        "name": "archive branch unchanged (approved-review verification + tasks gate intact)",
+        "concept": "match + approved → verification gate → tasks gate → archive authorization; 088 required 'keep the later approved-review archive gate'",
+        "checks": [
+          "next.ts:231-234: verdict===approved → if (!isVerificationFactAvailable) blocked (unchanged)",
+          "next.ts:235-242: tasks gate (isTasksFactAvailable) → blocked tasks-facts-unavailable (unchanged)",
+          "next.ts:243-249: archive scope → action archive; else owner-decision authorize-archive (unchanged)",
+          "next.test.ts:363-365 'match + approved → blocked verification-facts-unavailable' still passes",
+          "088 requiredChange 'Keep the later approved-review archive gate' — satisfied (gate intact, unchanged)"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-05",
+        "name": "Spec ↔ implementation (review-apply needs Verification available+passed)",
+        "concept": "spec.md:209-216 review-apply requires Verification facts available+passed; unavailable → next returns blocked: verification-facts-unavailable",
+        "checks": [
+          "spec.md:209-216 'review-apply 需 Verification 事实可用且 passed' + 'Verification 事实不可用时 next 返回 blocked: verification-facts-unavailable'",
+          "next.ts !lineage.match branch now implements this: unavailable → blocked: verification-facts-unavailable",
+          "spec.md:178-184 'review-apply 允许在无 lineage match 时执行' AND 'Change Verification 事实可用且 passed' — next() only returns action: review-apply when isVerificationFactAvailable (forward-compat, when facts become available)",
+          "isVerificationFactAvailable doc: 'A future change that extends the snapshot updates only this function — the rest of D1 becomes correct automatically' — encapsulates the available+passed gate",
+          "No spec modification needed (spec already correct; bug was implementation not matching spec)"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-06",
+        "name": "Test suite consistency (no test encodes old wrong behavior)",
+        "concept": "All next() review-apply assertions now expect blocked in D1; canRun/preconditions/unified-entry tests already correct",
+        "checks": [
+          "next.test.ts:340-361 (test 1) — updated to blocked ✓",
+          "next.test.ts:460-518 (lifecycle Step 6) — updated to blocked; Step 7 removed ✓",
+          "preconditions.test.ts:249-267 review-apply tests assert verification-facts-unavailable (unchanged, already correct) ✓",
+          "unified-entry.test.ts:226-239 'apply stage stays blocked after revise-apply (D1-7 boundary)' (unchanged, already correct) ✓",
+          "unified-entry.test.ts:209-224 revise-S-restores-review loop excludes apply stage (already correct) ✓",
+          "grep 'review-apply' as next() action result in tests: no remaining assertion of action: review-apply from next() — all consistent"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-07",
+        "name": "diagnose() consistency (verification-facts-unavailable reason still emitted)",
+        "concept": "diagnose() returns blocked diagnosis with verification-facts-unavailable for the review-apply path; diagnose tests unaffected",
+        "checks": [
+          "blocked-diagnosis.ts verificationFactsUnavailableDiagnosis() unchanged — still constructs the reason",
+          "diagnose.test.ts: verification-facts-unavailable reason coverage unchanged — pass",
+          "next() now returns blocked (with diagnosis) instead of action for review-apply path — diagnose() aligns with next()'s corrected behavior",
+          "No diagnose test asserted action: review-apply (diagnose only returns blocked) — no break"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-08",
+        "name": "Proposal bundle integrity (unchanged)",
+        "concept": "revise-apply MUST NOT modify proposal/design/spec/tasks (mayModifyProposalArtifacts: false)",
+        "checks": [
+          "proposal.md SHA-256 = 6d86964a196f76c76652b2978274ee88f2b0c4556d93830a3ebd1caef1c77cec (== 086 recorded, unchanged)",
+          "design.md SHA-256 = 404e790d56d2d0a458cff139e7a9efb8f81f2cb04703a101e6491878892f7bc1 (== 086 recorded, unchanged)",
+          "spec.md SHA-256 = 71d3cff8b282715424d1d500f03f6de4afd12b98c8510a71d1eeee6ef9bf7845 (== 086 recorded, unchanged)",
+          "tasks.md unchanged (still 110/110 complete from 087; revise-apply did not touch it)",
+          "Only src/policy/next.ts + tests/unit/policy/next.test.ts modified"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-09",
+        "name": "Frozen specs + B1 states.ts + preconditions.ts unmodified",
+        "concept": "revise-apply touches only the buggy next() branch + its tests; canRun path (preconditions.ts) confirmed correct by 088 and left unchanged",
+        "checks": [
+          "openspec/specs/flowkit-domain-and-state-schema/spec.md (B1) — not modified",
+          "openspec/specs/flowkit-formal-fact-reader-and-persistence/spec.md (C1) — not modified",
+          "src/domain/states.ts — git diff empty (unmodified)",
+          "src/policy/preconditions.ts SHA-256 = 524afe3502bf48cfef3b81d4717179810d85ea55ef202017ea26cf43c00afba0 (== 087, unchanged) — canRun(review-apply) path left intact per 088",
+          "Other src/policy/*.ts files (types/lineage/stage-detector/can-run/diagnose/owner-decision/blocked-diagnosis/unified-entry/index) — unchanged"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-10",
+        "name": "Terminal Run immutability (069-088 unchanged)",
+        "concept": "revise-apply MUST NOT modify 069-088 terminal Runs",
+        "checks": [
+          "087-apply result SHA-256 = 7505b2a3b0d59476e34dac314c2041f0ec8b7fc8665e90aaca929f7f163a47af (== 088 reviewedResultRef, unchanged)",
+          "088-review-apply result SHA-256 = c49495cebbffbd52d8b220e6772534f9d6bda17ef5cc0454e10c18753b3dc27d (== 089 inputRef, unchanged)",
+          "089 only wrote to: src/policy/next.ts, tests/unit/policy/next.test.ts, and 089-revise-apply Run directory — no writes to 069-088 directories",
+          "git status: 069-088 Run directories remain as before; no modifications"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-11",
+        "name": "Verification suite + no new problems",
+        "concept": "All checks pass; fix introduces no new inconsistency or regression",
+        "checks": [
+          "npm run typecheck: passed (production + test)",
+          "npm run build: passed",
+          "npm run lint: passed (no errors)",
+          "npm test: 406/406 passed (0 fail) — no regression",
+          "npx openspec validate policy-engine --strict: 'Change policy-engine is valid'",
+          "No new inconsistency: next() vs canRun for all apply-stage branches (review-apply, revise-apply, archive) all consistent"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-12",
+        "name": "Mutation policy + lineage/next action",
+        "concept": "only next.ts + next.test.ts + 089 Run files modified; next action = review-apply",
+        "checks": [
+          "mayModifyProposalArtifacts: false — honored (proposal bundle unchanged, CS-08)",
+          "mayWriteProductionCode: true — next.ts fix only",
+          "mayWriteTestCode: true — next.test.ts fix only",
+          "mayCheckpoint: false / mayFullTest: false / commitAllowed: false — honored (no checkpoint, no full test, no commit)",
+          "After 089 completes: Current Artifact Run (apply) = 089-revise-apply (newest apply-stage artifact); Current Review (apply) = 088-review-apply (changes-requested); 088.reviewedRun = 087 ≠ 089 → no lineage match → next = review-apply (reviewer to verify 089 fixes D1-RA-001)"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      }
+    ],
+    "totalContradictions": 0,
+    "overallResult": "pass"
+  },
+  "verificationResults": {
+    "typecheck": {
+      "command": "npm run typecheck",
+      "status": "passed",
+      "result": "tsc --noEmit (production) + tsc --noEmit -p tsconfig.test.json (test) passed with no errors."
+    },
+    "build": {
+      "command": "npm run build",
+      "status": "passed",
+      "result": "tsc emitted production build with no errors."
+    },
+    "test": {
+      "command": "npm test",
+      "status": "passed",
+      "result": "406/406 tests passed (109 suites); 0 fail. Policy-specific 156/156. Two next.test.ts assertions updated to expect blocked (was action: review-apply); no other test changes."
+    },
+    "lint": {
+      "command": "npm run lint",
+      "status": "passed",
+      "result": "eslint completed with no errors."
+    },
+    "openspecValidate": {
+      "command": "npx openspec validate policy-engine --strict",
+      "status": "passed",
+      "result": "Change 'policy-engine' is valid"
+    },
+    "fullTest": {
+      "status": "not-applicable",
+      "result": "Not authorized in this Run; Full Test requires owner authorization per AGENTS.md rule #5. revise-apply constraints mayFullTest=false."
+    }
+  },
+  "mutationPolicyCheck": {
+    "mayModifyProposalArtifacts": false,
+    "mayWriteProductionCode": true,
+    "mayWriteTestCode": true,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false,
+    "proposalBundleModified": false,
+    "frozenSpecsModified": false,
+    "terminalRunsModified": false,
+    "b1StatesTsModified": false,
+    "preconditionsTsModified": false,
+    "productionCodeWritten": true,
+    "testCodeWritten": true,
+    "manifestModified": false,
+    "filesWritten": [
+      "src/policy/next.ts (modified — D1-RA-001 fix: verification gate on !lineage.match branch)",
+      "tests/unit/policy/next.test.ts (modified — two assertions updated to blocked; lifecycle Step 7 removed)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-089-revise-apply/context.json (new Run)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-089-revise-apply/action.md (new Run)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-089-revise-apply/result.json (new Run)"
+    ]
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "prohibitedWorkCheck": {
+    "frozenSpecsModified": false,
+    "terminalRunsModified": false,
+    "changeCheckpointExecuted": false,
+    "fullTestExecuted": false,
+    "scopeExpanded": false,
+    "proposalBundleModified": false,
+    "preconditionsTsModified": false,
+    "newInconsistencyIntroduced": false,
+    "autoCommit": false
+  },
+  "nextAction": "review-apply",
+  "nextActionNote": "reviewer 审查 089-revise-apply，重点验证 D1-RA-001 是否真正解决且未引入新问题：(1) next() decideApplyStage !lineage.match 分支现在先检查 isVerificationFactAvailable，不可用 → blocked: verification-facts-unavailable，永不 action: review-apply；(2) next() 与 canRun(review-apply) 一致（都 gate verification）；(3) 门控仅在该分支，未提升到 revise-apply 分支之前——canRun(revise-apply) 不要求 Verification 事实，提升会制造新不一致；(4) archive 分支的 verification+tasks gate 未变；(5) 两个 next.test.ts 断言已更新为 blocked，lifecycle Step 7 已移除（D1 不可达）；(6) proposal/design/spec/tasks 未修改，preconditions.ts 未修改（canRun 路径 088 已确认正确）；(7) 冻结 specs / B1 states.ts / 069-088 terminal Runs 未修改；(8) typecheck/build/lint/test(406)/openspec strict 全通过；(9) consistencyScan 12 维度 0 contradictions。如 approved 则进入 archive（需 owner 授权）；如 changes-requested 则进入 revise-apply。",
+  "blockedOn": []
+}

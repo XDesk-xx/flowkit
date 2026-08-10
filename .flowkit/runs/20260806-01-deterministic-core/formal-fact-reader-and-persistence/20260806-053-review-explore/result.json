@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-053-review-explore",
+  "status": "completed",
+  "summary": "C1 Explore review approved. The Explore artifact now defines a scoped formal-fact Reader, atomic Run persistence, and ResultRef adapter consistent with frozen A1/B1 and integration contracts. It preserves terminal immutability with staging creation and exclusive fs.link completion publication; uses a non-self-referential, validated physical result schema; keeps execution status single-source; and leaves Policy, diagnostic CLI, OpenSpec CLI integration, Full Test, and Git automation out of scope. The revision also reconciles the only terminal-result write path and the writeRunResult object API across Q5, Q7, acceptance criteria, conclusions, and review points.",
+  "reviewedResultRef": "run-result:.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-052-revise-explore/result.json;sha256:7fceafb8a755f97327399aa33153b9b888f33b8bd6b90de3416d6466644bf274",
+  "verdict": "approved",
+  "blockingFindings": [],
+  "nonBlockingFindings": [],
+  "resolvedFindings": [
+    {
+      "id": "C1-EX-010",
+      "resolution": "Resolved by revision 052: writeRunResult receives a RunResultFile object and alone validates, serializes, and exclusively publishes it; Q7 adapter only constructs the object and derives references on read."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "Frozen-boundary and lifecycle review",
+        "status": "passed",
+        "result": "Reviewed C1 scope against Delivery constraints, lifecycle, A1/B1 frozen contracts, and integration ResultRef rules."
+      },
+      {
+        "name": "Persistence protocol consistency review",
+        "status": "passed",
+        "result": "Confirmed a single no-replace terminal publication path, single execution-status source, non-self-referential result reference derivation, and a concrete projection validator."
+      },
+      {
+        "name": "Cross-section consistency review",
+        "status": "passed",
+        "result": "Confirmed Q5, Q7, acceptance criteria, conclusions, and review focus agree on writeRunResult object input and ownership."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run."
+      }
+    ]
+  },
+  "nextActionRecommendation": "propose",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "重新 Review 154 Apply：实现与 Change Verification 大部分符合已批准 Q2 契约，但 154 的 active-only Change-level Run projection 与现有 canonical Archive/Checkpoint 状态契约之间存在可恢复性冲突。flowkit-core-model 要求 Archive 或 Checkpoint 未完成时 Change 保持 active，而 flowkit-bootstrap-and-roadmap 又把 Change 已 completed 列为 Checkpoint 前置。该冲突在 154 后会直接影响 checkout/resume 时 Reader 是否还能投影当前 Change lineage。Reviewer 不决定具体状态顺序或实现方案，仅要求 canonical contract 与实现收敛为唯一、可确定性恢复的语义。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/orchestration-authority-boundary-correction/verification.md",
+      "versionFingerprint": "e33f46452591b9009926f88c24538989e4bebea0ba87c845ca10d7589f2e81f8",
+      "kind": "verification-summary"
+    }
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindings": [
+    {
+      "id": "Q2-RA-001",
+      "severity": "blocking",
+      "title": "active-only projection 与 Archive/Checkpoint canonical lifecycle 存在可恢复性冲突",
+      "problem": "154 将 Change-level Run projection 收窄为唯一 state=active Change。当前 canonical contract 同时存在不一致要求：flowkit-core-model 明确规定 Archive 或 Checkpoint 尚未完成时 Change MUST 保持 active；flowkit-bootstrap-and-roadmap 则把“Change 状态更新为 completed”列为 Change Checkpoint 的前置条件。实际将 Q2 state 置为 completed 且尚无 Change Checkpoint 时，154 Reader 不再投影 Q2 Change-level Runs，Policy 无法从该 Change lineage表达 checkpoint-pending 当前上下文。该矛盾使 checkout/resume 对 Archive 后、Checkpoint 前的正式状态缺少唯一可恢复语义。",
+      "location": "src/facts/formal-fact-reader.ts; openspec/specs/flowkit-core-model/spec.md; openspec/specs/flowkit-bootstrap-and-roadmap/spec.md; docs/core-model.md; docs/bootstrap-reference.md; docs/delivery-lifecycle.md",
+      "requiredChange": "消除上述 canonical lifecycle 契约与 154 current-fact projection 之间的矛盾，使 Archive 后、Change Checkpoint 完成前以及 Checkpoint 完成后的 repository snapshot 都能由正式 facts 确定性恢复，并使 Policy 得到唯一正确的下一边界。具体状态顺序、projection 表达或其他实现方案由 Author/Owner contract 决定，Reviewer 不指定。需要加入覆盖该 crash/resume 边界的回归，并继续保证 completed historical Change Runs 不被重新提升为 current Policy authority。"
+    }
+  ]
+}

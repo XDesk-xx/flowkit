@@ -1,0 +1,15 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "apply",
+    "executionStatus": "completed",
+    "summary": "已按 188 approved contract 与 Owner apply 授权完成 F1：实现 fixed focused/affected/full verification layers、closed affected scopes、Quality Guard hard checks 与 required warning-only maintainability metrics、timing warning contract、Windows launcher adapter、固定 Full Test Plan 和内部 Core RC candidate。正式 F1 Change Verification 通过 verify:change -- verification，affected 18/18、quality hard failures 0、typecheck/lint/build、OpenSpec strict 均通过；public test:full 609/609 通过。npm run verify:full 在当前 detached sandbox 的长生命周期执行中被外部执行时限截断，因此未宣称该 public command completed；其 constituent checks 已分别通过。Delivery Full Test 未运行，未修改 FullTestStatus/Policy，也未 Archive/Checkpoint/Commit/Push。",
+    "consumedInputRefs": [
+      {
+        "ref": ".flowkit/runs/20260806-01-deterministic-core/core-hardening-and-release-candidate/20260806-189-review-propose/result.json",
+        "versionFingerprint": "c0f0177308512404d7df94647d360d7e938891066382e62ba61ccfde1e4a60b6",
+        "kind": "run-result"
+      }
+    ]
+  }
+}

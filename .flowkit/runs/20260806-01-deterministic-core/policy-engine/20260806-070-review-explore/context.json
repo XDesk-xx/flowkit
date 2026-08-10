@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-070-review-explore",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "D1",
+  "changeId": "policy-engine",
+  "action": "review-explore",
+  "role": "reviewer",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-069-explore/",
+  "reviewedResultRef": "content-sha256:e369c403549fa9a0084215989a39757ec1cc5ab6edcbeae73a2ebb94327593e4",
+  "inputs": [
+    ".tmp/explore/policy-engine/conclusion.md",
+    ".tmp/explore/policy-engine/evidence.json",
+    ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-069-explore/result.json",
+    "docs/delivery-lifecycle.md",
+    "docs/core-model.md",
+    "openspec/specs/flowkit-domain-and-state-schema/spec.md",
+    "openspec/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+    "src/facts/formal-fact-snapshot.ts",
+    "src/facts/formal-fact-reader.ts"
+  ],
+  "constraints": {
+    "readOnlyExceptCurrentRun": true,
+    "fullTestAllowed": false,
+    "mayPropose": false,
+    "mayApply": false,
+    "mayArchive": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-070-review-explore/"
+}

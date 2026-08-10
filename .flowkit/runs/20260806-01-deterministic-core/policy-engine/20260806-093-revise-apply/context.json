@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-093-revise-apply",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "D1",
+  "changeId": "policy-engine",
+  "action": "revise-apply",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "inputRef": "4d5a75a0c74e1ce7c51738bf5f583ced4cc4acb391aab227e37ba85715c72bfe",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-091-revise-apply/",
+  "sourceReviewRun": "20260806-092-review-apply",
+  "sourceReviewVerdict": "changes-requested",
+  "sourceChangeState": "D1 policy-engine: active (explore 069 approved via 074; propose reviewed/approved; apply 087 reviewed by 088 changes-requested D1-RA-001, revised by 089, reviewed by 090 changes-requested D1-RA-002, revised by 091, reviewed by 092 changes-requested D1-RA-003; D1-PR-001..006 resolved at propose stage; D1-RA-001 resolved by 089; D1-RA-002 resolved by 091)",
+  "triggerFindings": [
+    {
+      "id": "D1-RA-003",
+      "severity": "P1",
+      "origin": "20260806-092-review-apply",
+      "title": "not-applicable Verification is incorrectly blocked as not-run"
+    }
+  ],
+  "inputRefSemantics": "inputRef cites 092-review-apply/result.json (the review whose changes-requested verdict and D1-RA-003 finding triggered this revision) with its actual immutable SHA-256 (4d5a75a0...), matching the revise-apply precedent (089 inputRef = 088 result SHA; 091 inputRef = 090 result SHA). reviewedRun names 091-revise-apply, the latest apply artifact whose implementation is revised. 093 fixes D1-RA-003: 091's mapVerificationStatusToGate fail-closed not-applicable to not-run, diverging from frozen verification-model.md Section 3.3 (permits passed|not-applicable before review-apply) and delivery-lifecycle.md Section 3.4/3.5 (archive accepts passed|not-applicable). 093 maps not-applicable → satisfied (releases the gate), renames gate kind passed → satisfied, and aligns the D1 Proposal spec/design/tasks (Change Verification gate: passed → passed or not-applicable) per the finding requiredChange. FullTestStatus passed (D1-12) is untouched. Production code (verification-gate.ts, next.ts, preconditions.ts comments, blocked-diagnosis.ts comments) + tests (verification-gate.test.ts) + proposal bundle (spec.md, tasks.md, design.md) modified; frozen docs / B1 states.ts / 069-092 terminal Runs / manifest untouched.",
+  "proposalModificationRationale": "Per D1-RA-003 requiredChange: 'Update the active D1 Proposal spec/design/tasks where they require passed only so they align with the frozen verification-model and delivery-lifecycle contracts; do not modify frozen documents.' The D1 Proposal repeated a passed-only restriction stricter than the frozen lifecycle — a proposal defect surfaced at apply review. This revise-apply corrects the proposal to match the frozen contract (passed|not-applicable releases; failed|not-run blocks). This is alignment, not scope expansion: no new Requirement/Scenario is added, no frozen spec is touched, and the FullTestStatus gate (D1-12) is unchanged. mayModifyProposalArtifacts is therefore true for this Run only because the finding explicitly requires it.",
+  "constraints": {
+    "mayModifyProposalArtifacts": true,
+    "mayWriteProductionCode": true,
+    "mayWriteTestCode": true,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-093-revise-apply/"
+}

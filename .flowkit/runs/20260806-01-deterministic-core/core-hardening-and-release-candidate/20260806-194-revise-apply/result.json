@@ -1,0 +1,13 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-apply",
+    "executionStatus": "completed",
+    "summary": "已关闭 193 的 F1-RA-003：保留统一 verify:full runner 记录 fixed order / fail-fast / terminal status+duration，但 final full 改为通过跨平台 command adapter 启动隔离的 public npm run test:full 子进程，避免在长期 parent runner 内复用 full test process lifecycle。failure regression 直接覆盖实际 full-step process path；public verify:full 连续完整执行均获得 exit 0 与 terminal full passed/duration，full-set 保持 611/611。final verify:change -- verification passed；Delivery Full Test、Archive、Checkpoint、Commit、Push 未执行。",
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260806-01-deterministic-core/core-hardening-and-release-candidate/20260806-193-review-apply/result.json",
+      "versionFingerprint": "9b0f2704d7274e1408a98cab539d31700350ddb1ead7551b024c5e16af39abff",
+      "kind": "run-result"
+    }
+  }
+}

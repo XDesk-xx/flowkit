@@ -1,0 +1,16 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "已沿 182 建立的 F1 审查链完成 194 revise-apply Review。193 的 F1-RA-003 已关闭：194 仅将 final full execution 从长期 verification parent 内的 in-process test runner 改为通过既有跨平台 command adapter 启动隔离的 public `npm run test:full` 子进程，Proposal/Design/Spec/Tasks 未改，193 Reviewer-owned files 原样保留。Reviewer 在 exact 194 candidate 上复核 `verify:change -- verification` passed；独立 `test:full` 与 `verify:step full` 均完成；后台真实 public `npm run verify:full` 获得 terminal `step: full status=passed duration=...` 且 exit 0；真实 child-process failure probe 获得 `step: full status=failed duration=...` 并原样传播 exit 7。OpenSpec strict、quality/typecheck/lint/build、611-test full-set contract、Core RC 与 authority boundary 均保持闭合。Blocking Findings 为 0。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/core-hardening-and-release-candidate/verification.md",
+      "versionFingerprint": "2b2a27385cf3b4ddf4ae8022ad291611edc8d03dcef6a47452d65f35e7f6be96",
+      "kind": "verification-summary"
+    },
+    "nextActionRecommendation": "owner-decision: authorize-archive"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindings": []
+}

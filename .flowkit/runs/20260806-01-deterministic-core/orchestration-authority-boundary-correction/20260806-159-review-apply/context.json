@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 2,
+  "runId": "20260806-159-review-apply",
+  "deliveryId": "20260806-01-deterministic-core",
+  "action": "review-apply",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/orchestration-authority-boundary-correction/20260806-159-review-apply/",
+  "changeKey": "Q2",
+  "changeId": "orchestration-authority-boundary-correction",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260806-01-deterministic-core/orchestration-authority-boundary-correction/20260806-158-revise-apply/result.json",
+    "versionFingerprint": "0c6b1895b24ccdd573067e2d0d1a361bd8668442e357a1ddd956c0f1d99149d1",
+    "kind": "run-result"
+  },
+  "verificationInputRef": {
+    "ref": "openspec/changes/orchestration-authority-boundary-correction/verification.md",
+    "versionFingerprint": "584c24436754086340dce8d55ebdc3b2f96bc7695460627191f87a20d034aae1",
+    "kind": "verification-summary"
+  },
+  "reviewedRunId": "20260806-158-revise-apply",
+  "constraints": {
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

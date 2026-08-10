@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-051-review-explore",
+  "status": "completed",
+  "summary": "C1 Explore review requests changes. Revision 050 correctly makes writeRunResult the sole publisher, but Q7 now says the adapter serializes RunResultFile to a JSON string and hands that string to writeRunResult. Q5 declares writeRunResult(runPath, resultFile: RunResultFile) and makes that function validate and serialize the object. The conflicting input types and serialization ownership leave the core write contract ambiguous.",
+  "reviewedResultRef": "run-result:.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-050-revise-explore/result.json;sha256:026a4eb7b87a9fd921a85b5c15a44ed7e501f084cffe38ceedc73850a4dd8c6e",
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "C1-EX-010",
+      "title": "writeRunResult input and serialization ownership are contradictory",
+      "severity": "P1",
+      "evidence": "Q5 declares writeRunResult(runPath, resultFile: RunResultFile) and its completion flow validates resultFile then serializes it. Q7 says to serialize RunResultFile into a JSON string and pass that string to writeRunResult. These cannot both be the contract, and moving serialization outside writeRunResult would bypass the stated in-function validation/publish sequence.",
+      "requiredChange": "Choose one typed boundary and use it consistently. Recommended: writeRunResult accepts RunResultFile, performs validation and exactly one canonical serialization internally, then executes the exclusive publish protocol; Q7 should describe constructing the object and passing it unchanged. Add a contract fixture that validates the function input and confirms serialization occurs once before fs.link publication."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "resolvedFindings": [
+    {
+      "id": "C1-EX-009",
+      "resolution": "Resolved by revision 050: only writeRunResult publishes terminal result.json; the adapter no longer uses atomicWriteFile on that file."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "Formal API-contract review",
+        "status": "passed",
+        "result": "Compared Q5 writeRunResult signature and sequence with Q7 serialization/write behavior."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

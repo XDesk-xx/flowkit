@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 2,
+  "runId": "20260806-193-review-apply",
+  "deliveryId": "20260806-01-deterministic-core",
+  "action": "review-apply",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/core-hardening-and-release-candidate/20260806-193-review-apply/",
+  "changeKey": "F1",
+  "changeId": "core-hardening-and-release-candidate",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260806-01-deterministic-core/core-hardening-and-release-candidate/20260806-192-revise-apply/result.json",
+    "versionFingerprint": "9de9354fb69fb778c9a7889986853672682bd433def8fec0ecb1e84c59ece079",
+    "kind": "run-result"
+  },
+  "verificationInputRef": {
+    "ref": "openspec/changes/core-hardening-and-release-candidate/verification.md",
+    "versionFingerprint": "0e10b5474648eedebc3b59ccb2d609c7b39188c0b8b900dea434624d6ceebf64",
+    "kind": "verification-summary"
+  },
+  "reviewedRunId": "20260806-192-revise-apply",
+  "constraints": {
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

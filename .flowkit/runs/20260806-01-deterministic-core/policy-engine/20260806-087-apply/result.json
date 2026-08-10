@@ -1,0 +1,395 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-087-apply",
+  "status": "completed",
+  "summary": "D1 policy-engine apply 完成。实现 11 个生产源码文件（types/lineage/stage-detector/preconditions/can-run/next/diagnose/owner-decision/blocked-diagnosis/unified-entry/index）+ 9 个单元测试文件（含 fixtures），156/156 Policy 测试通过（全仓 406/406 通过）。tasks.md 110/110 全部标记完成。typecheck、build、lint、openspec validate --strict 全部通过。三个纯函数 canRun/next/diagnose 从 FormalFactSnapshot 计算唯一合法下一 Action / owner-decision / blocked diagnosis；含 reviewed-Run lineage 模型（D1-8）、阶段识别、12 个 Action 前置条件矩阵、统一 review/revise 入口解析。D1-10（match+changes-requested 阻断 review-S）、D1-11（tasks-facts-unavailable）、D1-12（delivery-finalize 仅 passed）、D1-13（full-test 仅 authorized，frozen verification-model.md Section 4.2）均按 spec 实现。未修改冻结 specs / B1 states.ts / 069-086 terminal Runs；未创建 Git Commit（AGENTS.md rule #6）；未执行 Change Checkpoint 或 Full Test。",
+  "inputRef": "f3502cf75848e753905a719e6c05fe7566589d9c499f8116e3e35b84e5902a98",
+  "inputRefNote": "SHA-256 of 20260806-085-revise-propose/result.json — the approved proposal bundle's reviewed Run result (086 reviewed 085 and returned verdict: approved). Verified by hashing 085 result.json.",
+  "sourceReviewRef": "086-review-propose:bc4cafd502a19c6771ee9c9c931f16625f0bdeada46eabb6f114651869351505",
+  "sourceReviewVerdict": "approved",
+  "applyResults": {
+    "tasks": {
+      "total": 110,
+      "completed": 110,
+      "pending": 0
+    },
+    "files": {
+      "production": [
+        "src/policy/types.ts",
+        "src/policy/lineage.ts",
+        "src/policy/stage-detector.ts",
+        "src/policy/preconditions.ts",
+        "src/policy/can-run.ts",
+        "src/policy/next.ts",
+        "src/policy/diagnose.ts",
+        "src/policy/owner-decision.ts",
+        "src/policy/blocked-diagnosis.ts",
+        "src/policy/unified-entry.ts",
+        "src/policy/index.ts"
+      ],
+      "tests": [
+        "tests/unit/policy/types.test.ts",
+        "tests/unit/policy/lineage.test.ts",
+        "tests/unit/policy/stage-detector.test.ts",
+        "tests/unit/policy/preconditions.test.ts",
+        "tests/unit/policy/can-run.test.ts",
+        "tests/unit/policy/next.test.ts",
+        "tests/unit/policy/diagnose.test.ts",
+        "tests/unit/policy/unified-entry.test.ts",
+        "tests/unit/policy/fixtures.ts"
+      ]
+    },
+    "fileHashes": {
+      "production": {
+        "src/policy/types.ts": "4a63aec69b625a43ac97a0a05c6b9fe91956ab26cd868bd653e2aa4615a3f9e9",
+        "src/policy/lineage.ts": "0099c8523300534681313ad007faadfd472cf1830d926da1afea78eafb58d14b",
+        "src/policy/stage-detector.ts": "7f89b75f0fb1b3091fa64b9d00a1ba1d7e040fe1ee58730efc53cb8b4390e269",
+        "src/policy/preconditions.ts": "524afe3502bf48cfef3b81d4717179810d85ea55ef202017ea26cf43c00afba0",
+        "src/policy/can-run.ts": "fddb3bdcacc6caed55a06ed7134d47941b46491e1ea6c6fdb53c0708bf245bd1",
+        "src/policy/next.ts": "2268826a7a863d20df9158e4c1920f54643719bcdd41e320a7bd0216d79d7bf2",
+        "src/policy/diagnose.ts": "8dd963e7acc24e4b4ec24b9652f16109d28fdf08ef9b296cb583d162a05fef6c",
+        "src/policy/owner-decision.ts": "99bd8e06f019dc9e6a9001509550c21590a48e8a61c1766623f23c6e041b2e68",
+        "src/policy/blocked-diagnosis.ts": "bbca616732882f67198dc6287ff3d6ea556e33c1827ce0acbc74dd16bd722de9",
+        "src/policy/unified-entry.ts": "44976fd0d62192c7f17f68ba4661c2bfe83ae32f86655e7f7f13a4d93909ea38",
+        "src/policy/index.ts": "c0f6b3d61ab027a796ef557371fc6a7112d324d4356a9944e16e5dce96966ea0"
+      },
+      "tests": {
+        "tests/unit/policy/types.test.ts": "ffdb17bd36a2b016311605771edf25f7aef886eeb252a0ddb94ef9fa7bcbb580",
+        "tests/unit/policy/lineage.test.ts": "168c65973ef6e566e4efe737257f048eb767ccd4638734b23e28cec4504feb50",
+        "tests/unit/policy/stage-detector.test.ts": "b8fffb346aebe5644b8df6cbecf5f37ca5b8b2461dbbefdebad625621d0a47ba",
+        "tests/unit/policy/preconditions.test.ts": "11f1706546131172df4a1400b08ff8852a3bcfde541814892fc5a863dfe7ad82",
+        "tests/unit/policy/can-run.test.ts": "e59e3bc33fd457ab6de13a8f91929659769fe918a76f9b62dfcb805bfdd94cb5",
+        "tests/unit/policy/next.test.ts": "55ff6138e3b39fd6c6fbf350b1824d88afdbc6d8ba8da61c9c032c3351f93b9e",
+        "tests/unit/policy/diagnose.test.ts": "6854bf4e28ec7b69929677af1b747ce7504e344f58e838aeef75dc26af463359",
+        "tests/unit/policy/unified-entry.test.ts": "7d4f72640b526cc490f42ae6da8503a6bbc693935e975b6c49541c4436b3d507",
+        "tests/unit/policy/fixtures.ts": "831bf847a6cc23def794475ace320627b5a56df01f6679e1e7cb612477c0ec2d"
+      },
+      "tasks": {
+        "openspec/changes/policy-engine/tasks.md": "549fe80f8836c181e98da1573d3c43527b11f37fcf7da9a9a2cf434867c39dd4"
+      }
+    },
+    "scope": {
+      "pureFunctions": "canRun(snapshot, action) → CanRunResult; next(snapshot) → PolicyResult (action | owner-decision | blocked); diagnose(snapshot) → BlockedDiagnosis. All pure, stateless, I/O-free, read FormalFactSnapshot only.",
+      "lineage": "Reviewed-Run lineage by reviewedRunId (D1-8): currentArtifactRun (latest completed {S, revise-S}), currentReview (latest completed review-S + verdict), lineageMatch (review.reviewedRunId == artifact.runId). Replaces existence-based rule; correctly closes the cr→revise→review loop.",
+      "stageDetection": "detectStage(runs, changeId) → explore|propose|apply|archive from Run history (newest-first), with failed/cancelled latest Run → same-action retry (6.11).",
+      "preconditionMatrix": "12 formal Actions semantic preconditions returning unmetPreconditions; conflicts fail-closed (D1-3) override all.",
+      "unifiedEntry": "resolveReview/resolveRevise determine stage S then delegate to canRun(review-S)/revise-S; review and revise are not formal Actions themselves.",
+      "ownerDecisionBoundary": "owner-decisions (activate-change, authorize-apply/archive/full-test/delivery-finalize/checkpoint) strictly distinct from blocked (D1-9); not auto-advanceable (D1-5).",
+      "forwardCompatibleGates": "D1-7 (Verification facts unavailable) and D1-11 (Tasks facts unavailable) return blocked in D1; isVerificationFactAvailable/isTasksFactAvailable always false — no inference from Run history / OpenSpec artifacts / chat."
+    }
+  },
+  "verificationResults": {
+    "typecheck": {
+      "command": "npm run typecheck",
+      "status": "passed",
+      "result": "tsc --noEmit (production) + tsc --noEmit -p tsconfig.test.json (test) passed with no errors."
+    },
+    "build": {
+      "command": "npm run build",
+      "status": "passed",
+      "result": "tsc emitted production build with no errors."
+    },
+    "test": {
+      "command": "npm test",
+      "status": "passed",
+      "result": "406/406 tests passed (109 suites); 0 fail, 0 cancelled, 0 skipped, 0 todo. Policy-specific: 156/156 passed (55 suites)."
+    },
+    "lint": {
+      "command": "npm run lint",
+      "status": "passed",
+      "result": "eslint completed with no errors. (Fixed preconditions.ts: replaced misplaced eslint-disable-next-line with `void _snapshot;` to satisfy @typescript-eslint/no-unused-vars while preserving the signature contract for D1-7/D1-11 future extension.)"
+    },
+    "openspecValidate": {
+      "command": "npx openspec validate policy-engine --strict",
+      "status": "passed",
+      "result": "Change 'policy-engine' is valid"
+    },
+    "fullTest": {
+      "status": "not-applicable",
+      "result": "Not authorized in this Run; Full Test requires owner authorization per AGENTS.md rule #5. apply Run constraints mayFullTest=false."
+    }
+  },
+  "consistencyScan": {
+    "scanType": "full",
+    "triggerRun": "20260806-086-review-propose (approved)",
+    "modifiedConcepts": [
+      "Production implementation of canRun/next/diagnose pure functions (new code, no prior implementation)",
+      "Lineage model by reviewedRunId (D1-8) — new src/policy/lineage.ts",
+      "Stage detection from Run history — new src/policy/stage-detector.ts",
+      "12-Action precondition matrix — new src/policy/preconditions.ts",
+      "Unified review/revise entry resolution — new src/policy/unified-entry.ts",
+      "tasks.md: 110/110 marked complete (legitimate apply mutation per allowed work)"
+    ],
+    "dimensions": [
+      {
+        "id": "CS-01",
+        "name": "Implementation ↔ Spec: three pure functions contract",
+        "concept": "canRun/next/diagnose are pure, stateless, I/O-free, read FormalFactSnapshot only (spec D1-2)",
+        "checks": [
+          "src/policy/can-run.ts: canRun(snapshot, action): CanRunResult — reads snapshot only, no I/O, no persistence",
+          "src/policy/next.ts: next(snapshot): PolicyResult — reads snapshot only; comment 'never persists currentAction (D1-2)'",
+          "src/policy/diagnose.ts: diagnose(snapshot): BlockedDiagnosis — reads snapshot only, returns blocked info only",
+          "tests/unit/policy: purity tests (same input → same output, no state mutation) pass (task 10.19)",
+          "diagnose MUST NOT return action or owner-decision (task 7.3) — verified by diagnose.test.ts"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-02",
+        "name": "Implementation ↔ Spec: lineage model (D1-8)",
+        "concept": "currentArtifactRun / currentReview / lineageMatch by reviewedRunId; match+approved→advance, match+cr→revise-S, no match→review-S",
+        "checks": [
+          "src/policy/lineage.ts: currentArtifactRun returns latest completed Run with action ∈ {S, revise-S}; currentReview returns latest completed review-S verdict; lineageMatch compares review.reviewedRunId == artifact.runId",
+          "lineage.test.ts: match true after review(approved); match false after revise-S produces new artifact (task 10.12) — pass",
+          "next.ts decideExploreStage/decideProposeStage/decideApplyStage consume computeLineage and branch on match+verdict — consistent with spec 6.7/6.8/6.9",
+          "Lineage correctly closes cr→revise→review loop (replaces old existence-based rule) — per spec D1-8"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-03",
+        "name": "Implementation ↔ Spec: stage detection",
+        "concept": "detectStage identifies explore/propose/apply/archive from Run history; failed/cancelled latest → same-action retry (6.11)",
+        "checks": [
+          "src/policy/stage-detector.ts: detectStage(runs, changeId) scans completed Runs newest-first; {explore,revise-explore,review-explore}→explore etc.; no completed Run → explore (task 3.7)",
+          "next.ts decideActiveChange: latest failed/cancelled Run → actionResult(latest.action) (6.11 retry) before stage tree",
+          "stage-detector.test.ts covers all branches (task 3.1-3.9) — pass",
+          "archive Run → archive stage → owner-decision: authorize-checkpoint (6.10 Git boundary)"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-04",
+        "name": "Implementation ↔ Spec: canRun conflict fail-closed (D1-3) + unknown action",
+        "concept": "conflicts non-empty → allowed:false with conflictDimensions; unknown action → unmetPreconditions ['unknown-action']; allowed iff unmet+conflicts empty",
+        "checks": [
+          "src/policy/can-run.ts: snapshot.conflicts non-empty → allowed:false, conflictDimensions populated (task 5.2)",
+          "can-run.ts: action not in B1 ACTION_CATALOG → allowed:false, unmetPreconditions ['unknown-action'] (task 5.3)",
+          "can-run.ts: allowed:true iff unmetPreconditions empty AND conflictDimensions empty (task 5.5)",
+          "can-run.test.ts conflict fail-closed + unknown action tests pass (tasks 10.9, 10.18)"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-05",
+        "name": "Implementation ↔ Spec: D1-10 match+changes-requested blocks review-S",
+        "concept": "canRun(review-S) allowed:false when lineage match + changes-requested; unmet contains 'matching-changes-requested-requires-revision'; only revise-S legal",
+        "checks": [
+          "src/policy/preconditions.ts: review-S precondition returns 'matching-changes-requested-requires-revision' on match+cr (tasks 4.3/4.6/4.9/4.15)",
+          "unified-entry.test.ts: table-driven for S ∈ {explore, propose, apply} — canRun(review-S) allowed:false + resolveReview blocked on match+cr (task 10.20) — pass",
+          "next.ts: match+cr → actionResult('revise-S') (only legal action) — consistent",
+          "revise-S produces new artifact → no match → canRun(review-S) allowed:true again (task 10.20) — pass"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-06",
+        "name": "Implementation ↔ Spec: D1-11 tasks-facts-unavailable (archive gate)",
+        "concept": "snapshot has no task-completion field → canRun(archive) allowed:false + unmet 'tasks-facts-unavailable'; next → blocked: tasks-facts-unavailable; distinct from verification-facts-unavailable",
+        "checks": [
+          "src/policy/preconditions.ts: isTasksFactAvailable always false in D1 (no inference from change-tasks existence); archive precondition includes 'tasks-facts-unavailable' (tasks 4.11/4.16)",
+          "src/policy/next.ts decideApplyStage: after verification gate, isTasksFactAvailable false → blockedResult(tasksFactsUnavailableDiagnosis()) (task 4.16)",
+          "types.test.ts: tasks-facts-unavailable is distinct string from verification-facts-unavailable (task 10.21) — pass",
+          "diagnose.test.ts: reason='tasks-facts-unavailable' covered — pass",
+          "Both reasons coexist in unmetPreconditions when both facts unavailable (task 10.21) — pass"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-07",
+        "name": "Implementation ↔ Spec: D1-12 delivery-finalize passed-only",
+        "concept": "delivery-finalize requires deliveryFullTestStatus = passed; any non-passed (incl. undefined) → unmet 'full-test-not-passed'; not-applicable rejected (B1 FullTestStatus has no not-applicable)",
+        "checks": [
+          "src/policy/preconditions.ts: delivery-finalize precondition requires 'passed'; non-passed → 'full-test-not-passed' (tasks 4.13/4.17)",
+          "next.ts decideFullTestLifecycle: passed + finalize scope → actionResult('delivery-finalize'); passed + no scope → owner-decision: authorize-delivery-finalize",
+          "unified-entry/next tests: table-driven for {not-ready, awaiting-user-decision, authorized, failed, undefined} all → allowed:false + full-test-not-passed (task 10.22) — pass",
+          "Implementation never accepts 'not-applicable' as FullTestStatus (B1 enum invariant preserved)"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-08",
+        "name": "Implementation ↔ Spec: D1-13 full-test authorized-only (frozen verification-model.md Section 4.2)",
+        "concept": "full-test allowed ONLY when deliveryFullTestStatus = authorized (+ full-test scope); awaiting-user-decision → owner-decision: authorize-full-test (not action:full-test); failed → blocked: full-test-failed; passed → rejected",
+        "checks": [
+          "src/policy/preconditions.ts: full-test precondition requires 'authorized' + full-test scope (tasks 4.12/4.18)",
+          "next.ts decideFullTestLifecycle: authorized + scope → actionResult('full-test'); authorized + no scope → owner-decision: authorize-full-test (defensive fail-closed); awaiting-user-decision → owner-decision: authorize-full-test; failed → blocked: full-test-failed; passed → delivery-finalize path",
+          "next NEVER returns action:full-test for awaiting-user-decision or failed (frozen Section 4.2 '未 authorized 时不得执行 Full Test') — verified by next.test.ts (task 10.23)",
+          "diagnose.ts: full-test-failed reason + suggestedOwnerActions (authorize corrective Change / cancel Delivery); MUST NOT auto-create corrective Change (frozen Section 6) — pass",
+          "corrective Change reset → not-ready → re-enters awaiting-user-decision (not authorized, needs re-authorization) — task 10.23 pass"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-09",
+        "name": "Implementation ↔ Spec: owner-decision vs blocked distinction (D1-9)",
+        "concept": "owner-decisions (single authorization) strictly distinct from blocked (multiple/no choices); owner-decisions not auto-advanceable (D1-5)",
+        "checks": [
+          "src/policy/types.ts: OWNER_DECISIONS = {activate-change, authorize-apply, authorize-archive, authorize-full-test, authorize-delivery-finalize, authorize-checkpoint}; BLOCKED_REASONS = 10 reasons — disjoint (types.test.ts task 1.3/1.6)",
+          "next.ts: empty ownerAuthorizations → owner-decision (not blocked) for authorization-gated actions; scope present → normal advance (tasks 8.3/8.4)",
+          "full-test-failed (blocked, multiple owner choices) vs authorize-full-test (owner-decision, single authorization) correctly distinguished (task 10.16/CS-11 of 085)",
+          "next.ts never auto-advances an owner-decision — returns ownerDecisionResult, caller (owner) must act"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-10",
+        "name": "Implementation ↔ Spec: unified review/revise entry resolution (D1-10/Section 9)",
+        "concept": "resolveReview/resolveRevise determine stage S then delegate to canRun(review-S)/revise-S; review and revise are not formal Actions; unresolvable → blocked",
+        "checks": [
+          "src/policy/unified-entry.ts: resolveReview(snapshot) → review-S or blocked; resolveRevise(snapshot) → revise-S or blocked (tasks 9.1/9.2/9.3)",
+          "review and revise are NOT in B1 ACTION_CATALOG (task 9.4) — can-run.test.ts confirms",
+          "unified-entry.test.ts: resolveReview/resolveRevise purity + blocked cases + match+cr table-driven (tasks 10.17/10.19/10.20) — pass",
+          "revise-S completes → new artifact → no match → resolveReview allowed again (task 10.20) — pass"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-11",
+        "name": "Implementation ↔ Spec: diagnose covers all 10 blocked reasons",
+        "concept": "diagnose returns BlockedDiagnosis with reason ∈ BLOCKED_REASONS; suggestedOwnerActions list owner-mitigating actions",
+        "checks": [
+          "src/policy/diagnose.ts + blocked-diagnosis.ts: all 10 reasons constructible (formal-fact-conflict, no-active-delivery, no-actionable-change, verification-facts-unavailable, verification-failed, verification-not-run, tasks-facts-unavailable, ambiguous-state, dependency-incomplete, full-test-failed)",
+          "diagnose.test.ts: each reason covered including full-test-failed suggestedOwnerActions (tasks 7.1-7.6, 10.7) — pass",
+          "diagnose only returns blocked info, never action/owner-decision (task 7.3) — pass",
+          "full-test-failed suggestedOwnerActions: authorize corrective Change / cancel Delivery; no auto-retry, no auto-create (frozen Section 6)"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-12",
+        "name": "Frozen specs unmodified (B1/C1 + states.ts)",
+        "concept": "apply MUST NOT modify frozen specs or B1 state-transition tables",
+        "checks": [
+          "openspec/specs/flowkit-domain-and-state-schema/spec.md (B1) — not in git modified list (untracked/unchanged)",
+          "openspec/specs/flowkit-formal-fact-reader-and-persistence/spec.md (C1) — not modified",
+          "src/domain/states.ts — git diff --stat empty (unmodified, task 11.8)",
+          "Implementation reads B1/C1 types only (import type); no writes to frozen modules",
+          "proposal.md/design.md/spec.md (proposal bundle) SHA-256 match 086 recorded values (proposal=6d86964a..., design=404e790d..., spec=71d3cff8...) — unchanged by apply"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-13",
+        "name": "Terminal Run immutability (069-086 unchanged)",
+        "concept": "apply MUST NOT modify 069-086 terminal Runs",
+        "checks": [
+          "All 069-086 result.json files present and intact (SHA-256 spot-checked: 069=e369c403..., 074=b1323433..., 084=24668397..., 085=f3502cf7..., 086=bc4cafd5...)",
+          "085 result SHA-256 = f3502cf7... matches 087 inputRef (provenance correct)",
+          "086 result SHA-256 = bc4cafd5... matches 087 sourceReviewRef",
+          "apply only wrote to: src/policy/*, tests/unit/policy/*, openspec/changes/policy-engine/tasks.md, and 087-apply Run directory — no writes to 069-086 directories",
+          "git status: 069-086 Run directories remain untracked (??) as before; no modifications"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-14",
+        "name": "No scope expansion (no CLI, no execution loop, no auto-commit)",
+        "concept": "apply MUST NOT implement diagnostic CLI, full Change execution loop, or auto Commit/Push/Merge",
+        "checks": [
+          "src/policy/ contains only pure functions + types + resolvers — no CLI entry, no Run execution loop, no Git operations (task 11.11)",
+          "No new external runtime dependencies (git diff package.json empty, task 11.7)",
+          "No new hand-written .mjs source (src/policy/*.ts only, task 11.6)",
+          "No Git commit created (AGENTS.md rule #6); commitPolicy.autoCommit=false",
+          "No Change Checkpoint or Full Test executed (constraints mayCheckpoint=false, mayFullTest=false)"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-15",
+        "name": "No formal-fact inference + verification suite + next action lineage",
+        "concept": "D1 MUST NOT infer formal facts from Run history / OpenSpec artifacts / chat; verification suite passes; next action = review-apply",
+        "checks": [
+          "isVerificationFactAvailable/isTasksFactAvailable always false in D1 — no inference from Run history or change-tasks existence (tasks 11.10, D1-7/D1-11)",
+          "Implementation uses B1 ACTION_CATALOG / states (no self-created Actions or states, task 11.9)",
+          "npm run typecheck: passed; npm run build: passed; npm run lint: passed; npm test: 406/406 passed; npx openspec validate policy-engine --strict: passed (tasks 11.1-11.5)",
+          "tasks.md: 110/110 marked complete",
+          "After 087 completes: Current Artifact Run (apply) = 087-apply; Current Review (apply) = none (no review-apply Run exists) → no lineage match → next = review-apply (reviewer to verify 087 against 085 proposal bundle + spec)"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      }
+    ],
+    "totalContradictions": 0,
+    "overallResult": "pass"
+  },
+  "specStats": {
+    "requirements": 19,
+    "scenarios": 78,
+    "tasks": 110
+  },
+  "mutationPolicyCheck": {
+    "mayModifyProposalArtifacts": false,
+    "mayWriteProductionCode": true,
+    "mayWriteTestCode": true,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false,
+    "frozenSpecsModified": false,
+    "terminalRunsModified": false,
+    "proposalBundleModified": false,
+    "proposalBundleNote": "proposal.md/design.md/spec.md unchanged (SHA-256 match 086 recorded values). Only tasks.md modified (110/110 marked complete) — legitimate apply mutation per allowed work.",
+    "productionCodeWritten": true,
+    "testCodeWritten": true,
+    "manifestModified": false,
+    "b1StatesTsModified": false,
+    "externalDepsAdded": false,
+    "handWrittenMjsAdded": false,
+    "filesWritten": [
+      "src/policy/types.ts (new)",
+      "src/policy/lineage.ts (new)",
+      "src/policy/stage-detector.ts (new)",
+      "src/policy/preconditions.ts (new)",
+      "src/policy/can-run.ts (new)",
+      "src/policy/next.ts (new)",
+      "src/policy/diagnose.ts (new)",
+      "src/policy/owner-decision.ts (new)",
+      "src/policy/blocked-diagnosis.ts (new)",
+      "src/policy/unified-entry.ts (new)",
+      "src/policy/index.ts (new)",
+      "tests/unit/policy/types.test.ts (new)",
+      "tests/unit/policy/lineage.test.ts (new)",
+      "tests/unit/policy/stage-detector.test.ts (new)",
+      "tests/unit/policy/preconditions.test.ts (new)",
+      "tests/unit/policy/can-run.test.ts (new)",
+      "tests/unit/policy/next.test.ts (new)",
+      "tests/unit/policy/diagnose.test.ts (new)",
+      "tests/unit/policy/unified-entry.test.ts (new)",
+      "tests/unit/policy/fixtures.ts (new)",
+      "openspec/changes/policy-engine/tasks.md (modified — 110/110 marked complete)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-087-apply/result.json (new Run)"
+    ]
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit. Run may enter Git history via later Change Checkpoint or normal commit."
+  },
+  "prohibitedWorkCheck": {
+    "frozenSpecsModified": false,
+    "terminalRunsModified": false,
+    "changeCheckpointExecuted": false,
+    "fullTestExecuted": false,
+    "scopeExpanded": false,
+    "b1StatesTsModified": false,
+    "externalDepsAdded": false,
+    "autoCommit": false
+  },
+  "nextAction": "review-apply",
+  "nextActionNote": "reviewer 审查 087-apply 产物，重点验证：(1) 三个纯函数 canRun/next/diagnose 契约——纯函数、无 I/O、只读 FormalFactSnapshot（D1-2）；(2) lineage 模型（D1-8）正确闭合 cr→revise→review 循环；(3) 阶段识别 + 6.11 failed/cancelled 重试；(4) 12 Action 前置条件矩阵 + 冲突 fail-closed（D1-3）；(5) D1-10 match+changes-requested 阻断 review-S（三阶段表驱动）；(6) D1-11 tasks-facts-unavailable 与 verification-facts-unavailable 严格区分；(7) D1-12 delivery-finalize 仅 passed（拒绝 not-applicable）；(8) D1-13 full-test 仅 authorized（frozen verification-model.md Section 4.2），awaiting-user-decision→owner-decision:authorize-full-test（非 action:full-test），failed→blocked:full-test-failed（非自动 corrective Change，frozen Section 6）；(9) owner-decision vs blocked 区分（D1-9）；(10) 统一 review/revise 入口解析；(11) 冻结 specs / B1 states.ts / 069-086 terminal Runs 未修改；(12) 无范围扩张（无 CLI / 执行循环 / 自动 Commit）；(13) typecheck/build/lint/test(406)/openspec strict 全通过；(14) consistencyScan 15 维度 0 contradictions。如 approved 则进入 archive（需 owner 授权）；如 changes-requested 则进入 revise-apply。",
+  "blockedOn": []
+}

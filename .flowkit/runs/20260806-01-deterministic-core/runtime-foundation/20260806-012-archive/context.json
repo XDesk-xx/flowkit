@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-012-archive",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "A1",
+  "changeId": "runtime-foundation",
+  "action": "archive",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "inputRef": "ef82b1c296dc11ad6c203611919ee93c60ec45a2b22259d9d6554be39ff67259",
+  "sourceReviewRun": "20260806-011-review-apply",
+  "sourceReviewVerdict": "approved",
+  "constraints": {
+    "mayArchive": true,
+    "mayModifyManifest": true,
+    "mayRunOpenSpecArchive": true,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/runtime-foundation/20260806-012-archive/"
+}

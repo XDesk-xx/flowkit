@@ -1,0 +1,47 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "propose",
+    "executionStatus": "completed",
+    "summary": "已完成 E1 Diagnostic CLI Proposal：新增只读 diagnostic-cli capability；以单一 repository/active-Delivery loader 复用 FormalFactSnapshot/Policy；用 verification.md 内精确 status marker 最小投影 Change Verification，并仅接通 D1 既有 status-aware gate；doctor 保持聚合器而非第二 validator；输出/exit code 固定可测。170 的时点 Finding 作为 non-blocking 约束处理，未 revise Explore。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/diagnostic-cli/design.md",
+        "versionFingerprint": "5a289b59f2ee924acfdd7b2e50d5b475b885d400aa04558b5bfe18282e5689a7",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/diagnostic-cli/proposal.md",
+        "versionFingerprint": "6fac9bea94941425bac73695d39b3949357ea7cba7311fd3a3ea9001a28a4aa2",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/diagnostic-cli/specs/flowkit-diagnostic-cli/spec.md",
+        "versionFingerprint": "47856e445e81c1b7bb389636d4454a32d58b1f59cf40f3c2a3dc8d6424995507",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/diagnostic-cli/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "9386a8837ea6a08a90dfe51e25fd6afeded8c0c0501cd7d097d4b3efdf7ca796",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/diagnostic-cli/specs/flowkit-policy-engine/spec.md",
+        "versionFingerprint": "65296840a569f6cd4f5845745bb16fa2001727ff70a8bf0d3c2f578c12a9890d",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/diagnostic-cli/tasks.md",
+        "versionFingerprint": "a63e7a5a0ae14d5698d7861ad33bb30dab9d169c0b14ee45510de2cca7a73e63",
+        "kind": "produced-artifact"
+      }
+    ],
+    "consumedInputRefs": [
+      {
+        "ref": ".flowkit/runs/20260806-01-deterministic-core/diagnostic-cli/20260806-170-review-explore/result.json",
+        "versionFingerprint": "9b3a7275c1d6d05bfabb791faff2c7648d8f48354fbcbfa5117192daaaf239e9",
+        "kind": "run-result"
+      }
+    ]
+  }
+}

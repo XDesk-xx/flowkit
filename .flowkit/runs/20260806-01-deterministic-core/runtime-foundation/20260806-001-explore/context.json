@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-001-explore",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "A1",
+  "changeId": "runtime-foundation",
+  "action": "explore",
+  "role": "author",
+  "deliveryState": "active",
+  "changeState": "planned",
+  "inputs": [
+    "openspec/delivery-groups/20260806-01-deterministic-core.yaml",
+    "ref/01-deterministic-core-delivery-implementation-reference.md",
+    "openspec/specs/flowkit-core-model/spec.md",
+    "openspec/specs/flowkit-integration-boundaries/spec.md",
+    "docs/core-model.md",
+    "docs/integration-boundaries.md",
+    "docs/delivery-lifecycle.md",
+    "docs/verification-model.md"
+  ],
+  "frozenConstraints": {
+    "language": "TypeScript",
+    "moduleSystem": "ESM",
+    "sourceExtension": ".ts",
+    "compiledOutput": "dist/**/*.js",
+    "cliBin": "dist/bin/flowkit.js",
+    "noMjs": true,
+    "typecheckRequired": true,
+    "buildRequired": true
+  },
+  "constraints": {
+    "readOnlyExceptCurrentRunAndExploreArtifact": true,
+    "fullTestAllowed": false,
+    "mayApply": false,
+    "mayArchive": false,
+    "mayAdvanceFlow": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/runtime-foundation/20260806-001-explore/"
+}

@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-023-revise-explore",
+  "status": "completed",
+  "summary": "依据 022-review-explore 的 1 个 Blocking Finding 修订 B1 Explore。B1-RE-006：Q6 只定义了 CHANGE_STATE_TRANSITIONS，缺少 Delivery 和 Run 的结构转换表。修复：扩展 Q6 为 Delivery、Change、Run 三个实体分别定义结构转换表。DELIVERY_STATE_TRANSITIONS: active -> [completed, cancelled]，terminal 无出边。CHANGE_STATE_TRANSITIONS: 保持不变（planned -> [active, cancelled]，active -> [completed, cancelled]）。RUN_STATE_TRANSITIONS: pending -> [completed, failed, cancelled]，terminal 无出边。canTransition 改为泛型函数 canTransition<S>(table, from, to)。明确 B1 只拥有结构转换边，语义前置条件（owner 授权、Verification、dependencies）属于 D1 Policy。更新 Section 4 states.ts 描述、验收标准 3（三个实体 exhaustive matrix 测试）、Q10 测试策略（三个实体分别遍历 State × State）、结论 6。B1-RE-001/002/003/004/005 在前序 revise 中已解决，本次未改动相关段落。未创建 Git Commit。",
+  "findingsResolved": [
+    {
+      "id": "B1-RE-006",
+      "title": "State-transition contract covers Change only, not Delivery and Run",
+      "resolution": "扩展 Q6 为三个实体分别定义结构转换表。DELIVERY_STATE_TRANSITIONS（active -> [completed, cancelled]，completed/cancelled 无出边，与 docs/delivery-lifecycle.md Section 2 一致）。CHANGE_STATE_TRANSITIONS（保持不变，与 Section 3 一致）。RUN_STATE_TRANSITIONS（pending -> [completed, failed, cancelled]，terminal 无出边，与 docs/core-model.md Section 3.3 一致）。canTransition 改为泛型函数 canTransition<S extends string>(table: Record<S, readonly S[]>, from: S, to: S): boolean。明确 B1 只拥有结构转换边；语义前置条件（owner 授权、Verification passed、dependencies completed）属于 D1 Policy，不进入 B1 的转换表。更新 Section 4 states.ts 描述为 'Delivery/Change/Run 三个结构转换表 + canTransition'。验收标准 3 更新为 '三个结构转换表均覆盖所有合法转换，exhaustive matrix 测试覆盖三个实体'。Q10 测试策略更新为 '对 Delivery、Change、Run 三个实体分别遍历所有 State × State 组合'。结论 6 更新为 '三个结构转换表 + 泛型 canTransition，B1 只拥有结构转换边，语义前置条件属于 D1 Policy'。states.test.ts 描述更新为 '三个转换表的 exhaustive matrix 测试'。",
+      "changes": [
+        "Q6: 新增 DELIVERY_STATE_TRANSITIONS（active -> [completed, cancelled]，terminal 无出边）",
+        "Q6: CHANGE_STATE_TRANSITIONS 保持不变",
+        "Q6: 新增 RUN_STATE_TRANSITIONS（pending -> [completed, failed, cancelled]，terminal 无出边）",
+        "Q6: canTransition 从 (ChangeState, ChangeState) 改为泛型 <S extends string>(table, from, to)",
+        "Q6: 新增说明 B1 只拥有结构转换边，语义前置条件属于 D1 Policy",
+        "Q6: 测试描述更新为三个实体分别 exhaustive matrix",
+        "Section 4 states.ts: '主状态联合类型 + 状态转换表' 改为 '主状态联合类型 + Delivery/Change/Run 三个结构转换表 + canTransition'",
+        "Section 4 states.test.ts: '状态转换表驱动测试' 改为 '三个转换表的 exhaustive matrix 测试'",
+        "验收标准 3: '状态转换表覆盖所有合法转换' 改为 '三个结构转换表均覆盖，exhaustive matrix 测试覆盖三个实体'",
+        "Q10 测试策略: '遍历所有 State × State 组合' 改为 '对 Delivery、Change、Run 三个实体分别遍历'",
+        "结论 6: 更新为 '三个结构转换表 + 泛型 canTransition，B1 只拥有结构转换边'"
+      ]
+    }
+  ],
+  "priorFindingsPreserved": [
+    {
+      "id": "B1-RE-001",
+      "resolvedIn": "20260806-015-revise-explore",
+      "preserved": true,
+      "note": "Q5 CHANGE_ACTIONS 仍为 10 项；Section 6.5 仍记录源冲突解决；验收标准 4 和结论 5 未改动。"
+    },
+    {
+      "id": "B1-RE-002",
+      "resolvedIn": "20260806-015-revise-explore",
+      "preserved": true,
+      "note": "Q9 ResultRef 仍为 provider-neutral；Section 5.1.8 交叉引用 Q9；验收标准 10 和结论 10 未改动。"
+    },
+    {
+      "id": "B1-RE-003",
+      "resolvedIn": "20260806-017-revise-explore",
+      "preserved": true,
+      "note": "Review 重点 item 4 仍为 '10 Change + 2 Delivery'；未改动。"
+    },
+    {
+      "id": "B1-RE-004",
+      "resolvedIn": "20260806-019-revise-explore",
+      "preserved": true,
+      "note": "Section 5.1 领域对象契约矩阵未改动；验收标准 15 和结论 11 未改动。"
+    },
+    {
+      "id": "B1-RE-005",
+      "resolvedIn": "20260806-021-revise-explore",
+      "preserved": true,
+      "note": "Section 5.1.2 RunStatus 仍为 'pending | completed | failed | cancelled'；验收标准 16 和结论 12 未改动。"
+    }
+  ],
+  "exploreArtifact": {
+    "path": "openspec/changes/domain-and-state-schema/explore.md",
+    "sha256": "5feaa82fd8facc6ff4d7b7b04418188b6646b02eeb3e058d15c962f18a2a4091",
+    "previousSha256": "eb8d8ca96c69d65ba6fd252791a0f6a677c53265e247237dd2610867516e9877"
+  },
+  "scopePreserved": {
+    "b1Scope": "unchanged (domain types + schema validation + Run ID + terminal checks + object contract matrix + three-entity transition tables)",
+    "manifestNotModified": true,
+    "terminalRunsPreserved": true,
+    "noCode": true,
+    "frozenSpecsNotModified": true
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "nextAction": "review-explore",
+  "blockedOn": []
+}

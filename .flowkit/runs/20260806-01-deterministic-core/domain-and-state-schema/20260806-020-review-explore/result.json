@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-020-review-explore",
+  "status": "completed",
+  "summary": "B1 revised Explore review completed with changes-requested. The new object-contract matrix resolves B1-RE-004 and gives Proposal-ready ownership and field-level guidance. One blocking state-contract regression was introduced: RunStatus adds in-progress, although the frozen core model and B1 implementation reference define the Run state set as pending, completed, failed, cancelled only. The separate ActionResult execution status may express in-progress; RunStatus may not.",
+  "reviewedResultRef": "content-sha256:289a5e0426b5c201c00968c224b046604cdfb7a3bd502fa9e526a7e93fc0776a",
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "B1-RE-005",
+      "title": "RunStatus introduces an unfrozen in-progress state",
+      "location": "openspec/changes/domain-and-state-schema/explore.md:392-396; docs/core-model.md:84-93; ref/01-deterministic-core-delivery-implementation-reference.md:230-231",
+      "evidence": "The new object matrix defines RunStatus as pending | in-progress | completed | failed | cancelled. The frozen core model documents the complete Run status set as pending, completed, failed, cancelled; the B1 implementation reference repeats the same set. The matrix's own ActionResult ExecutionStatus separately contains in-progress, so the execution-progress concept does not require expanding RunStatus.",
+      "impact": "A Run with status in-progress would pass B1's proposed schema validator but violate the frozen lifecycle contract. It also creates an unapproved additional Run state that later persistence and Policy code could treat inconsistently.",
+      "requiredResolution": "Remove in-progress from RunStatus and add an explicit acceptance/test expectation that the schema rejects it as an unknown Run state. Retain in-progress only on ActionResult.ExecutionStatus if needed to describe an execution result; do not add a Run transition or persistence behavior for it. Recheck the Explore for any other statement that expands the frozen Run state set."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "resolvedFindings": [
+    {
+      "id": "B1-RE-004",
+      "resolution": "Section 5.1 now covers all eleven objects with ownership, minimum fields, and validation expectations while retaining C1's physical serialization and adapter boundary."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "reviewed Explore artifact hash",
+        "status": "passed",
+        "result": "SHA-256 is 289a5e0426b5c201c00968c224b046604cdfb7a3bd502fa9e526a7e93fc0776a and matches the completed 019-revise-explore Run."
+      },
+      {
+        "name": "object-contract matrix",
+        "status": "passed",
+        "result": "All eleven objects now have an ownership decision, minimum field direction, and stated validation expectation without introducing C1 persistence or adapters."
+      },
+      {
+        "name": "frozen Run-state boundary",
+        "status": "failed",
+        "result": "RunStatus includes in-progress even though the frozen contract permits only pending, completed, failed, and cancelled."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run; this is review-explore."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

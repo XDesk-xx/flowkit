@@ -1,0 +1,13 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-apply",
+    "executionStatus": "completed",
+    "summary": "已修正 176 E1-RA-001：为正式 CLI entrypoint 增加 Node shebang，并新增真实 npm pack→local install→node_modules/.bin/flowkit 回归，安装后的 --version 与 status 均可直接执行；同时复核 E1 本轮 CLI dispatcher、context loader、diagnostic projections、Verification Reader/Policy gate 的同类路径，未发现需要在本 Finding 下继续扩展的同源问题。affected npm test 586/586、typecheck、lint、build、OpenSpec strict 均通过；Delivery Full Test、Archive、Checkpoint、Commit、Push 未执行，GitHub 未访问。",
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260806-01-deterministic-core/diagnostic-cli/20260806-176-review-apply/result.json",
+      "versionFingerprint": "c2106c998bf66f8b1a009ac9bdf75d1cb811633de4b60c8e1f9fc8ae25cd3dc6",
+      "kind": "run-result"
+    }
+  }
+}

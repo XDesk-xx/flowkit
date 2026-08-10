@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-024-review-explore",
+  "status": "completed",
+  "summary": "B1 revised Explore review completed with changes-requested. B1-RE-006 is resolved: Delivery, Change, and Run now each have structural transition tables and exhaustive matrix-test direction. The Run-ID design remains allocation-only. Calculating max(NNN)+1 does not define validation that rejects existing duplicate NNN values across Change/Delivery directories, an attempted non-monotonic/reused candidate, or exhaustion of the fixed three-digit NNN format, despite those being B1 acceptance requirements.",
+  "reviewedResultRef": "content-sha256:5feaa82fd8facc6ff4d7b7b04418188b6646b02eeb3e058d15c962f18a2a4091",
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "B1-RE-007",
+      "title": "Run-ID plan allocates the next value but does not validate uniqueness, monotonicity, or three-digit exhaustion",
+      "location": "openspec/changes/domain-and-state-schema/explore.md:185-198, 379, 600; ref/01-deterministic-core-delivery-implementation-reference.md:272-288, 346-354",
+      "evidence": "Q3 only scans names and returns max(NNN)+1. It has no pure parser/validator contract for a full run ID or Delivery-wide set, no rejection rule for two different Change/Delivery directories that carry the same NNN, no candidate validation for NNN <= existing max, and no behavior once max is 999 even though the frozen format is YYYYMMDD-NNN-action. The implementation reference requires NNN to be Delivery-wide unique and strictly increasing, forbids reuse, and explicitly requires duplicate/backward/reuse rejection.",
+      "impact": "A corrupted or concurrently-created cross-directory duplicate can be silently accepted as historical input, and an allocator can emit a four-digit value that no longer matches the frozen run-ID grammar. C1 and D1 would receive no B1 validator to fail closed on those formal-fact inconsistencies.",
+      "requiredResolution": "Extend Q3 with a pure Run-ID parse/validate/allocation contract and fixture tests. It must validate the complete YYYYMMDD-NNN-action grammar; reject Delivery-wide duplicate NNN values across Change and _delivery sources; reject a requested/candidate NNN that is not greater than every allocated NNN; preserve allowed gaps; and fail explicitly rather than emit an invalid ID when the next value exceeds 999. Keep filesystem traversal and atomic create/persist behavior in C1; B1 should operate on supplied directory-name/Run-ID fixtures and expose the fail-closed validation result."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "resolvedFindings": [
+    {
+      "id": "B1-RE-006",
+      "resolution": "Q6 now defines separate Delivery, Change, and Run structural transition tables with exhaustive valid/invalid matrix testing and keeps semantic prerequisites in D1 Policy."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "reviewed Explore artifact hash",
+        "status": "passed",
+        "result": "SHA-256 is 5feaa82fd8facc6ff4d7b7b04418188b6646b02eeb3e058d15c962f18a2a4091 and matches the completed 023-revise-explore Run."
+      },
+      {
+        "name": "three-entity state-transition coverage",
+        "status": "passed",
+        "result": "Delivery, Change, and Run each have the frozen structural edges and exhaustive State x State matrix-test direction."
+      },
+      {
+        "name": "Run-ID invariant enforcement",
+        "status": "failed",
+        "result": "The design computes max plus one but lacks validation/rejection behavior for duplicate, backward/reused, and overflowing three-digit NNN values."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run; this is review-explore."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

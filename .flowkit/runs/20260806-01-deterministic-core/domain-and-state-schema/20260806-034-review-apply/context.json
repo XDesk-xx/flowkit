@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "deliveryId": "20260806-01-deterministic-core",
+  "change": {
+    "key": "B1",
+    "id": "domain-and-state-schema"
+  },
+  "run": {
+    "id": "20260806-034-review-apply",
+    "action": "review-apply",
+    "role": "reviewer"
+  },
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/domain-and-state-schema/20260806-033-revise-apply/",
+  "verificationRecord": "openspec/changes/domain-and-state-schema/verification.md",
+  "constraints": {
+    "readOnlyExceptCurrentRun": true,
+    "fullTestAllowed": false,
+    "commitAllowed": false,
+    "mayArchive": false
+  }
+}

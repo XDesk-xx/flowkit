@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-015-revise-explore",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "B1",
+  "changeId": "domain-and-state-schema",
+  "action": "revise-explore",
+  "role": "author",
+  "inputRef": "9bf435485664e0fbcf2c2d9d5701a9889f6176759b0d5db5ad386ed6bc9268a1",
+  "sourceReviewRun": "20260806-014-review-explore",
+  "sourceReviewVerdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "B1-RE-001",
+      "title": "The proposed fixed Action Catalog conflicts with the frozen core-model contract",
+      "requiredResolution": "Resolve source conflict: frozen spec lists 10 Actions without change-checkpoint; implementation reference includes it. Frozen spec is authority."
+    },
+    {
+      "id": "B1-RE-002",
+      "title": "ResultRef is prematurely fixed to a Run-path transport format",
+      "requiredResolution": "Make ResultRef provider-neutral, remove mandatory runPath, defer concrete schema to C1."
+    }
+  ],
+  "constraints": {
+    "mayModifyExplore": true,
+    "mayModifyCode": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/domain-and-state-schema/20260806-015-revise-explore/"
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-117-review-propose",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "Q1",
+  "changeId": "execution-model-correction",
+  "action": "review-propose",
+  "role": "reviewer",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-116-propose/",
+  "reviewedResultRef": "content-sha256:c9530e5648b1b9017ccb4c1a2ddaffdd51fc0831365e1501898b5d0812e2da62",
+  "sourceReview": {
+    "runId": "20260806-115-review-explore",
+    "verdict": "approved",
+    "resultRef": "content-sha256:6ef7fafaf932d7e8b65b2a204c2cc4e16d6777a4f82b78caf7ee7127b9f2c072"
+  },
+  "inputs": [
+    "ref/01-deterministic-core-delivery-implementation-reference.md",
+    "AGENTS.md",
+    "docs/bootstrap-reference.md",
+    "docs/delivery-lifecycle.md",
+    "docs/verification-model.md",
+    "openspec/delivery-groups/20260806-01-deterministic-core.yaml",
+    "openspec/changes/execution-model-correction/explore.md",
+    "openspec/changes/execution-model-correction/proposal.md",
+    "openspec/changes/execution-model-correction/design.md",
+    "openspec/changes/execution-model-correction/tasks.md",
+    "openspec/changes/execution-model-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+    "openspec/changes/execution-model-correction/specs/flowkit-bootstrap-and-roadmap/spec.md",
+    "openspec/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+    "src/facts/formal-fact-reader.ts",
+    "src/persistence/result-ref-adapter.ts",
+    "src/persistence/run-persistence.ts",
+    "src/persistence/serialization.ts",
+    ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-115-review-explore/result.json",
+    ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-116-propose/context.json",
+    ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-116-propose/result.json"
+  ],
+  "constraints": {
+    "readOnlyExceptOwnRun": true,
+    "mayModifyReviewedArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayFullTest": false,
+    "mayCheckpoint": false,
+    "commitAllowed": false
+  }
+}

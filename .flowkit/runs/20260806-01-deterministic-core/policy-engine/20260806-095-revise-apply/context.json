@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-095-revise-apply",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "D1",
+  "changeId": "policy-engine",
+  "action": "revise-apply",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "inputRef": "b07d894d83a3e6c03d87cd6e925e65887fb20f10bab78e72563c38ee870dda8f",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-093-revise-apply/",
+  "sourceReviewRun": "20260806-094-review-apply",
+  "sourceReviewVerdict": "changes-requested",
+  "sourceChangeState": "D1 policy-engine: active (explore 069 approved via 074; propose reviewed/approved; apply 087 reviewed by 088 changes-requested D1-RA-001, revised by 089, reviewed by 090 changes-requested D1-RA-002, revised by 091, reviewed by 092 changes-requested D1-RA-003, revised by 093, reviewed by 094 changes-requested D1-RA-004; D1-PR-001..006 resolved at propose stage; D1-RA-001 resolved by 089; D1-RA-002 resolved by 091; D1-RA-003 resolved by 093)",
+  "triggerFindings": [
+    {
+      "id": "D1-RA-004",
+      "severity": "P1",
+      "origin": "20260806-094-review-apply",
+      "title": "Change Verification record is stale after the latest revise-apply Runs"
+    }
+  ],
+  "inputRefSemantics": "inputRef cites 094-review-apply/result.json (the review whose changes-requested verdict and D1-RA-004 finding triggered this revision) with its actual immutable SHA-256 (b07d894d...), matching the revise-apply precedent (089 inputRef = 088 result SHA; 091 inputRef = 090 result SHA; 093 inputRef = 092 result SHA). reviewedRun names 093-revise-apply, the latest apply artifact whose Verification record is refreshed. 095 fixes D1-RA-004: 091 (D1-RA-002) and 093 (D1-RA-003) revised production code + proposal bundle but did not sync the Change-owned verification.md, which stayed at 087/089 + 406/406 + D1-RA-001 only. Per docs/verification-model.md Section 7, result.json cannot replace verification.md. 095 updates only verification.md: references 091/093, records D1-RA-002/D1-RA-003 checks, replaces 406/406 with 424/424, re-runs ordinary checks. No production code / tests / proposal bundle / frozen docs / terminal Runs modified.",
+  "verificationRecordRationale": "verification.md is the Change-owned Verification record (verification-model.md Section 7), distinct from the proposal bundle (proposal.md/design.md/spec.md/tasks.md). This Run modifies verification.md only; mayModifyProposalArtifacts is false because none of the four proposal artifacts is touched. mayWriteProductionCode/mayWriteTestCode are false because no src/ or tests/ file is touched. The only mutated file is openspec/changes/policy-engine/verification.md.",
+  "constraints": {
+    "mayModifyProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyVerificationRecord": true,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-095-revise-apply/"
+}

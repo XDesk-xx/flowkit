@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-068-archive",
+  "status": "completed",
+  "summary": "C1 formal-fact-reader-and-persistence 已归档。openspec archive 将 18 ADDED Requirements（73 Scenarios）应用到冻结 spec openspec/specs/flowkit-formal-fact-reader-and-persistence/spec.md，change 移动到 openspec/changes/archive/2026-08-06-formal-fact-reader-and-persistence/。冻结 spec 的 TBD Purpose 占位符已补全为正式 Purpose（符合项目硬约束：Purpose sections must not contain TBD placeholders）。Manifest C1 state 从 active 更新为 completed。openspec validate --strict 通过。未创建 Git Commit。",
+  "archiveResults": {
+    "command": "npx openspec archive formal-fact-reader-and-persistence -y",
+    "specDeltas": {
+      "added": 18,
+      "modified": 0,
+      "removed": 0
+    },
+    "frozenSpecCreated": "openspec/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+    "frozenSpecRequirements": 18,
+    "frozenSpecScenarios": 73,
+    "changeArchivedTo": "openspec/changes/archive/2026-08-06-formal-fact-reader-and-persistence/",
+    "archivedArtifacts": [
+      ".openspec.yaml",
+      "explore.md",
+      "proposal.md",
+      "design.md",
+      "tasks.md",
+      "verification.md",
+      "specs/flowkit-formal-fact-reader-and-persistence/spec.md"
+    ]
+  },
+  "purposeFix": {
+    "file": "openspec/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+    "reason": "项目硬约束：Purpose sections in spec.md files must not contain TBD placeholders",
+    "before": "TBD - created by archiving change formal-fact-reader-and-persistence. Update Purpose after archive.",
+    "after": "冻结 Flowkit 确定性内核的正式事实读取层与持久化层契约：定义 FormalFactSnapshot 只读事实视图、遵循 One-fact-one-authority 原则的 Reader、staging + atomic publish 的 Run 创建协议、独占 fs.link 的 terminal result 发布协议、assertMutable 对 CURRENT 持久化状态的校验、RunResultFile/ContextFile 物理 schema 与确定性投影、非自引用序列化边界、C1 物理投影校验器、content hash versionFingerprint、Run ID 文件系统集成、Git 边界摘要只读、手写最小子集 YAML manifest 解析、Delivery Manifest 嵌套状态读取、Bootstrap Run 兼容性与三路判别器、review verdict 重建与发布前完整性校验、Change Verification 记录。本 spec 为 Policy Engine 和诊断 CLI 提供不可变的正式事实输入与原子持久化基础。"
+  },
+  "manifestUpdate": {
+    "file": "openspec/delivery-groups/20260806-01-deterministic-core.yaml",
+    "change": "C1 state: active → completed"
+  },
+  "verificationResults": {
+    "frozenSpecExists": true,
+    "frozenSpecValid": true,
+    "frozenSpecValidateCommand": "npx openspec validate flowkit-formal-fact-reader-and-persistence --strict",
+    "frozenSpecValidateResult": "Specification 'flowkit-formal-fact-reader-and-persistence' is valid",
+    "changeMovedToArchive": true,
+    "oldChangeDirGone": true,
+    "purposePlaceholderRemoved": true
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit. Change Checkpoint is a separate formal Git boundary requiring owner authorization."
+  },
+  "prohibitedWorkCheck": {
+    "frozenSpecsModified": false,
+    "terminalRunsModified": false,
+    "changeCheckpointExecuted": false,
+    "fullTestExecuted": false,
+    "note": "未修改其他已 archived 的 Change；未执行 Change Checkpoint 或 Full Test；未提交 Git"
+  },
+  "nextAction": "change-checkpoint",
+  "nextActionNote": "Change Checkpoint 需 owner 明确授权 Git Commit。Checkpoint 后 C1 正式完成，Delivery 20260806-01-deterministic-core 的 Manifest 中下一个未完成 required Change 可激活。",
+  "blockedOn": []
+}

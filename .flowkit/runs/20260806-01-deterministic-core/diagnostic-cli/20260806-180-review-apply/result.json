@@ -1,0 +1,16 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "已沿 E1 169→180 lineage 完成 179 Owner-reset Apply 的独立完整审查。179 忠实落实 Owner 在 178 approved 后作出的 contract reset：撤销 Tasks completion 后置，只从 current active Change canonical tasks.md 投影最小 changeTasksComplete boolean，并接通 D1 既有 Archive Tasks gate；未建立 Task Registry、Task 数据库、Task execution engine 或第二套 OpenSpec authority。Proposal/Design/delta specs/tasks 已最小 reconciliation；tasks.md required checkboxes 全部完成。真实复跑 typecheck、lint、build、594/594 tests、OpenSpec diagnostic-cli strict 与 9/9 all strict 均通过；正式 npm-installed flowkit bin regression 继续通过；Reader 投影 changeTasksComplete=true、changeVerificationStatus=passed、conflicts=0。未发现 Blocking 或 Non-blocking Finding，故当前 179 Apply candidate verdict=approved。180 materialize 后必须由真实 Policy 决定下一 lifecycle boundary；Reviewer 不执行 Archive。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/diagnostic-cli/verification.md",
+      "versionFingerprint": "f8702fe7b13115e50d702ec08a831db1795450048a5e17777ea54d77ef81356d",
+      "kind": "verification-summary"
+    },
+    "nextActionRecommendation": "owner-decision: authorize-archive"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindings": []
+}

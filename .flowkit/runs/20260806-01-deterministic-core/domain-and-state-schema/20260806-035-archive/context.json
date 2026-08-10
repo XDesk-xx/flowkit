@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-035-archive",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "B1",
+  "changeId": "domain-and-state-schema",
+  "action": "archive",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "inputRef": "0ca8e28172a257c5f4941ea7f2ba6f8cebea0da0a4602b7515969cebab325eea",
+  "sourceReviewRun": "20260806-034-review-apply",
+  "sourceReviewVerdict": "approved",
+  "constraints": {
+    "mayArchive": true,
+    "mayModifyManifest": true,
+    "mayRunOpenSpecArchive": true,
+    "mayFixFrozenSpecPurpose": true,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/domain-and-state-schema/20260806-035-archive/"
+}

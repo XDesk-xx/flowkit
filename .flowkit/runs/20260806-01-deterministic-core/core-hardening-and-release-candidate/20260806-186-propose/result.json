@@ -1,0 +1,37 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "propose",
+    "executionStatus": "completed",
+    "summary": "已完成 F1 Proposal：在当前 Manifest 已授权的测试层次覆盖、固定 Full Test Plan、core release candidate 范围内，冻结 focused/affected/full/quality/verify scripts、固定 test concurrency、最小 hard Quality Guard 与 warning-only maintainability/timing contract，并定义内部 Core RC candidate 在 F1 completion/checkpoint 前形成、Delivery Full Test 仅在之后做 qualification 的无环 lifecycle。未修改 Manifest goal/outputs、production code、tests 或既有 Policy/Full Test authority。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/core-hardening-and-release-candidate/design.md",
+        "versionFingerprint": "caccd1ba91f55f7995203fa5e505e03745d445bc2e028ffdf3c1a314232f2b20",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/core-hardening-and-release-candidate/proposal.md",
+        "versionFingerprint": "bae3fa4c62a72b6a317ae7d63b5f90b1bd6fb3c1908f7015252b353e6a0b309c",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/core-hardening-and-release-candidate/specs/flowkit-core-hardening-and-release-candidate/spec.md",
+        "versionFingerprint": "7a39704ebfc6b4a6fc22878a52d4759f51f7a43ee9a68e5f48546cf0d50da165",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/core-hardening-and-release-candidate/tasks.md",
+        "versionFingerprint": "ff3a500273ebb4f46813d66c73cae402d43b74b55b00df0491d7a635d03c73ba",
+        "kind": "produced-artifact"
+      }
+    ],
+    "consumedInputRefs": [
+      {
+        "ref": ".flowkit/runs/20260806-01-deterministic-core/core-hardening-and-release-candidate/20260806-185-review-explore/result.json",
+        "versionFingerprint": "b658aade83225c0b01c68e151692326d2e0a66e60a5d86838c6857c990733895",
+        "kind": "run-result"
+      }
+    ]
+  }
+}

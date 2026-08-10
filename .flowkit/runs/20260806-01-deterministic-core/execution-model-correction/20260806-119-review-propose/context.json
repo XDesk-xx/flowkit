@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-119-review-propose",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "Q1",
+  "changeId": "execution-model-correction",
+  "action": "review-propose",
+  "role": "reviewer",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-118-revise-propose/",
+  "reviewedResultRef": "content-sha256:c35a6ce5858a4e63b67fd6d5193e8d57df699f2990c41b9ff5aa9fda39a76e71",
+  "sourceReview": {
+    "runId": "20260806-117-review-propose",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:61ff9a5afa8c39e9403522e9234c08011b77cd5c64c160be5ead6588c3d3cc44"
+  },
+  "inputs": [
+    "AGENTS.md",
+    "ref/01-deterministic-core-delivery-implementation-reference.md",
+    "docs/bootstrap-reference.md",
+    "docs/core-model.md",
+    "docs/delivery-lifecycle.md",
+    "docs/verification-model.md",
+    "openspec/delivery-groups/20260806-01-deterministic-core.yaml",
+    "openspec/changes/execution-model-correction/explore.md",
+    "openspec/changes/execution-model-correction/proposal.md",
+    "openspec/changes/execution-model-correction/design.md",
+    "openspec/changes/execution-model-correction/tasks.md",
+    "openspec/changes/execution-model-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+    "openspec/changes/execution-model-correction/specs/flowkit-bootstrap-and-roadmap/spec.md",
+    "openspec/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+    "src/facts/formal-fact-reader.ts",
+    "src/persistence/result-ref-adapter.ts",
+    "src/persistence/run-persistence.ts",
+    "src/persistence/serialization.ts",
+    ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-116-propose/result.json",
+    ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-117-review-propose/result.json",
+    ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-118-revise-propose/context.json",
+    ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-118-revise-propose/result.json"
+  ],
+  "constraints": {
+    "readOnlyExceptOwnRun": true,
+    "mayModifyReviewedArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayFullTest": false,
+    "mayCheckpoint": false,
+    "commitAllowed": false
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-explore",
+    "executionStatus": "completed",
+    "summary": "已按 183 Reviewer 的两个 Blocking Findings 最小修订 F1 Explore：Proposal 不再被授权自行扩大 Manifest/Delivery scope，任何实质 scope expansion 必须停在 Owner boundary；Core RC 明确为 F1 内先形成的 candidate，F1 review/archive/checkpoint 完成后才进入 Owner-authorized Delivery Full Test，Full Test passed 仅做 Delivery-level qualification/acceptance，从而消除 F1 与 Delivery Full Test 的循环依赖。未进入 Proposal，未修改 production code、tests 或 Manifest goal/outputs。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/core-hardening-and-release-candidate/explore.md",
+        "versionFingerprint": "571ef99c626456d1fe07dae00b5e1185f579be4e37e57bca2cf72ea4757b4fcc",
+        "kind": "produced-artifact"
+      }
+    ],
+    "consumedInputRefs": [
+      {
+        "ref": ".flowkit/runs/20260806-01-deterministic-core/core-hardening-and-release-candidate/20260806-183-review-explore/result.json",
+        "versionFingerprint": "7a4e4b28bccb18e0a0e37ea9bae431132172a571a937449b837dfe492d209685",
+        "kind": "run-result"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260806-01-deterministic-core/core-hardening-and-release-candidate/20260806-183-review-explore/result.json",
+      "versionFingerprint": "7a4e4b28bccb18e0a0e37ea9bae431132172a571a937449b837dfe492d209685",
+      "kind": "run-result"
+    }
+  }
+}

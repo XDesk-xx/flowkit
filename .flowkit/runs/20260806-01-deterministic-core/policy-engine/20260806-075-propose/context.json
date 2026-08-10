@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-075-propose",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "D1",
+  "changeId": "policy-engine",
+  "action": "propose",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "inputRef": {
+    "ref": "run-result:.flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-074-review-explore/result.json",
+    "versionFingerprint": "sha256:c672e7621062bb95c8dba3b68a8fee38d5529d8bef6ae86cfb3e811bae8792e9"
+  },
+  "sourceReviewRun": "20260806-074-review-explore",
+  "sourceReviewVerdict": "approved",
+  "sourceChangeState": "D1 policy-engine: active (explore approved via 074-review-explore)",
+  "constraints": {
+    "mayCreateProposalArtifacts": true,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-075-propose/"
+}

@@ -1,0 +1,33 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "已沿 182 建立的 F1 审查链完成 190 Apply Review。运输/hash、189→190 lineage、Owner Apply authorization provenance、OpenSpec strict 10/10、verify:change -- verification、quality、typecheck/lint/build、internal RC declaration 与 full test set 均已复核；test:full 三批合计 609/609 passed，materialized Reader conflicts=0、Policy next=review-apply。190 没有修改 D1 Policy/FullTestStatus，也没有执行 Delivery Full Test/Archive/Checkpoint。但当前 Apply 仍有 2 个 author-actionable blocker：Quality Guard 的 domain/policy filesystem hard invariant 可被合法 TypeScript `import = require(...)` 绕过；public `verify:full` 的最终 full step 失败路径只留下 `status=running`，不会按 approved contract记录该 step 的 failed status 与 duration。当前 target 不能进入 Archive，下一 boundary 为 revise-apply。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/core-hardening-and-release-candidate/verification.md",
+      "versionFingerprint": "c52e234a11dab6ced67e27dfa500f38fbeedd055fcb61c1c77e4928dcd7c603f",
+      "kind": "verification-summary"
+    },
+    "nextActionRecommendation": "revise-apply"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindings": [
+    {
+      "id": "F1-RA-001",
+      "severity": "blocking",
+      "title": "Quality Guard 的 filesystem hard invariant 存在合法 TypeScript import-equals 绕过路径",
+      "problem": "问题：`scripts/quality.ts` 的 `importedModuleSpecifiers()` 只识别 ImportDeclaration / ExportDeclaration、dynamic import(...) 与 identifier require(...)，没有识别 TypeScript `ImportEqualsDeclaration`。因此在 `src/domain/**` 或 `src/policy/**` 中写 `import fs = require('node:fs')` 可以通过当前 `npm run quality`，即使该语法在项目 NodeNext TypeScript 配置下能够成功 typecheck。Invariant：188 approved Spec 要求 `src/domain/**` 与 `src/policy/**` 不得直接 import `node:fs`、`node:fs/promises`、`fs` 或 `fs/promises`；任一 hard violation 必须使 quality non-zero，不能只覆盖部分合法 TypeScript import 语法。Evidence：`scripts/quality.ts#importedModuleSpecifiers`; reviewer adversarial fixture `src/domain/bypass.ts` 使用 `import fs = require('node:fs')` 时 `inspectQuality()` 返回 `hardFailures=[]`，且 TypeScript NodeNext typecheck 成功。Impact：F1 声明的 architecture hard guard 可以被真实可编译代码绕过，后续 Change Verification/Full Test 会错误报告 passed。Blocking authority：author-actionable。",
+      "location": "scripts/quality.ts importedModuleSpecifiers()/inspectQuality(); tests/unit/verification/quality.test.ts; F1 delta Spec `Quality Guard 的 hard failures...`",
+      "requiredChange": "使 filesystem boundary hard check 覆盖 approved contract 范围内的合法 TypeScript direct-import forms，并增加 regression 证明相应 form 会产生 hard failure；Reviewer 不限定必须通过哪种 AST helper 实现。Acceptance：在 domain/policy 中以项目 TypeScript 配置可接受的直接方式引用四个禁止 filesystem module 时，quality 必须确定性 non-zero；现有允许路径保持不受影响。"
+    },
+    {
+      "id": "F1-RA-002",
+      "severity": "blocking",
+      "title": "public verify:full 的 final full-step failure path 不满足 status/duration contract",
+      "problem": "问题：188 approved Design/Spec 要求 `npm run verify:full` 按固定顺序 fail-fast，并对每一步记录 status/duration。190 的 `package.json` 对 quality/typecheck/lint/build/openspec-all 使用 `verification.ts verify:step`，但最终 full step改为 shell chain：先打印 `step: full status=running`，再 `npm run test:full`，仅成功时打印 `step: full status=passed`。若 `test:full` 任一 batch 失败，`&&` 会直接退出；同时 `runNodeTests()` 在 batch failure 时会在 timingMessage 前提前 return。因此 public command 不会输出 `step: full status=failed`，也不会记录该失败 step 的 wall-clock duration。Invariant：`verify:full` 每个聚合检查必须可诊断地记录状态与耗时；fail-fast 不能丢失失败 step 的 terminal status/duration。Evidence：`package.json scripts.verify:full` 与 `scripts/verification.ts#runNodeTests`; `tests/unit/verification/package-scripts.test.ts` 当前只断言 full 的 running/passed 文本和顺序，没有覆盖 full failure。Impact：完整 Core verification 最昂贵、最关键的 final step 一旦失败，输出 contract恰好在最需要诊断时退化，且与已批准 Spec 不一致。Blocking authority：author-actionable。",
+      "location": "package.json scripts.verify:full; scripts/verification.ts runNodeTests()/runPlan(); tests/unit/verification/package-scripts.test.ts; F1 delta Spec `verify:full 必须固定 Full Test Plan...`",
+      "requiredChange": "让 public `npm run verify:full` 的 final full step 在成功和失败路径都满足已批准的 step status/duration contract，并补充 regression 覆盖 full-step failure；仍须保持 fixed order、fail-fast、不得创建 Owner/FullTestStatus authority。Reviewer 不限定必须改用单一 runner 还是保留 package-level orchestration。Acceptance：可控的 `test:full` failure 会使 `verify:full` non-zero，同时输出 final full step 的明确 failed status 与 duration；成功路径继续保持现有 contract。"
+    }
+  ]
+}

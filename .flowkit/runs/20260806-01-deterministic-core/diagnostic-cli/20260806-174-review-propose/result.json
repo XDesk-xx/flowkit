@@ -1,0 +1,11 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "已沿 E1 169→170→171→172→173 lineage 完成 173 revise-propose 独立复审。172 的三个 author-actionable Blocking Findings 已全部关闭：next 的 PolicyResult branch projection 已完整冻结 owner context 与 blocked conflicts；doctor 的 finding severity/overall/exit code 已唯一确定；no-active-Change 已冻结为正常 Delivery-level diagnostic projection。173 未扩大为第二 Policy/validator/state authority，package/lineage/OpenSpec strict/typecheck/Core admission 均通过。Blocking Findings 为 0。",
+    "nextActionRecommendation": "owner-decision: authorize-apply"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindings": []
+}

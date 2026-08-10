@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-025-revise-explore",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "B1",
+  "changeId": "domain-and-state-schema",
+  "action": "revise-explore",
+  "role": "author",
+  "inputRef": "5feaa82fd8facc6ff4d7b7b04418188b6646b02eeb3e058d15c962f18a2a4091",
+  "sourceReviewRun": "20260806-024-review-explore",
+  "sourceReviewVerdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "B1-RE-007",
+      "title": "Run-ID plan allocates the next value but does not validate uniqueness, monotonicity, or three-digit exhaustion",
+      "requiredResolution": "Extend Q3 with a pure Run-ID parse/validate/allocation contract and fixture tests. It must validate the complete YYYYMMDD-NNN-action grammar; reject Delivery-wide duplicate NNN values across Change and _delivery sources; reject a requested/candidate NNN that is not greater than every allocated NNN; preserve allowed gaps; and fail explicitly rather than emit an invalid ID when the next value exceeds 999. Keep filesystem traversal and atomic create/persist behavior in C1; B1 should operate on supplied directory-name/Run-ID fixtures and expose the fail-closed validation result."
+    }
+  ],
+  "resolvedFindingsFromPriorRevisions": [
+    {
+      "id": "B1-RE-001",
+      "resolvedIn": "20260806-015-revise-explore",
+      "resolution": "Action Catalog follows frozen core-model spec's ten formal Actions."
+    },
+    {
+      "id": "B1-RE-002",
+      "resolvedIn": "20260806-015-revise-explore",
+      "resolution": "ResultRef is provider-neutral without mandatory runPath."
+    },
+    {
+      "id": "B1-RE-003",
+      "resolvedIn": "20260806-017-revise-explore",
+      "resolution": "Review focus item 4 updated to ten Change Actions."
+    },
+    {
+      "id": "B1-RE-004",
+      "resolvedIn": "20260806-019-revise-explore",
+      "resolution": "Section 5.1 object-contract matrix covers all eleven objects."
+    },
+    {
+      "id": "B1-RE-005",
+      "resolvedIn": "20260806-021-revise-explore",
+      "resolution": "RunStatus matches frozen four-value set; in-progress limited to ExecutionStatus."
+    },
+    {
+      "id": "B1-RE-006",
+      "resolvedIn": "20260806-023-revise-explore",
+      "resolution": "Q6 defines separate Delivery, Change, and Run structural transition tables with exhaustive matrix tests."
+    }
+  ],
+  "constraints": {
+    "mayModifyExplore": true,
+    "mayModifyCode": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/domain-and-state-schema/20260806-025-revise-explore/"
+}

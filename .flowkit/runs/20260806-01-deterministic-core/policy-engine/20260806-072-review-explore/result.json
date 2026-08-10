@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-072-review-explore",
+  "status": "completed",
+  "verdict": "changes-requested",
+  "summary": "D1 071-revise-explore resolves the two prior design findings in its revised exploration conclusion, but the Revision Run records a source-result fingerprint that does not match the immutable 070-review-explore result. The provenance chain is therefore invalid and the Explore cannot be approved.",
+  "reviewedResultRef": "run-result:.flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-071-revise-explore/result.json;sha256:831cd0551b46da33e29c40476c55e19bed7f72c2fc70124a3375b46dafd4123b",
+  "blockingFindings": [
+    {
+      "id": "D1-EX-003",
+      "severity": "P1",
+      "title": "071 revision input fingerprint does not identify the reviewed 070 result",
+      "evidence": "071 context.inputRef.ref names 070-review-explore/result.json but declares sha256:5a3e7b1c9f2d8e4a6b0c3f5d7e9a1b3c5d7e9f1a3b5c7d9e1f3a5b7c9d1e3f5. The immutable file's actual SHA-256 is sha256:4a69f71f95ce5b29dfbfbf2f4a3e640f2d35d2728415cdbda799ba975501c770.",
+      "requiredChange": "Create a new revise-explore Run that cites 070 with its actual SHA-256, carries forward D1-EX-001 and D1-EX-002 as addressed, and preserves 070, 071, and 072 unchanged. Do not edit 071 in place."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "resolvedFindings": [
+    {
+      "id": "D1-EX-001",
+      "resolution": "The revised conclusion uses reviewedRunId lineage and allows a new review after a revision produces a new artifact Run."
+    },
+    {
+      "id": "D1-EX-002",
+      "resolution": "The revised conclusion blocks verification-gated actions when verification facts are unavailable and treats absent authorization scope as an owner-decision rather than inference."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "Revision artifact integrity",
+        "status": "passed",
+        "result": "conclusion.md SHA-256 matches evidence.json and 071 result: aa7e92b98f8f8683489cfad3036c50eb645858bb40794a8d6af29ad1cc7b4b8e"
+      },
+      {
+        "name": "070-to-071 provenance",
+        "status": "failed",
+        "result": "071 context inputRef.versionFingerprint does not match the immutable 070 result SHA-256."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

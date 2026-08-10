@@ -1,0 +1,47 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "propose",
+    "executionStatus": "completed",
+    "summary": "已完成新的 Q2 Orchestration Authority Boundary Proposal：从 current Policy 最小输入反推 Reader/Run 契约，删除 global generation/revision-window/archive replay，artifact-producing Run 每次 terminal 由 Core 派生完整 point-in-time 输出集合；保留 review/revise 最小 exact lineage，并明确 OpenSpec archive 与 AGENTS/Reviewer authority 边界。未修改 production code 或 tests。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/orchestration-authority-boundary-correction/design.md",
+        "versionFingerprint": "0dba68f0ecaec982c167c87636b93c84bba50ce7d0131243b212ffa4333ae0d4",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/orchestration-authority-boundary-correction/proposal.md",
+        "versionFingerprint": "61849f6ef4f2250682c1e716d19a114d90d5a6e3b10ec405bb6b085443195920",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/orchestration-authority-boundary-correction/specs/flowkit-bootstrap-and-roadmap/spec.md",
+        "versionFingerprint": "8e7f1e48be9c16ae5e34d87002b19ff853de1eaa5c7a539f4dcd11aa996963c8",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/orchestration-authority-boundary-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "8d62314f927eaceec762290a53679be0a286189c984db50f19760ed0b7a0ef28",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/orchestration-authority-boundary-correction/specs/flowkit-integration-boundaries/spec.md",
+        "versionFingerprint": "d94ce00c4f4a1ad55018dbd86f8b153352a6a36cc6405e6e7d64c54c675a825f",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/orchestration-authority-boundary-correction/tasks.md",
+        "versionFingerprint": "43c66b13746463c6d3815a88385018595d7105f3d56852e992eaec73d3c9292e",
+        "kind": "produced-artifact"
+      }
+    ],
+    "consumedInputRefs": [
+      {
+        "ref": ".flowkit/runs/20260806-01-deterministic-core/orchestration-authority-boundary-correction/20260806-149-review-explore/result.json",
+        "versionFingerprint": "4bbcdbe2cf1e12100a3e68aa753b85bcd0ac6abf6b65b43988bf6de688c504e5",
+        "kind": "run-result"
+      }
+    ]
+  }
+}

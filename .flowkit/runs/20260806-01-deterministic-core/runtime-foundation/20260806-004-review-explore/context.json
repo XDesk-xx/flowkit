@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-004-review-explore",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "A1",
+  "changeId": "runtime-foundation",
+  "action": "review-explore",
+  "role": "reviewer",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/runtime-foundation/20260806-003-revise-explore/",
+  "reviewedResultRef": "content-sha256:ad00831d2ba189bec65cfec730478d5d3e902ec7027751028567ce4ef268d2bc",
+  "inputs": [
+    "openspec/delivery-groups/20260806-01-deterministic-core.yaml",
+    "openspec/changes/runtime-foundation/explore.md",
+    ".flowkit/runs/20260806-01-deterministic-core/runtime-foundation/20260806-002-review-explore/result.json",
+    ".flowkit/runs/20260806-01-deterministic-core/runtime-foundation/20260806-003-revise-explore/result.json",
+    "ref/01-deterministic-core-delivery-implementation-reference.md",
+    "docs/core-model.md",
+    "docs/delivery-lifecycle.md",
+    "docs/verification-model.md",
+    "docs/integration-boundaries.md"
+  ],
+  "constraints": {
+    "readOnlyExceptCurrentRun": true,
+    "fullTestAllowed": false,
+    "mayPropose": false,
+    "mayApply": false,
+    "mayArchive": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/runtime-foundation/20260806-004-review-explore/"
+}

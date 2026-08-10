@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-117-review-propose",
+  "status": "completed",
+  "summary": "Complete Q1 Proposal review of 116 finished with changes-requested. The bundle is well scoped and carries the approved Explore's Core-owned provenance and review-binding design, but it fails strict OpenSpec validation because the added Bootstrap legacy requirement is not parsed as containing a MUST/SHALL. More importantly, review-apply is allowed to publish a verificationSummaryRef to the active Change path, then archive relocates verification.md; Reader's required replacement validation will make that already-terminal review Run conflict after a normal archive. The Proposal needs a durable archive-resolution rule for existing verification references, not merely archive non-eligibility for newly written ones.",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-116-propose/",
+  "reviewedResultRef": "content-sha256:c9530e5648b1b9017ccb4c1a2ddaffdd51fc0831365e1501898b5d0812e2da62",
+  "sourceReview": {
+    "runId": "20260806-115-review-explore",
+    "verdict": "approved",
+    "resultRef": "content-sha256:6ef7fafaf932d7e8b65b2a204c2cc4e16d6777a4f82b78caf7ee7127b9f2c072"
+  },
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "Q1-RP-001",
+      "title": "Proposal delta fails strict OpenSpec requirement syntax",
+      "location": "openspec/changes/execution-model-correction/specs/flowkit-bootstrap-and-roadmap/spec.md:104-108",
+      "evidence": "npx openspec validate execution-model-correction --strict fails: ADDED requirement Bootstrap legacy metadata correction 必须是有界例外 must contain SHALL or MUST. 116 nevertheless records openspecStrict=passed. Canonical-spec-only validation passes but does not validate this unmerged Change delta.",
+      "impact": "The Proposal cannot enter an approved state while its own required delta is structurally invalid, and the recorded validation fact is inaccurate.",
+      "requiredResolution": "Correct the added Requirement so the strict parser recognizes an explicit MUST/SHALL in its requirement body, then rerun and record openspec validate execution-model-correction --strict. Keep the change limited to the delta structural correction and accurate Run evidence."
+    },
+    {
+      "id": "Q1-RP-002",
+      "title": "Archive breaks an already-published review-apply verification ResultRef",
+      "location": "openspec/changes/execution-model-correction/design.md:244-268, 359-367; openspec/changes/execution-model-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md:307-342; openspec/changes/execution-model-correction/tasks.md:55-61",
+      "evidence": "The design makes only review-apply create verificationSummaryRef at openspec/changes/<context.changeId>/verification.md and makes archive non-eligible. But a review-apply Run is terminal before archive. Archive subsequently relocates Change artifacts to openspec/changes/archive/<date>-<change-id>/. Reader is required to validate persisted ResultRefs and treat missing targets as FactConflict, yet the Proposal defines no archive-aware resolver, stable logical locator, or retained source path for the existing review-apply ref. Excluding the archive Run from creating a new ref does not preserve the earlier one.",
+      "impact": "After an ordinary successful archive, reopening formal facts can fail closed on the formerly valid review-apply Run. That makes archive incompatible with the Proposal's own durable ResultRef and Reader contracts.",
+      "requiredResolution": "Define one archive-safe lifecycle for verificationSummaryRef already published by review-apply: either preserve its immutable canonical target for the reference lifetime, or make the shared resolver explicitly locate the archived verification artifact using immutable Change/archive facts while retaining an unambiguous stable reference identity. Apply the rule consistently to publication, preflight, Reader validation, archive behavior, and tests. Cover review-apply publication, archive relocation, and post-archive Reader validation of the same terminal Run."
+    }
+  ],
+  "nonBlockingFindings": [
+    {
+      "id": "Q1-NB-001",
+      "title": "Explore source links remain checkout-specific",
+      "location": "openspec/changes/execution-model-correction/explore.md:62, 72, 90, 98, 106, 127, 137",
+      "evidence": "The cited code links use file:///D:/Projects/flowkit absolute paths and cannot resolve in another checkout or platform.",
+      "recommendedResolution": "Convert source links to repository-relative Markdown links in a future in-scope edit. This does not block the Proposal findings above."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "116 source binding, JSON, artifact hashes, and Run numbering",
+        "status": "passed",
+        "result": "116 context/result JSON parse. Its inputRef equals the actual SHA-256 of 115 result.json; all five declared artifact hashes match; and 116 was the Delivery-wide maximum before this reviewer Run."
+      },
+      {
+        "name": "Proposal strict validation",
+        "command": "npx openspec validate execution-model-correction --strict",
+        "status": "failed",
+        "result": "The flowkit-bootstrap-and-roadmap added legacy-correction Requirement is rejected for lacking a parser-recognized MUST/SHALL."
+      },
+      {
+        "name": "canonical OpenSpec specs",
+        "command": "npx openspec validate --specs --strict",
+        "status": "passed",
+        "result": "8 canonical specs passed, 0 failed. It does not clear the Change-delta failure."
+      },
+      {
+        "name": "Proposal semantic and lifecycle review",
+        "status": "failed",
+        "result": "Archive relocation has no durable resolver or retention contract for a verificationSummaryRef already published by review-apply."
+      },
+      {
+        "name": "scope and whitespace",
+        "status": "passed",
+        "result": "116 declares only Proposal bundle files and no code/test edits. Artifact JSON, git diff --check, and explicit trailing-whitespace scan passed. The separately modified AGENTS.md is treated as an owner/repository instruction and not attributed to 116."
+      },
+      {
+        "name": "Delivery Full Test",
+        "status": "not-applicable",
+        "result": "Not owner-authorized and not run; review-propose has no Full-Test authority."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-propose",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

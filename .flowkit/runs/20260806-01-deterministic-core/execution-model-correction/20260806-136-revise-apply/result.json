@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-136-revise-apply",
+  "status": "completed",
+  "summary": "Q1 revise-apply completed both 135-review-apply Blocking Findings by completing the existing shared invariants — no new validator, no scope expansion. (Q1-RA-007) source-review requiredness is now Action-owned: requiresTuple is decided by the Action alone (revise-explore / revise-propose / revise-apply) in BOTH terminal preflight (completionPreflight) and the FormalFact Reader (validateImmutableRunResultRefs); the 135-flagged `&& sourceReviewRun !== undefined` gate is deleted. The shared validateSourceReviewTuple now also proves the Action-owned lineage: expectedSourceReviewActionFor maps revise-explore→review-explore / revise-propose→review-propose / revise-apply→review-apply, the source review's admitted action must equal the expected stage (wrong-review-stage fails), and BOTH the admitted verdict and persisted sourceReviewVerdict must be changes-requested (verdict-not-changes-requested fails) — an internally-consistent approved tuple can no longer precede a revise-*. readAdmittedSourceReviewVerdicts now exposes the source review Run's action for the stage mapping. Negative fixtures cover: revise-explore and revise-apply with the entire tuple absent, revise-propose with a complete fresh produced set but no tuple (rejects on source-review requiredness, not artifact completeness), approved source review, and wrong-stage changes-requested source review — all reject at completeRun without publishing result.json, and persisted historical versions produce Reader conflicts (immutable-ref-required / immutable-ref-verdict-not-cr / immutable-ref-wrong-stage), with superseded/revision-window immutable evidence still strict. (Q1-RA-010) validateActionResultApplicability now receives the top-level runStatus and enforces the required/forbidden matrix from runStatus==completed + context.action, NOT actionResult.executionStatus: a top-level completed review-apply MUST carry verificationSummaryRef regardless of executionStatus (completed/failed/blocked); a top-level completed artifact-producing Run MUST structurally carry producedResultRefs (presence at physical admission; full exact-set/bytes remain owned by validateStageEffectiveSet); producedResultRefs stays forbidden on non-artifact Actions, verificationSummaryRef only on review-apply, reviewVerdictRef forbidden on review-*. admitC1RunResult and terminal preflight share the same semantics, and a superseded-in-shape historical propose missing producedResultRefs still produces a run-result-schema conflict at physical admission (superseded only relaxes mutable current-byte comparison, never physical Action-result shape). Regression checks confirm RA-001/003/005/006/008/009 remain resolved and exact generation/archive behavior is preserved. All verification actually executed and passed: typecheck, lint, build, 584 tests (584 pass, 0 fail), OpenSpec change strict, canonical specs strict, git diff --check. Delivery Full Test was NOT run (no authorization for revise-apply). No contract artifacts, prior Runs, or Flowkit state were modified; no Git commit was created by this Run.",
+  "sourceReview": {
+    "runId": "20260806-135-review-apply",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:fdf3954e80c5486abac71152b2cfd1209e73c123d9e84e115c8782d031cf5a62"
+  },
+  "resolvedFindings": [
+    {
+      "id": "Q1-RA-007",
+      "result": "resolved",
+      "evidence": "requiresTuple is now decided by the Action alone in both production call sites (run-persistence.ts completionPreflight and formal-fact-reader.ts validateImmutableRunResultRefs): `requiresTuple: action === 'revise-explore' || action === 'revise-propose' || action === 'revise-apply'` — the 135-blocked `&& sourceReviewRun !== undefined` is deleted. validateSourceReviewTuple (result-ref-adapter.ts) adds the Action-owned lineage proof: expectedSourceReviewActionFor maps revise-explore→review-explore / revise-propose→review-propose / revise-apply→review-apply; an admitted source review whose action does not match produces a wrong-review-stage problem; an admitted verdict != changes-requested or persisted sourceReviewVerdict != changes-requested produces a verdict-not-changes-requested problem. readAdmittedSourceReviewVerdicts now reads the source review Run's context.action so the stage mapping can run at terminal preflight; the Reader passes each admitted ReviewVerdictFact's Run action from the runs index. Negative fixtures (run-persistence.test): revise-explore and revise-apply with the entire tuple absent → completeRun rejects SCHEMA_VALIDATION_FAILED and result.json is not published; revise-propose with a complete fresh proposal/design/tasks/specs set but NO tuple → still rejects (proving requiredness, not artifact completeness); revise-propose sourced from an APPROVED review (path/hash/verdict internally consistent) → rejects; revise-propose sourced from a WRONG-STAGE changes-requested review-explore → rejects. Reader fixtures (formal-fact-reader.test): persisted revise-explore with no tuple → immutable-ref-required; persisted revise-propose sourced from an approved review → immutable-ref-verdict-not-cr; source review B readable+correct-hash but wrong target stage → immutable-ref-target/verdict conflict; superseded-generation tampered reviewVerdictRef (integration) → immutable-ref-mismatch."
+    },
+    {
+      "id": "Q1-RA-010",
+      "result": "resolved",
+      "evidence": "validateActionResultApplicability(contextAction, runStatus, actionResult) (serialization.ts) now derives requiredness from the top-level physical runStatus + context.action, never from actionResult.executionStatus. Required matrix enforced: runStatus==completed + artifact-producing Action (explore/revise-explore/propose/revise-propose) ⇒ producedResultRefs MUST be structurally present (full exact-set/current bytes stay owned by validateStageEffectiveSet); runStatus==completed + review-apply ⇒ verificationSummaryRef MUST be present regardless of executionStatus=completed|failed|blocked; producedResultRefs forbidden on non-artifact Actions; verificationSummaryRef only on review-apply; reviewVerdictRef forbidden on review-*. admitC1RunResult passes result.runStatus into the validator and completionPreflight passes the terminal runStatus, so Writer and Reader share the exact same required/forbidden matrix. Negative fixtures (serialization.test): admitC1RunResult rejects top-level completed review-apply with executionStatus=failed and executionStatus=blocked (both missing verificationSummaryRef), and top-level completed explore / propose / revise-propose without producedResultRefs; accepts completed explore with producedResultRefs and completed review-apply with verificationSummaryRef. Reader fixture (formal-fact-reader.test): a superseded-in-shape historical propose missing producedResultRefs (with a legal R0→P1 chain present) still produces a run-result-schema conflict at physical admission — superseded generation semantics never exempt physical Action-result shape."
+    }
+  ],
+  "artifacts": [
+    { "path": "src/persistence/serialization.ts", "sha256": "b5670bc054b47e86ed4a54f4377be8e5f79bbea6d547640eb8e0d5a76abf2226" },
+    { "path": "src/persistence/result-ref-adapter.ts", "sha256": "5ad80ba28009c6bdab742acc78b4efa28e4934a9cdd5d0b0e59a5fc02654e2c2" },
+    { "path": "src/persistence/run-persistence.ts", "sha256": "9db7d1eb6b6adbfa3f6cd8542755244b11b218c6b8e742f4c84e4260689aef88" },
+    { "path": "src/facts/formal-fact-reader.ts", "sha256": "f284f866cb07a7ff93e3fee437e511b96e37eae4053faeb465c8b050c33abff8" },
+    { "path": "tests/unit/persistence/serialization.test.ts", "sha256": "57f1ef1a75bd508538ad34cf89238388d4dbe96ac28ce72c856410b858d76a8f" },
+    { "path": "tests/unit/persistence/run-persistence.test.ts", "sha256": "f2fcacfbe8d8883578d06bc076b3258c289481e0bdf972aca308ad81779f179f" },
+    { "path": "tests/unit/facts/formal-fact-reader.test.ts", "sha256": "d1774251a1c5158dad5eec9a894f51c0a9f3fd6ff46de15e001681d88cae55b6" },
+    { "path": "openspec/changes/execution-model-correction/verification.md", "sha256": "0796d24177fc5f29b0479d1b58c13821b06cc1ed6d179b0d8b374c8be4bf105a" }
+  ],
+  "scope": {
+    "modifiedCapabilities": [
+      "flowkit-formal-fact-reader-and-persistence"
+    ],
+    "productionCodeModified": true,
+    "testsModified": true,
+    "contractArtifactsModified": false,
+    "fullTestRun": false
+  },
+  "verification": {
+    "typecheck": "passed",
+    "lint": "passed",
+    "build": "passed",
+    "unitAndIntegrationTests": "passed (584 tests, 584 pass, 0 fail)",
+    "moduleUnitTests": "passed (serialization: validateActionResultApplicability runStatus-based required/forbidden matrix + admitC1RunResult negatives; run-persistence: revise-* tuple-absent / approved-source / wrong-stage terminal rejections; formal-fact-reader: persisted tuple-absent immutable-ref-required / approved-source immutable-ref-verdict-not-cr / superseded malformed physical run-result-schema)",
+    "lifecycleIntegrationFixtures": "passed (RA-006 invalid review cannot open legitimate lineage; RA-007 superseded immutable refs stay strict; generation-aware Reader + revise-propose effective-set + verification generation-aware + archive relocation)",
+    "openspecStrict": "passed",
+    "openspecCommand": "openspec validate execution-model-correction --strict",
+    "canonicalSpecs": "passed (7 passed, 0 failed)",
+    "whitespace": "passed (git diff --check exit 0; benign LF/CRLF warnings only)"
+  },
+  "nextActionRecommendation": "review-apply",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

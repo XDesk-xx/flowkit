@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-032-review-apply",
+  "status": "completed",
+  "summary": "B1 Apply review completed with changes-requested. The implementation builds, lints, passes all 87 host-side tests, and its core state/catalog/Run-ID functions are largely present. It cannot be approved because the formal Change Verification record is missing, VerificationCheck uses an applicability vocabulary that contradicts the approved Explore, and several B1 domain types loosen or omit the approved field-level contract needed by C1/D1 consumers.",
+  "reviewedResultRef": "apply-run:.flowkit/runs/20260806-01-deterministic-core/domain-and-state-schema/20260806-031-apply/result.json",
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "B1-RA-001",
+      "title": "Formal Change Verification record is missing",
+      "location": "openspec/changes/domain-and-state-schema/verification.md; docs/verification-model.md:7",
+      "evidence": "The Apply result reports passed checks, but `openspec/changes/domain-and-state-schema/verification.md` does not exist. The verification model requires a Change-owned record containing scope, applicability, methods, status, summary, result references/environment, Full Test status, and overall Change Verification; result.json cannot substitute for it.",
+      "impact": "The Change has no formal Verification fact, so review-apply and later Archive cannot establish the required passed/not-applicable Verification gate.",
+      "requiredResolution": "Create verification.md as a Change artifact, record every applicable B1 check and its command/result, state that Full Test was not authorized or run, and set the overall Change Verification status from the recorded evidence. Reference it from the revise-apply result."
+    },
+    {
+      "id": "B1-RA-002",
+      "title": "VerificationCheck applicability diverges from the approved B1 contract",
+      "location": "src/domain/types.ts:VerificationCheck; openspec/changes/domain-and-state-schema/explore.md:VerificationCheck contract",
+      "evidence": "The approved Explore defines VerificationCheck.applicability as 'applicable' | 'not-applicable'. The implementation instead declares 'always' | 'conditional'. This replaces the vocabulary used by the verification model and the approved object-contract matrix rather than implementing it.",
+      "impact": "C1 and callers cannot represent an explicitly not-applicable check using the B1 type, undermining the Verification status/record distinction frozen for this Delivery.",
+      "requiredResolution": "Use the approved applicability union ('applicable' | 'not-applicable') and update the types tests and any affected fixtures. Keep VerificationStatus as the separate execution-result field."
+    },
+    {
+      "id": "B1-RA-003",
+      "title": "Domain types loosen and omit approved field-level facts",
+      "location": "src/domain/types.ts:ChangeSummary, Run, ActionDefinition, ActionResult, ContinuationContext; approved B1 Explore section 5.1",
+      "evidence": "The approved contract uses formal Action unions for Run/ActionDefinition/ActionResult/ContinuationContext, ResultRef for Run.inputRef, and ChangeSummary includes dependsOn and outputs. The implementation uses bare string for those Action and input-reference fields, and ChangeSummary only has key/id/state/required. It therefore drops static catalog/reference guarantees and delivery-summary facts previously frozen for B1.",
+      "impact": "Downstream C1/D1/E1 code loses type-level enforcement of the fixed Catalog and ResultRef boundary, while Delivery.changes cannot expose dependency or output facts required by the proposed domain model.",
+      "requiredResolution": "Align these interfaces with the approved object-contract matrix: use ChangeAction | DeliveryAction where an action is formal, use ResultRef for Run.inputRef, and restore ChangeSummary.dependsOn and outputs. Update fixture/type tests and validateRun's returned type accordingly without adding C1 persistence or Policy behavior."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "verification": {
+    "checks": [
+      {"name": "npm run typecheck", "status": "passed", "result": "Production and test TypeScript projects passed."},
+      {"name": "npm run build", "status": "passed", "result": "tsc completed successfully."},
+      {"name": "npm test", "status": "passed", "result": "87 tests passed; the sandboxed first attempt was blocked by spawn EPERM, and the unchanged host-side retry passed."},
+      {"name": "npm run lint", "status": "passed", "result": "eslint completed with no errors."},
+      {"name": "OpenSpec strict validation", "status": "passed", "command": "openspec validate domain-and-state-schema --strict", "result": "Change is valid."},
+      {"name": "formal Change Verification", "status": "failed", "result": "verification.md is absent."},
+      {"name": "Full Test", "status": "not-applicable", "result": "Not authorized and not run."}
+    ]
+  },
+  "nextActionRecommendation": "revise-apply",
+  "commitPolicy": {"autoCommit": false, "commitCreated": false}
+}

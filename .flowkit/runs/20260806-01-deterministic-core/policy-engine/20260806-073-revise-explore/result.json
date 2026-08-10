@@ -1,0 +1,252 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-073-revise-explore",
+  "status": "completed",
+  "summary": "D1 policy-engine revise-explore 073 resolves D1-EX-003 (071 inputRef fingerprint mismatch) by creating a new Run whose context.inputRef cites 070-review-explore/result.json with its actual immutable SHA-256 sha256:4a69f71f95ce5b29dfbfbf2f4a3e640f2d35d2728415cdbda799ba975501c770. D1-EX-001 and D1-EX-002 are carried forward as addressed: the conclusion.md artifact (hash aa7e92b98f8f8683489cfad3036c50eb645858bb40794a8d6af29ad1cc7b4b8e) is preserved unchanged and remains consistent with evidence.json. Terminal Runs 070, 071, and 072 are verified unchanged by SHA-256. The explore artifact (conclusion.md, evidence.json) is not modified; the fix is a Run-level provenance correction only. Full consistencyScan covers 7 dimensions with 0 contradictions.",
+  "exploreArtifact": {
+    "conclusionPath": ".tmp/explore/policy-engine/conclusion.md",
+    "evidencePath": ".tmp/explore/policy-engine/evidence.json",
+    "conclusionHash": "aa7e92b98f8f8683489cfad3036c50eb645858bb40794a8d6af29ad1cc7b4b8e",
+    "evidenceHash": "ed725d944b43de379d1a849b2cddd9211c12c385e86e2d2b55fd085e175a60a6",
+    "carryForward": true,
+    "carryForwardNote": "conclusion.md and evidence.json are carried forward unchanged from 071-revise-explore. D1-EX-001 (Lineage model) and D1-EX-002 (verification/authorization facts availability) remain addressed by the existing conclusion content. D1-EX-003 is a provenance fix recorded in this Run's context.json, not a conclusion-content change."
+  },
+  "findingsAddressed": [
+    {
+      "id": "D1-EX-003",
+      "severity": "P1",
+      "origin": "20260806-072-review-explore",
+      "title": "071 revision input fingerprint does not identify the reviewed 070 result",
+      "rootCause": "071-revise-explore context.inputRef.ref named 070-review-explore/result.json but declared versionFingerprint sha256:5a3e7b1c9f2d8e4a6b0c3f5d7e9a1b3c5d7e9f1a3b5c7d9e1f3a5b7c9d1e3f5, which does not match the immutable 070 result actual SHA-256 sha256:4a69f71f95ce5b29dfbfbf2f4a3e640f2d35d2728415cdbda799ba975501c770. The provenance chain 070 -> 071 was therefore invalid. 071 is a terminal (completed) Run and cannot be edited in place.",
+      "fix": "Created a new revise-explore Run (073) whose context.inputRef cites 070-review-explore/result.json with the correct versionFingerprint sha256:4a69f71f95ce5b29dfbfbf2f4a3e640f2d35d2728415cdbda799ba975501c770, computed and verified against the immutable 070 result file. 071 is preserved unchanged. The conclusion artifact is carried forward unchanged because D1-EX-003 is a provenance correction, not a content defect.",
+      "verificationEvidence": "context.inputRef.versionFingerprint = sha256:4a69f71f95ce5b29dfbfbf2f4a3e640f2d35d2728415cdbda799ba975501c770 matches Get-FileHash SHA-256 of .flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-070-review-explore/result.json (computed independently). 071 result.json SHA-256 remains 831cd0551b46da33e29c40476c55e19bed7f72c2fc70124a3375b46dafd4123b (unchanged, matches 072 reviewedResultRef)."
+    },
+    {
+      "id": "D1-EX-001",
+      "severity": "P1",
+      "origin": "20260806-070-review-explore",
+      "title": "Lifecycle stage selection cannot progress after a completed review",
+      "carryForward": true,
+      "resolution": "Addressed in 071-revise-explore conclusion.md (Lineage model via ReviewVerdictFact.reviewedRunId). Conclusion content unchanged in 073; hash aa7e92b98f8f8683489cfad3036c50eb645858bb40794a8d6af29ad1cc7b4b8e matches 071 result and evidence.json. No regression introduced by this provenance-only revision.",
+      "verificationEvidence": "conclusion.md SHA-256 aa7e92b9... matches 071 result.exploreArtifact.conclusionHash and evidence.json conclusionHash. The Lineage model (Section 3.0) and decision tree (Section 4) are intact."
+    },
+    {
+      "id": "D1-EX-002",
+      "severity": "P1",
+      "origin": "20260806-070-review-explore",
+      "title": "Policy gates require formal facts that the declared snapshot does not provide",
+      "carryForward": true,
+      "resolution": "Addressed in 071-revise-explore conclusion.md (verification-facts-unavailable blocking; empty ownerAuthorizations -> owner-decision). Conclusion content unchanged in 073; hash aa7e92b98f8f8683489cfad3036c50eb645858bb40794a8d6af29ad1cc7b4b8e matches 071 result and evidence.json. No regression introduced by this provenance-only revision.",
+      "verificationEvidence": "conclusion.md SHA-256 aa7e92b9... matches 071 result.exploreArtifact.conclusionHash and evidence.json conclusionHash. The availability matrix (Section 1.3) and blocked diagnoses (Section 5) are intact."
+    }
+  ],
+  "keyFindings": [
+    "D1-EX-003 is a Run-level provenance defect, not a conclusion-content defect; the fix is a correct inputRef in this Run's context.json.",
+    "070-review-explore/result.json actual SHA-256 is sha256:4a69f71f95ce5b29dfbfbf2f4a3e640f2d35d2728415cdbda799ba975501c770, independently computed and now cited correctly in 073 context.inputRef.versionFingerprint.",
+    "071-revise-explore is a terminal (completed) Run and is preserved unchanged; its broken inputRef is superseded by 073, not edited in place.",
+    "conclusion.md (hash aa7e92b9...) and evidence.json (hash ed725d94...) are carried forward unchanged; D1-EX-001 and D1-EX-002 remain addressed by the existing conclusion content.",
+    "Terminal Runs 070, 071, 072 are verified unchanged by SHA-256 fingerprint comparison.",
+    "After 073 completes, the Lineage model (conclusion Section 3.0) evaluates: Current Artifact Run = 073-revise-explore; Current Review = 072-review-explore; 072.reviewedRun = 071 != 073 -> no lineage match -> next action = review-explore. The revision loop continues correctly."
+  ],
+  "sourceFactsRead": {
+    "formalDocs": [
+      "docs/delivery-lifecycle.md (Section 3.2-3.5 lifecycle, Section 4 multi-round review)",
+      "docs/core-model.md (Section 7 Run boundaries, Section 10 D1 boundary)"
+    ],
+    "frozenSpecs": [
+      "openspec/specs/flowkit-domain-and-state-schema/spec.md (B1)",
+      "openspec/specs/flowkit-formal-fact-reader-and-persistence/spec.md (C1)"
+    ],
+    "reviewRuns": [
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-070-review-explore/result.json (verdict: changes-requested; findings D1-EX-001, D1-EX-002; actual SHA-256 4a69f71f95ce5b29dfbfbf2f4a3e640f2d35d2728415cdbda799ba975501c770)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-070-review-explore/context.json",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-071-revise-explore/context.json (inputRef.versionFingerprint sha256:5a3e7b1c... does not match 070 actual)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-071-revise-explore/result.json (SHA-256 831cd0551b46da33e29c40476c55e19bed7f72c2fc70124a3375b46dafd4123b; exploreArtifact.conclusionHash aa7e92b9...)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-072-review-explore/result.json (verdict: changes-requested; finding D1-EX-003; SHA-256 c672e7621062bb95c8dba3b68a8fee38d5529d8bef6ae86cfb3e811bae8792e9)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-072-review-explore/context.json (reviewedRun: 071; reviewedResultRef: content-sha256:831cd055...)"
+    ],
+    "exploreArtifact": [
+      ".tmp/explore/policy-engine/conclusion.md (SHA-256 aa7e92b98f8f8683489cfad3036c50eb645858bb40794a8d6af29ad1cc7b4b8e; carried forward unchanged)",
+      ".tmp/explore/policy-engine/evidence.json (SHA-256 ed725d944b43de379d1a849b2cddd9211c12c385e86e2d2b55fd085e175a60a6; conclusionHash aa7e92b9... matches conclusion.md)"
+    ]
+  },
+  "consistencyScan": {
+    "scanType": "full",
+    "triggerRun": "20260806-072-review-explore (changes-requested, D1-EX-003)",
+    "modifiedConcepts": [
+      "Revision Run inputRef provenance to source review (D1-EX-003)",
+      "Carry-forward of addressed findings D1-EX-001/D1-EX-002 (conclusion unchanged)"
+    ],
+    "dimensions": [
+      {
+        "id": "CS-01",
+        "name": "inputRef provenance integrity",
+        "concept": "073 context.inputRef cites 070 with actual SHA-256",
+        "sectionsChecked": [
+          "073 context.inputRef.ref",
+          "073 context.inputRef.versionFingerprint",
+          "070-review-explore/result.json (immutable file)"
+        ],
+        "checks": [
+          "073 context.inputRef.ref = run-result:.flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-070-review-explore/result.json",
+          "073 context.inputRef.versionFingerprint = sha256:4a69f71f95ce5b29dfbfbf2f4a3e640f2d35d2728415cdbda799ba975501c770",
+          "Get-FileHash SHA-256 of 070 result.json = 4a69f71f95ce5b29dfbfbf2f4a3e640f2d35d2728415cdbda799ba975501c770 -> matches versionFingerprint",
+          "071 declared sha256:5a3e7b1c... which did not match; 073 corrects this"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-02",
+        "name": "Conclusion artifact carry-forward integrity",
+        "concept": "conclusion.md unchanged from 071; evidence.json conclusionHash matches",
+        "sectionsChecked": [
+          ".tmp/explore/policy-engine/conclusion.md",
+          ".tmp/explore/policy-engine/evidence.json",
+          "071 result.exploreArtifact.conclusionHash",
+          "072 verification.checks[Revision artifact integrity]"
+        ],
+        "checks": [
+          "conclusion.md SHA-256 = aa7e92b98f8f8683489cfad3036c50eb645858bb40794a8d6af29ad1cc7b4b8e (matches 071 result and 072 review evidence)",
+          "evidence.json conclusionHash = aa7e92b98f8f8683489cfad3036c50eb645858bb40794a8d6af29ad1cc7b4b8e (matches conclusion.md)",
+          "evidence.json SHA-256 = ed725d944b43de379d1a849b2cddd9211c12c385e86e2d2b55fd085e175a60a6 (unchanged)",
+          "073 did not modify conclusion.md or evidence.json (carry-forward)"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-03",
+        "name": "D1-EX-001/D1-EX-002 carry-forward consistency",
+        "concept": "conclusion content still addresses D1-EX-001 and D1-EX-002; no regression",
+        "sectionsChecked": [
+          "conclusion.md Section 1.3 (availability matrix)",
+          "conclusion.md Section 3.0 (Lineage model)",
+          "conclusion.md Section 3.1 (precondition matrix)",
+          "conclusion.md Section 4 (decision tree)",
+          "conclusion.md Section 5 (blocked diagnoses)"
+        ],
+        "checks": [
+          "D1-EX-001: Lineage model via reviewedRunId present in conclusion Section 3.0 (unchanged)",
+          "D1-EX-002: verification-facts-unavailable blocking present in conclusion Section 1.3/5 (unchanged)",
+          "D1-EX-002: empty ownerAuthorizations -> owner-decision present in conclusion Section 1.3/3.3 (unchanged)",
+          "Conclusion hash unchanged -> content identical to 071 version reviewed by 072 for D1-EX-001/D1-EX-002 resolution"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-04",
+        "name": "D1-EX-003 resolution consistency",
+        "concept": "071 broken fingerprint superseded by 073 correct citation; 071 preserved",
+        "sectionsChecked": [
+          "073 context.inputRef",
+          "071 context.inputRef (preserved, not modified)",
+          "072 result.blockingFindings[D1-EX-003].requiredChange",
+          "072 result.resolvedFindings"
+        ],
+        "checks": [
+          "072 requiredChange: 'Create a new revise-explore Run that cites 070 with its actual SHA-256' -> 073 context.inputRef cites 070 with sha256:4a69f71f... SATISFIED",
+          "072 requiredChange: 'carries forward D1-EX-001 and D1-EX-002 as addressed' -> 073 findingsAddressed carries both forward, conclusion hash unchanged SATISFIED",
+          "072 requiredChange: 'preserves 070, 071, and 072 unchanged' -> SHA-256 verification in CS-05 SATISFIED",
+          "072 requiredChange: 'Do not edit 071 in place' -> 071 context.json/result.json SHA-256 unchanged; new Run 073 created SATISFIED",
+          "072 resolvedFindings[D1-EX-001/D1-EX-002] remain resolved; D1-EX-003 now resolved by 073"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-05",
+        "name": "Terminal Run immutability",
+        "concept": "070, 071, 072 result.json unchanged (verified by SHA-256)",
+        "sectionsChecked": [
+          ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-070-review-explore/result.json",
+          ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-071-revise-explore/result.json",
+          ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-071-revise-explore/context.json",
+          ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-072-review-explore/result.json"
+        ],
+        "checks": [
+          "070 result.json SHA-256 = 4a69f71f95ce5b29dfbfbf2f4a3e640f2d35d2728415cdbda799ba975501c770 (immutable, matches 072 evidence and 073 inputRef)",
+          "071 result.json SHA-256 = 831cd0551b46da33e29c40476c55e19bed7f72c2fc70124a3375b46dafd4123b (matches 072 reviewedResultRef content-sha256:831cd055...)",
+          "072 result.json SHA-256 = c672e7621062bb95c8dba3b68a8fee38d5529d8bef6ae86cfb3e811bae8792e9 (immutable)",
+          "073 did not write to 070/071/072 directories; only created 073 directory files"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-06",
+        "name": "Mutation policy compliance",
+        "concept": "scratch-only; only 073 Run files created; no manifest/tracked/production/test/openspec/explore-artifact changes",
+        "sectionsChecked": [
+          "openspec/delivery-groups/20260806-01-deterministic-core.yaml",
+          "src/",
+          "tests/",
+          "openspec/changes/",
+          ".tmp/explore/policy-engine/",
+          ".flowkit/runs/20260806-01-deterministic-core/policy-engine/070-review-explore/",
+          ".flowkit/runs/20260806-01-deterministic-core/policy-engine/071-revise-explore/",
+          ".flowkit/runs/20260806-01-deterministic-core/policy-engine/072-review-explore/"
+        ],
+        "checks": [
+          "Manifest not modified (D1 state remains active)",
+          "No production code written (src/ untouched)",
+          "No test code written (tests/ untouched)",
+          "No OpenSpec changes written (openspec/changes/ untouched)",
+          "Explore artifact not modified (conclusion.md and evidence.json carried forward unchanged)",
+          "Terminal Runs not modified (070/071/072 untouched)",
+          "Only 073 Run files created: context.json, action.md, result.json"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-07",
+        "name": "Lineage model consistency post-073",
+        "concept": "After 073 completes, the conclusion Section 3.0 Lineage model produces a unique legal next action",
+        "sectionsChecked": [
+          "conclusion.md Section 3.0 (Lineage rules)",
+          "conclusion.md Section 4.6 (unified entry)",
+          "072 result.nextActionRecommendation",
+          "073 context.reviewedRun / inputRef semantics"
+        ],
+        "checks": [
+          "Current Artifact Run after 073 = 20260806-073-revise-explore (latest completed revise-explore)",
+          "Current Review after 073 = 20260806-072-review-explore (latest completed review-explore; 073 has not yet been reviewed)",
+          "072.reviewedRun = 071-revise-explore != 073-revise-explore -> lineage no-match -> next action = review-explore",
+          "073 reviewedRun = 072 (the review that triggered this revision); inputRef = 070 (source of carried-forward findings); semantics documented in context.inputRefSemantics",
+          "No conflict with conclusion Section 3.0 lineage rules; the revise->review loop continues correctly"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      }
+    ],
+    "totalContradictions": 0,
+    "overallResult": "pass"
+  },
+  "mutationPolicyCheck": {
+    "scratchOnly": true,
+    "scratchRoot": ".tmp/explore/policy-engine/",
+    "manifestModified": false,
+    "trackedFilesModified": false,
+    "openspecChangesWritten": false,
+    "productionCodeWritten": false,
+    "testCodeWritten": false,
+    "terminalRunsModified": false,
+    "exploreArtifactModified": false,
+    "exploreArtifactNote": "conclusion.md and evidence.json carried forward unchanged from 071-revise-explore. D1-EX-003 is a Run-level provenance fix in 073 context.json, not an artifact-content change.",
+    "filesWritten": [
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-073-revise-explore/context.json (new Run)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-073-revise-explore/action.md (new Run)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-073-revise-explore/result.json (new Run)"
+    ]
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "nextAction": "review-explore",
+  "nextActionNote": "reviewer 审查 073-revise-explore，重点验证：(1) context.inputRef.versionFingerprint 是否匹配 070 result.json 实际 SHA-256 (sha256:4a69f71f95ce5b29dfbfbf2f4a3e640f2d35d2728415cdbda799ba975501c770)；(2) D1-EX-003 requiredChange 的四项要求是否全部满足（cite 070 实际 SHA-256 / carry forward D1-EX-001+D1-EX-002 / preserve 070+071+072 unchanged / not edit 071 in place）；(3) conclusion.md hash aa7e92b9... 是否不变且与 evidence.json 一致（carry-forward 无回归）；(4) 070/071/072 terminal Runs SHA-256 是否未变；(5) inputRef=070 与 reviewedRun=072 的语义差异是否合理（见 context.inputRefSemantics）；(6) consistencyScan 7 维度是否完整且 0 contradictions。",
+  "blockedOn": []
+}

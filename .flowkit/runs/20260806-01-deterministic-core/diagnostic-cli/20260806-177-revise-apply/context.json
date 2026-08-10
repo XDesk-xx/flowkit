@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 2,
+  "runId": "20260806-177-revise-apply",
+  "deliveryId": "20260806-01-deterministic-core",
+  "action": "revise-apply",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/diagnostic-cli/20260806-177-revise-apply/",
+  "changeKey": "E1",
+  "changeId": "diagnostic-cli",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260806-01-deterministic-core/diagnostic-cli/20260806-176-review-apply/result.json",
+    "versionFingerprint": "c2106c998bf66f8b1a009ac9bdf75d1cb811633de4b60c8e1f9fc8ae25cd3dc6",
+    "kind": "run-result"
+  },
+  "sourceReviewRun": "20260806-176-review-apply",
+  "sourceReviewVerdict": "changes-requested",
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": true,
+    "mayWriteTestCode": true,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

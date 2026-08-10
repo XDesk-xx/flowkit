@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-013-explore",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "B1",
+  "changeId": "domain-and-state-schema",
+  "action": "explore",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "inputRef": "checkpoint-commit:b4f807f",
+  "dependencyChange": {
+    "key": "A1",
+    "id": "runtime-foundation",
+    "state": "completed",
+    "checkpointCommit": "b4f807f"
+  },
+  "frozenSpecsRead": [
+    "openspec/specs/flowkit-core-model/spec.md",
+    "openspec/specs/flowkit-runtime-foundation/spec.md"
+  ],
+  "frozenDocsRead": [
+    "docs/delivery-lifecycle.md",
+    "docs/verification-model.md"
+  ],
+  "constraints": {
+    "readOnlyExceptCurrentRunAndExplore": true,
+    "mayModifyManifest": true,
+    "mayModifyCode": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/domain-and-state-schema/20260806-013-explore/"
+}

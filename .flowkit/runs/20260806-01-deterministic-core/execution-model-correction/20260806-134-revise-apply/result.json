@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-134-revise-apply",
+  "status": "completed",
+  "summary": "Q1 revise-apply converged all three 133-review-apply Blocking Findings into three shared invariants used identically by Writer/terminal preflight, FormalFact Reader and sibling-lineage recovery — no per-file patch. (Q1-RA-006) validateReviewRunBinding is the ONE review exact-binding rule: schemaVersion 2 review-* must carry reviewedRunId + a run-result inputRef; the expected target is ALWAYS Core-re-derived from reviewedRunId via resolveRunResultPath; inputRef.ref must equal it; the target must be readable; actual SHA-256 must equal versionFingerprint. Deleting inputRef, changing kind (target/hash correct), or pointing at a different readable result with a matching hash all fail closed: terminal completion rejects and does not publish result.json, Reader does not promote a ReviewVerdictFact, and sibling lineage does not admit the review. validateContextFile adds structural requiredness (review-* inputRef + kind==run-result). (Q1-RA-007) validateSourceReviewTuple treats sourceReviewRun + sourceReviewVerdict + reviewVerdictRef as one complete immutable tuple: any present ⇒ all three present and mutually consistent; reviewVerdictRef.kind==run-result; target must exact-match sourceReviewRun/result.json; the referenced review must be an admitted completed review (unadmitted source review is a CONFLICT, never a silent skip); its actual admitted verdict must equal sourceReviewVerdict; hash exact. validateContextFile adds sourceReviewRun↔sourceReviewVerdict pairing requiredness. Immutable evidence stays strict across superseded/revision-window generations. (Q1-RA-010) validateActionResultApplicability is shared by admitC1RunResult and terminal preflight: actionResult.action == context.action; producedResultRefs only on artifact-producing Actions; verificationSummaryRef only on review-apply (required for completed review-apply); reviewVerdictRef forbidden on review-*. Reader can no longer admit a schemaVersion 2 projection Core's writer could never publish. Regression checks: RA-001/003/005/008/009 remain resolved. All verification was actually executed and passed: typecheck, lint, build, 569 tests (569 pass, 0 fail), OpenSpec change strict, canonical specs strict, git diff --check. Delivery Full Test was NOT run (no authorization for revise-apply). No contract artifacts, prior Runs, or Flowkit state were modified; no Git commit was created by this Run.",
+  "sourceReview": {
+    "runId": "20260806-133-review-apply",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:eea737b70ef9642be7d123f5ea58689ff33b8cac98a0e5cc630b503242adfbf1"
+  },
+  "resolvedFindings": [
+    {
+      "id": "Q1-RA-006",
+      "result": "resolved",
+      "evidence": "Shared review exact-binding validator validateReviewRunBinding (src/persistence/result-ref-adapter.ts) is the ONE authority used at terminal completion preflight (run-persistence.ts completionPreflight), formal Reader (formal-fact-reader.ts validateReviewExactBindings), and sibling-lineage admission (run-persistence.ts readRunVerdict). For every schemaVersion 2 review-* Run it enforces: reviewedRunId present; inputRef present; inputRef.kind==run-result; expected target Core-re-derived from reviewedRunId via resolveRunResultPath (never trusting caller inputRef.ref alone); inputRef.ref == expected; target readable; actual SHA-256 == versionFingerprint. validateContextFile adds structural requiredness: review-* MUST carry a run-result inputRef. Negative fixtures prove: (a) deleting inputRef from a pending review context → completeRun rejects SCHEMA_VALIDATION_FAILED and result.json is NOT published; (b) changing kind to produced-artifact with correct target/hash → reject; (c) pointing inputRef at a different readable Run's result.json with that Run's CORRECT hash → reject (RESULT_REF_MISMATCH) — proving binding requires reviewedRunId, not just path+hash validity; (d) Reader wrong-kind and different-readable-target reviews produce no ReviewVerdictFact; (e) readRunVerdict returns undefined for broken binding so sibling lineage cannot consume the review."
+    },
+    {
+      "id": "Q1-RA-007",
+      "result": "resolved",
+      "evidence": "Shared source-review tuple validator validateSourceReviewTuple (src/persistence/result-ref-adapter.ts) treats sourceReviewRun + sourceReviewVerdict + reviewVerdictRef as one complete immutable tuple: if any is present/applicable, all three MUST be present (missing counterpart → fail closed); reviewVerdictRef.kind==run-result; reviewVerdictRef.ref MUST equal the Core-derived <sourceReviewRun>/result.json; target readable + SHA-256 exact; the referenced review MUST be an admitted completed review (readRunVerdict only yields a verdict after full C1 admission + exact binding proof) — an unadmitted source review is an immutable-ref-source-unadmitted conflict, never a silent skip; the actual admitted verdict MUST equal sourceReviewVerdict (verdict-mismatch conflict otherwise). validateContextFile adds sourceReviewRun↔sourceReviewVerdict pairing requiredness. validateImmutableRunResultRefs (Reader) runs before mutable generation classification, so superseded/revision-window generations remain strictly validated. Negative fixtures: revise-propose without sourceReviewRun (orphaned) → reject; missing sourceReviewVerdict (post-create tamper) → reject; missing reviewVerdictRef evidence → reject; unadmitted source review (corrupted review result) → reject at completion and no result.json; Reader: revise-propose referencing a missing (unadmitted) review → immutable-ref-missing; revise-propose with sourceReviewRun=A but reviewVerdictRef pointing at a different admitted review B with B's correct hash → immutable-ref-target conflict; integration: superseded generation tampered reviewVerdictRef → immutable-ref-mismatch."
+    },
+    {
+      "id": "Q1-RA-010",
+      "result": "resolved",
+      "evidence": "Shared Action-result applicability validator validateActionResultApplicability (src/persistence/serialization.ts) is invoked from BOTH admitC1RunResult (Reader/admission) and completionPreflight (terminal writer), so the writer and Reader share the exact same Action-owned ResultRef field scope. It enforces: actionResult.action == context.action; producedResultRefs only on artifact-producing Actions (explore/revise-explore/propose/revise-propose) — forbidden on apply/revise-apply/review-*/archive/delivery-level; verificationSummaryRef only on review-apply AND required for a completed review-apply projection; reviewVerdictRef forbidden on review-* (self-reference) — its applicability on non-review Runs follows the RA-007 source-review tuple. Effective-set completeness remains owned by validateStageEffectiveSet (not duplicated). Negative fixtures: actionResult.action mismatch (serialization + admitC1RunResult); producedResultRefs on apply / review-propose / archive; verificationSummaryRef on apply / revise-apply; completed review-apply missing verificationSummaryRef; review-propose carrying reviewVerdictRef (direct + via admitC1RunResult) — all reject SCHEMA_VALIDATION_FAILED, proving a schemaVersion 2 projection Core could never publish is not admitted as a valid C1 fact."
+    }
+  ],
+  "artifacts": [
+    { "path": "src/persistence/serialization.ts", "sha256": "8c13f9ff7c398aef615e603bde6289f2e35660bf7dd957f9277fa5b236b2396b" },
+    { "path": "src/persistence/result-ref-adapter.ts", "sha256": "1b472f10ebf40116adf5bfa02cc906fd4ede80309f65649264ec2beec9e83e04" },
+    { "path": "src/persistence/run-persistence.ts", "sha256": "8cd40bb29320078ebc009a2b48d04096725aa1dea966129bbd0f65b1eb9ad98d" },
+    { "path": "src/facts/formal-fact-reader.ts", "sha256": "3aef543651a236afae377990d9d6d165ab7bbf202a95521cfc9e58d376d54180" },
+    { "path": "tests/unit/persistence/serialization.test.ts", "sha256": "ad905e6479b804566646dd6b03a32f7e050e3b2eac55a61c515084ddbb76a407" },
+    { "path": "tests/unit/persistence/run-persistence.test.ts", "sha256": "cb5f203503ea8e0b2633d48600ea5ca5bd4bdf3c7183ad47874576c2ac987e70" },
+    { "path": "tests/unit/facts/formal-fact-reader.test.ts", "sha256": "0bfd907b0f916a3c6fcb251052287f3cc7edad11397235ee8ada1f24cf5d0eca" },
+    { "path": "openspec/changes/execution-model-correction/verification.md", "sha256": "ad1e3bc829b0abf9852d1a46368bb847032fbbf5b9df6bb61f2dfc3cf838f1a4" }
+  ],
+  "scope": {
+    "modifiedCapabilities": [
+      "flowkit-formal-fact-reader-and-persistence"
+    ],
+    "productionCodeModified": true,
+    "testsModified": true,
+    "contractArtifactsModified": false,
+    "fullTestRun": false
+  },
+  "verification": {
+    "typecheck": "passed",
+    "lint": "passed",
+    "build": "passed",
+    "unitAndIntegrationTests": "passed (569 tests, 569 pass, 0 fail)",
+    "moduleUnitTests": "passed (serialization: validateActionResultApplicability shared validator + review-* inputRef requiredness + sourceReviewRun↔sourceReviewVerdict pairing; result-ref-adapter: validateReviewRunBinding + validateSourceReviewTuple; run-persistence: terminal completion broken-binding reject + source-review tuple counterpart fail-closed; formal-fact-reader: wrong-kind/different-target review no verdict + unadmitted source review / wrong reviewVerdictRef target FactConflict)",
+    "lifecycleIntegrationFixtures": "passed (RA-006 invalid review cannot open legitimate lineage; RA-007 superseded immutable refs stay strict; generation-aware Reader + revise-propose effective-set + verification generation-aware + archive relocation)",
+    "openspecStrict": "passed",
+    "openspecCommand": "openspec validate execution-model-correction --strict",
+    "canonicalSpecs": "passed (0 failed)",
+    "whitespace": "passed (git diff --check exit 0; benign LF/CRLF warnings only)"
+  },
+  "nextActionRecommendation": "review-apply",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

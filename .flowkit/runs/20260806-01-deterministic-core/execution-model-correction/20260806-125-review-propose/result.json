@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-125-review-propose",
+  "status": "completed",
+  "summary": "Complete Q1 Proposal review of 124 is approved. Q1-RP-006 is resolved: complete specs namespace coverage is now an explicit invariant for every current propose effective generation. Initial propose still derives its complete expected set; revise-propose first overlays declared tags, then exact-compares its effective specs logical-ref identities with the current canonical specs namespace at terminal preflight. Namespace drift without the specs tag keeps the successor pending; declaring specs triggers Core re-enumeration and whole-namespace replacement. review-propose entry repeats the exact-set check, closing post-terminal/pre-review drift. This preserves subset overlay when the namespace is unchanged, keeps immutable bindings and terminal create-once intact, and adds required positive/negative fixtures. No remaining blocking Proposal finding was found.",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-124-revise-propose/",
+  "reviewedResultRef": "content-sha256:6e9ebf03d551d21b072e5ea205fd86a36cc9e104f10874c3b429b04c808aafab",
+  "sourceReview": {
+    "runId": "20260806-123-review-propose",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:b8936761511310fb98ceebd623f9ba510d96b832a61eddc6249ca64ad58eb5d6"
+  },
+  "verdict": "approved",
+  "blockingFindings": [],
+  "nonBlockingFindings": [
+    {
+      "id": "Q1-NB-001",
+      "title": "Explore source links remain checkout-specific",
+      "location": "openspec/changes/execution-model-correction/explore.md:62,72,90,98,106,127,137",
+      "evidence": "The cited source links use file:///D:/Projects/flowkit absolute paths and cannot resolve in another checkout or platform.",
+      "recommendedResolution": "Convert source links to repository-relative Markdown links in a future in-scope edit. This does not block the approved Proposal."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "124 source binding, JSON, artifact hashes, and Run numbering",
+        "status": "passed",
+        "result": "124 context/result JSON parse. Its inputRef equals the actual SHA-256 of corrected 123 result.json; all five declared Proposal artifact hashes match current files; and 124 was the Delivery-wide maximum before this reviewer Run."
+      },
+      {
+        "name": "Q1-RP-006 successor specs namespace completeness",
+        "status": "passed",
+        "result": "Proposal, design, delta Requirements and tasks require exact comparison at revise-propose terminal preflight and review entry. The P0({A}) -> changes-requested review -> P1(proposal only plus B) negative case is rejected; the declared-specs re-enumeration positive case and unchanged-namespace subset-overlay positive case are required."
+      },
+      {
+        "name": "Proposal strict validation",
+        "command": "npx openspec validate execution-model-correction --strict",
+        "status": "passed",
+        "result": "Change 'execution-model-correction' is valid."
+      },
+      {
+        "name": "Canonical OpenSpec specs",
+        "command": "npx openspec validate --specs --strict",
+        "status": "passed",
+        "result": "8 canonical specs passed, 0 failed."
+      },
+      {
+        "name": "Scope and whitespace",
+        "status": "passed",
+        "result": "124 changes only the permitted Proposal bundle. Reviewed JSON parses, explicit trailing-whitespace scan and git diff --check passed. No production code or tests were modified."
+      },
+      {
+        "name": "Delivery Full Test",
+        "status": "not-applicable",
+        "result": "Not owner-authorized and not run; review-propose has no Full-Test authority."
+      }
+    ]
+  },
+  "nextActionRecommendation": "await-owner-authorization: apply",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

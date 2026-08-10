@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-073-revise-explore",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "D1",
+  "changeId": "policy-engine",
+  "action": "revise-explore",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "inputRef": {
+    "ref": "run-result:.flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-070-review-explore/result.json",
+    "versionFingerprint": "sha256:4a69f71f95ce5b29dfbfbf2f4a3e640f2d35d2728415cdbda799ba975501c770"
+  },
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-072-review-explore/",
+  "sourceReviewRun": "20260806-072-review-explore",
+  "sourceReviewVerdict": "changes-requested",
+  "sourceChangeState": "D1 policy-engine: active (explore completed; 070-review-explore changes-requested; 071-revise-explore completed; 072-review-explore changes-requested)",
+  "triggerFindings": [
+    {
+      "id": "D1-EX-003",
+      "severity": "P1",
+      "origin": "20260806-072-review-explore",
+      "title": "071 revision input fingerprint does not identify the reviewed 070 result"
+    }
+  ],
+  "carriedForwardFindings": [
+    {
+      "id": "D1-EX-001",
+      "severity": "P1",
+      "origin": "20260806-070-review-explore",
+      "status": "addressed-in-071-conclusion"
+    },
+    {
+      "id": "D1-EX-002",
+      "severity": "P1",
+      "origin": "20260806-070-review-explore",
+      "status": "addressed-in-071-conclusion"
+    }
+  ],
+  "inputRefSemantics": "inputRef cites 070-review-explore/result.json (the source review whose findings D1-EX-001 and D1-EX-002 the conclusion artifact addresses) with its actual immutable SHA-256 sha256:4a69f71f95ce5b29dfbfbf2f4a3e640f2d35d2728415cdbda799ba975501c770. This is the D1-EX-003 fix: 071 declared a non-matching fingerprint, so this Run re-establishes correct provenance to 070. reviewedRun names 072-review-explore, the review whose changes-requested verdict and D1-EX-003 finding triggered this revision. The two fields differ by design: the conclusion content addresses 070's findings (D1-EX-001/D1-EX-002) and is carried forward unchanged, while this Run responds to 072's provenance finding (D1-EX-003).",
+  "constraints": {
+    "mayReadFormalDocs": true,
+    "mayReadFrozenSpecs": true,
+    "mayReadRefDocs": true,
+    "mayWriteExploreArtifact": true,
+    "mayModifyManifest": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-073-revise-explore/"
+}

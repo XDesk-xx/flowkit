@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-138-revise-apply",
+  "status": "completed",
+  "summary": "Resolved Run 137 Blocking Finding Q1-RA-007 by turning immutable/predecessor validation into an explicit revise-Run admission boundary before mutable generation classification. Pending revise-* now validates only sourceReviewRun/sourceReviewVerdict against an exact-bound admitted matching-stage changes-requested review and does not require terminal-only reviewVerdictRef. Completed revise-* continues through validateSourceReviewTuple and is admitted only when the complete immutable tuple passes. Artifact and verification generation classifiers now receive integrityAdmittedReviseRunIds and exclude invalid pending/completed revise Runs, so invalid successors cannot suppress predecessor artifact/verification replacement conflicts. Added focused regression coverage for valid pending revision-window, invalid pending predecessor lineage, and invalid completed missing reviewVerdictRef. Delivery Full Test was not run.",
+  "sourceReview": {
+    "runId": "20260806-137-review-apply",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:56336f6d205e3008bebac9564ab5137cafd36854ec8a8bba37f4349c42d1f7a3"
+  },
+  "resolvedFindings": [
+    {
+      "id": "Q1-RA-007",
+      "result": "resolved",
+      "evidence": "readFormalFactSnapshot now consumes ImmutableValidationResult { conflicts, integrityAdmittedReviseRunIds } before either generation-aware validator. Pending revise-* uses context-only predecessor validation; completed revise-* requires the existing full validateSourceReviewTuple; invalid revise Runs are filtered out of completed artifact generation candidates and successor sets. Focused regression file covers all three Run-137 acceptance directions."
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "src/facts/formal-fact-reader.ts",
+      "sha256": "df4216f2d46a412ccdbda2b37db58c731be16b4f5606939ef636ae5e8528c4fe"
+    },
+    {
+      "path": "tests/unit/facts/formal-fact-reader-ra007-admission.test.ts",
+      "sha256": "4ea0b5146b89b251bb28e2cf9b4663f5dbe0dafe2c667fffa0af353569eede9a"
+    }
+  ],
+  "scope": {
+    "modifiedCapabilities": [
+      "flowkit-formal-fact-reader-and-persistence"
+    ],
+    "productionCodeModified": true,
+    "testsModified": true,
+    "contractArtifactsModified": false,
+    "fullTestRun": false
+  },
+  "verification": {
+    "isolatedTypeScriptParse": "passed for changed files; tsc reported only expected unresolved imports because the ZIP payload is not a full repository checkout",
+    "focusedRegressionCoverageAdded": "passed by inspection: valid pending revise window; invalid pending predecessor; invalid completed missing terminal immutable evidence",
+    "deliveryFullTest": "not run; not owner-authorized"
+  },
+  "nextActionRecommendation": "review-apply",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

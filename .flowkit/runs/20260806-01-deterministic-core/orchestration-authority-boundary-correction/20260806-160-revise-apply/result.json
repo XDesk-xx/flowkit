@@ -1,0 +1,13 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-apply",
+    "executionStatus": "completed",
+    "summary": "已关闭 159 唯一 Blocking Finding Q2-RA-001：明确 Owner 直接输入才是 lifecycle decision authority，仓库内 Author artifacts/Run 仅记录 provenance，不新增 owner-decision persistence；保留 158 已通过的 Checkpoint recovery 实现。无 production/tests 变更。",
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260806-01-deterministic-core/orchestration-authority-boundary-correction/20260806-159-review-apply/result.json",
+      "versionFingerprint": "f774e4a6aac00a715c3c5573a2839ef201574032015fc65058aa95a7e48392f0",
+      "kind": "run-result"
+    }
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-011-review-apply",
+  "status": "completed",
+  "summary": "A1 Apply review approved. The missing formal Change Verification record is now present and complete with an overall passed status. The A1 implementation conforms to the approved runtime-foundation contract: TypeScript ESM tooling, thin version CLI, four shared modules, typed tests, no handwritten .mjs source/test/CLI shell, no runtime dependencies, and no plugin/registry/gate abstraction. All applicable focused checks were rerun successfully; Delivery Full Test was not authorized or run.",
+  "reviewedResultRef": "apply-run:.flowkit/runs/20260806-01-deterministic-core/runtime-foundation/20260806-009-apply/result.json;verification-sha256:48f92be8dea0019a34036391b3120d4d37a58c9887a552fc98afff65a5299a65",
+  "verificationRecord": "openspec/changes/runtime-foundation/verification.md",
+  "retryOf": ".flowkit/runs/20260806-01-deterministic-core/runtime-foundation/20260806-010-review-apply/",
+  "verdict": "approved",
+  "blockingFindings": [],
+  "nonBlockingFindings": [],
+  "verification": {
+    "record": {
+      "status": "passed",
+      "result": "verification.md exists and records scope, all applicable checks with commands/statuses/results, environment, result references, Full Test status, and overall Change Verification=passed."
+    },
+    "checks": [
+      {
+        "name": "npm run typecheck",
+        "status": "passed",
+        "result": "Production and test TypeScript projects completed successfully."
+      },
+      {
+        "name": "npm run build",
+        "status": "passed",
+        "result": "tsc completed successfully."
+      },
+      {
+        "name": "npm test",
+        "status": "passed",
+        "result": "20 tests passed; 0 failed."
+      },
+      {
+        "name": "npm run lint",
+        "status": "passed",
+        "result": "eslint completed with no errors."
+      },
+      {
+        "name": "node dist/bin/flowkit.js --version",
+        "status": "passed",
+        "result": "Output: 0.1.0."
+      },
+      {
+        "name": "OpenSpec strict validation",
+        "status": "passed",
+        "command": "openspec validate runtime-foundation --strict",
+        "result": "Change 'runtime-foundation' is valid."
+      },
+      {
+        "name": "A1 boundary checks",
+        "status": "passed",
+        "result": "All 34 tasks are checked; no handwritten .mjs files under src/tests; package runtime dependencies are empty; no Plugin/Registry/Gate abstraction in TypeScript source; git diff --check produced no output."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run."
+      }
+    ]
+  },
+  "nextActionRecommendation": "await-owner-authorization-for-archive",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

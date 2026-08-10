@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-111-review-explore",
+  "status": "completed",
+  "summary": "Complete Q1 Explore review of 110 finished with changes-requested. 110 resolves Q1-RE-001: kind and produced-artifact path selection are now Core-owned and Action-bounded. However, verificationSummaryRef is mapped to the mutable active Change rather than the Run's immutable context.changeId, so Reader validation of a historical Q1 Run changes target once E1 becomes active. It also removes every caller descriptor without defining when this optional ResultRef is included; always deriving it blocks Explore/Propose before verification.md exists, while omitting it leaves no way to record verification when it does exist. The verification reference lifecycle is therefore neither stable nor executable.",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-110-revise-explore/",
+  "reviewedResultRef": "content-sha256:1c13ddc021e2ac83701d696a3232711536a5116235c31ed89856223f3977d1a1",
+  "sourceReview": {
+    "runId": "20260806-109-review-explore",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:20795279995e861cb8a4c76cfb83cf0dc8630bcf23a2f487690d23567cc6b077"
+  },
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "Q1-RE-004",
+      "title": "verificationSummaryRef has neither a Run-stable target nor an executable inclusion rule",
+      "location": "openspec/changes/execution-model-correction/explore.md:219-243, 273-277, 357-370, 379-385, 460-466, 490-492",
+      "evidence": "110 fixes verificationSummaryRef to openspec/changes/<active-change-id>/verification.md and requires the same resolver for Reader. But a historical Change-level Run already persists its immutable context.changeId; C1 validates that value against the Run path and Reader reconstructs every Run from that context. After Q1 completes and E1 is active, resolving a Q1 ResultRef through the active Change points at E1's verification.md rather than Q1's. In addition, the field remains optional but 110 gives callers no descriptor, flag, or Action-owned rule that decides whether Core should create it. An unconditional resolver makes Explore/Propose fail before verification.md exists; a conditional omission leaves no specified way to record the verification summary after it exists.",
+      "impact": "Reader/preflight behavior depends on mutable Delivery state instead of the terminal Run's own identity, so historical provenance either validates against the wrong Change artifact or fails after normal lifecycle progression. The missing inclusion contract also leaves writeRunResult impossible to implement consistently without inventing behavior outside the Explore.",
+      "requiredResolution": "Define verificationSummaryRef from the persisted Run context, never the currently active Change: for a Change-level Run its sole canonical target is openspec/changes/<context.changeId>/verification.md, and create/preflight/Reader must use that same context-derived resolver. Separately define the field's inclusion lifecycle without returning kind/path authority to callers: specify the narrow typed intent or fixed Action/verification-state rule that causes Core to attempt the reference, and specify absent versus requested-but-missing behavior. Cover at least an Explore/Propose Run before verification.md exists, an eligible Run with a valid summary, requested-but-missing preservation of pending, a historical Q1 read after another Change is active, and replacement detection."
+    }
+  ],
+  "nonBlockingFindings": [
+    {
+      "id": "Q1-NB-001",
+      "title": "Explore source links remain checkout-specific",
+      "location": "openspec/changes/execution-model-correction/explore.md:62, 72, 90, 98, 106, 127, 137",
+      "evidence": "The cited code links use file:///D:/Projects/flowkit absolute paths and cannot resolve in another checkout or platform.",
+      "recommendedResolution": "Use repository-relative Markdown links in a future in-scope Explore edit. This remains non-blocking because the cited source evidence was independently verified."
+    }
+  ],
+  "resolvedFindings": [
+    {
+      "id": "Q1-RE-001",
+      "result": "resolved",
+      "evidence": "110 makes kind selection internal to Core and defines a fixed Action-plus-tag mapping for produced artifacts, while verificationSummaryRef has a canonical Core-selected kind and no caller path."
+    },
+    {
+      "id": "Q1-RE-002",
+      "result": "resolved",
+      "evidence": "Q1 remains limited to verification timing, ownership, and Full-Test authorization boundaries; concrete scripts remain assigned to F1."
+    },
+    {
+      "id": "Q1-RE-003",
+      "result": "resolved",
+      "evidence": "review-* inputRef is required, Core-derived from reviewedRunId, checked before terminal publication, and Reader-fail-closed for missing, mismatched, unreadable, or replaced reviewed results."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "110 reviewed-result binding and JSON validity",
+        "status": "passed",
+        "result": "110 context.json and result.json parse as JSON. SHA-256 of 110 result.json is 1c13ddc021e2ac83701d696a3232711536a5116235c31ed89856223f3977d1a1."
+      },
+      {
+        "name": "revision lineage and Run numbering",
+        "status": "passed",
+        "result": "110 inputRef equals the actual SHA-256 of 109 result.json, sourceReviewRun/verdict match 109, and 110 was the Delivery-wide maximum before this reviewer Run."
+      },
+      {
+        "name": "Q1 semantic, lifecycle, and Reader-contract review",
+        "status": "failed",
+        "result": "110 resolves the previous generic artifact provenance finding, but Q1-RE-004 leaves verificationSummaryRef dependent on mutable active Change state and unspecified optional-field inclusion behavior."
+      },
+      {
+        "name": "canonical OpenSpec specs",
+        "command": "npx openspec validate --specs --strict",
+        "status": "passed",
+        "result": "8 canonical specs passed, 0 failed. This structural result does not clear the semantic finding."
+      },
+      {
+        "name": "scope and whitespace",
+        "status": "passed",
+        "result": "110 declares and records only the Explore revision. JSON parsing, git diff --check, and explicit trailing-whitespace scan passed. The separately modified AGENTS.md is treated as an owner/repository instruction outside 110's declared modified-file claim and is not attributed to this review result."
+      },
+      {
+        "name": "Delivery Full Test",
+        "status": "not-applicable",
+        "result": "Not owner-authorized and not run; review-explore has no Full-Test authority."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

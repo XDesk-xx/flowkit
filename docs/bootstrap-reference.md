@@ -107,32 +107,28 @@ deliveryId
 changeId
 action
 role
-inputRef
-dependsOn
-artifacts / input ResultRefs
+inputRef              // Core 从 consumedRunId / reviewedRunId 派生，不手工填写
+sourceReviewRun / sourceReviewVerdict
+reviewedRunId         // review-* Run 必填
 constraints
-owner authorizations
+ownerAuthorization
 runPath
 ```
 
-规则：保存引用与约束；不复制 OpenSpec、Git、Review、Verification 的全部内部状态；不保存完整聊天；不保存会因当前 Commit 自身变化而立即失效的自引用 SHA；路径与字段冲突时必须阻塞。
+规则：保存引用与约束；不复制 OpenSpec、Git、Review、Verification 的全部内部状态；不保存完整聊天；不保存会因当前 Commit 自身变化而立即失效的自引用 SHA；路径与字段冲突时必须阻塞。`inputRef` 的 kind、path 和 fingerprint 由 Core 从真实目标派生，Agent 不得手工构造。
 
-**result.json** 保存本次执行发生的事实：
+**result.json** 保存本次执行的最小正式事实，使用 closed Core-validated schema：
 
 ```text
-schemaVersion
-runId
-status
-summary
-produced / updated ResultRefs
-consumed Findings / authorization refs
-Verification summary / ref
-Review Verdict / Findings refs
-failure / blocked reason
-nextActionRecommendation（可选）
+runStatus                 // completed | failed | cancelled
+actionResult?             // action / executionStatus / summary + Core 派生的 ResultRef
+failureDiagnosis?
+cancellationReason?
+reviewVerdict?            // review-* completed 专用
+reviewFindings?           // review-* completed 专用 typed payload
 ```
 
-`nextActionRecommendation` 只能是建议，不能替代 Policy。
+`blockingFindings`、`nonBlockingFindings`、`verification[]`、`consistencyScan`、`commitPolicy` 等自由重型字段不属于 result.json，出现时被拒绝。`nextActionRecommendation`（可选）只能是建议，不能替代 Policy。
 
 ### 3.3 Run 不保存完整对话
 
@@ -178,6 +174,33 @@ Policy 解析具体 review-*
 Run 状态：`pending / completed / failed / cancelled`。
 
 Run 进入 terminal 状态后保留原记录。需要重试时创建新 Run，不把失败 Run 改写成成功 Run。
+
+### 3.7 Canonical artifact 与 point-in-time 引用
+
+`openspec/changes/<changeId>/` 下的 `explore.md / proposal.md / design.md / specs/** / tasks.md / verification.md` 是 OpenSpec 的 **current-state canonical path**：
+
+- 合法 `revise-*` MAY 覆盖同一路径；历史 terminal Run 的 mutable artifact / verification ResultRef 只表达“该 Run 当时引用的版本”，不要求未来 current path 永久保持相同 bytes；
+- 当前 Review 或下一 Action 真正消费某一版本时，Core MAY 在该 handoff 边界做 exact check；handoff 成功后，不把 predecessor ref 延伸成未来 artifact authority；
+- `pending` 只表示 Run 尚未 terminal，不产生 revision-window / supersession / generation class；
+- 不建立 `.flowkit/artifacts/`、`openspec/.history/` 或其他 per-Run artifact snapshot store；
+- archive 的 relocation / spec sync / operation success-failure 由 OpenSpec 自己负责；Flowkit 不在 operation 成功后按 archive path 再证明一次历史 ResultRef。
+
+### 3.8 Legacy metadata-only 有界例外
+
+schemaVersion 1 历史 Run 继续由 legacy recognizer best-effort 读取，`createRun` / `writeRunResult` 不自动迁移或重写 legacy Run。
+
+Bootstrap 仅允许 owner 明确授权的 migration-time metadata correction，且必须满足：
+
+```text
+schemaVersion 1 legacy
+metadata-only
+不改 result.json
+不改 Action / Role / Verdict / Findings / 业务产物
+不存在已知下游消费冲突
+Git 保存 before / after
+```
+
+该例外不实现通用 CLI/API，不成为长期产品接口，也不修改任何 terminal Run 的业务事实。
 
 ---
 
@@ -303,7 +326,7 @@ chore(flowkit): start <delivery-id>
 
 ### 5.4 Change Checkpoint Commit
 
-每个完成的 Change 一次。
+每个完成的 Change 一次。OpenSpec 只负责 archive operation 的 success/failure、relocation 与 spec sync；operation success 后由 Flowkit 记录自己的 Change 状态为 `completed`。Checkpoint 是随后独立的 Flowkit/Git 正式边界，不参与 Change 的 `active → completed` 判定。
 
 前置条件：
 
@@ -322,6 +345,8 @@ Archive Run 已完成
 ```text
 chore(flowkit): checkpoint <change-id>
 ```
+
+Checkpoint recovery 必须限定在当前 Delivery 的 Git boundary scope：Reader 以 Delivery Start 的 Git 拓扑归属过滤 checkpoint；其他 Delivery 的同名 `<change-id>` 不得被当前 Delivery 消费。历史 legacy checkpoint 没有结构化 `changeId` 时，只保留有界兼容，并与后续 structured checkpoint 同时生效。
 
 Checkpoint Commit 应尽量包含真实收尾变化，例如 OpenSpec Archive、Manifest 状态更新和 Archive Run，不为了边界创建无意义空 Commit。
 

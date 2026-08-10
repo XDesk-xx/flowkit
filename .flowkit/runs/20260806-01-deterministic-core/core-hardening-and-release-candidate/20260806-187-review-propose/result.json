@@ -1,0 +1,36 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "已沿 182 建立的 F1 审查链完成 186 Proposal Review。186 忠实保留 184/185 的两个关键边界：没有修改 Manifest goal/outputs 或自行创造 Owner scope authority；Core RC candidate 在 F1 completion/checkpoint 前形成，Delivery Full Test 只在 checkpoint 后做 qualification，因此未重新引入 lifecycle 自阻塞。运输、lineage、produced/consumed fingerprints、OpenSpec strict 10/10、typecheck/lint/build 与 materialized Core status/next/doctor 均正常。但 Proposal 仍有 3 个 author-actionable contract blocker：affected `shared` 被定义为全 suite，却同时要求 `verify:change` 对所有 scope 不得运行 full suite；固定 affected scope set 没有为 F1 自己新增的 verification/quality tooling 定义确定测试覆盖路径；maintainability metrics 在 Proposal/Design/Tasks 中是 required work，而 delta Spec 使用 MAY，导致 Apply 是否必须实现并不唯一。当前 target 不能进入 Apply，下一 boundary 为 revise-propose。",
+    "nextActionRecommendation": "revise-propose"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindings": [
+    {
+      "id": "F1-RP-001",
+      "severity": "blocking",
+      "title": "affected `shared` 与 verify:change 的 no-full invariant 自相矛盾",
+      "problem": "问题：Design §4 将 `shared` scope 明确定义为“全 suite”，而 Design §8、Proposal 与 delta Spec 又要求 `verify:change -- <scope...>` 不得运行 full suite，并声明 Full suite 只用于 F1 自身验收、明确诊断或 Owner-authorized Delivery Full Test。由于 `shared` 是合法 affected scope，`verify:change -- shared` 同时被要求运行全部 tests 和不得运行 full suite。Invariant：同一个合法 CLI 输入必须有唯一、可执行的测试集合；Change Verification layering 不能通过一个普通 affected alias 静默退化成 full suite。Evidence：design.md §4 lines 82-119 (`shared → 全 suite`) 与 §8 lines 162-180 (`verify:change MUST NOT ... Full suite`)；spec.md `verify:change` requirement/scenario。Impact：Apply 无法在不自行改变 contract 的情况下实现 `shared`，并且 verification cost boundary 会因实现选择不同而失去确定性。Blocking authority：author-actionable。",
+      "location": "openspec/changes/core-hardening-and-release-candidate/design.md §4/§8; proposal.md What Changes; specs/flowkit-core-hardening-and-release-candidate/spec.md verify:change requirement",
+      "requiredChange": "在 Proposal/Design/Spec 中统一 affected `shared` 与 `verify:change` 的语义，使每个合法 scope 都有唯一执行行为，并保留已经声明的 focused/affected/full 分层。Reviewer 不规定必须删除 `shared`、缩小 mapping 或设计显式例外；但任何例外都必须被明确冻结，且不能混淆项目 full suite 与 Delivery Full Test authority。Acceptance：不存在一个合法 `verify:change` invocation 同时被 contract 要求运行 full suite又禁止 full suite；对应 regression 可以直接从 contract 写出。"
+    },
+    {
+      "id": "F1-RP-002",
+      "severity": "blocking",
+      "title": "affected scope model 无法确定覆盖 F1 自己新增的 verification/quality tooling",
+      "problem": "问题：Proposal/Design 将 affected aliases 封闭为 `shared/domain/persistence/facts/policy/cli`，但 F1 Apply 的主要新增生产 tooling 是 `scripts/verification.ts`、`scripts/quality.ts` 及其 helper。当前 contract 没有说明这些 tooling 变化应选择哪个 affected scope；`none` 按定义会跳过 affected tests，而任意借用 `shared` 又没有 contract 依据并触发 RP-001 的 full-suite 冲突。Invariant：作为通用 Change Verification 入口的 `verify:change`，必须对当前 in-scope、需要测试的代码类别有确定的 test-selection path，不能要求 Reviewer/Author在执行时临时解释 alias。Evidence：proposal.md lines 11-17/35-36；design.md §2-§4 fixed scope set；tasks.md 1.x/2.x/3.x 明确新增并测试 verification/quality scripts。Impact：F1 自己以及后续修改 verification tooling 的 Change 无法仅依据已批准 contract选择可靠 affected tests，可能选择 `none` 漏测或选择任意 alias 过测。Blocking authority：author-actionable。",
+      "location": "openspec/changes/core-hardening-and-release-candidate/design.md §2-§4/§8; proposal.md What Changes/Impact; tasks.md §1-§3",
+      "requiredChange": "冻结一个不依赖 Git diff/CodeGraph/registry 的确定性 coverage path，使 F1 新增的 verification/quality tooling 以及其他本 Change 明确引入的 test-bearing tooling 能被 Change Verification 合法覆盖；或者明确收窄 `verify:change` 的适用边界，并同时冻结这类变化的替代 verification contract。Reviewer 不指定必须新增哪个 alias 或采用哪种参数形式。Acceptance：给定 `scripts/verification.ts` / `scripts/quality.ts` 的修改，可以仅根据 Proposal contract确定应运行的相关 tests，不需要临时发明 scope，也不会把 tests 错标为 not-applicable。"
+    },
+    {
+      "id": "F1-RP-003",
+      "severity": "blocking",
+      "title": "Maintainability metrics 在 Proposal artifacts 中 required/optional 强度不一致",
+      "problem": "问题：Proposal 将 file/function LOC、complexity、nesting、parameters 与固定 reference thresholds 列入本次 What Changes；Design §6 要求使用 TypeScript AST + deterministic effective-LOC rules，并在实现测试冻结 fixture；tasks.md 2.2/2.3 也把 metrics 与 fixtures 列为必须完成的 Tasks。但 delta Spec 的对应 Requirement 使用 `quality MAY 报告`，scenario 也写 `MAY 输出 warning`。Invariant：review-propose 必须冻结 Apply 的 required outcome；同一 capability 不能同时是必做 task 和可完全省略的 spec behavior。Impact：Author Apply 可以选择完全不实现 metrics 仍声称满足 Spec，或按 Tasks 实现额外 surface；Reviewer无法依据唯一 contract 判断 completion。Blocking authority：author-actionable。",
+      "location": "proposal.md lines 15-18; design.md §6/§10; specs/flowkit-core-hardening-and-release-candidate/spec.md Maintainability metrics requirement; tasks.md 2.2-2.3",
+      "requiredChange": "统一 Proposal/Design/Spec/Tasks 对 maintainability metrics 的 contract strength：明确它们在 F1 是 required warning-only output，还是 optional/deferred 支撑；如果 required，则 Spec acceptance 必须能判断实现存在且 warning 不改变 correctness；如果 optional，则 Tasks/Proposal 不应把其实现作为 F1 completion 必需项。若调整会实质扩大当前 Manifest scope，应遵守 184 已冻结的 owner-decision-required boundary。Acceptance：Apply 是否必须实现 metrics 在四类 Proposal artifact 中得到唯一答案。"
+    }
+  ]
+}

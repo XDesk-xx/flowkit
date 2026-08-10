@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-133-review-apply",
+  "status": "completed",
+  "summary": "Independent review of 132 finished with changes-requested. Q1-RA-008 (non-Run logical/archive resolver) and Q1-RA-009 (current verificationSummaryRef recovery) are resolved, and 132 is formally present, exact-binds 131, and records 542/542 tests with typecheck/lint/build/OpenSpec checks passed as recorded. However, Q1-RA-006 and Q1-RA-007 remain incomplete at executable boundaries. Review exact-binding is still optional in ContextFile validation, terminal completion preflight, and sibling-lineage admission: a review context with inputRef removed can still reach terminal publication, and a sibling review with no inputRef can still return a verdict for lineage; inputRef kind/target is also not mechanically re-derived from reviewedRunId in the terminal preflight. Source-review immutable evidence is likewise only conditionally related: reviewVerdictRef can exist without sourceReviewRun, sourceReviewRun can exist without reviewVerdictRef/sourceReviewVerdict, and an unadmitted source review is silently tolerated instead of conflicting. Finally, the new shared admitC1RunResult pipeline validates closed field shapes and kinds but not Action-owned ResultRef applicability, so impossible schemaVersion 2 projections such as review-* carrying reviewVerdictRef, apply/revise-apply carrying verificationSummaryRef, or non-artifact Actions carrying producedResultRefs can still be admitted by Reader without an Action-scope conflict. Delivery Full Test was not authorized or run.",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-132-revise-apply/",
+  "reviewedResultRef": "content-sha256:38c208054053ce707db553a4c939b65b1e3faf6e91fbd876b2b6007dab43c944",
+  "sourceReview": {
+    "runId": "20260806-131-review-apply",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:867cc17bf2021e769b14e5bbc6cbb96ddc5ab7ae5148bbe4dfee70e925267262"
+  },
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "Q1-RA-006",
+      "title": "Review exact-binding proof is still optional at terminal publication and sibling-lineage admission",
+      "location": "src/persistence/serialization.ts: validateContextFile; src/persistence/run-persistence.ts: completionPreflight, verifyRunResultRef, readRunVerdict; src/facts/formal-fact-reader.ts: validateReviewExactBindings",
+      "evidence": "The approved Q1 contract says review-* ContextFile.inputRef MUST exist, be kind=run-result, and exact-bind reviewedRunId/result.json. Current validateContextFile requires reviewedRunId for review-* but keeps inputRef generically optional and validates it only through validateResultRefProjection, so produced-artifact or verification-summary kind is structurally accepted. completionPreflight re-verifies a review inputRef only under `if (isReviewAction && contextFile.inputRef !== undefined && contextFile.reviewedRunId !== undefined)`, so removing inputRef from an already-created pending review context skips the binding check and can still terminal-publish. Its verifyRunResultRef helper checks only the caller-persisted ref path bytes/hash; it does not recompute the expected target from reviewedRunId or enforce kind=run-result. The review-entry sibling-lineage helper readRunVerdict has the same fail-open shape: exact-binding proof is inside `if (ctx.inputRef !== undefined)`, then it returns the admitted reviewVerdict even when inputRef is absent. Formal Reader validateReviewExactBindings compares target/hash but also does not enforce inputRef.kind == run-result. Therefore a missing or wrong-kind review binding can still be terminal-published or consumed as lineage despite 132's Phase-1 result admission.",
+      "impact": "This is the same Q1-RA-006 invariant from 131, not a new design requirement. A review verdict is only valid when exact binding is mechanically proven. Because the proof is optional at two production/recovery boundaries, a tampered pending review can publish a verdict over no reviewed result (or a different valid result), and an inputRef-less historical review can still open a review/revise lineage in review-entry.",
+      "requiredResolution": "Make the exact-review-binding contract one shared fail-closed validator used by Context admission/terminal preflight, formal Reader, and sibling-lineage review admission. For every schemaVersion 2 review-* Run: inputRef is required; kind must equal run-result; Core must recompute the canonical result.json path from reviewedRunId; inputRef.ref must equal that path; target must be readable; actual SHA-256 must equal versionFingerprint. Missing, wrong-kind, wrong-target, unreadable, or mismatch must block terminal publication and must not yield ReviewVerdictFact/ReviewLineageFact. Add negative fixtures that mutate a pending review context after createRun by (a) deleting inputRef, (b) changing kind while keeping valid target/hash, and (c) pointing at a different readable result with a matching hash; completeRun must remain pending. Add sibling-lineage/Reader fixtures proving the same three shapes cannot open lineage."
+    },
+    {
+      "id": "Q1-RA-007",
+      "title": "Source-review immutable evidence remains conditionally validated instead of exact and required",
+      "location": "src/facts/formal-fact-reader.ts: validateImmutableRunResultRefs; src/persistence/serialization.ts: validateContextFile; src/persistence/run-persistence.ts: deriveReviewVerdictRef / completeRun descriptor path",
+      "evidence": "132 now validates the generic kind/path/hash of reviewVerdictRef, but the source-review relationship is guarded by optional fields. If reviewVerdictRef exists while context.sourceReviewRun is absent, no relationship conflict is produced. If sourceReviewRun exists but sourceReviewVerdict is absent, verdict equality is not checked. If sourceReviewRun/sourceReviewVerdict exist and the referenced review is not present in admittedReviewVerdicts, the code checks `if (reviewedVerdict !== undefined && ... mismatch)` and silently passes when the review is unadmitted. Conversely, a completed non-review Run can carry sourceReviewRun in context while its validated actionResult omits reviewVerdictRef; validateImmutableRunResultRefs has no requiredness check because it only enters the branch when reviewVerdictRef is present. validateContextFile also permits sourceReviewRun and sourceReviewVerdict independently. This is weaker than the Q1 source-review lineage contract and weaker than 132's own claimed resolution that reviewVerdictRef MUST exact-match sourceReviewRun and the actual admitted verdict.",
+      "impact": "Immutable source-review evidence is supposed to remain strict even when mutable artifacts are in revision-window or superseded scope. The current optional checks allow incomplete or orphaned source-review evidence to escape Reader conflict detection and can leave a completed revise/apply Run with a context lineage claim that is not backed by an exact immutable review result reference.",
+      "requiredResolution": "Enforce the source-review tuple bidirectionally for schemaVersion 2 completed non-review Runs that address a review. If any of sourceReviewRun, sourceReviewVerdict, or actionResult.reviewVerdictRef is present/applicable, require the complete tuple according to the Action contract. reviewVerdictRef.kind must be run-result; its embedded/derived target Run ID must equal sourceReviewRun; the target must be an admitted completed review Run; its actual admitted verdict must equal sourceReviewVerdict; target bytes/hash must match. An absent admitted source review is a conflict, not a skip. Also reject reviewVerdictRef when sourceReviewRun is absent and flag a missing reviewVerdictRef when sourceReviewRun requires one. Add negative fixtures for missing sourceReviewRun, missing sourceReviewVerdict, missing reviewVerdictRef, unadmitted source review, wrong target, and verdict mismatch; prove all remain strict for superseded/revision-window generations."
+    },
+    {
+      "id": "Q1-RA-010",
+      "title": "Shared C1 result admission still omits Action-owned ResultRef field applicability",
+      "location": "src/persistence/serialization.ts: admitC1RunResult, validateActionResultWithoutRunRef; src/persistence/run-persistence.ts: completionPreflight / deriveActionResult; src/facts/formal-fact-reader.ts: readC1Run",
+      "evidence": "admitC1RunResult now correctly performs the closed top-level RunResultFile validation, ActionResultWithoutRunRef field-shape/kind validation, and reviewVerdict integrity, but validateActionResultWithoutRunRef only checks that actionResult.action is some formal Action and that each ResultRef field has the right generic kind. It does not require actionResult.action to equal the ContextFile action and does not enforce the Q1 Action-owned inclusion matrix. The production completion preflight separately forbids review-* reviewVerdictRef and limits/requires verificationSummaryRef, while deriveActionResult only creates producedResultRefs for artifact-producing Actions. Reader admission does not replay those Action-scope rules. Therefore a manually tampered schemaVersion 2 result can still be structurally admitted with, for example, review-* carrying reviewVerdictRef, apply/revise-apply/archive carrying verificationSummaryRef, non-artifact Actions carrying producedResultRefs, or an actionResult.action that disagrees with context.action; downstream Reader paths may simply ignore the impossible field.",
+      "impact": "The approved Q1 field→kind→path resolver is Action-owned and is required to have the same semantics in writer/preflight/Reader. A result that Core could never legally publish must not be accepted as a valid schemaVersion 2 formal fact merely because each individual field is well-shaped. This leaves the new 'shared admission' boundary less strict than the production writer.",
+      "requiredResolution": "Extract a small shared Action-result scope validator (do not create a registry/platform) and invoke it from both terminal publication and admitC1RunResult/Reader admission. At minimum enforce actionResult.action == context action; producedResultRefs are permitted/required only for the artifact-producing Action set under the existing stage contract; verificationSummaryRef is permitted only on review-apply (and required for a completed review-apply physical projection); reviewVerdictRef is forbidden on review-* and must follow the source-review contract on applicable non-review Runs. Preserve existing field-kind validators and generation-aware mutable-byte rules. Add Reader/admission negative fixtures for each Action-disallowed field and actionResult.action mismatch, proving such Runs are not promoted as valid C1 facts."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "resolvedPriorFindings": [
+    {
+      "id": "Q1-RA-008",
+      "result": "resolved",
+      "evidence": "normalizeArtifactLogicalRef now rejects POSIX/Windows absolute evidence before normalization, canonical Change-root validation is applied before archive resolution, and archive discovery uses exact valid YYYY-MM-DD-<changeId> parsing/equality rather than suffix matching; focused negative fixtures are present."
+    },
+    {
+      "id": "Q1-RA-009",
+      "result": "resolved",
+      "evidence": "Current review-apply verificationSummaryRef recovery now requires presence, structure, kind=verification-summary, exact Core-derived logical path, unique archive-aware target, readability and current SHA-256, while legitimate superseded verification generations remain generation-aware."
+    },
+    {
+      "id": "Q1-RA-001",
+      "result": "still-resolved",
+      "evidence": "writeRunResult remains module-private and completeRun remains the descriptor-driven public terminal completion boundary."
+    },
+    {
+      "id": "Q1-RA-003",
+      "result": "still-resolved",
+      "evidence": "validateStageEffectiveSet remains shared across completion preflight, review entry, and Reader current artifact-generation validation."
+    },
+    {
+      "id": "Q1-RA-005",
+      "result": "still-resolved",
+      "evidence": "Run-ID descriptors and produced artifact tags remain runtime fail-closed at the production descriptor boundary."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "132 formal Run presence and source-review binding",
+        "status": "passed",
+        "result": "20260806-132-revise-apply/action.md, context.json and result.json are present. 132 sourceReview exact-binds 131-review-apply changes-requested using content-sha256:867cc17bf2021e769b14e5bbc6cbb96ddc5ab7ae5148bbe4dfee70e925267262."
+      },
+      {
+        "name": "132 reviewed result binding",
+        "status": "passed",
+        "result": "Reviewed 20260806-132-revise-apply/result.json exact content SHA-256 38c208054053ce707db553a4c939b65b1e3faf6e91fbd876b2b6007dab43c944 (Git blob b8594ac2263ac5914ba6feafe14dfff29615de85)."
+      },
+      {
+        "name": "Author-recorded focused/affected verification",
+        "status": "passed-as-recorded",
+        "result": "Current verification.md records 132-revise-apply sourced from 131, typecheck/lint/build, 542/542 unit+integration tests, OpenSpec Change strict validation, 8/8 canonical specs and git diff --check as passed."
+      },
+      {
+        "name": "Q1-RA-008 non-Run logical/archive resolver",
+        "status": "passed",
+        "result": "POSIX/Windows absolute refs, traversal/root violations and malformed/suffix archive directory matches are fail-closed; exact date-prefixed archive matching is implemented."
+      },
+      {
+        "name": "Q1-RA-009 current verification summary recovery",
+        "status": "passed",
+        "result": "Current review-apply verificationSummaryRef is presence/kind/path/target/hash fail-closed and superseded generations retain the intended generation-aware behavior."
+      },
+      {
+        "name": "Q1-RA-006 exact review binding at all boundaries",
+        "status": "failed",
+        "result": "Review inputRef is not schema-required/kind-bound, terminal preflight and sibling-lineage admission conditionally skip exact proof when inputRef is absent, and preflight does not recompute the reviewedRunId target."
+      },
+      {
+        "name": "Q1-RA-007 source-review immutable evidence",
+        "status": "failed",
+        "result": "reviewVerdictRef/sourceReviewRun/sourceReviewVerdict requiredness and admitted-review relationship remain conditional; absent counterparts or an unadmitted source review can pass without the required immutable conflict."
+      },
+      {
+        "name": "C1 Action-owned ResultRef admission parity",
+        "status": "failed",
+        "result": "admitC1RunResult validates closed shapes/kinds but not context-action equality or the Action-owned ResultRef inclusion/exclusion matrix enforced by the writer."
+      },
+      {
+        "name": "Delivery Full Test",
+        "status": "not-applicable",
+        "result": "Not owner-authorized and not run; review-apply has no Delivery Full Test authority."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-apply",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

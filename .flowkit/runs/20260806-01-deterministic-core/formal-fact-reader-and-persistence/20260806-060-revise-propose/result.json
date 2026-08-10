@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-060-revise-propose",
+  "status": "completed",
+  "summary": "C1 revise-propose 完成。3 个 P1 findings 已修复：C1-PR-006（三路判别器：schemaVersion===2→C1 Run fail-closed，===1/缺失→legacy recognizer，其他→FactConflict；引入 schemaVersion:2 C1 标记与 legacy-recognizer.ts）、C1-PR-007（inputRef 改为可选 ResultRef，与 B1 Run.inputRef?:ResultRef 类型一致，直投影无需转换）、C1-PR-008（changeKey/changeId 可选，Action-scope 规则决定存在性，支持 Delivery-level Run）。全量一致性扫描 10 维度 0 矛盾，含真实 Run 语料证据（054/055/056/059/060 context.json 全部 schemaVersion:1→legacy→Bootstrap Run）。OpenSpec strict + typecheck + lint 通过。",
+  "sourceReviewRef": "059-review-propose:cd4bd0c2a3d67b621d78c45e02723839b7164bb688bea660780aab060500c978",
+  "sourceReviewVerdict": "changes-requested",
+  "resolvedFindings": [
+    {
+      "id": "C1-PR-006",
+      "resolution": "design.md D16 重写为三路判别器：schemaVersion===2→C1 Run 路径（validateContextFile+validateContextFileIdentity，任一失败→FactConflict fail-closed，MUST NOT 降级为 Bootstrap）；schemaVersion===1 或缺失→legacy 路径（bounded legacy recognizer，MUST NOT 调 C1 validateContextFile）；其他 schemaVersion→FactConflict。新增 legacy-recognizer.ts（recognizeLegacyRun）校验 B1 Run 最小必填字段。design D15 ContextFile schemaVersion 固定为 2。spec.md Bootstrap Requirement 重构为 8 Scenarios（C1 判别器/malformed fail-closed/legacy 判别器/legacy recognizer 形状/未知 schemaVersion fail-closed/string inputRef/runStatus 归一化/不被修改）。tasks.md 第 11 组扩展为 13 tasks。proposal.md item 9 更新。真实语料证据：054/055/056/059/060 context.json 全部 schemaVersion:1→legacy 路径→Bootstrap Run。"
+    },
+    {
+      "id": "C1-PR-007",
+      "resolution": "design.md D15 inputRef 从 string 改为 inputRef?: ResultRef，与 B1 Run.inputRef?: ResultRef 类型一致。存在时通过 C1 validateResultRefProjection 校验（ref+versionFingerprint 非空 string）。确定性投影为直接映射 ContextFile.inputRef→Run.inputRef，无需类型转换。Bootstrap Run string 形 inputRef 由 legacy adapter 读取为 Run.inputRef=undefined（不构造 ResultRef）。spec.md 新增 inputRef 为可选 ResultRef Scenario。tasks.md 10.3/10.6/10.20 更新 + 12.35-12.38 fixture。"
+    },
+    {
+      "id": "C1-PR-008",
+      "resolution": "design.md D15 changeKey/changeId 改为可选，新增 Action-scope 规则：action∈DELIVERY_ACTIONS→changeKey/changeId MUST 缺失；action∈CHANGE_ACTIONS→changeKey/changeId MUST 存在；混合→reject/FactConflict。与 B1 Run.changeId? 语义一致（B1 Run 无 changeKey，changeKey 是 C1 专属）。身份校验 Delivery-level Run 跳过 changeId 路径段。spec.md 新增 Action-scope 规则 Scenario + 更新身份校验 changeId Scenario。tasks.md 10.5/10.12/10.13 + 12.32-12.34/12.42 fixture。"
+    }
+  ],
+  "modifiedArtifacts": {
+    "proposal.md": "item 6 更新（schemaVersion:2 + Action-scope + inputRef ResultRef）、item 9 重写（三路判别器 + legacy-recognizer.ts）",
+    "design.md": "D15 重写（schemaVersion:2 + 可选 changeKey/changeId + Action-scope + inputRef ResultRef + 确定性投影 validateRun）、D16 重写（三路判别器 + legacy recognizer + fail-closed + 真实语料对照）、架构图新增 legacy-recognizer.ts、所有权表新增 recognizeLegacyRun",
+    "spec.md": "context.json Requirement 9 Scenarios（+Action-scope +inputRef ResultRef +validateRun）、Bootstrap Requirement 8 Scenarios（三路判别器 + legacy recognizer + fail-closed），总 14 Requirements 51 Scenarios",
+    "tasks.md": "第 10 组 17→21 tasks、第 11 组 9→13 tasks、第 12 组 32→62 tasks（含真实语料 fixture），总 13 组 172 tasks"
+  },
+  "specStats": {
+    "requirements": 14,
+    "scenarios": 51,
+    "allAdded": true
+  },
+  "taskStats": {
+    "total": 172,
+    "completed": 0,
+    "pending": 172,
+    "groups": 13
+  },
+  "consistencyScan": {
+    "dimensionsScanned": 10,
+    "remainingContradictions": 0,
+    "realCorpusEvidence": true,
+    "dimensions": [
+      {
+        "id": 1,
+        "name": "proposal.md ↔ design.md（item 6 → D15 schemaVersion:2/Action-scope/inputRef ResultRef；item 9 → D16 三路判别器/legacy-recognizer.ts）",
+        "status": "consistent"
+      },
+      {
+        "id": 2,
+        "name": "design.md ↔ spec.md（D15 5 项→spec context.json 9 Scenarios；D16 三路判别器/legacy recognizer/fail-closed→spec Bootstrap 8 Scenarios）",
+        "status": "consistent"
+      },
+      {
+        "id": 3,
+        "name": "spec.md ↔ tasks.md（context.json 9 Scenarios→tasks 10.1-10.21；Bootstrap 8 Scenarios→tasks 11.1-11.13）",
+        "status": "consistent"
+      },
+      {
+        "id": 4,
+        "name": "tasks.md ↔ design.md 文件规划（serialization.ts + legacy-recognizer.ts + result-ref-adapter.ts → tasks 10.1/11.1/7.1）",
+        "status": "consistent"
+      },
+      {
+        "id": 5,
+        "name": "真实语料证据：054/055/056/059/060 context.json 全部 schemaVersion:1→legacy 路径→Bootstrap Run（无 pre-C1 Run 误入 C1 Run 路径）",
+        "status": "consistent",
+        "evidence": "054-propose(schemaVersion:1,字段齐全)→legacy✓; 055-review-propose(schemaVersion:1,缺changeKey/ownerAuthorization/inputRef/runPath)→legacy✓; 056-revise-propose(schemaVersion:1,含findings未知字段)→legacy✓; 059-review-propose(schemaVersion:1)→legacy✓; 060-revise-propose(schemaVersion:1,本Run)→legacy✓"
+      },
+      {
+        "id": 6,
+        "name": "真实语料证据：corpus 中无 schemaVersion:2 记录（C1 createRun 未实现），无 Run 进入 C1 Run 路径",
+        "status": "consistent",
+        "evidence": "扫描 036-060 所有 context.json，全部 schemaVersion:1，无 schemaVersion:2"
+      },
+      {
+        "id": 7,
+        "name": "B1 类型对齐（Run.changeId?→ContextFile.changeId? 可选；Run.inputRef?:ResultRef→ContextFile.inputRef?:ResultRef；B1 无 changeKey→C1 专属；DELIVERY_ACTIONS 2 个/CHANGE_ACTIONS 10 个）",
+        "status": "consistent",
+        "evidence": "B1 types.ts:151-160 Run.changeId?/inputRef?:ResultRef; actions.ts:18-34 CHANGE_ACTIONS 10个/DELIVERY_ACTIONS 2个; schema-validator.ts:187-190 changeId 可选"
+      },
+      {
+        "id": 8,
+        "name": "inputRef 投影类型check（ContextFile.inputRef?:ResultRef→Run.inputRef?:ResultRef 直映射，无 string→ResultRef 转换；validateResultRefProjection 校验 ref+versionFingerprint）",
+        "status": "consistent"
+      },
+      {
+        "id": 9,
+        "name": "fail-closed 边界（schemaVersion:2+校验失败→FactConflict 不降级；schemaVersion:1/缺失+legacy 形状失败→FactConflict；其他 schemaVersion→FactConflict；result.json.status 无效→FactConflict）",
+        "status": "consistent"
+      },
+      {
+        "id": 10,
+        "name": "tasks.md 格式与 A1 一致（## N. 节标题 + - [ ]N.M 格式，13 组）",
+        "status": "consistent"
+      }
+    ]
+  },
+  "verificationResults": {
+    "openspecValidate": {
+      "command": "npx openspec validate formal-fact-reader-and-persistence --strict",
+      "status": "passed",
+      "result": "Change 'formal-fact-reader-and-persistence' is valid"
+    },
+    "typecheck": {
+      "command": "npm run typecheck",
+      "status": "passed"
+    },
+    "lint": {
+      "command": "npm run lint",
+      "status": "passed"
+    },
+    "fullTest": {
+      "status": "not-applicable",
+      "result": "Not authorized and not run."
+    }
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "nextAction": "review-propose",
+  "nextActionNote": "reviewer 重新审查修订后的 proposal 产物，重点验：三路判别器是否覆盖所有 pre-C1 Run（含 054 字段齐全的）、inputRef ResultRef 投影、Delivery-level Run 支持。建议 reviewer 对照 054/055/056 真实 context.json 验证判别器。",
+  "blockedOn": []
+}

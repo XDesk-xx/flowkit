@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-002-review-explore",
+  "status": "completed",
+  "summary": "A1 Explore review completed with changes-requested. The scope, no-.mjs boundary, thin CLI, shared-module boundary, and direct tsc approach are aligned with the Delivery. Three blocking omissions leave the proposed toolchain unable to guarantee its ESM runtime and TypeScript checks: the package ESM contract and NodeNext import convention are absent, Node typings are not declared, and test TypeScript is excluded from typecheck.",
+  "reviewedResultRef": "content-sha256:1fab6a68e9b6e1a914f840d27c3dfb98562f8858e78427ba7285ec67ca4b26b1",
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "A1-RE-001",
+      "title": "ESM package contract is incomplete",
+      "location": "openspec/changes/runtime-foundation/explore.md:146-206",
+      "evidence": "The proposed tsconfig uses NodeNext, but the package plan does not require package.json to set type=module or require emitted-ESM-compatible relative import specifiers such as ./version.js. Under NodeNext, the nearest package.json type controls whether .ts files emit as ESM or CommonJS. The Delivery requires a Node.js ESM runtime under dist/.",
+      "impact": "A1 can pass a nominal tsc build while emitting CommonJS or produce source imports that fail NodeNext compilation/runtime, violating the fixed ESM and dist/bin/flowkit.js contract.",
+      "requiredResolution": "In the Explore and its conclusion, require package.json type=module, a Node 22 engine floor, and the NodeNext rule that relative imports in .ts source use their emitted .js specifier. Carry these requirements into the Proposal acceptance checks."
+    },
+    {
+      "id": "A1-RE-002",
+      "title": "Node type declarations are missing from the toolchain decision",
+      "location": "openspec/changes/runtime-foundation/explore.md:194-218",
+      "evidence": "The planned production modules use filesystem, path, and child-process boundaries, while tests use node:test, but the listed devDependencies omit @types/node. TypeScript does not include Node's declarations without an installed visible @types/node package.",
+      "impact": "The required strict typecheck cannot type the intended Node APIs or node:test imports from the stated dependency set.",
+      "requiredResolution": "Add @types/node as a direct devDependency, pin it to the supported Node 22 major line, and include the Node typings choice in the TypeScript configuration/package decision."
+    },
+    {
+      "id": "A1-RE-003",
+      "title": "The stated typecheck omits all handwritten test TypeScript",
+      "location": "openspec/changes/runtime-foundation/explore.md:150-206",
+      "evidence": "The only tsconfig includes src/**/*.ts and excludes tests; the proposed typecheck command is tsc --noEmit. The test command uses tsx, which transpiles and executes tests but does not substitute for a TypeScript semantic check of the test sources.",
+      "impact": "Tests can run despite TypeScript type errors, so A1 would not deliver the required typecheck toolchain for all newly handwritten .ts source and test files.",
+      "requiredResolution": "Specify a test tsconfig extending the production tsconfig, include tests/**/*.ts with noEmit, and make the typecheck script run both production and test projects. Quote the Node test glob so Node, rather than the host shell, resolves it consistently across platforms."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "verification": {
+    "checks": [
+      {
+        "name": "reviewed Explore artifact hash",
+        "status": "passed",
+        "result": "SHA-256 is 1fab6a68e9b6e1a914f840d27c3dfb98562f8858e78427ba7285ec67ca4b26b1 and matches the Author Run reviewedResultRef."
+      },
+      {
+        "name": "scope and whitespace review",
+        "status": "passed",
+        "result": "The Explore remains within A1 and git diff --check produced no output."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run; this is a review-explore action."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

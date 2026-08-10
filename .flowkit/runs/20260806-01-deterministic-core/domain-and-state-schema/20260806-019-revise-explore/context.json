@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-019-revise-explore",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "B1",
+  "changeId": "domain-and-state-schema",
+  "action": "revise-explore",
+  "role": "author",
+  "inputRef": "8cc3c09b323795c35f5379e8470d25534a069d02a4fc940041dbc3ff96524882",
+  "sourceReviewRun": "20260806-018-review-explore",
+  "sourceReviewVerdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "B1-RE-004",
+      "title": "The eleven promised domain types do not have a field-level or ownership contract",
+      "requiredResolution": "Add a compact object-contract matrix covering all eleven objects. For each, state the B1-owned minimum fields/invariants and validation expectation, or explicitly mark it C1-owned. Reconcile ActionDefinition with integration-boundaries.md Section 3.1; define ActionResult and ContinuationContext logical minimum without fixing physical transport; give Delivery, Change, Run, VerificationSummary, and OwnerAuthorizationRef enough field-level direction for Proposal and tests."
+    }
+  ],
+  "resolvedFindingsFromPriorRevisions": [
+    {
+      "id": "B1-RE-001",
+      "resolvedIn": "20260806-015-revise-explore",
+      "resolution": "Action Catalog follows frozen core-model spec's ten formal Actions; change-checkpoint treated as Git boundary."
+    },
+    {
+      "id": "B1-RE-002",
+      "resolvedIn": "20260806-015-revise-explore",
+      "resolution": "ResultRef is provider-neutral without mandatory runPath; concrete serialization deferred to C1."
+    },
+    {
+      "id": "B1-RE-003",
+      "resolvedIn": "20260806-017-revise-explore",
+      "resolution": "Review focus item 4 updated to require ten Change Actions plus two Delivery Actions."
+    }
+  ],
+  "constraints": {
+    "mayModifyExplore": true,
+    "mayModifyCode": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/domain-and-state-schema/20260806-019-revise-explore/"
+}

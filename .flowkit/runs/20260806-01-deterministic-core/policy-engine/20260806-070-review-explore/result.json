@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-070-review-explore",
+  "status": "completed",
+  "verdict": "changes-requested",
+  "summary": "D1 Explore is not approved. The proposed Policy cannot derive a unique lifecycle action after a Review, and its FormalFactSnapshot input lacks the verification and owner-authorization facts required by its own gates.",
+  "reviewedResultRef": "run-result:.flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-069-explore/result.json;sha256:e369c403549fa9a0084215989a39757ec1cc5ab6edcbeae73a2ebb94327593e4",
+  "blockingFindings": [
+    {
+      "id": "D1-EX-001",
+      "severity": "P1",
+      "title": "Lifecycle stage selection cannot progress after a completed review",
+      "evidence": "Conclusion Section 4 says to select the latest completed Run from all Runs, but defines branches only for explore, revise-explore, propose, revise-propose, apply/revise-apply and archive. A completed review-explore/review-propose/review-apply Run is therefore the latest Run with no branch. Section 3 also rejects review-* whenever any completed review-* exists, which prevents the required changes-requested -> revise-* -> review-* loop.",
+      "requiredChange": "Define stage and verdict lineage by reviewed Run, including when a changes-requested verdict is superseded by its completed revision. Make canRun and next use that same current-lineage rule; historical Review completion alone must not prohibit the post-revision Review. Cover all three Review/Revision loops with table-driven tests."
+    },
+    {
+      "id": "D1-EX-002",
+      "severity": "P1",
+      "title": "Policy gates require formal facts that the declared snapshot does not provide",
+      "evidence": "Section 3 requires Change Verification for review-apply/archive and owner authorization for apply/archive/full-test/finalize, while Section 1 says Policy consumes only C1 FormalFactSnapshot. That snapshot has no verification-status field or verification artifact kind. Its Reader currently returns an empty ownerAuthorizations array as a placeholder. Consequently a conforming implementation cannot distinguish passed verification or any valid authorization from the declared input.",
+      "requiredChange": "Specify the single authoritative source and snapshot projection for Change Verification, task completion where archive depends on it, and scoped owner authorizations. Either extend the upstream contract through an explicitly scoped dependency/corrective change or narrow D1 so it does not claim to decide gates whose facts are unavailable; do not infer them from chat or Run history."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "verification": {
+    "checks": [
+      {
+        "name": "Explore artifact integrity",
+        "status": "passed",
+        "result": "conclusion.md SHA-256 matches evidence.json: 0210eb68770f6f239aaa93c80a4353e4ee2095637f84775a602d623153c84ecb"
+      },
+      {
+        "name": "Frozen lifecycle and domain-contract review",
+        "status": "failed",
+        "result": "D1-EX-001 and D1-EX-002 block a unique legal Policy result."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

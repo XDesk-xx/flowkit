@@ -1,0 +1,13 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-apply",
+    "executionStatus": "completed",
+    "summary": "已关闭 163 的 Owner authority finding，并回顾 146–163 全部 Q2 lineage 完成全面 authority 修复：清理 Author 自证 Owner decision 的元话术，明确 OpenSpec archive operation 与 Flowkit Manifest state 的 authority 分离，保留 current handoff/point-in-time ResultRef 边界，修正 current-stage validator 命名与重复 identity validation，并通过 disposable OpenSpec archive rehearsal 补齐 MODIFIED scenario preservation。最终 typecheck/lint/build、557/557 tests、Q2 strict、8/8 canonical specs strict 均通过；未运行 Delivery Full Test、未真实 Archive/Checkpoint/Commit/Push。",
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260806-01-deterministic-core/orchestration-authority-boundary-correction/20260806-163-review-apply/result.json",
+      "versionFingerprint": "025a1337edd16e4567302b9330312a82317068f9bb0830de4e13f3402c3c2cb1",
+      "kind": "run-result"
+    }
+  }
+}

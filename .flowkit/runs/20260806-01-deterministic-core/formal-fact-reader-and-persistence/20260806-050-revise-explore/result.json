@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-050-revise-explore",
+  "status": "completed",
+  "summary": "C1 revise-explore 完成。修复了 049-review-explore 的 1 个 P1 blocking finding (C1-EX-009)。C1-EX-009：Q7 write behavior 仍说 atomicWriteFile(result.json, jsonString)，A1 atomicWriteFile 使用 rename（替换已存在目标），与 Q5 独占 fs.link 发布协议冲突，通过第二条写入路径重新引入 C1-EX-006 terminal 覆盖缺陷。修复：Q7 write behavior 重写为只描述序列化，不描述发布——JSON 字符串交给 writeRunResult（Q5 独占发布协议），adapter 不直接写入 result.json，不调用 atomicWriteFile(result.json, ...)。新增 adapter 边界声明（adapter 只负责序列化和读取派生，不负责发布；terminal result 发布是 writeRunResult 的独占职责；atomicWriteFile 可用于 staging 目录内文件但不用于 result.json）。新增一致性契约 fixture（扫描全部文档化 result.json 写入路径，确认只有 writeRunResult 能发布 terminal result；contract test 证明没有 helper 路径能覆盖已存在 result.json）。验收标准 item 9 更新（C1-EX-006 + C1-EX-009），探索结论 item 5 更新，Review 重点 item 7 更新。",
+  "reviewedResultRef": "run-result:.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-049-review-explore/result.json;sha256:859d692375665f07718a0c426a2f2bd7a9ea8e9840adaf6de89542eeb67d5f60",
+  "revisedArtifact": {
+    "path": "openspec/changes/formal-fact-reader-and-persistence/explore.md",
+    "sha256": "5319233f0412d17153db63af4220e036a48a9963c90ffd2a57811cecaae21a17"
+  },
+  "resolvedFindings": [
+    {
+      "id": "C1-EX-009",
+      "resolution": "Q7 write behavior 重写：(1) 移除 atomicWriteFile(result.json, jsonString) 步骤，替换为'将 JSON 字符串交给 writeRunResult（Q5 独占发布协议）'；(2) 新增 adapter 边界声明——adapter 只负责序列化和读取派生，不负责发布；adapter 永远不直接写入或替换 result.json；terminal result 发布是 writeRunResult 的独占职责；atomicWriteFile 可用于 staging 目录内文件但不用于 result.json；(3) 新增一致性契约 fixture——扫描全部文档化 result.json 写入路径，确认只有 writeRunResult 能发布 terminal result，contract test 证明没有 helper 路径能覆盖已存在 result.json。"
+    }
+  ],
+  "changesSummary": {
+    "Q7_write_behavior": "重写：移除 atomicWriteFile(result.json) 步骤，替换为'交给 writeRunResult'；adapter 不直接写入 result.json",
+    "Q7_adapter_boundary": "新增 adapter 边界声明：只序列化和读取派生，不发布/替换 terminal result；atomicWriteFile 可用于 staging 但不用于 result.json",
+    "Q5_fixtures": "新增一致性契约 fixture（C1-EX-009）：扫描文档化写入路径 + contract test 证明无 helper 覆盖",
+    "section7": "item 9 更新（C1-EX-006 + C1-EX-009 合并）",
+    "section8": "item 5 更新（新增 Q7 adapter 不发布/替换 terminal result）",
+    "section9": "item 7 更新（C1-EX-006 + C1-EX-009 合并）"
+  },
+  "solePublicationPathDesign": {
+    "problem": "Q5 正确禁止 atomicWriteFile 用于 terminal 发布，但 Q7 write behavior 仍说 atomicWriteFile(result.json, jsonString)。atomicWriteFile 使用 rename（替换已存在目标），通过第二条写入路径重新引入 C1-EX-006 terminal 覆盖缺陷。两条文档化写入路径互相矛盾。",
+    "solution": "writeRunResult 是 terminal result 的唯一发布路径。Q7 只描述序列化（构造 RunResultFile → 序列化 JSON），不描述发布。JSON 字符串交给 writeRunResult，由其 temp-file + fs.link 独占发布。adapter 不直接写入或替换 result.json。",
+    "q7_before": "1. 构造 RunResultFile 2. 序列化 JSON 3. atomicWriteFile(result.json, jsonString) 4. 文件写入完成",
+    "q7_after": "1. 构造 RunResultFile 2. 序列化 JSON 3. 将 JSON 交给 writeRunResult（Q5 独占发布）— adapter 不直接写入 result.json 4. writeRunResult 发布后文件不含自身哈希",
+    "adapterBoundary": "adapter 只负责序列化和读取派生；不发布或替换 terminal result；atomicWriteFile 可用于 staging 目录内文件但不用于 result.json",
+    "consistencyFixture": "扫描全部文档化 result.json 写入路径 + contract test 证明无 helper 覆盖已存在 result.json"
+  },
+  "scopeDiscipline": {
+    "scopeExpanded": false,
+    "reason": "只处理 C1-EX-009，不扩张 Change 范围"
+  },
+  "nextActionRecommendation": "review-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "lastCommit": "180f161 checkpoint(domain-and-state-schema): B1 Change Checkpoint",
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "blockedOn": []
+}

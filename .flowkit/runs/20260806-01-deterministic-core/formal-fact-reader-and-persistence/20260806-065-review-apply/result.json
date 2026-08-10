@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-065-review-apply",
+  "status": "completed",
+  "verdict": "changes-requested",
+  "summary": "Apply review found two P1 blockers: non-ENOENT result.json read failures are treated as pending, and canonical review verdict integrity is not enforced before terminal publication.",
+  "findings": [
+    {
+      "id": "C1-AP-005",
+      "severity": "P1",
+      "title": "result.json read errors are treated as an absent result",
+      "disposition": "changes-requested"
+    },
+    {
+      "id": "C1-AP-006",
+      "severity": "P1",
+      "title": "review verdict integrity is detected too late, after terminal publication",
+      "disposition": "changes-requested"
+    }
+  ],
+  "verification": [
+    {
+      "command": "npm test",
+      "status": "passed",
+      "result": "238 tests passed; review found uncovered semantic defects."
+    },
+    {
+      "command": "npm run typecheck",
+      "status": "passed"
+    },
+    {
+      "command": "npm run lint",
+      "status": "passed"
+    },
+    {
+      "command": "npx openspec validate formal-fact-reader-and-persistence --strict",
+      "status": "passed",
+      "note": "Structural validation only."
+    },
+    {
+      "command": "full test",
+      "status": "not-run",
+      "note": "No owner authorization."
+    }
+  ],
+  "nextAction": "revise-apply"
+}

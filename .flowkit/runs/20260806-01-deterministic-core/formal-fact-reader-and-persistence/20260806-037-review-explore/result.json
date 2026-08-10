@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-037-review-explore",
+  "status": "completed",
+  "summary": "C1 Explore review requests changes. The proposed persistence sequence invokes B1 assertMutable on a Run already set to a terminal status, which necessarily rejects the write. It also does not define an all-or-nothing publication protocol for a new Run directory and its three required files; per-file atomic writes can expose a partial formal Run after interruption.",
+  "reviewedResultRef": "run-result:.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-036-explore/result.json;sha256:0eaf7d39ff3a83ce2c34b7fd221ec6daf565b25571c0cf6e38211b845adb3af8",
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "C1-EX-001",
+      "title": "Terminal immutability check is ordered so every result write fails",
+      "severity": "P1",
+      "evidence": "Explore Q5 says to construct the Run with a terminal status (completed/failed/cancelled), then call B1 assertMutable(run) before writing result.json. src/domain/terminal.ts rejects every terminal status, so this sequence always throws and cannot complete any Run.",
+      "requiredChange": "Revise the persistence lifecycle to validate mutability from the existing persisted Run state (or an explicitly pending state) before committing the terminal result; separately validate the proposed terminal result. Define the read, validation, and publish ordering so terminal records remain immutable without making their first completion impossible."
+    },
+    {
+      "id": "C1-EX-002",
+      "title": "New Run creation lacks an atomic publication boundary",
+      "severity": "P1",
+      "evidence": "Explore Q5 creates the directory and atomically writes action.md and context.json individually; result.json is written later. A1 atomicWriteFile protects one file only. An interruption between these operations can leave a visible partial Run that the Reader treats as a pending Run, contrary to the stated all-or-nothing Run creation and recovery goal.",
+      "requiredChange": "Specify one publication protocol for a new Run: stage all required initial files in an unobservable temporary location, validate them, then atomically publish the complete Run directory (or define an equivalent explicit creation marker and recovery rule). Include failure cleanup and fixture tests for every interruption boundary."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "verification": {
+    "checks": [
+      {
+        "name": "Formal contract review",
+        "status": "passed",
+        "result": "Reviewed C1 Explore against delivery-lifecycle, core-model, integration-boundaries, A1 atomic-write, and B1 terminal contracts."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "Review 156 revise-apply：基础实现与验证均可执行，但仍有两个 Blocking Findings。其一，156 以“Owner 已决定”为前提改写 frozen Archive/Checkpoint lifecycle，而当前可用 Owner 授权没有提供该具体决策事实；Reviewer 不替 Owner补充。其二，新增 completed-but-uncheckpointed recovery 对真实 Base 的 legacy Q1 checkpoint 与新 structured checkpoint 混合场景处理错误，并且 checkpoint Git facts 未按 Delivery identity 过滤，无法保证确定性恢复。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/orchestration-authority-boundary-correction/verification.md",
+      "versionFingerprint": "ca99e186ff105e333ef2f2ed27d91a72290c86fd6301c61d3a3dfaf9b7671b4a",
+      "kind": "verification-summary"
+    }
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindings": [
+    {
+      "id": "Q2-RA-001",
+      "severity": "blocking",
+      "title": "156 对 frozen lifecycle 的修订依赖未提供的 Owner 决策事实",
+      "problem": "156 的 action.md、proposal.md、design.md、tasks.md 与 verification.md 均声明“Owner 已决定/冻结”OpenSpec archive success 即令 Change completed，并据此修改 flowkit-core-model / policy-engine canonical delta。当前可用 Owner 授权只明确授权重新 Review 154，并要求 Reviewer 不做该设计决策；未提供这个具体 lifecycle 选择。仓库冻结规则又要求改变既有 frozen decision 时必须获得 Owner 明确决定。因此当前 candidate 把不存在于正式输入中的 Owner 决策当作实现前提。",
+      "location": "20260806-156-revise-apply/action.md; openspec/changes/orchestration-authority-boundary-correction/proposal.md; design.md; tasks.md; verification.md; specs/flowkit-core-model/spec.md; specs/flowkit-policy-engine/spec.md",
+      "requiredChange": "使 lifecycle contract 的决策来源合法且可验证：若该语义确属 Owner 决策，应提供对应的明确 Owner decision fact/授权输入；否则不得把它表述为 Owner 已冻结的事实，并应在不越过现有 frozen-decision authority 的前提下重新形成可审查 candidate。Reviewer 不指定应选择哪一种 Archive/Checkpoint 状态模型。"
+    },
+    {
+      "id": "Q2-RA-002",
+      "severity": "blocking",
+      "title": "Checkpoint Git identity 在 legacy/new 混合与 Delivery scope 下不能确定恢复",
+      "problem": "156 的 getCompletedUncheckpointedChanges() 在存在任意带 changeId 的 structured checkpoint 时，只按 structured changeId 集合判断并忽略 legacy/unstructured checkpoints。当前 Base 的 Q1 checkpoint subject 为旧格式、没有 changeId；当 Q2 后续出现新格式 checkpoint 后，实际 probe 得到 Q1 被重新判为 completed-but-uncheckpointed，Policy 再次返回 authorize-checkpoint(Q1)。同时 readGitBoundarySummaries(repoRoot, deliveryId) 对 checkpoint subject 不验证 deliveryId；来自其他 Delivery 的同名 checkpoint 也会被当前 Delivery接纳。两者都破坏 Checkpoint 作为 Git persistence/sync/recovery boundary 的确定性。",
+      "location": "src/facts/git-boundary-reader.ts; src/policy/preconditions.ts; src/policy/next.ts; tests/unit/facts/git-boundary-reader.test.ts; tests/unit/policy/preconditions.test.ts; tests/unit/policy/next.test.ts",
+      "requiredChange": "使 Checkpoint recovery 对当前真实 Base 的 legacy checkpoint、后续 structured checkpoint 以及历史其他 Delivery 的 checkpoint 同时保持确定性：已 checkpoint 的 Change 不得因新格式 boundary 出现而重新变成 pending，当前 Delivery不得消费其他 Delivery 的 checkpoint。补充至少覆盖 legacy+structured 混合以及 cross-Delivery identity 的回归；具体 Git identity/兼容策略由 Author 设计，Reviewer 不指定。"
+    }
+  ]
+}

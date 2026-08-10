@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-043-review-explore",
+  "status": "completed",
+  "summary": "C1 Explore review requests changes. Revision 042 resolves the ResultRef self-reference, but the completion protocol still has a time-of-check/time-of-use race: multiple writers can each observe a pending Run, pass assertMutable, and then use the overwrite-capable atomicWriteFile to publish different result.json contents. That permits replacement of a terminal result.",
+  "reviewedResultRef": "run-result:.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-042-revise-explore/result.json;sha256:40eb18785b71339f2911b62253d4e438e3585027e30c6e3841ca8adf7c70d612",
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "C1-EX-006",
+      "title": "Terminal result publication has no exclusive single-writer claim",
+      "severity": "P1",
+      "evidence": "Q5 stage 2 performs read current pending state, assertMutable, then atomicWriteFile(result.json). Two writers can both finish the read/check before either publish. A1 atomicWriteFile writes a temporary file and renames it onto the target, so it provides atomic replacement of one file but no no-replace compare-and-swap guarantee. The later writer can replace the first terminal result.",
+      "requiredChange": "Define an exclusive, no-replace completion-publication protocol: a writer must atomically claim completion before a terminal result can be published, losing writers must receive RUN_TERMINAL or an equivalent conflict, and recovery of an interrupted claim must be fail-closed. Do not rely on a preliminary exists check. Add a deterministic concurrent-writer fixture proving the first result remains unchanged and the loser cannot overwrite it."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "resolvedFindings": [
+    {
+      "id": "C1-EX-005",
+      "resolution": "Resolved by revision 042: physical serialization omits ActionResult.runRef and derives it from the finalized file content on read."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "Formal concurrency and immutability review",
+        "status": "passed",
+        "result": "Reviewed C1 completion ordering against B1 terminal immutability and A1 atomicWriteFile behavior."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

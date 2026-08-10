@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-064-revise-apply",
+  "status": "completed",
+  "summary": "C1 revise-apply 完成。063-review-apply 的 4 个 P1 findings 全部修复：C1-AP-001（创建 verification.md 作为 Change Verification 正式记录，含验证范围/检查/结果/总体状态=passed）、C1-AP-002（writeRunResult 新增 reconstructCurrentRun 读取已有 result.json 重建 CURRENT terminal 状态供 assertMutable 观察，assertMutable 在任何 temp-file 发布前拒绝 terminal Run，损坏 result.json 抛 SCHEMA_VALIDATION_FAILED）、C1-AP-003（Reader 从嵌套 manifest.delivery.state/delivery.fullTestStatus 读取，缺失/无效时 fail-closed 收集 FactConflict）、C1-AP-004（ContextFile.reviewedRunId + RunResultFile.reviewVerdict canonical payload + review-scope 规则 + Bootstrap legacy 连接抽取）。全量一致性扫描 11 维度 0 矛盾。typecheck + build + lint + test(238 passed) + openspec validate --strict 全部通过。036-063 terminal Runs 未修改。",
+  "sourceReviewRef": "063-review-apply:cd04cdba5efb16eaf81f72ef58b09142e027b33cb1371c6d715e746bc64536b4",
+  "sourceReviewVerdict": "changes-requested",
+  "resolvedFindings": [
+    {
+      "id": "C1-AP-001",
+      "resolution": "创建 openspec/changes/formal-fact-reader-and-persistence/verification.md，遵循 docs/verification-model.md Section 7。记录包含：验证范围（生产源码 src/facts/* + src/persistence/* + 单元测试 + 提案产物）、适用检查表（OpenSpec strict/typecheck/build/lint/单元测试 + 4 个 finding-specific 检查 + Full Test=not-applicable）、结果引用与环境、A1 历史例外说明、总体 Change Verification 状态=passed。spec.md 新增 'Requirement: Change Verification 记录属 Change 所有' + 3 Scenarios。design.md 新增 D20。"
+    },
+    {
+      "id": "C1-AP-002",
+      "resolution": "run-persistence.ts writeRunResult 重构为：(1) readContextFile + validateContextFileIdentity 校验身份；(2) reconstructCurrentRun 读取已有 result.json——不存在→pending（从 context.json 投影），存在→从 RunResultFile.runStatus 重建 terminal 状态，损坏（非 JSON 或 runStatus 无效）抛 SCHEMA_VALIDATION_FAILED；(3) assertMutable(currentRun) 在任何 temp-file 发布前拒绝 terminal Run。race-safe fs.link 保留为并发不变量。spec.md 'Requirement: assertMutable 校验 CURRENT 持久化状态' 扩展为 5 Scenarios（pending 校验/观察持久化 terminal/损坏不可覆盖/身份校验/terminal 不可覆盖）。design.md 新增 D17。新增 3 个单元测试覆盖。"
+    },
+    {
+      "id": "C1-AP-003",
+      "resolution": "formal-fact-reader.ts readDeliveryManifest 重写：从 manifest['delivery'] 嵌套 mapping 读取 delivery.state（枚举 active|completed|cancelled）和 delivery.fullTestStatus（枚举 not-ready|awaiting-user-decision|authorized|passed|failed）。delivery mapping 缺失/非对象→FactConflict(dimension=delivery-manifest-shape)；state/fullTestStatus 缺失/无效→FactConflict(dimension=delivery-state/delivery-full-test-status)，不静默返回 undefined。Manifest 完全不存在→undefined（bootstrap-only Delivery，由 Policy 决定）。spec.md 新增 'Requirement: Delivery Manifest 嵌套 delivery 状态读取' + 3 Scenarios。design.md 新增 D18。新增单元测试使用真实 manifest 形状验证。"
+    },
+    {
+      "id": "C1-AP-004",
+      "resolution": "定义 canonical review verdict payload：ContextFile.reviewedRunId（review-* Run 的被审查 Run ID，review-scope 规则要求 review-* 必须存在、非 review 必须缺失）+ RunResultFile.reviewVerdict（verdict 值）。formal-fact-reader.ts readC1Run 从 result.json.reviewVerdict + context.json.reviewedRunId 重建 ReviewVerdictFact，缺失→FactConflict(dimension=review-verdict-linkage)。readLegacyRun 从 result.json.verdict（顶层）+ context.json 多种字段名（reviewedRun path 取 basename、input.reviewedRunId、sourceRevisionRun/sourceApplyRun/sourceExploreRun/sourceProposeRun）重建 Bootstrap review 连接，缺失→FactConflict。reviewedRunId 与 sourceReviewRun 语义明确区分（前者是 review-* 审查目标，后者是 revise-* 修订的前序 review）。spec.md 新增 'Requirement: Review verdict 重建' + 6 Scenarios。design.md 新增 D19。serialization.ts validateContextFile 新增 review-scope 规则校验。新增单元测试覆盖 C1 canonical + Bootstrap legacy 路径。"
+    }
+  ],
+  "modifiedArtifacts": {
+    "verification.md": "新建（C1-AP-001）：验证范围 + 适用检查表 + 结果引用/环境 + Full Test not-applicable + A1 历史例外 + 总体状态=passed",
+    "src/persistence/run-persistence.ts": "C1-AP-002：新增 reconstructCurrentRun 函数 + writeRunResult 重构（readContextFile→validateContextFileIdentity→reconstructCurrentRun→assertMutable→validate→serialize→temp→fs.link）；CreateRunInput 新增 reviewedRunId",
+    "src/facts/formal-fact-reader.ts": "C1-AP-003：readDeliveryManifest 重写读取嵌套 delivery mapping + fail-closed；C1-AP-004：readC1Run 提取 canonical reviewVerdict+reviewedRunId，readLegacyRun + extractLegacyReviewedRunId 提取 Bootstrap legacy 连接",
+    "src/persistence/serialization.ts": "C1-AP-004：RunResultFile 新增 reviewVerdict?，ContextFile 新增 reviewedRunId?，validateContextFile 新增 review-scope 规则（review-* MUST 携带 reviewedRunId，非 review MUST NOT）",
+    "specs/flowkit-formal-fact-reader-and-persistence/spec.md": "新增 4 Requirements + 17 Scenarios（assertMutable 5 + Delivery Manifest 嵌套 3 + Review verdict 重建 6 + Change Verification 3）",
+    "design.md": "新增 D17（writeRunResult 重建 CURRENT 状态）、D18（嵌套 delivery 状态 fail-closed）、D19（review verdict canonical + Bootstrap 连接）、D20（Change Verification 记录）",
+    "tasks.md": "全部 172 tasks 保持 [x]（4 个修复在现有 task 范围内，task 4.3/10.17/13.1-13.5 等覆盖）",
+    "tests/unit/persistence/run-persistence.test.ts": "C1-AP-002：新增 3 测试（assertMutable 观察持久化 terminal / 损坏 result.json 抛 SCHEMA_VALIDATION_FAILED / ContextFile 身份校验）",
+    "tests/unit/facts/formal-fact-reader.test.ts": "C1-AP-003 + C1-AP-004：新增测试（嵌套 manifest 读取 / C1 review verdict canonical 重建 / Bootstrap legacy 连接重建 / fail-closed 缺失 linkage）",
+    "tests/unit/persistence/serialization.test.ts": "C1-AP-004：新增 review-scope 规则测试（review-* 缺 reviewedRunId reject / 非 review 携带 reviewedRunId reject）"
+  },
+  "consistencyScan": {
+    "dimensionsScanned": 11,
+    "remainingContradictions": 0,
+    "realCorpusEvidence": true,
+    "dimensions": [
+      {
+        "id": 1,
+        "name": "spec.md ↔ design.md（4 新 Requirements ↔ D17-D20：assertMutable 5 Scenarios→D17，Delivery Manifest 嵌套 3 Scenarios→D18，Review verdict 重建 6 Scenarios→D19，Change Verification 3 Scenarios→D20）",
+        "status": "consistent"
+      },
+      {
+        "id": 2,
+        "name": "design.md D17 ↔ run-persistence.ts（reconstructCurrentRun 读取 result.json 重建 terminal 状态 / assertMutable 在 temp-file 发布前拒绝 / 损坏抛 SCHEMA_VALIDATION_FAILED / validateContextFileIdentity 在 assertMutable 前）",
+        "status": "consistent",
+        "evidence": "run-persistence.ts:211-224 writeRunResult 调用顺序 readContextFile→validateContextFileIdentity→reconstructCurrentRun→assertMutable；reconstructCurrentRun:282-319 读取 result.json 重建状态"
+      },
+      {
+        "id": 3,
+        "name": "design.md D18 ↔ formal-fact-reader.ts（manifest['delivery'] 嵌套 mapping / delivery.state 枚举 active|completed|cancelled / delivery.fullTestStatus 枚举 not-ready|awaiting-user-decision|authorized|passed|failed / 缺失无效 fail-closed FactConflict）",
+        "status": "consistent",
+        "evidence": "formal-fact-reader.ts:168-239 读取嵌套 delivery mapping + VALID_DELIVERY_STATES/VALID_FULL_TEST_STATUSES 枚举校验 + fail-closed"
+      },
+      {
+        "id": 4,
+        "name": "design.md D19 ↔ serialization.ts + formal-fact-reader.ts（ContextFile.reviewedRunId + RunResultFile.reviewVerdict canonical / review-scope 规则 / reviewedRunId≠sourceReviewRun 语义区分 / Bootstrap legacy 连接多字段名抽取）",
+        "status": "consistent",
+        "evidence": "serialization.ts:139 ContextFile.reviewedRunId; serialization.ts:84 RunResultFile.reviewVerdict; serialization.ts:477-491 review-scope 规则; formal-fact-reader.ts:489-518 C1 canonical 提取; formal-fact-reader.ts:561-591+610-655 Bootstrap legacy 提取"
+      },
+      {
+        "id": 5,
+        "name": "design.md D20 ↔ verification.md（验证范围 + 适用检查 + 命令/方法 + 状态 + 摘要 + 结果引用/环境 + Full Test not-applicable + 总体状态=passed）",
+        "status": "consistent",
+        "evidence": "verification.md 存在且包含 Section 1-6 全部必需字段；总体状态=passed"
+      },
+      {
+        "id": 6,
+        "name": "spec.md ↔ tasks.md（4 新 Requirements 的 Scenarios 在 tasks 中有对应 task 覆盖：assertMutable→4.3/12.9-12.11，嵌套 manifest→1.8/12.2，review verdict→12.2，verification→13.1-13.5）",
+        "status": "consistent"
+      },
+      {
+        "id": 7,
+        "name": "source code ↔ tests（4 修复全部有单元测试覆盖：C1-AP-002 run-persistence.test.ts 3 测试 / C1-AP-003 formal-fact-reader.test.ts 嵌套 manifest 测试 / C1-AP-004 formal-fact-reader.test.ts C1+Bootstrap review + serialization.test.ts review-scope）",
+        "status": "consistent",
+        "evidence": "238 tests passed（首次 apply 226 + revise 新增 12），0 failed"
+      },
+      {
+        "id": 8,
+        "name": "B1 类型对齐（DeliveryState 枚举 ↔ VALID_DELIVERY_STATES；FullTestStatus 枚举 ↔ VALID_FULL_TEST_STATUSES；ReviewVerdictValue ↔ reviewVerdict/reviewedRunId 字段类型）",
+        "status": "consistent",
+        "evidence": "formal-fact-reader.ts:194-201 枚举集与 B1 domain/types.ts DeliveryState/FullTestStatus 一致；serialization.ts:84 ReviewVerdictValue 类型引用"
+      },
+      {
+        "id": 9,
+        "name": "fail-closed 边界（C1-AP-002 损坏 result.json→SCHEMA_VALIDATION_FAILED；C1-AP-003 delivery mapping 缺失/无效→FactConflict；C1-AP-004 review-* 缺 verdict/linkage→FactConflict；C1-AP-004 非 review 携带 reviewedRunId→reject）",
+        "status": "consistent"
+      },
+      {
+        "id": 10,
+        "name": "terminal Run 保留（036-063 terminal Runs 未修改：062-apply/063-review-apply 的 context.json/result.json 未被本 Run 修改）",
+        "status": "consistent",
+        "evidence": "063-review-apply result.json 仍记录 verdict=changes-requested + 4 findings；062-apply 未修改"
+      },
+      {
+        "id": 11,
+        "name": "真实语料证据（063-review-apply 的 4 个 P1 findings ↔ 064 修复逐一对应；063 context.json schemaVersion:1 走 legacy 路径不被 C1 writeRunResult 误写）",
+        "status": "consistent",
+        "evidence": "063-review-apply result.json findings C1-AP-001~004 全部在 resolvedFindings 中有对应 resolution；063 context.json schemaVersion:1 由 legacy recognizer 处理"
+      }
+    ]
+  },
+  "verificationResults": {
+    "openspecValidate": {
+      "command": "npx openspec validate formal-fact-reader-and-persistence --strict",
+      "status": "passed",
+      "result": "Change 'formal-fact-reader-and-persistence' is valid"
+    },
+    "typecheck": {
+      "command": "npm run typecheck",
+      "status": "passed",
+      "result": "tsc --noEmit（production + test projects）无错误"
+    },
+    "build": {
+      "command": "npm run build",
+      "status": "passed",
+      "result": "tsc 编译到 dist/ 无错误"
+    },
+    "lint": {
+      "command": "npm run lint",
+      "status": "passed",
+      "result": "eslint 无错误"
+    },
+    "test": {
+      "command": "npm test",
+      "status": "passed",
+      "result": "238 tests passed, 0 failed, 0 cancelled, 0 skipped（首次 apply 226 + revise 新增 12）"
+    },
+    "fullTest": {
+      "status": "not-applicable",
+      "result": "Full Test 属 Delivery，需要 owner 明确授权。本 Change 未获得 owner Full Test 授权。"
+    }
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit. Run 可与 Change 的其他正式内容一起在普通 Commit 或 Change Checkpoint 中进入 Git 历史。"
+  },
+  "prohibitedWorkCheck": {
+    "frozenSpecsModified": false,
+    "terminalRunsModified": false,
+    "changeCheckpointExecuted": false,
+    "fullTestExecuted": false,
+    "scopeExpansion": false,
+    "note": "036-063 terminal Runs 未修改；未执行 Change Checkpoint 或 Full Test；未扩张 Change 范围"
+  },
+  "nextAction": "review-apply",
+  "nextActionNote": "reviewer 重新审查修订后的 apply 产物，重点验：(1) verification.md 是否满足 docs/verification-model.md Section 7；(2) writeRunResult 的 reconstructCurrentRun 是否正确观察持久化 terminal 状态；(3) Reader 是否正确读取真实 manifest 的嵌套 delivery mapping；(4) review verdict canonical payload + Bootstrap legacy 连接是否可重建。建议 reviewer 对照 063-review-apply 的 4 个 findings 逐一验证。",
+  "blockedOn": []
+}

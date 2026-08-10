@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-042-revise-explore",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "C1",
+  "changeId": "formal-fact-reader-and-persistence",
+  "action": "revise-explore",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "inputRef": "163cf222c0c6c87504c9892f1fe1e09779ddbe1c84bf192f4bc2ca5826fa3116",
+  "sourceReviewRun": "20260806-041-review-explore",
+  "sourceReviewVerdict": "changes-requested",
+  "blockingFindings": ["C1-EX-005"],
+  "nonBlockingFindings": [],
+  "constraints": {
+    "mayReviseExploreArtifact": true,
+    "mayExpandChangeScope": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-042-revise-explore/"
+}

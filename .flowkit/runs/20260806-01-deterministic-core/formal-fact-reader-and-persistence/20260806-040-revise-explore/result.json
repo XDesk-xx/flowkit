@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-040-revise-explore",
+  "status": "completed",
+  "summary": "C1 revise-explore 完成。修复了 039-review-explore 的 1 个 P1 blocking finding (C1-EX-003) 和 1 个 P2 non-blocking finding (C1-EX-004)。C1-EX-003：定义了 C1 拥有的 result.json 物理传输 schema RunResultFile，显式携带 runStatus（terminal RunStatus: completed/failed/cancelled）和可选 executionStatus（ExecutionStatus: completed/failed/blocked），两个值集独立不从 executionStatus 推断 runStatus；定义了 5 个允许组合和 5 个禁止组合，写入和读取时均校验；Reader 读取 result.json 时校验组合合法性并重建 Run。C1-EX-004：恢复表移除'doctor 可清理'，改为 createRun 对自身 staging 目录 best-effort 清理，显式恢复变更 deferred 不分配给只读 doctor。验收标准从 19 项扩展到 23 项，探索结论和 Review 重点同步更新。",
+  "reviewedResultRef": "run-result:.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-039-review-explore/result.json;sha256:687dc2d7c2e28394d9bae16d0ba218be9a099109c77b73d5083afa42f0989a32",
+  "revisedArtifact": {
+    "path": "openspec/changes/formal-fact-reader-and-persistence/explore.md",
+    "sha256": "546d298259d0656225a931dd1f654845813064ce00eda6dcf46b76dcaefd3f27"
+  },
+  "resolvedFindings": [
+    {
+      "id": "C1-EX-003",
+      "resolution": "Q5 阶段 2 新增 RunResultFile 物理传输 schema 定义：显式 runStatus (TerminalRunStatus: completed|failed|cancelled) + 可选 executionStatus (ExecutionStatus: completed|failed|blocked)。定义 5 个允许组合 (completed+completed, completed+failed, completed+blocked, failed+—, cancelled+—) 和 5 个禁止组合 (pending+any, completed+in-progress, completed+absent, failed+present, cancelled+present)。writeRunResult 签名改为接收 RunResultFile。新增 Reader 读取 terminal Run 校验流程。新增 fixture 测试覆盖要求（5 合法 + 5 非法 + 3 边界 reject）。验收标准新增 item 9/10/11。"
+    },
+    {
+      "id": "C1-EX-004",
+      "resolution": "恢复表 staging 目录行从'Reader 忽略；doctor 可清理'改为'Reader 忽略；createRun 对自身 staging 目录 best-effort 清理；显式恢复变更 deferred（不分配给只读 doctor）'。验收标准新增 item 17。"
+    }
+  ],
+  "changesSummary": {
+    "Q5_stage2": "新增 RunResultFile 物理传输 schema 定义 + 允许/禁止组合表 + 关键区分说明 + writeRunResult 签名更新 + Reader 读取校验流程 + fixture 测试覆盖要求",
+    "Q5_recovery_table": "staging 目录行移除'doctor 可清理'，改为 createRun best-effort + deferred",
+    "section4": "serialization.ts 描述更新为'RunResultFile 物理 schema + ...序列化'",
+    "section7": "验收标准从 19 项扩展到 23 项，新增 result.json 物理 schema(9)、组合校验+fixture(10)、Reader 读取校验(11)、staging 清理分配(17)",
+    "section8": "探索结论新增 item 7 (RunResultFile 物理 schema)，item 6 更新 staging 清理分配，item 12 更新测试覆盖",
+    "section9": "Review 重点新增 item 7/8/9 (RunResultFile schema、组合穷尽、staging 清理)，item 16 更新所有权边界"
+  },
+  "keyDistinction": {
+    "runStatus_vs_executionStatus": "RunStatus (pending/completed/failed/cancelled) 是 Run 生命周期状态；ExecutionStatus (in-progress/completed/failed/blocked) 是 Action 执行结果。两个值集独立：blocked 不是 RunStatus，cancelled 不是 ExecutionStatus。executionStatus:failed + runStatus:completed 表示 Action 失败但 Run 正常完成；runStatus:failed 表示 Run 自身基础设施失败无 ActionResult。",
+    "ownershipBoundary": "B1 拥有逻辑 ActionResult 类型；C1 拥有物理传输 schema RunResultFile 和序列化"
+  },
+  "scopeDiscipline": {
+    "scopeExpanded": false,
+    "reason": "只处理 C1-EX-003 和 C1-EX-004，不扩张 Change 范围"
+  },
+  "nextActionRecommendation": "review-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "lastCommit": "180f161 checkpoint(domain-and-state-schema): B1 Change Checkpoint",
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "blockedOn": []
+}

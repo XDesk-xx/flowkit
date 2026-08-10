@@ -1,0 +1,11 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "已沿 182 建立的 F1 审查链完成 188 revise-propose 复审。187 的三个 author-actionable Blocking Findings 均已关闭：shared 已冻结为 broad affected 而非 full suite；新增 verification scope 为 F1 verification/quality tooling 提供确定 coverage path；maintainability metrics 在 Proposal/Design/Spec/Tasks 中统一为 required warning-only 并冻结确定性 metric definition。188 未修改 Manifest goal/outputs、Explore、production code 或 tests，184/185 的 scope authority 与 Core RC/Delivery Full Test lifecycle 边界保持不变。运输、lineage、OpenSpec strict 10/10、typecheck/lint/build 与 materialized Core admission 均通过。Blocking Findings 为 0。",
+    "nextActionRecommendation": "owner-decision: authorize-apply"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindings": []
+}

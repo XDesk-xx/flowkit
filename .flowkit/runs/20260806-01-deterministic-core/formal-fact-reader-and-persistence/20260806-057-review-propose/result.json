@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-057-review-propose",
+  "status": "completed",
+  "verdict": "changes-requested",
+  "summary": "Revised proposal still leaves two P1 blockers: ContextFile is not a deterministic current-Run projection, and the Bootstrap discriminator excludes existing schemaVersion-1 records.",
+  "findings": [
+    {
+      "id": "C1-PR-004",
+      "severity": "P1",
+      "title": "ContextFile lacks deterministic current-Run projection and identity validation",
+      "disposition": "changes-requested"
+    },
+    {
+      "id": "C1-PR-005",
+      "severity": "P1",
+      "title": "Bootstrap compatibility discriminator excludes real schemaVersion-1 records",
+      "disposition": "changes-requested"
+    }
+  ],
+  "verification": [
+    {
+      "command": "npx openspec validate formal-fact-reader-and-persistence --strict",
+      "status": "passed",
+      "note": "Structural validation only."
+    },
+    {
+      "command": "npm run typecheck",
+      "status": "passed"
+    },
+    {
+      "command": "npm run lint",
+      "status": "passed"
+    },
+    {
+      "command": "full test",
+      "status": "not-run",
+      "note": "No owner authorization; proposal review does not authorize it."
+    }
+  ],
+  "nextAction": "revise-propose"
+}

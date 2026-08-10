@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 2,
+  "runId": "20260806-106-revise-explore",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "Q1",
+  "changeId": "execution-model-correction",
+  "action": "revise-explore",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-105-review-explore/result.json",
+    "versionFingerprint": "58920464971c4945daee4847650a7b20b711f99dc02147cfaba82777044eab43",
+    "kind": "run-result"
+  },
+  "sourceReviewRun": "20260806-105-review-explore",
+  "sourceReviewVerdict": "changes-requested",
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-106-revise-explore/",
+  "constraints": {
+    "mayCreateProposalArtifacts": true,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": true,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

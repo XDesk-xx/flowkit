@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-038-revise-explore",
+  "status": "completed",
+  "summary": "C1 revise-explore 完成。修复了 037-review-explore 的两个 P1 blocking findings。C1-EX-001：assertMutable 校验顺序从'构造 terminal Run 后校验'改为'读取 CURRENT pending 状态后校验'，使 pending Run 能通过校验并写入 terminal result.json。C1-EX-002：Run 创建从逐文件写入改为 staging + atomic publish 协议——全部初始文件在临时 staging 目录中准备并校验后通过目录 rename 原子发布，staging 目录对 Reader 不可见。Q5 重写为两阶段持久化协议，验收标准、探索结论和 Review 重点同步更新。",
+  "reviewedResultRef": "run-result:.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-037-review-explore/result.json;sha256:6a31e69bcac6cf237b333d17c3ee50b7a44a0bdcdb0898e3ce2b9ee93659b759",
+  "revisedArtifact": {
+    "path": "openspec/changes/formal-fact-reader-and-persistence/explore.md",
+    "sha256": "3425fc08a9d71032ba15b72cd8940225e1bc189598f1a2c69e78db365721414e"
+  },
+  "resolvedFindings": [
+    {
+      "id": "C1-EX-001",
+      "resolution": "Q5 阶段 2 重写：assertMutable 校验 CURRENT 持久化状态（pending），不是 NEW terminal 结果。顺序为：读取当前 Run (pending) → assertMutable(currentRun) [pending 通过] → 校验 NEW result → atomicWriteFile(result.json) → Run 转为 terminal。错误顺序（构造 terminal 后 assertMutable）在 explore.md 中显式标注为反面示例。"
+    },
+    {
+      "id": "C1-EX-002",
+      "resolution": "Q5 阶段 1 重写为 staging + atomic publish 协议：在 .tmp-<run-id>/ staging 目录中准备 action.md + context.json → 校验 → rename 为 <run-id>/。staging 目录对 Reader 不可见（恢复规则表中明确）。失败时清理 staging 目录。验收标准新增 item 5/6/16 覆盖 all-or-nothing 和中断边界测试。"
+    }
+  ],
+  "changesSummary": {
+    "Q5": "完全重写为两阶段持久化协议（staging+publish 创建 / read+assertMutable+write 完成），含恢复规则表",
+    "section4": "run-persistence.ts 描述更新为'两阶段持久化'",
+    "section7": "验收标准从 16 项扩展到 19 项，新增 staging+publish(5)、staging 不可见(6)、assertMutable 顺序(7)、terminal 不可覆盖(8)、中断边界测试(16)",
+    "section8": "探索结论 item 5/6 更新为两阶段协议和 staging+publish",
+    "section9": "Review 重点 item 5/6 更新为 assertMutable 顺序和 staging+publish，新增中断边界测试(11)",
+    "Q10": "持久化测试更新为覆盖每个中断边界"
+  },
+  "scopeDiscipline": {
+    "scopeExpanded": false,
+    "reason": "只处理 C1-EX-001 和 C1-EX-002，不扩张 Change 范围"
+  },
+  "nextActionRecommendation": "review-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "lastCommit": "180f161 checkpoint(domain-and-state-schema): B1 Change Checkpoint",
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "blockedOn": []
+}

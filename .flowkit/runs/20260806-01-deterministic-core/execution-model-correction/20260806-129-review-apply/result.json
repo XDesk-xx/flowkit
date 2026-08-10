@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-129-review-apply",
+  "status": "completed",
+  "summary": "Independent review of 128 finished with changes-requested. Q1-RA-002 (exact lineage + pending revision-window) and Q1-RA-004 (schemaVersion 2 ResultRef.kind required + exact field-kind binding) are materially resolved, and the test reorganization addresses the prior non-blocking organization concern. However, the central Q1 authority boundary is still bypassable: exported writeRunResult still accepts caller-authored RunResultFile/ResultRefs and its preflight intentionally skips initial artifact completeness when producedResultRefs is absent and does not require verificationSummaryRef on review-apply. The same omission leaves review-entry/Reader completeness fail-open for empty or partial initial produced sets. In addition, descriptor values are not runtime constrained: unknown/empty producedArtifactTags can be silently ignored and Run-ID descriptors can carry path semantics because reviewedRunId/consumedRunIds are not validated against the Run-ID grammar before filesystem resolution. Author-recorded typecheck/lint/build/494 tests/OpenSpec checks are accepted as recorded; Delivery Full Test was not authorized or run.",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-128-revise-apply/",
+  "reviewedResultRef": "content-sha256:9675640bd06646bb7d1b694123dcf714d36b83482c50208d5c4ce4058234938b",
+  "sourceReview": {
+    "runId": "20260806-127-review-apply",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:9797725abe5a2cce06502e1622f4ff129d8c3fd7322c7116bb0cd46295825b8d"
+  },
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "Q1-RA-001",
+      "title": "Core-owned ResultRef authority remains bypassable through exported writeRunResult",
+      "location": "src/persistence/run-persistence.ts: writeRunResult, publishTerminalResult, completionPreflight; tests/unit/persistence/run-persistence.test.ts",
+      "evidence": "Run 128 adds completeRun(runDir, CompleteRunInput) as a descriptor-driven happy-path API, but export async function writeRunResult(runDir, result: RunResultFile) remains externally reachable and still accepts a caller-built actionResult containing ResultRefs. completionPreflight validates only refs that are present. Its initial completeness branch is explicitly guarded by actionResult.producedResultRefs !== undefined, and the review-apply rule only rejects verificationSummaryRef on other actions; it never requires one when writeRunResult is used for review-apply. The current run-persistence unit test still terminal-publishes an explore Run through writeRunResult with no producedResultRefs, demonstrating that the 127 bypass remains executable.",
+      "impact": "A schemaVersion 2 caller can still bypass completeRun, omit the complete initial produced set or review-apply verification summary, and publish a terminal result through the exported raw RunResultFile path. Therefore ResultRef path/kind/fingerprint authority is not mechanically exclusive to Core.",
+      "requiredResolution": "Make the descriptor-driven completion boundary the only externally reachable production terminal-completion API. Keep the raw RunResultFile publisher private/internal (or make writeRunResult itself descriptor-driven) while preserving one shared assertMutable + preflight + fs.link publisher. Also make the shared preflight fail closed on missing required initial producedResultRefs and missing review-apply verificationSummaryRef so an internal misuse cannot recreate the bypass. Remove/update tests that prove raw caller-authored terminal completion is accepted."
+    },
+    {
+      "id": "Q1-RA-003",
+      "title": "Review-entry and Reader still fail open on empty or partial initial effective artifact sets",
+      "location": "src/persistence/run-persistence.ts: validateReviewEntry/readRunProducedResultRefs; src/facts/formal-fact-reader.ts: validateCurrentGenerationRefs",
+      "evidence": "readRunProducedResultRefs returns [] when producedResultRefs is absent, malformed, or unreadable. validateReviewEntry only calls validateEffectiveArtifactRefs when producedRefs.length > 0. For review-explore, an empty produced set therefore receives no artifact completeness check at all. For review-propose, the remaining validateSpecsExactSet check compares only specs identities; when the canonical specs namespace is empty, an empty produced set passes even though proposal.md/design.md/tasks.md were never bound. Reader has the same gap: validateCurrentGenerationRefs returns without conflict when producedResultRefs is absent instead of enforcing the approved initial generation completeness invariant.",
+      "impact": "A terminal initial generation created through the still-open low-level path can be treated as current and can form a review binding without the complete authoritative artifact set. Reader can also expose such a generation without the required FactConflict, weakening both review-entry and Policy fail-closed behavior.",
+      "requiredResolution": "Use one shared stage-aware effective-set completeness validator at terminal preflight, review entry, and Reader current-generation validation. Initial explore must exactly bind explore.md; initial propose must bind proposal.md, design.md, tasks.md, and the complete current specs namespace. Missing, malformed, empty, or partial produced sets must reject review creation or produce FactConflict regardless of whether the field is present."
+    },
+    {
+      "id": "Q1-RA-005",
+      "title": "Typed descriptors are not runtime fail-closed and can still encode caller path/tag authority",
+      "location": "src/persistence/run-persistence.ts: CompleteRunInput/deriveReviseProposeProducedRefs/readReferencedRunResult; src/persistence/result-ref-adapter.ts: resolveRunResultPath; src/persistence/serialization.ts: validateContextFile reviewedRunId",
+      "evidence": "CompleteRunInput relies on TypeScript types but does not runtime-validate producedArtifactTags. deriveReviseProposeProducedRefs constructs new Set(declaredTags ?? []) and silently ignores unknown tags; an empty or unknown-only set can become a no-op inherited revision. Run-ID descriptors are also plain strings: reviewedRunId is only requireString in validateContextFile, consumedRunIds are not grammar-validated, readReferencedRunResult passes the supplied string to path.join, and resolveRunResultPath concatenates it into a persisted ref without rejecting slashes, '..', absolute/path-shaped values, or a non-Run-ID form. The approved Q1 resolver contract explicitly requires Core to reject Action-disallowed tags, path traversal/absolute paths, and caller-selected path semantics.",
+      "impact": "A JavaScript/CLI caller can bypass compile-time typing, silently supply invalid/no-op artifact tags, or smuggle path semantics through a nominal Run-ID descriptor. That means caller authority has moved from a ResultRef object into unchecked descriptor strings rather than being eliminated.",
+      "requiredResolution": "Runtime-validate every descriptor before filesystem resolution. Reuse the formal Run-ID grammar/validator for reviewedRunId, consumedRunIds, and other Run-ID descriptors; reject any path-shaped value. Validate producedArtifactTags against the Action-permitted closed set and enforce the approved non-empty changed-tag requirement for revise artifact actions. Add negative tests for unknown/disallowed tags, empty/no-op revise tags, and Run-ID traversal/path-shaped descriptors."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "resolvedPriorFindings": [
+    {
+      "id": "Q1-RA-002",
+      "result": "resolved",
+      "evidence": "generation-resolver.ts now proves artifact and verification successors from reviewedRunId/sourceReviewRun/sourceReviewVerdict and accepts pending revise Runs for bounded revision-window classification without using Run-ID ordering as lineage proof."
+    },
+    {
+      "id": "Q1-RA-004",
+      "result": "resolved",
+      "evidence": "validateResultRefProjection now requires kind for schemaVersion 2 and field-specific validators require exact kind equality; missing/empty/unknown/mismatched kind cases are covered by reorganized tests."
+    },
+    {
+      "id": "Q1-RA-NB-001",
+      "result": "resolved",
+      "evidence": "The Change-centric q1-execution-model.test.ts was removed and its module unit vs cross-module lifecycle responsibilities were split into product-owned unit files and tests/integration/execution-model-lifecycle.test.ts."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "128 reviewed Run binding",
+        "status": "passed",
+        "result": "Reviewed 20260806-128-revise-apply/result.json exact content SHA-256 9675640bd06646bb7d1b694123dcf714d36b83482c50208d5c4ce4058234938b (Git blob 5647ea504a5cf12cdcd4cf6044d07e6bbd99cc43)."
+      },
+      {
+        "name": "Author-recorded focused/affected verification",
+        "status": "passed-as-recorded",
+        "result": "128/verification.md records typecheck, lint, build, 494/494 unit+integration tests, OpenSpec Change strict validation, 8/8 canonical specs and git diff --check as passed. Reviewer did not rerun Delivery Full Test."
+      },
+      {
+        "name": "Q1-RA-002 exact lineage + revision-window",
+        "status": "passed",
+        "result": "Shared generation-resolver requires reviewedRunId/sourceReviewRun/sourceReviewVerdict exact lineage and includes pending revise Runs."
+      },
+      {
+        "name": "Q1-RA-004 ResultRef.kind closed schema",
+        "status": "passed",
+        "result": "schemaVersion 2 ResultRef.kind is required and field-kind binding is exact."
+      },
+      {
+        "name": "Q1-RA-001 production ResultRef authority",
+        "status": "failed",
+        "result": "Exported writeRunResult still accepts caller-authored RunResultFile/ResultRefs and omission remains a terminal-publication bypass."
+      },
+      {
+        "name": "Q1-RA-003 review-entry/current-generation completeness",
+        "status": "failed",
+        "result": "Empty/partial initial produced sets are not unconditionally rejected at review entry or surfaced as Reader conflicts."
+      },
+      {
+        "name": "Descriptor runtime/path authority",
+        "status": "failed",
+        "result": "Run-ID and artifact-tag descriptors are not runtime fail-closed; path-shaped Run IDs and unknown/no-op tags are not rejected at the descriptor boundary."
+      },
+      {
+        "name": "Delivery Full Test",
+        "status": "not-applicable",
+        "result": "Not owner-authorized and not run; review-apply has no Delivery Full Test authority."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-apply",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

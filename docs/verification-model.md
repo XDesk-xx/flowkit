@@ -87,6 +87,91 @@ passed | not-applicable
 
 不得因为是 Review 修复就跳过验证。
 
+### 3.5 成本边界与脚本归属
+
+Change Verification 冻结的是 timing 与 ownership，不是具体脚本：
+
+```text
+explore / propose
+  → 当前契约/文档适用检查
+
+apply / revise-apply
+  → focused + affected 范围适用检查
+  → typecheck / lint / build / OpenSpec strict 仅在适用时执行
+
+review-apply / archive
+  → 消费 Change Verification，不自动跑 Delivery Full Test
+```
+
+- 小修改优先 focused checks；只有影响共享契约、公共类型或跨模块行为时才扩大到 affected checks；
+- 从 F1 起，项目级 `test:focused` / `test:affected` / `test:full` / `quality` / `verify:change` / `verify:full` contract 见 §3.6；
+- Delivery Full Test 只有 Delivery ready + owner explicit authorization 才允许，详见 §4–§5。
+
+### 3.6 F1 executable verification contract
+
+F1 将 Verification 分层落实为以下项目命令：
+
+```text
+npm run test:focused -- <tests/**/*.test.ts...>
+npm run test:affected -- <shared|domain|persistence|facts|policy|cli|verification...>
+npm run test:full
+npm run quality
+npm run verify:change -- <affected-scope...|none>
+npm run verify:full
+```
+
+固定 test concurrency：
+
+```text
+focused = 1
+affected = 2
+full = 4
+```
+
+`npm test` 只是 `npm run test:full` 的兼容入口，不再保留依赖 Node 默认 concurrency 的第二条 full path。
+
+`test:focused` 只运行调用者显式给出的 repository-relative `tests/**/*.test.ts`；`test:affected` 只消费 F1 source-controlled closed scope mapping，不做 Git diff 推断、不建立 Registry、不接入 CodeGraph。`shared` 是 broad affected set，但不是 full suite；`verification` 专门覆盖 F1 verification/quality tooling。
+
+`quality` 的 hard failures 只覆盖当前 correctness/architecture invariant：
+
+- `src/**` / `tests/**` 禁止手写 `.mjs` source/test；
+- `package.json.bin.flowkit` 必须为 `dist/bin/flowkit.js`；
+- `src/bin/flowkit.ts` 必须保留 Node shebang；
+- `src/domain/**` / `src/policy/**` 不得直接 import Node filesystem modules。
+
+同时 `quality` 必须确定性计算 file/function LOC、cyclomatic complexity、nesting depth、parameter count，并按 F1 reference threshold 报告 warning/elevated-warning。maintainability warning 不改变 correctness exit code，也不成为 Flowkit 状态。
+
+`verify:change` 固定聚合：
+
+```text
+quality
+selected affected tests（或显式 none）
+typecheck
+lint
+build
+current Change OpenSpec strict
+canonical specs strict
+```
+
+它不得调用 `test:full` / `verify:full`，也不得创建 Delivery Full Test authority fact。verification/quality tooling 变化必须使用 `verification` affected scope。
+
+`verify:full` 固定按 fail-fast 顺序执行：
+
+```text
+quality
+typecheck
+lint
+build
+openspec validate --all --strict
+test:full
+```
+
+该命令只是项目完整 Core verification 工具。只有当所有 required Changes completed + checkpointed、Owner 明确授权并进入正式 `full-test` Action 后，这次执行结果才可被 Delivery lifecycle 消费为 Delivery Full Test。Author/Reviewer 在 F1 自身验收中运行相同命令，只产生 Change evidence。
+
+F1 timing reference budget：focused `2s/5s`、affected `30s/60s`、full `30s/60s`、typecheck/lint/build 各 `10s/20s`（target/warning）。超预算只输出 diagnosis，不改变 correctness result。
+
+Windows process test 必须通过真实 `.cmd/.bat` command processor 语义。Change Checkpoint 前的 `git diff --check` 与暂存后的 `git diff --cached --check` 仍属于 Git authority preflight；detached `quality` / `verify:change` 不伪造这两个 Git facts。
+
 ## 4. Delivery Full Test
 
 ### 4.1 状态
@@ -196,6 +281,20 @@ Full Test failed 不得自动扩张 Delivery 范围，也不提供失败结果 w
 - 总体 Change Verification 状态。
 
 Run 的 `result.json` 可以引用该记录，但不能替代它。
+
+从 E1 `diagnostic-cli` 起，新的/current active Change `verification.md` 还必须包含且只包含一个精确的 machine-readable status marker：
+
+```text
+<!-- flowkit-change-verification-status: passed -->
+```
+
+marker 的允许值与 `VerificationStatus` 一致：
+
+```text
+not-run | passed | failed | not-applicable
+```
+
+该 marker 只是 Flowkit Reader 对既有 Verification authority file 的确定性投影钩子，不是第二份 Verification 状态。Reader 不得从周围 prose、Run summary、聊天或 historical ResultRef 推断 Change Verification 状态。`verification.md` 存在但 marker 缺失、重复或非法时，Reader 必须 fail-closed 为 `change-verification-status` conflict。历史 archived Change 不要求回填 marker。
 
 ## 8. Review 与 Verification
 

@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-049-review-explore",
+  "status": "completed",
+  "summary": "C1 Explore review requests changes. Revision 048 resolves execution-status duplication, but Q7 still prescribes atomicWriteFile(result.json, jsonString) for ResultRef serialization. That is an overwrite-capable rename path and conflicts with Q5 exclusive fs.link publication, reintroducing the C1-EX-006 terminal-overwrite defect through a second documented write path.",
+  "reviewedResultRef": "run-result:.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-048-revise-explore/result.json;sha256:829a33dd55ba47b4cfbf45f4da6edbd0f3137c95d9c771314a698dc4ad90f0ce",
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "C1-EX-009",
+      "title": "Q7 retains an overwrite-capable result.json write path",
+      "severity": "P1",
+      "evidence": "Q5 correctly requires temp-file plus fs.link create-if-not-exists and explicitly forbids atomicWriteFile for terminal publication. Q7 write behavior nevertheless says atomicWriteFile(result.json, jsonString). A1 atomicWriteFile uses rename, which replaces an existing target, so the two specifications are incompatible and Q7 permits terminal-result replacement.",
+      "requiredChange": "Make writeRunResult the sole terminal result publication path. Revise Q7 to describe serialization and post-publication ResultRef derivation without invoking atomicWriteFile on result.json; state explicitly that adapters never publish or replace terminal result files. Add a consistency fixture or contract test proving no documented helper path can overwrite an existing result.json."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "resolvedFindings": [
+    {
+      "id": "C1-EX-008",
+      "resolution": "Resolved by revision 048: executionStatus is serialized only in actionResult and no longer duplicated at the envelope level."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "Formal protocol-consistency review",
+        "status": "passed",
+        "result": "Reviewed Q5 terminal publication and Q7 ResultRef write behavior against A1 atomicWriteFile semantics."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

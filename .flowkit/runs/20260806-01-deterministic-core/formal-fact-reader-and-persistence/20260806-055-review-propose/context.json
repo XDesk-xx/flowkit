@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-055-review-propose",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeId": "formal-fact-reader-and-persistence",
+  "action": "review-propose",
+  "role": "reviewer",
+  "status": "pending",
+  "input": {
+    "reviewedRunId": "20260806-054-propose",
+    "reviewedAction": "propose",
+    "reviewedResultRef": "sha256:55667fb746999e6837aaead29f23174635272a8c420f4d223259289240167153"
+  },
+  "constraints": {
+    "fullTestAuthorized": false,
+    "reviewScope": "proposal artifacts and formal-reader lifecycle contracts"
+  }
+}

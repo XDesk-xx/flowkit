@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-127-review-apply",
+  "status": "completed",
+  "summary": "Complete Q1 Apply review of 126 finished with changes-requested. The implementation is substantial and the author-recorded typecheck, lint, build, 471 unit tests, OpenSpec Change strict validation and canonical-spec validation are all recorded as passed. However, four frozen Q1 contracts are not fully enforced by the production implementation: (1) writeRunResult still accepts caller-authored ResultRefs instead of deriving all applicable ResultRefs from typed descriptors, and initial produced-set / review-apply verification-summary requirements can be bypassed by omission; (2) Reader generation classification does not prove exact sourceReviewRun/sourceReviewVerdict lineage and does not implement the pending revision window; (3) review-explore/review-propose creation does not enforce the required current-effective-artifact review-entry validation before binding; (4) schemaVersion 2 ResultRef validation still permits missing kind. The q1-execution-model.test.ts filename and mixed responsibilities are also poor long-term product-test organization, but that is non-blocking.",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-126-apply/",
+  "reviewedResultRef": "content-sha256:8da79043abf292685055f91b5b7df86f5baa4b72d60e43209021d7be410af340",
+  "sourceReview": {
+    "runId": "20260806-125-review-propose",
+    "verdict": "approved",
+    "resultRef": "content-sha256:2374ecf5fd9516fc2fe3fd178c2f138150a15dd17af71f43c7d9af0dfb46fc03"
+  },
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "Q1-RA-001",
+      "title": "Core-owned ResultRef authority is bypassable at writeRunResult",
+      "location": "src/persistence/run-persistence.ts: writeRunResult/completionPreflight; tests/unit/persistence/q1-execution-model.test.ts; openspec/changes/execution-model-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "evidence": "The approved contract requires schemaVersion 2 production ResultRefs to be Core-derived from typed descriptors. Initial explore/propose must automatically establish the complete Action-owned produced set, and review-apply must derive verificationSummaryRef from the current verification.md. The current public writeRunResult(runDir, result: RunResultFile) still accepts caller-supplied producedResultRefs/consumedInputRefs/reviewVerdictRef/verificationSummaryRef. completionPreflight validates refs already present instead of owning their derivation. For initial explore/propose, validateInitialArtifactCompleteness runs only when producedResultRefs is present, so omitting the field bypasses completeness. For review-apply, the preflight rejects verificationSummaryRef on non-review-apply but does not require/derive it on review-apply. The Q1 fixture file constructs ResultRefs itself and passes them into writeRunResult, thereby testing the bypassable caller-authority model rather than the frozen descriptor model.",
+      "impact": "A schemaVersion 2 caller can still choose ref path/kind/fingerprint-bearing objects at the terminal-write boundary, or omit required initial/review-apply references entirely. This breaks the One fact, one authority Q1 goal and means a terminal Run can be published without the complete Core-owned evidence set required by the approved Proposal.",
+      "requiredResolution": "Make the production terminal-write entry point descriptor-driven: callers provide only allowed typed descriptors/tags/Run IDs; Core derives all applicable ResultRefs from actual targets. Initial explore/propose MUST derive and require the complete expected produced set even when the caller omits any result-ref field. review-apply MUST derive and require verificationSummaryRef from context.changeId/current verification.md; missing/unreadable/ambiguous target keeps the Run pending. Add negative tests for omitted producedResultRefs and omitted review-apply verificationSummaryRef, and update existing fixtures so they do not construct production ResultRefs as caller authority."
+    },
+    {
+      "id": "Q1-RA-002",
+      "title": "Generation-aware Reader uses Run ordering instead of exact review/revise lineage and lacks pending revision-window handling",
+      "location": "src/facts/formal-fact-reader.ts: validateGenerationAwareArtifacts, classifyGenerations, hasLegitimateRevisionChain, classifyVerificationGenerations",
+      "evidence": "The approved contract requires supersession to be proven by the exact chain R.reviewedRunId == G0.runId, R.verdict == changes-requested, G1.sourceReviewRun == R.runId, G1.sourceReviewVerdict == changes-requested, and explicitly forbids inference from newer Run IDs. Current hasLegitimateRevisionChain is documented as a simplified check and does not verify later.sourceReviewRun; it relies on a changes-requested review plus later action/order. RunFact does not carry sourceReviewRun/sourceReviewVerdict. validateGenerationAwareArtifacts filters artifact Runs to status === completed, so a legal pending revise-S Run cannot create the required revision-window class even though GenerationClass declares revision-window. Verification generation classification similarly accepts a changes-requested review-apply plus any completed revise-apply between Run IDs rather than proving that revise-apply is sourced from that review.",
+      "impact": "Reader can falsely mark history superseded from an unrelated later revision, or report false replacement conflicts while a legitimate pending revision is editing canonical artifacts. Both violate the frozen fail-closed lineage semantics and can misroute Policy.",
+      "requiredResolution": "Expose the required sourceReviewRun/sourceReviewVerdict facts to Reader and classify generations using exact lineage only. Implement the bounded pending revision window for explore/propose and equivalent verification revision lineage for review-apply/revise-apply. Do not use Run ordering as proof of supersession. Add negative fixtures for unrelated changes-requested reviews/revise Runs and positive fixtures proving pending revision-window behavior."
+    },
+    {
+      "id": "Q1-RA-003",
+      "title": "review-explore/review-propose entry does not validate the reviewed generation current effective artifact set before binding",
+      "location": "src/persistence/run-persistence.ts: createRun/deriveInputRef; openspec/changes/execution-model-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "evidence": "The approved contract requires review-explore/review-propose entry to validate the reviewed generation's current effective artifacts before the review Run is created; review-propose must additionally exact-compare the effective specs namespace with current canonical specs/**. Current createRun for review-* derives context.inputRef from reviewedRunId/result.json, but performs no current effective artifact or specs namespace validation before staging/publishing the review Run. Reader may detect a conflict later, but the forbidden review binding has already been created.",
+      "impact": "A proposal can terminal, its canonical proposal/spec namespace can drift, and a new review-propose Run can still be formally created and exact-bind the immutable result.json. This violates the required review-entry boundary and weakens the guarantee that a reviewer is reviewing the exact current effective artifact generation.",
+      "requiredResolution": "Before publishing review-explore/review-propose, resolve the reviewed Run's current effective generation using the same shared lineage/effective-set semantics as Reader, validate every current effective artifact ref, and for review-propose exact-compare effective specs identities with current canonical specs/**. On mismatch/missing/namespace drift, fail before Run publish. Add post-author-terminal/pre-review drift negative fixtures."
+    },
+    {
+      "id": "Q1-RA-004",
+      "title": "schemaVersion 2 ResultRef validation still permits missing kind",
+      "location": "src/persistence/serialization.ts: validateResultRefProjection / field-specific ResultRef validation",
+      "evidence": "The approved delta states that schemaVersion 2 ResultRef.kind MUST be one of run-result, produced-artifact, verification-summary and that unknown, empty, or missing kind must be rejected. validateResultRefProjection currently treats kind as optional and only validates enum membership when kind is present. Field-specific validation likewise rejects a mismatch only when a kind exists. A {ref, versionFingerprint} projection can therefore pass schemaVersion 2 validation.",
+      "impact": "The physical closed schema does not mechanically enforce the Core-owned kind discriminator, allowing ambiguous legacy-shaped references into schemaVersion 2 results and weakening field-kind-path binding.",
+      "requiredResolution": "Require ResultRef.kind for every schemaVersion 2 ResultRef projection and require exact field-specific kind equality. Add missing-kind, empty-kind, unknown-kind, and field-kind mismatch negative tests while preserving bounded schemaVersion 1 legacy recognition separately."
+    }
+  ],
+  "nonBlockingFindings": [
+    {
+      "id": "Q1-RA-NB-001",
+      "title": "q1-execution-model.test.ts is Change-centric and mixes unit and lifecycle integration responsibilities",
+      "location": "tests/unit/persistence/q1-execution-model.test.ts",
+      "evidence": "The persistence test directory otherwise uses product/module names such as serialization.test.ts, result-ref-adapter.test.ts, run-persistence.test.ts and legacy-recognizer.test.ts. q1-execution-model.test.ts is named after temporary Change key Q1, is large, imports serialization/result-ref-adapter/run-persistence/formal-fact-reader together, and contains both narrow unit checks and full P0 -> review -> revise -> Reader/archive lifecycle fixtures.",
+      "recommendedResolution": "Do not make this a standalone blocker. When touching these tests for the blocking fixes, prefer moving module-level checks into product-owned unit files and cross-module generation/review/archive fixtures into an integration test such as tests/integration/execution-model-lifecycle.test.ts. Avoid retaining the temporary Q1 identifier as the long-term product test boundary."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "126 reviewed Run binding",
+        "status": "passed",
+        "result": "127 binds the current GitHub 126 terminal result.json by content SHA-256 8da79043abf292685055f91b5b7df86f5baa4b72d60e43209021d7be410af340."
+      },
+      {
+        "name": "Author-recorded mechanical verification",
+        "status": "passed-as-recorded",
+        "result": "126/verification.md records typecheck, lint, build, 471/471 unit tests, OpenSpec Change strict validation, 8/8 canonical specs, and whitespace checks as passed. This reviewer did not rerun Delivery Full Test."
+      },
+      {
+        "name": "Approved Q1 contract vs production API authority",
+        "status": "failed",
+        "result": "writeRunResult still accepts caller-authored ResultRefs and omission can bypass initial produced-set and review-apply verification-summary requirements."
+      },
+      {
+        "name": "Generation lineage and revision-window semantics",
+        "status": "failed",
+        "result": "Reader uses simplified Run-order inference and does not classify pending revise Runs into the required bounded revision window."
+      },
+      {
+        "name": "Review-entry current effective set validation",
+        "status": "failed",
+        "result": "createRun binds reviewed result.json but does not validate current effective artifacts/specs namespace before publishing review-explore/review-propose."
+      },
+      {
+        "name": "schemaVersion 2 ResultRef closed kind contract",
+        "status": "failed",
+        "result": "ResultRef.kind remains optional in validateResultRefProjection."
+      },
+      {
+        "name": "Delivery Full Test",
+        "status": "not-applicable",
+        "result": "Not owner-authorized and not run; review-apply has no Delivery Full Test authority."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-apply",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

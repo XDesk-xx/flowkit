@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-107-review-explore",
+  "status": "completed",
+  "summary": "Complete Q1 Explore review of 106 finished with changes-requested. 106 correctly identifies every ResultRef category and removes the review-result self-reference. However, it assigns all target types to buildRunResultRef even though that C1 helper appends result.json and cannot reference verification.md or arbitrary produced artifacts. It also leaves review-* exact version binding optional: C1 requires reviewedRunId but permits context.inputRef to be absent, while Q1 does not require a Core-derived review input target to match reviewedRunId. These omissions leave generic provenance and reviewer version binding non-executable.",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-106-revise-explore/",
+  "reviewedResultRef": "content-sha256:8c4f3a696e2dae3a6916118d683b062c38fdd0f7ddbe3eefe0f5b925d4d65ba4",
+  "sourceReview": {
+    "runId": "20260806-105-review-explore",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:58920464971c4945daee4847650a7b20b711f99dc02147cfaba82777044eab43"
+  },
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "Q1-RE-001",
+      "title": "All-category ResultRef design invokes a Run-only constructor for non-Run artifacts",
+      "location": "openspec/changes/execution-model-correction/explore.md:191-222, 264-278, 361-367",
+      "evidence": "The Explore says every category is Core-built with buildRunResultRef, including artifactPath and verificationPath targets. The actual helper takes a Run path and unconditionally appends result.json; it can only produce kind=run-result. It therefore cannot construct a ResultRef to openspec/changes/<id>/verification.md or an arbitrary produced artifact file. The target-descriptor matrix also omits the required kind/path-normalization contract for those artifact categories.",
+      "impact": "The Proposal cannot implement the stated verificationSummaryRef and producedResultRefs behavior with the named helper. A naive implementation will reference nonexistent artifact/result.json paths or falsely label non-Run artifacts as run-result, breaking provenance and later verification.",
+      "requiredResolution": "Keep Q1-RE-001 open. Define a generic, Core-owned artifact ResultRef constructor that accepts a normalized repository-relative file path, content, and validated kind, then retain buildRunResultRef only as the result.json specialization. Specify allowed kinds and path roots for produced artifacts and verification.md, descriptor-to-path resolution, traversal rejection, and generic verification/read resolution. Update all-category derivation and tests to cover both run-result and non-Run artifact references."
+    },
+    {
+      "id": "Q1-RE-003",
+      "title": "Review version binding remains run-ID-only rather than content-bound",
+      "location": "openspec/changes/execution-model-correction/explore.md:193-200, 225-252, 264-294, 391-393; src/persistence/serialization.ts:528-560; openspec/specs/flowkit-formal-fact-reader-and-persistence/spec.md:471-487",
+      "evidence": "Q1 correctly says review-* Runs omit reviewVerdictRef to avoid self-reference, but it does not require a review Run's Core-derived context.inputRef descriptor to target the same Run as required reviewedRunId. Current C1 requires reviewedRunId for review-* but leaves inputRef optional; its reader reconstructs only reviewRunId, verdict, and reviewedRunId. A review can therefore bind only the Run identity, not the exact terminal result content, even though the updated reference treats reviewer binding to the precise reviewed ResultRef as strict.",
+      "impact": "If the reviewed result is replaced, malformed, or its target descriptor diverges from reviewedRunId, Policy can still treat the verdict as a matching review. This weakens the immutable reviewed-version boundary Q1 is intended to preserve.",
+      "requiredResolution": "Keep Q1-RE-003 open. For every review-* Run, require a Core-derived review input descriptor and require it to resolve to the result.json of context.reviewedRunId; persist the resulting inputRef, validate the equality at createRun and again before review-result publication, and have Reader fail closed when either binding is absent, mismatched, unreadable, or replaced. Add the reviewFindings payload only after this exact reviewedResultRef binding is established, with tests for valid binding, missing/mismatched ID, replacement, and pending preservation."
+    }
+  ],
+  "nonBlockingFindings": [
+    {
+      "id": "Q1-NB-001",
+      "title": "Explore source links remain checkout-specific",
+      "location": "openspec/changes/execution-model-correction/explore.md:62, 72, 90, 98, 106, 127, 131, 137",
+      "evidence": "Code citations still use file:///D:/Projects/flowkit absolute paths, which cannot resolve from a different checkout or platform.",
+      "recommendedResolution": "Convert these citations to repository-relative Markdown links during a future in-scope Explore edit. This remains non-blocking because the cited source evidence was independently verified."
+    }
+  ],
+  "resolvedFindings": [
+    {
+      "id": "Q1-RE-002",
+      "result": "resolved",
+      "evidence": "Concrete verification scripts remain assigned to F1; Q1 retains only verification timing, ownership, and Full-Test authorization boundaries."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "106 reviewed-result binding and JSON validity",
+        "status": "passed",
+        "result": "106 context.json and result.json parse as JSON. SHA-256 of 106 result.json is 8c4f3a696e2dae3a6916118d683b062c38fdd0f7ddbe3eefe0f5b925d4d65ba4."
+      },
+      {
+        "name": "revision lineage and Run numbering",
+        "status": "passed",
+        "result": "106 inputRef equals the actual SHA-256 of 105 result.json, sourceReviewRun/verdict match 105, and 106 was the Delivery-wide maximum before this reviewer Run."
+      },
+      {
+        "name": "Q1 semantic and serialization-contract scan",
+        "status": "failed",
+        "result": "106 resolves the prior self-reference and names all ResultRef categories, but Q1-RE-001 lacks an executable non-Run artifact constructor and Q1-RE-003 lacks mandatory exact reviewed-result binding."
+      },
+      {
+        "name": "canonical OpenSpec specs",
+        "command": "npx openspec validate --specs --strict",
+        "status": "passed",
+        "result": "8 canonical specs passed, 0 failed. This structural result does not clear the semantic findings."
+      },
+      {
+        "name": "scope and whitespace",
+        "status": "passed",
+        "result": "106 declares and records only the Explore revision. JSON parsing, git diff --check, and explicit trailing-whitespace scan passed. The separately modified AGENTS.md is treated as an owner/repository instruction outside 106's declared modified-file claim and is not attributed to this review result."
+      },
+      {
+        "name": "Delivery Full Test",
+        "status": "not-applicable",
+        "result": "Not owner-authorized and not run; review-explore has no Full-Test authority."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

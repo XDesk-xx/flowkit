@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-120-revise-propose",
+  "status": "completed",
+  "summary": "Q1 revise-propose resolved Q1-RP-003 by replacing perpetual historical canonical-path validation with a generation-aware validation boundary for mutable Change artifacts. A valid matching changes-requested -> revise-* lineage creates a bounded revision window and, after terminal successor publication, marks overwritten predecessor mutable refs as superseded. The current effective artifact set is reconstructed by lineage overlay and remains strictly content-hash validated before review, at revise completion, and after archive. Subset revisions inherit unchanged refs and fail terminal preflight if an undeclared artifact changed. The same root-cause rule covers verification.md across revise-apply/re-verification. Terminal Runs and exact review Run-result bindings remain immutable; no per-Run artifact snapshot/history store is introduced.",
+  "sourceReview": {
+    "runId": "20260806-119-review-propose",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:563f9773ac39fac5a488f3257765d5fae94433ab5c653e7cf295c2c7053c74ae"
+  },
+  "resolvedFindings": [
+    {
+      "id": "Q1-RP-003",
+      "result": "resolved",
+      "evidence": "Proposal/design/persistence delta/bootstrap delta/tasks now define a complete propose -> review changes-requested -> revise subset -> review -> archive lifecycle. Reader first builds review/revise lineage, classifies mutable generations as current/revision-window/superseded, constructs the current effective artifact set by overlay, and strictly validates only current/inherited effective refs against canonical or archived bytes. Historical overwritten refs are exempt only when a valid successor lineage proves legitimate supersession; unauthorized overwrite still fails closed. Required tests explicitly cover P0 propose, R0 changes-requested, P1 subset revise, pre-archive reading of both terminal Runs, archive, post-archive final validation, undeclared subset mutation, and no-lineage overwrite."
+    }
+  ],
+  "preflight": {
+    "fullReading": "Read Q1-RP-003 requiredResolution and all referenced 118 Proposal sections. The finding permits either immutable per-generation targets or an explicit consistent historical validation boundary.",
+    "instanceEnumeration": "Enumerated mutable non-Run references affected by the same root cause: explore/revise-explore producedResultRefs, propose/revise-propose producedResultRefs, and review-apply verificationSummaryRef. Immutable run-result refs remain outside the exemption.",
+    "implementability": "Checked current persistence/Reader contracts: ContextFile already carries sourceReviewRun/sourceReviewVerdict for revise lineage; ReviewVerdictFact carries reviewedRunId; current Reader reads schemaVersion 2 contexts/results and can be refactored to build lineage before mutable-ref validation; buildRunResultRef remains immutable Run-result binding. The design requires no self-reference, no new Policy state, and no artifact snapshot registry.",
+    "consistency": "Applied the generation-aware rule consistently to proposal, design, persistence delta, Bootstrap artifact lifecycle, tasks, archive behavior, review entry, completion preflight, and verificationSummaryRef."
+  },
+  "artifacts": [
+    {
+      "path": "openspec/changes/execution-model-correction/proposal.md",
+      "sha256": "881d4134e21268ec0a3440a4df6fb7786bcf7bc0792506fea53b4236496c7ede"
+    },
+    {
+      "path": "openspec/changes/execution-model-correction/design.md",
+      "sha256": "0cb209b08a5acfbb7a311cb2dc495f1a016d101c6f3528b62603f5ce5b688a9e"
+    },
+    {
+      "path": "openspec/changes/execution-model-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "sha256": "be91c034828b7f30df4a46b5501f274207bdfb0697b179971631f07c44b77c0f"
+    },
+    {
+      "path": "openspec/changes/execution-model-correction/specs/flowkit-bootstrap-and-roadmap/spec.md",
+      "sha256": "aec413c4614e700e4974a1433207fc195e6ac3ef3b0de9e3fc8c2b9389687e84"
+    },
+    {
+      "path": "openspec/changes/execution-model-correction/tasks.md",
+      "sha256": "d4051db39c6aa134840a47a851c097f79e4a147e5d957fb1ecc3026d4413274c"
+    }
+  ],
+  "scope": {
+    "productionCodeModified": false,
+    "testsModified": false,
+    "approvedExploreModified": false,
+    "priorTerminalRunsModified": false,
+    "fullTestRun": false
+  },
+  "verification": {
+    "openspecStrict": "passed",
+    "openspecCommand": "openspec 1.7.0 validate execution-model-correction --strict",
+    "openspecResult": "Change 'execution-model-correction' is valid",
+    "whitespace": "passed",
+    "jsonValidity": "passed",
+    "deliveryFullTest": "not-run"
+  },
+  "nextActionRecommendation": "review-propose",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

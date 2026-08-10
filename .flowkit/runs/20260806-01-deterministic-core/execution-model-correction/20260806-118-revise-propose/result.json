@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-118-revise-propose",
+  "status": "completed",
+  "summary": "Q1 revise-propose resolved both 117 Blocking Findings. The Bootstrap legacy requirement now contains an explicit parser-recognized MUST and the Change delta passes strict OpenSpec validation. The artifact reference model now uses stable active-canonical logical refs plus one shared archive-aware physical resolver for all non-Run Change artifacts, so existing producedResultRefs and review-apply verificationSummaryRef remain content-hash verifiable after normal OpenSpec archive relocation without rewriting terminal Runs.",
+  "sourceReview": {
+    "runId": "20260806-117-review-propose",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:61ff9a5afa8c39e9403522e9234c08011b77cd5c64c160be5ead6588c3d3cc44"
+  },
+  "resolvedFindings": [
+    {
+      "id": "Q1-RP-001",
+      "result": "resolved",
+      "evidence": "The ADDED Bootstrap legacy metadata-correction Requirement body now starts with an explicit `Flowkit MUST ...` constraint. Offline OpenSpec 1.7.0 strict validation reports `Change 'execution-model-correction' is valid`."
+    },
+    {
+      "id": "Q1-RP-002",
+      "result": "resolved",
+      "evidence": "Proposal/design/C1 delta/tasks now define a shared archive-aware resolver: persisted non-Run artifact refs keep the active canonical logical identity; before archive they resolve to the active path, after archive they resolve to exactly one `<YYYY-MM-DD>-<changeId>` archive directory. Ambiguity and content changes fail closed. The rule covers both verificationSummaryRef and producedResultRefs, and includes post-archive Reader tests."
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "openspec/changes/execution-model-correction/proposal.md",
+      "sha256": "3662953fbbd457037de4392c4797adf502cbb201499dc57569c3ad6af71fe7ce"
+    },
+    {
+      "path": "openspec/changes/execution-model-correction/design.md",
+      "sha256": "5be8d2f0efb4fa9d977940a43694f30867d764f528d3aca263fc5866b6eb5e88"
+    },
+    {
+      "path": "openspec/changes/execution-model-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "sha256": "67e6da3b1afe04de8fb2dfccf832cabc6b48ec5eea00be9fd7f3387028297288"
+    },
+    {
+      "path": "openspec/changes/execution-model-correction/specs/flowkit-bootstrap-and-roadmap/spec.md",
+      "sha256": "a4984335d5afbc68f826e212b35965acaea9ce4624833179a0a1f59961f6b34d"
+    },
+    {
+      "path": "openspec/changes/execution-model-correction/tasks.md",
+      "sha256": "2616664c6afd18c93673b5444b146f1f11d6e8fe050b8582653ff342c176ffc1"
+    }
+  ],
+  "scope": {
+    "productionCodeModified": false,
+    "testsModified": false,
+    "fullTestRun": false
+  },
+  "verification": {
+    "openspecStrict": "passed",
+    "openspecCommand": "openspec 1.7.0 validate execution-model-correction --strict",
+    "openspecResult": "Change 'execution-model-correction' is valid",
+    "whitespace": "passed",
+    "jsonValidity": "passed",
+    "deliveryFullTest": "not-run"
+  },
+  "nextActionRecommendation": "review-propose",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

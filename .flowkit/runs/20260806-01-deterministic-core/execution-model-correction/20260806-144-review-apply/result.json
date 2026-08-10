@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-144-review-apply",
+  "status": "completed",
+  "summary": "Final repository-level review of the implementation produced by 20260806-142-revise-apply is approved with zero Blocking Findings. The cumulative v3 implementation previously accepted by Run 143 is present in the real repository at applied code commit 44a0e77e76adf5d728fcebc8b95b15ad587b30f7. The only subsequent commit to the reviewed HEAD a557fb6b2bace713b4e9aa11c314af9c60d005bf refreshes the canonical Q1 verification.md and does not change production or test code. Canonical Change Verification now records actual post-apply execution on the applied code state: typecheck passed, lint passed, build passed, npm test passed with 597/597 tests and 0 failures, OpenSpec change strict passed, 8 canonical specs strict passed, and git diff --check passed. The refreshed verification also covers the final RA-007 and RA-011 regression fixtures. Q1-RA-011 remains resolved: bounded schemaVersion 1 legacy facts are isolated from C1-only ResultRef/generation obligations while schemaVersion 2 remains strict. Q1-RA-007 remains resolved for pending/completed/failed/cancelled revise admission and all-applicable-immutable successor gating. RA-001/002/003/004/005/006/008/009/010 show no reviewed regression. Q1 tasks are complete and the Change Verification status is passed. The repository Delivery manifest still has Q1 active and E1/F1 planned; therefore the formal Delivery-level full-test Action is correctly not-ready and has not been run. The owner-authorized repository npm test execution must not be confused with the Delivery-level full-test Action. No new Blocking or Non-blocking Finding was identified. This Run is the final repository-level approval for Q1 implementation. The next boundary is owner authorization for Archive; Archive itself must not be auto-authorized by this Reviewer.",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-142-revise-apply/",
+  "reviewedResultRef": "content-sha256:3b0cbfb9654b66448bd91fbc9d6d850a090f7515619a311d3f61ceebee847813",
+  "reviewedRepositoryHead": "a557fb6b2bace713b4e9aa11c314af9c60d005bf",
+  "appliedCodeHead": "44a0e77e76adf5d728fcebc8b95b15ad587b30f7",
+  "priorCandidateReview": {
+    "runId": "20260806-143-review-apply",
+    "verdict": "approved",
+    "scope": "candidate-overlay",
+    "resultRef": "content-sha256:0ab5e9d66492de9d7a9ad84bc44c46991eac3bee26f1a0fb820e2e8ade76f619"
+  },
+  "verdict": "approved",
+  "approvalScope": "repository",
+  "formalRepositoryApproval": true,
+  "blockingFindings": [],
+  "nonBlockingFindings": [],
+  "resolvedPriorFindings": [
+    {
+      "id": "Q1-RA-011",
+      "result": "resolved",
+      "evidence": "Applied Reader retains internal C1 provenance and restricts C1-only immutable/artifact/verification generation validation to admitted schemaVersion 2 Runs; bounded schemaVersion 1 history remains legacy."
+    },
+    {
+      "id": "Q1-RA-007",
+      "result": "resolved",
+      "evidence": "Applied Reader keeps status-aware revise lineage semantics and only allows pending/completed revise successors whose applicable immutable input/source-review evidence is admitted."
+    },
+    {
+      "id": "Q1-RA-010",
+      "result": "still-resolved",
+      "evidence": "Top-level runStatus + Action physical required/forbidden ResultRef matrix is unchanged."
+    },
+    {
+      "id": "Q1-RA-006",
+      "result": "still-resolved",
+      "evidence": "Exact review binding remains shared and fail-closed."
+    },
+    {
+      "id": "Q1-RA-009",
+      "result": "still-resolved",
+      "evidence": "Current C1 verificationSummaryRef recovery remains fail-closed."
+    },
+    {
+      "id": "Q1-RA-008",
+      "result": "still-resolved",
+      "evidence": "Non-Run logical/archive resolution remains fail-closed."
+    },
+    {
+      "id": "Q1-RA-001",
+      "result": "still-resolved",
+      "evidence": "Core remains the terminal ResultRef derivation authority."
+    },
+    {
+      "id": "Q1-RA-002",
+      "result": "still-resolved",
+      "evidence": "Generation classification remains exact-lineage based with bounded revision windows."
+    },
+    {
+      "id": "Q1-RA-003",
+      "result": "still-resolved",
+      "evidence": "Current effective-set validation remains shared across completion/review/Reader boundaries."
+    },
+    {
+      "id": "Q1-RA-004",
+      "result": "still-resolved",
+      "evidence": "SchemaVersion 2 ResultRef.kind requiredness and field-kind equality remain strict."
+    },
+    {
+      "id": "Q1-RA-005",
+      "result": "still-resolved",
+      "evidence": "Run-ID descriptor grammar and produced tag closure remain runtime-enforced."
+    }
+  ],
+  "verification": {
+    "canonicalVerificationPath": "openspec/changes/execution-model-correction/verification.md",
+    "canonicalVerificationBlobSha": "6b698e16741cfafd4aedba0db8447fce4c475037",
+    "status": "passed",
+    "checks": [
+      {
+        "name": "npm run typecheck",
+        "status": "passed-as-current-formal-evidence"
+      },
+      {
+        "name": "npm run lint",
+        "status": "passed-as-current-formal-evidence"
+      },
+      {
+        "name": "npm run build",
+        "status": "passed-as-current-formal-evidence"
+      },
+      {
+        "name": "npm test",
+        "status": "passed-as-current-formal-evidence",
+        "result": "597 tests, 597 pass, 0 fail, 0 cancelled/skipped"
+      },
+      {
+        "name": "npx openspec validate execution-model-correction --strict",
+        "status": "passed-as-current-formal-evidence"
+      },
+      {
+        "name": "npx openspec validate --specs --strict",
+        "status": "passed-as-current-formal-evidence",
+        "result": "8 canonical specs passed, 0 failed"
+      },
+      {
+        "name": "git diff --check",
+        "status": "passed-as-current-formal-evidence"
+      },
+      {
+        "name": "Delivery-level full-test Action",
+        "status": "not-ready",
+        "result": "Not run. E1 and F1 remain planned, so all required Changes are not completed/checkpointed and delivery.fullTestStatus remains not-ready."
+      }
+    ]
+  },
+  "nextActionRecommendation": "owner-decision:authorize-archive",
+  "archiveBoundary": {
+    "reviewerMayAuthorize": false,
+    "ownerAuthorizationRequired": true,
+    "afterAuthorization": "archive"
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

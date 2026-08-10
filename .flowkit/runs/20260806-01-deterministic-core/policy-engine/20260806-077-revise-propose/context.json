@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-077-revise-propose",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "D1",
+  "changeId": "policy-engine",
+  "action": "revise-propose",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "inputRef": {
+    "ref": "run-result:.flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-074-review-explore/result.json",
+    "versionFingerprint": "sha256:b1323433400ff5aa39027adc7196a9cd69492773e60630d38798e8388ad4e293"
+  },
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-076-review-propose/",
+  "sourceReviewRun": "20260806-076-review-propose",
+  "sourceReviewVerdict": "changes-requested",
+  "sourceChangeState": "D1 policy-engine: active (explore approved via 074; propose completed 075; review-propose 076 changes-requested)",
+  "triggerFindings": [
+    {
+      "id": "D1-PR-001",
+      "severity": "P1",
+      "origin": "20260806-076-review-propose",
+      "title": "075 Proposal source fingerprint does not identify the approved 074 Review"
+    }
+  ],
+  "inputRefSemantics": "inputRef cites 074-review-explore/result.json (the approved source review that authorizes the propose stage) with its actual immutable SHA-256 sha256:b1323433400ff5aa39027adc7196a9cd69492773e60630d38798e8388ad4e293. This is the D1-PR-001 fix: 075 erroneously recorded 072's SHA-256 (c672e762...) instead of 074's. reviewedRun names 076-review-propose, the review whose changes-requested verdict and D1-PR-001 finding triggered this revision. The Proposal bundle (proposal.md, design.md, spec.md, tasks.md) is carried forward unchanged; D1-PR-001 is a Run-level provenance correction, not a proposal-content change.",
+  "constraints": {
+    "mayReadFormalDocs": true,
+    "mayReadFrozenSpecs": true,
+    "mayReadRefDocs": true,
+    "mayWriteProposalArtifacts": true,
+    "mayModifyManifest": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-077-revise-propose/"
+}

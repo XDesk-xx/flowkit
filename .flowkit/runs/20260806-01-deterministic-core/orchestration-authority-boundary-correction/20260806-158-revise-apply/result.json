@@ -1,0 +1,13 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-apply",
+    "executionStatus": "completed",
+    "summary": "已关闭 157 两个 Blocking Findings：明确 Owner 已决定 OpenSpec archive success 即关闭 Change、Checkpoint 为后续 Flowkit/Git 流程；Checkpoint recovery 改为按 Delivery Start Git topology 限定 boundary ownership，并让 legacy 无 changeId checkpoint 与 structured changeId checkpoint 同时有界生效。focused 82/82、全量 affected 557/557、typecheck/lint/build、Q2 strict、8/8 canonical specs 均通过。",
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260806-01-deterministic-core/orchestration-authority-boundary-correction/20260806-157-review-apply/result.json",
+      "versionFingerprint": "66b14ea25c1520df067de5e1c188a0f9d787c13dbf1074175b18fe48fe1c59ba",
+      "kind": "run-result"
+    }
+  }
+}

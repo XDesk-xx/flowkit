@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-132-revise-apply",
+  "status": "completed",
+  "summary": "Q1 revise-apply resolved all four 131-review-apply Blocking Findings by making every production-reachable result-admission / immutable-ref / non-Run-resolver / verification-recovery boundary fail closed. (Q1-RA-006) C1 terminal result admission is now a shared two-phase pipeline: admitC1RunResult (validateRunResultFileCombination + validateActionResultWithoutRunRef + validateReviewVerdictIntegrity) must pass BEFORE any formal fact is promoted, and a review whose exact binding (reviewedRunId ↔ inputRef target ↔ actual bytes) is broken or whose result fails the closed schema is NOT admitted into snapshot.reviewVerdicts and therefore cannot be consumed as lineage by generation classification; review-entry sibling lineage (readRunVerdict) applies the same full admission + binding proof. Non-ENOENT result read failures now surface a run-result FactConflict instead of silently projecting pending. (Q1-RA-007) validateImmutableRunResultRefs strictly validates non-review inputRef, consumedInputRefs[*] and reviewVerdictRef for kind == run-result, Core-allowed canonical target reconstruction from the embedded Run ID, target existence/readability, and actual SHA-256; reviewVerdictRef must also exact-match context.sourceReviewRun/result.json and sourceReviewVerdict must match the referenced review Run's actual admitted verdict. The validation is independent of mutable generation class — superseded and revision-window generations remain strictly validated. (Q1-RA-008) normalizeArtifactLogicalRef rejects POSIX absolute (leading /) and Windows drive-letter evidence BEFORE normalization; assertCanonicalArtifactRoot enforces the exact openspec/changes/<changeId>/ root identity plus no traversal and non-result.json targets; resolveArchiveAwareArtifactPath asserts the canonical root at entry; archive discovery accepts ONLY the exact YYYY-MM-DD-<changeId> grammar with a real calendar date (malformed/suffix-match dirs never match), and active + exact archive ambiguity fails closed. (Q1-RA-009) current review-apply verificationSummaryRef is four-layer fail-closed: missing actionResult/summary-ref/malformed → conflict; kind must be verification-summary; logical ref must exactly equal the Core-derived openspec/changes/<changeId>/verification.md; archive-aware physical resolution + current-bytes SHA-256 match, with missing/ambiguous/replacement each producing a FactConflict; legitimate changes-requested → revise-apply superseded verification generations do not regress (Q1-9). Regression: Q1-RA-001 / RA-003 / RA-005 remain resolved. All verification checks were actually executed and passed: typecheck, lint, build, 542 tests (542 pass, 0 fail), OpenSpec change strict, 8/8 canonical specs strict, git diff --check. Delivery Full Test was NOT run (no authorization for revise-apply). No contract artifacts, prior Runs, or Flowkit state were modified; no Git commit was created by this Run.",
+  "sourceReview": {
+    "runId": "20260806-131-review-apply",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:867cc17bf2021e769b14e5bbc6cbb96ddc5ab7ae5148bbe4dfee70e925267262"
+  },
+  "resolvedFindings": [
+    {
+      "id": "Q1-RA-006",
+      "result": "resolved",
+      "evidence": "Shared C1 terminal-result admission pipeline: src/persistence/serialization.ts now exports admitC1RunResult(raw, action) which runs validateRunResultFileCombination + validateActionResultWithoutRunRef + validateReviewVerdictIntegrity and returns a typed RunResultFile or throws SCHEMA_VALIDATION_FAILED. src/facts/formal-fact-reader.ts readC1Run uses it as Phase-1 admission (run-result-schema / run-result-status conflicts on failure; verdict is constructed ONLY after admission passes), and src/persistence/run-persistence.ts readRunVerdict uses the same pipeline plus context inputRef exact-binding proof before a verdict may enter sibling review lineage. validateReviewExactBindings now returns { conflicts, admittedVerdicts } — a review with broken target/hash binding or a terminal review without inputRef is reported AND its verdict is dropped from admittedReviewVerdicts, so generation classification never consumes it. Non-ENOENT result read failures (e.g. EISDIR) produce a run-result FactConflict instead of projecting pending. Negative tests: closed-schema-violating review (blockingFindings field) → no ReviewVerdictFact + run-result-schema conflict; changes-requested without blocking findings → no ReviewVerdictFact; wrong-fingerprint inputRef → review-binding-mismatch + verdict not admitted; C1 review without inputRef → review-binding-missing + not admitted; EISDIR result.json → run-result conflict; integration: closed-schema-violating historical review and binding-broken review cannot open a legitimate supersession lineage."
+    },
+    {
+      "id": "Q1-RA-007",
+      "result": "resolved",
+      "evidence": "validateImmutableRunResultRefs (src/facts/formal-fact-reader.ts) runs after review exact bindings and BEFORE mutable-artifact generation classification, so a tampered immutable ref can never hide behind a healthy mutable artifact set. For non-review inputRef, consumedInputRefs[*] and reviewVerdictRef it enforces: kind === 'run-result'; canonical target reconstruction via resolveRunResultPath(runsPathPrefix, deliveryId, changeId, embeddedRunId) compared against the ref (immutable-ref-target on mismatch); target existence/readability (immutable-ref-missing); actual content SHA-256 vs versionFingerprint (immutable-ref-mismatch). For reviewVerdictRef it additionally requires the embedded Run ID to equal context.sourceReviewRun and sourceReviewVerdict to equal the referenced review Run's actual admitted verdict (immutable-ref-target / immutable-ref-verdict-mismatch). RunFact now carries consumedInputRefs and reviewVerdictRef (formal-fact-snapshot.ts). Negative tests: wrong kind (rejected at schema admission), missing target, path-shaped target (../../result.json), fingerprint mismatch, and integration test proving a SUPERSEDED generation's tampered reviewVerdictRef still produces immutable-ref-mismatch (no supersession exemption)."
+    },
+    {
+      "id": "Q1-RA-008",
+      "result": "resolved",
+      "evidence": "src/persistence/result-ref-adapter.ts normalizeArtifactLogicalRef now rejects POSIX absolute (separatorNormalized.startsWith('/')) and Windows drive-letter evidence BEFORE the leading-'/' strip, so /openspec/changes/C1/proposal.md and C:\\openspec\\...\\proposal.md are rejected instead of silently rewritten. New assertCanonicalArtifactRoot enforces the exact openspec/changes/<changeId>/... root identity (rejects docs/proposal.md, openspec/changes//proposal.md, traversal, empty trailing file, result.json targets). resolveArchiveAwareArtifactPath asserts the canonical root at entry. Archive discovery uses new changeIdFromArchiveDirectoryName which accepts ONLY the exact YYYY-MM-DD-<changeId> grammar AND validates the date is a real calendar date (rejects 2026-13-99-C1, 2026-02-30-C1, 2026-2-02-C1); findArchiveMatches now filters by exact changeId equality instead of endsWith('-<changeId>'), so 2026-02-02-C1-extra / C1 / 2026-02-02 never match. active + multiple exact archive dirs fail closed. Negative tests cover all of the above (POSIX absolute, Windows absolute, traversal, wrong root, empty changeId, result.json target, malformed archive names, suffix-match bypass closed, active+exact-archive ambiguity)."
+    },
+    {
+      "id": "Q1-RA-009",
+      "result": "resolved",
+      "evidence": "validateCurrentVerificationSummaryRef (src/facts/formal-fact-reader.ts) is now fail-closed for every current review-apply generation: missing actionResult or missing verificationSummaryRef → verification-summary-missing; malformed (non-string ref/versionFingerprint) → verification-summary-malformed; kind !== VERIFICATION_SUMMARY_KIND → verification-summary-kind; logical ref !== resolveVerificationSummaryRef(run.changeId) (Core-derived openspec/changes/<changeId>/verification.md) → verification-summary-path; archive-aware physical resolution missing/ambiguous → verification-summary-missing / verification-summary-archive-ambiguous; current bytes SHA-256 !== versionFingerprint → verification-summary-replaced. validateVerificationGenerationAware still classifies superseded (legitimate changes-requested → revise-apply exact lineage) generations as skipped, so Q1-9 legitimate supersession behavior does not regress. Negative tests cover missing, malformed, wrong-kind (rejected at schema admission), wrong-path, missing-target (dedicated changeId without verification.md), and fingerprint-mismatch paths; integration tests confirm legitimate superseded verificationSummaryRef produces no false conflict and no-lineage verification.md replacement fails closed."
+    }
+  ],
+  "artifacts": [
+    { "path": "src/facts/formal-fact-reader.ts", "sha256": "ad1e8ba074b9a29916bfca76c3a087bc818326dc5000916bba5436b654d19f12" },
+    { "path": "src/facts/formal-fact-snapshot.ts", "sha256": "349c0ed6142f45d2ff74696d2b71902b1c3abaeb15eeeb57641ab167a71b5e1d" },
+    { "path": "src/persistence/result-ref-adapter.ts", "sha256": "f5cfefa64a896abdec18a38437fab5f063c14941beba9f76a3ea10981246d4c5" },
+    { "path": "src/persistence/run-persistence.ts", "sha256": "72a6e39a1021ea1bd6a79a0bf7554bc2e378df8040500f83f5885a384dbc8a5b" },
+    { "path": "src/persistence/serialization.ts", "sha256": "95ea52f9eb30bfb020761266cee87a31fe76a3b932260cd0e031e71243f336f9" },
+    { "path": "tests/unit/facts/formal-fact-reader.test.ts", "sha256": "3048cc49978e9348c01360774c2a9c6926f8b75267ef0a8bd27ef09d14522dc7" },
+    { "path": "tests/unit/persistence/result-ref-adapter.test.ts", "sha256": "067826b942d924839ec4eae86718ed5746a8c495693308c6c74f4cef7a787acc" },
+    { "path": "tests/integration/execution-model-lifecycle.test.ts", "sha256": "ad55194fc94f10e4b0cd5c3680a18b3f003c687fbdeef9362395bccdfce6afed" },
+    { "path": "openspec/changes/execution-model-correction/verification.md", "sha256": "4a281829310578da2531d11da8740101d4588063b07d5e7ffc7466dd02d3114e" }
+  ],
+  "scope": {
+    "modifiedCapabilities": [
+      "flowkit-formal-fact-reader-and-persistence"
+    ],
+    "productionCodeModified": true,
+    "testsModified": true,
+    "contractArtifactsModified": false,
+    "fullTestRun": false
+  },
+  "verification": {
+    "typecheck": "passed",
+    "lint": "passed",
+    "build": "passed",
+    "unitAndIntegrationTests": "passed (542 tests, 542 pass, 0 fail)",
+    "moduleUnitTests": "passed (serialization: closed schema / ResultRef.kind required / field-kind binding / admitC1RunResult shared admission pipeline; result-ref-adapter: normalizeArtifactLogicalRef absolute-pre-check / assertCanonicalArtifactRoot / archive exact YYYY-MM-DD-<changeId> grammar + real calendar date / ambiguity fail-closed; run-persistence: readRunVerdict full admission + exact-binding proof; formal-fact-reader: RA-006 closed-schema/verdict-integrity/no-inputRef/hash-binding → verdict not admitted + non-ENOENT fail-closed, RA-007 immutable-ref kind/missing/path/mismatch, RA-009 verificationSummaryRef missing/malformed/kind/path/missing-target/replaced)",
+    "lifecycleIntegrationFixtures": "passed (RA-006 invalid review cannot open legitimate lineage; RA-007 superseded immutable refs stay strict; RA-009 superseded verification no false conflict + no-lineage replacement fail-closed; generation-aware Reader + revise-propose effective-set + verification generation-aware + archive relocation)",
+    "openspecStrict": "passed",
+    "openspecCommand": "openspec validate execution-model-correction --strict",
+    "canonicalSpecs": "passed (8 passed, 0 failed)",
+    "whitespace": "passed (git diff --check exit 0; benign LF/CRLF warnings only)"
+  },
+  "nextActionRecommendation": "review-apply",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

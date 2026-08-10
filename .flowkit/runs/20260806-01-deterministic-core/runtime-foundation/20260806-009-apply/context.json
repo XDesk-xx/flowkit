@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-009-apply",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "A1",
+  "changeId": "runtime-foundation",
+  "action": "apply",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "inputRef": "586ac18cd26460d0939e469db93f22a9462c8c4197ae6887673a595255712469",
+  "sourceReviewRun": "20260806-008-review-propose",
+  "sourceReviewVerdict": "approved",
+  "constraints": {
+    "readOnlyExceptCurrentRunAndCodeAndTasks": true,
+    "mayModifyCode": true,
+    "mayModifyTasks": true,
+    "mayInstallDependencies": true,
+    "mayRunVerification": true,
+    "fullTestAllowed": false,
+    "mayArchive": false,
+    "mayAdvanceFlow": false,
+    "mayModifyProposal": false,
+    "mayModifyExplore": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/runtime-foundation/20260806-009-apply/"
+}

@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-128-revise-apply",
+  "status": "completed",
+  "summary": "Q1 revise-apply resolved all four 127-review-apply Blocking Findings by making the approved Q1 contract unbypassable in production. (Q1-RA-001) completeRun is the descriptor-driven terminal-write production API: callers provide only typed descriptors (consumedRunIds / producedArtifactTags / reviewedRunId) and Core derives every ResultRef from actual target bytes; initial explore/propose unconditionally build the complete Core-expected produced set; review-apply unconditionally derives verificationSummaryRef from current verification.md; missing/unreadable/ambiguous targets keep the Run pending. (Q1-RA-002) generation-resolver.ts centralizes exact lineage classification using sourceReviewRun / sourceReviewVerdict / reviewedRunId — no Run-ID ordering inference; pending revise Runs open a bounded revision-window; verification generation uses the same exact review-apply → revise-apply lineage. (Q1-RA-003) validateReviewEntry runs in createRun(review-explore/review-propose) BEFORE publish, reusing the same shared lineage + validateEffectiveArtifactRefs + validateSpecsExactSet semantics as Reader; drift rejects before the review Run is created. (Q1-RA-004) validateResultRefProjection requires ResultRef.kind for schemaVersion 2 and enforces exact field-specific kind equality. Owner-authorized test refactor (part of Q1-RA-001): q1-execution-model.test.ts deleted; module-level unit tests归位 to serialization.test.ts / result-ref-adapter.test.ts / run-persistence.test.ts / formal-fact-reader.test.ts; cross-module lifecycle fixtures迁入 tests/integration/execution-model-lifecycle.test.ts. 494 tests pass (0 fail). No contract artifacts, prior Runs, Full Test, or Git commit touched.",
+  "sourceReview": {
+    "runId": "20260806-127-review-apply",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:9797725abe5a2cce06502e1622f4ff129d8c3fd7322c7116bb0cd46295825b8d"
+  },
+  "resolvedFindings": [
+    {
+      "id": "Q1-RA-001",
+      "result": "resolved",
+      "evidence": "completeRun(runDir, CompleteRunInput) is the descriptor-driven production terminal-write API. Caller supplies only typed descriptors (consumedRunIds, producedArtifactTags, reviewedRunId, reviewVerdict, reviewFindings); Core derives all ResultRefs via deriveActionResult → buildRunResultRef / buildArtifactResultRef / deriveReviewVerdictRef / deriveVerificationSummaryArtifactRef. Initial explore/propose ignore caller tags and unconditionally build the complete Core-expected produced set (validateInitialArtifactCompleteness no longer gates on producedResultRefs presence). review-apply unconditionally derives verificationSummaryRef from current verification.md; missing/unreadable/ambiguous target → RESULT_REF_TARGET_MISSING (Run stays pending). writeRunResult remains exported only as the low-level publish primitive (fs.link / assertMutable / race protocol) with no production callers; both paths route through publishTerminalResult which runs the same completion preflight. Negative fixtures cover omitted producedResultRefs (initial explore/propose) and omitted review-apply verificationSummaryRef."
+    },
+    {
+      "id": "Q1-RA-002",
+      "result": "resolved",
+      "evidence": "src/facts/generation-resolver.ts centralizes exact lineage classification. isLegitimateArtifactSuccessor requires a completed review-<stage> R with R.reviewedRunId == g0.runId, R.verdict == changes-requested, AND g1.sourceReviewRun == R.runId, g1.sourceReviewVerdict == changes-requested — Run ID ordering is NOT consulted (used only for deterministic presentation). classifyArtifactGenerations accepts allReviseRuns including PENDING revise Runs, so a legitimate pending revise opens a bounded revision-window and canonical bytes may change without false mutable conflict. classifyVerificationGenerations uses the same exact review-apply → revise-apply lineage (isLegitimateVerificationSuccessor). RunFact (src/facts/formal-fact-snapshot.ts) carries sourceReviewRun / sourceReviewVerdict / reviewedRunId. formal-fact-reader.ts integrates the shared resolver via buildReviewLineageFacts. Integration fixtures cover legitimate revise → superseded (no false conflict), no-lineage overwrite → fail-closed, and verification generation-aware lifecycle."
+    },
+    {
+      "id": "Q1-RA-003",
+      "result": "resolved",
+      "evidence": "validateReviewEntry(input) runs inside createRun for review-explore/review-propose BEFORE the review Run is staged/published. It (1) reads the reviewed Run's lineage fact + producedResultRefs; (2) reads sibling lineage facts; (3) classifies the reviewed Run's generation via the shared classifyReviewedArtifactGeneration — MUST be current; (4) validates producedResultRefs against current canonical bytes via the shared validateEffectiveArtifactRefs; (5) for review-propose exact-compares effective specs identities with current canonical specs/** via the shared validateSpecsExactSet. On any mismatch/missing/namespace drift it throws RESULT_REF_MISMATCH / RESULT_REF_TARGET_MISSING before publish. The same shared validators (result-ref-adapter.ts) are reused by completion preflight and Reader, satisfying one-fact-one-authority. Negative fixtures cover post-terminal/pre-review artifact drift and specs namespace drift rejecting before review Run publish."
+    },
+    {
+      "id": "Q1-RA-004",
+      "result": "resolved",
+      "evidence": "validateResultRefProjection (src/persistence/serialization.ts) requires ResultRef.kind for every schemaVersion 2 projection: missing → SCHEMA_VALIDATION_FAILED; empty ('') → reject; unknown → reject; closed schema rejects unknown fields. Field-specific kind binding (validateOptionalResultRef / validateOptionalResultRefArray) uses exact equality (ref.kind !== expectedKind) — no legacy `if kind !== undefined` tolerance. Binding: producedResultRefs → produced-artifact; consumedInputRefs → run-result; verificationSummaryRef → verification-summary; reviewVerdictRef → run-result. schemaVersion 1 legacy recognition preserved separately. Negative fixtures cover missing-kind, empty-kind, unknown-kind, and field-kind mismatch."
+    }
+  ],
+  "artifacts": [
+    { "path": "src/persistence/serialization.ts", "sha256": "8fa956e53b27fded7e47b522a4861b5cc57ea334f4cc29519892b7380f94a532" },
+    { "path": "src/persistence/result-ref-adapter.ts", "sha256": "7d7466ddf9a7e43fd3375ac890b25ed72b2df137820f2d1571c819c7b3de3481" },
+    { "path": "src/persistence/run-persistence.ts", "sha256": "b185ce44882322423eaff66c98729fd5af1f4aa0ee9b62ff83b506477e92b411" },
+    { "path": "src/facts/formal-fact-reader.ts", "sha256": "e75211bec81ac81c51887f1df80e5367605394fe61e8ef6275e59f1fc79c4289" },
+    { "path": "src/facts/formal-fact-snapshot.ts", "sha256": "5ad223ba0f8732abd11a40832c7580d90e6a6c577c440eb3b3bb5365a23621d0" },
+    { "path": "src/facts/generation-resolver.ts", "sha256": "90f0a81a32564d8f31c98dcc56a3741fda1e9e284dc636f5f0f1df71861ac7d1" },
+    { "path": "tests/unit/persistence/serialization.test.ts", "sha256": "7785bbd683551928b3b78b5751dfa1a838b5ae619f6870fe037242ea6683c885" },
+    { "path": "tests/unit/persistence/result-ref-adapter.test.ts", "sha256": "1f26624432c5410f3432d7ef27dd56b70efe33fc8103e7451d5c3a771fbc6e9a" },
+    { "path": "tests/unit/persistence/run-persistence.test.ts", "sha256": "e1b38037156cc0962ffb2a8a39fa28553b63a36970f8374cd3884d891475b7a9" },
+    { "path": "tests/unit/facts/formal-fact-reader.test.ts", "sha256": "8b8b99256d501e5f05dedc4930bc352a6696bb416a2e182c2ac8dc5aa32bada9" },
+    { "path": "tests/integration/execution-model-lifecycle.test.ts", "sha256": "a554e55b4bb7698b0ef867c7bb62a674f2e9d379119cb1f93fd86e8c3ad176b7" },
+    { "path": "openspec/changes/execution-model-correction/verification.md", "sha256": "ef9646010e73decff09c9b0c68fabedaeb6fd6aa0a63c05657c504ec8c2124a7" }
+  ],
+  "scope": {
+    "modifiedCapabilities": [
+      "flowkit-formal-fact-reader-and-persistence"
+    ],
+    "productionCodeModified": true,
+    "testsModified": true,
+    "contractArtifactsModified": false,
+    "fullTestRun": false
+  },
+  "verification": {
+    "typecheck": "passed",
+    "lint": "passed",
+    "build": "passed",
+    "unitAndIntegrationTests": "passed (494 tests, 494 pass, 0 fail)",
+    "moduleUnitTests": "passed (serialization: closed schema / ResultRef.kind required / field-kind binding; result-ref-adapter: ResultRef construction / specs enumeration / archive-aware resolution / shared effective-set validators; run-persistence: completeRun descriptor-driven authority / completion preflight / validateReviewEntry / review exact binding / writeRunResult publish protocol; formal-fact-reader: exact lineage classification / current·revision-window·superseded / FactConflict)",
+    "lifecycleIntegrationFixtures": "passed (generation-aware Reader: legitimate revise superseded no false conflict / no-lineage fail-closed; revise-propose effective-set: namespace drift reject / re-enumerate / subset overlay / undeclared singleton pending; verification generation-aware; archive relocation)",
+    "openspecStrict": "passed",
+    "openspecCommand": "openspec validate execution-model-correction --strict",
+    "canonicalSpecs": "passed (8 passed, 0 failed)",
+    "whitespace": "passed (git diff --check exit 0; benign LF/CRLF warnings only)"
+  },
+  "nextActionRecommendation": "review-apply",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

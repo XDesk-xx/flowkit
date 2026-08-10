@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-042-revise-explore",
+  "status": "completed",
+  "summary": "C1 revise-explore 完成。修复了 041-review-explore 的 1 个 P1 blocking finding (C1-EX-005)。C1-EX-005：ResultRef content-hash 设计自引用——ActionResult.runRef.versionFingerprint 定义为 result.json 内容 SHA-256，但 result.json 包含 actionResult.runRef.versionFingerprint，哈希值是被哈希内容的一部分。修复为非自引用序列化边界（省略-派生模式）：物理序列化省略 actionResult.runRef，新增 ActionResultWithoutRunRef 类型；versionFingerprint 在读取时从文件内容 SHA-256 派生；文件不包含自身哈希，消除循环。定义了 computeResultFileHash / buildRunResultRef / reconstructActionResult / verifyResultRef 四个函数，明确写入行为（不含 runRef）、读取行为（派生 runRef）、替换检测（fingerprint 不匹配）、错误 fingerprint 拒绝。Q5 RunResultFile 定义更新，Q7 完全重写。验收标准从 23 项扩展到 25 项，探索结论和 Review 重点同步更新。",
+  "reviewedResultRef": "run-result:.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-041-review-explore/result.json;sha256:163cf222c0c6c87504c9892f1fe1e09779ddbe1c84bf192f4bc2ca5826fa3116",
+  "revisedArtifact": {
+    "path": "openspec/changes/formal-fact-reader-and-persistence/explore.md",
+    "sha256": "13ea5d15749084ace65f7fc647709c4f717ffbe4209f4363d2865974fd36eebb"
+  },
+  "resolvedFindings": [
+    {
+      "id": "C1-EX-005",
+      "resolution": "定义非自引用序列化边界（省略-派生模式）：(1) RunResultFile.actionResult 类型改为 ActionResultWithoutRunRef (Omit<ActionResult, 'runRef'>)，物理序列化省略 runRef；(2) 写入时构造不含 runRef 的 RunResultFile，序列化为 JSON，atomicWriteFile 写入——文件不含自身哈希；(3) 读取时 computeResultFileHash(fileContent) 计算 SHA-256，reconstructActionResult 派生 runRef = { ref, versionFingerprint, kind }，重建完整 ActionResult；(4) verifyResultRef 检测替换和错误 fingerprint。Q7 完全重写定义四个函数 + 写入/读取行为 + 替换检测 + 映射规则 + 自引用禁止说明 + fixture 测试。"
+    }
+  ],
+  "changesSummary": {
+    "Q5_RunResultFile": "actionResult 类型改为 ActionResultWithoutRunRef，新增非自引用序列化边界说明",
+    "Q5_write_flow": "步骤 3 新增'actionResult 序列化时省略 runRef'，步骤 4 重写为'序列化 + 原子写入，文件不含自身哈希'",
+    "Q5_reader": "读取流程新增步骤 1-2（读取原始内容 + 计算 SHA-256）和步骤 6（派生 runRef + 重建完整 ActionResult）",
+    "Q5_fixtures": "新增 5 个非自引用 fixture（不含 runRef 合法、含 runRef reject、写入后读取一致、替换检测、错误 fingerprint 拒绝）",
+    "Q7": "完全重写：定义 computeResultFileHash / buildRunResultRef / reconstructActionResult / verifyResultRef 四个函数 + 写入行为 + 读取行为 + 替换检测 + 映射规则 + 自引用禁止说明 + fixture 测试",
+    "section7": "验收标准从 23 项扩展到 25 项，新增 item 14（省略 runRef + 派生 fingerprint）和 item 15（verifyResultRef 替换检测 + fixture）",
+    "section8": "探索结论新增 item 10（非自引用序列化边界），item 13 更新测试覆盖",
+    "section9": "Review 重点新增 item 11（自引用消除）和 item 12（verifyResultRef 正确性），item 16 更新测试覆盖"
+  },
+  "nonSelfReferentialDesign": {
+    "problem": "ActionResult.runRef.versionFingerprint = SHA-256(result.json)，但 result.json 包含 actionResult.runRef.versionFingerprint → 循环依赖",
+    "solution": "省略-派生模式：物理文件省略 actionResult.runRef，versionFingerprint 在读取时从文件内容 SHA-256 派生",
+    "writeBehavior": "构造不含 runRef 的 RunResultFile → 序列化为 JSON → atomicWriteFile → 文件不含自身哈希",
+    "readBehavior": "读取文件内容 → computeResultFileHash → 解析 JSON → reconstructActionResult 派生 runRef → 重建完整 ActionResult",
+    "replacementDetection": "verifyResultRef(ref, actualContent): ref.versionFingerprint ≠ SHA-256(actualContent) → false → FactConflict 或引用失效",
+    "ownershipBoundary": "B1 拥有逻辑 ActionResult（含必填 runRef）；C1 拥有物理传输 schema（省略 runRef + 读取时派生）"
+  },
+  "scopeDiscipline": {
+    "scopeExpanded": false,
+    "reason": "只处理 C1-EX-005，不扩张 Change 范围"
+  },
+  "nextActionRecommendation": "review-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "lastCommit": "180f161 checkpoint(domain-and-state-schema): B1 Change Checkpoint",
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "blockedOn": []
+}

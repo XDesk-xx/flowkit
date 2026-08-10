@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-016-review-explore",
+  "status": "completed",
+  "summary": "B1 revised Explore review completed with changes-requested. B1-RE-001 and B1-RE-002 are substantively resolved: the catalog now follows the frozen core-model spec's ten formal Change Actions, and ResultRef is provider-neutral without a mandatory Run path. One blocking internal inconsistency remains: the Review focus still instructs reviewers to require eleven Change Actions, directly contradicting the revised catalog, acceptance criterion, and conclusion. The Explore must have one executable review criterion before Proposal.",
+  "reviewedResultRef": "content-sha256:c322ff653f434a7d83b85dd58185ee3a3f4ce4a5e0abd65e789d7ed2192963bb",
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "B1-RE-003",
+      "title": "Review focus retains the superseded eleven-Action catalog",
+      "location": "openspec/changes/domain-and-state-schema/explore.md:415; compare Q5, acceptance criterion 4, and conclusion 5",
+      "evidence": "Q5, the source-conflict resolution, acceptance criterion 4, and conclusion 5 consistently specify ten Change Actions and exclude change-checkpoint. Review focus item 4 instead says the catalog is complete only with eleven Change Actions plus two Delivery Actions. It was not updated when B1-RE-001 was resolved.",
+      "impact": "The same Explore both defines a conforming ten-Action implementation and directs its formal reviewer to reject it for lacking an eleventh Action. This leaves no single executable acceptance/review criterion for the Proposal or later Apply review.",
+      "requiredResolution": "Update Review focus item 4 to require the frozen ten Change Actions plus the two Delivery Actions, and explicitly check that review, revise, and change-checkpoint are absent. Recheck the Explore for any remaining eleven-Action wording that presents it as the required catalog."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "resolvedFindings": [
+    {
+      "id": "B1-RE-001",
+      "resolution": "Q5, section 6.5, acceptance criterion 4, and the conclusion now select the frozen core-model spec's ten formal Actions and treat Change Checkpoint as a Git boundary rather than an Action."
+    },
+    {
+      "id": "B1-RE-002",
+      "resolution": "Q9 defines ResultRef through provider-neutral stable identity and version-fingerprint capabilities, without mandatory runPath; concrete serialization and adapter mapping remain C1 work."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "reviewed Explore artifact hash",
+        "status": "passed",
+        "result": "SHA-256 is c322ff653f434a7d83b85dd58185ee3a3f4ce4a5e0abd65e789d7ed2192963bb and matches the completed 015-revise-explore Run."
+      },
+      {
+        "name": "014 blocking-finding resolutions",
+        "status": "passed",
+        "result": "The Action Catalog now follows the frozen core-model spec and ResultRef is no longer constrained to a mandatory Run path."
+      },
+      {
+        "name": "Explore internal consistency",
+        "status": "failed",
+        "result": "Review focus item 4 still requires eleven Change Actions while the resolved catalog, acceptance criterion, and conclusion require ten."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run; this is review-explore."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

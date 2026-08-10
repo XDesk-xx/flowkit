@@ -1,0 +1,27 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-explore",
+    "executionStatus": "completed",
+    "summary": "已按 147 Reviewer 的两个 Blocking Findings 最小修订 Q2 Explore：把人类可读内容默认简体中文与 Reviewer mutation boundary 纳入 AGENTS 的 Proposal 正式调查输入，并明确 AGENTS 只约束 Agent 行为、不拥有 Policy/OpenSpec/Owner authority；未修改 AGENTS、docs、production code 或 tests，也未进入 Proposal。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/orchestration-authority-boundary-correction/explore.md",
+        "versionFingerprint": "c0f48ce99f55ff28f699295e9ae2d9b68d4092735d4f4d54d8b9bf53b66aa8d9",
+        "kind": "produced-artifact"
+      }
+    ],
+    "consumedInputRefs": [
+      {
+        "ref": ".flowkit/runs/20260806-01-deterministic-core/orchestration-authority-boundary-correction/20260806-147-review-explore/result.json",
+        "versionFingerprint": "e56d8ca2e968e9492b0ea1d3c2e69353c6a0c6ccfbcbed7a5280a9fdf1ccadf6",
+        "kind": "run-result"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260806-01-deterministic-core/orchestration-authority-boundary-correction/20260806-147-review-explore/result.json",
+      "versionFingerprint": "e56d8ca2e968e9492b0ea1d3c2e69353c6a0c6ccfbcbed7a5280a9fdf1ccadf6",
+      "kind": "run-result"
+    }
+  }
+}

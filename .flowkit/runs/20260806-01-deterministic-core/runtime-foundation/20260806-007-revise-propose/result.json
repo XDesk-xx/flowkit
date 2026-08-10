@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-007-revise-propose",
+  "status": "completed",
+  "summary": "依据 006-review-propose 的 1 个 Blocking Finding 修订 A1 Proposal。修复 tsconfig.test.json 继承生产 rootDir=src 但包含 tests/ 外部文件导致 typecheck 无法工作的问题。在 tsconfig.test.json 中添加 compilerOptions.rootDir: \".\" 覆盖生产 rootDir。修改了 design.md D1、tasks.md 1.3、spec.md 测试 tsconfig 场景。未修改 proposal.md、explore.md、Manifest 或先前 terminal Runs。未创建 Git Commit。",
+  "findingsResolved": [
+    {
+      "id": "A1-RP-001",
+      "title": "Test tsconfig cannot include tests outside the inherited rootDir",
+      "resolution": "在 tsconfig.test.json 中添加 compilerOptions.rootDir: \".\" 覆盖生产 rootDir: src，允许 TypeScript 接受 tests/ 下的文件。保持 noEmit: true，不引入测试构建输出。",
+      "changes": [
+        "design.md D1: tsconfig.test.json 添加 compilerOptions.rootDir: \".\"",
+        "tasks.md 1.3: 添加 rootDir \".\" 到 tsconfig.test.json 描述",
+        "spec.md: 测试 tsconfig 场景添加 compilerOptions.rootDir MUST 为 \".\" 检查"
+      ]
+    }
+  ],
+  "proposalArtifacts": {
+    "proposal": {
+      "path": "openspec/changes/runtime-foundation/proposal.md",
+      "sha256": "c2a36055ab8370018ee9f833d52749623a61ae32af879ad9dd341a9e8cc0ee7d",
+      "modified": false
+    },
+    "design": {
+      "path": "openspec/changes/runtime-foundation/design.md",
+      "sha256": "52c807d9063b47647f9ac5eeff02644a0ab7ec2627eb7df566c7e9292e9ae2fc",
+      "modified": true
+    },
+    "spec": {
+      "path": "openspec/changes/runtime-foundation/specs/flowkit-runtime-foundation/spec.md",
+      "sha256": "6feca45cd593dfa7d02dc527ab12ffb0842a776b9d89f2070a4454af27a99554",
+      "modified": true
+    },
+    "tasks": {
+      "path": "openspec/changes/runtime-foundation/tasks.md",
+      "sha256": "06483d7f368e9576703a92a6770ace154701357e5cf29f668d9a13b66c3a462d",
+      "modified": true
+    }
+  },
+  "scopePreserved": {
+    "a1Scope": "unchanged (TypeScript runtime skeleton + shared engineering basics)",
+    "exploreNotModified": true,
+    "proposalNotModified": true,
+    "terminalRunsPreserved": true,
+    "manifestNotModified": true,
+    "noCode": true
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "nextAction": "review-propose",
+  "blockedOn": []
+}

@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-141-review-apply",
+  "status": "completed",
+  "summary": "Integrated review of cumulative fix-series v2 completed with changes-requested. Run 140 materially resolves the two direct Run-139 Q1-RA-007 edges for C1/schemaVersion 2 facts: failed/cancelled revise Runs no longer require terminal-only reviewVerdictRef and cannot enter successor eligibility; pending/completed revise eligibility now requires all status-applicable per-Run immutable checks accumulated by the candidate. However the exact repository overlay exposes a separate Bootstrap compatibility blocker. readLegacyRun intentionally collapses schemaVersion 1 Bootstrap records into a minimal RunFact without C1 ResultRefs or source-review tuple projection. Downstream immutable/generation validators then operate on the undifferentiated RunFact collection and use action/status alone to apply C1 revise/artifact rules. The fixed GitHub baseline already contains 20260806-136-revise-apply as schemaVersion 1 + completed, and the v2 package adds schemaVersion 1 completed revise Runs 138 and 140. Each is therefore eligible for the candidate's completed revise branch, which calls validateSourceReviewTuple(requiresTuple=true) although legacy RunFact has no C1 reviewVerdictRef/source-review projection. This creates false immutable-ref-required conflicts merely because Bootstrap history is not C1. The same provenance loss can route schemaVersion 1 explore/propose history into C1 generation/current producedResultRefs validation even though the bounded legacy recognizer deliberately does not construct C1 ResultRefs. This violates the frozen Bootstrap compatibility boundary and means the candidate cannot safely be applied to the actual Run-136 repository history without self-conflicting on legacy formal facts. The v2 package manifest and checksums are internally consistent and both changed TypeScript files parse without syntax diagnostics. Repository command-suite execution was not claimed because the package is an overlay rather than a dependency-installed checkout. Delivery Full Test was not authorized or run.",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-140-revise-apply/",
+  "reviewedResultRef": "content-sha256:3922bbea0c7e4bb766e3703a0aebc2df0ce1ddff9b156fb49115a905ea81680b",
+  "reviewedPackageRef": "content-sha256:93080e042f96a33e8d7ce5a0da2f0e94eaca73954b17150148561fa4eec54914",
+  "reviewedSeriesVersion": "v2",
+  "reviewedBaseGitHead": "44e1a64447ba63aa66c3b5653b448101713fb5b7",
+  "sourceReview": {
+    "runId": "20260806-139-review-apply",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:3da64623ba678ec96904ca0f3df67ef9b6788a16e97de077bf4c9e34a094baf1"
+  },
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "Q1-RA-011",
+      "title": "C1-only immutable/generation rules are applied to Bootstrap schemaVersion 1 Runs after provenance is lost",
+      "problem": "The bounded legacy path correctly recognizes schemaVersion 1 Runs without constructing C1 ResultRefs. readLegacyRun then projects only minimal RunFact fields (runId/deliveryId/action/role/status/changeId). After that projection, validateImmutableRunResultRefs and the generation validators receive the same undifferentiated RunFact[] used for C1. In the v2 candidate, every action=revise-* + status=completed enters the completed revise branch and requires the full C1 source-review tuple. A Bootstrap revise Run cannot satisfy that rule because readLegacyRun intentionally does not project sourceReviewRun/sourceReviewVerdict/reviewVerdictRef as C1 evidence. The actual fixed baseline proves this is not theoretical: 20260806-136-revise-apply/context.json is schemaVersion 1 and its result is completed. The v2 payload itself also preserves schemaVersion 1 completed revise Runs 138 and 140. After application, these valid Bootstrap history records will be reported as missing C1 immutable evidence. Similarly, schemaVersion 1 explore/propose RunFacts can enter C1 artifact-generation/current effective-set validation even though bounded legacy recognition never promised actionResult.producedResultRefs.",
+      "location": "v2 payload src/facts/formal-fact-reader.ts: readLegacyRun, validateImmutableRunResultRefs, validateGenerationAwareArtifacts, validateVerificationGenerationAware; unchanged src/persistence/legacy-recognizer.ts three-way discriminator; GitHub baseline 20260806-136-revise-apply context/result.",
+      "impact": "Applying v2 to the real Run-136 repository can make existing valid Bootstrap history—and the package's own 138/140 Bootstrap-style revise records—produce C1-only FactConflicts. That breaks deterministic recovery on the exact repository the fix series targets and violates the frozen compatibility rule that schemaVersion 1 remains a bounded legacy format rather than being retroactively required to satisfy C1 physical ResultRef contracts.",
+      "requiredOutcome": "Preserve enough format/provenance information through Reader admission so C1/schemaVersion 2 immutable and generation-specific ResultRef validation is applied only where that contract is applicable. Bootstrap schemaVersion 1 Runs must continue through the bounded legacy semantics without being required to synthesize or retroactively carry C1 source-review/produced/verification ResultRefs. At the same time, all Run-140 C1 behavior must remain strict: schemaVersion 2 pending/completed revise admission and invalid-successor filtering cannot be weakened. The Author may choose the representation/filtering structure; the Reviewer does not require a particular type, field, registry, or module split.",
+      "acceptance": [
+        "The real schemaVersion 1 completed 20260806-136-revise-apply can be read without a C1 missing-reviewVerdictRef/source-review-tuple conflict caused solely by its legacy format.",
+        "After applying the series, schemaVersion 1 completed revise Runs 138 and 140 likewise do not receive C1-only immutable-ref-required conflicts.",
+        "A schemaVersion 1 legacy Run is not required to carry C1 ResultRef fields that the bounded legacy recognizer intentionally does not construct.",
+        "Legacy explore/propose history is not routed into C1 producedResultRefs/effective-set validation unless an explicitly approved legacy contract supports that evidence.",
+        "Unknown or malformed schema versions remain fail-closed; this must not become a generic legacy bypass.",
+        "SchemaVersion 2 completed revise still requires the complete source-review tuple.",
+        "SchemaVersion 2 pending revise still uses context-level predecessor proof without terminal reviewVerdictRef.",
+        "SchemaVersion 2 failed/cancelled revise keeps the Run-140 status-correct behavior and never participates as successor.",
+        "SchemaVersion 2 invalid inputRef/consumedInputRefs/source-review evidence still disqualifies successor eligibility.",
+        "RA-006/008/009/010 remain intact and no legacy Run is rewritten."
+      ]
+    }
+  ],
+  "nonBlockingFindings": [],
+  "resolvedPriorFindings": [
+    {
+      "id": "Q1-RA-007",
+      "result": "resolved-for-c1",
+      "evidence": "For schemaVersion 2/C1 semantics, 140 accumulates per-Run immutable conflicts before eligibility, treats pending/completed/failed/cancelled separately, and filters artifact/verification successor candidates by integrityAdmittedReviseRunIds."
+    },
+    {
+      "id": "Q1-RA-010",
+      "result": "still-resolved",
+      "evidence": "140 does not weaken the runStatus + Action physical applicability matrix introduced in 136."
+    },
+    {
+      "id": "Q1-RA-006",
+      "result": "still-resolved",
+      "evidence": "Exact-bound C1 review verdict admission remains the source for C1 predecessor proof."
+    },
+    {
+      "id": "Q1-RA-008",
+      "result": "still-resolved",
+      "evidence": "Non-Run logical/archive resolution is unchanged."
+    },
+    {
+      "id": "Q1-RA-009",
+      "result": "still-resolved",
+      "evidence": "Current C1 verificationSummaryRef validation is unchanged."
+    },
+    {
+      "id": "Q1-RA-001",
+      "result": "still-resolved",
+      "evidence": "No raw terminal publication authority was reintroduced."
+    },
+    {
+      "id": "Q1-RA-003",
+      "result": "still-resolved",
+      "evidence": "Shared C1 effective-set validation remains unchanged."
+    },
+    {
+      "id": "Q1-RA-005",
+      "result": "still-resolved",
+      "evidence": "Runtime C1 Run-ID/tag descriptor closure remains unchanged."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "v2 package checksum manifest",
+        "status": "passed",
+        "result": "18/18 checksums matched the uploaded package contents."
+      },
+      {
+        "name": "Exact fixed GitHub baseline",
+        "status": "passed",
+        "result": "v2 declares the same fixed base commit 44e1a64447ba63aa66c3b5653b448101713fb5b7."
+      },
+      {
+        "name": "140 source-review binding",
+        "status": "passed",
+        "result": "140 exact-binds 139 changes-requested using content-sha256:3da64623ba678ec96904ca0f3df67ef9b6788a16e97de077bf4c9e34a094baf1."
+      },
+      {
+        "name": "140 result exact hash",
+        "status": "passed",
+        "result": "140 result.json SHA-256 = 3922bbea0c7e4bb766e3703a0aebc2df0ce1ddff9b156fb49115a905ea81680b."
+      },
+      {
+        "name": "Changed TypeScript syntax parse",
+        "status": "passed",
+        "result": "formal-fact-reader.ts (f9d6e4c0417328e60b7f58fab58e81e0e883a0dd1b9881972cc01b3e652c97df) and focused test (1e25ad8982b21e69bf9f8b56ffa9ae40a8d6d7e0e7410940bc054d928c194e25) produced zero TypeScript syntax diagnostics."
+      },
+      {
+        "name": "Run-139 failed/cancelled revise acceptance",
+        "status": "passed-by-code-review",
+        "result": "For C1 RunFacts with predecessor context present, failed/cancelled no longer require terminal reviewVerdictRef and are never admitted as generation successors."
+      },
+      {
+        "name": "Run-139 all-immutable eligibility acceptance",
+        "status": "passed-by-code-review",
+        "result": "Pending/completed C1 revise eligibility now depends on the per-Run accumulated applicable immutable conflicts, including inputRef and consumedInputRefs."
+      },
+      {
+        "name": "Bootstrap/C1 format isolation on actual baseline",
+        "status": "failed",
+        "result": "The real baseline 136 revise-apply is schemaVersion 1 + completed, but downstream candidate validation has no schema provenance and will apply completed C1 revise tuple requiredness to its minimal legacy RunFact."
+      },
+      {
+        "name": "Repository command suite",
+        "status": "not-run",
+        "result": "The uploaded v2 is a cumulative overlay package rather than a dependency-installed checkout. Static integrated review already found a deterministic compatibility blocker; approval is therefore not inferred from unrun npm commands."
+      },
+      {
+        "name": "Delivery Full Test",
+        "status": "not-applicable",
+        "result": "Not owner-authorized and not run."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-apply",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

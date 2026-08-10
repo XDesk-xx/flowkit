@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-010-review-apply",
+  "status": "failed",
+  "summary": "review-apply is blocked before a formal review verdict. openspec/changes/runtime-foundation/verification.md is absent, so the completed Apply Run's embedded verification summary cannot serve as the required Change Verification record. No review verdict was issued.",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/runtime-foundation/20260806-009-apply/",
+  "blocked": {
+    "code": "change-verification-record-missing",
+    "reason": "docs/verification-model.md requires each Change to have verification.md with scope, applicability, commands/methods, status, summary, result references/environment, Full Test status, and an overall Change Verification status. The current Change has no such file; therefore the required passed/not-applicable formal facts are missing and review-apply cannot issue a Verdict.",
+    "evidence": [
+      "Test-Path openspec/changes/runtime-foundation/verification.md returned False.",
+      "The only verification.md files are in archived historical Changes.",
+      "009-apply/result.json contains a summary but does not replace the required verification.md record."
+    ]
+  },
+  "diagnosticChecks": [
+    {
+      "name": "npm run typecheck",
+      "status": "passed",
+      "result": "Production and test TypeScript projects completed successfully."
+    },
+    {
+      "name": "npm run build",
+      "status": "passed",
+      "result": "tsc completed successfully."
+    },
+    {
+      "name": "npm test",
+      "status": "passed",
+      "result": "20 tests passed; 0 failed."
+    },
+    {
+      "name": "npm run lint",
+      "status": "passed",
+      "result": "eslint completed with no errors."
+    },
+    {
+      "name": "node dist/bin/flowkit.js --version",
+      "status": "passed",
+      "result": "Output: 0.1.0."
+    },
+    {
+      "name": "Full Test",
+      "status": "not-run",
+      "result": "Not authorized and not run."
+    }
+  ],
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

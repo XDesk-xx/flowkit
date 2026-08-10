@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-063-review-apply",
+  "status": "completed",
+  "verdict": "changes-requested",
+  "summary": "Apply review found four P1 blockers: Change Verification record is missing; assertMutable never sees persisted terminal status; the Reader misses the real nested Manifest state; and review verdict linkage is not reconstructible.",
+  "findings": [
+    {
+      "id": "C1-AP-001",
+      "severity": "P1",
+      "title": "required Change Verification record is missing",
+      "disposition": "changes-requested"
+    },
+    {
+      "id": "C1-AP-002",
+      "severity": "P1",
+      "title": "writeRunResult does not let assertMutable observe terminal persistent state",
+      "disposition": "changes-requested"
+    },
+    {
+      "id": "C1-AP-003",
+      "severity": "P1",
+      "title": "FormalFact Reader cannot read the actual Delivery Manifest state",
+      "disposition": "changes-requested"
+    },
+    {
+      "id": "C1-AP-004",
+      "severity": "P1",
+      "title": "Reader cannot reconstruct review verdict facts from canonical or current Bootstrap records",
+      "disposition": "changes-requested"
+    }
+  ],
+  "verification": [
+    {
+      "command": "npm test",
+      "status": "passed",
+      "result": "226 tests passed; review found uncovered semantic defects."
+    },
+    {
+      "command": "npm run build",
+      "status": "passed"
+    },
+    {
+      "command": "npx openspec validate formal-fact-reader-and-persistence --strict",
+      "status": "passed",
+      "note": "Structural validation only."
+    },
+    {
+      "command": "Change Verification record",
+      "status": "failed",
+      "note": "openspec/changes/formal-fact-reader-and-persistence/verification.md is absent."
+    },
+    {
+      "command": "full test",
+      "status": "not-run",
+      "note": "No owner authorization."
+    }
+  ],
+  "nextAction": "revise-apply"
+}

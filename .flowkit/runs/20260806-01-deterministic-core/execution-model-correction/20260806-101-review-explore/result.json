@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-101-review-explore",
+  "status": "completed",
+  "summary": "Complete Q1 Explore review of 100 finished with changes-requested. 100 correctly removes Q1-owned concrete verification scripts and correctly changes the primary section 4.2 design to Core-derived inputRef creation. It does not, however, carry that mandatory Core-owned derivation through the problem conclusion, implementation/acceptance table, acceptance criteria, and cross-reference contract; those still permit or require only validation. In addition, the proposed Lean Run contract still explicitly permits full Findings and Verification payloads in unvalidated Agent notes, contrary to the updated reference's rule that a Run is not an audit ledger and must not duplicate those complete facts. One non-blocking portability observation is also recorded.",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-100-revise-explore/",
+  "reviewedResultRef": "content-sha256:a01f61342f38b088882dba00683e64f22c9f01230b6ec6d99d04994da886ca05",
+  "sourceReview": {
+    "runId": "20260806-099-review-explore",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:925b275dde6c0285398b34bc9d3b855bebfc88cee5f91913f1c5649768b3f5fa"
+  },
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "Q1-RE-001",
+      "title": "Core-derived provenance is still not an end-to-end Q1 requirement",
+      "location": "openspec/changes/execution-model-correction/explore.md:102, 295-300, 327, 345",
+      "evidence": "100 fixes section 4.2 to make createRun derive and persist inputRef itself, but section 3.2 still concludes that Core may 'derive or verify' a fingerprint. The implementation table still describes createRun/result-ref-adapter as inputRef 'validation', acceptance only requires Core to 'verify' the fingerprint, and the cross-reference requires createRun validation plus preflight verification. In contrast, the updated reference section 6.5 and the active manifest require Core to read the target, compute SHA-256, construct ResultRef, and not depend on Agent-supplied versionFingerprint. Verification is a required second check after Core construction, not an alternative implementation.",
+      "impact": "A Proposal can satisfy the remaining wording by retaining a caller-supplied ResultRef and adding validation, leaving the exact provenance authority defect that Q1 was activated to remove. The Explore therefore lacks a consistent, testable acceptance contract for the intended production change.",
+      "requiredResolution": "Keep the same finding ID and make derivation mandatory everywhere: section 3.2 conclusion, section 5 implementation table, section 7 acceptance, and section 8 cross-reference must state that createRun accepts only a consumption target, Core constructs and persists the canonical ResultRef, and writeRunResult subsequently revalidates that Core-created reference. Reserve 'verify' for the post-creation/pre-publication replacement check; update proposed C1 delta and tests accordingly."
+    },
+    {
+      "id": "Q1-RE-003",
+      "title": "Lean Run contract still permits the Run to be an unbounded Findings and Verification ledger",
+      "location": "openspec/changes/execution-model-correction/explore.md:173-205",
+      "evidence": "Section 4.1 places findings (blocking, non-blocking, resolved), verification details, archive/manifest/verification results, and consistencyScan in free-form Agent notes and explicitly says the Run schema does not prohibit them. The updated reference sections 2.3 and 6.3 require a Run to remain an execution envelope: it must not copy complete Findings or Verification facts, and an Action/Reviewer consistency scan must be represented by a minimal result reference rather than turning the Run into a generic evidence container. The same section 4.1 already lists reviewVerdictRef and verificationSummaryRef, but does not make those references the required replacement for the copied payloads.",
+      "impact": "Leaving these payloads allowed and unbounded preserves the D1 behavior Q1 is meant to correct: each Run can again grow with duplicated reviewer and verification narrative, making resume/review cost depend on Agent bookkeeping rather than the authoritative artifacts.",
+      "requiredResolution": "Define a bounded Lean Run rule: Run stores only the minimal execution summary and the applicable reviewer/verification result references; complete Findings, Verification detail, archive/manifest facts, and any necessary consistency analysis remain with their owning artifact/authority and are referenced rather than copied. State the limited exception, if any, for a short non-authoritative note, set a size/content boundary, and add acceptance/tests that reject or omit duplicated full payloads. Do not create a second evidence subsystem."
+    }
+  ],
+  "nonBlockingFindings": [
+    {
+      "id": "Q1-NB-001",
+      "title": "Explore source links are checkout-specific",
+      "location": "openspec/changes/execution-model-correction/explore.md:62, 72, 90, 98, 106, 127, 131, 137",
+      "evidence": "The code citations use file:///D:/Projects/flowkit absolute paths. The Explore itself is intended to be a Git-recoverable formal artifact; these links do not resolve in another checkout or platform.",
+      "recommendedResolution": "Convert source citations to repository-relative Markdown links when the Explore is next edited. This does not block the current revision because the cited source and line evidence were independently verified."
+    }
+  ],
+  "resolvedFindings": [
+    {
+      "id": "Q1-RE-002",
+      "result": "resolved",
+      "evidence": "100 changes sections 3.7 and 4.5 so Q1 freezes only verification timing/ownership/Full-Test boundaries and assigns concrete test scripts, commands, and script-level acceptance to F1, matching ref/01 section 8.3."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "100 reviewed-result binding and JSON validity",
+        "status": "passed",
+        "result": "100 context.json and result.json parse as JSON. SHA-256 of 100 result.json is a01f61342f38b088882dba00683e64f22c9f01230b6ec6d99d04994da886ca05."
+      },
+      {
+        "name": "revision lineage and Run numbering",
+        "status": "passed",
+        "result": "100 inputRef equals the actual SHA-256 of 099 result.json, sourceReviewRun/verdict match 099, and 100 was the Delivery-wide maximum before this reviewer Run."
+      },
+      {
+        "name": "complete Q1 contract scan",
+        "status": "failed",
+        "result": "Q1-RE-001 remains unresolved across the Explore's duplicate acceptance language; Q1-RE-003 finds a distinct Lean Run authority-boundary omission. Q1-RE-002 is resolved."
+      },
+      {
+        "name": "scope and whitespace",
+        "status": "passed",
+        "result": "100 declares and its result records only the Explore revision. JSON parsing, git diff --check, and an explicit trailing-whitespace scan passed. The separately modified AGENTS.md is treated as an owner/repository instruction outside 100's declared modified-file claim and is not attributed to this review result."
+      },
+      {
+        "name": "Delivery Full Test",
+        "status": "not-applicable",
+        "result": "Not owner-authorized and not run; review-explore has no code-change Full-Test authority."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

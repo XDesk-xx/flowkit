@@ -35,7 +35,7 @@ Delivery 是完整交付主线和最终验收边界，至少承载：
 
 Change 是 Delivery 内边界明确、可独立实施和审查的变更单元。
 
-每个 Change 必须属于一个 Delivery，并在该 Delivery 中完成 Explore、Propose、Apply、Review、Archive 和 Checkpoint 闭环。
+每个 Change 必须属于一个 Delivery，并在该 Delivery 中完成 Explore、Propose、Apply、Review 和 Archive 生命周期。OpenSpec archive operation 成功后，由 Flowkit 记录 Change 为 `completed`，该 Change 随即关闭；Change Checkpoint 是关闭后的 Flowkit/Git 正式边界，不属于 Change 完成条件。
 
 ### 2.3 Action
 
@@ -45,9 +45,11 @@ Action 与 Git Commit 不一一对应。同一个 Action 可以包含多轮讨�
 
 ### 2.4 Run
 
-Run 是某个角色对某个正式 Action 的一次执行实例。
+Run 是某个角色对某个正式 Action 的一次执行实例，是流程推进、精确交接和恢复所需的最小执行信封（execution envelope）。
 
 Run 不构成第四个产品实体层，不拥有 Change 契约、流程状态、Git 历史、Findings、测试结果或其他专业事实的主要权威。
+
+Run 的 `result.json` 使用 closed Core-validated schema：只保存执行状态、动作结果摘要和 Core 派生的 ResultRef，拒绝 `blockingFindings`、`verification[]`、`consistencyScan`、`commitPolicy` 等自由重型 bookkeeping 字段。所有 ResultRef（run-result、produced-artifact、verification-summary）的 kind、path 和 fingerprint 均由 Core 从真实目标派生，不由 Agent 手工填写。
 
 ## 3. 状态模型
 
@@ -76,7 +78,7 @@ cancelled
 
 - `planned`：属于当前 Delivery，但尚未激活；
 - `active`：当前唯一正在推进的 Change；
-- `completed`：已完成 Review、Verification、Archive 和 Change Checkpoint；
+- `completed`：已完成 Review、Verification，且 OpenSpec archive operation 已成功并由 Flowkit 记录关闭；Change Checkpoint 可在其后尚未形成；
 - `cancelled`：owner 明确终止，不再推进。
 
 不使用 `reviewing`、`revising`、`verifying` 或 `ready` 作为 Change 主状态。
@@ -137,7 +139,7 @@ Review、Revision/Fix、Verification 和 Checkpoint 不形成额外 Phase 实体
 - Review：独立判断当前 Action 的完整结果；
 - Revision：处理 `changes-requested` Verdict；
 - Verification：确认 Apply/Revision 后的适用检查；
-- Checkpoint：Change 完成所需的 Git 正式边界。
+- Checkpoint：Change 已由 Archive 关闭后的 Git 正式边界，用于持久化/同步/恢复；它不反向决定 Change 是否 completed。
 
 Review 是正式生命周期边界。Revision 只在对应 Review 返回 `changes-requested` 时适用；Review `approved` 时不创建 skipped 状态或空 Run。
 

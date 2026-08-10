@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-135-review-apply",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "Q1",
+  "changeId": "execution-model-correction",
+  "action": "review-apply",
+  "role": "reviewer",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-134-revise-apply/",
+  "reviewedResultRef": "content-sha256:97b46a240f46e6f25a2b883e92dbce8805de31aa52c93fdee11240a522ee3093",
+  "sourceReview": {
+    "runId": "20260806-133-review-apply",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:eea737b70ef9642be7d123f5ea58689ff33b8cac98a0e5cc630b503242adfbf1"
+  },
+  "inputs": [
+    "AGENTS.md",
+    "openspec/changes/execution-model-correction/proposal.md",
+    "openspec/changes/execution-model-correction/design.md",
+    "openspec/changes/execution-model-correction/tasks.md",
+    "openspec/changes/execution-model-correction/verification.md",
+    "openspec/changes/execution-model-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+    "src/persistence/serialization.ts",
+    "src/persistence/result-ref-adapter.ts",
+    "src/persistence/run-persistence.ts",
+    "src/persistence/legacy-recognizer.ts",
+    "src/facts/formal-fact-snapshot.ts",
+    "src/facts/formal-fact-reader.ts",
+    "src/facts/generation-resolver.ts",
+    "tests/unit/persistence/serialization.test.ts",
+    "tests/unit/persistence/result-ref-adapter.test.ts",
+    "tests/unit/persistence/run-persistence.test.ts",
+    "tests/unit/facts/formal-fact-reader.test.ts",
+    "tests/integration/execution-model-lifecycle.test.ts",
+    ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-133-review-apply/result.json",
+    ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-134-revise-apply/action.md",
+    ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-134-revise-apply/context.json",
+    ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-134-revise-apply/result.json"
+  ],
+  "constraints": {
+    "readOnlyExceptOwnRun": true,
+    "mayModifyReviewedArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayFullTest": false,
+    "mayCheckpoint": false,
+    "commitAllowed": false
+  }
+}

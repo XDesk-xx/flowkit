@@ -1,0 +1,36 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "已沿 E1 169→170→171 lineage 完成 Proposal 独立审查。171 的 authority 方向、Verification marker/Reader projection、D1 gate 接线、thin dispatcher、detached Git 边界与 170 timing clarification 基本正确；package/lineage/OpenSpec strict/typecheck/Core admission 均通过。但 Proposal 尚有三个会直接影响 Apply 行为的 contract gap：`next` 固定文本 contract 丢失 owner-decision context / blocked conflicts；doctor severity 与 exit code 映射仍未冻结；正常 no-active-Change Delivery-level 状态缺少 diagnostic projection。三个 blocker 均为 author-actionable。",
+    "nextActionRecommendation": "revise-propose"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindings": [
+    {
+      "id": "E1-RP-001",
+      "severity": "blocking",
+      "title": "`next` 固定输出 contract 丢失 PolicyResult 必需上下文",
+      "problem": "问题/证据：169 Explore 已要求 `owner-decision` 显示 `decision + minimal context`、`blocked` 显示 `reason + unmet/conflict dimensions`；171 delta spec 也要求 owner-decision 输出最小上下文、blocked 输出 unmet/conflict diagnosis。但 Design Decision 8 把 `next` 固定字段冻结为 `kind`、`action | decision | reason`、`unmet`、`owner-actions`，没有任何 owner-decision context 投影，也没有 blocked `conflicts` 投影。当前 Policy 的 `OwnerDecisionContext` 可携带 changeKey / eligibleChangeKeys / deliveryFullTestStatus / detail，`BlockedDiagnosis` 还独立携带 conflicts。Invariant：Diagnostic CLI 只能呈现 PolicyResult，但必须完整呈现当前流程边界所需的最小 authority-owned information，不能在 formatter 层静默丢失。影响：`activate-change`、Full Test/Finalize 等 owner boundary 可能只显示 decision 名而丢失对象/候选；`formal-fact-conflict` 可能丢失 conflict diagnosis，导致 `flowkit next` 在最需要诊断时信息不足。Blocking authority：author-actionable。",
+      "location": "openspec/changes/diagnostic-cli/explore.md §5.2 lines 287-293; design.md Decision 8 lines 233-242; specs/flowkit-diagnostic-cli/spec.md lines 91-108",
+      "requiredChange": "在 Proposal/Design/delta spec/Tasks 中一致冻结 `PolicyResult` 三个 union branch 的 deterministic 文本投影：owner-decision 必须保留其适用的最小 context，blocked 必须保留 Policy 提供的 unmet/conflict diagnosis；字段/排序/缺失值规则必须足以形成可测试 contract，同时不得在 CLI 重算 Policy。实现形式由 Author 决定。Acceptance：至少覆盖一个带 context 的 owner-decision 与一个带 conflicts 的 blocked fixture，输出能够从文本中恢复规范要求的最小信息且 byte-stable。"
+    },
+    {
+      "id": "E1-RP-002",
+      "severity": "blocking",
+      "title": "doctor finding severity 尚未冻结，exit code 因此不确定",
+      "problem": "问题/证据：169 Explore 明确把 `error / warning / ok` 分类列为 Proposal 需要进一步冻结的事项。171 Design Decision 7 仍把“multiple pending Runs”写成 `warning/error`，并把 Policy blocked diagnosis 写成“when useful”的 presentation finding；delta spec 对 orphan pending 也保留 `warning/error`。与此同时 Decision 8 与 Tasks 5.3 已把 `doctor` 的 exit code 绑定到是否存在 error。Invariant：同一组正式 facts 必须得到唯一、可测试的 doctor severity/overall/exit code；Proposal 阶段不能把 contract-sensitive severity 推迟到 Apply 临场选择。影响：同一 ambiguous pending 或 blocked 状态可被不同实现合法地解释成 exit 0 或 exit 1，破坏 CLI 的 deterministic public behavior 和测试验收。Blocking authority：author-actionable。",
+      "location": "openspec/changes/diagnostic-cli/explore.md §5.3 lines 305-325; design.md Decision 7 lines 197-212 / Decision 8 lines 244-274; specs/flowkit-diagnostic-cli/spec.md lines 110-126, 150-170; tasks.md 4.3-4.5 / 5.3",
+      "requiredChange": "在 Proposal/Design/spec/tasks 中冻结 E1 doctor 自有 findings 的 deterministic severity 规则，并明确 Policy blocked diagnosis 是否进入 findings、若进入时如何定级；确保每个已列入 E1 的检查对 `overall` 与 exit code 都有唯一结果。不要新增第二套 Policy/validator，只冻结 presentation severity。Acceptance：移除 contract 中 `warning/error` 与 `when useful` 对 exit-sensitive 行为的歧义，并为 ambiguous pending、orphan pending、missing formal artifact、Reader conflict 以及选择呈现的 Policy blocked 情况定义可断言的 severity/exit 预期。"
+    },
+    {
+      "id": "E1-RP-003",
+      "severity": "blocking",
+      "title": "正常的 no-active-Change Delivery 状态没有 CLI contract",
+      "problem": "问题/证据：169 Explore 的 `status` 候选已明确 `Change: ...（若无则 none）`、`Stage: ... 或 delivery-level`。当前 Policy 也存在正常的 no-active-Change 分支，用于 Change Checkpoint、activate-change、Full Test 与 Delivery Finalize 等 Delivery-level 边界。171 discovery 只要求唯一 active Delivery，因此 no-active Change 并不是 invocation error；但 Design Decision 6 只定义 `For an active Change` 的 stage/lineage/artifact 投影，status/resume-context delta scenarios 也只覆盖 active Change。Invariant：只读诊断 CLI 必须覆盖 Flowkit 正常 lifecycle 中可出现的正式状态，不能把“没有 active Change”误当异常或留给实现自行猜测。影响：在 Change 刚完成等待 Checkpoint、Changes 之间或 Delivery ready/Full Test 阶段，`status` / `doctor` / `resume-context` 可能出现不一致的 `change/stage/last-artifact/review/verification` 表达，甚至无法生成本应 exit 0 的诊断视图。Blocking authority：author-actionable。",
+      "location": "openspec/changes/diagnostic-cli/explore.md §5.1 lines 259-272; design.md Decision 6 lines 176-195 / Decision 8 lines 218-265; specs/flowkit-diagnostic-cli/spec.md status/resume-context requirements lines 73-89, 133-148",
+      "requiredChange": "冻结 active Delivery 存在但无 active Change 时的 diagnostic projection，至少明确 `status`、`doctor`、`resume-context` 对 change/stage/last-artifact/review/verification 的稳定 none/delivery-level 表达以及正常 exit code；`next` 继续直接呈现现有 Policy 的 Delivery-level result，不新增流程判断。Acceptance：增加 no-active-Change 的 spec/test scenario，覆盖至少一个正常 Delivery-level boundary（例如 checkpoint/activate-change/full-test 中任一类），并保证四命令不会把该状态当 discovery/loading failure。"
+    }
+  ]
+}

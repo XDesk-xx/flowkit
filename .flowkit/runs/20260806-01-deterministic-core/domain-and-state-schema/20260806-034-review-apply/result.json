@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-034-review-apply",
+  "status": "completed",
+  "summary": "B1 revise-apply review approved. verification.md now records all applicable checks with an overall passed Change Verification status; VerificationCheck uses the approved applicable/not-applicable vocabulary; and the domain interfaces again preserve formal Action unions, ResultRef input references, and ChangeSummary dependency/output facts. The B1 implementation remains within its domain/schema-only boundary.",
+  "reviewedResultRef": "revise-apply:.flowkit/runs/20260806-01-deterministic-core/domain-and-state-schema/20260806-033-revise-apply/result.json;verification-sha256:257cfdfe72480425f0da34e3bfcae9fb53ef94b5ca19f0ea27e71035519c002d",
+  "verificationRecord": "openspec/changes/domain-and-state-schema/verification.md",
+  "verdict": "approved",
+  "blockingFindings": [],
+  "nonBlockingFindings": [],
+  "resolvedFindings": [
+    {
+      "id": "B1-RA-001",
+      "resolution": "verification.md exists, records scope, applicable checks, results, environment, references, Full Test boundary, and overall passed status."
+    },
+    {
+      "id": "B1-RA-002",
+      "resolution": "VerificationCheck.applicability is applicable | not-applicable and fixtures use the approved vocabulary."
+    },
+    {
+      "id": "B1-RA-003",
+      "resolution": "Formal Action unions, ResultRef inputRef, and ChangeSummary dependsOn/outputs are restored and runtime inputRef validation covers the typed reference."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "npm run typecheck",
+        "status": "passed",
+        "result": "Production and test TypeScript projects passed."
+      },
+      {
+        "name": "npm run build",
+        "status": "passed",
+        "result": "tsc completed successfully."
+      },
+      {
+        "name": "npm test",
+        "status": "passed",
+        "result": "89 tests passed; host-side execution used because sandbox worker spawning is restricted."
+      },
+      {
+        "name": "npm run lint",
+        "status": "passed",
+        "result": "eslint completed with no errors."
+      },
+      {
+        "name": "OpenSpec strict validation",
+        "status": "passed",
+        "command": "openspec validate domain-and-state-schema --strict",
+        "result": "Change is valid."
+      },
+      {
+        "name": "formal Change Verification",
+        "status": "passed",
+        "result": "verification.md is present and states overall Change Verification=passed."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run."
+      }
+    ]
+  },
+  "nextActionRecommendation": "await-owner-authorization-for-archive",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

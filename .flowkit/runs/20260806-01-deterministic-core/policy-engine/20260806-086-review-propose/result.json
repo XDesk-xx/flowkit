@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-086-review-propose",
+  "status": "completed",
+  "verdict": "approved",
+  "summary": "D1 Proposal revision 085 is approved. It resolves D1-PR-006 by restricting full-test to deliveryFullTestStatus = authorized. awaiting-user-decision is a pre-authorization state and returns owner-decision: authorize-full-test rather than action: full-test. The prior full-test failed, archive task-fact, delivery-finalize, provenance, and review-lineage corrections remain intact.",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-085-revise-propose/",
+  "reviewedResultRef": "content-sha256:f3502cf75848e753905a719e6c05fe7566589d9c499f8116e3e35b84e5902a98",
+  "sourceReview": {
+    "runId": "20260806-084-review-propose",
+    "verdict": "changes-requested",
+    "resultSha256": "24668397cdf6f53b1256fecde7f383592e5c1572fa95707cd054a5b4fe7329f5"
+  },
+  "blockingFindings": [],
+  "nonBlockingFindings": [],
+  "resolvedFindings": [
+    "D1-PR-001",
+    "D1-PR-002",
+    "D1-PR-003",
+    "D1-PR-004",
+    "D1-PR-005",
+    "D1-PR-006"
+  ],
+  "proposalBundle": {
+    "proposal": {
+      "path": "openspec/changes/policy-engine/proposal.md",
+      "sha256": "6d86964a196f76c76652b2978274ee88f2b0c4556d93830a3ebd1caef1c77cec"
+    },
+    "design": {
+      "path": "openspec/changes/policy-engine/design.md",
+      "sha256": "404e790d56d2d0a458cff139e7a9efb8f81f2cb04703a101e6491878892f7bc1"
+    },
+    "spec": {
+      "path": "openspec/changes/policy-engine/specs/flowkit-policy-engine/spec.md",
+      "sha256": "71d3cff8b282715424d1d500f03f6de4afd12b98c8510a71d1eeee6ef9bf7845"
+    },
+    "tasks": {
+      "path": "openspec/changes/policy-engine/tasks.md",
+      "sha256": "e0e0b5d3e764b7132de20c2293fd6f266d159663e48c8a6f57b530d589868845"
+    }
+  },
+  "verification": [
+    {
+      "name": "Reviewed Run provenance",
+      "result": "passed",
+      "evidence": "085 result.json SHA-256 is f3502cf75848e753905a719e6c05fe7566589d9c499f8116e3e35b84e5902a98, matching this Run's reviewedResultRef. 085 correctly cites 084's immutable result SHA-256."
+    },
+    {
+      "name": "D1-PR-006 authorization boundary",
+      "result": "passed",
+      "evidence": "Spec, design D1-13, and tasks require deliveryFullTestStatus = authorized for full-test. For awaiting-user-decision they require allowed:false, full-test-not-authorized, and owner-decision: authorize-full-test; they prohibit action: full-test. This matches frozen verification-model.md Section 4.2."
+    },
+    {
+      "name": "Full Test failure and finalization lifecycle",
+      "result": "passed",
+      "evidence": "failed remains blocked: full-test-failed without automatic retry or corrective Change; delivery-finalize requires deliveryFullTestStatus = passed."
+    },
+    {
+      "name": "Prior Proposal review corrections",
+      "result": "passed",
+      "evidence": "Review-lineage changes-requested requires revise, archive fails closed when task-completion facts are unavailable, and FullTestStatus is not conflated with Change VerificationStatus."
+    },
+    {
+      "name": "OpenSpec strict validation",
+      "command": "npx openspec validate policy-engine --strict",
+      "result": "passed",
+      "evidence": "Change 'policy-engine' is valid."
+    },
+    {
+      "name": "Full Test",
+      "result": "not-applicable",
+      "evidence": "Not authorized and not run; Proposal review does not authorize Delivery Full Test."
+    }
+  ],
+  "policyRoute": {
+    "basis": "085 is the latest propose artifact Run and 084 reviewed 083, so the new 085 artifact has no matching review. The lifecycle therefore selects review-propose; after this approved verdict, Apply remains an owner-decision boundary.",
+    "nextAction": "owner-decision: authorize-apply"
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Action/Run completion does not create a Git commit."
+  },
+  "nextAction": "owner-decision: authorize-apply",
+  "nextActionNote": "Proposal review is approved. Apply requires explicit owner authorization and is not started by this Review Run.",
+  "blockedOn": []
+}

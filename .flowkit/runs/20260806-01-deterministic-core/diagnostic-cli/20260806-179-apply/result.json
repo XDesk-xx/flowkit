@@ -1,0 +1,15 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "apply",
+    "executionStatus": "completed",
+    "summary": "已按 178 approved 后 Owner 的明确 contract reset 完成 E1 最小 Tasks completion reconciliation：current active Change canonical tasks.md 现在投影 changeTasksComplete；Policy 既有 Archive Tasks gate 区分 tasks-facts-unavailable / tasks-incomplete / complete；当前 E1 required tasks 全部完成。Proposal/Design/delta specs/tasks/verification 已最小同步；focused + affected Change Verification 通过，npm test 594/594、typecheck、lint、build、OpenSpec strict 9/9 通过。未实现 Task Registry/数据库/execution engine，未运行 Delivery Full Test，未 Archive/Checkpoint/Commit/Push。",
+    "consumedInputRefs": [
+      {
+        "ref": ".flowkit/runs/20260806-01-deterministic-core/diagnostic-cli/20260806-174-review-propose/result.json",
+        "versionFingerprint": "a4be2b3b967fc874dc8d5e79692597830615d3ee536615b838047345b1bd585c",
+        "kind": "run-result"
+      }
+    ]
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-apply",
+    "executionStatus": "completed",
+    "summary": "已关闭 191 的两个 author-actionable blocker：Quality Guard 现覆盖 TypeScript import-equals direct filesystem imports，并以四个禁止 module 与真实 tsc adversarial probe 固化；public verify:full 已统一回单一 runner，final full 成功/失败都记录 terminal status 与 duration，failure-path regression 已覆盖。final verify:change -- verification passed，public verify:full exit 0，full 三批合计 611/611 passed；Delivery Full Test、Archive、Checkpoint、Commit、Push 未执行。",
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260806-01-deterministic-core/core-hardening-and-release-candidate/20260806-191-review-apply/result.json",
+      "versionFingerprint": "d28b775f6553d789892c512cb4fec674d5b877f813bfbface7496733b6dd7e1f",
+      "kind": "run-result"
+    }
+  }
+}

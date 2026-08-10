@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-094-review-apply",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "D1",
+  "changeId": "policy-engine",
+  "action": "review-apply",
+  "role": "reviewer",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-093-revise-apply/",
+  "reviewedResultRef": "content-sha256:bbb1c89b075f2a05ee183bbcfbd3d76d019974758c304b3651f2b723f64ebcfb",
+  "sourceReviewRun": "20260806-092-review-apply",
+  "sourceReviewVerdict": "changes-requested",
+  "ownerAuthorizedScope": [
+    "explore artifact migration from .tmp/explore/policy-engine/conclusion.md to openspec/changes/policy-engine/explore.md"
+  ],
+  "inputs": [
+    ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-092-review-apply/result.json",
+    ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-093-revise-apply/action.md",
+    ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-093-revise-apply/context.json",
+    ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-093-revise-apply/result.json",
+    "src/policy/verification-gate.ts",
+    "src/policy/next.ts",
+    "src/policy/preconditions.ts",
+    "src/policy/blocked-diagnosis.ts",
+    "tests/unit/policy/verification-gate.test.ts",
+    "openspec/changes/policy-engine/verification.md",
+    "openspec/changes/policy-engine/specs/flowkit-policy-engine/spec.md",
+    "openspec/changes/policy-engine/design.md",
+    "openspec/changes/policy-engine/tasks.md",
+    "docs/verification-model.md",
+    "docs/delivery-lifecycle.md"
+  ],
+  "constraints": {
+    "readOnlyExceptCurrentRun": true,
+    "fullTestAllowed": false,
+    "mayApply": false,
+    "mayArchive": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-094-review-apply/"
+}

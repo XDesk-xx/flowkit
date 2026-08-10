@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-014-review-explore",
+  "status": "completed",
+  "summary": "B1 Explore review completed with changes-requested. The proposed B1 scope, state schemas, terminal immutability, outputs boundary, Archify restraint, and fixture-oriented test strategy are generally aligned. Two blocking contract conflicts remain: the Explore treats a reference-only `change-checkpoint` entry as part of the fixed Action Catalog despite the frozen core-model catalog being exhaustive without it, and it hard-codes ResultRef to a Run-path representation even though the frozen integration boundary requires a provider-neutral logical reference. The Explore must reconcile these before B1 can create a Proposal.",
+  "reviewedResultRef": "content-sha256:10afa23ced23c3436e69997eea7f94a852b1a75c2f3d4a2f728d2f6d8bf8105b",
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "B1-RE-001",
+      "title": "The proposed fixed Action Catalog conflicts with the frozen core-model contract",
+      "location": "openspec/changes/domain-and-state-schema/explore.md:Q5, 6.5, 7; openspec/specs/flowkit-core-model/spec.md:52-65; ref/01-deterministic-core-delivery-implementation-reference.md:6.3",
+      "evidence": "The Explore requires CHANGE_ACTIONS to contain eleven entries including change-checkpoint. The frozen core-model Requirement states that the fixed main Actions are explore, propose, apply, archive and that its auxiliary Actions are the six listed review/revise actions; it does not include change-checkpoint. The implementation reference section 6.3 does include it. The Explore selects the reference's interpretation without recording or resolving the contradiction between the frozen sources.",
+      "impact": "An implementation cannot demonstrate exact conformance to both frozen Action Catalog definitions. Treating the reference as silently overriding the formal product spec would create a second, undocumented catalog authority and can mislead later Policy implementation.",
+      "requiredResolution": "Revise the Explore to explicitly resolve this source conflict before Proposal. Either preserve the core-model catalog exactly and model Change Checkpoint only as the required Git boundary, or obtain and record an authorized contract change that adds change-checkpoint to the core-model catalog. The resulting catalog, rationale, and acceptance tests must have one authoritative definition; do not silently choose between the sources."
+    },
+    {
+      "id": "B1-RE-002",
+      "title": "ResultRef is prematurely fixed to a Run-path transport format",
+      "location": "openspec/changes/domain-and-state-schema/explore.md:Q9; docs/integration-boundaries.md:83-100, 152-163",
+      "evidence": "Q9 defines ResultRef as required runPath and sha256 fields. The frozen integration boundary defines ResultRef as a logical, provider-neutral reference that may map to a Git revision, Run result, artifact version, content hash, or another unambiguous version reference. It assigns the Action Package/Result/ResultRef logical boundary to C1.",
+      "impact": "Mandatory runPath excludes legitimate Git- or artifact-backed results and couples the domain type to one filesystem layout before C1 defines the adapter/schema boundary. Later Review and continuation logic would not be able to represent all formally supported result sources without breaking B1's public type.",
+      "requiredResolution": "Keep B1's type boundary provider-neutral and defer the concrete serialized ResultRef schema/adapter mapping to C1. At minimum, remove mandatory runPath and describe the type in terms of stable identity, version/change detection, and optional locator capabilities that can represent the allowed reference kinds. Carry that boundary into the Proposal and tests."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "verification": {
+    "checks": [
+      {
+        "name": "reviewed Explore artifact hash",
+        "status": "passed",
+        "result": "SHA-256 is 10afa23ced23c3436e69997eea7f94a852b1a75c2f3d4a2f728d2f6d8bf8105b and matches the completed 013-explore Run."
+      },
+      {
+        "name": "source Run linkage",
+        "status": "passed",
+        "result": "013-explore action, context, and result are readable and consistently identify B1 domain-and-state-schema with nextAction review-explore."
+      },
+      {
+        "name": "frozen-boundary review",
+        "status": "failed",
+        "result": "The Explore leaves the Action Catalog source conflict unresolved and fixes ResultRef more narrowly than the provider-neutral C1 integration boundary permits."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run; this is review-explore."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

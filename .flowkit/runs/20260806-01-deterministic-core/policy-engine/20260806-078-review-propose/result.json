@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-078-review-propose",
+  "status": "completed",
+  "verdict": "changes-requested",
+  "summary": "D1-PR-001 is resolved and the carried-forward Proposal bundle remains structurally valid, but the Action precondition requirement permits review-S when the current matching Verdict is changes-requested. That conflicts with the required next action revise-S and would let unified review bypass Revision.",
+  "reviewedResultRef": "run-result:.flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-077-revise-propose/result.json;sha256:cd53dde29a889886716bd5b095272cf88d63108eef10757c132dd3ca1db8715f",
+  "blockingFindings": [
+    {
+      "id": "D1-PR-002",
+      "severity": "P1",
+      "title": "review-S precondition permits a Review when the matching Verdict requires Revision",
+      "evidence": "The Spec's lineage requirement says match + changes-requested -> next revise-S, but its Change-level Action precondition requirement also permits review-explore when Current Review is 'match+changes-requested'. The unified review entry delegates to canRun(review-S), so this permits another review before the required revise-S. This conflicts with docs/delivery-lifecycle.md: explore -> review-explore -> changes-requested: revise-explore -> review-explore and the analogous propose/apply loops.",
+      "requiredChange": "For every stage S, define canRun(review-S) as allowed only when the current artifact has no current review or has no lineage match. A matching changes-requested verdict must allow only revise-S; remove the contradictory match+changes-requested condition and add table-driven scenarios proving unified review blocks until the revision produces a new artifact. Update Design, Spec, and Tasks consistently without altering prior Runs."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "resolvedFindings": [
+    {
+      "id": "D1-PR-001",
+      "resolution": "077 context.inputRef cites 074-review-explore/result.json with its actual SHA-256, and the carried-forward Proposal bundle hashes and strict validation match."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "077 source-review provenance",
+        "status": "passed",
+        "result": "077 context.inputRef.versionFingerprint matches the immutable 074 review result SHA-256."
+      },
+      {
+        "name": "Proposal bundle integrity",
+        "status": "passed",
+        "result": "proposal.md, design.md, spec.md, and tasks.md match the hashes recorded by 077."
+      },
+      {
+        "name": "OpenSpec strict validation",
+        "status": "passed",
+        "result": "openspec validate policy-engine --strict: Change 'policy-engine' is valid."
+      },
+      {
+        "name": "Lifecycle and unified-review semantic review",
+        "status": "failed",
+        "result": "D1-PR-002: canRun(review-S) contradicts match + changes-requested -> revise-S."
+      },
+      {
+        "name": "Full Test",
+        "status": "not-applicable",
+        "result": "Not authorized and not run."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-propose",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

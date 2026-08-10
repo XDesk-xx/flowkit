@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-143-review-apply",
+  "status": "completed",
+  "summary": "Independent integrated-overlay review of cumulative fix-series v3 completed with approved candidate verdict and no Blocking Findings. Run 142 resolves Q1-RA-011 without weakening the bounded legacy recognizer or the C1 physical contract. Reader admission now retains an internal c1RunIds provenance set only for Runs that passed the schemaVersion 2/C1 discriminator path. validateImmutableRunResultRefs skips bounded legacy projections; artifact generation candidates and verification generation candidates are likewise restricted to C1-admitted Runs. Consequently schemaVersion 1 completed revise history (including the real baseline 136 and cumulative 138/140) is not retroactively required to carry C1 source-review ResultRefs; legacy explore/propose is not routed into C1 producedResultRefs/effective-set validation; and legacy review-apply does not become a C1 verification generation. Unknown schemaVersion values remain rejected by the unchanged three-way discriminator. The v2→v3 code delta is narrowly limited to retaining internal provenance and applying it at the three C1-only validation boundaries; no product registry, second Run domain, historical Run rewrite, or generic bypass was introduced. The Run-140 C1 semantics remain intact: valid pending revise uses context predecessor proof without terminal reviewVerdictRef; completed revise requires full immutable source-review tuple; failed/cancelled revise does not require terminal-only evidence and cannot become a successor; and any applicable immutable inputRef, consumedInputRefs or source-review failure prevents pending/completed revise from entering successor eligibility. Package integrity checks pass and all three changed TypeScript files parse with zero syntax diagnostics. No new Blocking or Non-blocking code findings were identified. This is a candidate-overlay approval only: Run 142 explicitly records that the complete dependency-installed repository focused/typecheck/lint/build/OpenSpec suite was not executed in the Author environment. The candidate is ready for owner-controlled mechanical application to the exact fixed baseline followed by real repository verification. This verdict does not authorize archive, checkpoint, Full Test, or final Delivery advancement.",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-142-revise-apply/",
+  "reviewedResultRef": "content-sha256:3b0cbfb9654b66448bd91fbc9d6d850a090f7515619a311d3f61ceebee847813",
+  "reviewedPackageRef": "content-sha256:cb827dcf57efd683e3041518c5770818c8000c791b3a8dd938ec6100bd6b92f8",
+  "reviewedSeriesVersion": "v3",
+  "reviewedBaseGitHead": "44e1a64447ba63aa66c3b5653b448101713fb5b7",
+  "sourceReview": {
+    "runId": "20260806-141-review-apply",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:bda851e4f25a230f4db5939b95fa25b5ff676f08b7d8abcf542ab3b6c39ec68b"
+  },
+  "verdict": "approved",
+  "approvalScope": "candidate-overlay",
+  "formalRepositoryApproval": false,
+  "blockingFindings": [],
+  "nonBlockingFindings": [],
+  "resolvedPriorFindings": [
+    {
+      "id": "Q1-RA-011",
+      "result": "resolved",
+      "evidence": "C1-vs-legacy provenance is retained internally from discriminateRun through readRuns/readChangeRuns. C1-only immutable validation and both generation-aware validators explicitly consume c1RunIds, while schemaVersion 1 RunFacts remain in the final snapshot under bounded legacy semantics."
+    },
+    {
+      "id": "Q1-RA-007",
+      "result": "still-resolved-for-c1",
+      "evidence": "The v3 delta does not alter Run-140 per-status revise validation or per-Run immutable successor admission. C1 pending/completed candidate classification still consumes only integrityAdmittedReviseRunIds."
+    },
+    {
+      "id": "Q1-RA-010",
+      "result": "still-resolved",
+      "evidence": "The top-level runStatus + Action physical required/forbidden matrix is untouched."
+    },
+    {
+      "id": "Q1-RA-006",
+      "result": "still-resolved",
+      "evidence": "C1 review exact-binding admission remains unchanged and fail-closed."
+    },
+    {
+      "id": "Q1-RA-008",
+      "result": "still-resolved",
+      "evidence": "Logical/archive resolver behavior is untouched."
+    },
+    {
+      "id": "Q1-RA-009",
+      "result": "still-resolved",
+      "evidence": "Current C1 verificationSummaryRef validation remains strict; only legacy review-apply is excluded from C1 generation semantics."
+    },
+    {
+      "id": "Q1-RA-001",
+      "result": "still-resolved",
+      "evidence": "No terminal publication path changed."
+    },
+    {
+      "id": "Q1-RA-003",
+      "result": "still-resolved",
+      "evidence": "C1 shared stage effective-set validation remains unchanged."
+    },
+    {
+      "id": "Q1-RA-005",
+      "result": "still-resolved",
+      "evidence": "Runtime C1 descriptor closure remains unchanged."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "Exact fixed GitHub baseline",
+        "status": "passed",
+        "result": "Current delivery branch still points to 44e1a64447ba63aa66c3b5653b448101713fb5b7, matching the v3 apply manifest's immutable code-operation baseline."
+      },
+      {
+        "name": "v3 package checksums",
+        "status": "passed",
+        "result": "24/24 checksum entries matched uploaded package bytes."
+      },
+      {
+        "name": "142 source review binding",
+        "status": "passed",
+        "result": "142 exact-binds 141 using content-sha256:bda851e4f25a230f4db5939b95fa25b5ff676f08b7d8abcf542ab3b6c39ec68b."
+      },
+      {
+        "name": "142 result exact hash",
+        "status": "passed",
+        "result": "142 result.json SHA-256 = 3b0cbfb9654b66448bd91fbc9d6d850a090f7515619a311d3f61ceebee847813."
+      },
+      {
+        "name": "v2→v3 implementation scope",
+        "status": "passed",
+        "result": "Production delta is limited to Reader-internal format provenance propagation plus C1-only filtering at immutable, artifact-generation and verification-generation validation boundaries."
+      },
+      {
+        "name": "RA-011 real legacy revise compatibility",
+        "status": "passed-by-code-review",
+        "result": "schemaVersion 1 revise RunFacts are not members of c1RunIds and therefore never enter C1 full source-review tuple validation or C1 generation successor candidate sets."
+      },
+      {
+        "name": "RA-011 legacy artifact/verification isolation",
+        "status": "passed-by-code-review",
+        "result": "Legacy explore/propose and legacy review-apply remain visible snapshot facts but are filtered from C1 current effective-set and verification-generation candidate sets."
+      },
+      {
+        "name": "Unknown schema fail-closed",
+        "status": "passed-by-code-review",
+        "result": "The unchanged discriminateRun still returns conflict for schema versions other than 1/missing and 2; unknown formats never enter legacy or c1 provenance sets."
+      },
+      {
+        "name": "Run-140 C1 regression boundary",
+        "status": "passed-by-code-review",
+        "result": "v3 does not modify the pending/completed/failed/cancelled C1 revise branches or the accumulated all-immutable eligibility decision."
+      },
+      {
+        "name": "Changed TypeScript syntax parse",
+        "status": "passed",
+        "result": "Reader 13ccdf1ad2a9262d1e0e304548036c9e369251cc69076e318c9a4c7894549688, RA-007 test 1e25ad8982b21e69bf9f8b56ffa9ae40a8d6d7e0e7410940bc054d928c194e25, and RA-011 test 843f303e9c0f6e84377d0fcc2f2334f47bff35df043c63c423e92336c4383176 produced zero TypeScript transpile syntax diagnostics."
+      },
+      {
+        "name": "Complete dependency-installed repository verification",
+        "status": "pending-execution",
+        "result": "Run 142 records that repository-focused tests/typecheck/lint/build/OpenSpec were not executed in its environment. Candidate approval therefore requires owner-controlled application to the exact baseline and real verification before any formal repository-level approval/archive decision."
+      },
+      {
+        "name": "Delivery Full Test",
+        "status": "not-applicable",
+        "result": "Not owner-authorized and not run."
+      }
+    ]
+  },
+  "nextActionRecommendation": "owner-controlled-candidate-execution-and-verification",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-123-review-propose",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "Q1",
+  "changeId": "execution-model-correction",
+  "action": "review-propose",
+  "role": "reviewer",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-122-revise-propose/",
+  "reviewedResultRef": "content-sha256:8e2cd7d0bb36562aeba0d381642076e478446341a2f8f29d06122063bcc6766b",
+  "sourceReview": {
+    "runId": "20260806-121-review-propose",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:4afb55b3c0fa188559a520ed05839ca4d00bc71cf3823660ca7efd459cf4ea8f"
+  },
+  "inputs": [
+    "AGENTS.md",
+    "ref/01-deterministic-core-delivery-implementation-reference.md",
+    "docs/bootstrap-reference.md",
+    "docs/core-model.md",
+    "docs/delivery-lifecycle.md",
+    "docs/verification-model.md",
+    "openspec/delivery-groups/20260806-01-deterministic-core.yaml",
+    "openspec/changes/execution-model-correction/explore.md",
+    "openspec/changes/execution-model-correction/proposal.md",
+    "openspec/changes/execution-model-correction/design.md",
+    "openspec/changes/execution-model-correction/tasks.md",
+    "openspec/changes/execution-model-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+    "openspec/changes/execution-model-correction/specs/flowkit-bootstrap-and-roadmap/spec.md",
+    "openspec/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+    "openspec/specs/flowkit-policy-engine/spec.md",
+    "src/facts/formal-fact-reader.ts",
+    "src/persistence/result-ref-adapter.ts",
+    "src/persistence/run-persistence.ts",
+    "src/persistence/serialization.ts",
+    ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-121-review-propose/result.json",
+    ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-122-revise-propose/context.json",
+    ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-122-revise-propose/result.json"
+  ],
+  "constraints": {
+    "readOnlyExceptOwnRun": true,
+    "mayModifyReviewedArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayFullTest": false,
+    "mayCheckpoint": false,
+    "commitAllowed": false
+  }
+}

@@ -1,0 +1,194 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-077-revise-propose",
+  "status": "completed",
+  "summary": "D1 policy-engine revise-propose 077 resolves D1-PR-001 (075 inputRef recorded 072's SHA-256 instead of 074's) by creating a new Run whose context.inputRef cites 074-review-explore/result.json with its actual immutable SHA-256 sha256:b1323433400ff5aa39027adc7196a9cd69492773e60630d38798e8388ad4e293. The Proposal bundle (proposal.md, design.md, spec.md, tasks.md) is carried forward unchanged with verified artifact hashes; openspec validate --strict re-passed. Terminal Runs 075 and 076 are verified unchanged by SHA-256. The fix is a Run-level provenance correction only; no proposal content, frozen spec, production code, test code, or manifest was modified.",
+  "proposalBundle": {
+    "carryForward": true,
+    "carryForwardNote": "D1-PR-001 is a Run-level provenance defect (075 cited 074 but recorded 072's SHA-256). The Proposal content already passed 076 OpenSpec strict validation; it is carried forward unchanged.",
+    "artifacts": {
+      "proposal": {
+        "path": "openspec/changes/policy-engine/proposal.md",
+        "sha256": "6d86964a196f76c76652b2978274ee88f2b0c4556d93830a3ebd1caef1c77cec",
+        "modified": false
+      },
+      "design": {
+        "path": "openspec/changes/policy-engine/design.md",
+        "sha256": "6a7ae7c396db11a4d035d6fbe67062f7a8ca57c53b9c8c8a146bdd5b23548a8d",
+        "modified": false
+      },
+      "spec": {
+        "path": "openspec/changes/policy-engine/specs/flowkit-policy-engine/spec.md",
+        "sha256": "208a0ded02048d0041a6cc47b7ddc94d801b7d77065738c0e201b6be20eb48ad",
+        "modified": false
+      },
+      "tasks": {
+        "path": "openspec/changes/policy-engine/tasks.md",
+        "sha256": "8501875daf7af7c4a1cc25e48f6f66cef81fc18ef70ec88975765bb1fb95b82a",
+        "modified": false
+      }
+    },
+    "strictValidation": {
+      "command": "npx openspec validate policy-engine --strict",
+      "status": "passed",
+      "result": "Change 'policy-engine' is valid"
+    }
+  },
+  "findingsAddressed": [
+    {
+      "id": "D1-PR-001",
+      "severity": "P1",
+      "origin": "20260806-076-review-propose",
+      "title": "075 Proposal source fingerprint does not identify the approved 074 Review",
+      "rootCause": "075-propose context.inputRef.ref named 074-review-explore/result.json but declared versionFingerprint sha256:c672e7621062bb95c8dba3b68a8fee38d5529d8bef6ae86cfb3e811bae8792e9, which is the SHA-256 of 072-review-explore/result.json, not 074. The provenance chain 074 -> 075 was therefore invalid. 075 is a terminal (completed) Run and cannot be edited in place.",
+      "fix": "Created a new revise-propose Run (077) whose context.inputRef cites 074-review-explore/result.json with the correct versionFingerprint sha256:b1323433400ff5aa39027adc7196a9cd69492773e60630d38798e8388ad4e293, computed and verified against the immutable 074 result file. 075 is preserved unchanged. The Proposal bundle is carried forward unchanged because D1-PR-001 is a provenance correction, not a content defect.",
+      "verificationEvidence": "context.inputRef.versionFingerprint = sha256:b1323433400ff5aa39027adc7196a9cd69492773e60630d38798e8388ad4e293 matches Get-FileHash SHA-256 of .flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-074-review-explore/result.json (computed independently). The wrongly-used 072 hash c672e762... is no longer referenced. 075 result.json SHA-256 remains e5e46147ec22ff12cbeccb3a49dc5f034b4402bf8c2726f2322aedcc684d79de (unchanged, matches 076 reviewedResultRef)."
+    }
+  ],
+  "keyFindings": [
+    "D1-PR-001 is a Run-level provenance defect, not a proposal-content defect; the fix is a correct inputRef in this Run's context.json.",
+    "074-review-explore/result.json actual SHA-256 is sha256:b1323433400ff5aa39027adc7196a9cd69492773e60630d38798e8388ad4e293, independently computed and now cited correctly in 077 context.inputRef.versionFingerprint.",
+    "075-propose is a terminal (completed) Run and is preserved unchanged; its broken inputRef is superseded by 077, not edited in place.",
+    "The Proposal bundle (4 artifacts) is carried forward unchanged with verified SHA-256 hashes; openspec validate --strict re-passed.",
+    "Terminal Runs 075 and 076 are verified unchanged by SHA-256 fingerprint comparison.",
+    "After 077 completes, the Lineage model evaluates: Current Artifact Run = 077-revise-propose; Current Review = 076-review-propose; 076.reviewedRun = 075 != 077 -> no lineage match -> next action = review-propose."
+  ],
+  "sourceFactsRead": {
+    "formalDocs": [
+      "docs/delivery-lifecycle.md (Section 3.3 propose stage, Section 4 multi-round review)"
+    ],
+    "frozenSpecs": [
+      "openspec/specs/flowkit-domain-and-state-schema/spec.md (B1)",
+      "openspec/specs/flowkit-formal-fact-reader-and-persistence/spec.md (C1)"
+    ],
+    "reviewRuns": [
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-074-review-explore/result.json (verdict: approved; actual SHA-256 b1323433400ff5aa39027adc7196a9cd69492773e60630d38798e8388ad4e293)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-075-propose/context.json (inputRef.versionFingerprint sha256:c672e762... = 072 hash, WRONG)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-075-propose/result.json (SHA-256 e5e46147ec22ff12cbeccb3a49dc5f034b4402bf8c2726f2322aedcc684d79de)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-076-review-propose/result.json (verdict: changes-requested; finding D1-PR-001; SHA-256 cde8e2c8309a111ef02352ef502c1dc4245123e1c2f2a05207c566ef8aaebc1e)"
+    ],
+    "proposalBundle": [
+      "openspec/changes/policy-engine/proposal.md (SHA-256 6d86964a...)",
+      "openspec/changes/policy-engine/design.md (SHA-256 6a7ae7c3...)",
+      "openspec/changes/policy-engine/specs/flowkit-policy-engine/spec.md (SHA-256 208a0ded...)",
+      "openspec/changes/policy-engine/tasks.md (SHA-256 8501875d...)"
+    ]
+  },
+  "consistencyScan": {
+    "scanType": "full",
+    "triggerRun": "20260806-076-review-propose (changes-requested, D1-PR-001)",
+    "modifiedConcepts": [
+      "Revision Run inputRef provenance to approved source review (D1-PR-001)",
+      "Carry-forward of unchanged Proposal bundle (4 artifacts)"
+    ],
+    "dimensions": [
+      {
+        "id": "CS-01",
+        "name": "inputRef provenance integrity",
+        "concept": "077 context.inputRef cites 074 with actual SHA-256",
+        "checks": [
+          "077 context.inputRef.ref = run-result:.flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-074-review-explore/result.json",
+          "077 context.inputRef.versionFingerprint = sha256:b1323433400ff5aa39027adc7196a9cd69492773e60630d38798e8388ad4e293",
+          "Get-FileHash SHA-256 of 074 result.json = b1323433400ff5aa39027adc7196a9cd69492773e60630d38798e8388ad4e293 -> matches versionFingerprint",
+          "075 declared sha256:c672e762... (= 072 hash) which did not match; 077 corrects this"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-02",
+        "name": "Proposal bundle carry-forward integrity",
+        "concept": "4 artifacts unchanged from 075; strict validation re-passed",
+        "checks": [
+          "proposal.md SHA-256 = 6d86964a196f76c76652b2978274ee88f2b0c4556d93830a3ebd1caef1c77cec (unchanged)",
+          "design.md SHA-256 = 6a7ae7c396db11a4d035d6fbe67062f7a8ca57c53b9c8c8a146bdd5b23548a8d (unchanged)",
+          "spec.md SHA-256 = 208a0ded02048d0041a6cc47b7ddc94d801b7d77065738c0e201b6be20eb48ad (unchanged)",
+          "tasks.md SHA-256 = 8501875daf7af7c4a1cc25e48f6f66cef81fc18ef70ec88975765bb1fb95b82a (unchanged)",
+          "openspec validate policy-engine --strict re-run: 'Change policy-engine is valid' -> passed",
+          "077 did not modify any proposal artifact (carry-forward)"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-03",
+        "name": "D1-PR-001 resolution consistency",
+        "concept": "075 broken fingerprint superseded by 077 correct citation; 075 preserved",
+        "checks": [
+          "076 requiredChange: 'Create a new revise-propose Run that records 074 with its actual SHA-256' -> 077 context.inputFingerprint = sha256:b1323433... SATISFIED",
+          "076 requiredChange: 'preserves 075 and 076 unchanged' -> SHA-256 verification in CS-04 SATISFIED",
+          "076 requiredChange: 'carries the unchanged Proposal bundle forward only after verifying artifact set and strict validation still match' -> CS-02 artifact hashes + strict validation SATISFIED",
+          "076 requiredChange: 'Do not edit 075 in place' -> 075 context.json/result.json SHA-256 unchanged; new Run 077 created SATISFIED"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-04",
+        "name": "Terminal Run immutability",
+        "concept": "075, 076 result.json unchanged (verified by SHA-256)",
+        "checks": [
+          "075 result.json SHA-256 = e5e46147ec22ff12cbeccb3a49dc5f034b4402bf8c2726f2322aedcc684d79de (matches 076 reviewedResultRef content-sha256:e5e46147...)",
+          "076 result.json SHA-256 = cde8e2c8309a111ef02352ef502c1dc4245123e1c2f2a05207c566ef8aaebc1e (immutable)",
+          "077 did not write to 075 or 076 directories; only created 077 directory files"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-05",
+        "name": "Mutation policy compliance",
+        "concept": "only 077 Run files created; no manifest/tracked/production/test/frozen-spec/proposal-artifact changes",
+        "checks": [
+          "Manifest not modified (D1 state remains active)",
+          "No production code written (src/ untouched)",
+          "No test code written (tests/ untouched)",
+          "No frozen specs modified (openspec/specs/ untouched)",
+          "Proposal bundle not modified (4 artifacts carry-forward, hashes verified in CS-02)",
+          "Terminal Runs not modified (075/076 untouched, verified in CS-04)",
+          "Only 077 Run files created: context.json, action.md, result.json"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      },
+      {
+        "id": "CS-06",
+        "name": "Lineage model consistency post-077",
+        "concept": "After 077 completes, the conclusion Section 3.0 Lineage model produces a unique legal next action",
+        "checks": [
+          "Current Artifact Run after 077 = 20260806-077-revise-propose (latest completed revise-propose)",
+          "Current Review after 077 = 20260806-076-review-propose (latest completed review-propose; 077 has not yet been reviewed)",
+          "076.reviewedRun = 075-propose != 077-revise-propose -> lineage no-match -> next action = review-propose",
+          "077 reviewedRun = 076 (the review that triggered this revision); inputRef = 074 (approved source review); semantics documented in context.inputRefSemantics",
+          "No conflict with conclusion Section 3.0 lineage rules; the revise->review loop continues correctly"
+        ],
+        "contradictionsFound": 0,
+        "result": "pass"
+      }
+    ],
+    "totalContradictions": 0,
+    "overallResult": "pass"
+  },
+  "mutationPolicyCheck": {
+    "mayCreateProposalArtifacts": true,
+    "frozenSpecsModified": false,
+    "terminalRunsModified": false,
+    "proposalBundleModified": false,
+    "productionCodeWritten": false,
+    "testCodeWritten": false,
+    "manifestModified": false,
+    "filesWritten": [
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-077-revise-propose/context.json (new Run)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-077-revise-propose/action.md (new Run)",
+      ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-077-revise-propose/result.json (new Run)"
+    ]
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit."
+  },
+  "nextAction": "review-propose",
+  "nextActionNote": "reviewer 审查 077-revise-propose，重点验证：(1) context.inputRef.versionFingerprint 是否匹配 074 result.json 实际 SHA-256 (sha256:b1323433400ff5aa39027adc7196a9cd69492773e60630d38798e8388ad4e293)；(2) D1-PR-001 requiredChange 的四项要求是否全部满足（record 074 实际 SHA-256 / preserve 075+076 unchanged / carry forward Proposal bundle 已验证 / not edit 075 in place）；(3) 4 个 Proposal artifact SHA-256 是否不变且 openspec validate --strict 仍通过；(4) 075/076 terminal Runs SHA-256 是否未变；(5) inputRef=074 与 reviewedRun=076 的语义差异是否合理（见 context.inputRefSemantics）；(6) consistencyScan 6 维度是否完整且 0 contradictions。",
+  "blockedOn": []
+}

@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-145-archive",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "Q1",
+  "changeId": "execution-model-correction",
+  "action": "archive",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "inputRef": "fa7154ef336d97e9757d0171456e6cb6f89bb244d426bf1fe8695e86b14f4a90",
+  "sourceReviewRun": "20260806-144-review-apply",
+  "sourceReviewVerdict": "approved",
+  "constraints": {
+    "mayArchive": true,
+    "mayModifyManifest": true,
+    "mayRunOpenSpecArchive": true,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-145-archive/"
+}

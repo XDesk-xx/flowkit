@@ -1,0 +1,15 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "explore",
+    "executionStatus": "completed",
+    "summary": "已基于 Owner 重新冻结的 thin orchestration authority 原则完成新 Q2 Explore：确认 pending 只属于 RunStatus；高层 One fact, one authority 保留；重点调查并准备收敛 historical mutable artifact replay、generation/revision-window、archive-aware 二次证明与过重 completion preflight；本轮未修改生产代码、测试、canonical specs、AGENTS 或 docs。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/orchestration-authority-boundary-correction/explore.md",
+        "versionFingerprint": "0275a6e0d3d8ae24df50f212febd785d57548e3edaec95d03986a84426d9e18b",
+        "kind": "produced-artifact"
+      }
+    ]
+  }
+}

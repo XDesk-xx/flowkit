@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-113-review-explore",
+  "status": "completed",
+  "summary": "Complete Q1 Explore review of 112 finished with changes-requested. 112 correctly makes verificationSummaryRef Run-stable through context.changeId and gives it an Action-owned inclusion rule. That rule is still lifecycle-inverted: it requires apply and revise-apply to resolve verification.md before their terminal result can publish, while formal lifecycle and verification rules require Change Verification to execute after each of those Actions. A missing verification.md therefore holds the Action pending and prevents the verification that would create or update it. Archive is likewise made eligible despite its action moving Change artifacts to the archive path. The verification-reference eligibility set remains non-executable.",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-112-revise-explore/",
+  "reviewedResultRef": "content-sha256:37bd87f187f8ff30d8cc8c9708c661934c977bd51619beceefba10650e9531de",
+  "sourceReview": {
+    "runId": "20260806-111-review-explore",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:44c215a31dcfb5ba5bde57cdfa7d8b785eb312fe6f577d63581a453b6a271d2f"
+  },
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "Q1-RE-004",
+      "title": "verificationSummaryRef eligibility is ordered before the Verification it requires",
+      "location": "openspec/changes/execution-model-correction/explore.md:244-261, 291-298, 378-386, 400-412, 481-487, 511-513",
+      "evidence": "112 declares apply, revise-apply, review-apply, and archive verification-eligible, and requires eligible Actions with missing verification.md to remain pending. The frozen lifecycle is apply → Change Verification → review-apply, and revise-apply → Change Verification → review-apply; verification-model.md also requires Change Verification after apply and revise-apply. Thus an apply or revise-apply Run cannot publish when verification.md is absent, yet the required verification cannot happen until that Action finishes. Archive is also eligible even though archival relocates Change artifacts from openspec/changes/<change-id>/ to the archive path, so its original-path resolver is not stable across the archive operation.",
+      "impact": "Normal first Apply and every revision can deadlock before Change Verification. Archive can similarly fail against a path its own action relocates. This contradicts the fixed lifecycle and prevents a deterministic implementation of the optional verification reference.",
+      "requiredResolution": "Keep Q1-RE-004 open. Set verificationSummaryRef eligibility only at a lifecycle point where the relevant verification record already exists and remains at the resolver's declared path—at minimum review-apply may consume the completed Change Verification record. Remove apply and revise-apply from automatic eligibility; they must complete before Verification runs. Either remove archive eligibility or define an archive-safe, immutable target/retention resolver after the formal artifact move; do not rely on the pre-archive path during archive completion. Update the inclusion, preflight, tests, acceptance, and cross-reference matrix for: first apply before verification, revised apply before re-verification, review-apply with passed/not-applicable verification, and archive relocation."
+    }
+  ],
+  "nonBlockingFindings": [
+    {
+      "id": "Q1-NB-001",
+      "title": "Explore source links remain checkout-specific",
+      "location": "openspec/changes/execution-model-correction/explore.md:62, 72, 90, 98, 106, 127, 137",
+      "evidence": "The cited code links use file:///D:/Projects/flowkit absolute paths and cannot resolve in another checkout or platform.",
+      "recommendedResolution": "Use repository-relative Markdown links in a future in-scope Explore edit. This remains non-blocking because the cited source evidence was independently verified."
+    }
+  ],
+  "resolvedFindings": [
+    { "id": "Q1-RE-001", "result": "resolved", "evidence": "Core now fixes non-Run kind selection and uses an Action-bounded produced-artifact path mapping." },
+    { "id": "Q1-RE-002", "result": "resolved", "evidence": "Q1 retains verification principles; concrete scripts remain F1 work." },
+    { "id": "Q1-RE-003", "result": "resolved", "evidence": "review-* inputRef is Core-derived and exactly bound to reviewedRunId across create, preflight, and Reader." }
+  ],
+  "verification": {
+    "checks": [
+      { "name": "112 reviewed-result binding and JSON validity", "status": "passed", "result": "112 context.json and result.json parse as JSON. SHA-256 of 112 result.json is 37bd87f187f8ff30d8cc8c9708c661934c977bd51619beceefba10650e9531de." },
+      { "name": "revision lineage and Run numbering", "status": "passed", "result": "112 inputRef equals the actual SHA-256 of 111 result.json, sourceReviewRun/verdict match 111, and 112 was the Delivery-wide maximum before this reviewer Run." },
+      { "name": "Q1 semantic and lifecycle-contract review", "status": "failed", "result": "112 fixes the historical target and optional-field trigger from the prior review, but its eligible Action set requires a verification record before the lifecycle allows that verification to be created or refreshed." },
+      { "name": "canonical OpenSpec specs", "command": "npx openspec validate --specs --strict", "status": "passed", "result": "8 canonical specs passed, 0 failed. This structural result does not clear the semantic finding." },
+      { "name": "scope and whitespace", "status": "passed", "result": "112 declares and records only the Explore revision. JSON parsing, git diff --check, and explicit trailing-whitespace scan passed. The separately modified AGENTS.md is treated as an owner/repository instruction outside 112's declared modified-file claim and is not attributed to this review result." },
+      { "name": "Delivery Full Test", "status": "not-applicable", "result": "Not owner-authorized and not run; review-explore has no Full-Test authority." }
+    ]
+  },
+  "nextActionRecommendation": "revise-explore",
+  "commitPolicy": { "autoCommit": false, "commitCreated": false }
+}

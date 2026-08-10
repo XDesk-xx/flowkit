@@ -1,0 +1,24 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "整体复核 146–164：历史 Run byte lineage、147 中文/Reviewer mutation boundary、151 ResultRef/current handoff、157 checkpoint recovery、实现与 557/557 tests、OpenSpec Q2 strict、8/8 canonical specs strict 及 disposable archive rehearsal 均通过，未发现新的技术级 Blocking。当前唯一 Blocking 仍为 Q2-RA-001：164 已正确承认 repository candidate 不能建立 Owner decision，但继续保留并实现一个会改写 frozen Archive/Checkpoint lifecycle 的 contract；当前独立 Owner 输入仍未明确批准该 contract，因此缺失的 Owner decision authority 尚未关闭。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/orchestration-authority-boundary-correction/verification.md",
+      "versionFingerprint": "76fadc5317d796903a7c9ef4cc55416da7fb77528411d22b9d5c3886fefc4882",
+      "kind": "verification-summary"
+    }
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindings": [
+    {
+      "id": "Q2-RA-001",
+      "severity": "blocking",
+      "title": "164 的技术 contract 已收敛，但 frozen lifecycle 修改仍缺独立 Owner decision authority",
+      "problem": "从 146 起整体复核后，前序技术与 authority 修复均保持成立；164 也已正确删除“Owner 已决定/已冻结”的 Author 自证，并明确 package 不能建立 Owner decision。但当前 candidate 仍在 flowkit-core-model / bootstrap delta、正式 docs 与已实现 Policy/Reader contract 中保留“OpenSpec archive operation success 后由 Flowkit 记录 Change completed，Checkpoint 为其后的 Git boundary”这一会改变既有 frozen lifecycle 的选择。164 自己明确要求 Reviewer 从 package 外独立 Owner 输入确认该 authority；当前可用 Owner 输入仅授权本轮整体 Review，并未明确批准这一 lifecycle contract。因此 candidate 技术正确性不能替代缺失的 frozen-decision authority。",
+      "location": "20260806-164-revise-apply/action.md; openspec/changes/orchestration-authority-boundary-correction/proposal.md; design.md; specs/flowkit-core-model/spec.md; specs/flowkit-bootstrap-and-roadmap/spec.md; docs/core-model.md; docs/delivery-lifecycle.md; docs/bootstrap-reference.md",
+      "requiredChange": "关闭 Owner-only frozen-decision gate：如果继续保留当前 Archive/Checkpoint lifecycle contract，必须由 package 外的独立 Owner 输入明确批准该选择；如果没有该 Owner decision，则当前 candidate 不能以该 frozen-contract 修改获得 approval。Reviewer 不指定 Owner 应选择哪一种 lifecycle 模型，也不要求新增 owner-decision persistence。"
+    }
+  ]
+}

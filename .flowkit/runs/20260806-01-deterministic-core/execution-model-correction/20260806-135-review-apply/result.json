@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-135-review-apply",
+  "status": "completed",
+  "summary": "Independent complete review of 134 finished with changes-requested. Q1-RA-006 is materially resolved: schemaVersion 2 review inputRef is structurally required/kind-bound and the shared validateReviewRunBinding re-derives reviewedRunId/result.json and is used by terminal preflight, FormalFact Reader and sibling-lineage admission. Q1-RA-008 and Q1-RA-009 remain resolved, as do RA-001/RA-003/RA-005. Two blocking contract gaps remain. First, Q1-RA-007's new source-review tuple validator is correct once invoked, but both terminal preflight and Reader pass `requiresTuple = reviseAction && sourceReviewRun !== undefined`; therefore a revise-explore/revise-propose/revise-apply with the entire source-review tuple absent does not trigger the requiredness rule. The tuple also proves only that an admitted review and the persisted sourceReviewVerdict agree; it does not prove the Action-owned lineage requirement that a revise-* must consume the matching stage review with verdict changes-requested. Second, Q1-RA-010's shared Action-result applicability is still weaker than the production writer for required fields: it requires verificationSummaryRef only when actionResult.executionStatus is `completed`, although any top-level completed review-apply physical projection must carry the Core-derived summary; and it forbids producedResultRefs on non-artifact Actions but does not structurally require producedResultRefs on a top-level completed artifact-producing Run during C1 admission. These gaps allow manually persisted shapes that Core's writer cannot legally publish to enter Reader admission or avoid the intended source-review requirement. 134 is formally present and exact-binds 133; Author-recorded typecheck/lint/build/569 tests/OpenSpec checks are accepted as recorded. Delivery Full Test was not authorized or run.",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-134-revise-apply/",
+  "reviewedResultRef": "content-sha256:97b46a240f46e6f25a2b883e92dbce8805de31aa52c93fdee11240a522ee3093",
+  "reviewedGitHead": "48acd5ff3a200ba1f6dca3ad6aa7f13416036dff",
+  "sourceReview": {
+    "runId": "20260806-133-review-apply",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:eea737b70ef9642be7d123f5ea58689ff33b8cac98a0e5cc630b503242adfbf1"
+  },
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "Q1-RA-007",
+      "title": "Source-review tuple validator is bypassed when a revise-* carries no source-review evidence and does not prove the required revise lineage",
+      "location": "src/persistence/run-persistence.ts: completionPreflight; src/facts/formal-fact-reader.ts: validateImmutableRunResultRefs; src/persistence/result-ref-adapter.ts: validateSourceReviewTuple; tests/unit/persistence/run-persistence.test.ts",
+      "evidence": "validateSourceReviewTuple itself has the intended complete-tuple behavior: when `requiresTuple` is true, no evidence produces a missing-reviewVerdictRef problem; when any component is present it requires sourceReviewRun + sourceReviewVerdict + reviewVerdictRef, then checks kind/target/readability/hash/admitted review/verdict. However both production preflight and Reader calculate `requiresSourceReview` for revise-explore/revise-propose/revise-apply and then pass `requiresTuple: requiresSourceReview && sourceReviewRun !== undefined`. For the exact bypass that Action requiredness is meant to catch — a revise-* with sourceReviewRun, sourceReviewVerdict and reviewVerdictRef all absent — this expression passes false, `hasAny` is false, and the tuple validator returns no problem. The Author test named 'revise-propose without sourceReviewRun' uses only producedArtifactTags=['proposal']; an orphan revise-propose can therefore reject later because its effective propose set lacks inherited design/tasks/specs, not because the source-review invariant fired. A revise-explore/revise-apply or a revise-propose declaring a complete fresh set exposes the bypass directly. In addition, SourceReviewTupleInput.action is not used to prove the approved stage/verdict semantics: the validator accepts any admitted review whose actual verdict equals the persisted sourceReviewVerdict. It does not require a revise-* source review to be the matching review-explore/review-propose/review-apply stage nor require its verdict/sourceReviewVerdict to be changes-requested.",
+      "impact": "This leaves the central Flowkit invariant 'revise-* only after the matching changes-requested review' mechanically bypassable. A revise-* Run can exist/terminal without any source-review tuple, or can claim an admitted approved/wrong-stage review as its source as long as the tuple's path/hash/verdict are internally consistent. Generation classification may still reject some such lineages later, but terminal publication and immutable Reader admission must themselves fail closed rather than rely on a downstream classifier.",
+      "requiredResolution": "For schemaVersion 2 revise-explore/revise-propose/revise-apply, pass `requiresTuple: true` based on Action alone — never condition it on sourceReviewRun already being present. Make the shared source-review validator (or a small Action-lineage wrapper around it) prove the Action-owned relationship: revise-explore requires an admitted review-explore, revise-propose requires admitted review-propose, revise-apply requires admitted review-apply; the admitted verdict and sourceReviewVerdict MUST both be changes-requested. Preserve the exact ref target/hash checks. Add focused negative fixtures for revise-explore/revise-apply with all three tuple fields absent, revise-propose with a complete fresh produced set but no tuple, revise-* sourced from an approved review, and revise-* sourced from a wrong-stage changes-requested review. Verify both completeRun and Reader fail closed, including superseded/revision-window paths."
+    },
+    {
+      "id": "Q1-RA-010",
+      "title": "Shared C1 Action applicability still omits Action-owned required fields for top-level completed physical results",
+      "location": "src/persistence/serialization.ts: validateActionResultApplicability, admitC1RunResult; src/persistence/run-persistence.ts: completionPreflight/deriveActionResult; src/facts/formal-fact-reader.ts: current-generation validators",
+      "evidence": "validateActionResultApplicability now correctly enforces actionResult.action == context.action and forbids producedResultRefs / verificationSummaryRef / reviewVerdictRef on the wrong Action families. But its review-apply requiredness is `isReviewApply && actionResult.executionStatus === 'completed' && verificationSummaryRef === undefined`. validateRunResultFileCombination permits a top-level `runStatus=completed` actionResult executionStatus of completed|failed|blocked, while Core's deriveActionResult always derives verificationSummaryRef for action=review-apply regardless of that executionStatus. Therefore a manually persisted top-level completed review-apply with executionStatus=failed or blocked and no verificationSummaryRef passes shared admission even though the production writer can never produce that shape. Similarly, applicability only forbids producedResultRefs on non-artifact Actions; it does not require the field on a top-level completed explore/revise-explore/propose/revise-propose physical projection. Writer preflight requires it, but admitC1RunResult does not. Reader's stage validator only checks current mutable generations, so an invalid historical artifact result can be physically admitted and later escape structural completeness once classified superseded/revision-window.",
+      "impact": "Q1-RA-010's acceptance criterion was writer/Reader admission parity: a schemaVersion 2 projection that Core could never publish must not be admitted as a valid formal result. The shared validator currently covers forbidden fields but not the complete Action-owned required field matrix, so that parity is still incomplete.",
+      "requiredResolution": "Make Action applicability operate on the top-level terminal context (or receive runStatus explicitly) and enforce structural requiredness from the Action, not actionResult.executionStatus. Any top-level completed review-apply MUST carry verificationSummaryRef; any top-level completed artifact-producing Action MUST carry producedResultRefs. Keep byte/current-generation validation in the existing generation-aware validators; this shared admission rule only proves that required formal evidence is structurally present. Preserve all existing forbidden-field rules. Add admission/Reader negative fixtures for review-apply executionStatus=failed and blocked with missing verificationSummaryRef, and for each artifact stage with missing producedResultRefs including a legitimately superseded historical generation."
+    }
+  ],
+  "nonBlockingFindings": [],
+  "resolvedPriorFindings": [
+    {
+      "id": "Q1-RA-006",
+      "result": "resolved",
+      "evidence": "validateContextFile now requires schemaVersion 2 review-* inputRef with kind=run-result; shared validateReviewRunBinding Core-re-derives the reviewedRunId target and validates target/hash at terminal preflight, FormalFact Reader and sibling-lineage admission."
+    },
+    {
+      "id": "Q1-RA-008",
+      "result": "still-resolved",
+      "evidence": "Non-Run logical refs still reject absolute/traversal forms before resolution and archive discovery still uses exact valid YYYY-MM-DD-<changeId> matching with ambiguity fail-closed."
+    },
+    {
+      "id": "Q1-RA-009",
+      "result": "still-resolved",
+      "evidence": "Current review-apply verification summary recovery still validates presence/shape/kind/Core-derived path/unique target/current SHA-256 with legitimate superseded generation handling."
+    },
+    {
+      "id": "Q1-RA-001",
+      "result": "still-resolved",
+      "evidence": "writeRunResult remains module-private and completeRun remains the descriptor-driven public terminal completion boundary."
+    },
+    {
+      "id": "Q1-RA-003",
+      "result": "still-resolved",
+      "evidence": "validateStageEffectiveSet remains the shared exact-set validator at terminal preflight, review entry and Reader current generation."
+    },
+    {
+      "id": "Q1-RA-005",
+      "result": "still-resolved",
+      "evidence": "Run-ID descriptors and produced artifact tags remain runtime closed before filesystem resolution."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "134 formal Run presence and source-review binding",
+        "status": "passed",
+        "result": "20260806-134-revise-apply context/result are present and sourceReview exact-binds 133-review-apply changes-requested using content-sha256:eea737b70ef9642be7d123f5ea58689ff33b8cac98a0e5cc630b503242adfbf1."
+      },
+      {
+        "name": "134 reviewed result exact binding",
+        "status": "passed",
+        "result": "Reviewed 20260806-134-revise-apply/result.json exact content SHA-256 97b46a240f46e6f25a2b883e92dbce8805de31aa52c93fdee11240a522ee3093; reconstructed bytes also produce the Git blob SHA 4b3a507f3269e5b3d8f68662015f36564a8f7a01, matching the branch object. Reviewed branch HEAD is 48acd5ff3a200ba1f6dca3ad6aa7f13416036dff."
+      },
+      {
+        "name": "Author-recorded focused/affected verification",
+        "status": "passed-as-recorded",
+        "result": "verification.md / 134 result record typecheck, lint, build, 569/569 tests, OpenSpec Change strict, canonical specs strict and git diff --check as passed."
+      },
+      {
+        "name": "Q1-RA-006 shared review exact binding",
+        "status": "passed",
+        "result": "Context structural requiredness and the shared physical binding validator cover Writer, Reader and sibling-lineage recovery."
+      },
+      {
+        "name": "Q1-RA-007 Action-owned source-review lineage",
+        "status": "failed",
+        "result": "Both Writer and Reader condition requiresTuple on sourceReviewRun already being present, so an all-absent tuple bypasses revise-* requiredness; matching review stage and changes-requested verdict are not proven by the tuple validator."
+      },
+      {
+        "name": "Q1-RA-010 Writer/Reader Action applicability parity",
+        "status": "failed",
+        "result": "Shared admission still omits structural requiredness for top-level completed artifact producedResultRefs and conditions review-apply verificationSummaryRef on executionStatus rather than the top-level completed physical result."
+      },
+      {
+        "name": "Prior resolver/generation regressions",
+        "status": "passed",
+        "result": "No regression found in RA-001/003/005/006/008/009 or exact generation/archive behavior in the reviewed code paths."
+      },
+      {
+        "name": "Delivery Full Test",
+        "status": "not-applicable",
+        "result": "Not owner-authorized and not run; review-apply has no Delivery Full Test authority."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-apply",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

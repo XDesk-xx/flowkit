@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-106-revise-explore",
+  "status": "completed",
+  "actionResult": {
+    "action": "revise-explore",
+    "executionStatus": "completed",
+    "summary": "最小安全修复 105-review-explore 的 2 个 blocking findings（Q1-RE-001 重开 + Q1-RE-003 重开）。按 AGENTS.md 契约产物 revise preflight 4 步执行：(1) 完整阅读 finding requiredResolution + ref/01 section 6.5/2.1 全文；(2) 枚举 ALL ResultRef 类别（inputRef/consumedInputRefs/producedResultRefs/verificationSummaryRef/reviewVerdictRef）；(3) 可实现性验证——逐类模拟 hash 计算流程，确认无循环依赖/自引用；(4) 全局一致性——更新 Section 3.2/3.3/4.1/4.2/4.3/5/7/8 全部引用位置。Q1-RE-001 修复：Core-owned derivation 从仅 inputRef 扩展到所有 5 类 ResultRef；caller 提供目标描述符（consumedRunId/artifactPath/verificationPath/reviewRunId），NEVER versionFingerprint；Core 在 createRun（inputRef）和 writeRunResult（actionResult.*ResultRef）构造并验证。Q1-RE-003 修复：review-* Run 不携带 reviewVerdictRef（避免自引用 hash——reviewVerdictRef 指向包含自己的 result.json = 循环 hash 方程）；review-* Run 直接携带 reviewVerdict + reviewFindings typed formal payload（非 ResultRef，无 hash 计算）；非 review Run 通过 reviewVerdictRef 引用 review Run result.json（Core-derived，不同 Run，不自引用）。allowlist 显式命名 reviewFindings formal field。preflight 从仅 inputRef 扩展到所有 ResultRef。Section 5 表（C1 delta/run-persistence/result-ref-adapter/tests 行）、Section 7 验收、Section 8 交叉引用同步更新。未修改生产代码、测试、冻结文档或 terminal Runs。"
+  },
+  "preflight": {
+    "rule": "AGENTS.md revise 契约产物 preflight（4 步）",
+    "step1_completeReading": "读 finding requiredResolution 全文 + ref/01 section 6.5（UNIVERSAL：生产路径禁止 Agent 手写 versionFingerprint，覆盖所有 ResultRef）+ ref/01 section 2.1（Reviewer Findings/Verdict 由 Reviewer 正式结果拥有；Run 拥有执行上下文与最小结果引用）",
+    "step2_enumerateInstances": "5 ResultRef 类别：context.inputRef（已 Core-derived）、actionResult.consumedInputRefs（caller-provided）、actionResult.producedResultRefs（caller-provided）、actionResult.verificationSummaryRef（caller-provided）、actionResult.reviewVerdictRef（caller-provided + 自引用 for review-* Run）",
+    "step3_implementabilityVerification": "逐类模拟 hash 计算流程：context.inputRef（context.json ≠ consumed result.json ✓）、consumedInputRefs（this result.json ≠ consumed result.json ✓）、producedResultRefs（artifact ≠ result.json，后者由 runRef 在读取时派生 ✓）、verificationSummaryRef（verification.md ≠ result.json ✓）、reviewVerdictRef 非 review Run（this result.json ≠ review result.json ✓）、reviewVerdictRef review-* Run（自引用 ✗ → 修复：review-* Run 不携带 reviewVerdictRef，直接携带 reviewFindings typed payload）。reviewVerdict + reviewFindings 是 typed formal fields 非 ResultRef，无 hash 计算，无自引用。结论：无循环依赖，无自引用，全部可实现。",
+    "step4_globalConsistency": "更新位置：Section 3.2（标题+结论）、Section 3.3（结论）、Section 4.1（allowlist+ResultRef target+reviewFindings+closed schema tests+原则）、Section 4.2（标题+body）、Section 4.3（preflight）、Section 5（C1 delta/run-persistence/result-ref-adapter/tests 行）、Section 7（验收 3 行新增/修改）、Section 8（Lean Run/ALL ResultRef fingerprint/closed allowlist 行）。Grep 确认 0 occurrences of 'Core-derived inputRef'/'INPUT_REF_MISMATCH'/'bounded envelope'/'Agent notes'/'blockedOn'。"
+  },
+  "findingsAddressed": [
+    {
+      "id": "Q1-RE-001",
+      "severity": "P1",
+      "origin": "20260806-105-review-explore",
+      "title": "Core-owned ResultRef provenance remains limited to context.inputRef",
+      "fix": "Extended Core-owned derivation from inputRef-only to ALL 5 ResultRef categories. Section 3.2 title changed from 'inputRef fingerprint' to 'ResultRef fingerprint'; conclusion lists all 5 categories. Section 3.3 conclusion broadened to all ResultRef. Section 4.1 allowlist comments changed from 'Core 验证 ResultRef 结构' to 'Core 派生（caller 提供目标描述符，Core 计算 SHA-256 并构造）'. Section 4.1 adds '所有 ResultRef 类别 Core 派生' block with per-category target/descriptor/Core-derivation-flow. Section 4.2 retitled 'Core-derived ResultRef（全部类别）'; body specifies createRun (inputRef) + writeRunResult (actionResult.*ResultRef) Core derivation. Section 4.3 preflight broadened to all ResultRef categories with RESULT_REF_MISMATCH error. Section 5 table: C1 delta row '所有 ResultRef 类别 Core 派生'; run-persistence row '所有 ResultRef 派生'; result-ref-adapter row '所有 ResultRef 类别'; tests row '所有 ResultRef 类别派生 + preflight（每类：成功/缺失/替换 mismatch/pending preservation）+ caller-supplied versionFingerprint 拒绝'. Section 7 acceptance: '所有 ResultRef 类别 fingerprint 由 Core 派生' + 'caller-supplied versionFingerprint 被拒绝'. Section 8 cross-ref: 'ALL ResultRef fingerprint' dimension. CreateRunInput no longer accepts caller-supplied versionFingerprint for ANY ResultRef category."
+    },
+    {
+      "id": "Q1-RE-003",
+      "severity": "P1",
+      "origin": "20260806-105-review-explore",
+      "title": "Reviewer-result reference design creates a self-referential content hash",
+      "fix": "Chose Option A (non-self-referential design). review-* Runs do NOT carry reviewVerdictRef (they ARE the referenced target — reviewVerdictRef pointing to own result.json = circular hash equation). review-* Runs directly carry reviewVerdict + reviewFindings (typed formal payload, NOT ResultRef, no hash computation, no self-reference). Section 4.1 allowlist: reviewVerdictRef comment '仅非 review Run；review-* Run 不携带，避免自引用'; added reviewFindings 'typed formal payload（review-* Run 专用；reviewer 正式 findings，Core 验证 typed schema）'. Section 4.1 'Reviewer formal artifact' block: reviewVerdict + reviewFindings as typed formal payload; reviewer is authority (ref/01 section 2.1); non-review Runs reference via reviewVerdictRef. Section 4.1 ResultRef target: reviewVerdictRef '仅非 review Run 携带；review-* Run 不携带（避免自引用 hash）'. Section 4.1 closed schema tests: 'review-* Run 不携带 reviewVerdictRef（自引用检测）' + 'review-* Run 携带 reviewVerdict + reviewFindings（typed schema 验证）'. Section 4.1 principles: 'review-* Run 不携带 reviewVerdictRef（避免自引用 hash）；reviewer formal findings 作为 typed payload 直接携带'. Section 7 acceptance: 'review-* Run 不携带 reviewVerdictRef（避免自引用 hash）；reviewer formal findings 作为 reviewFindings typed payload 直接携带'. Section 8 Lean Run: 'review-* Run 不携带 reviewVerdictRef（不自引用）；reviewFindings typed payload'. C1 delta spec will define reviewFindings formal field schema."
+    }
+  ],
+  "consistencyScan": {
+    "dimensionsScanned": [
+      {
+        "concept": "ALL ResultRef Core-derived (UNIVERSAL, not just inputRef)",
+        "locations": ["Section 3.2 (title + conclusion)", "Section 3.3 (conclusion)", "Section 4.1 (allowlist + '所有 ResultRef 类别 Core 派生' block)", "Section 4.2 (title + body)", "Section 4.3 (preflight)", "Section 5 (C1 delta / run-persistence / result-ref-adapter / tests rows)", "Section 7 (acceptance)", "Section 8 (ALL ResultRef fingerprint row)"],
+        "result": "consistent — all 5 ResultRef categories (inputRef/consumedInputRefs/producedResultRefs/verificationSummaryRef/reviewVerdictRef) specified as Core-derived. Caller provides typed target descriptors, NEVER versionFingerprint. Core constructs at createRun (inputRef) and writeRunResult (actionResult.*ResultRef). Preflight verifies all before terminal publication. Grep: 'Core-derived inputRef' = 0, 'INPUT_REF_MISMATCH' = 0, '所有 ResultRef' = 17 occurrences. No residual inputRef-only derivation."
+      },
+      {
+        "concept": "reviewVerdictRef non-self-referential + reviewFindings typed payload",
+        "locations": ["Section 4.1 (allowlist + ResultRef target + Reviewer formal artifact + closed schema tests + principles)", "Section 5 (C1 delta + tests rows)", "Section 7 (acceptance)", "Section 8 (Lean Run row)"],
+        "result": "consistent — review-* Run does NOT carry reviewVerdictRef (avoid self-referential hash). review-* Run carries reviewVerdict + reviewFindings (typed formal payload, NOT ResultRef, no hash computation). Non-review Run carries reviewVerdictRef pointing to review Run result.json (Core-derived, different Run, NOT self-referential). allowlist explicitly names reviewFindings. Grep: 'reviewFindings' = 9, '自引用' = 9 (all in context of reviewVerdictRef avoidance). No residual self-referential reviewVerdictRef."
+      },
+      {
+        "concept": "closed allowlist coherence (single layer, no duplication, enforceable)",
+        "locations": ["Section 4.1 (contract)", "Section 5 (implementation table)", "Section 7 (acceptance)", "Section 8 (cross-ref)"],
+        "result": "consistent — unchanged from 104-revise-explore. Single closed Core-validated allowlist; unknown fields rejected; no unvalidated layer; no field duplication. Grep: 'bounded envelope' = 0, 'Agent notes' = 0, 'blockedOn' = 0."
+      },
+      {
+        "concept": "terminal create-once preservation",
+        "locations": ["Section 3.4", "Section 4.3", "Section 6", "Section 8"],
+        "result": "consistent — unchanged. Q1 MUST NOT change terminal semantics. reviewVerdictRef lifecycle=terminal create-once aligns with existing terminal immutability."
+      },
+      {
+        "concept": "verification script ownership",
+        "locations": ["Section 3.7", "Section 4.5", "Section 7", "Section 8"],
+        "result": "consistent — unchanged. Q1-RE-002 resolved, confirmed by 103. Concrete scripts belong to F1."
+      }
+    ],
+    "totalContradictions": 0,
+    "overallResult": "pass"
+  },
+  "modifiedFiles": [
+    "openspec/changes/execution-model-correction/explore.md"
+  ],
+  "commitPolicy": "No commit, checkpoint, or Full Test was authorized or performed by this revise Run. No self-review performed.",
+  "nextAction": "review-explore"
+}

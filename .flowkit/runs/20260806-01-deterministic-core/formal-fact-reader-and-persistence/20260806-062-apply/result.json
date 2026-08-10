@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-062-apply",
+  "status": "completed",
+  "summary": "C1 formal-fact-reader-and-persistence apply 完成。实现 8 个生产源码文件（formal-fact-snapshot、formal-fact-reader、git-boundary-reader、yaml-parser、run-persistence、serialization、legacy-recognizer、result-ref-adapter、run-id-fs）+ 8 个单元测试文件，226/226 测试通过。tasks.md 172/172 全部标记完成。typecheck、build、lint、openspec validate --strict 全部通过。未创建 Git Commit（AGENTS.md rule #6）。",
+  "sourceReviewRef": "061-review-propose:f60e4b326d59031cb95ac8792a89555fffbd294f6c2b542b8e446d453e9ee662",
+  "sourceReviewVerdict": "approved",
+  "applyResults": {
+    "tasks": {
+      "total": 172,
+      "completed": 172,
+      "pending": 0
+    },
+    "files": {
+      "production": [
+        "src/facts/formal-fact-snapshot.ts",
+        "src/facts/formal-fact-reader.ts",
+        "src/facts/git-boundary-reader.ts",
+        "src/facts/yaml-parser.ts",
+        "src/persistence/run-persistence.ts",
+        "src/persistence/run-id-fs.ts",
+        "src/persistence/serialization.ts",
+        "src/persistence/legacy-recognizer.ts",
+        "src/persistence/result-ref-adapter.ts"
+      ],
+      "tests": [
+        "tests/unit/facts/formal-fact-snapshot.test.ts",
+        "tests/unit/facts/formal-fact-reader.test.ts",
+        "tests/unit/facts/git-boundary-reader.test.ts",
+        "tests/unit/facts/yaml-parser.test.ts",
+        "tests/unit/persistence/run-persistence.test.ts",
+        "tests/unit/persistence/serialization.test.ts",
+        "tests/unit/persistence/legacy-recognizer.test.ts",
+        "tests/unit/persistence/result-ref-adapter.test.ts",
+        "tests/unit/persistence/run-id-fs.test.ts"
+      ]
+    },
+    "scope": {
+      "facts": "FormalFactSnapshot + FactConflict interfaces; Reader reads Delivery Manifest (YAML), committed Runs, OpenSpec artifacts, Git boundaries; one fact one authority; conflicts collected not auto-resolved.",
+      "persistence": "createRun (staging + atomic rename); writeRunResult (fs.link create-if-not-exists); ContextFile schemaVersion=2 with three-way discriminator (C1 / legacy / FactConflict); RunResultFile physical schema; ResultRef adapter.",
+      "legacyCompat": "schemaVersion=1 or missing → bounded legacy recognizer (validates minimal Run fields, skips C1 schema validation, normalizes terminal status from result.json.status).",
+      "failClosed": "schemaVersion=2 with invalid C1 schema or identity → FactConflict (not degraded to legacy); schemaVersion=0/3/negative → FactConflict."
+    }
+  },
+  "verificationResults": {
+    "typecheck": {
+      "command": "npm run typecheck",
+      "status": "passed",
+      "result": "tsc --noEmit (production + test projects) passed with no errors."
+    },
+    "build": {
+      "command": "npm run build",
+      "status": "passed",
+      "result": "tsc emitted production build with no errors."
+    },
+    "test": {
+      "command": "npm test",
+      "status": "passed",
+      "result": "226/226 tests passed; 0 fail, 0 cancelled, 0 skipped, 0 todo."
+    },
+    "lint": {
+      "command": "npm run lint",
+      "status": "passed",
+      "result": "eslint completed with no errors."
+    },
+    "openspecValidate": {
+      "command": "npx openspec validate formal-fact-reader-and-persistence --strict",
+      "status": "passed",
+      "result": "Change 'formal-fact-reader-and-persistence' is valid"
+    },
+    "fullTest": {
+      "status": "not-applicable",
+      "result": "Not authorized in this Run; Full Test requires owner authorization per AGENTS.md rule #5."
+    }
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit. Run may enter Git history via later Change Checkpoint or normal commit."
+  },
+  "prohibitedWorkCheck": {
+    "frozenSpecsModified": false,
+    "terminalRunsModified": false,
+    "changeCheckpointExecuted": false,
+    "fullTestExecuted": false,
+    "scopeExpanded": false
+  },
+  "nextAction": "review-apply",
+  "nextActionNote": "reviewer 审查 C1 apply 产物（生产源码 + 单元测试 + tasks.md 完成度 + 验证结果）。如 approved 则进入 archive；如 changes-requested 则进入 revise-apply。",
+  "blockedOn": []
+}

@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-109-review-explore",
+  "status": "completed",
+  "summary": "Complete Q1 Explore review of 108 finished with changes-requested. 108 resolves the prior Run-only constructor problem at the type level and defines exact review input binding. However, the new non-Run artifact contract still lets the caller choose the artifact kind and gives produced-artifact only an unspecified ‘path root defined by Action’. No Core-owned field-to-kind rule or executable Action/path-root mapping prevents a descriptor from relabeling an arbitrary repository-relative file as a verification summary or produced artifact. The generic provenance boundary therefore remains non-deterministic.",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/execution-model-correction/20260806-108-revise-explore/",
+  "reviewedResultRef": "content-sha256:0f8d381ba2a64c67c0aa9ce370b4851504a9b7a8f44368f8eb71279e613d8f05",
+  "sourceReview": {
+    "runId": "20260806-107-review-explore",
+    "verdict": "changes-requested",
+    "resultRef": "content-sha256:daa12b412a528e3e6aa1bb59afbb4b93a51532a07b9fd290446c06161694a793"
+  },
+  "verdict": "changes-requested",
+  "blockingFindings": [
+    {
+      "id": "Q1-RE-001",
+      "title": "Non-Run artifact provenance still leaves kind and produced-artifact roots caller-defined",
+      "location": "openspec/changes/execution-model-correction/explore.md:203-215, 238-247, 324-340, 451-460",
+      "evidence": "108 correctly separates buildArtifactResultRef from buildRunResultRef, but its constructor declares that kind is ‘specified by caller’, while the allowed-kind table gives produced-artifact only ‘path root defined by Action’. The per-category flow accepts caller artifactPath/verificationPath descriptors, and neither the contract nor acceptance criteria defines a Core-owned mapping from result field to canonical kind or an executable Action-to-produced-path-root rule. Existing C1 ResultRef validation likewise accepts arbitrary non-empty ref and kind strings. Consequently a caller can present any repository-relative file under an unspecified root and label it produced-artifact or verification-summary; Core can hash that file but cannot establish that the descriptor is the category it claims to be.",
+      "impact": "The new generic constructor fixes the nonexistent artifact/result.json path, but not authoritative provenance. The Proposal would have no deterministic rule for rejecting a wrong-kind or wrong-output-path descriptor, so all-category Core derivation could still persist semantically spoofed ResultRefs.",
+      "requiredResolution": "Keep Q1-RE-001 open. Make category selection Core-owned: callers provide only a typed descriptor appropriate to the result field, and Core fixes verificationSummaryRef to the canonical active Change verification.md path and assigns its kind itself. Define an executable, fixed mapping for producedResultRefs from Action plus descriptor to permitted repository-relative roots (or explicitly narrow the field to a single Core-owned run-artifact root); reject any path outside that mapping, traversal, absolute paths, result.json targets, and kind/field mismatches. buildArtifactResultRef may accept an internal validated enum, but callers must not select it. Specify the same resolver and validation for creation, preflight, and Reader, with tests for valid targets and each rejected mismatched kind/path case."
+    }
+  ],
+  "nonBlockingFindings": [
+    {
+      "id": "Q1-NB-001",
+      "title": "Explore source links remain checkout-specific",
+      "location": "openspec/changes/execution-model-correction/explore.md:62, 72, 90, 98, 106, 127, 137",
+      "evidence": "The cited code links use file:///D:/Projects/flowkit absolute paths and cannot resolve in another checkout or platform.",
+      "recommendedResolution": "Use repository-relative Markdown links in a future in-scope Explore edit. This remains non-blocking because the cited source evidence was independently verified."
+    }
+  ],
+  "resolvedFindings": [
+    {
+      "id": "Q1-RE-002",
+      "result": "resolved",
+      "evidence": "Q1 retains only verification timing, ownership, and Full-Test authorization boundaries; concrete scripts remain assigned to F1."
+    },
+    {
+      "id": "Q1-RE-003",
+      "result": "resolved",
+      "evidence": "108 requires a review-* inputRef derived from reviewedRunId at createRun, validates it again before publication, and requires Reader fail-closed behavior for absent, mismatched, unreadable, or replaced reviewed results."
+    }
+  ],
+  "verification": {
+    "checks": [
+      {
+        "name": "108 reviewed-result binding and JSON validity",
+        "status": "passed",
+        "result": "108 context.json and result.json parse as JSON. SHA-256 of 108 result.json is 0f8d381ba2a64c67c0aa9ce370b4851504a9b7a8f44368f8eb71279e613d8f05."
+      },
+      {
+        "name": "revision lineage and Run numbering",
+        "status": "passed",
+        "result": "108 inputRef equals the actual SHA-256 of 107 result.json, sourceReviewRun/verdict match 107, and 108 was the Delivery-wide maximum before this reviewer Run."
+      },
+      {
+        "name": "Q1 semantic and C1-contract review",
+        "status": "failed",
+        "result": "108 resolves the Run-only constructor and exact review-input binding, but Q1-RE-001 remains because artifact kind and produced-artifact root selection are not Core-owned or executable."
+      },
+      {
+        "name": "canonical OpenSpec specs",
+        "command": "npx openspec validate --specs --strict",
+        "status": "passed",
+        "result": "8 canonical specs passed, 0 failed. This structural result does not clear the semantic finding."
+      },
+      {
+        "name": "scope and whitespace",
+        "status": "passed",
+        "result": "108 declares and records only the Explore revision. JSON parsing, git diff --check, and explicit trailing-whitespace scan passed. The separately modified AGENTS.md is treated as an owner/repository instruction outside 108's declared modified-file claim and is not attributed to this review result."
+      },
+      {
+        "name": "Delivery Full Test",
+        "status": "not-applicable",
+        "result": "Not owner-authorized and not run; review-explore has no Full-Test authority."
+      }
+    ]
+  },
+  "nextActionRecommendation": "revise-explore",
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false
+  }
+}

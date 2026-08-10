@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-036-explore",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "C1",
+  "changeId": "formal-fact-reader-and-persistence",
+  "action": "explore",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "inputRef": "180f161",
+  "sourceChangeState": "B1 domain-and-state-schema: completed (checkpoint commit 180f161)",
+  "constraints": {
+    "mayReadFormalDocs": true,
+    "mayReadFrozenSpecs": true,
+    "mayReadRefDocs": true,
+    "mayWriteExploreArtifact": true,
+    "mayModifyManifest": true,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-036-explore/"
+}

@@ -25,3 +25,5 @@ Thumbs.db
 .codegraph/
 .trae/
 ref/
+.codebuddy/
+.detached-linux-deps/

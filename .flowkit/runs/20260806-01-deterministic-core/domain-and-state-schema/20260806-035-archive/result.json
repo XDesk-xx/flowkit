@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-035-archive",
+  "status": "completed",
+  "summary": "B1 domain-and-state-schema 已归档。openspec archive 将 ADDED Requirements 应用到冻结 spec openspec/specs/flowkit-domain-and-state-schema/spec.md（13 Requirements, 41 Scenarios），change 移动到 openspec/changes/archive/2026-08-06-domain-and-state-schema/。冻结 spec 的 TBD Purpose 占位符已补全为正式 Purpose（符合项目硬约束：Purpose sections must not contain TBD placeholders）。Manifest B1 state 从 active 更新为 completed。openspec validate --strict 通过。未创建 Git Commit。",
+  "archiveResults": {
+    "command": "npx openspec archive domain-and-state-schema -y",
+    "specDeltas": {
+      "added": 13,
+      "modified": 0,
+      "removed": 0
+    },
+    "frozenSpecCreated": "openspec/specs/flowkit-domain-and-state-schema/spec.md",
+    "frozenSpecRequirements": 13,
+    "frozenSpecScenarios": 41,
+    "changeArchivedTo": "openspec/changes/archive/2026-08-06-domain-and-state-schema/",
+    "archivedArtifacts": [
+      ".openspec.yaml",
+      "explore.md",
+      "proposal.md",
+      "design.md",
+      "tasks.md",
+      "verification.md",
+      "specs/flowkit-domain-and-state-schema/spec.md"
+    ]
+  },
+  "purposeFix": {
+    "file": "openspec/specs/flowkit-domain-and-state-schema/spec.md",
+    "reason": "项目硬约束：Purpose sections in spec.md files must not contain TBD placeholders",
+    "before": "TBD - created by archiving change domain-and-state-schema. Update Purpose after archive.",
+    "after": "冻结 Flowkit 确定性内核的领域层契约：定义 Delivery / Change / Run 领域对象、主状态联合类型与转换表、固定 Action Catalog、Run ID 分配规则与 terminal immutability 校验。本 spec 为后续 Formal Fact Reader、Policy Engine 和诊断 CLI 提供不可变的领域类型与 Schema 校验基础。"
+  },
+  "manifestUpdate": {
+    "file": "openspec/delivery-groups/20260806-01-deterministic-core.yaml",
+    "change": "B1 state: active → completed"
+  },
+  "verificationResults": {
+    "frozenSpecExists": true,
+    "frozenSpecValid": true,
+    "frozenSpecValidateCommand": "npx openspec validate flowkit-domain-and-state-schema --strict",
+    "frozenSpecValidateResult": "Specification 'flowkit-domain-and-state-schema' is valid",
+    "changeMovedToArchive": true,
+    "oldChangeDirGone": true,
+    "changeNoLongerValidatableAsChange": true,
+    "changeValidateResult": "Unknown item 'domain-and-state-schema' (expected: change is now a frozen spec)",
+    "purposePlaceholderRemoved": true
+  },
+  "commitPolicy": {
+    "autoCommit": false,
+    "commitCreated": false,
+    "lastCommit": "b4f807f checkpoint(runtime-foundation): A1 Change Checkpoint",
+    "reason": "Per AGENTS.md rule #6: Action/Run do not auto-commit. Change Checkpoint is a separate formal Git boundary requiring owner authorization."
+  },
+  "nextAction": "change-checkpoint",
+  "nextActionNote": "Change Checkpoint 需 owner 明确授权 Git Commit。Checkpoint 后 B1 正式完成，可激活 C1 formal-fact-reader-and-persistence。",
+  "blockedOn": []
+}

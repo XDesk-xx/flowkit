@@ -1,59 +1,55 @@
 # AGENTS.md
 
-> 仓库级开发指令。所有 AI Agent 在本仓库工作前必须读取并遵守。
->
-> 本文档与 `docs/bootstrap-reference.md` 分工：本文档是简短约束，`docs/bootstrap-reference.md` 是详细操作参考。
+> 仓库级 Agent 操作约束。正式事实以当前 OpenSpec、Flowkit 状态、Git、
+> Reviewer 结果和项目验证工具为准，不依赖聊天记忆推断。
 
----
+## 基本规则
 
-## 最小规则
+1. 执行 Action 前先读取当前正式事实，并由 Flowkit Policy 确认合法 Action。
+2. 不重新打开已 Checkpoint Change；新问题通过当前合法流程或新的 corrective Change 处理。
+3. `approved` 才向前推进；只有 `changes-requested` 才执行对应 `revise-*`。
+4. Author 不自审；Review 必须由独立 Reviewer 完成。
+5. Full Test、Archive、Checkpoint、Finalize 等 owner 边界不得自行授权。
+6. Run / Action 不自动 Commit；普通 Commit 不推进 Flowkit 状态。
+7. 正式 Change artifacts 必须写入其 canonical Git-tracked 路径；`.tmp/**` 只用于可删除 scratch。
+8. 不建立第二套流程权威；不使用聊天、Memory、临时文件替代正式事实。
+9. 人类可读内容默认使用简体中文；Action 名、schema key、enum、CLI/code identifier、path、error code 等机器标识保持英文。
+10. `AGENTS.md` 只约束 Agent 操作方式，不定义 Policy、OpenSpec contract 或 owner 决策。
 
-1. **先读取正式 docs、当前 OpenSpec Change 和当前 Runs**，不依赖聊天摘要或记忆推断当前流程状态。
+## Review / Revise
 
-2. **由 Policy 确定唯一合法下一 Action**，不由 Agent 建议、Git 状态或聊天摘要决定。正式事实 → Flowkit Policy → 唯一合法下一 Action。
+- `review` = **完整审查**：一次检查当前阶段全部适用契约和验收条件，尽量一次列全 Blocking Findings。
+- `revise` = **最小安全修复**：只修当前 Blocking Findings，不扩大 scope，不顺手重构。
+- 分析范围可以完整，实际修改范围必须最小。
+- 小修改执行 focused checks；只有影响共享契约、公共类型或跨模块行为时才扩大到 affected checks。
+- Review / Revise 不自动运行 Delivery Full Test。
+- Reviewer 是只读审查者：只写 Reviewer-owned Run / Review artifact，不修改 Author artifacts、生产代码、测试或 Manifest；`changes-requested` 后交回 Author 修正。
+- Reviewer 不替 owner 授权 Apply、Archive、Checkpoint、Full Test 或 Finalize。
 
-3. **不得重新打开已 Checkpoint Change**。已 Checkpoint 的 Change 不重新打开，真正冲突通过 corrective Change 处理。
+### 契约修改 preflight
 
-4. **不得跳过正式 Review**。`approved` 向前推进；只有 `changes-requested` 才进入对应 `revise-*`。
+修改 `explore.md / proposal / design / spec` 前：
 
-5. **不得自行授权 Full Test**。Full Test 由 owner 明确授权，不得由 Apply、Revision、Review、Archive 或 Adapter 自动触发。
+1. 完整读取 Finding、required resolution 和其引用的正式契约。
+2. 枚举该问题涉及的全部同类对象和引用位置，避免只修 Reviewer 点名的一处。
+3. 验证设计可实现：
+   - 读取涉及的实际函数、类型和持久化约束；
+   - 追踪 create → persist → read → consume 的完整数据流；
+   - 排除自引用、循环依赖、不可执行约束和与现有实现冲突的假设。
+4. 修改后只对受影响概念做一致性检查。
 
-6. **Action / Run 不自动 Commit**。Run 创建和完成都不自动触发 Git Commit。Run 可以与当前 Change 的其他正式内容一起在普通 Commit 或 Change Checkpoint 中进入 Git 历史。
+## 跨平台与文本卫生
 
-7. **Git 只在 Start / Checkpoint / Final 形成正式边界**。一个 Delivery 的 Git 历史只要求：1 个 Delivery Start + 每个 Change 1 个 Change Checkpoint + 1 个 Delivery Final + 0 到若干按需普通 Commit。Change 激活不是正式 Git 边界。
+- CLI / process 集成测试必须覆盖真实的平台 launcher 语义。Windows 下的 `.cmd` / `.bat` 不能默认按 POSIX 普通 executable 处理；调用 npm-installed CLI 或脚本时必须使用 Windows 可执行的 launcher 路径/command processor，并保留对应回归测试。
+- Change Checkpoint 前必须执行 whitespace preflight：工作区检查使用 `git diff --check`；进入 checkpoint 暂存后必须再执行 `git diff --cached --check`。新增或生成的文本 artifact 不得包含 trailing whitespace 或 EOF 多余空白行；纯格式 defect 只做最小 normalization，不得借机修改 artifact 语义。
 
-8. **普通 Commit 仅按真实保存和交互需要创建**。不推进 Flowkit 状态，不等于 Action 完成，不等于 Review Approved，不等于 Change Checkpoint。
+## 原则
 
-9. **执行者或会话变化不构成流程状态变化**。更换 AI、更换会话或更换工作环境不改变 Delivery、Change 或 Action 的流程状态。
+能由 Core、类型、Policy、Git 或验证工具确定的事实，
+不要要求 Agent 手工维护或重复证明。
 
-10. **信息交换媒介不固定**。不要求 GitHub、Push、PR、Remote 或特定 AI Provider 作为流程前提。正式结果可读取、上下文可恢复、Policy 可计算下一 Action 即可。
-
-11. **不得引入第二套流程权威**。Bootstrap 手工执行同一套 Flowkit 规则，不建立 bootstrap-only 的状态、manifest 或 pointer。所有正式事实仍由 Flowkit、OpenSpec、Git、Reviewer 和验证工具拥有。
-
----
-
-## 不固定
-
-```text
-ChatGPT
-Codex
-GitHub
-Remote
-PR
-固定 Worktree 拓扑
-```
-
-正式角色为 owner / author / reviewer。当前由谁承担只属于项目执行映射。
-
----
-
-## 参考
-
-- `docs/bootstrap-reference.md`：Bootstrap 阶段详细操作参考
-- `docs/development-roadmap.md`：后续 Runner Delivery 路线
-- `docs/product-positioning.md`：A1 产品定位
-- `docs/core-model.md`：B1 核心模型
-- `docs/delivery-lifecycle.md`：B1 交付生命周期
-- `docs/verification-model.md`：B1 验证模型
-- `docs/integration-boundaries.md`：C1 集成边界
-- `.codex/skills/flowkit-git-workflow/SKILL.md`：Git 工作流 Skill
+- Run `result.json` 是 closed Core-validated schema；Agent 不得手工填写 `blockingFindings`、`verification[]`、`consistencyScan` 等重型 bookkeeping 字段。
+- 所有 ResultRef（kind / path / fingerprint）由 Core 从真实目标派生；Agent 只提供必要的 typed target descriptor（如 `consumedRunId` / `reviewedRunId`），不手工构造 ResultRef。
+- `pending` 只表示 Run 已开始但尚无 terminal result；不得把它解释为 Action 状态、revision window 或 artifact generation。
+- 当前 Action 正在消费的 handoff ref 可以 exact-bind；已经完成的 mutable artifact / verification ref 只是 point-in-time 记录，后续合法修改不得反向使历史 Run 失效。
+- 不为了“更安全”重复证明 OpenSpec、Git、Verification 或 Reviewer 已经拥有的事实；跨 authority 新增校验前必须证明它直接关系到当前 Action 的安全流转。

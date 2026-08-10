@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260806-089-revise-apply",
+  "deliveryId": "20260806-01-deterministic-core",
+  "changeKey": "D1",
+  "changeId": "policy-engine",
+  "action": "revise-apply",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "inputRef": "c49495cebbffbd52d8b220e6772534f9d6bda17ef5cc0454e10c18753b3dc27d",
+  "reviewedRun": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-087-apply/",
+  "sourceReviewRun": "20260806-088-review-apply",
+  "sourceReviewVerdict": "changes-requested",
+  "sourceChangeState": "D1 policy-engine: active (explore 069 approved via 072; propose 075/077/079/081/083/085 reviewed, 086 approved 085; apply 087 reviewed by 088 changes-requested D1-RA-001; D1-PR-001..006 resolved at propose stage)",
+  "triggerFindings": [
+    {
+      "id": "D1-RA-001",
+      "severity": "P1",
+      "origin": "20260806-088-review-apply",
+      "title": "next() bypasses the Verification-facts gate before review-apply"
+    }
+  ],
+  "inputRefSemantics": "inputRef cites 088-review-apply/result.json (the review whose changes-requested verdict and D1-RA-001 finding triggered this revision) with its actual immutable SHA-256 (c49495ce...), matching the revise-apply precedent (066-revise-apply inputRef = 065-review-apply result SHA). reviewedRun names 087-apply, the apply artifact whose implementation is revised. 089 fixes D1-RA-001: 087's next.ts decideApplyStage returned action: review-apply on the no-lineage-match branch without checking Change Verification facts, while canRun(review-apply) correctly rejected with verification-facts-unavailable. 089 adds the verification gate to that branch so next() fails closed (blocked: verification-facts-unavailable), mirroring canRun. Production code (next.ts) + tests (next.test.ts) modified; proposal bundle (proposal/design/spec/tasks) unchanged; no frozen specs / terminal Runs / manifest touched.",
+  "constraints": {
+    "mayModifyProposalArtifacts": false,
+    "mayWriteProductionCode": true,
+    "mayWriteTestCode": true,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260806-01-deterministic-core/policy-engine/20260806-089-revise-apply/"
+}
