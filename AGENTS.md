@@ -53,3 +53,11 @@
 - `pending` 只表示 Run 已开始但尚无 terminal result；不得把它解释为 Action 状态、revision window 或 artifact generation。
 - 当前 Action 正在消费的 handoff ref 可以 exact-bind；已经完成的 mutable artifact / verification ref 只是 point-in-time 记录，后续合法修改不得反向使历史 Run 失效。
 - 不为了“更安全”重复证明 OpenSpec、Git、Verification 或 Reviewer 已经拥有的事实；跨 authority 新增校验前必须证明它直接关系到当前 Action 的安全流转。
+
+## A1 Write-side 与 Owner Provenance
+
+- 正常的新 Delivery/Change creation、authorization-only Owner record 与 Change activation 必须通过 Flowkit A1 write-side；不得再用 Agent prose、Run `ownerAuthorization` 或手工 Manifest patch 创造新的 Owner authority。
+- Delivery Manifest `dependsOn` 统一使用 `Change.id`；`Change.key` 只用于短标签/展示。
+- A1 write-side 新建 Change 必须显式提供并持久化 boolean `architectureImpact`。Base `448fa042de86d07e893bcc51da528f93eb7ced3a` 之前冻结的 3 个 Delivery / 21 个 exact Change.id 缺失该字段时只允许 Reader 表达 `pre-a1-legacy-missing`，不得猜 true/false 或回填。
+- `flowkit owner record` 只允许当前 Policy 正在请求的同一 authorization decision/target；early/stale authorization 必须拒绝并保持 Manifest 不变。
+- activation 不是 Formal Action、Run 或 Git boundary；成功 activation 只形成最小 OpenSpec metadata、Owner provenance 和 `planned → active`。

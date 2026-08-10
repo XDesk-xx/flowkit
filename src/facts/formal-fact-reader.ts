@@ -29,6 +29,10 @@ import {
 } from '../persistence/result-ref-adapter.js';
 import { BLOCKING_AUTHORITIES } from '../domain/types.js';
 import type { BlockingAuthority, ResultRef, RunStatus, VerificationStatus } from '../domain/types.js';
+import { AUTHORIZATION_ONLY_OWNER_DECISIONS, OWNER_DECISION_RECORD_KINDS } from '../domain/a1-types.js';
+import type { AuthorizationOnlyOwnerDecision, OwnerDecisionRecordKind } from '../domain/a1-types.js';
+import { ownerDecisionRefFor } from '../domain/owner-provenance.js';
+import { isPreA1LegacyArchitectureImpactIdentity } from './pre-a1-legacy-architecture-impact.js';
 import { FlowkitError } from '../shared/errors.js';
 import type {
   ChangeFact,
@@ -38,6 +42,7 @@ import type {
   OpenSpecArtifactFact,
   ReviewVerdictFact,
   RunFact,
+  OwnerAuthorizationFact,
 } from './formal-fact-snapshot.js';
 
 export interface ReadFormalFactSnapshotInput {
@@ -81,7 +86,7 @@ export async function readFormalFactSnapshot(
     // Git boundaries are best-effort at Reader level.
   }
 
-  const ownerAuthorizations = collectOwnerAuthorizations(runs);
+  const ownerAuthorizations = manifestResult.ownerAuthorizations;
   conflicts.push(...manifestResult.conflicts);
 
   const bindingResult = await validateReviewExactBindings(
@@ -130,6 +135,7 @@ interface ManifestResult {
   readonly deliveryState: FormalFactSnapshot['deliveryState'];
   readonly deliveryFullTestStatus: FormalFactSnapshot['deliveryFullTestStatus'];
   readonly changes: readonly ChangeFact[];
+  readonly ownerAuthorizations: readonly OwnerAuthorizationFact[];
   readonly conflicts: readonly FactConflict[];
 }
 
@@ -141,6 +147,7 @@ async function readDeliveryManifest(input: ReadFormalFactSnapshotInput): Promise
       deliveryState: undefined,
       deliveryFullTestStatus: undefined,
       changes: [],
+      ownerAuthorizations: [],
       conflicts,
     };
   }
@@ -158,6 +165,7 @@ async function readDeliveryManifest(input: ReadFormalFactSnapshotInput): Promise
       deliveryState: undefined,
       deliveryFullTestStatus: undefined,
       changes: [],
+      ownerAuthorizations: [],
       conflicts,
     };
   }
@@ -179,7 +187,8 @@ async function readDeliveryManifest(input: ReadFormalFactSnapshotInput): Promise
     return {
       deliveryState: undefined,
       deliveryFullTestStatus: undefined,
-      changes: readChangeFacts(manifest['changes']),
+      changes: readChangeFacts(input.deliveryId, manifest['changes'], conflicts, manifestPath),
+      ownerAuthorizations: readOwnerAuthorizations(input.deliveryId, manifest['ownerDecisions'], manifest['changes'], conflicts, manifestPath),
       conflicts,
     };
   }
@@ -222,15 +231,30 @@ async function readDeliveryManifest(input: ReadFormalFactSnapshotInput): Promise
     fullTestStatus = undefined;
   }
 
+  const changes = readChangeFacts(input.deliveryId, manifest['changes'], conflicts, manifestPath);
+  const ownerAuthorizations = readOwnerAuthorizations(
+    input.deliveryId,
+    manifest['ownerDecisions'],
+    manifest['changes'],
+    conflicts,
+    manifestPath,
+  );
+
   return {
     deliveryState,
     deliveryFullTestStatus: fullTestStatus,
-    changes: readChangeFacts(manifest['changes']),
+    changes,
+    ownerAuthorizations,
     conflicts,
   };
 }
 
-function readChangeFacts(value: unknown): ChangeFact[] {
+function readChangeFacts(
+  deliveryId: string,
+  value: unknown,
+  conflicts: FactConflict[],
+  manifestPath: string,
+): ChangeFact[] {
   if (!Array.isArray(value)) return [];
   const facts: ChangeFact[] = [];
   for (const item of value) {
@@ -245,13 +269,186 @@ function readChangeFacts(value: unknown): ChangeFact[] {
     const outputs = Array.isArray(obj['outputs'])
       ? (obj['outputs'] as unknown[]).filter((s): s is string => typeof s === 'string')
       : undefined;
+
+    let architectureImpact: ChangeFact['architectureImpact'];
+    const architectureImpactRaw = obj['architectureImpact'];
+    if (typeof architectureImpactRaw === 'boolean') {
+      architectureImpact = architectureImpactRaw;
+    } else if (
+      architectureImpactRaw === undefined &&
+      isPreA1LegacyArchitectureImpactIdentity(deliveryId, id)
+    ) {
+      architectureImpact = 'pre-a1-legacy-missing';
+    } else {
+      conflicts.push({
+        dimension: 'change-architecture-impact',
+        authority: manifestPath,
+        message: `Change ${id} architectureImpact missing or invalid`,
+        detail: { deliveryId, changeId: id, value: architectureImpactRaw },
+      });
+      continue;
+    }
+
     facts.push({
       key,
       id,
       state: typeof obj['state'] === 'string' ? (obj['state'] as ChangeFact['state']) : 'planned',
       required: typeof obj['required'] === 'boolean' ? obj['required'] : false,
       dependsOn,
+      architectureImpact,
       ...(outputs !== undefined && { outputs }),
+    });
+  }
+  return facts;
+}
+
+function readOwnerAuthorizations(
+  deliveryId: string,
+  value: unknown,
+  changesValue: unknown,
+  conflicts: FactConflict[],
+  manifestPath: string,
+): OwnerAuthorizationFact[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) {
+    conflicts.push({
+      dimension: 'owner-decisions-shape',
+      authority: manifestPath,
+      message: 'ownerDecisions must be a sequence',
+    });
+    return [];
+  }
+
+  const knownChangeIds = new Set<string>();
+  if (Array.isArray(changesValue)) {
+    for (const item of changesValue) {
+      if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
+        const id = (item as Record<string, unknown>)['id'];
+        if (typeof id === 'string') knownChangeIds.add(id);
+      }
+    }
+  }
+
+  const facts: OwnerAuthorizationFact[] = [];
+  const seenRefs = new Map<string, string>();
+  for (const item of value) {
+    if (typeof item !== 'object' || item === null || Array.isArray(item)) {
+      conflicts.push({
+        dimension: 'owner-decision-record',
+        authority: manifestPath,
+        message: 'ownerDecisions item must be a mapping',
+      });
+      continue;
+    }
+    const obj = item as Record<string, unknown>;
+    const ref = obj['ref'];
+    const decision = obj['decision'];
+    const recordDeliveryId = obj['deliveryId'];
+    const changeId = obj['changeId'];
+    const sourceRef = obj['sourceRef'];
+    if (
+      typeof ref !== 'string' ||
+      typeof decision !== 'string' ||
+      typeof recordDeliveryId !== 'string' ||
+      typeof sourceRef !== 'string' ||
+      sourceRef.trim() === ''
+    ) {
+      conflicts.push({
+        dimension: 'owner-decision-record',
+        authority: manifestPath,
+        message: 'ownerDecisions item missing required typed fields',
+        detail: { ref, decision, deliveryId: recordDeliveryId, changeId, sourceRef },
+      });
+      continue;
+    }
+    if (recordDeliveryId !== deliveryId) {
+      conflicts.push({
+        dimension: 'owner-decision-applicability',
+        authority: manifestPath,
+        message: `Owner record ${ref} deliveryId does not match active Delivery`,
+        detail: { recordDeliveryId, deliveryId },
+      });
+      continue;
+    }
+    if (!(OWNER_DECISION_RECORD_KINDS as readonly string[]).includes(decision)) {
+      conflicts.push({
+        dimension: 'owner-decision-record',
+        authority: manifestPath,
+        message: `Owner record ${ref} has unknown decision ${decision}`,
+      });
+      continue;
+    }
+    const typedRecordDecision = decision as OwnerDecisionRecordKind;
+    const expectedRef = ownerDecisionRefFor({
+      decision: typedRecordDecision,
+      deliveryId: recordDeliveryId,
+      sourceRef,
+      ...(typeof changeId === 'string' ? { changeId } : {}),
+    });
+    if (ref !== expectedRef) {
+      conflicts.push({
+        dimension: 'owner-decision-ref',
+        authority: manifestPath,
+        message: `Owner record ${ref} does not match canonical tuple hash`,
+        detail: { expectedRef },
+      });
+      continue;
+    }
+
+    const canonical = JSON.stringify({
+      decision,
+      deliveryId: recordDeliveryId,
+      ...(typeof changeId === 'string' ? { changeId } : {}),
+      sourceRef,
+    });
+    const prior = seenRefs.get(ref);
+    if (prior !== undefined && prior !== canonical) {
+      conflicts.push({
+        dimension: 'owner-decision-ref-collision',
+        authority: manifestPath,
+        message: `Owner record ref ${ref} maps to different content`,
+      });
+      continue;
+    }
+    seenRefs.set(ref, canonical);
+
+    const changeScopedRecord =
+      typedRecordDecision === 'create-change' ||
+      typedRecordDecision === 'activate-change' ||
+      typedRecordDecision === 'authorize-apply' ||
+      typedRecordDecision === 'authorize-archive' ||
+      typedRecordDecision === 'authorize-checkpoint';
+    if (changeScopedRecord) {
+      if (typeof changeId !== 'string' || !knownChangeIds.has(changeId)) {
+        conflicts.push({
+          dimension: 'owner-decision-applicability',
+          authority: manifestPath,
+          message: `Owner record ${ref} requires a known changeId`,
+          detail: { changeId },
+        });
+        continue;
+      }
+    } else if (changeId !== undefined) {
+      conflicts.push({
+        dimension: 'owner-decision-applicability',
+        authority: manifestPath,
+        message: `Delivery-scoped Owner record ${ref} must not carry changeId`,
+        detail: { changeId },
+      });
+      continue;
+    }
+
+    if (!(AUTHORIZATION_ONLY_OWNER_DECISIONS as readonly string[]).includes(typedRecordDecision)) {
+      // create-delivery/create-change/activate-change are provenance, not Policy authorization facts.
+      continue;
+    }
+    const typedDecision = typedRecordDecision as AuthorizationOnlyOwnerDecision;
+    facts.push({
+      ref,
+      decision: typedDecision,
+      deliveryId,
+      ...(typeof changeId === 'string' ? { changeId } : {}),
+      sourceRef,
     });
   }
   return facts;
@@ -808,10 +1005,6 @@ async function findSpecFile(changeDir: string): Promise<string | null> {
   return null;
 }
 
-function collectOwnerAuthorizations(runs: readonly RunFact[]): { ref: string; scope: string }[] {
-  void runs;
-  return [];
-}
 
 async function validateReviewExactBindings(
   runs: readonly RunFact[],

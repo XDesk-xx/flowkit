@@ -341,3 +341,25 @@ Git Commit 只记录文件历史，不决定 Action 或 Run 数量。
 - reviewer 如何执行统一 `review`；
 - author 如何执行统一 `revise`；
 - Checkpoint 的具体 Git 操作。
+
+## 11. A1 Creation 与 Activation Boundary
+
+正常产品 write-side：
+
+```text
+create Delivery
+→ Delivery active
+
+create Change
+→ Change planned
+
+Policy: owner-decision activate-change
++ Owner explicit sourceRef
+→ minimal OpenSpec metadata
+→ atomic Manifest publish(owner decision + planned→active)
+→ next() = explore
+```
+
+`dependsOn` 必须按 `Change.id` 判断 completed dependency。Activation 不是 Formal Action，也不产生 Standard Run 或独立 Git boundary。
+
+Authorization-only Owner record（Apply / Archive / Checkpoint / Full Test / Finalize）只能在 fresh formal snapshot 的 current Policy 正在请求完全相同 decision 与 canonical target 时写入；否则 fail-closed 且 Manifest byte-identical。

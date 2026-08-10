@@ -30,6 +30,7 @@ async function repoFixture(options: { activeChange?: boolean; verification?: str
       '  - key: E1',
       '    id: diagnostic-cli',
       `    state: ${options.activeChange === false ? 'planned' : 'active'}`,
+      '    architectureImpact: false',
       '    required: true',
       '    dependsOn: []',
     ].join('\n'),

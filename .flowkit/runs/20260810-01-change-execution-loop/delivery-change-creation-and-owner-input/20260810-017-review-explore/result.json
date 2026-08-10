@@ -1,0 +1,21 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-explore",
+    "executionStatus": "completed",
+    "summary": "016 Explore 对 A1 write-side、Owner provenance、activation mutation、Manifest writer、multi-file failure、CLI/API 与 scope guard 的调查总体充分，但漏掉了 Q1 checkpoint 后真实暴露的 dependency identity drift：Manifest dependsOn 使用 Change.id，而 current Policy 按 Change.key 解析，导致 A1 被错误阻塞为 dependency-incomplete。Owner 已明确选择将该问题并入 A1，因此这是 Author-actionable Explore omission；需 revise-explore 后再审。",
+    "nextActionRecommendation": "revise-explore"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindings": [
+    {
+      "id": "A1-RE-001",
+      "severity": "blocking",
+      "title": "Explore 漏掉 Q1 Checkpoint 后真实暴露的 dependency identity drift",
+      "problem": "016 正确识别 detached ZIP 缺 .git 会让本地 Reader 看不到 Q1 Checkpoint，但没有纳入已经在真实 checkpoint 语义下复现的第二层 activation defect：Delivery Manifest 的 dependsOn 使用 Change.id（A1=core-contract-alignment），而 current Policy dependenciesMet() 以 c.key 与该值比较；Policy fixtures 又多处使用 Q1/Q2 key 作为 dependsOn。结果是 Q1 completed + checkpoint 后 A1 仍被错误判为 dependency-incomplete。该事实直接影响 A1 的 dependency validation / planned→active contract，不能留到 Proposal 临时发现。",
+      "location": "openspec/changes/delivery-change-creation-and-owner-input/explore.md Sections 2, 12/P5, 23; openspec/delivery-groups/20260810-01-change-execution-loop.yaml A1.dependsOn; src/policy/next.ts dependenciesMet(); tests/unit/policy/next.test.ts dependency fixtures",
+      "blockingAuthority": "author",
+      "requiredChange": "revise-explore：把 dependency identity mismatch 作为 A1 confirmed gap 纳入 Explore，纠正“ZIP 无 .git 是当前唯一入口问题”的不完整诊断；要求 Proposal 基于 repo-wide canonical evidence 冻结唯一 dependency identity，并同步 Manifest/Reader/Policy/create validation/diagnostics/tests，补真实 Manifest-shape regression。不要重开 Q1、不要新增 Q2、不要在 Explore 阶段直接实现修复。"
+    }
+  ]
+}

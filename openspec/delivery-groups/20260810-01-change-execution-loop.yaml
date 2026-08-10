@@ -109,7 +109,7 @@ changes:
     required: true
     dependsOn:
       - core-contract-alignment
-    state: planned
+    state: completed
     outputs:
       - Delivery creation
       - Change creation
@@ -218,6 +218,13 @@ changes:
       - focused / affected verification timing observation
       - review convergence observation
 
+
+ownerDecisions:
+  - ref: "owner:71a3cd250fc5674228d9617217e5a5423c7ee90b0c077e394e9767ce3c2de446"
+    decision: "authorize-archive"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "delivery-change-creation-and-owner-input"
+    sourceRef: "chat-owner-input:2026-08-11T00:23+08:00:authorize-archive:A1"
 verification:
   change:
     requireApplicableChecks: true

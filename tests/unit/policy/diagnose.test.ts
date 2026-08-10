@@ -139,8 +139,8 @@ describe('diagnose — blocked reasons (task 7.4, 10.7)', () => {
   it('dependency-incomplete when planned required has unmet deps', () => {
     const snap = buildSnapshot({
       changes: [
-        buildChange({ key: 'D1', state: 'planned', required: true, dependsOn: ['B1'] }),
-        buildChange({ key: 'B1', state: 'cancelled', required: true }),
+        buildChange({ key: 'D1', id: 'D1', state: 'planned', required: true, dependsOn: ['B1'] }),
+        buildChange({ key: 'B1', id: 'B1', state: 'cancelled', required: true }),
       ],
     });
     const d = diagnose(snap);

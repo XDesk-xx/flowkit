@@ -25,6 +25,7 @@ const SCOPE_SELECTORS: Readonly<Record<AffectedScope, readonly Selector[]>> = {
     { kind: 'file', path: 'tests/integration/diagnostic-cli.test.ts' },
   ],
   domain: [
+    { kind: 'directory', path: 'tests/unit/services' },
     { kind: 'directory', path: 'tests/unit/domain' },
     { kind: 'directory', path: 'tests/unit/persistence' },
     { kind: 'directory', path: 'tests/unit/facts' },
@@ -35,12 +36,14 @@ const SCOPE_SELECTORS: Readonly<Record<AffectedScope, readonly Selector[]>> = {
     { kind: 'file', path: 'tests/integration/diagnostic-cli.test.ts' },
   ],
   persistence: [
+    { kind: 'directory', path: 'tests/unit/services' },
     { kind: 'file', path: 'tests/unit/atomic-write.test.ts' },
     { kind: 'directory', path: 'tests/unit/persistence' },
     { kind: 'directory', path: 'tests/unit/facts' },
     { kind: 'file', path: 'tests/integration/execution-model-lifecycle.test.ts' },
   ],
   facts: [
+    { kind: 'directory', path: 'tests/unit/services' },
     { kind: 'directory', path: 'tests/unit/facts' },
     { kind: 'directory', path: 'tests/unit/policy' },
     { kind: 'directory', path: 'tests/unit/diagnostics' },
@@ -49,12 +52,14 @@ const SCOPE_SELECTORS: Readonly<Record<AffectedScope, readonly Selector[]>> = {
     { kind: 'file', path: 'tests/integration/diagnostic-cli.test.ts' },
   ],
   policy: [
+    { kind: 'directory', path: 'tests/unit/services' },
     { kind: 'directory', path: 'tests/unit/policy' },
     { kind: 'directory', path: 'tests/unit/diagnostics' },
     { kind: 'file', path: 'tests/integration/execution-model-lifecycle.test.ts' },
     { kind: 'file', path: 'tests/integration/diagnostic-cli.test.ts' },
   ],
   cli: [
+    { kind: 'directory', path: 'tests/unit/services' },
     { kind: 'directory', path: 'tests/unit/cli' },
     { kind: 'directory', path: 'tests/unit/diagnostics' },
     { kind: 'file', path: 'tests/integration/diagnostic-cli.test.ts' },

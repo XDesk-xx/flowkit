@@ -251,3 +251,13 @@ Skill 只在当前 Action 内提供方法，不得决定 Delivery、Change、Act
 负责生产代码、持久化实现、Policy 执行器和 CLI。
 
 任何后续实现若与本文冲突，必须通过明确 Change 修改正式契约，不得以代码、Run 或临时说明静默偏离。
+
+## 11. A1 Creation / Owner Provenance / Activation
+
+从 A1 起，Flowkit 增加最小 write-side，但不增加新的 Formal Action 或 lifecycle 主状态。
+
+- Delivery creation：由 Owner 独立输入创建 `state=active` Delivery Manifest。
+- Change creation：创建 `state=planned` Change；`dependsOn` 的唯一 canonical identity 为 `Change.id`。
+- Change `architectureImpact` 是 source-controlled persisted/read fact。A1 write-side 创建的新 Change 必须保存 boolean；pre-A1 exact legacy identity 缺失时只允许显式 `pre-a1-legacy-missing`。
+- Owner authority provenance 由 Delivery Manifest 顶层 `ownerDecisions` 拥有；Run 中的 owner 字符串不是 authority。
+- activation 只执行合法 `planned → active` mutation，并初始化最小 OpenSpec metadata；不创建 Run、Commit、Push、Full Test 或 Archify asset。

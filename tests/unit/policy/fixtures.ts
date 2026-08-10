@@ -48,6 +48,7 @@ export function buildChange(spec: ChangeSpec = {}): ChangeFact {
     state: spec.state ?? 'active',
     required: spec.required ?? true,
     dependsOn: spec.dependsOn ?? [],
+    architectureImpact: false,
   };
 }
 
@@ -120,7 +121,21 @@ function deriveStageOf(runId: string): string {
 // ---------------------------------------------------------------------------
 
 export function buildAuthorization(scope: string): OwnerAuthorizationFact {
-  return { ref: `auth-${scope}`, scope };
+  const decision =
+    scope === 'apply' ? 'authorize-apply' :
+    scope === 'archive' ? 'authorize-archive' :
+    scope === 'full-test' ? 'authorize-full-test' :
+    scope === 'finalize' ? 'authorize-delivery-finalize' :
+    scope === 'checkpoint' ? 'authorize-checkpoint' :
+    (() => { throw new Error(`unknown authorization scope: ${scope}`); })();
+  const changeScoped = scope === 'apply' || scope === 'archive' || scope === 'checkpoint';
+  return {
+    ref: `auth-${scope}`,
+    decision,
+    deliveryId: DELIVERY_ID,
+    ...(changeScoped ? { changeId: CHANGE_ID } : {}),
+    sourceRef: `test:${scope}`,
+  };
 }
 
 // ---------------------------------------------------------------------------

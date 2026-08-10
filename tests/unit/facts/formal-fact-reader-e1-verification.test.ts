@@ -31,6 +31,7 @@ async function fixture(verification?: string): Promise<{ root: string; deliveryI
       '  - key: E1',
       '    id: diagnostic-cli',
       '    state: active',
+        '    architectureImpact: false',
       '    required: true',
       '    dependsOn: []',
     ].join('\n'),

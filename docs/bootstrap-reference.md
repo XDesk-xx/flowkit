@@ -596,3 +596,18 @@ Checkpoint 的具体 Git 操作
 - Checkpoint 的具体 Git 操作 → §5.4 Change Checkpoint Commit
 
 D1 不修改 `docs/delivery-lifecycle.md`。若后续确需修改 B1 文档，必须由 owner 授权独立 corrective Change。
+
+## 10. A1 之后的 Bootstrap 收缩
+
+A1 product write-side 可用后，正常后续 Change 不再通过手工 Manifest mutation完成 creation / Owner provenance / activation：
+
+```text
+flowkit create delivery
+flowkit create change
+flowkit owner record
+flowkit activate
+```
+
+当前 02 Delivery 在 A1 之前已经形成的 Bootstrap history 保持原样，不回写历史 Owner strings，也不补写历史 `architectureImpact`。Reader 对 Base `448fa042de86d07e893bcc51da528f93eb7ced3a` 冻结的 exact legacy identities只做 read-only unknown compatibility。
+
+这不改变 Git Bootstrap 边界：activation 仍不是 Change Start Commit；Change Checkpoint 仍在 Archive/complete 后由 Owner 授权的 Git workflow执行。

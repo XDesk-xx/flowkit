@@ -125,8 +125,8 @@ describe('next — Archive closes Change, Checkpoint follows', () => {
   it('crash/resume: closed Q2 stays checkpoint-pending without re-projecting Q2 Runs; after checkpoint E1 may activate', () => {
     const changes = [
       buildChange({ key: 'Q1', id: 'q1', state: 'completed', required: true }),
-      buildChange({ key: 'Q2', id: 'q2', state: 'completed', required: true, dependsOn: ['Q1'] }),
-      buildChange({ key: 'E1', id: 'e1', state: 'planned', required: true, dependsOn: ['Q2'] }),
+      buildChange({ key: 'Q2', id: 'q2', state: 'completed', required: true, dependsOn: ['q1'] }),
+      buildChange({ key: 'E1', id: 'e1', state: 'planned', required: true, dependsOn: ['q2'] }),
     ];
 
     const beforeCheckpoint = next(buildSnapshot({
@@ -169,8 +169,8 @@ describe('next — no active Change (task 6.4, 6.5, 10.16)', () => {
   it('planned required Change with unmet deps → blocked dependency-incomplete', () => {
     const snap = buildSnapshot({
       changes: [
-        buildChange({ key: 'D1', state: 'planned', required: true, dependsOn: ['B1'] }),
-        buildChange({ key: 'B1', state: 'cancelled', required: true }),
+        buildChange({ key: 'D1', id: 'D1', state: 'planned', required: true, dependsOn: ['B1'] }),
+        buildChange({ key: 'B1', id: 'B1', state: 'cancelled', required: true }),
       ],
     });
     const r = next(snap);

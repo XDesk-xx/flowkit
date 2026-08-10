@@ -219,7 +219,9 @@ export async function inspectQuality(root = projectRoot): Promise<QualityReport>
   if (flowkitBin !== 'dist/bin/flowkit.js') hardFailures.push('bin-contract: package.json bin.flowkit must equal dist/bin/flowkit.js');
 
   const binSource = await readFile(resolve(root, 'src/bin/flowkit.ts'), 'utf-8');
-  if (!binSource.startsWith('#!/usr/bin/env node\n')) hardFailures.push('bin-shebang: src/bin/flowkit.ts must start with #!/usr/bin/env node');
+  // Normalize CRLF so a Windows checkout (CRLF bin source) still matches the
+  // shebang exactly like an LF checkout.
+  if (!binSource.replace(/\r\n/g, '\n').startsWith('#!/usr/bin/env node\n')) hardFailures.push('bin-shebang: src/bin/flowkit.ts must start with #!/usr/bin/env node');
 
   for (const area of ['src/domain', 'src/policy']) {
     for (const path of await walkFiles(root, area, '.ts')) {

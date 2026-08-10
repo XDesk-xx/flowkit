@@ -8,6 +8,7 @@
  */
 
 import type { FormalAction } from './actions.js';
+import type { ArchitectureImpactFact } from './a1-types.js';
 
 // ---------------------------------------------------------------------------
 // Frozen state union types
@@ -105,6 +106,7 @@ export interface ChangeSummary {
   readonly dependsOn: readonly string[];
   readonly state: ChangeState;
   readonly required: boolean;
+  readonly architectureImpact: ArchitectureImpactFact;
   readonly outputs?: readonly string[];
 }
 
@@ -143,6 +145,7 @@ export interface Change {
   readonly required: boolean;
   readonly dependsOn: readonly string[];
   readonly state: ChangeState;
+  readonly architectureImpact: ArchitectureImpactFact;
   /** Conceptual product-artifact range. Not a file whitelist. */
   readonly outputs?: readonly string[];
 }

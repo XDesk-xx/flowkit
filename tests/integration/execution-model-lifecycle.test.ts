@@ -63,6 +63,7 @@ async function activeManifest(changeId: string): Promise<void> {
     '  - key: Q2',
     `    id: ${changeId}`,
     '    state: active',
+    '    architectureImpact: false',
     '    required: true',
     '    dependsOn: []',
   ].join('\n'));
@@ -223,8 +224,8 @@ describe('Q2 current orchestration handoff', () => {
     await mkdir(manifestDir, { recursive: true });
     await writeFile(join(manifestDir, 'D1.yaml'), [
       'id: D1', 'delivery:', '  state: active', '  fullTestStatus: not-ready', 'changes:',
-      '  - key: OLD', `    id: ${old}`, '    state: completed', '    required: true', '    dependsOn: []',
-      '  - key: Q2', `    id: ${current}`, '    state: active', '    required: true', '    dependsOn: []',
+      '  - key: OLD', `    id: ${old}`, '    state: completed', '    architectureImpact: false', '    required: true', '    dependsOn: []',
+      '  - key: Q2', `    id: ${current}`, '    state: active', '    architectureImpact: false', '    required: true', '    dependsOn: []',
     ].join('\n'));
     await writeExplore(current);
     const cur = await createRun(input(current, '20260806-010-explore', 'explore'));

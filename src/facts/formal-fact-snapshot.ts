@@ -32,6 +32,7 @@ import type {
   RunStatus,
   BlockingAuthority,
 } from '../domain/types.js';
+import type { ArchitectureImpactFact, AuthorizationOnlyOwnerDecision } from '../domain/a1-types.js';
 import type { FormalAction } from '../domain/actions.js';
 
 /**
@@ -62,6 +63,7 @@ export interface ChangeFact {
   readonly state: ChangeState;
   readonly required: boolean;
   readonly dependsOn: readonly string[];
+  readonly architectureImpact: ArchitectureImpactFact;
   /** Conceptual product-artifact range, if declared. */
   readonly outputs?: readonly string[];
 }
@@ -136,7 +138,10 @@ export interface GitBoundaryFact {
 export interface OwnerAuthorizationFact {
   /** Provider-neutral reference to the authorization. */
   readonly ref: string;
-  readonly scope: string;
+  readonly decision: AuthorizationOnlyOwnerDecision;
+  readonly deliveryId: string;
+  readonly changeId?: string;
+  readonly sourceRef: string;
 }
 
 /**

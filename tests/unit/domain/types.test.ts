@@ -31,7 +31,7 @@ describe('domain object types compile (B1-RE-004)', () => {
       fullTestStatus: 'not-ready',
       architecture: { impact: true, archifyPlan: 'required' },
       changes: [
-        { key: 'B1', id: 'domain-and-state-schema', dependsOn: ['A1'], state: 'active', required: true, outputs: ['src/domain/types.ts'] },
+        { key: 'B1', id: 'domain-and-state-schema', dependsOn: ['A1'], state: 'active', required: true, architectureImpact: false, outputs: ['src/domain/types.ts'] },
       ],
     };
     assert.equal(delivery.state, 'active');
@@ -48,6 +48,7 @@ describe('domain object types compile (B1-RE-004)', () => {
       required: true,
       dependsOn: ['A1'],
       state: 'active',
+      architectureImpact: false,
       outputs: ['src/domain/types.ts'],
     };
     assert.deepEqual([...(change.outputs ?? [])], ['src/domain/types.ts']);

@@ -1,0 +1,26 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "026 的 A1 主实现和独立 Change Verification 大部分成立：真实 Base+026 self-read 无冲突，dependency id、architectureImpact strict/legacy seam、Owner exact gate、creation/activation/CLI 均通过；但完整 Apply scan 发现 A1-RA-001：authorization-only Owner record 在第一次成功后关闭 current gate，完全相同 tuple 的第二次 retry 会在 idempotent detection 前被 gate mismatch 拒绝，违反 024/025 已批准的 deterministic idempotent retry contract。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/delivery-change-creation-and-owner-input/verification.md",
+      "versionFingerprint": "998c185908cd0e34f289970901e0ecb96a516047b99e48e42aa647fe2c2e1c19",
+      "kind": "verification-summary"
+    },
+    "nextActionRecommendation": "revise-apply"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindings": [
+    {
+      "id": "A1-RA-001",
+      "severity": "blocking",
+      "blockingAuthority": "author",
+      "title": "authorization-only Owner record 的 exact retry 不能 idempotent success",
+      "problem": "026 recordOwnerDecision() 在检查 Manifest 是否已有完全相同 canonical record 之前先要求 current Policy 仍返回同一 owner-decision。第一次 authorize-apply 成功后 Policy 变为 action: apply，第二次完全相同 tuple 因此被 OWNER_DECISION_GATE_MISMATCH 拒绝。该行为违反 approved persistence/new capability spec 的“相同 tuple retry MUST 返回同一 ref 且不得增加 record”要求。",
+      "location": "src/services/a1-write-service.ts:372-414; src/persistence/delivery-manifest-document.ts:130-158; openspec/changes/delivery-change-creation-and-owner-input/specs/flowkit-formal-fact-reader-and-persistence/spec.md `Owner decision ref 必须 deterministic 且 idempotent`; specs/flowkit-delivery-change-creation-and-owner-input/spec.md `完全相同 Owner record 重试`",
+      "requiredChange": "revise-apply：把 exact-existing no-mutation retry 与 new authorization write admission 分离。完全相同 canonical tuple 已存在时必须返回同一 ref/idempotent success且不写第二条 record；只有 record 不存在时才 fresh-read current Policy exact decision/target 后允许新写入。不同 tuple 的 stale/early/target mismatch、same ref different content 继续 fail closed。补 authorize-apply 等会在首次记录后关闭 gate 的真实 retry regression。"
+    }
+  ]
+}

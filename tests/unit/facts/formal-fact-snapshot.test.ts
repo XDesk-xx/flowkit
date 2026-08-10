@@ -57,6 +57,7 @@ describe('FormalFactSnapshot', () => {
       state: 'active',
       required: true,
       dependsOn: ['B1'],
+      architectureImpact: 'pre-a1-legacy-missing',
     };
     const run: RunFact = {
       runId: '20260806-001-explore',
@@ -84,7 +85,7 @@ describe('FormalFactSnapshot', () => {
       runs: [run],
       openSpecArtifacts: [artifact],
       gitBoundaries: [boundary],
-      ownerAuthorizations: [{ ref: 'auth-1', scope: 'apply' }],
+      ownerAuthorizations: [{ ref: 'auth-1', decision: 'authorize-apply', deliveryId: 'D1', changeId: 'formal-fact-reader-and-persistence', sourceRef: 'test:auth-1' }],
       reviewVerdicts: [],
       conflicts: [],
     };

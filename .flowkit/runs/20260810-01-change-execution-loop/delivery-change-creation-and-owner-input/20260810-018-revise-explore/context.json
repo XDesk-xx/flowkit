@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 2,
+  "runId": "20260810-018-revise-explore",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "revise-explore",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/delivery-change-creation-and-owner-input/20260810-018-revise-explore/",
+  "changeKey": "A1",
+  "changeId": "delivery-change-creation-and-owner-input",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/delivery-change-creation-and-owner-input/20260810-017-review-explore/result.json",
+    "versionFingerprint": "951ea11b8c387b59c0947e4a9e1f048c3aa4dc7da8f504d1cf2ca7a064852d8a",
+    "kind": "run-result"
+  },
+  "sourceReviewRun": "20260810-017-review-explore",
+  "sourceReviewVerdict": "changes-requested",
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

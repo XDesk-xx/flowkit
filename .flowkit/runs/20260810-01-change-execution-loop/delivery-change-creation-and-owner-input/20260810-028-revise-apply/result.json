@@ -1,0 +1,20 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-apply",
+    "executionStatus": "completed",
+    "summary": "关闭 027 的 A1-RA-001：authorization-only Owner record 现在先识别 exact existing canonical tuple；首次成功后即使 Policy 已推进到 apply，同一 tuple retry 仍返回同一 deterministic ref 与 idempotent=true 且 Manifest byte-identical。只有 record 不存在时才 fresh-read current facts/Policy exact decision/target 后允许新写入；stale/early different tuple、target mismatch、same-ref different-content 继续 fail closed。新增真实 authorize-apply retry regression，A1 focused/affected/typecheck/lint/build/quality/OpenSpec strict/verify:change 全部通过，未运行 Delivery Full Test。",
+    "consumedInputRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/delivery-change-creation-and-owner-input/20260810-027-review-apply/result.json",
+        "versionFingerprint": "0c18f1a0e0014892b05a20319ddbe4a4d017501e6860c2445a6caf555f5d9264",
+        "kind": "run-result"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/delivery-change-creation-and-owner-input/20260810-027-review-apply/result.json",
+      "versionFingerprint": "0c18f1a0e0014892b05a20319ddbe4a4d017501e6860c2445a6caf555f5d9264",
+      "kind": "run-result"
+    }
+  }
+}

@@ -358,3 +358,31 @@ docs/adapters/github-snapshot-workspace.md
 ```
 
 这些草案中有价值的背景只能作为"为什么不能固定媒介"的问题证据，不得直接转入正式文档。
+
+## 16. A1 Owner / Manifest / OpenSpec Write Boundary
+
+A1 冻结以下 authority：
+
+```text
+Owner independent input
+→ authority source
+
+Delivery Manifest ownerDecisions
+→ source-controlled Owner provenance
+
+Delivery Manifest Change fields
+→ lifecycle / dependency / architectureImpact facts
+
+Policy
+→ whether a lifecycle boundary is legal
+
+A1 write service
+→ mechanical mutation only
+
+OpenSpec
+→ Change artifact lifecycle
+```
+
+A1 只初始化 `openspec/changes/<change-id>/.openspec.yaml`，不调用或复制 OpenSpec 1.7 artifact lifecycle。Run `ownerAuthorization`、Reviewer prose、Git commit message或聊天摘要都不能替代 Manifest Owner record。
+
+pre-A1 exact legacy Change 缺失 `architectureImpact` 时，不得从 Delivery architecture、OpenSpec、goal、outputs、Run 或 Git 推断 boolean。

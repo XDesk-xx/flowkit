@@ -34,7 +34,7 @@ import type {
 } from '../facts/formal-fact-snapshot.js';
 import { computeLineage } from './lineage.js';
 import type { Stage } from './stage-detector.js';
-import { hasAuthorizationScope } from './owner-decision.js';
+import { hasOwnerAuthorization } from './owner-decision.js';
 import {
   evaluateVerificationGate,
   verificationGateUnmet,
@@ -379,7 +379,7 @@ function applyPreconditions(snapshot: FormalFactSnapshot): readonly string[] {
   if (!(proposeLineage.match && proposeLineage.verdict === 'approved')) {
     unmet.push('propose-not-approved');
   }
-  if (!hasAuthorizationScope(snapshot.ownerAuthorizations, 'apply')) {
+  if (!hasOwnerAuthorization(snapshot.ownerAuthorizations, 'authorize-apply', snapshot.deliveryId, change.id)) {
     unmet.push('apply-not-authorized');
   }
   if (hasCompletedRun(snapshot.runs, change.id, 'apply')) {
@@ -427,7 +427,7 @@ function archivePreconditions(snapshot: FormalFactSnapshot): readonly string[] {
   } else if (!areTasksComplete(snapshot)) {
     unmet.push('tasks-incomplete');
   }
-  if (!hasAuthorizationScope(snapshot.ownerAuthorizations, 'archive')) {
+  if (!hasOwnerAuthorization(snapshot.ownerAuthorizations, 'authorize-archive', snapshot.deliveryId, change.id)) {
     unmet.push('archive-not-authorized');
   }
   return unmet;

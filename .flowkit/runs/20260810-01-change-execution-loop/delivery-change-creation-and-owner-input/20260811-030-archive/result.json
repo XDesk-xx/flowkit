@@ -1,0 +1,15 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "archive",
+    "executionStatus": "completed",
+    "summary": "Owner 已明确授权 archive A1；authorize-archive provenance 已通过 A1 write-side 正式写入并使 Policy 推进为 archive。OpenSpec 1.7 archive 成功将 delivery-change-creation-and-owner-input relocation 为 openspec/changes/archive/2026-08-10-delivery-change-creation-and-owner-input，operation result 为 specsUpdated=false、canonical specs 0 hash changes。Flowkit 随后仅将 Delivery Manifest 中 A1 state 从 active 更新为 completed。未执行 Change Checkpoint、Commit、Push 或 Delivery Full Test。",
+    "consumedInputRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/delivery-change-creation-and-owner-input/20260810-029-review-apply/result.json",
+        "versionFingerprint": "92cb7c0109e536799b1198705af7fb7746dc3c74db557e6638c29bca252686f3",
+        "kind": "run-result"
+      }
+    ]
+  }
+}

@@ -40,6 +40,7 @@ async function makeRepo(): Promise<string> {
       '  - key: E1',
       '    id: diagnostic-cli',
       '    state: active',
+        '    architectureImpact: false',
       '    required: true',
       '    dependsOn: []',
     ].join('\n'),

@@ -66,6 +66,7 @@ async function writeRun(
         `  - key: ${String(context.changeKey ?? changeId)}`,
         `    id: ${changeId}`,
         '    state: active',
+        '    architectureImpact: false',
         '    required: true',
         '    dependsOn: []',
       ].join('\n'));
@@ -244,6 +245,7 @@ describe('readFormalFactSnapshot', () => {
         '  - key: C1',
         '    id: C1',
         '    state: active',
+        '    architectureImpact: false',
         '    required: true',
         '    dependsOn: []',
       ].join('\n'),
@@ -1189,6 +1191,7 @@ describe('readFormalFactSnapshot', () => {
       '  - key: C1',
       '    id: C1',
       '    state: active',
+        '    architectureImpact: false',
       '    required: true',
       '    dependsOn: []',
     ].join('\n'));
@@ -2148,6 +2151,7 @@ describe('readFormalFactSnapshot', () => {
       '  - key: Q1',
       `    id: ${changeId}`,
       '    state: active',
+        '    architectureImpact: false',
       '    required: true',
       '    dependsOn: []',
     ].join('\n'));

@@ -13,7 +13,7 @@ async function read(root: string, deliveryId: string) {
 async function manifest(root: string, deliveryId: string): Promise<void> {
   const dir = join(root, '.flowkit', 'manifests');
   await mkdir(dir, { recursive: true });
-  await writeFile(join(dir, `${deliveryId}.yaml`), `id: ${deliveryId}\ndelivery:\n  state: active\n  fullTestStatus: not-ready\nchanges:\n  - key: Q1\n    id: execution-model-correction\n    state: completed\n    required: true\n    dependsOn: []\n  - key: Q2\n    id: run-authority-boundary-correction\n    state: active\n    required: true\n    dependsOn:\n      - execution-model-correction\n`);
+  await writeFile(join(dir, `${deliveryId}.yaml`), `id: ${deliveryId}\ndelivery:\n  state: active\n  fullTestStatus: not-ready\nchanges:\n  - key: Q1\n    id: execution-model-correction\n    state: completed\n    architectureImpact: false\n    required: true\n    dependsOn: []\n  - key: Q2\n    id: run-authority-boundary-correction\n    state: active\n    architectureImpact: false\n    required: true\n    dependsOn:\n      - execution-model-correction\n`);
 }
 
 describe('Q2/v6 bounded historical provenance', () => {

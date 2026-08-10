@@ -41,7 +41,7 @@ import {
   isTasksFactAvailable,
   areTasksComplete,
 } from './preconditions.js';
-import { hasAuthorizationScope } from './owner-decision.js';
+import { hasOwnerAuthorization } from './owner-decision.js';
 import {
   evaluateVerificationGate,
   verificationGateDiagnosis,
@@ -84,7 +84,7 @@ function latestRunForChange(
 }
 
 /**
- * Returns `true` when every dependency key of `change` has a completed Change
+ * Returns `true` when every dependency id of `change` has a completed Change
  * in `snapshot`.
  */
 function dependenciesMet(
@@ -94,8 +94,8 @@ function dependenciesMet(
   if (change.dependsOn.length === 0) {
     return true;
   }
-  return change.dependsOn.every((depKey) =>
-    snapshot.changes.some((c) => c.key === depKey && c.state === 'completed'),
+  return change.dependsOn.every((depId) =>
+    snapshot.changes.some((c) => c.id === depId && c.state === 'completed'),
   );
 }
 
@@ -214,7 +214,7 @@ function decideProposeStage(
     return actionResult('review-propose');
   }
   if (lineage.verdict === 'approved') {
-    if (hasAuthorizationScope(snapshot.ownerAuthorizations, 'apply')) {
+    if (hasOwnerAuthorization(snapshot.ownerAuthorizations, 'authorize-apply', snapshot.deliveryId, _change.id)) {
       return actionResult('apply');
     }
     return ownerDecisionResult('authorize-apply', {
@@ -276,7 +276,7 @@ function decideApplyStage(
   }
   // Verification satisfied + all required Tasks completed → archive owner
   // authorization boundary.
-  if (hasAuthorizationScope(snapshot.ownerAuthorizations, 'archive')) {
+  if (hasOwnerAuthorization(snapshot.ownerAuthorizations, 'authorize-archive', snapshot.deliveryId, _change.id)) {
     return actionResult('archive');
   }
   return ownerDecisionResult('authorize-archive', {
@@ -335,7 +335,7 @@ function decideFullTestLifecycle(snapshot: FormalFactSnapshot): PolicyResult {
       return blockedResult(fullTestFailedDiagnosis());
 
     case 'passed':
-      if (hasAuthorizationScope(snapshot.ownerAuthorizations, 'finalize')) {
+      if (hasOwnerAuthorization(snapshot.ownerAuthorizations, 'authorize-delivery-finalize', snapshot.deliveryId)) {
         return blockedResult(deliveryBehaviorNotImplementedDiagnosis('delivery-finalize'));
       }
       return ownerDecisionResult('authorize-delivery-finalize', {
