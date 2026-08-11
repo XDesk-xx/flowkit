@@ -19,6 +19,7 @@ C1 MUST 提供只读 `FormalFactSnapshot`，用于 Policy 消费 active Delivery
 - **WHEN** Reader 发现当前 Policy relevant formal fact 自相矛盾或不可解析
 - **THEN** MUST 收集 `FactConflict`
 - **AND** Policy MUST NOT 猜测 authority 或下一 Action
+
 ### Requirement: 正式事实 Reader 遵循 One fact, one authority
 
 Reader MUST 遵循 `One fact, one authority` 原则：每个当前 Policy 所需正式事实从唯一权威来源读取。Reader MUST NOT 做跨权威交叉推断，也 MUST NOT 把 Run 历史记录提升为 OpenSpec、Git、Verification 或 current repository bytes 的持续 authority。只有当前 Policy relevance 范围内的 authority fact 自相矛盾、required fact 缺失、当前 Run schema/identity 无效或当前 immutable lineage binding 错误时，冲突 MUST 收集为 `FactConflict[]`；Reader MUST NOT 自动择优。
@@ -390,6 +391,7 @@ C1 MUST 手写最小子集 YAML 解析器解析 Delivery Manifest。MUST NOT 引
 - **WHEN** 校验 schemaVersion 2 current Run
 - **THEN** `deliveryId`、`changeId`、`runId` 与 `runPath` MUST 和实际目录一致
 - **AND** 任一不一致 MUST reject 或收集 `FactConflict`
+
 ### Requirement: Bootstrap Run 兼容性 + 三路判别器
 
 Reader MUST 兼容既有 Bootstrap/legacy Run。schemaVersion 2 current Change Run MUST 走严格 current schema，验证失败 MUST fail closed，MUST NOT 泛化降级。schemaVersion 1 或缺失 MUST 走 bounded legacy recognizer；该 recognizer MAY 识别历史 `full-test` / `delivery-finalize` Delivery-level Run，但只用于历史读取/Run-ID 兼容，MUST NOT 将其提升为 current `FormalAction`、current Policy Run 或新 Run 创建能力。其他 schemaVersion MUST fail closed。
@@ -414,6 +416,7 @@ Reader MUST 兼容既有 Bootstrap/legacy Run。schemaVersion 2 current Change R
 - **WHEN** bounded legacy reader 识别历史 Delivery-level Run
 - **THEN** MUST NOT 修改、迁移或重写其 `context.json` / `result.json`
 - **AND** current Policy MUST 从 Delivery Manifest/Verification/Owner/Git facts 读取 Delivery lifecycle，而不是 replay 该 Run
+
 ### Requirement: Delivery Manifest 嵌套 delivery 状态读取 + fail-closed
 
 Reader MUST 从 Delivery Manifest 的嵌套 `delivery:` mapping 读取 `state` 和 `fullTestStatus`（实际 Manifest 形状见 `openspec/delivery-groups/*.yaml`）。MUST NOT 从顶层 `state`/`fullTestStatus` 读取。Manifest 存在但 `delivery:` mapping 缺失、或 `delivery.state`/`delivery.fullTestStatus` 缺失/无效时 MUST 收集为 `FactConflict`（fail-closed），MUST NOT 静默返回 `undefined`。Manifest 完全不存在时返回 `undefined`（bootstrap-only Delivery，由 Policy 决定是否阻塞）。
@@ -486,6 +489,7 @@ Reader MUST 从 review-* Run 重建 `ReviewVerdictFact`（`reviewRunId` + `verdi
 - **WHEN** `changes-requested` Review 的 blocking finding 既无合法 `blockingAuthority` 又不满足旧 author-compatible 形状
 - **THEN** MUST 收集 `FactConflict`
 - **AND** MUST NOT 默认为 owner/verification/external 或任意推进
+
 ### Requirement: Review verdict 完整性在 terminal 发布前校验（C1-AP-006）
 
 `writeRunResult` MUST 在发布 result.json 前调用 `validateReviewVerdictIntegrity(action, result)` 校验 review verdict 完整性。MUST NOT 依赖 Reader 在事后检测缺失的 review verdict——result.json 一旦 terminal 发布即不可变，缺失 verdict 的 review-* Run 是不可恢复的 Policy 输入缺失。规则：`completed` + `review-*` → `reviewVerdict` MUST 存在且为有效 `ReviewVerdictValue`；`failed`/`cancelled` + `review-*` → `reviewVerdict` MUST 缺失；任何状态 + 非 `review-*` → `reviewVerdict` MUST 缺失。
@@ -575,32 +579,39 @@ schemaVersion 2 `RunResultFile` MUST 只持久化执行、交接与恢复所需�
 - **WHEN** Run Action 不是 review-*
 - **THEN** `reviewVerdict` 与 `reviewFindings` MUST absent
 - **AND** 如需消费 reviewer 结果 MUST 通过 review Run result reference / Reader projection
+
 ### Requirement: Core 拥有 ResultRef field-kind-path resolver
 
-Core MUST 使用唯一 resolver 将 typed target descriptor 映射为受控 path 和 kind。Caller MUST NOT 提供
-任意 artifact path 或 ResultRef kind。createRun、writeRunResult preflight 和 Reader MUST 复用同一 resolver
-语义。
+Core MUST使用唯一 resolver将 typed target descriptor映射为受控 logical path与kind。Caller MUST NOT提供任意 artifact path、ResultRef kind或versionFingerprint。对于 OpenSpec `spec-driven` planning artifacts，resolver MUST消费 C1 validated structured `changeRoot/artifactPaths/contextFiles`而不是重新拥有全局 `openspec/changes/<changeId>` physical layout rule；对于 Flowkit-owned Explore与Verification-owned Verification，resolver MAY在同一 validated `changeRoot`下派生固定owned filename。createRun、terminal preflight与Reader MUST复用同一 logical resolver语义。
 
 #### Scenario: produced artifact 使用固定 Action+tag mapping
 
-- **WHEN** Action 为 `explore` 或 `revise-explore` 且 tag=`explore`
-- **THEN** Core MUST 解析为 `openspec/changes/<changeId>/explore.md`
-- **AND** Action 为 `propose` 或 `revise-propose` 时只允许 `proposal`、`design`、`specs`、`tasks`
-- **AND** `specs` MUST 由 Core 枚举该 Change `specs/**` 下的实际文件
-- **AND** 其他 Action MUST 不允许 produced artifact tag
+- **WHEN** Action为`explore`或`revise-explore`且tag=`explore`
+- **THEN** Core MUST从C1 validated changeRoot派生`explore.md`
+- **AND** MUST NOT要求OpenSpec artifact graph存在`explore` id
+- **AND** Action为`propose`或`revise-propose`时只允许`proposal`、`design`、`specs`、`tasks`
+- **AND**这些planning artifact path与`specs`完整namespace MUST来自当前C1 normalized OpenSpec structured view
+- **AND** caller MUST NOT提供任意physical path缩小、替换或重写expected set
+- **AND**其他Action MUST不允许 produced artifact tag
 
 #### Scenario: 不允许的 tag 或 path authority 被拒绝
 
-- **WHEN** caller 提供不属于当前 Action permitted set 的 tag
-- **OR** caller 尝试提供任意 path、kind 或 versionFingerprint
+- **WHEN** caller提供不属于当前Action permitted set的tag
+- **OR** caller尝试提供任意path、kind或versionFingerprint
 - **THEN** MUST reject
-- **AND** Run MUST 不因此产生 terminal result
+- **AND** Run MUST不因此产生terminal result
 
 #### Scenario: resolver 在 create preflight Reader 语义一致
 
-- **WHEN** 同一个 descriptor 在 createRun、writeRunResult preflight 或 Reader 中解析
-- **THEN** MUST 得到同一 canonical kind/path
-- **AND** 任一层发现非法 descriptor/path MUST fail closed
+- **WHEN**同一个descriptor在createRun、terminal preflight或Reader中解析
+- **THEN** MUST得到同一canonical logical kind/path
+- **AND**任一层发现C1 path/root identity非法 MUST fail closed
+
+#### Scenario: Proposal bundle 使用 OpenSpec structured paths
+
+- **WHEN** Action为`propose`或`revise-propose`
+- **THEN** singleton proposal/design/tasks与完整specs namespace MUST来自当前C1 normalized OpenSpec planning view
+- **AND** `specs`枚举 MUST与OpenSpec current structured state/context一致
 
 ### Requirement: initial artifact generation 必须由 Core 建立完整 expected produced set
 
@@ -785,6 +796,7 @@ Reader MUST 在解析 Run 内容前根据 Delivery Manifest 选择 current Polic
 - **WHEN** 当前不存在 active Change
 - **THEN** Change completion/dependency/checkpoint facts MUST 来自 Manifest/Git authority
 - **AND** MUST NOT replay completed Change 或 historical Delivery Run corpus 重新证明这些事实
+
 ### Requirement: Run pending 只表示 non-terminal execution status
 
 `pending` MUST 只表示 Run 已创建但 terminal `result.json` 尚未发布。Action 与 Change MUST NOT 获得 `pending` 主状态；Reader/persistence MUST NOT 从 pending 推导 artifact revision-window、generation ownership 或 external authority lifecycle。
@@ -863,6 +875,7 @@ Reader MUST 在解析 Run 内容前根据 Delivery Manifest 选择 current Polic
 - **WHEN** matching Review 的任一 blocking authority 为 `owner`、`verification` 或 `external`
 - **THEN** MUST NOT 创建 `revise-*` Run
 - **AND** MUST NOT 用 `sourceReviewRun/sourceReviewVerdict` 伪装 authority resolution
+
 ### Requirement: review-apply 必须区分 entry verification binding 与 terminal point-in-time summary
 
 `review-apply` create entry MUST 由 Core 从 current `verification.md` 派生 `context.verificationInputRef`，用于冻结本次 Review 实际审查的 Verification generation；completion MUST exact-check persisted input ref。只有 completed `review-apply` MAY 新建 `verificationSummaryRef`，其 fingerprint MUST 由 Core 从 terminal 时当前 `verification.md` bytes 派生。`verificationInputRef` 与 `verificationSummaryRef` 都不得形成跨后续 Revision/Archive 的 global generation authority。
@@ -911,20 +924,33 @@ Reader MUST 在解析 Run 内容前根据 Delivery Manifest 选择 current Polic
 
 ### Requirement: Reader 投影 current Explore 与 Verification artifact
 
-FormalFactSnapshot 的 OpenSpec artifact projection MUST 支持 `change-explore` 与 `change-verification` 两种 artifact kind，并继续只表达 current canonical path 的存在性与路径。Reader MUST NOT 为此建立 artifact history registry，也 MUST NOT 从 historical ResultRef 重建当前路径。
+FormalFactSnapshot 的 OpenSpec-adjacent formal artifact projection MUST支持`change-explore`与`change-verification`两种artifact kind，并只表达 current validated changeRoot下对应 owned file的存在性与repository-relative logical path。Reader MUST NOT把这两个文件伪装成 default `spec-driven` artifact graph node，也 MUST NOT为此建立artifact history registry或从historical ResultRef重建current path。
 
 #### Scenario: Explore artifact 存在
-- **WHEN** active Change canonical path 存在 `explore.md`
-- **THEN** `openSpecArtifacts` MUST 包含 kind=`change-explore`、对应 repository-relative path 且 exists=true 的 fact
+
+- **WHEN** active Change的C1 validated changeRoot存在`explore.md`
+- **THEN** `openSpecArtifacts` MUST包含kind=`change-explore`、对应repository-relative path且exists=true的fact
+- **AND** OpenSpec graph status MAY仍只包含proposal/specs/design/tasks
 
 #### Scenario: Verification artifact 存在
-- **WHEN** active Change canonical path 存在 `verification.md`
-- **THEN** `openSpecArtifacts` MUST 包含 kind=`change-verification`、对应 repository-relative path 且 exists=true 的 fact
+
+- **WHEN** active Change的C1 validated changeRoot存在`verification.md`
+- **THEN** `openSpecArtifacts` MUST包含kind=`change-verification`、对应repository-relative path且exists=true的fact
+- **AND**该fact的业务truth MUST继续来自Verification authority
 
 #### Scenario: artifact 不存在只表达 current absence
-- **WHEN** current canonical path 不存在目标 Explore 或 Verification artifact
-- **THEN** 对应 fact MUST 表达 exists=false
-- **AND** Reader MUST NOT 扫描 historical Run producedResultRefs 来寻找替代 current artifact
+
+- **WHEN** current validated changeRoot不存在目标Explore或Verification artifact
+- **THEN**对应fact MUST表达exists=false
+- **AND** Reader MUST NOT扫描historical Run producedResultRefs寻找替代current artifact
+
+#### Scenario: current C1 self-archive relocation窗口不得误切 structured Reader
+
+- **WHEN** current C1 archive已经把C1 delta merge到canonical specs并relocate active changeRoot
+- **AND** Flowkit Manifest中的C1仍为`active`，archive terminal result尚待admission
+- **THEN** Reader MUST NOT仅因canonical C1 capability spec存在就调用OpenSpec status查询已relocated的active C1
+- **AND** current C1 archive recovery/admission MUST继续从durable archive guard/terminalObservation与Flowkit formal lifecycle facts收口
+- **AND** C1 completed后 future Change MAY进入normal structured Reader path
 
 ### Requirement: Change Verification status 从 verification.md 的最小 marker 投影
 
@@ -1085,3 +1111,72 @@ Persistence/Reader恢复pending Run后，B1 preparation重新派生semantic desc
 - **AND** current contractRef versionFingerprint已变化
 - **THEN** resume MUST fail closed
 - **AND** pending context/result MUST保持未改写
+
+### Requirement: pending archive 必须持久化 crash-safe mutation recovery guard
+
+Current `ContextFile` MAY仅对 `action=archive` 增加 machine-owned `archiveMutationGuard` operational field。该 field MUST与 immutable Run entry identity分离：`runId/deliveryId/changeId/action/role/Owner/Review/Verification refs/semanticInputFingerprint` 等既有字段 MUST NOT因 archive attempt/recovery 被改写；guard MUST NOT进入 B1 semantic fingerprint。Persistence MUST提供 atomic compare-and-set，且只有 C1 archive invocation/recovery seam MAY修改 guard。
+
+Guard shape MUST至少表达：
+
+```text
+state: armed | recovery-admitted
+surfaceVersion: openspec-archive-mutation-v1
+changeRoot: validated repo-relative active Change root
+canonicalSpecsRoot: openspec/specs
+archiveNamespaceRoot: validated repo-relative changes/archive root
+preArchiveGenerationFingerprint: SHA-256
+terminalObservation?: normalized typed success | failure observation + canonical fingerprint
+```
+
+`armed` MUST在 child spawn 前 durable publish。Child spawn后若得到可接纳structured terminal success/failure，C1 MUST在任何terminal/recovery classification前 atomic persist bounded `terminalObservation`；该 observation 与guard一样属于machine-owned operational field，不进入B1 semantic fingerprint或V1。只要 `armed` 存在且当前 Run仍pending，Reader/preparation/diagnostics MUST从 durable observation（若有）+ current V1投影分类，而不是依赖当前 process memory。
+
+#### Scenario: pre-spawn arm 在 process crash 后仍阻止第二次 archive
+
+- **WHEN** pending archive 在 spawn 前已 atomic persist `archiveMutationGuard.state=armed`
+- **AND** process/session随后终止，无法证明 child是否已经执行mutation
+- **THEN** checkout/resume MUST恢复同一 guard 与同一 pending Run
+- **AND** prepare/inspect MUST NOT把该 Run投影为普通 resumable
+- **AND** archive invocation MUST NOT spawn第二次OpenSpec archive
+
+#### Scenario: structured failure after mutation 必须 durable 保存 terminal observation
+
+- **WHEN** archive child已经spawn并返回可接纳structured terminal failure
+- **THEN** C1 MUST在post-V1 classification/terminal收口前atomic persist normalized failure terminalObservation
+- **AND**若current V1与stored F不同，result.json MUST仍不存在且同一pending archive guard MUST保持durable
+- **AND**新process/session MUST从 persisted failure observation + current V1 drift投影 recovery-required
+- **AND** exact recovery到F后 MUST从同一failure observation terminal failed且 MUST NOT respawn
+
+#### Scenario: guard mutation 不改写 Run semantic identity
+
+- **WHEN** C1将 fresh archive guard原子写为`armed`、持久化terminalObservation，或将真正outcome-unknown exact recovery后的`armed`写为`recovery-admitted`
+- **THEN** ContextFile 的 entry identity fields与stored `semanticInputFingerprint` MUST保持不变
+- **AND** guard MUST NOT成为Action Package semantic authority
+- **AND** input-drift path MUST NOT借机改写guard或entry fields
+
+#### Scenario: exact OpenSpec generation proof 才能 recovery-admit
+
+- **WHEN** pending archive guard为`armed`
+- **AND** recovery flow按 stored `surfaceVersion`重新计算 `OpenSpecArchiveMutationSurfaceV1`
+- **THEN** current fingerprint MUST先 exact-match stored `preArchiveGenerationFingerprint`
+- **AND**若存在durable failure terminalObservation，MUST从该observation重新分类为failure + same并terminal failed，MUST NOT transition为`recovery-admitted`
+- **AND**只有不存在terminalObservation的真正outcome-unknown MAY atomic transition为`recovery-admitted`
+- **AND** V1 MUST覆盖 active `changeRoot` 全目录/regular-file exact bytes、canonical `openspec/specs/**` 全树，以及 `changes/archive` immediate child name/type collision namespace
+- **AND** `.flowkit/.git/node_modules/dist` 与其它无关 repo 环境 MUST NOT进入该 proof
+- **AND** symlink或unsupported entry在任何被纳入surface的位置 MUST fail closed
+- **AND** B1 semantic fingerprint匹配本身 MUST NOT替代该 byte-generation proof
+
+#### Scenario: guard 自身持久化不得改变 recovery proof
+
+- **WHEN** C1 对 fresh pending archive 计算 `OpenSpecArchiveMutationSurfaceV1` 得到 F
+- **AND** 仅把 `archiveMutationGuard(state=armed, F)` 原子写入 `.flowkit/runs/**/context.json`
+- **THEN** 再次计算 V1 MUST仍得到 F
+- **AND** 若 guard 写入导致 fingerprint变化，C1 MUST fail closed before spawn
+
+#### Scenario: retry spawn 前必须重新 arm
+
+- **WHEN**同一 pending archive 已处于`recovery-admitted`
+- **AND** guard不存在terminalObservation
+- **AND** C1准备重新调用OpenSpec archive
+- **THEN** invocation MUST再次确认 current mutation-surface fingerprint仍匹配
+- **AND** MUST在 spawn 前 atomic transition回`armed`
+- **AND** crash发生在该arm之后 MUST再次要求exact recovery

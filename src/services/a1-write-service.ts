@@ -25,6 +25,8 @@ import {
 } from '../persistence/delivery-manifest-document.js';
 
 export interface A1ServiceOptions {
+  /** C1 activation-time OpenSpec delta declaration. */
+  readonly specDeltaMode?: 'required' | 'skip';
   readonly now?: () => Date;
   readonly atomicWrite?: (path: string, data: string) => Promise<void>;
 }
@@ -445,20 +447,46 @@ export async function ensureMinimalOpenSpecMetadata(
   options: A1ServiceOptions = {},
 ): Promise<{ path: string; created: boolean }> {
   nonEmpty(changeId, 'changeId');
+  const mode = options.specDeltaMode ?? 'required';
   const dir = join(repoRoot, 'openspec', 'changes', changeId);
   const path = join(dir, '.openspec.yaml');
   const now = options.now ?? (() => new Date());
-  const expected = `schema: spec-driven\ncreated: ${today(now)}\n`;
+  const expected = `schema: spec-driven\ncreated: ${today(now)}\n${mode === 'skip' ? 'skip_specs: true\n' : ''}`;
   if (await pathExists(path)) {
     const current = await readFile(path, 'utf8');
-    if (/^schema: spec-driven\ncreated: \d{4}-\d{2}-\d{2}\n$/.test(current)) {
+    const exactRequired = /^schema: spec-driven\ncreated: \d{4}-\d{2}-\d{2}\n$/.test(current);
+    const exactSkip = /^schema: spec-driven\ncreated: \d{4}-\d{2}-\d{2}\nskip_specs: true\n$/.test(current);
+    if ((mode === 'required' && exactRequired) || (mode === 'skip' && exactSkip)) {
       return { path, created: false };
     }
-    throw new FlowkitError('OPENSPEC_METADATA_MISMATCH', `existing OpenSpec metadata is not exact minimal shape for ${changeId}`);
+    throw new FlowkitError('OPENSPEC_METADATA_MISMATCH', `existing OpenSpec metadata does not match specDeltaMode=${mode} for ${changeId}`);
   }
   await mkdir(dir, { recursive: true });
   await (options.atomicWrite ?? atomicWriteFile)(path, expected);
   return { path, created: true };
+}
+
+const CURRENT_DELIVERY_BOUNDED_REQUIRED_COMPAT = new Set([
+  'review-findings-and-blocker-authority',
+  'change-verification-selection-and-change-set',
+  'archive-and-checkpoint-boundary',
+  'change-cli-end-to-end-and-performance',
+]);
+
+function resolveActivationSpecDeltaMode(
+  deliveryId: string,
+  changeId: string,
+  requested: A1ServiceOptions['specDeltaMode'],
+): 'required' | 'skip' {
+  if (requested !== undefined) return requested;
+  if (deliveryId === '20260810-01-change-execution-loop' && CURRENT_DELIVERY_BOUNDED_REQUIRED_COMPAT.has(changeId)) {
+    return 'required';
+  }
+  throw new FlowkitError(
+    'SPEC_DELTA_MODE_REQUIRED',
+    `activation requires explicit specDeltaMode=required|skip for ${changeId}`,
+    { deliveryId, changeId },
+  );
 }
 
 export async function activateChange(
@@ -497,6 +525,8 @@ export async function activateChange(
     throw new FlowkitError('ACTIVATION_POLICY_MISMATCH', `Policy does not currently allow activation of ${requestedChangeId}`);
   }
 
+  const specDeltaMode = resolveActivationSpecDeltaMode(deliveryId, requestedChangeId, options.specDeltaMode);
+
   const record = buildOwnerDecisionRecord({
     decision: 'activate-change',
     deliveryId,
@@ -505,7 +535,7 @@ export async function activateChange(
   });
 
   // Safe partial ordering: exact OpenSpec metadata first.
-  await ensureMinimalOpenSpecMetadata(repoRoot, requestedChangeId, options);
+  await ensureMinimalOpenSpecMetadata(repoRoot, requestedChangeId, { ...options, specDeltaMode });
 
   const path = manifestPath(repoRoot, deliveryId);
   const original = await readFile(path, 'utf8');

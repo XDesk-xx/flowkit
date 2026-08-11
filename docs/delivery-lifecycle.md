@@ -187,13 +187,17 @@ active  → cancelled
 
 ### 3.7 Change artifact 生命周期
 
-active Change 的正式 artifact 位于 `openspec/changes/<changeId>/`：
+active Change 的正式 planning path由 OpenSpec 1.7 structured view确定：
 
 ```text
-explore.md / proposal.md / design.md / specs/** / tasks.md / verification.md
+validated changeRoot
+├─ explore.md                         # Flowkit-owned
+├─ proposal.md / design.md / tasks.md # OpenSpec artifactPaths
+├─ specs/**                           # OpenSpec artifactPaths/contextFiles exact set
+└─ verification.md                    # Verification-owned
 ```
 
-这些是 **mutable current-state canonical path**，不是每个 terminal Run 的 immutable history store：
+默认 repo-local layout可以是 `openspec/changes/<changeId>/`，但 Flowkit MUST NOT把该默认布局重新编码成 OpenSpec planning path authority。以上 logical path 是 **mutable current-state path**，不是每个 terminal Run 的 immutable history store：
 
 - 合法 `revise-explore` / `revise-propose` MAY 覆盖同一路径；历史 `producedResultRefs` / `verificationSummaryRef` 只表达 point-in-time 版本，不因后续合法 current bytes 变化产生历史 conflict；
 - Reader 只把当前 Policy 真正需要的 active Change Runs 投影为 Change-level facts，不通过 `current / superseded / revision-window` 重放 completed Change 的 mutable artifact 历史；

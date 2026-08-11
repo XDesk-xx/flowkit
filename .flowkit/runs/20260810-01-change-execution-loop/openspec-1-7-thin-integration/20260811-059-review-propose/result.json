@@ -1,0 +1,19 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "058 已关闭 C1-RP-005：OpenSpecArchiveMutationSurfaceV1 已从 repoRoot 收缩为 active Change source、canonical specs 与 archive collision namespace，guard/control-plane 不再自引用；但发现新的 Proposal blocker C1-RP-006。OpenSpec 1.7.0 archive 的真实 mutation 顺序会先写 canonical specs，再检查 archive target collision/执行 move，因此可接纳的 structured terminal failure（已实测 archive_target_exists）也可能发生在 canonical specs 已部分/完整改写之后。058 当前把所有 valid structured OpenSpec failure 一律视为 known failure 并按 terminal semantics 收口，只把无 terminal result 的情况送入 outcome-unknown recovery；这会让 known-but-mutated failure 绕过 durable recovery gate，留下 partial mutation并允许后续错误重试。Proposal 必须用 durable pre-archive generation proof 区分 known-no-mutation failure 与 known-but-mutated failure：只有 failure 后 current V1 仍 exact-match stored F 才可普通 known failure 收口；若 V1 drift，则必须进入 durable recovery-required boundary，禁止直接 terminal/retry，直到 exact recovery。"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindings": [
+    {
+      "id": "C1-RP-006",
+      "severity": "blocking",
+      "title": "structured archive failure 也可能已经修改 canonical specs，当前 known-failure 分支会绕过 recovery gate",
+      "problem": "058 将“valid structured OpenSpec failure”统一分类为 known failure，并规定 known terminal success/failure 按 terminal semantics 收口；durable recovery 只覆盖 timeout/transport loss/missing-or-malformed result 等 outcome-unknown。但 OpenSpec 1.7.0 的真实 archive 顺序是先 build/validate并写 canonical specs，之后才计算/检查 archive target，最后 move active Change。Reviewer 在 disposable 058 candidate 上预先创建同日 archive target 后执行 `archive --json --yes`，OpenSpec 返回 structured `archive_target_exists` / exit 1，同时 canonical `openspec/specs` 已发生实际 mutation（5 个既有 capability spec hash 改变并新增 1 个 canonical spec），active Change 仍存在。因此“structured failure”只证明 operation terminal status=failure，不证明 no mutation；若 C1 直接 terminal 收口/清除 guard，partial mutation 将留在 candidate，并可绕过 exact pre-archive recovery gate。",
+      "blockingAuthority": "author",
+      "requiredChange": "revise-propose 必须把 archive failure classification 与 durable generation proof 联动：在任何已 spawn archive 的 structured failure 后，使用 stored OpenSpecArchiveMutationSurfaceV1 / preArchiveGenerationFingerprint 判定 mutation。只有 current V1 exact-match stored F 时才能分类为 known-no-mutation failure 并按普通 terminal failure 收口/清理 guard；若 current V1 与 F 不同，则必须分类为 known-but-mutated / recovery-required（名称可自定），保持足以跨 session 阻止第二次 mutation 的 durable recovery fact，禁止直接 retry/普通 terminal 收口，直到 exact pre-archive mutation surface 被机械恢复并 machine-proven。必须补真实 `archive_target_exists after spec writes` 或等价 fixture，证明 structured failure + mutation drift 会进入 recovery boundary；不得扫描 filesystem 猜 success，也不得把 structured failure 本身当作 no-mutation proof。"
+    }
+  ]
+}

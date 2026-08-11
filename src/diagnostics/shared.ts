@@ -9,7 +9,7 @@ export interface PendingRunInspection {
   readonly runId?: string;
   readonly action?: string;
   readonly role?: string;
-  readonly status: 'none' | 'resumable' | 'input-drift' | 'fingerprint-missing' | 'not-resumable' | 'ambiguous';
+  readonly status: 'none' | 'resumable' | 'input-drift' | 'fingerprint-missing' | 'not-resumable' | 'ambiguous' | 'recovery-required' | 'terminal-observation';
 }
 
 export function escapeScalar(value: string): string {

@@ -25,6 +25,8 @@ import { normalizeSeparators } from '../shared/paths.js';
 import { FlowkitError } from '../shared/errors.js';
 import { parseRunId } from '../domain/run-id.js';
 import type { ActionResult, ResultRef } from '../domain/types.js';
+import { OpenSpecCliAdapter } from '../integrations/openspec/openspec-cli-adapter.js';
+import { isOpenSpecThinIntegrationActive } from '../integrations/openspec/openspec-integration-state.js';
 import type { ActionResultWithoutRunRef } from './serialization.js';
 
 // ---------------------------------------------------------------------------
@@ -308,6 +310,50 @@ export function resolveVerificationSummaryRef(changeId: string): string {
   return `openspec/changes/${changeId}/verification.md`;
 }
 
+/**
+ * Resolve the current singleton artifact identity through OpenSpec 1.7 once the
+ * thin integration has been canonicalized. Legacy repositories retain the
+ * deterministic pre-C1 path mapping so historical fixtures remain readable.
+ *
+ * Planning artifacts are OpenSpec-owned and therefore come from structured
+ * `artifactPaths`. `explore.md` is Flowkit-owned and is derived only from the
+ * validated OpenSpec `changeRoot`.
+ */
+export async function resolveCurrentSingletonArtifactRef(
+  repoRoot: string,
+  action: string,
+  tag: Exclude<ProducedArtifactTag, 'specs'>,
+  changeId: string,
+): Promise<string> {
+  const permitted = permittedProducedArtifactTags(action);
+  if (!permitted.includes(tag)) {
+    throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `Action ${action} does not permit produced-artifact tag ${tag}`, { action, tag });
+  }
+  if (!(await isOpenSpecThinIntegrationActive(repoRoot, changeId))) {
+    return resolveSingletonArtifactRef(action, tag, changeId);
+  }
+  const status = await new OpenSpecCliAdapter({ repoRoot }).getChangeStatus(changeId);
+  if (tag === 'explore') return `${status.changeRootLogical}/explore.md`;
+  const paths = status.artifactPaths[tag].logicalPaths;
+  if (paths.length !== 1) {
+    throw new FlowkitError('OPENSPEC_AMBIGUOUS_ARTIFACT_PATH', `OpenSpec ${tag} artifact path must resolve to exactly one file`, { changeId, tag, paths });
+  }
+  return paths[0]!;
+}
+
+/**
+ * Resolve the Verification-owned summary under the validated OpenSpec
+ * `changeRoot`. OpenSpec artifact instructions are deliberately not used.
+ */
+export async function resolveCurrentVerificationSummaryRef(
+  repoRoot: string,
+  changeId: string,
+): Promise<string> {
+  if (!(await isOpenSpecThinIntegrationActive(repoRoot, changeId))) return resolveVerificationSummaryRef(changeId);
+  const status = await new OpenSpecCliAdapter({ repoRoot }).getChangeStatus(changeId);
+  return `${status.changeRootLogical}/verification.md`;
+}
+
 // ---------------------------------------------------------------------------
 // Logical ref validation
 // ---------------------------------------------------------------------------
@@ -482,8 +528,14 @@ export async function enumerateSpecsNamespace(
   repoRoot: string,
   changeId: string,
 ): Promise<readonly ResultRef[]> {
-  const specsDir = join(repoRoot, 'openspec', 'changes', changeId, 'specs');
-  const files = await collectMarkdownFiles(specsDir);
+  let files: string[];
+  if (await isOpenSpecThinIntegrationActive(repoRoot, changeId)) {
+    const status = await new OpenSpecCliAdapter({ repoRoot }).getChangeStatus(changeId);
+    files = [...status.artifactPaths.specs.physicalPaths];
+  } else {
+    const specsDir = join(repoRoot, 'openspec', 'changes', changeId, 'specs');
+    files = await collectMarkdownFiles(specsDir);
+  }
   const refs: ResultRef[] = [];
   for (const file of files) {
     const content = await readFile(file, 'utf-8');
@@ -565,8 +617,8 @@ export async function readArtifactBytes(
   repoRoot: string,
   logicalRef: string,
 ): Promise<string> {
-  assertCanonicalArtifactRoot(logicalRef);
-  const filePath = join(repoRoot, normalizeSeparators(logicalRef));
+  const normalized = normalizeArtifactLogicalRef(logicalRef);
+  const filePath = join(repoRoot, normalized);
   try {
     return await readFile(filePath, 'utf-8');
   } catch {
@@ -740,11 +792,11 @@ export async function validateCurrentStageArtifactSet(
   // Build the Core-enumerated expected identity set for the stage.
   const expectedIdentities: string[] = [];
   if (stage === 'explore') {
-    expectedIdentities.push(resolveSingletonArtifactRef('explore', 'explore', changeId));
+    expectedIdentities.push(await resolveCurrentSingletonArtifactRef(repoRoot, 'explore', 'explore', changeId));
   } else {
-    expectedIdentities.push(resolveSingletonArtifactRef('propose', 'proposal', changeId));
-    expectedIdentities.push(resolveSingletonArtifactRef('propose', 'design', changeId));
-    expectedIdentities.push(resolveSingletonArtifactRef('propose', 'tasks', changeId));
+    expectedIdentities.push(await resolveCurrentSingletonArtifactRef(repoRoot, 'propose', 'proposal', changeId));
+    expectedIdentities.push(await resolveCurrentSingletonArtifactRef(repoRoot, 'propose', 'design', changeId));
+    expectedIdentities.push(await resolveCurrentSingletonArtifactRef(repoRoot, 'propose', 'tasks', changeId));
     const specsRefs = await enumerateSpecsNamespace(repoRoot, changeId);
     expectedIdentities.push(...specsRefs.map((r) => r.ref));
   }

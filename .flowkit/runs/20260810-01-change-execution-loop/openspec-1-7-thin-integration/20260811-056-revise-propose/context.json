@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 2,
+  "runId": "20260811-056-revise-propose",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "revise-propose",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "83e42356774802ba9b9e373e9bb47849a62f144029439c65ea0c2ac5e5e5b9a3",
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/openspec-1-7-thin-integration/20260811-056-revise-propose/",
+  "changeKey": "C1",
+  "changeId": "openspec-1-7-thin-integration",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/openspec-1-7-thin-integration/20260811-055-review-propose/result.json",
+    "versionFingerprint": "7e3c07946996298a88cf5647e4179bd363ff8b373308f665cc305da5b50109b5",
+    "kind": "run-result"
+  },
+  "sourceReviewRun": "20260811-055-review-propose",
+  "sourceReviewVerdict": "changes-requested",
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": true,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

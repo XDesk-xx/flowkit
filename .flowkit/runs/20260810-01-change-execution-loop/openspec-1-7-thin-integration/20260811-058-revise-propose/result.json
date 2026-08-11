@@ -1,0 +1,55 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-propose",
+    "executionStatus": "completed",
+    "summary": "已完成 C1 058 revise-propose：将 durable archive recovery proof 从整个 planningHome/repoRoot 收缩为有版本的 OpenSpecArchiveMutationSurfaceV1，仅覆盖 active Change source 全树、canonical openspec/specs 全树与 changes/archive immediate child collision namespace；明确排除 .flowkit guard 自身、.git、node_modules、dist 与其它无关 repo 环境，消除 pre-spawn arm 自引用。Proposal/Design/specs/tasks 同步冻结 post-arm fingerprint equality、cross-session armed blocking、mutation drift mismatch 与 exact restore recovery-admit acceptance；machine proof 7/7、OpenSpec strict valid、MODIFIED canonical scenario completeness 0 missing、最终 disposable OpenSpec 1.7 real archive success。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/openspec-1-7-thin-integration/design.md",
+        "versionFingerprint": "e5e51c0e3e891a6decffc26a4e475d6330a851e5df972d6f8244e9ae16121159",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/openspec-1-7-thin-integration/proposal.md",
+        "versionFingerprint": "1c9df590d194e09f4fe92615b42e2c24d9328a6616de67db86079056ee0cbfd3",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/openspec-1-7-thin-integration/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+        "versionFingerprint": "124f327d56b2f8a813b0285f868fad3195ca0185e520cbeb90ebdabd757d567a",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/openspec-1-7-thin-integration/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "77aa49ac43c109fdba0c62806aaecbb8095b5f6212b547970d0f276fad712917",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/openspec-1-7-thin-integration/specs/flowkit-integration-boundaries/spec.md",
+        "versionFingerprint": "3f29b5f6350390df1767163bad6c599a97737564cf2f1b3520502b065a90cec6",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/openspec-1-7-thin-integration/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+        "versionFingerprint": "0632154eca7531fe03e89722321e4c1a03ffb3a51f429015b5d7e947eedf0102",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/openspec-1-7-thin-integration/specs/flowkit-runtime-foundation/spec.md",
+        "versionFingerprint": "9714d41340c48f6b6c06a3df787c995f0c87b7f80ab4ca5aa144d0f0b4553c70",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/openspec-1-7-thin-integration/tasks.md",
+        "versionFingerprint": "4fc026bff6f1c0cad728ab0ba1958d253e7c74e572da3e14b3b7a36ca2175a2f",
+        "kind": "produced-artifact"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/openspec-1-7-thin-integration/20260811-057-review-propose/result.json",
+      "versionFingerprint": "c79f30cb2fef1c54edcf21484c7e7c819c469e783c9b5c0b1f32b15bc2dbbf7f",
+      "kind": "run-result"
+    }
+  }
+}

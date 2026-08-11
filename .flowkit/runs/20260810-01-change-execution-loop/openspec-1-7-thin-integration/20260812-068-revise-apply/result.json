@@ -1,0 +1,13 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-apply",
+    "executionStatus": "completed",
+    "summary": "关闭 C1-RA-006：stable SemVer build metadata 仅接受非空 dot-separated identifiers；新增 adversarial malformed build metadata regression，保持 no fixed upper bound、prerelease fail-closed 与 structured machine-contract conformance。",
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/openspec-1-7-thin-integration/20260812-067-review-apply/result.json",
+      "versionFingerprint": "7bf4af9f25658c21fb70677546578b91afd8aada029628b24716b1d16ac27f2c",
+      "kind": "run-result"
+    }
+  }
+}

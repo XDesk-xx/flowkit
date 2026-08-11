@@ -41,6 +41,10 @@ import {
 } from '../persistence/serialization.js';
 import { FlowkitError } from '../shared/errors.js';
 import { normalizeSeparators } from '../shared/paths.js';
+import { OpenSpecCliAdapter } from '../integrations/openspec/openspec-cli-adapter.js';
+import { OPENSPEC_SUPPORTED_ARTIFACT_IDS, type OpenSpecPreparedActionContextView } from '../integrations/openspec/openspec-types.js';
+import { isOpenSpecThinIntegrationActive } from '../integrations/openspec/openspec-integration-state.js';
+import { inspectOpenSpecArchiveRecovery } from '../integrations/openspec/openspec-archive-service.js';
 
 export type RunPreparationEntry = 'next' | 'review';
 
@@ -55,6 +59,8 @@ export interface PrepareActionExecutionInput {
 export interface PreparedActionExecution {
   readonly package: ActionPackage;
   readonly resumed: boolean;
+  /** Bounded external OpenSpec execution view for the single resolved Action. */
+  readonly openSpecContext?: OpenSpecPreparedActionContextView;
 }
 
 
@@ -62,7 +68,7 @@ export interface PreparedRunInspection {
   readonly runId?: string;
   readonly action?: ChangeAction;
   readonly role?: 'author' | 'reviewer';
-  readonly status: 'none' | 'resumable' | 'input-drift' | 'fingerprint-missing' | 'not-resumable' | 'ambiguous';
+  readonly status: 'none' | 'resumable' | 'input-drift' | 'fingerprint-missing' | 'not-resumable' | 'ambiguous' | 'recovery-required' | 'terminal-observation';
 }
 
 /** Read-only diagnostic projection for one B1 prepared pending Run. */
@@ -127,6 +133,8 @@ interface SemanticInputs {
   readonly reviewView?: ActionPackageReviewView;
   readonly ownerAuthorizationRefs: readonly OwnerAuthorizationRef[];
   readonly verificationView?: ActionPackageVerificationView;
+  readonly openSpecContext?: OpenSpecPreparedActionContextView;
+  readonly externalContextFingerprint?: string;
   readonly semanticInputFingerprint: string;
 }
 
@@ -222,6 +230,7 @@ export async function prepareActionExecution(
     return {
       package: buildActionPackage(input.deliveryId, change.id, existing.runId, action, semantic),
       resumed: true,
+      ...(semantic.openSpecContext !== undefined && { openSpecContext: semantic.openSpecContext }),
     };
   }
 
@@ -259,6 +268,7 @@ export async function prepareActionExecution(
   return {
     package: buildActionPackage(input.deliveryId, change.id, allocated.runId, action, semantic),
     resumed: false,
+    ...(semantic.openSpecContext !== undefined && { openSpecContext: semantic.openSpecContext }),
   };
 }
 
@@ -316,6 +326,13 @@ async function resumePendingArchive(
   snapshot: FormalFactSnapshot,
   existing: ContextFile,
 ): Promise<PreparedActionExecution> {
+  if (await isOpenSpecThinIntegrationActive(input.repoRoot, existing.changeId)) {
+    const runDir = join(input.repoRoot, existing.runPath);
+    const recovery = await inspectOpenSpecArchiveRecovery(input.repoRoot, runDir);
+    if (recovery === 'recovery-required') {
+      throw new FlowkitError('OPENSPEC_ARCHIVE_RECOVERY_REQUIRED', `Pending archive Run ${existing.runId} requires exact mutation-surface recovery`);
+    }
+  }
   const recovered = await recoverPersistedPendingArchive(
     input.repoRoot,
     input.deliveryId,
@@ -333,6 +350,7 @@ async function resumePendingArchive(
       recovered.semantic,
     ),
     resumed: true,
+    ...(recovered.semantic.openSpecContext !== undefined && { openSpecContext: recovered.semantic.openSpecContext }),
   };
 }
 
@@ -348,6 +366,11 @@ async function inspectPersistedPendingArchive(
     role: existing.role === 'author' ? 'author' as const : 'reviewer' as const,
   };
   if (existing.role !== 'author') return { ...base, status: 'not-resumable' };
+  if (await isOpenSpecThinIntegrationActive(repoRoot, existing.changeId)) {
+    const recovery = await inspectOpenSpecArchiveRecovery(repoRoot, join(repoRoot, existing.runPath));
+    if (recovery === 'recovery-required') return { ...base, status: 'recovery-required' };
+    if (recovery === 'known-success' || recovery === 'terminalizable-failure') return { ...base, status: 'terminal-observation' };
+  }
   if (existing.semanticInputFingerprint === undefined) {
     return { ...base, status: 'fingerprint-missing' };
   }
@@ -570,6 +593,17 @@ export async function admitActionResult(input: AdmitActionResultInput): Promise<
   const snapshot = await readSnapshot(input.repoRoot, input.deliveryId);
   assertConflictFree(snapshot);
 
+  const c1OpenSpecActive = await isOpenSpecThinIntegrationActive(input.repoRoot, pkg.run.changeId);
+  if (c1OpenSpecActive && (pkg.run.action === 'propose' || pkg.run.action === 'revise-propose')
+      && input.result.failureDiagnosis === undefined && input.result.cancellationReason === undefined) {
+    const validation = await new OpenSpecCliAdapter({ repoRoot: input.repoRoot }).validateChange(pkg.run.changeId, true);
+    if (!validation.valid) {
+      throw new FlowkitError('OPENSPEC_STRICT_VALIDATION_FAILED', `OpenSpec strict validation failed before ${pkg.run.action} terminal admission`, {
+        changeId: pkg.run.changeId, issues: validation.issues, status: validation.status,
+      });
+    }
+  }
+
   if (pkg.run.action === 'archive') {
     const persistedArchive = await findPersistedPendingArchive(input.repoRoot, input.deliveryId);
     if (
@@ -589,6 +623,12 @@ export async function admitActionResult(input: AdmitActionResultInput): Promise<
       persistedArchive,
     );
     assertRecoveredArchiveFingerprint(persistedArchive, recovered.semantic);
+    if (c1OpenSpecActive) {
+      const recovery = await inspectOpenSpecArchiveRecovery(input.repoRoot, runDir);
+      if (recovery !== 'known-success') {
+        throw new FlowkitError('OPENSPEC_ARCHIVE_RESULT_NOT_ADMISSIBLE', 'archive completion requires durable structured success plus post-invocation mutation-surface drift', { recovery });
+      }
+    }
   } else {
     const change = getActiveChange(snapshot);
     if (change === null || change.id !== pkg.run.changeId) {
@@ -635,8 +675,56 @@ function buildActionPackage(
     ...(semantic.reviewView !== undefined && { reviewView: semantic.reviewView }),
     ownerAuthorizationRefs: semantic.ownerAuthorizationRefs,
     ...(semantic.verificationView !== undefined && { verificationView: semantic.verificationView }),
+    ...(semantic.externalContextFingerprint !== undefined && { externalContextFingerprint: semantic.externalContextFingerprint }),
     requiredResultContract: definition.terminalContract,
   };
+}
+
+export async function buildOpenSpecPreparedActionContext(
+  repoRoot: string,
+  changeId: string,
+  action: ChangeAction,
+  adapter: OpenSpecCliAdapter = new OpenSpecCliAdapter({ repoRoot }),
+): Promise<OpenSpecPreparedActionContextView | undefined> {
+  if (!(await isOpenSpecThinIntegrationActive(repoRoot, changeId))) return undefined;
+
+  const version = await adapter.getVersion();
+  const status = await adapter.getChangeStatus(changeId);
+  const base = {
+    version,
+    changeId,
+    changeRootLogical: status.changeRootLogical,
+    artifactPaths: Object.fromEntries(OPENSPEC_SUPPORTED_ARTIFACT_IDS.map((artifactId) => [
+      artifactId,
+      [...status.artifactPaths[artifactId].logicalPaths],
+    ])) as unknown as Readonly<Record<(typeof OPENSPEC_SUPPORTED_ARTIFACT_IDS)[number], readonly string[]>>,
+  };
+
+  if (action === 'propose' || action === 'revise-propose') {
+    const artifactInstructions = Object.fromEntries(await Promise.all(
+      OPENSPEC_SUPPORTED_ARTIFACT_IDS.map(async (artifactId) => [artifactId, await adapter.getArtifactInstructions(changeId, artifactId)] as const),
+    )) as Readonly<Record<(typeof OPENSPEC_SUPPORTED_ARTIFACT_IDS)[number], Awaited<ReturnType<OpenSpecCliAdapter['getArtifactInstructions']>>>>;
+    return { ...base, artifactInstructions };
+  }
+
+  if (action === 'apply' || action === 'revise-apply') {
+    const validation = await adapter.validateChange(changeId, true);
+    if (!validation.valid) {
+      throw new FlowkitError('OPENSPEC_STRICT_VALIDATION_FAILED', `OpenSpec strict validation failed before ${action}`, {
+        changeId, issues: validation.issues, status: validation.status,
+      });
+    }
+    return { ...base, applyInstructions: await adapter.getApplyInstructions(changeId) };
+  }
+
+  return base;
+}
+
+
+export function fingerprintOpenSpecPreparedActionContext(
+  view: OpenSpecPreparedActionContextView | undefined,
+): string | undefined {
+  return view === undefined ? undefined : sha256(stableStringify(view));
 }
 
 async function deriveSemanticInputs(
@@ -666,6 +754,8 @@ async function deriveSemanticInputs(
     action,
     descriptors,
   );
+  const openSpecContext = await buildOpenSpecPreparedActionContext(repoRoot, changeId, action);
+  const externalContextFingerprint = fingerprintOpenSpecPreparedActionContext(openSpecContext);
 
   const semanticInputFingerprint = sha256(stableStringify(buildSemanticDescriptor({
     deliveryId,
@@ -677,6 +767,7 @@ async function deriveSemanticInputs(
     reviewView,
     ownerAuthorizationRefs,
     verificationView,
+    externalContextFingerprint,
   })));
   return {
     contractRefs,
@@ -684,6 +775,8 @@ async function deriveSemanticInputs(
     ...(reviewView !== undefined && { reviewView }),
     ownerAuthorizationRefs,
     ...(verificationView !== undefined && { verificationView }),
+    ...(openSpecContext !== undefined && { openSpecContext }),
+    ...(externalContextFingerprint !== undefined && { externalContextFingerprint }),
     semanticInputFingerprint,
   };
 }
@@ -784,7 +877,10 @@ async function collectContractRefs(
   action: ChangeAction,
 ): Promise<readonly VersionedAuthorityRef[]> {
   const refs: VersionedAuthorityRef[] = [];
-  const metadata = `${OPEN_SPEC_CHANGE_PREFIX}/${changeId}/.openspec.yaml`;
+  const c1Active = await isOpenSpecThinIntegrationActive(repoRoot, changeId);
+  const status = c1Active ? await new OpenSpecCliAdapter({ repoRoot }).getChangeStatus(changeId) : undefined;
+  const changeRoot = status?.changeRootLogical ?? `${OPEN_SPEC_CHANGE_PREFIX}/${changeId}`;
+  const metadata = `${changeRoot}/.openspec.yaml`;
   const metadataRef = action === 'archive'
     ? await versionedActiveOrArchivedChangeFileRef(repoRoot, changeId, metadata, 'openspec-metadata')
     : (await isFile(join(repoRoot, metadata)))
@@ -797,48 +893,66 @@ async function collectContractRefs(
 
   const producer = computeLineage(snapshot.runs, snapshot.reviewVerdicts, changeId, stage).artifact;
   if (producer === null) {
-    throw new FlowkitError(
-      'RUN_PREPARATION_BINDING_MISSING',
-      `${action} has no immutable ${stage} producer generation`,
-    );
+    throw new FlowkitError('RUN_PREPARATION_BINDING_MISSING', `${action} has no immutable ${stage} producer generation`);
   }
-  const produced = await readProducedAuthorityRefs(
-    repoRoot,
-    deliveryId,
-    changeId,
-    producer.runId,
-  );
-  const currentTasksRef = `${OPEN_SPEC_CHANGE_PREFIX}/${changeId}/tasks.md`;
+  const produced = await readProducedAuthorityRefs(repoRoot, deliveryId, changeId, producer.runId);
+  const stageIdentities = c1Active && status !== undefined
+    ? new Set(stage === 'explore'
+      ? [`${status.changeRootLogical}/explore.md`]
+      : [
+          ...status.artifactPaths.proposal.logicalPaths,
+          ...status.artifactPaths.design.logicalPaths,
+          ...status.artifactPaths.tasks.logicalPaths,
+          ...status.artifactPaths.specs.logicalPaths,
+        ])
+    : undefined;
+
+  const currentTasksRef = c1Active && status !== undefined
+    ? requireExactlyOnePath(status.artifactPaths.tasks.logicalPaths, changeId, 'tasks')
+    : `${OPEN_SPEC_CHANGE_PREFIX}/${changeId}/tasks.md`;
+
+  // Apply execution consumes OpenSpec's structured contextFiles, not a second
+  // Flowkit path graph. Exact producer refs still carry the immutable bytes.
+  let applyContextSet: ReadonlySet<string> | undefined;
+  if (c1Active && (action === 'apply' || action === 'revise-apply')) {
+    const apply = await new OpenSpecCliAdapter({ repoRoot }).getApplyInstructions(changeId);
+    applyContextSet = new Set(Object.values(apply.contextFiles).flat());
+  }
+
   for (const ref of produced) {
-    if (!isContractRefForStage(ref, changeId, stage)) continue;
+    const relevant = stageIdentities !== undefined
+      ? stageIdentities.has(ref.ref)
+      : isContractRefForStage(ref, changeId, stage);
+    if (!relevant) continue;
+    if (applyContextSet !== undefined && stage === 'propose' && !applyContextSet.has(ref.ref)) continue;
     if ((action === 'review-apply' || action === 'archive') && ref.ref === currentTasksRef) continue;
     refs.push(ref);
   }
 
   if (action === 'review-apply') {
-    if (await isFile(join(repoRoot, currentTasksRef))) {
-      refs.push(await versionedFileRef(repoRoot, currentTasksRef, 'openspec-contract'));
-    }
+    if (await isFile(join(repoRoot, currentTasksRef))) refs.push(await versionedFileRef(repoRoot, currentTasksRef, 'openspec-contract'));
   } else if (action === 'archive') {
-    const tasks = await versionedActiveOrArchivedChangeFileRef(
-      repoRoot,
-      changeId,
-      currentTasksRef,
-      'openspec-contract',
-    );
+    const tasks = await versionedActiveOrArchivedChangeFileRef(repoRoot, changeId, currentTasksRef, 'openspec-contract');
     if (tasks !== undefined) refs.push(tasks);
   }
 
-  await assertImmutableContractRefsForAction(repoRoot, refs, changeId, action);
+  await assertImmutableContractRefsForAction(repoRoot, refs, changeId, action, status?.changeRootLogical);
   return sortRefs(refs);
 }
 
+function requireExactlyOnePath(paths: readonly string[], changeId: string, artifact: string): string {
+  if (paths.length !== 1) {
+    throw new FlowkitError('OPENSPEC_AMBIGUOUS_ARTIFACT_PATH', `OpenSpec ${artifact} artifact must resolve to exactly one path`, { changeId, paths });
+  }
+  return paths[0]!;
+}
 function isActionOwnedMutableContractRef(
   action: ChangeAction,
   ref: VersionedAuthorityRef,
   changeId: string,
+  structuredChangeRoot?: string,
 ): boolean {
-  const root = `${OPEN_SPEC_CHANGE_PREFIX}/${changeId}/`;
+  const root = `${structuredChangeRoot ?? `${OPEN_SPEC_CHANGE_PREFIX}/${changeId}`}/`;
   switch (action) {
     case 'revise-explore':
       return ref.ref === `${root}explore.md`;
@@ -862,11 +976,13 @@ async function assertImmutableContractRefsForAction(
   refs: readonly VersionedAuthorityRef[],
   changeId: string,
   action: ChangeAction,
+  structuredChangeRoot?: string,
 ): Promise<void> {
+  const changeRootPrefix = `${structuredChangeRoot ?? `${OPEN_SPEC_CHANGE_PREFIX}/${changeId}`}/`;
   for (const ref of refs) {
-    if (!ref.ref.startsWith(`${OPEN_SPEC_CHANGE_PREFIX}/${changeId}/`)) continue;
+    if (!ref.ref.startsWith(changeRootPrefix)) continue;
     if (ref.ref.endsWith('/.openspec.yaml')) continue;
-    if (isActionOwnedMutableContractRef(action, ref, changeId)) continue;
+    if (isActionOwnedMutableContractRef(action, ref, changeId, structuredChangeRoot)) continue;
 
     const current = action === 'archive'
       ? await readActiveOrArchivedChangeFile(repoRoot, changeId, ref.ref)
@@ -1273,6 +1389,7 @@ function buildSemanticDescriptor(input: {
   readonly reviewView?: ActionPackageReviewView;
   readonly ownerAuthorizationRefs: readonly OwnerAuthorizationRef[];
   readonly verificationView?: ActionPackageVerificationView;
+  readonly externalContextFingerprint?: string;
 }): unknown {
   return {
     schemaVersion: 1,
@@ -1292,6 +1409,7 @@ function buildSemanticDescriptor(input: {
         },
     verificationAuthority: input.verificationView ?? null,
     ownerAuthorizationRefs: [...input.ownerAuthorizationRefs].sort((a, b) => a.ref.localeCompare(b.ref)),
+    externalContextFingerprint: input.externalContextFingerprint ?? null,
   };
 }
 
@@ -1306,6 +1424,7 @@ function fingerprintActionPackageSemantics(pkg: ActionPackage): string {
     ...(pkg.reviewView !== undefined && { reviewView: pkg.reviewView }),
     ownerAuthorizationRefs: pkg.ownerAuthorizationRefs,
     ...(pkg.verificationView !== undefined && { verificationView: pkg.verificationView }),
+    ...(pkg.externalContextFingerprint !== undefined && { externalContextFingerprint: pkg.externalContextFingerprint }),
   })));
 }
 

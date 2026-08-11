@@ -34,6 +34,8 @@ import type { AuthorizationOnlyOwnerDecision, OwnerDecisionRecordKind } from '..
 import { ownerDecisionRefFor } from '../domain/owner-provenance.js';
 import { isPreA1LegacyArchitectureImpactIdentity } from './pre-a1-legacy-architecture-impact.js';
 import { FlowkitError } from '../shared/errors.js';
+import { OpenSpecCliAdapter } from '../integrations/openspec/openspec-cli-adapter.js';
+import { isOpenSpecThinIntegrationActive } from '../integrations/openspec/openspec-integration-state.js';
 import type {
   ChangeFact,
   FactConflict,
@@ -836,6 +838,33 @@ async function readOpenSpecArtifacts(
 ): Promise<OpenSpecArtifactFact[]> {
   const artifacts: OpenSpecArtifactFact[] = [];
   for (const change of changes) {
+    const integrationActive = await isOpenSpecThinIntegrationActive(input.repoRoot, change.id);
+    if (integrationActive && change.state === 'active') {
+      const status = await new OpenSpecCliAdapter({ repoRoot: input.repoRoot }).getChangeStatus(change.id);
+      const structuredCandidates = [
+        { kind: 'change-explore' as const, logical: `${status.changeRootLogical}/explore.md` },
+        { kind: 'change-proposal' as const, logical: status.artifactPaths.proposal.logicalPaths[0] ?? '' },
+        { kind: 'change-design' as const, logical: status.artifactPaths.design.logicalPaths[0] ?? '' },
+        { kind: 'change-tasks' as const, logical: status.artifactPaths.tasks.logicalPaths[0] ?? '' },
+        { kind: 'change-verification' as const, logical: `${status.changeRootLogical}/verification.md` },
+      ];
+      for (const candidate of structuredCandidates) {
+        artifacts.push({
+          kind: candidate.kind,
+          path: candidate.logical,
+          exists: candidate.logical !== '' && await pathExists(join(input.repoRoot, candidate.logical)),
+        });
+      }
+      const specLogical = status.artifactPaths.specs.logicalPaths[0] ?? '';
+      artifacts.push({
+        kind: 'change-spec',
+        path: specLogical,
+        exists: specLogical !== '' && await pathExists(join(input.repoRoot, specLogical)),
+      });
+      continue;
+    }
+
+    // Bounded compatibility for pre-C1 facts and closed historical Changes.
     const changeDir = join(input.repoRoot, input.openspecChangesPath, change.id);
     for (const candidate of [
       { kind: 'change-explore' as const, path: join(changeDir, 'explore.md') },
@@ -860,7 +889,6 @@ async function readOpenSpecArtifacts(
   return artifacts;
 }
 
-
 interface VerificationProjectionResult {
   readonly status?: VerificationStatus;
   readonly conflicts: readonly FactConflict[];
@@ -883,12 +911,7 @@ async function readActiveChangeVerificationStatus(
     return { conflicts: [] };
   }
 
-  const verificationPath = join(
-    input.repoRoot,
-    input.openspecChangesPath,
-    activeChangeId,
-    'verification.md',
-  );
+  const verificationPath = await resolveActiveOpenSpecOwnedPath(input, activeChangeId, 'verification');
   if (!(await pathExists(verificationPath))) {
     return { conflicts: [] };
   }
@@ -960,12 +983,7 @@ async function readActiveChangeTasksCompletion(
     return { conflicts: [] };
   }
 
-  const tasksPath = join(
-    input.repoRoot,
-    input.openspecChangesPath,
-    activeChangeId,
-    'tasks.md',
-  );
+  const tasksPath = await resolveActiveOpenSpecOwnedPath(input, activeChangeId, 'tasks');
   if (!(await pathExists(tasksPath))) {
     return { conflicts: [] };
   }
@@ -991,6 +1009,23 @@ async function readActiveChangeTasksCompletion(
     return marker === 'x' || marker === 'X';
   });
   return { complete, conflicts: [] };
+}
+
+async function resolveActiveOpenSpecOwnedPath(
+  input: ReadFormalFactSnapshotInput,
+  changeId: string,
+  kind: 'tasks' | 'verification',
+): Promise<string> {
+  if (!(await isOpenSpecThinIntegrationActive(input.repoRoot, changeId))) {
+    return join(input.repoRoot, input.openspecChangesPath, changeId, `${kind}.md`);
+  }
+  const status = await new OpenSpecCliAdapter({ repoRoot: input.repoRoot }).getChangeStatus(changeId);
+  if (kind === 'verification') return join(input.repoRoot, status.changeRootLogical, 'verification.md');
+  const paths = status.artifactPaths.tasks.physicalPaths;
+  if (paths.length !== 1) {
+    throw new FlowkitError('OPENSPEC_AMBIGUOUS_ARTIFACT_PATH', 'OpenSpec tasks artifact must resolve to exactly one file', { changeId, paths });
+  }
+  return paths[0]!;
 }
 
 async function findSpecFile(changeDir: string): Promise<string | null> {

@@ -225,11 +225,13 @@ C1 不：
 
 ### 11.1 OpenSpec
 
-OpenSpec 拥有 Change 契约。Flowkit 引用当前 Change 的 Explore、Proposal、Design、Specs、Tasks、Verification 和 Archive 结果。Action Package 只暴露当前 Action 所需的契约视图。
+OpenSpec 拥有 Change 契约与 `spec-driven` planning graph。Flowkit 1.7 thin integration只消费固定 machine surface：version/context/doctor/status/artifact instructions/apply contextFiles/strict validate/archive。Planning artifact path只来自 validated `changeRoot/artifactPaths/contextFiles`；Explore 与 Verification 只在 validated `changeRoot` 下派生 owned filename。Action Package 只暴露当前 Action 所需的契约视图。
 
-OpenSpec 不得决定 Delivery、当前 Action 或 owner 授权。Flowkit 不复制 OpenSpec 全部内部状态。
+兼容性以 **stable `1.7.0` minimum baseline + required structured machine-contract conformance** 为准，不设置固定 minor/major upper bound。Below-baseline、malformed 与 prerelease version fail closed；高于 baseline 的 stable version 只有在 required command、JSON shape、requested-Change/path identity、exit/result coherence 与 archive semantics 全部继续满足 C1 typed contract 时才可消费。Version number 只是 compatibility signal，不是唯一 compatibility authority。
 
-当未来 Change Runner 调用 OpenSpec archive 时，archive 内部的 delta spec sync、artifact relocation 以及 operation success/failure 都由 OpenSpec 定义。Flowkit 只负责调用前的流程 gate / 必要 handoff，并记录 OpenSpec 返回的执行结果；operation 成功后不再扫描 archive path 做二次 proof。
+OpenSpec 不得决定 Delivery、当前 Action、Reviewer Verdict 或 owner 授权。Flowkit 不复制 OpenSpec 全部内部状态，也不维护第二套 proposal/spec/design/tasks dependency graph。Strict validation是 contract check，不是 Policy authority。
+
+Mutating archive 仍由 OpenSpec 定义 delta sync、relocation 与 structured terminal result；但 Flowkit 在 child spawn 前 MUST durable arm `openspec-archive-mutation-v1` guard，并在可接纳 terminal result 后先 durable publish normalized terminal observation，再用 post-V1 与 pre-archive F 做 safety classification。只有 `success + drift` 可接纳成功；`success + same` fail closed；`failure + same`普通失败；`failure + drift` recovery-required；无 durable terminal observation 时无论 same/drift 都是 outcome-unknown。该 recovery proof 只覆盖 active changeRoot、canonical `openspec/specs/**` 与 archive immediate-child collision namespace，不扫描历史 archive 正文，也不包含 `.flowkit/.git/node_modules/dist`。Operation success 后仍不得扫描 archive path 做第二套 OpenSpec success proof。
 
 ### 11.2 Git
 
@@ -383,6 +385,6 @@ OpenSpec
 → Change artifact lifecycle
 ```
 
-A1 只初始化 `openspec/changes/<change-id>/.openspec.yaml`，不调用或复制 OpenSpec 1.7 artifact lifecycle。Run `ownerAuthorization`、Reviewer prose、Git commit message或聊天摘要都不能替代 Manifest Owner record。
+A1 只初始化 target Change minimal `.openspec.yaml`，不调用或复制 OpenSpec 1.7 artifact lifecycle。C1 checkpoint 后的新 activation request MUST显式提供 `specDeltaMode=required|skip`：`required`只写 `schema: spec-driven` + `created`，`skip`另写 `skip_specs: true`；不得从 goal/outputs/Proposal/spec 数量推断。当前 Delivery C1 checkpoint 前已存在的 exact D1–G1 identity仅允许 bounded missing-mode→`required` compatibility。Run `ownerAuthorization`、Reviewer prose、Git commit message或聊天摘要都不能替代 Manifest Owner record。
 
 pre-A1 exact legacy Change 缺失 `architectureImpact` 时，不得从 Delivery architecture、OpenSpec、goal、outputs、Run 或 Git 推断 boolean。

@@ -1,0 +1,50 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "propose",
+    "executionStatus": "completed",
+    "summary": "064 Owner Contract Reset Proposal generation completed: old 062 Apply generation is abandoned; no revise-apply was created. The 061-approved decisions remain except compatibility, which is reset to stable OpenSpec 1.7.0 minimum baseline with no fixed minor/major upper bound and required structured machine-contract conformance. 063 findings C1-RA-001/003/004/005 are retained; C1-RA-002 is rewritten to prerelease fail-closed plus higher-version conformance. Proposal/Design/Specs/Tasks only; no production/test code, Apply, Delivery Full Test, archive, or checkpoint was performed. OpenSpec 1.7.0 strict validation and disposable archive merge preflight passed.",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/openspec-1-7-thin-integration/design.md",
+        "versionFingerprint": "464e66a4d185ddb19f0e234051d7e1220607f8f24ae6c2121c56b7feda5cbd4a",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/openspec-1-7-thin-integration/proposal.md",
+        "versionFingerprint": "2ba2bac5cff434b06a4b136185d93edb3d378cda91c5015d53f4b4698d5d52d5",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/openspec-1-7-thin-integration/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+        "versionFingerprint": "124f327d56b2f8a813b0285f868fad3195ca0185e520cbeb90ebdabd757d567a",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/openspec-1-7-thin-integration/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "6755f022003fece7dd523f7a3194abbcaa2a12fdbba9af051039cd72c55fedb0",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/openspec-1-7-thin-integration/specs/flowkit-integration-boundaries/spec.md",
+        "versionFingerprint": "e2f4c894c57468d4e75fcf905a2f92cd4d2e10ce7628e319bff08ac20db7b11a",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/openspec-1-7-thin-integration/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+        "versionFingerprint": "7bcc1f41a694eca583ca1ff78bc13045b76ed964cff3778341bb466629f0304c",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/openspec-1-7-thin-integration/specs/flowkit-runtime-foundation/spec.md",
+        "versionFingerprint": "9714d41340c48f6b6c06a3df787c995f0c87b7f80ab4ca5aa144d0f0b4553c70",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/openspec-1-7-thin-integration/tasks.md",
+        "versionFingerprint": "70b66331894ba9427a600f0d42a41dbdc5bffc6d57cebd78b1c4dc6b44b0aa20",
+        "kind": "produced-artifact"
+      }
+    ]
+  }
+}

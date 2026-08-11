@@ -1,0 +1,10 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "060 已关闭 C1-RP-006：mutating archive 在 child spawn 后以 durable structured terminalObservation × post-invocation OpenSpecArchiveMutationSurfaceV1 equality 二维矩阵分类；structured failure+same 才可 ordinary failure，failure+drift 必须 recovery-required，exact restore 后从同一 durable failure observation terminal failed 且禁止 respawn；无 terminalObservation 的 outcome-unknown 才可 recovery-admitted retry。完整 Proposal/Design/delta specs/tasks 与 OpenSpec 1.7 real archive preflight、strict validation、focused regression及工程质量检查未发现新的 blocking finding。"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindings": []
+}

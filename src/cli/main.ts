@@ -117,7 +117,13 @@ export async function runCli(invocation: CliInvocation): Promise<CliResult> {
     if (args[0] === 'activate') {
       const changeId = requiredOption(args, '--change');
       const sourceRef = requiredOption(args, '--source-ref');
-      const result = await activateChange(repoRoot, changeId, sourceRef);
+      const specDeltaMode = optionValue(args, '--spec-delta-mode');
+      if (specDeltaMode !== undefined && specDeltaMode !== 'required' && specDeltaMode !== 'skip') {
+        throw new Error('--spec-delta-mode must be required|skip');
+      }
+      const result = await activateChange(repoRoot, changeId, sourceRef, {
+        ...(specDeltaMode !== undefined && { specDeltaMode }),
+      });
       return { exitCode: 0, stdout: renderWriteResult(result), stderr: '' };
     }
 

@@ -243,6 +243,8 @@ export interface ActionPackage {
   readonly reviewView?: ActionPackageReviewView;
   readonly ownerAuthorizationRefs: readonly OwnerAuthorizationRef[];
   readonly verificationView?: ActionPackageVerificationView;
+  /** Bounded digest of external structured execution context participating in same-Run drift protection. */
+  readonly externalContextFingerprint?: string;
   readonly requiredResultContract: ActionTerminalContract;
 }
 

@@ -36,7 +36,7 @@ import {
   PRODUCED_ARTIFACT_KIND,
   VERIFICATION_SUMMARY_KIND,
   RESULT_REF_KINDS,
-  resolveVerificationSummaryRef,
+  normalizeArtifactLogicalRef,
 } from './result-ref-adapter.js';
 import type {
   ActionResult,
@@ -46,6 +46,12 @@ import type {
   BlockingAuthority,
 } from '../domain/types.js';
 import { BLOCKING_AUTHORITIES } from '../domain/types.js';
+import {
+  OPENSPEC_ARCHIVE_SURFACE_VERSION,
+  type ArchiveMutationGuard,
+  type OpenSpecArchiveSuccessObservation,
+  type OpenSpecArchiveFailureObservation,
+} from '../integrations/openspec/openspec-types.js';
 
 // ---------------------------------------------------------------------------
 // TerminalRunStatus + ActionResultWithoutRunRef
@@ -198,6 +204,8 @@ export interface ContextFile {
   readonly sourceReviewVerdict?: ReviewVerdictValue;
   /** Run being reviewed by a `review-*` Run (C1-AP-004 canonical linkage). */
   readonly reviewedRunId?: string;
+  /** C1 OpenSpec archive-only machine operational recovery field. */
+  readonly archiveMutationGuard?: ArchiveMutationGuard;
   readonly constraints?: ContextFileConstraints;
   /** MUST be consistent with the actual filesystem Run directory path. */
   readonly runPath: string;
@@ -1218,12 +1226,12 @@ export function validateContextFile(value: unknown): ContextFile {
         kind: verificationInputRef.kind,
       });
     }
-    if (normalizeSeparators(verificationInputRef.ref) !== resolveVerificationSummaryRef(changeId)) {
-      schemaFail('review-apply verificationInputRef.ref must equal the canonical verification.md path', {
+    const verificationLogicalRef = normalizeArtifactLogicalRef(verificationInputRef.ref);
+    if (!verificationLogicalRef.endsWith('/verification.md')) {
+      schemaFail('review-apply verificationInputRef.ref must identify verification.md inside the validated Change root', {
         action,
         changeId,
         ref: verificationInputRef.ref,
-        expected: resolveVerificationSummaryRef(changeId),
       });
     }
   } else if (verificationInputRef !== undefined) {
@@ -1311,6 +1319,8 @@ export function validateContextFile(value: unknown): ContextFile {
     reviewedRunId = s;
   }
 
+  const archiveMutationGuard = validateArchiveMutationGuard(obj['archiveMutationGuard'], action as ChangeAction);
+
   // constraints (optional object).
   const constraints = validateOptionalConstraints(obj['constraints']);
 
@@ -1330,9 +1340,86 @@ export function validateContextFile(value: unknown): ContextFile {
     ...(sourceReviewRun !== undefined && { sourceReviewRun }),
     ...(sourceReviewVerdict !== undefined && { sourceReviewVerdict }),
     ...(reviewedRunId !== undefined && { reviewedRunId }),
+    ...(archiveMutationGuard !== undefined && { archiveMutationGuard }),
     ...(constraints !== undefined && { constraints }),
   };
   return result;
+}
+
+function validateArchiveMutationGuard(value: unknown, action: ChangeAction): ArchiveMutationGuard | undefined {
+  if (value === undefined) return undefined;
+  if (action !== 'archive') {
+    schemaFail('archiveMutationGuard is only allowed on archive Runs', { action });
+  }
+  const obj = asObject(value, 'archiveMutationGuard');
+  const state = requireString(obj, 'state');
+  if (state !== 'armed' && state !== 'recovery-admitted') {
+    schemaFail('archiveMutationGuard.state must be armed|recovery-admitted', { state });
+  }
+  if (obj['surfaceVersion'] !== OPENSPEC_ARCHIVE_SURFACE_VERSION) {
+    schemaFail(`archiveMutationGuard.surfaceVersion must equal ${OPENSPEC_ARCHIVE_SURFACE_VERSION}`);
+  }
+  const changeRoot = requireNonEmptyString(obj, 'changeRoot');
+  const canonicalSpecsRoot = requireNonEmptyString(obj, 'canonicalSpecsRoot');
+  const archiveNamespaceRoot = requireNonEmptyString(obj, 'archiveNamespaceRoot');
+  if (canonicalSpecsRoot !== 'openspec/specs') {
+    schemaFail('archiveMutationGuard.canonicalSpecsRoot must equal openspec/specs');
+  }
+  for (const [field, path] of [['changeRoot', changeRoot], ['archiveNamespaceRoot', archiveNamespaceRoot]] as const) {
+    if (path.startsWith('/') || path.includes('\\') || path.split('/').some((part) => part === '..' || part === '')) {
+      schemaFail(`archiveMutationGuard.${field} must be a normalized repo-relative POSIX path`, { path });
+    }
+  }
+  const fingerprint = requireNonEmptyString(obj, 'preArchiveGenerationFingerprint');
+  if (!/^[0-9a-f]{64}$/.test(fingerprint)) {
+    schemaFail('archiveMutationGuard.preArchiveGenerationFingerprint must be lowercase SHA-256');
+  }
+
+  let terminalObservation: ArchiveMutationGuard['terminalObservation'];
+  if (obj['terminalObservation'] !== undefined) {
+    const terminal = asObject(obj['terminalObservation'], 'archiveMutationGuard.terminalObservation');
+    const kind = requireString(terminal, 'kind');
+    if (kind !== 'success' && kind !== 'failure') schemaFail('terminalObservation.kind must be success|failure');
+    const resultFingerprint = requireNonEmptyString(terminal, 'resultFingerprint');
+    if (!/^[0-9a-f]{64}$/.test(resultFingerprint)) schemaFail('terminalObservation.resultFingerprint must be lowercase SHA-256');
+    const normalized = asObject(terminal['normalized'], 'terminalObservation.normalized');
+    if (normalized['kind'] !== kind) schemaFail('terminalObservation normalized.kind must match terminalObservation.kind');
+    if (kind === 'success') {
+      requireNonEmptyString(normalized, 'change');
+      requireNonEmptyString(normalized, 'archivedAs');
+      requireNonEmptyString(normalized, 'path');
+      if (typeof normalized['specsUpdated'] !== 'boolean') schemaFail('success terminalObservation.specsUpdated must be boolean');
+      if (normalized['totals'] !== undefined) {
+        const totals = asObject(normalized['totals'], 'terminalObservation.normalized.totals');
+        for (const field of ['added', 'modified', 'removed', 'renamed']) {
+          const n = totals[field];
+          if (typeof n !== 'number' || !Number.isInteger(n) || n < 0) schemaFail(`terminalObservation totals.${field} must be a non-negative integer`);
+        }
+      }
+      terminalObservation = { kind, resultFingerprint, normalized: normalized as unknown as OpenSpecArchiveSuccessObservation };
+    } else {
+      const exitCode = normalized['exitCode'];
+      if (typeof exitCode !== 'number' || !Number.isInteger(exitCode)) schemaFail('failure terminalObservation.exitCode must be integer');
+      const status = normalized['status'];
+      if (!Array.isArray(status) || status.length === 0) schemaFail('failure terminalObservation.status must be a non-empty array');
+      for (const item of status) {
+        const st = asObject(item, 'terminalObservation.normalized.status[]');
+        requireNonEmptyString(st, 'severity');
+        if (st['code'] !== undefined && typeof st['code'] !== 'string') schemaFail('terminalObservation status.code must be string when present');
+      }
+      terminalObservation = { kind, resultFingerprint, normalized: normalized as unknown as OpenSpecArchiveFailureObservation };
+    }
+  }
+
+  return {
+    state,
+    surfaceVersion: OPENSPEC_ARCHIVE_SURFACE_VERSION,
+    changeRoot,
+    canonicalSpecsRoot: 'openspec/specs',
+    archiveNamespaceRoot,
+    preArchiveGenerationFingerprint: fingerprint,
+    ...(terminalObservation !== undefined && { terminalObservation }),
+  };
 }
 
 function validateOptionalConstraints(

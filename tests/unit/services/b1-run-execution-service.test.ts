@@ -21,11 +21,11 @@ afterEach(async () => {
   await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 });
 
-async function freshActiveFixture() {
+async function freshActiveFixture(options: { changeId?: string } = {}) {
   const root = await createTempDir();
   roots.push(root);
   const deliveryId = '20990201-01-b1';
-  const changeId = 'lean-run-fixture';
+  const changeId = options.changeId ?? 'lean-run-fixture';
   await mkdir(join(root, 'openspec', 'delivery-groups'), { recursive: true });
   await mkdir(join(root, 'openspec', 'changes', changeId), { recursive: true });
   await mkdir(join(root, '.flowkit', 'runs'), { recursive: true });
@@ -558,6 +558,48 @@ describe('B1 preparation and admission', () => {
       (run) => run.status === 'pending' && run.action === 'archive',
     );
     assert.deepEqual(pendingArchive, []);
+  });
+
+  it('keeps current C1 self-archive resumable after canonical spec merge and active root relocation', async () => {
+    const c1Id = 'openspec-1-7-thin-integration';
+    const { root, deliveryId, changeId, now } = await freshActiveFixture({ changeId: c1Id });
+    await advanceToArchiveReady(root, deliveryId, changeId, now);
+    const first = await prepareActionExecution({ repoRoot: root, deliveryId, entry: 'next', now });
+    assert.equal(first.package.run.action, 'archive');
+
+    const activeRoot = join(root, 'openspec', 'changes', changeId);
+    const archivedRoot = join(root, 'openspec', 'changes', 'archive', `2099-02-01-${changeId}`);
+    await mkdir(join(root, 'openspec', 'changes', 'archive'), { recursive: true });
+    await rename(activeRoot, archivedRoot);
+    const canonicalC1 = join(root, 'openspec', 'specs', 'flowkit-openspec-1-7-thin-integration', 'spec.md');
+    await mkdir(join(canonicalC1, '..'), { recursive: true });
+    await writeFile(canonicalC1, '# canonical C1 capability now exists\n', 'utf8');
+    await markFixtureChangeCompleted(root, deliveryId, changeId);
+
+    // If the global structured reader were enabled merely by canonical spec
+    // existence, this would attempt to query the now-relocated active C1.
+    const resumed = await prepareActionExecution({ repoRoot: root, deliveryId, entry: 'next', now });
+    assert.equal(resumed.resumed, true);
+    assert.equal(resumed.package.run.runId, first.package.run.runId);
+
+    for (const command of ['status', 'doctor', 'resume-context'] as const) {
+      const result = await runCli({ argv: [command], cwd: root });
+      assert.equal(result.exitCode, 0);
+      assert.match(result.stdout, new RegExp(`pending-run: ${first.package.run.runId}`));
+      assert.match(result.stdout, /pending-action: archive/);
+    }
+
+    await admitActionResult({
+      repoRoot: root,
+      deliveryId,
+      actionPackage: resumed.package,
+      result: { executionStatus: 'completed', summary: 'C1 self-archive completed' },
+    });
+    const terminal = JSON.parse(await readFile(
+      join(root, '.flowkit', 'runs', deliveryId, changeId, first.package.run.runId, 'result.json'),
+      'utf8',
+    )) as { runStatus: string };
+    assert.equal(terminal.runStatus, 'completed');
   });
 
   it('admits terminal result for the exact persisted pending archive after Change completed progress', async () => {

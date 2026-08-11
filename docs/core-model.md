@@ -266,4 +266,4 @@ B1 拥有十个 Standard Change Actions 的固定 `ActionDefinition`、logical A
 - Change creation：创建 `state=planned` Change；`dependsOn` 的唯一 canonical identity 为 `Change.id`。
 - Change `architectureImpact` 是 source-controlled persisted/read fact。A1 write-side 创建的新 Change 必须保存 boolean；pre-A1 exact legacy identity 缺失时只允许显式 `pre-a1-legacy-missing`。
 - Owner authority provenance 由 Delivery Manifest 顶层 `ownerDecisions` 拥有；Run 中的 owner 字符串不是 authority。
-- activation 只执行合法 `planned → active` mutation，并初始化最小 OpenSpec metadata；不创建 Run、Commit、Push、Full Test 或 Archify asset。
+- activation 只执行合法 `planned → active` mutation，并初始化最小 OpenSpec metadata；C1 checkpoint 后新 activation 必须显式声明 `specDeltaMode=required|skip`，不得把 Proposal/spec 内容当 metadata authority；不创建 Run、Commit、Push、Full Test 或 Archify asset。

@@ -551,6 +551,28 @@ describe('validateContextFile', () => {
     assert.equal(cf.reviewedRunId, '20260806-009-apply');
   });
 
+  it('accepts review-apply verificationInputRef under a structured non-default Change root', () => {
+    const cf = validateContextFile({
+      ...validChangeContext,
+      runId: '20260806-010-review-apply',
+      action: 'review-apply',
+      role: 'reviewer',
+      reviewedRunId: '20260806-009-apply',
+      inputRef: {
+        ref: '.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-009-apply/result.json',
+        versionFingerprint: 'abc123',
+        kind: 'run-result',
+      },
+      verificationInputRef: {
+        ref: 'planning/active/formal-fact-reader-and-persistence/verification.md',
+        versionFingerprint: 'def456',
+        kind: 'verification-summary',
+      },
+      runPath: '.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-010-review-apply/',
+    });
+    assert.equal(cf.verificationInputRef?.ref, 'planning/active/formal-fact-reader-and-persistence/verification.md');
+  });
+
   it('rejects review-* Run missing inputRef (Q1-RA-006)', () => {
     assert.throws(
       () =>

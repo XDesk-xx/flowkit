@@ -24,7 +24,7 @@
  * `pending` — the deterministic current-Run projection source.
  */
 
-import { link, mkdir, readFile, readdir, rename, rm, stat, unlink, writeFile } from 'node:fs/promises';
+import { link, mkdir, open, readFile, readdir, rename, rm, stat, unlink, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { assertMutable } from '../domain/terminal.js';
 import { validateRun } from '../domain/schema-validator.js';
@@ -56,8 +56,8 @@ import {
   buildArtifactResultRef,
   computeResultFileHash,
   resolveRunResultPath,
-  resolveSingletonArtifactRef,
-  resolveVerificationSummaryRef,
+  resolveCurrentSingletonArtifactRef,
+  resolveCurrentVerificationSummaryRef,
   enumerateSpecsNamespace,
   readArtifactBytes,
   validateCurrentStageArtifactSet,
@@ -68,6 +68,7 @@ import {
   VERIFICATION_SUMMARY_KIND,
 } from './result-ref-adapter.js';
 import { validateCandidateRunId } from './run-id-fs.js';
+import type { ArchiveMutationGuard } from '../integrations/openspec/openspec-types.js';
 import {
   artifactStage,
   latestCompletedArtifactRunId,
@@ -437,7 +438,7 @@ async function deriveVerificationInputRef(input: CreateRunInput): Promise<Result
       { action: input.action, runId: input.runId },
     );
   }
-  const logicalRef = resolveVerificationSummaryRef(input.changeId);
+  const logicalRef = await resolveCurrentVerificationSummaryRef(input.repoRoot, input.changeId);
   const content = await readArtifactBytes(input.repoRoot, logicalRef);
   return buildArtifactResultRef(logicalRef, content, VERIFICATION_SUMMARY_KIND);
 }
@@ -1337,7 +1338,7 @@ async function deriveVerificationSummaryArtifactRef(
   repoRoot: string,
 ): Promise<ResultRef> {
   requireChangeId(contextFile, 'review-apply');
-  const logicalRef = resolveVerificationSummaryRef(contextFile.changeId!);
+  const logicalRef = await resolveCurrentVerificationSummaryRef(repoRoot, contextFile.changeId!);
   const content = await readArtifactBytes(repoRoot, logicalRef);
   return buildArtifactResultRef(logicalRef, content, VERIFICATION_SUMMARY_KIND);
 }
@@ -1356,7 +1357,7 @@ async function buildSingletonArtifactRef(
   changeId: string,
   repoRoot: string,
 ): Promise<ResultRef> {
-  const logicalRef = resolveSingletonArtifactRef(action, tag, changeId);
+  const logicalRef = await resolveCurrentSingletonArtifactRef(repoRoot, action, tag, changeId);
   const content = await readArtifactBytes(repoRoot, logicalRef);
   return buildArtifactResultRef(logicalRef, content, PRODUCED_ARTIFACT_KIND);
 }
@@ -1912,6 +1913,70 @@ async function bestEffortUnlink(path: string): Promise<void> {
     await unlink(path);
   } catch {
     // best-effort
+  }
+}
+
+
+// ---------------------------------------------------------------------------
+// C1 OpenSpec archive operational guard persistence
+// ---------------------------------------------------------------------------
+
+function guardIdentity(value: ArchiveMutationGuard | undefined): string {
+  return JSON.stringify(value ?? null);
+}
+
+/** Read the machine-owned archive mutation guard from an archive Run. */
+export async function readArchiveMutationGuard(runDir: string): Promise<ArchiveMutationGuard | undefined> {
+  const context = await readContextFile(runDir);
+  validateContextFileIdentity(context, runDir);
+  if (context.action !== 'archive') {
+    throw new FlowkitError('ARCHIVE_GUARD_NOT_ALLOWED', `Run ${context.runId} is not an archive Run`);
+  }
+  return context.archiveMutationGuard;
+}
+
+/**
+ * Atomic compare-and-set for the sole mutable archive operational field.
+ * A short-lived exclusive lock prevents two local processes from both
+ * observing the same generation and replacing context.json concurrently.
+ */
+export async function compareAndSetArchiveMutationGuard(
+  runDir: string,
+  expected: ArchiveMutationGuard | undefined,
+  nextGuard: ArchiveMutationGuard,
+): Promise<void> {
+  const lockPath = join(runDir, '.archive-guard.lock');
+  let handle;
+  try {
+    handle = await open(lockPath, 'wx');
+  } catch (error) {
+    throw new FlowkitError('ARCHIVE_GUARD_CONCURRENT_UPDATE', 'archive mutation guard is being updated concurrently', {
+      runDir,
+      code: (error as NodeJS.ErrnoException).code,
+    });
+  }
+  try {
+    let terminalExists = false;
+    try { terminalExists = (await stat(join(runDir, 'result.json'))).isFile(); } catch { terminalExists = false; }
+    if (terminalExists) throw new FlowkitError('RUN_TERMINAL', 'archive guard cannot mutate after result.json exists', { runDir });
+
+    const current = await readContextFile(runDir);
+    validateContextFileIdentity(current, runDir);
+    if (current.action !== 'archive') {
+      throw new FlowkitError('ARCHIVE_GUARD_NOT_ALLOWED', `Run ${current.runId} is not an archive Run`);
+    }
+    if (guardIdentity(current.archiveMutationGuard) !== guardIdentity(expected)) {
+      throw new FlowkitError('ARCHIVE_GUARD_COMPARE_FAILED', 'archive mutation guard generation changed before CAS', {
+        runId: current.runId,
+      });
+    }
+    const nextContext: ContextFile = { ...current, archiveMutationGuard: nextGuard };
+    validateContextFile(nextContext);
+    validateContextFileIdentity(nextContext, runDir);
+    await atomicWriteFile(join(runDir, 'context.json'), serializeContextFile(nextContext));
+  } finally {
+    await handle.close();
+    await bestEffortUnlink(lockPath);
   }
 }
 

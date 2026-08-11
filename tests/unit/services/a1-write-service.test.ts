@@ -608,6 +608,7 @@ describe('A1 activation', () => {
     const { root, path, deliveryId } = await activationRoot();
     const result = await activateChange(root, 'target', 'owner:activate', {
       now: () => new Date('2099-01-05T00:00:00Z'),
+      specDeltaMode: 'required',
     });
     assert.equal(result.state, 'active');
     const manifest = await readFile(path, 'utf8');
@@ -625,11 +626,32 @@ describe('A1 activation', () => {
   });
 
 
+  it('writes skip_specs only for explicit future specDeltaMode=skip', async () => {
+    const { root } = await activationRoot();
+    await activateChange(root, 'target', 'owner:skip-activate', {
+      now: () => new Date('2099-01-05T00:00:00Z'),
+      specDeltaMode: 'skip',
+    });
+    assert.equal(
+      await readFile(join(root, 'openspec', 'changes', 'target', '.openspec.yaml'), 'utf8'),
+      'schema: spec-driven\ncreated: 2099-01-05\nskip_specs: true\n',
+    );
+  });
+
+  it('rejects future activation missing specDeltaMode before metadata or manifest mutation', async () => {
+    const { root, path } = await activationRoot();
+    const before = await readFile(path, 'utf8');
+    await assert.rejects(activateChange(root, 'target', 'owner:missing-mode'), /specDeltaMode=required\|skip/);
+    assert.equal(await readFile(path, 'utf8'), before);
+    await assert.rejects(stat(join(root, 'openspec', 'changes', 'target', '.openspec.yaml')));
+  });
+
   it('activate accepts pure CRLF Manifest input and writes canonical LF', async () => {
     const { root, path } = await activationRoot();
     await convertFileToCrLf(path);
     await activateChange(root, 'target', 'owner:crlf-activate', {
       now: () => new Date('2099-01-05T00:00:00Z'),
+      specDeltaMode: 'required',
     });
     const bytes = await readFile(path, 'utf8');
     assert.equal(bytes.includes('\r'), false);
@@ -662,6 +684,7 @@ describe('A1 activation', () => {
 
     await activateChange(root, 'lean-run-and-action-package', 'owner:legacy-activate', {
       now: () => new Date('2099-01-05T00:00:00Z'),
+      specDeltaMode: 'required',
     });
     const manifest = await readFile(path, 'utf8');
     assert.doesNotMatch(manifest, /architectureImpact:/);
@@ -682,6 +705,7 @@ describe('A1 activation', () => {
     await assert.rejects(
       activateChange(root, 'target', 'owner:activate', {
         now: () => new Date('2099-01-05T00:00:00Z'),
+        specDeltaMode: 'required',
         atomicWrite: failingAtomic,
       }),
       /simulated manifest publish failure/,
@@ -694,6 +718,7 @@ describe('A1 activation', () => {
 
     await activateChange(root, 'target', 'owner:activate', {
       now: () => new Date('2099-01-06T00:00:00Z'),
+      specDeltaMode: 'required',
     });
     assert.match(await readFile(path, 'utf8'), /id: target[\s\S]*state: active/);
   });
@@ -770,7 +795,7 @@ describe('A1 write CLI', () => {
     assert.match(create.stdout, /"changeId":"cli-created-change"/);
 
     const activate = await runCli({
-      argv: ['activate', '--change', 'cli-created-change', '--source-ref', 'owner:cli-activate'],
+      argv: ['activate', '--change', 'cli-created-change', '--source-ref', 'owner:cli-activate', '--spec-delta-mode', 'required'],
       cwd: root,
     });
     assert.equal(activate.exitCode, 0, activate.stderr);

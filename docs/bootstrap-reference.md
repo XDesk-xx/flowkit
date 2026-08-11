@@ -170,9 +170,11 @@ Run 进入 terminal 状态后保留原记录。需要重试时创建新 Run，�
 
 ### 3.7 Canonical artifact 与 point-in-time 引用
 
-`openspec/changes/<changeId>/` 下的 `explore.md / proposal.md / design.md / specs/** / tasks.md / verification.md` 是 OpenSpec 的 **current-state canonical path**：
+OpenSpec 1.7 `status/instructions` 返回的 validated `changeRoot/artifactPaths/contextFiles` 是 current planning path authority。`proposal/design/specs/tasks` MUST 由 structured view 解析；`explore.md` 与 `verification.md` 不是 `spec-driven` graph node，只能在同一 validated `changeRoot` 下由 Flowkit / Verification 派生 owned filename。默认 repo-local layout 当前通常落在 `openspec/changes/<changeId>/`，但该默认路径不得重新成为 Flowkit 的第二套 OpenSpec path rule。
 
-- 合法 `revise-*` MAY 覆盖同一路径；历史 terminal Run 的 mutable artifact / verification ResultRef 只表达“该 Run 当时引用的版本”，不要求未来 current path 永久保持相同 bytes；
+OpenSpec compatibility 从 stable `1.7.0` 起步，但不冻结 `<1.8.0` 一类 upper bound。Prerelease 不因数值达到 baseline 自动获得支持；higher stable release 必须逐 required machine surface 通过 typed conformance，任何 command/JSON/path/coherence/archive semantic drift 都 fail closed。
+
+- 合法 `revise-*` MAY 覆盖当前 structured logical path；历史 terminal Run 的 mutable artifact / verification ResultRef 只表达“该 Run 当时引用的版本”，不要求未来 current path 永久保持相同 bytes；
 - 当前 Review 或下一 Action 真正消费某一版本时，Core MAY 在该 handoff 边界做 exact check；handoff 成功后，不把 predecessor ref 延伸成未来 artifact authority；
 - `pending` 只表示 Run 尚未 terminal，不产生 revision-window / supersession / generation class；
 - 不建立 `.flowkit/artifacts/`、`openspec/.history/` 或其他 per-Run artifact snapshot store；

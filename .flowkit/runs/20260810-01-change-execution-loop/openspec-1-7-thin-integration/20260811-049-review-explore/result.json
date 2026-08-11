@@ -1,0 +1,20 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-explore",
+    "executionStatus": "completed",
+    "summary": "048 的主体 Explore 成立：Reviewer 独立复现 OpenSpec 1.7.0 structured status/instructions/validate/schema probes，确认 built-in spec-driven 只有 proposal/specs/design/tasks 四个 planning nodes，当前 Core 存在 physical-path assumptions、A1 metadata 固定 spec-driven、production OpenSpec adapter/timeout/Windows launcher 尚缺，thin authority split framing正确。唯一 blocker 是 048 虽把 project-local custom schema列为 Proposal候选并要求未来 A1 initializer 对齐，却没有调查当前已在 spec-driven 下激活、且 B1 review/propose semantic package已 version-bind .openspec.yaml 的 C1 自身如何合法迁移 schema。若 Proposal选择修改当前 C1 metadata，会撞上 propose=proposal-bundle-only 与 reviewed semantic binding；不能在 049→propose 之间做 out-of-band mutation。revise-explore 必须把 current-C1 schema migration/compatibility seam 纳入 confirmed gap 与 Proposal freeze question。"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindings": [
+    {
+      "id": "C1-RE-001",
+      "severity": "blocking",
+      "blockingAuthority": "author",
+      "title": "Explore 未调查当前已激活 C1 的 schema migration 与 B1 Action mutation/semantic binding 边界",
+      "problem": "048 正确识别 built-in spec-driven 四节点与 Flowkit formal files 的 authority mismatch，并把 project-local custom schema列为 Proposal候选，但只要求 A1 future metadata initializer 与最终 schema/root decision 对齐。当前 C1 本身已以 schema: spec-driven 激活；048 review-explore 与下一 propose 的 B1 Action Package 都把当前 .openspec.yaml 作为 versioned contractRef，而 propose 的固定 mutationClass 是 proposal-bundle-only。若 Proposal选择让当前 C1 切换 custom schema，现有 Explore没有说明该 metadata mutation 由哪个合法 lifecycle boundary拥有，也没有区分“当前 C1 planning schema”与“C1实现后 future Change schema”。这会让一个核心 Proposal候选依赖 out-of-band metadata rewrite或违反 Propose mutation boundary。",
+      "location": "openspec/changes/openspec-1-7-thin-integration/explore.md §7–§8, §15 P2/P3；B1 ActionDefinition propose=proposal-bundle-only；048/next-propose Action Package contractRefs 中的 .openspec.yaml",
+      "requiredChange": "revise-explore：增加 current-C1 schema migration/compatibility gap，并要求 Proposal明确区分（1）当前已激活 C1 本次 Explore/Propose 使用的 schema authority，（2）C1实现完成后 future Changes 的 metadata/schema contract。若任何方案需要修改当前 C1 .openspec.yaml，必须先证明该 mutation 有合法且已冻结的 Action/Owner/candidate-reset boundary，并保持已 review 的 semantic binding；不得在 review-explore approved→propose 之间静默改 metadata，也不得让 proposal-bundle-only Propose 暗中承担 schema migration。若选择当前 C1继续 spec-driven、仅让新行为作用于 future Changes，也必须明确冻结这一点。"
+    }
+  ]
+}

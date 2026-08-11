@@ -142,7 +142,7 @@ changes:
     required: true
     dependsOn:
       - lean-run-and-action-package
-    state: planned
+    state: completed
     outputs:
       - OpenSpec 1.7 thin adapter
       - structured planningHome / changeRoot / artifactPaths / contextFiles 消费
@@ -240,6 +240,21 @@ ownerDecisions:
     deliveryId: "20260810-01-change-execution-loop"
     changeId: "lean-run-and-action-package"
     sourceRef: "chat-owner-input:2026-08-11T16:37+08:00:authorize-archive:B1"
+  - ref: "owner:329575e05a3448a26c071d88ed37de90470d8a12e7e8b10fe48a7164217fdbcc"
+    decision: "activate-change"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "openspec-1-7-thin-integration"
+    sourceRef: "chat-owner-input:2026-08-11T18:51+08:00:activate:C1"
+  - ref: "owner:85410ab288ab01ba934a5d5c2f7f9a14e5ba4af7b6c9d441b87b15599e7c75e4"
+    decision: "authorize-apply"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "openspec-1-7-thin-integration"
+    sourceRef: "chat-owner-input:2026-08-12T05:23+08:00:authorize-apply:C1-after-065"
+  - ref: "owner:419463eca3acfd846b3bd8da1b86f7202ea17a2c23a28f9a88f9ff9fcd137f18"
+    decision: "authorize-archive"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "openspec-1-7-thin-integration"
+    sourceRef: "chat-owner-input:2026-08-12T06:22+08:00:authorize-archive:C1"
 verification:
   change:
     requireApplicableChecks: true
