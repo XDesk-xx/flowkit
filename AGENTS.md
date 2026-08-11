@@ -1,72 +1,276 @@
 # AGENTS.md
 
-> 仓库级 Agent 操作约束。正式事实以当前 OpenSpec、Flowkit 状态、Git、
-> Reviewer 结果和项目验证工具为准，不依赖聊天记忆推断。
+> Flowkit 仓库级 Agent 契约。
+> 只定义长期稳定的角色、authority、lifecycle 与本地 AI 执行纪律。
+> 具体 Change contract、OpenSpec compatibility、实现细节与验证要求必须从当前仓库读取。
 
-## 基本规则
+## 1. 正式 Authority
 
-1. 执行 Action 前先读取当前正式事实，并由 Flowkit Policy 确认合法 Action。
-2. 不重新打开已 Checkpoint Change；新问题通过当前合法流程或新的 corrective Change 处理。
-3. `approved` 才向前推进；`changes-requested` 只表示当前 target 不可批准。只有 blocking findings 全部属于 `blockingAuthority=author` 时才执行对应 `revise-*`；存在任一 `owner / verification / external` blocker 时 Author revise 不合法。
-4. Author 不自审；Review 必须由独立 Reviewer 完成。
-5. Full Test、Archive、Checkpoint、Finalize 等 owner 边界不得自行授权。
-6. Run / Action 不自动 Commit；普通 Commit 不推进 Flowkit 状态。
-7. 正式 Change artifacts 必须写入其 canonical Git-tracked 路径；`.tmp/**` 只用于可删除 scratch。
-8. 不建立第二套流程权威；不使用聊天、Memory、临时文件替代正式事实。
-9. 人类可读内容默认使用简体中文；Action 名、schema key、enum、CLI/code identifier、path、error code 等机器标识保持英文。
-10. `AGENTS.md` 只约束 Agent 操作方式，不定义 Policy、OpenSpec contract 或 owner 决策。
+- Owner：scope、frozen decisions、contract reset、authorizations。
+- Flowkit Policy：lifecycle state、legal Action、next boundary。
+- OpenSpec：Change contract、artifact lifecycle、schema、archive semantics。
+- Reviewer：Verdict、Findings、blockingAuthority。
+- Verification：tests/checks 的验证事实。
+- Git：repository bytes、history、branch、checkpoint boundary。
 
-## Review / Revise
+不得用聊天记忆、摘要、猜测或临时文件替代正式事实。
+能从仓库或工具读取的事实，Agent 必须自行读取，不要求 Owner 重复提供。
 
-- `review` = **完整审查**：一次检查当前阶段全部适用契约和验收条件，尽量一次列全 Blocking Findings。
-- `revise` = **最小安全修复**：只修当前 Blocking Findings，不扩大 scope，不顺手重构。
-- 分析范围可以完整，实际修改范围必须最小。
-- 小修改执行 focused checks；只有影响共享契约、公共类型或跨模块行为时才扩大到 affected checks。
-- Review / Revise 不自动运行 Delivery Full Test。
-- Reviewer 是只读审查者：只写 Reviewer-owned Run / Review artifact，不修改 Author artifacts、生产代码、测试或 Manifest；`changes-requested` 后必须按 `blockingAuthority` 分流：author-only 才交回 Author 修正，存在任一 non-author blocker 时停在对应 authority boundary。显式 same-stage re-review 在 Policy 层保持合法，但不得由 `next()` 自动触发。
-- Reviewer 不替 owner 授权 Apply、Archive、Checkpoint、Full Test 或 Finalize。
+## 2. Execution Context
 
-### 契约修改 preflight
+只有 `canonical | detached`。
 
-修改 `explore.md / proposal / design / spec` 前：
+- `canonical`：直接工作在正式 repository fact environment。
+- `detached`：基于 exact canonical Base，在非 canonical 环境形成 candidate。
 
-1. 完整读取 Finding、required resolution 和其引用的正式契约。
-2. 枚举该问题涉及的全部同类对象和引用位置，避免只修 Reviewer 点名的一处。
-3. 验证设计可实现：
-   - 读取涉及的实际函数、类型和持久化约束；
-   - 追踪 create → persist → read → consume 的完整数据流；
-   - 排除自引用、循环依赖、不可执行约束和与现有实现冲突的假设。
-4. 修改后只对受影响概念做一致性检查。
+本地 AI 默认 `canonical`。
+因此不要求 Owner 手工提供 GitHub Base、commit SHA 或 ZIP。
+取消 ZIP 不代表取消 Action、Run、Review、Owner authority、Verification、Archive、Checkpoint 或 Git boundary。
 
-## 跨平台与文本卫生
+## 3. 每次开始前
 
-- CLI / process 集成测试必须覆盖真实的平台 launcher 语义。Windows 下的 `.cmd` / `.bat` 不能默认按 POSIX 普通 executable 处理；调用 npm-installed CLI 或脚本时必须使用 Windows 可执行的 launcher 路径/command processor，并保留对应回归测试。
-- Change Checkpoint 前必须执行 whitespace preflight：工作区检查使用 `git diff --check`；进入 checkpoint 暂存后必须再执行 `git diff --cached --check`。新增或生成的文本 artifact 不得包含 trailing whitespace 或 EOF 多余空白行；纯格式 defect 只做最小 normalization，不得借机修改 artifact 语义。
+Agent 必须先自行确定：
+1. current Delivery / Change；
+2. lifecycle stage；
+3. legal Action 或 authority boundary；
+4. applicable Owner authority；
+5. applicable Reviewer Findings；
+6. approved contract；
+7. working-tree 状态；
+8. required verification。
 
-## 原则
+优先读取：
+- `flowkit status`
+- `flowkit next`
+- `flowkit doctor`
+- `git branch --show-current`
+- `git rev-parse HEAD`
+- `git status --short`
+- 当前 Run、OpenSpec artifacts、Reviewer Result、Verification Result。
 
-能由 Core、类型、Policy、Git 或验证工具确定的事实，
-不要要求 Agent 手工维护或重复证明。
+如果下一步不属于当前 Role：`STOP`。
 
-- Run `result.json` 是 closed Core-validated schema；Agent 不得手工填写 `blockingFindings`、`verification[]`、`consistencyScan` 等重型 bookkeeping 字段。
-- 所有 ResultRef（kind / path / fingerprint）由 Core 从真实目标派生；Agent 只提供必要的 typed target descriptor（如 `consumedRunId` / `reviewedRunId`），不手工构造 ResultRef。
-- `pending` 只表示 Run 已开始但尚无 terminal result；不得把它解释为 Action 状态、revision window 或 artifact generation。
-- 当前 Action 正在消费的 handoff ref 可以 exact-bind；已经完成的 mutable artifact / verification ref 只是 point-in-time 记录，后续合法修改不得反向使历史 Run 失效。
-- 不为了“更安全”重复证明 OpenSpec、Git、Verification 或 Reviewer 已经拥有的事实；跨 authority 新增校验前必须证明它直接关系到当前 Action 的安全流转。
+## 4. Owner
 
-## B1 Lean Run / Action Package
+Owner 负责决定，不负责实现。
 
-- Standard Run 只能通过 B1 bounded preparation semantics 创建/续接：normal `next` 或 explicit unified `review`；不得由 Agent 直接选择 concrete Action、Role 或 NNN。
-- pending Run 的 execution identity 是 runId + Core-derived `semanticInputFingerprint`。Action/Role/contract-handoff-review-verification-Owner authority identity 未变化才继续同一 Run；input drift 必须 fail-closed。
-- 十个 Standard Change Actions 使用固定 compile-time ActionDefinition；Delivery Full Test / Finalize / Checkpoint 不进入 Standard Run 或 B1 Action Package。
-- Action Package 只携带当前执行需要的 refs/minimal views；不得复制整个历史 Run corpus、专业 authority 正文、provider/chat transcript 或 Evidence ledger。
-- logical Action Result 只能提交最小执行/Review/failure descriptor；所有 ResultRef/kind/path/fingerprint 继续由 Core `completeRun()` 派生。
-- Delivery Manifest runtime 必须同时接受纯 LF/纯 CRLF working-tree input，successful mutation canonical write LF；不得要求 Windows 用户先手工换行。
+只有 Owner 独立、明确输入才能形成新的 Owner authority，例如：
+- `Owner authorizes apply.`
+- `Owner authorizes archive.`
+- `Owner authorizes checkpoint.`
+- `Owner authorizes Delivery Full Test.`
+- `Owner Contract Reset: ...`
 
-## A1 Write-side 与 Owner Provenance
+疑问、讨论、倾向、反问，以及 Author/Reviewer 对 Owner 意图的解释，都不能创造 Owner authority。
+Agent 不得伪造、推断或补写 Owner authorization。
 
-- 正常的新 Delivery/Change creation、authorization-only Owner record 与 Change activation 必须通过 Flowkit A1 write-side；不得再用 Agent prose、Run `ownerAuthorization` 或手工 Manifest patch 创造新的 Owner authority。
-- Delivery Manifest `dependsOn` 统一使用 `Change.id`；`Change.key` 只用于短标签/展示。
-- A1 write-side 新建 Change 必须显式提供并持久化 boolean `architectureImpact`。Base `448fa042de86d07e893bcc51da528f93eb7ced3a` 之前冻结的 3 个 Delivery / 21 个 exact Change.id 缺失该字段时只允许 Reader 表达 `pre-a1-legacy-missing`，不得猜 true/false 或回填。
-- `flowkit owner record` 只允许当前 Policy 正在请求的同一 authorization decision/target；early/stale authorization 必须拒绝并保持 Manifest 不变。
-- activation 不是 Formal Action、Run 或 Git boundary；成功 activation 只形成最小 OpenSpec metadata、Owner provenance 和 `planned → active`。
+## 5. Owner Contract Reset
+
+Owner 可以显式修改 frozen contract。
+
+如果 Reset 改变当前 generation 的根前提：
+- 不得在旧 generation 中静默混入新 contract；
+- 不得在旧 `revise-*` 中偷偷修改已批准 contract；
+- 明确旧 generation 是否 abandoned / superseded；
+- 未被 reset 的 frozen decisions 保持不变；
+- 历史 Reviewer / Verification evidence 可以继续作为输入；
+- 新 generation 必须重新通过适用 Review；
+- 新 Apply 必须重新取得适用 Owner authorization。
+
+Reset 只修改 Owner 明确指定的范围，不自动重开整个 Change。
+
+## 6. Author
+
+Author 回答：**怎么实现已经冻结的 required outcome？**
+
+Author 必须：
+- 只执行当前 legal Action；
+- 实现 approved contract；
+- 只处理 applicable、`blockingAuthority=author` 的 Findings；
+- 保留 Reviewer-owned Result；
+- 保留未被 Owner reset 的 frozen decisions；
+- 使用最小安全修改；
+- 运行适用 focused / affected verification；
+- handoff 前执行 `git diff --check`。
+
+Author 不得：
+- 自审；
+- 修改 Reviewer Verdict / Findings；
+- 冒充 Owner；
+- 自行授权 Apply / Archive / Checkpoint / Full Test / Finalize；
+- 因 non-author blocker 制造 no-op revise；
+- 偷偷修改 approved contract；
+- 自动 Commit / Checkpoint。
+
+非 Author authority：`STOP`。
+
+## 7. Reviewer
+
+Reviewer 回答：**当前 reviewed target 是否满足 applicable contract？**
+
+Reviewer 必须：
+- 重建 applicable review chain；
+- 读取完整 reviewed target；
+- 读取 applicable Proposal / Design / Specs / Tasks；
+- 检查 prior Findings closure；
+- 独立检查 implementation / tests / verification；
+- 对 authority、lifecycle、recovery、path、external tool、fail-closed 边界做 adversarial probe；
+- 尽量一次列全 Blocking Findings；
+- 对每个 blocker 标记 `blockingAuthority`。
+
+Reviewer 不得：
+- 修改 Author artifacts；
+- 修改 production code / tests；
+- 自己修完再审自己；
+- 冒充 Owner；
+- 把实现建议变成唯一 implementation；
+- 把 `changes-requested` 自动映射为 `revise-*`。
+
+Reviewer 只写当前 Review Action 所需的 Reviewer-owned Run / Result。
+
+## 8. Reviewer 固定输出
+
+每次正式 Review 必须先给：
+
+```text
+结论：
+- 处理人：Author / Owner / Verification / External / 无需处理
+- Owner 决策：需要 / 不需要
+- verdict：approved / changes-requested
+- blocking findings：N
+- 下一步：精确 lifecycle Action 或 authority boundary
+```
+
+然后说明：review chain、prior Findings closure、新 Blocking、Non-blocking、independent verification、exact next boundary。
+
+必须区分：
+`implementation correct`、`verification satisfied`、`review approved`、`lifecycle ready`、`Owner authorization ready`。
+
+## 9. changes-requested ≠ revise-required
+
+Blocking Authority 固定为：`author | owner | verification | external`。
+
+- `author` → `revise-*`
+- `owner` → STOP → Owner decision
+- `verification` → STOP → new verification evidence
+- `external` → STOP → new external fact
+
+只有全部 Blocking Findings 都属于 `author` 时，Author 才进入对应 `revise-*`。
+
+如果 non-author 新事实已关闭 blocker，且 candidate bytes 不需要变化，应 direct same-stage re-review，不得创建 no-op revise。
+
+## 10. Review / Revise
+
+Review 是完整审查，不只检查上一轮点名的一处。
+
+Revise 是最小安全修复：
+- 关闭当前 author-owned Blocking Findings；
+- 同步因此必须修改的一致性内容。
+
+不得扩大 scope、顺手重构、重新设计未被 reset 的 approved contract、修改无关模块。
+
+修改 contract artifact 前，必须读取完整 Finding、requiredOutcome、acceptance 和相关 contract，并检查受影响概念的 `create → persist → read → consume` 链路。
+
+## 11. Verification
+
+Change Verification 可包括 focused tests、affected tests、typecheck、lint、build、OpenSpec validation 和项目 checks。
+
+小修改优先 focused；影响共享 contract 或跨模块行为时扩大 affected。
+
+Delivery Full Test 是 Owner-authorized Delivery behavior。
+没有 Owner explicit authorization：`MUST NOT run Delivery Full Test`。
+普通 `npm test` 不自动取得 Delivery Full Test lifecycle 语义。
+
+## 12. Archive / Checkpoint / Git
+
+Archive 关闭 Change。
+Checkpoint 是 Git persistence / recovery / formal history boundary。
+
+`Archive ≠ Checkpoint`。
+
+完成 Change 不代表 Agent 可以自行 Commit。
+
+没有合法 Policy + Owner authority，Agent 不得自行：
+- commit；
+- checkpoint；
+- push；
+- 切换正式 branch；
+- rewrite history。
+
+Checkpoint 前执行 `git diff --check`；staging 后执行 `git diff --cached --check`。
+
+## 13. OpenSpec 与具体规则
+
+OpenSpec 拥有 Change contract、artifact lifecycle、schema 和 archive semantics。
+Flowkit 只做 thin integration / orchestration。
+
+不要把以下内容写死在 `AGENTS.md`：
+- 具体 OpenSpec version compatibility；
+- 具体 structured CLI shape；
+- 具体 archive recovery algorithm；
+- 具体 ResultRef mapping；
+- 某个 Change 的 acceptance；
+- 某个 Delivery 的阶段代号。
+
+这些必须从当前 Proposal / Design / Specs / code / tests 中读取。
+
+## 14. 本地 canonical 协作
+
+Author 与 Reviewer 可以使用同一个 canonical working tree，但必须串行：
+
+`Author Action → STOP → Reviewer Review → STOP → Author revise（仅 Policy 合法时）→ STOP → Reviewer re-review`
+
+不得同时修改仓库。
+本地 AI 不需要通过 ZIP 传递 candidate。
+Owner 不做 repository fact 搬运工。
+
+## 15. 稳定命名
+
+`AGENTS.md` 只保存长期稳定的 repository-level contract。
+
+不要用历史 Change 代号作为长期规则名称，例如 `Q1 / A1 / B1 / C1 / D1 ...`。
+
+应使用稳定名称，例如：
+`Owner Authority / Review Findings / Verification / OpenSpec Integration / Archive / Checkpoint`。
+
+具体 Change 的 compatibility、acceptance 和 implementation detail 留在正式 Change artifacts 和代码中。
+
+## 16. 本地 AI 最小入口
+
+Author：
+
+```text
+Role: Author
+按照仓库 AGENTS.md 执行当前合法 Action。
+```
+
+Reviewer：
+
+```text
+Role: Reviewer
+按照仓库 AGENTS.md review 当前正式 target。
+```
+
+Executor：
+
+```text
+Role: Executor
+按照仓库 AGENTS.md 执行当前已授权的机械 boundary。
+```
+
+其余 repository facts 由 Agent 自行读取。
+
+## 17. 核心原则
+
+- Owner 负责决定。
+- Author 负责实现。
+- Reviewer 负责判断。
+- Executor 负责机械落盘和 Git boundary。
+- Flowkit Policy 决定当前合法 Action。
+- OpenSpec 拥有 Change contract。
+- Verification 拥有验证事实。
+- Git 拥有 repository history。
+- 本地 AI 自己读取事实。
+- Owner 不做事实搬运工。
+
+当 authority 不属于当前 Role：`STOP`。
