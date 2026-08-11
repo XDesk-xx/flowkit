@@ -1,0 +1,35 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "041 已完整关闭040的B1-RA-001/B1-RA-002：caller package semantic tamper现会在terminal publish前 PENDING_INPUT_DRIFT，Apply/revise-apply合法tasks/verification progress可same-run resume且immutable proposal drift仍fail closed。但完整scan发现两个新的author blocker：B1-RA-003，producer refs被过宽用于Reviewer/immutable target，外部review target drift会错误resume；B1-RA-004，pending archive 在合法OpenSpec archive/Change completion progress后因active boundary消失无法same-run resume。SHA84/84、focused82/82、affected604/604、typecheck/lint/build/quality、OpenSpec strict、lineage/hygiene与cumulative diagnostics均通过。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/lean-run-and-action-package/verification.md",
+      "versionFingerprint": "e188aceb9861cc0965d33e6359c36e3f43bd9fcb24dff2376ff8854953bf8df3",
+      "kind": "verification-summary"
+    },
+    "nextActionRecommendation": "revise-apply"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindings": [
+    {
+      "id": "B1-RA-003",
+      "severity": "blocking",
+      "blockingAuthority": "author",
+      "title": "Producer point-in-time refs 被过宽用于 immutable Reviewer target，current target drift 会错误 resume",
+      "problem": "041 为解决 Apply self-drift 将 collectContractRefs 广泛改为读取 stage producer 的 producedResultRefs，但 review-explore/review-propose 等 reviewer-result-only Action 没有 current-byte equality guard。Reviewer 实测 pending review-explore 建立后外部修改 explore.md，再次 prepare 仍 resumed=true/same runId，因为 fresh descriptor继续使用旧 producer ref。",
+      "location": "src/services/b1-run-execution-service.ts collectContractRefs()/contractGenerationStage(); openspec/changes/lean-run-and-action-package/specs/flowkit-lean-run-and-action-package/spec.md `same pending Run continuation 的 semantic identity...`",
+      "requiredChange": "revise-apply：按 Action mutation boundary 区分 immutable current target 与 Action-owned mutable progress。对当前 Action 不允许修改的 contract/target，producer ref必须同时验证 current authority/current bytes仍等于 entry generation；外部 drift必须 PENDING_INPUT_DRIFT。对 Apply/revise等 Action-owned mutable progress继续允许 same-run continuation。至少新增 review-explore/review-propose target drift regressions，并保持040两个closure regressions。"
+    },
+    {
+      "id": "B1-RA-004",
+      "severity": "blocking",
+      "blockingAuthority": "author",
+      "title": "Archive 的合法 OpenSpec archive/completed progress 会让自身 pending Run失去 preparation boundary",
+      "problem": "archive 的 fixed mutationClass 本身允许 OpenSpec archive + Change completed transition，但 prepareActionExecution 在检查 pending 前先要求 active Change存在且 shared next()/review重新解析出 Standard Action。Reviewer 实测 prepare archive 后把 active OpenSpec Change移入 archive目录，再次 prepare 返回 RUN_PREPARATION_NOT_ALLOWED，而不是恢复同一 pending archive Run。",
+      "location": "src/services/b1-run-execution-service.ts prepareActionExecution()/collectContractRefs(); src/domain/actions.ts archive ActionDefinition; openspec/changes/lean-run-and-action-package/specs/flowkit-lean-run-and-action-package/spec.md same pending continuation / archive mapping",
+      "requiredChange": "revise-apply：让唯一已存在的 pending archive execution在其 Action-owned archive/completion progress后仍可从 persisted execution identity恢复；next()仍只拥有新 Action creation authority，completed Change且无pending archive不得创建新Run。archive-owned OpenSpec relocation/active→completed不得造成self-drift，unrelated immutable authority drift仍fail closed，Checkpoint继续不是Action。补 active OpenSpec relocation、completed progress、no-pending completed 三类 regression。"
+    }
+  ]
+}

@@ -125,7 +125,7 @@ changes:
     required: true
     dependsOn:
       - delivery-change-creation-and-owner-input
-    state: planned
+    state: completed
     outputs:
       - Lean Run lifecycle 与 Delivery-wide monotonic Run ID
       - Action Package
@@ -225,6 +225,21 @@ ownerDecisions:
     deliveryId: "20260810-01-change-execution-loop"
     changeId: "delivery-change-creation-and-owner-input"
     sourceRef: "chat-owner-input:2026-08-11T00:23+08:00:authorize-archive:A1"
+  - ref: "owner:0c53492fdfc92de59fe2d9f65e95346e8f146a205366067af28415562053c8fa"
+    decision: "activate-change"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "lean-run-and-action-package"
+    sourceRef: "chat-owner-input:2026-08-11T01:28+08:00:activate-change:B1"
+  - ref: "owner:ba3febcb579af60a6e979b119b1067f083daab25df7c45707595e0ecd8f0c26f"
+    decision: "authorize-apply"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "lean-run-and-action-package"
+    sourceRef: "chat-owner-input:2026-08-11T08:53+08:00:authorize-apply:B1"
+  - ref: "owner:945b3f77e24fc3cbab16321b09f644f80796e29361fbe5fbb83cc25bfba84043"
+    decision: "authorize-archive"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "lean-run-and-action-package"
+    sourceRef: "chat-owner-input:2026-08-11T16:37+08:00:authorize-archive:B1"
 verification:
   change:
     requireApplicableChecks: true

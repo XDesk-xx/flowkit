@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 2,
+  "runId": "20260811-046-review-apply",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "review-apply",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/lean-run-and-action-package/20260811-046-review-apply/",
+  "changeKey": "B1",
+  "changeId": "lean-run-and-action-package",
+  "reviewedRunId": "20260811-045-revise-apply",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/lean-run-and-action-package/20260811-045-revise-apply/result.json",
+    "versionFingerprint": "c0343dd7f4d004009c5f5020c4ce5438f19fba9dbe61bc459214cfd99db8c116",
+    "kind": "run-result"
+  },
+  "verificationInputRef": {
+    "ref": "openspec/changes/lean-run-and-action-package/verification.md",
+    "versionFingerprint": "969d50a925fab180fa39316989ae1e6e1a36d042141a358c0e0bfc54c0081cf1",
+    "kind": "verification-summary"
+  },
+  "constraints": {
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "explore",
+    "executionStatus": "completed",
+    "summary": "已完成 B1 Lean Run / Action Package Explore：确认现有 Core 已具备 Change-only Run path、Delivery-wide Run-ID helper、atomic createRun/completeRun、Core-derived ResultRef、active-Change-only Reader 与 pending diagnostics，因此 B1 不应重写 Deterministic Core。真实 gaps 集中在 execution composition：当前低层 createRun 未强制组合 Run-ID allocator/validator，disposable probe 可创建 malformed Run ID、错误 Action→Role 以及跨 Change 重复 NNN；ActionDefinition 只有 interface 无 machine catalog；pending same-Run continuation 只有 next/resume 诊断而无统一 prepare/resume/new-instance surface；Action Package 无 production generator；Action Result 应复用 completeRun/ResultRef authority并补薄 admission service；failed/cancelled retry缺统一 new execution preparation。Owner 额外授权的 Windows CRLF Manifest writer compatibility 作为 bounded B1 子问题纳入：合法 CRLF working-tree Manifest 必须可读/normalize，并在 mutation 后 canonical LF 写出，不重做 A1 authority/creation semantics。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/lean-run-and-action-package/explore.md",
+        "versionFingerprint": "bf56f4b2e3990ce31e9217305da2528fba6a9eed9d7c3e9913b687c40133dd1c",
+        "kind": "produced-artifact"
+      }
+    ]
+  }
+}

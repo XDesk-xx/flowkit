@@ -1,0 +1,35 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "043 已完整关闭042的B1-RA-003/B1-RA-004：Reviewer immutable target drift重新 fail-closed，Apply/revise-apply self-owned progress continuation保持，persisted pending archive在OpenSpec relocation或Change completed后可恢复同一runId，completed无pending不会创建新archive。但完整archive闭环仍有两个author blocker：B1-RA-005，completed后resume成功但admitActionResult仍强制active Change，terminal result无法发布；B1-RA-006，同一可恢复pending archive在inspect/status/doctor/resume-context中因无active Change被误报为none。SHA90/90、focused87/87、affected609/609、full regression638/638、typecheck/lint/build/quality、OpenSpec strict、lineage/hygiene与cumulative diagnostics均通过。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/lean-run-and-action-package/verification.md",
+      "versionFingerprint": "4c09542dcb4b0f9fa5e471dadbac61927bce00b0ac8b1f21ea7b2607c4bec846",
+      "kind": "verification-summary"
+    },
+    "nextActionRecommendation": "revise-apply"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindings": [
+    {
+      "id": "B1-RA-005",
+      "severity": "blocking",
+      "blockingAuthority": "author",
+      "title": "pending archive 在 Change completed 后虽可 resume，但 terminal admission 仍要求 active Change",
+      "problem": "043 修复了 persisted pending archive preparation/resume，但 admitActionResult 仍要求 getActiveChange(snapshot) 存在且等于 package.changeId。archive 的合法 output 本身包含 Change active→completed，因此 Reviewer 实测 prepare archive→mark completed→resume same runId 后提交 completed result，仍被 PENDING_INPUT_DRIFT 拒绝，无法发布 terminal result.json。",
+      "location": "src/services/b1-run-execution-service.ts admitActionResult() active-Change guard; src/domain/actions.ts archive ActionDefinition; openspec/changes/lean-run-and-action-package/specs/flowkit-lean-run-and-action-package/spec.md archive completed output / same-pending execution semantics",
+      "requiredChange": "revise-apply：对 exact matching persisted pending archive 提供 bounded terminal-admission seam，允许其在合法 Change completed progress 后继续通过 package semantic identity、Owner/Review/Verification/contract binding并由 completeRun 发布唯一 terminal result。non-archive仍保持 active-Change binding；completed且无pending archive不得获得新admission authority；Checkpoint 继续不是Action output。补 completed-resume→admit success、fabricated completed archive reject、non-archive active-binding regression。"
+    },
+    {
+      "id": "B1-RA-006",
+      "severity": "blocking",
+      "blockingAuthority": "author",
+      "title": "persisted pending archive 可恢复，但 inspect/status/doctor/resume-context 在 completed seam 误报无 pending Run",
+      "problem": "043 execution path 通过 findPersistedPendingArchive 可在 Change completed 后恢复同一 pending archive，但 inspectPreparedRun 仍先调用 getActiveChange(snapshot)，无active Change时直接返回 status=none。Reviewer 实测同一状态下 prepareActionExecution resumed=true，而 inspectPreparedRun runId=undefined/status=none，导致 diagnostics 与真实 execution recovery authority不一致。",
+      "location": "src/services/b1-run-execution-service.ts inspectPreparedRun()/findPersistedPendingArchive(); src/cli/main.ts diagnostics prepared-run projection; openspec/changes/lean-run-and-action-package/specs/flowkit-diagnostic-cli/spec.md Diagnostics 必须可恢复 B1 prepared pending Run",
+      "requiredChange": "revise-apply：让 inspectPreparedRun/status/doctor/resume-context bounded复用 persisted pending archive recovery identity。completed+matching pending archive时必须报告同runId/action/role及 resumable/input-drift真实状态；completed无pending继续none。保持read-only，不创建Run、不自动执行archive，并避免复制第二套archive decision tree。补inspect与CLI projection regressions。"
+    }
+  ]
+}

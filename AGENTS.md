@@ -54,6 +54,15 @@
 - 当前 Action 正在消费的 handoff ref 可以 exact-bind；已经完成的 mutable artifact / verification ref 只是 point-in-time 记录，后续合法修改不得反向使历史 Run 失效。
 - 不为了“更安全”重复证明 OpenSpec、Git、Verification 或 Reviewer 已经拥有的事实；跨 authority 新增校验前必须证明它直接关系到当前 Action 的安全流转。
 
+## B1 Lean Run / Action Package
+
+- Standard Run 只能通过 B1 bounded preparation semantics 创建/续接：normal `next` 或 explicit unified `review`；不得由 Agent 直接选择 concrete Action、Role 或 NNN。
+- pending Run 的 execution identity 是 runId + Core-derived `semanticInputFingerprint`。Action/Role/contract-handoff-review-verification-Owner authority identity 未变化才继续同一 Run；input drift 必须 fail-closed。
+- 十个 Standard Change Actions 使用固定 compile-time ActionDefinition；Delivery Full Test / Finalize / Checkpoint 不进入 Standard Run 或 B1 Action Package。
+- Action Package 只携带当前执行需要的 refs/minimal views；不得复制整个历史 Run corpus、专业 authority 正文、provider/chat transcript 或 Evidence ledger。
+- logical Action Result 只能提交最小执行/Review/failure descriptor；所有 ResultRef/kind/path/fingerprint 继续由 Core `completeRun()` 派生。
+- Delivery Manifest runtime 必须同时接受纯 LF/纯 CRLF working-tree input，successful mutation canonical write LF；不得要求 Windows 用户先手工换行。
+
 ## A1 Write-side 与 Owner Provenance
 
 - 正常的新 Delivery/Change creation、authorization-only Owner record 与 Change activation 必须通过 Flowkit A1 write-side；不得再用 Agent prose、Run `ownerAuthorization` 或手工 Manifest patch 创造新的 Owner authority。

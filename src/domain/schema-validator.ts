@@ -9,7 +9,7 @@
  */
 
 import { FlowkitError } from '../shared/errors.js';
-import { isFormalAction } from './actions.js';
+import { isFormalAction, isRoleAllowedForAction } from './actions.js';
 import type {
   ChangeState,
   DeliveryState,
@@ -183,6 +183,28 @@ export function validateRun(value: unknown): Run {
       action,
     });
   }
+  if (!isRoleAllowedForAction(action, role)) {
+    throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `Action ${action} has invalid role ${role}`, {
+      action,
+      role,
+    });
+  }
+
+  const semanticInputFingerprintRaw = obj['semanticInputFingerprint'];
+  let semanticInputFingerprint: string | undefined;
+  if (semanticInputFingerprintRaw !== undefined) {
+    if (
+      typeof semanticInputFingerprintRaw !== 'string' ||
+      !/^[0-9a-f]{64}$/.test(semanticInputFingerprintRaw)
+    ) {
+      throw new FlowkitError(
+        'SCHEMA_VALIDATION_FAILED',
+        'semanticInputFingerprint must be a lowercase SHA-256 hex string',
+        { semanticInputFingerprint: semanticInputFingerprintRaw },
+      );
+    }
+    semanticInputFingerprint = semanticInputFingerprintRaw;
+  }
 
   const changeId = requireString(obj, 'changeId');
   const inputRef =
@@ -195,6 +217,7 @@ export function validateRun(value: unknown): Run {
     action,
     role,
     status,
+    ...(semanticInputFingerprint !== undefined && { semanticInputFingerprint }),
     inputRef,
   };
 }

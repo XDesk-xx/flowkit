@@ -23,6 +23,7 @@ import { createHash } from 'node:crypto';
 import {
   isFormalAction,
   isChangeAction,
+  isRoleAllowedForAction,
   CHANGE_ACTIONS,
 } from '../domain/actions.js';
 import type { ChangeAction } from '../domain/actions.js';
@@ -176,6 +177,12 @@ export interface ContextFile {
   readonly action: ChangeAction;
   readonly role: Role;
   readonly ownerAuthorization: string;
+  /**
+   * B1 compact semantic authority identity for pending-run continuation.
+   * Historical pre-B1 Runs may omit it; every Run prepared through the B1
+   * high-level surface persists it.
+   */
+  readonly semanticInputFingerprint?: string;
   /** Optional ResultRef projecting directly to `Run.inputRef`. */
   readonly inputRef?: ResultRef;
   /**
@@ -1106,8 +1113,27 @@ export function validateContextFile(value: unknown): ContextFile {
   if (role !== 'owner' && role !== 'author' && role !== 'reviewer') {
     schemaFail('Field role must be owner|author|reviewer', { role });
   }
+  if (isChangeAction(action) && !isRoleAllowedForAction(action, role as Role)) {
+    schemaFail(`Action ${action} requires role ${action.startsWith('review-') ? 'reviewer' : 'author'}, got ${role}`, {
+      action,
+      role,
+    });
+  }
   const ownerAuthorization = requireString(obj, 'ownerAuthorization');
   const runPath = requireNonEmptyString(obj, 'runPath');
+  const semanticInputFingerprintRaw = obj['semanticInputFingerprint'];
+  let semanticInputFingerprint: string | undefined;
+  if (semanticInputFingerprintRaw !== undefined) {
+    if (
+      typeof semanticInputFingerprintRaw !== 'string' ||
+      !/^[0-9a-f]{64}$/.test(semanticInputFingerprintRaw)
+    ) {
+      schemaFail('semanticInputFingerprint must be a lowercase SHA-256 hex string', {
+        semanticInputFingerprint: semanticInputFingerprintRaw,
+      });
+    }
+    semanticInputFingerprint = semanticInputFingerprintRaw;
+  }
 
   // Current schemaVersion 2 Standard Runs are Change-only.
   if (!isChangeAction(action)) {
@@ -1295,6 +1321,7 @@ export function validateContextFile(value: unknown): ContextFile {
     action: action as ChangeAction,
     role: role as Role,
     ownerAuthorization,
+    ...(semanticInputFingerprint !== undefined && { semanticInputFingerprint }),
     runPath,
     changeKey,
     changeId,

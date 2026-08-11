@@ -33,6 +33,8 @@ describe('diagnostic views', () => {
         'change-state: active',
         'stage: explore',
         'last-run: 20260806-170-review-explore',
+        'pending-run: none',
+        'pending-resume: none',
         'review: approved',
         'verification: not-run',
         'full-test: unavailable',
@@ -133,6 +135,16 @@ describe('diagnostic views', () => {
     const report = diagnoseRepository(snapshot);
     assert.equal(report.overall, 'warning');
     assert.ok(report.findings.some((finding) => finding.code === 'orphan-pending-run'));
+  });
+
+  it('surfaces B1 pending semantic input drift without mutating lifecycle facts', () => {
+    const pending = buildRun({ nnn: 177, action: 'explore', status: 'pending', changeId: 'diagnostic-cli' });
+    const snapshot = buildSnapshot({ changes: [change], runs: [pending] });
+    const inspection = { runId: pending.runId, action: 'explore', role: 'author', status: 'input-drift' } as const;
+    const report = diagnoseRepository(snapshot, inspection);
+    assert.ok(report.findings.some((finding) => finding.code === 'pending-semantic-input-drift'));
+    assert.match(renderResumeContext(snapshot, inspection), /pending-run: 20260806-177-explore/);
+    assert.match(renderResumeContext(snapshot, inspection), /pending-resume: input-drift/);
   });
 
   it('reports missing current formal artifact as error', () => {

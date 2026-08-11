@@ -65,6 +65,28 @@ interface Span {
   readonly end: number;
 }
 
+
+function normalizeManifestLineEndings(content: string): string {
+  if (!content.includes('\r')) return content;
+
+  // Accept exactly one Windows form: every newline is CRLF. Any bare CR or a
+  // mixture of CRLF and bare LF remains unsupported/fail-closed.
+  const withoutCrLf = content.replace(/\r\n/g, '');
+  if (withoutCrLf.includes('\r')) {
+    throw new FlowkitError(
+      'MANIFEST_UNSUPPORTED_SHAPE',
+      'Delivery Manifest contains unsupported carriage return characters',
+    );
+  }
+  if (withoutCrLf.includes('\n')) {
+    throw new FlowkitError(
+      'MANIFEST_UNSUPPORTED_SHAPE',
+      'Delivery Manifest contains mixed LF/CRLF line endings',
+    );
+  }
+  return content.replace(/\r\n/g, '\n');
+}
+
 function splitLines(content: string): string[] {
   if (content.includes('\t')) {
     throw new FlowkitError('MANIFEST_UNSUPPORTED_SHAPE', 'tabs are not supported in Delivery Manifest');
@@ -118,9 +140,10 @@ export class DeliveryManifestDocument {
   }
 
   static parse(content: string): DeliveryManifestDocument {
-    splitLines(content);
-    parseRoot(content);
-    return new DeliveryManifestDocument(content);
+    const normalized = normalizeManifestLineEndings(content);
+    splitLines(normalized);
+    parseRoot(normalized);
+    return new DeliveryManifestDocument(normalized);
   }
 
   toString(): string {

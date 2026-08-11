@@ -1,4 +1,4 @@
-import { describe, it, before, after } from 'node:test';
+import { describe, it, before, after, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdir, readFile, rm, readdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -72,7 +72,7 @@ describe('createRun', () => {
   });
 
   it('writes context.json with schemaVersion: 2 + full C1 validation (task 12.62)', async () => {
-    const runDir = await createRun(createRunInput({ runId: '20260806-002-propose' }));
+    const runDir = await createRun(createRunInput({ runId: '20260806-002-explore' }));
     const contextJson = await readFile(join(runDir, 'context.json'), 'utf-8');
     const ctx = validateContextFile(JSON.parse(contextJson));
     assert.equal(ctx.schemaVersion, 2);
@@ -119,6 +119,28 @@ describe('createRun', () => {
     }
     const entries = await readdir(deliveryRunsDir());
     assert.ok(entries.every((e) => !e.startsWith('.tmp-20260806-006')));
+  });
+
+  it('rejects Run-ID action suffix mismatch before pending publish', async () => {
+    await assert.rejects(
+      createRun(createRunInput({ runId: '20260806-005-propose', action: 'explore' })),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'RUN_ID_ACTION_MISMATCH',
+    );
+  });
+
+  it('rejects Action→Role mismatch before pending publish', async () => {
+    await assert.rejects(
+      createRun(createRunInput({ runId: '20260806-006-explore', action: 'explore', role: 'reviewer' })),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'ACTION_ROLE_MISMATCH',
+    );
+  });
+
+  it('rejects duplicate Delivery-wide NNN across different Change directories', async () => {
+    await createRun(createRunInput({ runId: '20260806-007-explore', changeId: 'C1' }));
+    await assert.rejects(
+      createRun(createRunInput({ runId: '20260806-007-explore', changeId: 'C2' })),
+      (e: unknown) => e instanceof FlowkitError && (e.code === 'RUN_ID_NNN_DUPLICATE' || e.code === 'RUN_ID_NNN_NOT_MONOTONIC'),
+    );
   });
 
   it('rejects retired Delivery behavior as a current Run', async () => {
@@ -334,7 +356,7 @@ describe('completeRun publish protocol (fs.link / assertMutable / race)', () => 
 
   it('does not depend on pre-existing exists check (task 12.11)', async () => {
     // Two concurrent writers: both call completeRun; only one succeeds.
-    const runDir = await writeExplore('20260806-016-explore');
+    const runDir = await writeExplore('20260806-020-explore');
     const [r1, r2] = await Promise.allSettled([
       completeRun(runDir, { executionStatus: 'completed', summary: 'race' }),
       completeRun(runDir, { executionStatus: 'completed', summary: 'race2' }),
@@ -484,8 +506,8 @@ async function setupApprovedProposal(changeId: string): Promise<void> {
 }
 
 describe('Q2 current authority boundary', () => {
-  before(makeTempRoot);
-  after(cleanupTempRoot);
+  beforeEach(makeTempRoot);
+  afterEach(cleanupTempRoot);
 
   it('Core derives explore produced ref from current bytes', async () => {
     const c = 'Q2-explore-ref';

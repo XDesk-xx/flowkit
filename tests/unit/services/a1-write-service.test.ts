@@ -36,6 +36,11 @@ async function writeManifest(root: string, deliveryId: string, body: string): Pr
   return path;
 }
 
+async function convertFileToCrLf(path: string): Promise<void> {
+  const lf = (await readFile(path, 'utf8')).replace(/\r\n/g, '\n');
+  await writeFile(path, lf.replace(/\n/g, '\r\n'), 'utf8');
+}
+
 async function snapshot(root: string, deliveryId: string) {
   return readFormalFactSnapshot({
     repoRoot: root,
@@ -426,6 +431,38 @@ describe('A1 creation write-side', () => {
     assert.equal(s.changes.find((c) => c.id === 'new-change')?.architectureImpact, true);
   });
 
+  it('createChange accepts pure CRLF Manifest input and writes canonical LF while preserving unknown sections', async () => {
+    const root = await freshRoot();
+    const deliveryId = '20990103-02-crlf-create';
+    const path = await writeManifest(root, deliveryId, [
+      `id: ${deliveryId}`,
+      'delivery:',
+      '  state: active',
+      '  fullTestStatus: not-ready',
+      'changes:',
+      '  - key: A1',
+      '    id: base-change',
+      '    goal: "Base"',
+      '    required: false',
+      '    dependsOn: []',
+      '    state: completed',
+      '    architectureImpact: false',
+      '    outputs: []',
+      'customSection:',
+      '  keep: "yes"',
+    ].join('\n'));
+    await convertFileToCrLf(path);
+    await createChange(root, {
+      key: 'B1', id: 'crlf-change', goal: 'CRLF', required: true, dependsOn: ['base-change'],
+      outputs: [], architectureImpact: false,
+    }, 'owner:crlf-create');
+    const bytes = await readFile(path, 'utf8');
+    assert.equal(bytes.includes('\r'), false);
+    assert.ok(bytes.endsWith('\n'));
+    assert.match(bytes, /customSection:\n {2}keep: "yes"\n/);
+    assert.match(bytes, /id: "crlf-change"/);
+  });
+
   it('authorization-only Owner record rejects early gate and leaves Manifest byte-identical', async () => {
     const root = await freshRoot();
     const deliveryId = '20990104-01-active';
@@ -505,6 +542,35 @@ describe('A1 creation write-side', () => {
     assert.equal(await readFile(path, 'utf8'), bytesAfterFirst);
     assert.equal((bytesAfterFirst.match(/decision: "authorize-apply"/g) ?? []).length, 1);
   });
+  it('owner record accepts pure CRLF input and canonicalizes successful mutation to LF', async () => {
+    const root = await freshRoot();
+    const deliveryId = '20990109-02-crlf-owner';
+    const changeId = 'apply-ready-crlf';
+    const path = await writeManifest(root, deliveryId, [
+      `id: ${deliveryId}`,
+      'delivery:',
+      '  state: active',
+      '  fullTestStatus: not-ready',
+      'changes:',
+      '  - key: A1',
+      `    id: ${changeId}`,
+      '    goal: "Apply-ready"',
+      '    required: true',
+      '    dependsOn: []',
+      '    state: active',
+      '    architectureImpact: false',
+      '    outputs: []',
+    ].join('\n'));
+    await writeApprovedProposeFixture(root, deliveryId, 'A1', changeId);
+    await convertFileToCrLf(path);
+    await recordOwnerDecision(root, {
+      decision: 'authorize-apply', changeId, sourceRef: 'owner:crlf-apply',
+    });
+    const bytes = await readFile(path, 'utf8');
+    assert.equal(bytes.includes('\r'), false);
+    assert.ok(bytes.endsWith('\n'));
+    assert.match(bytes, /decision: "authorize-apply"/);
+  });
 });
 
 describe('A1 activation', () => {
@@ -558,6 +624,19 @@ describe('A1 activation', () => {
     assert.equal(s.changes.find((c) => c.id === 'target')?.state, 'active');
   });
 
+
+  it('activate accepts pure CRLF Manifest input and writes canonical LF', async () => {
+    const { root, path } = await activationRoot();
+    await convertFileToCrLf(path);
+    await activateChange(root, 'target', 'owner:crlf-activate', {
+      now: () => new Date('2099-01-05T00:00:00Z'),
+    });
+    const bytes = await readFile(path, 'utf8');
+    assert.equal(bytes.includes('\r'), false);
+    assert.ok(bytes.endsWith('\n'));
+    assert.match(bytes, /id: target[\s\S]*state: active/);
+    assert.match(bytes, /architectureImpact: true/);
+  });
 
   it('activates an exact pre-A1 legacy Change without backfilling architectureImpact', async () => {
     const root = await freshRoot();

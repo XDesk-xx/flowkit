@@ -234,13 +234,19 @@ B1 不绑定具体 Skill 标识。
 
 Skill 只在当前 Action 内提供方法，不得决定 Delivery、Change、Action、是否 Review、是否 Full Test、下一 Action、Archive 或 Finalize。
 
-具体 Action Package、Skill 字段、标识、加载和 Adapter 协议属于 C1。
+B1 拥有十个 Standard Change Actions 的固定 `ActionDefinition`、logical Action Package、same-pending Run preparation/resume 与 logical result admission。Action Package 只覆盖 Standard Change Actions；Delivery Full Test / Finalize 仍是 Delivery behavior，不创建 B1 Action Package/Standard Run。
+
+具体 Skill 标识、外部工具 structured context、physical serialization 和 Adapter/Provider 映射属于后置 C1/03；这些层只执行/映射 B1 已决定的单个 Action，不拥有 `next`。
 
 ## 10. 与后续 Change 的边界
 
+### B1：lean-run-and-action-package
+
+负责固定 ActionDefinition、Delivery-wide Run identity、same-pending semantic continuation、logical Action Package 与 logical result admission。
+
 ### C1：integration-boundaries
 
-负责具体 Action Package、Adapter、Schema、Skill 声明以及外部工具输入输出协议。
+负责 OpenSpec / 外部工具 structured integration 与 physical adapter mapping；不得重新拥有 logical Action Package 或 lifecycle decision。
 
 ### D1：bootstrap-and-roadmap
 

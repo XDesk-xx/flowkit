@@ -1,0 +1,21 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-explore",
+    "executionStatus": "completed",
+    "summary": "031 的主体调查成立：Run-ID helper 与 createRun 尚未形成安全 execution preparation surface，Action→Role 未机器绑定，same-pending continuation / logical Action Package generator / thin Action Result admission 仍缺，CRLF Manifest writer 兼容也被正确 bounded 纳入 B1；Owner 已明确确认启动 B1 Explore。唯一 blocker 是 031 漏掉 exact Base 中当前 canonical Action Package contract drift：docs 已排除 Full Test/Finalize 于 Standard Change Action Package，但 canonical integration spec 仍把 Full Test 写成 Action Package 示例，core-model 还保留历史 C1 ownership。B1 在进入 Proposal 前必须把该冲突显式纳入 confirmed gap。",
+    "nextActionRecommendation": "revise-explore"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindings": [
+    {
+      "id": "B1-RE-001",
+      "severity": "blocking",
+      "blockingAuthority": "author",
+      "title": "Explore 未识别 canonical Action Package 对 Full Test 与阶段 ownership 的现存冲突",
+      "problem": "031 已把 Action Package canonical docs/specs列为 affected surface，但没有识别 exact Base 中 docs/integration-boundaries.md 已排除 Delivery Full Test/Finalize 于 Standard Change Action Package，而 flowkit-integration-boundaries canonical spec 仍以 Full Test 作为 Action Package Owner authorization 示例；docs/core-model.md 还保留历史 C1 拥有“具体 Action Package”的阶段 ownership。B1 即将实现 production logical Action Package generator，如果不在 Explore/Proposal 明确消除该 drift，Apply 将面对相互冲突的正式 contract。",
+      "location": "docs/integration-boundaries.md §3.2; openspec/specs/flowkit-integration-boundaries/spec.md `Scenario: Action Package 包含 owner 授权状态`; docs/core-model.md §9-10; openspec/changes/lean-run-and-action-package/explore.md §12-13",
+      "requiredChange": "revise-explore：新增 confirmed canonical drift，要求 Proposal 冻结 B1 logical Action Package 只服务十个 Standard Change Actions；Delivery Full Test/Finalize 属 Delivery behavior、不得进入 Standard Run/Change Action Package。同步明确 B1 logical package generation 与后置 physical adapter/transport ownership 的边界，并把冲突 canonical docs/spec 纳入明确对齐范围。"
+    }
+  ]
+}

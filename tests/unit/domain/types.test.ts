@@ -66,17 +66,25 @@ describe('domain object types compile (B1-RE-004)', () => {
     assert.equal(run.changeId, 'domain-and-state-schema');
   });
 
-  it('ActionDefinition has integration-boundaries fields', () => {
+  it('ActionDefinition has the frozen B1 execution boundary fields', () => {
     const def: ActionDefinition = {
       action: 'explore',
+      version: 1,
       role: 'author',
-      goal: 'Explore a Change.',
-      preconditions: ['change.state === active'],
-      allowedOutputs: ['explore.md'],
-      completionConditions: ['conclusion.md exists'],
+      goalClass: 'investigate-change',
+      mutationClass: 'explore-planning-only',
+      outputClass: 'current-explore-artifact-set',
+      terminalContract: {
+        kind: 'artifact',
+        verdictRequired: false,
+        bindsReviewedRun: false,
+        bindsSourceReview: false,
+        verificationSummaryRef: 'none',
+        gitCheckpointOutputAllowed: false,
+      },
     };
     assert.equal(def.role, 'author');
-    assert.equal(def.preconditions.length, 1);
+    assert.equal(def.goalClass, 'investigate-change');
   });
 
   it('ActionResult uses logical minimal fields', () => {
@@ -129,13 +137,16 @@ describe('domain object types compile (B1-RE-004)', () => {
     assert.equal(summary.overallStatus, 'passed');
   });
 
-  it('OwnerAuthorizationRef is provider-neutral', () => {
+  it('OwnerAuthorizationRef is provider-neutral and target-specific', () => {
     const auth: OwnerAuthorizationRef = {
-      ref: 'auth-001',
-      scope: 'apply',
+      ref: 'owner:abc',
+      decision: 'authorize-apply',
+      deliveryId: '20260806-01-deterministic-core',
+      changeId: 'domain-and-state-schema',
+      sourceRef: 'chat-owner-input:1',
     };
-    assert.equal(auth.scope, 'apply');
-    assert.equal(auth.authorizedAt, undefined);
+    assert.equal(auth.decision, 'authorize-apply');
+    assert.equal(auth.changeId, 'domain-and-state-schema');
   });
 
   it('ContinuationContext type is usable', () => {

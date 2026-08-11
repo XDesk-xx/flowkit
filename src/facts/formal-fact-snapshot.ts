@@ -85,6 +85,8 @@ export interface RunFact {
   readonly action: FormalAction;
   readonly role: Role;
   readonly status: RunStatus;
+  /** B1 compact semantic input identity for pending-run continuation. */
+  readonly semanticInputFingerprint?: string;
   /** Present when the Run consumed a prior result as input. */
   readonly inputRef?: ResultRef;
   /** Terminal result reference, present when `status` is terminal. */

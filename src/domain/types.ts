@@ -163,6 +163,7 @@ export interface Run {
   readonly action: FormalAction;
   readonly role: Role;
   readonly status: RunStatus;
+  readonly semanticInputFingerprint?: string;
   readonly inputRef?: ResultRef;
 }
 
@@ -171,19 +172,91 @@ export interface Run {
 // ---------------------------------------------------------------------------
 
 /**
- * Immutable definition of a formal Action.
+ * Immutable definition of one Standard Change Action.
  *
- * B1 owns the complete type. The catalog is fixed and immutable — no
- * transport/persistence needs.
- * Field contract aligned with integration-boundaries.md Section 3.1.
+ * B1 owns the complete static catalog. The five fields below are the normative
+ * execution boundary reviewed in B1 Proposal: role, goal class, mutation
+ * class, output class and terminal contract. The catalog is compile-time
+ * constant data — no Registry/Router/dynamic discovery.
  */
+export interface ActionTerminalContract {
+  readonly kind: 'artifact' | 'review' | 'implementation' | 'archive';
+  readonly verdictRequired: boolean;
+  readonly bindsReviewedRun: boolean;
+  readonly bindsSourceReview: boolean;
+  readonly verificationSummaryRef: 'none' | 'core-derived';
+  readonly gitCheckpointOutputAllowed: false;
+}
+
 export interface ActionDefinition {
   readonly action: FormalAction;
-  readonly role: Role;
-  readonly goal: string;
-  readonly preconditions: readonly string[];
-  readonly allowedOutputs: readonly string[];
-  readonly completionConditions: readonly string[];
+  readonly version: 1;
+  readonly role: Exclude<Role, 'owner'>;
+  readonly goalClass: string;
+  readonly mutationClass: string;
+  readonly outputClass: string;
+  readonly terminalContract: ActionTerminalContract;
+}
+
+/** Exact versioned authority reference used by a logical Action Package. */
+export interface VersionedAuthorityRef {
+  readonly ref: string;
+  readonly kind: string;
+  readonly versionFingerprint: string;
+}
+
+export interface ActionPackageFindingView {
+  readonly id: string;
+  readonly severity: FindingSeverity;
+  readonly blockingAuthority?: BlockingAuthority;
+  readonly title?: string;
+  readonly requiredOutcome?: string;
+  readonly acceptance?: string;
+}
+
+export interface ActionPackageReviewView {
+  readonly reviewRunId: string;
+  readonly verdict: ReviewVerdictValue;
+  readonly resultRef: VersionedAuthorityRef;
+  readonly blockingAuthorities: readonly BlockingAuthority[];
+  readonly findings: readonly ActionPackageFindingView[];
+}
+
+export interface ActionPackageVerificationView {
+  readonly status: VerificationStatus | 'unavailable';
+  readonly resultRef?: VersionedAuthorityRef;
+}
+
+export interface ActionPackage {
+  readonly schemaVersion: 1;
+  readonly run: {
+    readonly deliveryId: string;
+    readonly changeId: string;
+    readonly runId: string;
+    readonly action: FormalAction;
+    readonly role: Exclude<Role, 'owner'>;
+    readonly semanticInputFingerprint: string;
+  };
+  readonly definition: ActionDefinition;
+  readonly contractRefs: readonly VersionedAuthorityRef[];
+  readonly handoffRefs: readonly VersionedAuthorityRef[];
+  readonly reviewView?: ActionPackageReviewView;
+  readonly ownerAuthorizationRefs: readonly OwnerAuthorizationRef[];
+  readonly verificationView?: ActionPackageVerificationView;
+  readonly requiredResultContract: ActionTerminalContract;
+}
+
+/**
+ * Provider/executor-owned logical terminal descriptor. Core derives physical
+ * ResultRefs, reviewed/source-review bindings and verification refs.
+ */
+export interface LogicalActionResultInput {
+  readonly executionStatus?: ExecutionStatus;
+  readonly summary?: string;
+  readonly reviewVerdict?: ReviewVerdictValue;
+  readonly reviewFindings?: readonly unknown[];
+  readonly failureDiagnosis?: string;
+  readonly cancellationReason?: string;
 }
 
 /**
@@ -280,8 +353,10 @@ export interface VerificationSummary {
  */
 export interface OwnerAuthorizationRef {
   readonly ref: string;
-  readonly scope: string;
-  readonly authorizedAt?: string;
+  readonly decision: string;
+  readonly deliveryId: string;
+  readonly changeId?: string;
+  readonly sourceRef: string;
 }
 
 /**

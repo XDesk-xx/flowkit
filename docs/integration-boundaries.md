@@ -31,7 +31,7 @@ Action Definition 是某类 Action 的稳定规则，包括角色、目标、前
 
 ### 3.2 Action Package
 
-Action Package 是针对当前 Delivery、Change、Run 和 Action 生成的**逻辑执行输入视图**。
+Action Package 是 B1 针对当前 Delivery、Change、Run 和 Standard Change Action 生成的**provider-neutral 逻辑执行输入视图**。B1 拥有 logical preparation；本 integration layer 只做 structured/physical mapping，不决定下一 Action。
 
 Action Package 不是固定的物理文件包、ZIP、Patch、JSON Manifest 或特定平台 Payload。相同的逻辑输入可以通过不同媒介表达，只要语义完整且无歧义。
 

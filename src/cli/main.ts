@@ -8,6 +8,7 @@ import { renderDoctor, diagnoseRepository } from '../diagnostics/doctor.js';
 import { renderNext } from '../diagnostics/next.js';
 import { renderResumeContext } from '../diagnostics/resume-context.js';
 import { renderStatus } from '../diagnostics/status.js';
+import { inspectPreparedRun } from '../services/b1-run-execution-service.js';
 import { getVersion } from './version.js';
 import {
   activateChange,
@@ -65,19 +66,20 @@ export async function runCli(invocation: CliInvocation): Promise<CliResult> {
 
   try {
     if (args.length === 1 && DIAGNOSTIC_COMMANDS.has(args[0]!)) {
-      const { snapshot } = await loadDiagnosticContext(invocation.cwd);
+      const { snapshot, repoRoot, deliveryId } = await loadDiagnosticContext(invocation.cwd);
+      const prepared = await inspectPreparedRun(repoRoot, deliveryId);
       switch (args[0]) {
         case 'status':
-          return { exitCode: 0, stdout: renderStatus(snapshot), stderr: '' };
+          return { exitCode: 0, stdout: renderStatus(snapshot, prepared), stderr: '' };
         case 'next':
           return { exitCode: 0, stdout: renderNext(snapshot), stderr: '' };
         case 'resume-context':
-          return { exitCode: 0, stdout: renderResumeContext(snapshot), stderr: '' };
+          return { exitCode: 0, stdout: renderResumeContext(snapshot, prepared), stderr: '' };
         case 'doctor': {
-          const report = diagnoseRepository(snapshot);
+          const report = diagnoseRepository(snapshot, prepared);
           return {
             exitCode: report.overall === 'error' ? 1 : 0,
-            stdout: renderDoctor(snapshot),
+            stdout: renderDoctor(snapshot, prepared),
             stderr: '',
           };
         }

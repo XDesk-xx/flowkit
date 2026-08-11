@@ -298,9 +298,11 @@ Flowkit 不保存 `currentAction`。Policy 使用以下正式事实计算唯一�
 
 ## 8. Run 与生命周期
 
-同一角色、同一 Action、同一目标的多轮工作属于同一个 Run。
+Current Standard Run continuation 由 B1 semantic identity 决定：同一 pending Run 的 Action/Role 与 `semanticInputFingerprint` 都未变化时继续同一 runId；contract/handoff/review/verification/Owner authority identity 漂移时必须 fail-closed，不能静默重写 fingerprint。
 
-Author 完成 Action 后只记录 `nextAction: review-*`；Reviewer 真正开始 Review 时才创建下一 reviewer Run。
+Failed/cancelled retry、new Reviewer execution、real revise 或 new formal Action 使用新的 Delivery-wide NNN。Q1 non-author blocker 下 `next()` 可以保持 blocked，同时 explicit unified `review` 仍可由 shared Policy 创建/恢复 same-stage Reviewer Run。
+
+Action execution 完成后由 logical result admission 进入现有 Core `completeRun()`；ResultRef 仍由 Core 从真实 authority bytes 派生。
 
 Git Commit 只记录文件历史，不决定 Action 或 Run 数量。
 

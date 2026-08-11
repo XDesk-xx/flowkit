@@ -8,6 +8,7 @@ import {
   isPendingRunResumable,
   line,
   stageHasFormalArtifact,
+  type PendingRunInspection,
 } from './shared.js';
 
 export type DoctorSeverity = 'error' | 'warning';
@@ -66,7 +67,7 @@ function severityRank(severity: DoctorSeverity): number {
   return severity === 'error' ? 0 : 1;
 }
 
-export function diagnoseRepository(snapshot: FormalFactSnapshot): DoctorReport {
+export function diagnoseRepository(snapshot: FormalFactSnapshot, prepared?: PendingRunInspection): DoctorReport {
   const findings: DoctorFinding[] = snapshot.conflicts.map(readerConflictFinding);
   const policy = next(snapshot);
   const change = activeChange(snapshot);
@@ -97,6 +98,12 @@ export function diagnoseRepository(snapshot: FormalFactSnapshot): DoctorReport {
     }
   }
 
+  if (prepared?.status === 'input-drift') {
+    findings.push({ code: 'pending-semantic-input-drift', severity: 'warning', message: `pending Run ${prepared.runId ?? 'unknown'} semantic input differs from current authority refs` });
+  } else if (prepared?.status === 'fingerprint-missing') {
+    findings.push({ code: 'pending-semantic-fingerprint-missing', severity: 'warning', message: `pending Run ${prepared.runId ?? 'unknown'} has no B1 semantic input fingerprint` });
+  }
+
   const pFinding = policyFinding(policy);
   if (pFinding !== undefined) findings.push(pFinding);
 
@@ -114,9 +121,17 @@ export function diagnoseRepository(snapshot: FormalFactSnapshot): DoctorReport {
   return { overall, findings };
 }
 
-export function renderDoctor(snapshot: FormalFactSnapshot): string {
-  const report = diagnoseRepository(snapshot);
+export function renderDoctor(snapshot: FormalFactSnapshot, prepared?: PendingRunInspection): string {
+  const report = diagnoseRepository(snapshot, prepared);
   const lines = [line('overall', report.overall), line('findings', report.findings.length)];
+  if (prepared?.runId !== undefined) {
+    lines.push(
+      line('pending-run', prepared.runId),
+      line('pending-action', prepared.action ?? 'none'),
+      line('pending-role', prepared.role ?? 'none'),
+      line('pending-resume', prepared.status),
+    );
+  }
   report.findings.forEach((finding, index) => {
     lines.push(
       `finding[${index}]: severity=${finding.severity}; code=${finding.code}; message=${finding.message.replace(/\r/g, '\\r').replace(/\n/g, '\\n')}`,

@@ -717,6 +717,9 @@ function readC1Run(
     role: contextFile.role,
     status,
     changeId: contextFile.changeId,
+    ...(contextFile.semanticInputFingerprint !== undefined && {
+      semanticInputFingerprint: contextFile.semanticInputFingerprint,
+    }),
     ...(contextFile.inputRef !== undefined && { inputRef: contextFile.inputRef }),
     ...(consumedInputRefs !== undefined && { consumedInputRefs }),
     ...(reviewVerdictRef !== undefined && { reviewVerdictRef }),

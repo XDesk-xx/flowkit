@@ -4,6 +4,14 @@ import { detectStage, stageActions } from '../policy/stage-detector.js';
 import type { Stage } from '../policy/stage-detector.js';
 import type { PolicyResult } from '../policy/types.js';
 
+
+export interface PendingRunInspection {
+  readonly runId?: string;
+  readonly action?: string;
+  readonly role?: string;
+  readonly status: 'none' | 'resumable' | 'input-drift' | 'fingerprint-missing' | 'not-resumable' | 'ambiguous';
+}
+
 export function escapeScalar(value: string): string {
   return value.replace(/\r/g, '\\r').replace(/\n/g, '\\n');
 }

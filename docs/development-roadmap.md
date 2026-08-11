@@ -65,9 +65,10 @@ Provider Registry
 
 ```text
 Delivery / Change 创建
-Change-only Run 创建和生命周期
-Action Package 生成
-Action Result 接纳
+固定十 ActionDefinition catalog
+Delivery-wide Run preparation / same-pending semantic continuation
+provider-neutral logical Action Package
+logical Action Result → Core admission
 OpenSpec 薄集成
 Review / Findings 最小闭环
 Change Verification

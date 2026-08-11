@@ -59,16 +59,9 @@ temporary-flowkit-state/
 
 ### 3.1 何时创建新 Run
 
-仅在以下边界创建新 Run：
+Bootstrap 与后续 Runner 必须共享 B1 的唯一 Standard Run preparation semantics。Caller 只能请求 normal `next` 或 explicit unified `review` intent；concrete Action、Role 与 Delivery-wide NNN 由 Policy/catalog/allocator 确定。
 
-```text
-正式 Action 改变
-执行角色改变
-本次目标改变
-前一 Run failed / cancelled 后重试同一 Action
-```
-
-只有正式 Action、执行角色和本次目标三者均未改变时，多轮交流、内容完善、补充检查以及普通 Commit 才保持在同一个 Run。任一改变即创建新 Run。
+同一 pending Run 仅在 resolved Action/Role 与 Core-derived `semanticInputFingerprint` 仍匹配时继续；聊天、provider session、工具重开或普通 Commit 本身不得创建新 Run。Failed/cancelled retry、new Reviewer execution、real author revise 或 new formal Action 才创建新的 Delivery-wide NNN。Explicit direct re-review 必须由 shared Policy 的统一 `review` admission 解析，不得把 blocked `next()` 自动转换成 review。
 
 ### 3.2 Run 文件最低内容
 
@@ -81,7 +74,7 @@ Run 的基础结构（B1 已冻结）：
 └─ result.json
 ```
 
-Run ID：`YYYYMMDD-NNN-action`，`NNN` 在整个 Delivery 内唯一且单调递增。
+Run ID：`YYYYMMDD-NNN-action`，`NNN` 在整个 Delivery 内唯一且单调递增。Checkpoint 不消耗或重置 NNN；低层 Run persistence 也必须拒绝 malformed/non-monotonic/duplicate NNN、suffix mismatch 与错误 Action→Role。
 
 **action.md** 保存人类可读的当前 Run 执行说明：
 

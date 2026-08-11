@@ -30,7 +30,9 @@ import { assertMutable } from '../domain/terminal.js';
 import { validateRun } from '../domain/schema-validator.js';
 import type { Run, BlockingAuthority } from '../domain/types.js';
 import { BLOCKING_AUTHORITIES } from '../domain/types.js';
+import { isChangeAction, isRoleAllowedForAction } from '../domain/actions.js';
 import type { ChangeAction } from '../domain/actions.js';
+import { parseRunId } from '../domain/run-id.js';
 import type { ExecutionStatus, ResultRef, ReviewVerdictValue, Role, RunStatus } from '../domain/types.js';
 import { FlowkitError } from '../shared/errors.js';
 import { atomicWriteFile } from '../shared/atomic-write.js';
@@ -65,6 +67,7 @@ import {
   PRODUCED_ARTIFACT_KIND,
   VERIFICATION_SUMMARY_KIND,
 } from './result-ref-adapter.js';
+import { validateCandidateRunId } from './run-id-fs.js';
 import {
   artifactStage,
   latestCompletedArtifactRunId,
@@ -94,6 +97,8 @@ export interface CreateRunInput {
   readonly action: ChangeAction;
   readonly role: Role;
   readonly ownerAuthorization: string;
+  /** B1 compact semantic input identity persisted in context.json. */
+  readonly semanticInputFingerprint?: string;
   /**
    * Q1: Typed descriptor for the Run whose result.json is the input.
    * Core reads this Run's result.json and derives `context.inputRef`.
@@ -154,6 +159,33 @@ export async function createRun(input: CreateRunInput): Promise<string> {
   }
 
   validateCreateRunDescriptors(input);
+
+  // B1 defense-in-depth: the low-level persistence boundary must not allow
+  // internal callers to bypass Delivery-wide NNN, action suffix or role
+  // invariants even when they skip the high-level preparation service.
+  if (!isChangeAction(input.action as string)) {
+    throw new FlowkitError(
+      'UNKNOWN_ACTION',
+      `Unknown Standard Change Action: ${String(input.action)}`,
+      { runId: input.runId, action: input.action },
+    );
+  }
+  const parsedRunId = parseRunId(input.runId);
+  if (parsedRunId.action !== input.action) {
+    throw new FlowkitError(
+      'RUN_ID_ACTION_MISMATCH',
+      `Run ID action suffix ${parsedRunId.action} does not match formal Action ${input.action}`,
+      { runId: input.runId, action: input.action, suffix: parsedRunId.action },
+    );
+  }
+  if (!isRoleAllowedForAction(input.action, input.role)) {
+    throw new FlowkitError(
+      'ACTION_ROLE_MISMATCH',
+      `Action ${input.action} requires its fixed catalog role, got ${input.role}`,
+      { runId: input.runId, action: input.action, role: input.role },
+    );
+  }
+  await validateCandidateRunId(input.runId, input.deliveryRunsDir);
 
   // 1. Compute the target Run directory and runPath.
   const { runDir, runPath } = computeRunPaths(
@@ -882,6 +914,9 @@ export function projectCurrentRun(contextFile: ContextFile): Run {
     role: contextFile.role,
     status: 'pending',
     changeId: contextFile.changeId,
+    ...(contextFile.semanticInputFingerprint !== undefined && {
+      semanticInputFingerprint: contextFile.semanticInputFingerprint,
+    }),
     ...(contextFile.inputRef !== undefined && { inputRef: contextFile.inputRef }),
   };
   // MUST pass B1 validateRun.
@@ -1809,6 +1844,9 @@ function buildContextFile(
     action: input.action,
     role: input.role,
     ownerAuthorization: input.ownerAuthorization,
+    ...(input.semanticInputFingerprint !== undefined && {
+      semanticInputFingerprint: input.semanticInputFingerprint,
+    }),
     runPath,
     changeKey: input.changeKey,
     changeId: input.changeId,

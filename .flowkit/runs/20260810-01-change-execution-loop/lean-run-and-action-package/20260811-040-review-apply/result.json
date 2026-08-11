@@ -1,0 +1,35 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "从031开始回溯B1链后，039主体实现与037/038 Proposal大部分一致，focused 77/77、affected 599/599、project regression 628/628、typecheck/lint/build/quality、OpenSpec 12/12 strict、lineage/hash/hygiene与cumulative diagnostics均通过。但存在两个author-blocking Apply问题：其一，logical result admission只信caller携带的fingerprint字符串，Reviewer已实测篡改contractRefs/handoffRefs而保留旧fingerprint仍可发布terminal result；其二，Apply/revise-apply每次resume从当前mutable tasks/verification重新计算semantic fingerprint，导致合法Action自身进度触发PENDING_INPUT_DRIFT并使same pending Run无法恢复。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/lean-run-and-action-package/verification.md",
+      "versionFingerprint": "741017e76421da0af44b11cf5f6cf85d4d5971780b6fb44e00909155aff3f799",
+      "kind": "verification-summary"
+    },
+    "nextActionRecommendation": "revise-apply"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindings": [
+    {
+      "id": "B1-RA-001",
+      "severity": "blocking",
+      "blockingAuthority": "author",
+      "title": "Action Result admission 未证明 caller 返回的 ActionPackage semantic content 对应 persisted fingerprint",
+      "problem": "admitActionResult 只比较 pkg.run.semanticInputFingerprint 与 persisted context fingerprint，没有验证 package 中 fingerprint-covered contractRefs/handoffRefs/review/verification/owner authority identity 等内容本身对应该 fingerprint。Reviewer 实测保留旧 fingerprint、篡改 contractRefs/handoffRefs 后 terminal result 仍被接受并发布 result.json。",
+      "location": "src/services/b1-run-execution-service.ts admitActionResult()/deriveSemanticInputs(); openspec/changes/lean-run-and-action-package/specs/flowkit-lean-run-and-action-package/spec.md `logical Action Result admission 必须复用 Core terminal persistence`",
+      "requiredChange": "revise-apply：admission 必须验证 caller 带回的 package semantic descriptor 与 persisted semanticInputFingerprint 一致，而不能只信 fingerprint 字符串。至少对所有 037 纳入 fingerprint 的 authority identities 做 deterministic binding；tampered contract/handoff/review/verification/owner identity 必须在发布 result.json 前 fail closed。不得通过重新 hash 当前 Action 已合法修改的 post-execution outputs 造成自我否定。"
+    },
+    {
+      "id": "B1-RA-002",
+      "severity": "blocking",
+      "blockingAuthority": "author",
+      "title": "Apply same-pending resume 会被 Action 自己合法修改的 tasks/verification progress 触发 input drift",
+      "problem": "apply/revise-apply 的 semantic descriptor 当前从 working tree重新计算 proposal/design/tasks/delta-spec contractRefs，并读取 current verification status/ref。tasks.md 与 verification.md/status 又是 Apply 自己允许更新的 progress/output。Reviewer 实测 prepare Apply 后仅把 tasks.md 从未完成改为已完成，再次 prepare 同一 pending Run 即返回 PENDING_INPUT_DRIFT，导致 pending Run既不能resume又不能创建第二个 pending Run。",
+      "location": "src/services/b1-run-execution-service.ts collectContractRefs()/buildVerificationView()/deriveSemanticInputs()/prepareActionExecution(); openspec/changes/lean-run-and-action-package/proposal.md semantic fingerprint + same pending contract",
+      "requiredChange": "revise-apply：区分 immutable entry contract/authority generation 与 Action-owned mutable progress/output。真实 approved contract/handoff/external authority drift继续 fail closed；但同一 pending Apply/revise-apply合法更新 tasks/verification/implementation 后必须仍可从其 immutable entry identity恢复同一 runId。不得简单取消 contractRef exact version binding。"
+    }
+  ]
+}
