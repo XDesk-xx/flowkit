@@ -6,6 +6,8 @@ export interface RunCommandOptions {
   timeout?: number;
   platform?: NodeJS.Platform;
   comSpec?: string;
+  /** D1 bounded test/host override. Normal Windows order is pwsh.exe then powershell.exe. */
+  powerShellCandidates?: readonly string[];
 }
 
 export interface ResolvedCommand {
@@ -32,7 +34,8 @@ export interface RunCommandResult {
 /**
  * Resolve platform launch mechanics without changing the logical command.
  * On Windows, `.cmd`/`.bat` shims are launched through ComSpec because direct
- * `spawn()` semantics are not portable. Non-Windows commands are unchanged.
+ * `spawn()` semantics are not portable. PowerShell scripts are handled by the
+ * bounded `.ps1` launcher in `runCommand`. Non-Windows commands are unchanged.
  */
 export function resolveCommandForPlatform(
   command: string,
@@ -55,17 +58,24 @@ export function resolveCommandForPlatform(
   };
 }
 
-/**
- * Run an external command with bounded process mechanics and capture stdout,
- * stderr, exit status, spawn/timeout diagnostics. It never inherits stdio.
- */
-export function runCommand(
-  command: string,
-  args: string[],
+/** D1 bounded PowerShell script argv contract: no shell, no profile, no expression evaluation. */
+export function resolvePowerShellScriptCommand(
+  script: string,
+  args: readonly string[],
+  launcher: string,
+): ResolvedCommand {
+  return {
+    command: launcher,
+    args: ['-NoLogo', '-NoProfile', '-NonInteractive', '-File', script, ...args],
+    usedWindowsLauncher: true,
+  };
+}
+
+function runResolvedCommand(
+  resolved: ResolvedCommand,
   options?: RunCommandOptions,
 ): Promise<RunCommandResult> {
   return new Promise((resolve) => {
-    const resolved = resolveCommandForPlatform(command, args, options);
     let child;
     try {
       child = spawn(resolved.command, [...resolved.args], {
@@ -143,8 +153,6 @@ export function runCommand(
     if (timeout !== undefined && Number.isFinite(timeout) && timeout > 0) {
       timeoutHandle = setTimeout(() => {
         timedOut = true;
-        // SIGKILL is supported as a deterministic hard stop on Node's process
-        // abstraction; Windows maps it to TerminateProcess.
         try {
           child.kill('SIGKILL');
         } catch {
@@ -154,4 +162,41 @@ export function runCommand(
       timeoutHandle.unref?.();
     }
   });
+}
+
+/**
+ * Run an external command with bounded process mechanics and capture stdout,
+ * stderr, exit status, spawn/timeout diagnostics. It never inherits stdio.
+ *
+ * D1: on Windows a `.ps1` script is launched through PowerShell Core first,
+ * then Windows PowerShell only when the first launcher itself is absent. Once
+ * a launcher starts, script/exit/timeout failure is terminal and MUST NOT fall
+ * through to another launcher or to a `.cmd` sibling.
+ */
+export async function runCommand(
+  command: string,
+  args: string[],
+  options?: RunCommandOptions,
+): Promise<RunCommandResult> {
+  const platform = options?.platform ?? process.platform;
+  if (platform === 'win32' && /\.ps1$/i.test(command)) {
+    const candidates = options?.powerShellCandidates ?? ['pwsh.exe', 'powershell.exe'];
+    for (let index = 0; index < candidates.length; index += 1) {
+      const launcher = candidates[index]!;
+      const result = await runResolvedCommand(resolvePowerShellScriptCommand(command, args, launcher), options);
+      const launcherAbsent = !result.spawned && result.spawnError?.code === 'ENOENT';
+      if (!launcherAbsent) return result;
+      if (index === candidates.length - 1) {
+        return {
+          ...result,
+          spawnError: {
+            code: 'POWERSHELL_NOT_FOUND',
+            message: `No PowerShell launcher available for ${command}; tried ${candidates.join(', ')}`,
+          },
+        };
+      }
+    }
+  }
+
+  return runResolvedCommand(resolveCommandForPlatform(command, args, options), options);
 }

@@ -1,0 +1,20 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "077 Proposal 主方向基本正确，但 Contract Reset 只进入 pending semantic identity，缺少 completed generation/approval 的 reset-aware lineage 失效与 convergence 边界；存在新 Owner Reset 后旧 approval 仍可推进 Apply、旧 generation findings 被重新带入的风险。"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindings": [
+    {
+      "id": "D1-RP-001",
+      "severity": "blocking",
+      "title": "Contract Reset 缺少 completed generation / approval 的 lineage 失效契约",
+      "problem": "Proposal 将 active Change-scoped contract-reset 设为可独立接纳的 current Owner fact，并仅规定其参与当前/待执行 Standard Action 的 semanticInputFingerprint；同时 Reviewer/Policy 仍按 current artifact + latest completed review 判断阶段完成。Proposal 没有冻结 completed artifact/review generation 与当时 applicable Contract Reset identity 的绑定/失效规则。因此 Owner 在 review-propose approved 之后记录新的 Contract Reset 时，旧 proposal/review 仍可能保持 current，Policy 可继续进入 apply；而 convergence 的“latest completed matching Review”也可能跨已经 abandoned/superseded 的 generation 继承旧 findings。",
+      "location": "design.md D2/D3/D5-D7；flowkit-review-findings-and-blocker-authority / flowkit-lean-run-and-action-package / flowkit-delivery-change-creation-and-owner-input delta specs",
+      "blockingAuthority": "author",
+      "requiredChange": "补齐最小 reset-aware lineage contract，不建立 generic generation manager：历史 completed Runs 继续保持有效历史记录，但 current artifact/review approval 必须只对其生成/审查时 applicable 的 Contract Reset identity 生效；新的 current Reset 不得静默继承旧 generation approval，必须确定性落到合法的新 producer/review boundary。Finding convergence 的 previous matching Review 必须来自实际近邻 lineage（例如同 target direct re-review，或 revise 的 sourceReviewRun 链），不得仅按同 stage/latest Review 跨 reset generation 选择。Proposal/Design/Specs/Tasks 增加至少覆盖“approved 后 reset 不得直接 apply”“新 generation 不继承 abandoned generation findings”“历史 Run 不被反向判 invalid”的验收。"
+    }
+  ]
+}

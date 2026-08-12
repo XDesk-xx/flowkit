@@ -36,6 +36,13 @@ export function renderOwnerDecisionRecord(
   if (record.changeId !== undefined) {
     lines.push(`${fieldIndent}changeId: ${quote(record.changeId)}`);
   }
+  if (record.scope !== undefined) {
+    lines.push(`${fieldIndent}scope: ${quote(record.scope)}`);
+  }
+  if (record.requiredOutcomes !== undefined) {
+    lines.push(`${fieldIndent}requiredOutcomes:`);
+    lines.push(...renderStringList(record.requiredOutcomes, `${fieldIndent}  `));
+  }
   lines.push(`${fieldIndent}sourceRef: ${quote(record.sourceRef)}`);
   return lines;
 }
@@ -156,6 +163,11 @@ export class DeliveryManifestDocument {
     requireCleanScalar(record.deliveryId, 'deliveryId');
     requireCleanScalar(record.sourceRef, 'sourceRef');
     if (record.changeId !== undefined) requireCleanScalar(record.changeId, 'changeId');
+    if (record.scope !== undefined) requireCleanScalar(record.scope, 'scope');
+    if (record.requiredOutcomes !== undefined) {
+      if (record.requiredOutcomes.length === 0) throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'requiredOutcomes must not be empty');
+      for (const outcome of record.requiredOutcomes) requireCleanScalar(outcome, 'requiredOutcomes');
+    }
 
     const root = parseRoot(this.content);
     const existing = root['ownerDecisions'];
@@ -173,6 +185,8 @@ export class DeliveryManifestDocument {
           obj['decision'] === record.decision &&
           obj['deliveryId'] === record.deliveryId &&
           obj['changeId'] === record.changeId &&
+          obj['scope'] === record.scope &&
+          JSON.stringify(obj['requiredOutcomes']) === JSON.stringify(record.requiredOutcomes) &&
           obj['sourceRef'] === record.sourceRef;
         if (!same) {
           throw new FlowkitError('OWNER_DECISION_REF_COLLISION', `Owner decision ref collision: ${record.ref}`);

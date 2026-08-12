@@ -8,7 +8,7 @@ import { renderDoctor, diagnoseRepository } from '../diagnostics/doctor.js';
 import { renderNext } from '../diagnostics/next.js';
 import { renderResumeContext } from '../diagnostics/resume-context.js';
 import { renderStatus } from '../diagnostics/status.js';
-import { inspectPreparedRun } from '../services/b1-run-execution-service.js';
+import { inspectPreparedRun, recoverContractResetPendingRun } from '../services/b1-run-execution-service.js';
 import { getVersion } from './version.js';
 import {
   activateChange,
@@ -31,7 +31,7 @@ export interface CliResult {
 const DIAGNOSTIC_COMMANDS = new Set(['status', 'next', 'doctor', 'resume-context']);
 
 const USAGE =
-  'usage: flowkit <status|next|doctor|resume-context|create delivery|create change|owner record|activate|--version>\n';
+  'usage: flowkit <status|next|doctor|resume-context|create delivery|create change|owner record|recover contract-reset-pending|activate|--version>\n';
 
 function optionValue(args: readonly string[], name: string): string | undefined {
   const index = args.indexOf(name);
@@ -39,6 +39,16 @@ function optionValue(args: readonly string[], name: string): string | undefined 
   const value = args[index + 1];
   if (value === undefined || value.startsWith('--')) return undefined;
   return value;
+}
+
+function optionValues(args: readonly string[], name: string): readonly string[] {
+  const values: string[] = [];
+  for (let index = 0; index < args.length; index += 1) {
+    if (args[index] !== name) continue;
+    const value = args[index + 1];
+    if (value !== undefined && !value.startsWith('--')) values.push(value);
+  }
+  return values;
 }
 
 function requiredOption(args: readonly string[], name: string): string {
@@ -88,6 +98,12 @@ export async function runCli(invocation: CliInvocation): Promise<CliResult> {
 
     const repoRoot = await discoverRepositoryRoot(invocation.cwd);
 
+    if (args[0] === 'recover' && args[1] === 'contract-reset-pending') {
+      const { deliveryId } = await loadDiagnosticContext(invocation.cwd);
+      const result = await recoverContractResetPendingRun({ repoRoot, deliveryId });
+      return { exitCode: 0, stdout: renderWriteResult(result), stderr: '' };
+    }
+
     if (args[0] === 'create' && args[1] === 'delivery') {
       const inputPath = requiredOption(args, '--input');
       const sourceRef = requiredOption(args, '--source-ref');
@@ -106,10 +122,14 @@ export async function runCli(invocation: CliInvocation): Promise<CliResult> {
       const decision = requiredOption(args, '--decision');
       const sourceRef = requiredOption(args, '--source-ref');
       const changeId = optionValue(args, '--change');
+      const scope = optionValue(args, '--scope');
+      const requiredOutcomes = optionValues(args, '--required-outcome');
       const result = await recordOwnerDecision(repoRoot, {
         decision,
         sourceRef,
         ...(changeId !== undefined ? { changeId } : {}),
+        ...(scope !== undefined ? { scope } : {}),
+        ...(requiredOutcomes.length > 0 ? { requiredOutcomes } : {}),
       });
       return { exitCode: 0, stdout: renderWriteResult(result), stderr: '' };
     }

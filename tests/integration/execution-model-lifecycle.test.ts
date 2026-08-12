@@ -130,7 +130,8 @@ describe('Q2 current orchestration handoff', () => {
     const r = await createRun(input(c, '20260806-004-review-propose', 'review-propose', { reviewedRunId: '20260806-003-propose' }));
     await completeRun(r, {
       executionStatus: 'completed', summary: 'changes', reviewVerdict: 'changes-requested',
-      reviewFindings: [{ id: 'F1', severity: 'blocking', blockingAuthority: 'author', title: 'revise', problem: 'x', requiredChange: 'update' }],
+      reviewFindings: [{ id: 'F1', severity: 'blocking', blockingAuthority: 'author', title: 'revise', problem: 'x', contractRef: 'spec:integration', invariant: 'fixture contract', evidence: ['fixture mismatch'], impact: 'review blocked', requiredOutcome: 'update', acceptance: ['fixture updated'] }],
+      reviewFindingConvergence: [],
     });
     const revise = await createRun(input(c, '20260806-005-revise-propose', 'revise-propose', {
       sourceReviewRun: '20260806-004-review-propose', sourceReviewVerdict: 'changes-requested',
@@ -151,7 +152,8 @@ describe('Q2 current orchestration handoff', () => {
     const r = await createRun(input(c, '20260806-004-review-propose', 'review-propose', { reviewedRunId: '20260806-003-propose' }));
     await completeRun(r, {
       executionStatus: 'completed', summary: 'changes', reviewVerdict: 'changes-requested',
-      reviewFindings: [{ id: 'F1', severity: 'blocking', blockingAuthority: 'author', title: 'revise', problem: 'x', requiredChange: 'update' }],
+      reviewFindings: [{ id: 'F1', severity: 'blocking', blockingAuthority: 'author', title: 'revise', problem: 'x', contractRef: 'spec:integration', invariant: 'fixture contract', evidence: ['fixture mismatch'], impact: 'review blocked', requiredOutcome: 'update', acceptance: ['fixture updated'] }],
+      reviewFindingConvergence: [],
     });
     await writeFile(join(root, 'openspec', 'changes', c, 'proposal.md'), '# drift after review\n');
     await assert.rejects(
@@ -170,7 +172,8 @@ describe('Q2 current orchestration handoff', () => {
     const r = await createRun(input(c, '20260806-002-review-explore', 'review-explore', { reviewedRunId: '20260806-001-explore' }));
     await completeRun(r, {
       executionStatus: 'completed', summary: 'changes', reviewVerdict: 'changes-requested',
-      reviewFindings: [{ id: 'F1', severity: 'blocking', blockingAuthority: 'author', title: 'revise', problem: 'x', requiredChange: 'update' }],
+      reviewFindings: [{ id: 'F1', severity: 'blocking', blockingAuthority: 'author', title: 'revise', problem: 'x', contractRef: 'spec:integration', invariant: 'fixture contract', evidence: ['fixture mismatch'], impact: 'review blocked', requiredOutcome: 'update', acceptance: ['fixture updated'] }],
+      reviewFindingConvergence: [],
     });
     await assert.rejects(
       () => createRun(input(c, '20260806-003-revise-propose', 'revise-propose', {
@@ -275,7 +278,8 @@ describe('Q2 verification handoff boundary', () => {
     const review = await createRun(input(c, '20260806-006-review-apply', 'review-apply', { reviewedRunId: '20260806-005-apply' }));
     await completeRun(review, {
       executionStatus: 'completed', summary: 'changes', reviewVerdict: 'changes-requested',
-      reviewFindings: [{ id: 'F1', severity: 'blocking', blockingAuthority: 'author', title: 'fix', problem: 'x', requiredChange: 'update' }],
+      reviewFindings: [{ id: 'F1', severity: 'blocking', blockingAuthority: 'author', title: 'fix', problem: 'x', contractRef: 'spec:integration', invariant: 'fixture contract', evidence: ['fixture mismatch'], impact: 'review blocked', requiredOutcome: 'update', acceptance: ['fixture updated'] }],
+      reviewFindingConvergence: [],
     });
 
     await writeFile(verificationPath, '# verification drift\n');
@@ -313,7 +317,8 @@ describe('Q2 verification handoff boundary', () => {
     const review = await createRun(input(c, '20260806-004-review-propose', 'review-propose', { reviewedRunId: '20260806-003-propose' }));
     await completeRun(review, {
       executionStatus: 'completed', summary: 'changes', reviewVerdict: 'changes-requested',
-      reviewFindings: [{ id: 'F1', severity: 'blocking', blockingAuthority: 'author', title: 'fix', problem: 'x', requiredChange: 'update' }],
+      reviewFindings: [{ id: 'F1', severity: 'blocking', blockingAuthority: 'author', title: 'fix', problem: 'x', contractRef: 'spec:integration', invariant: 'fixture contract', evidence: ['fixture mismatch'], impact: 'review blocked', requiredOutcome: 'update', acceptance: ['fixture updated'] }],
+      reviewFindingConvergence: [],
     });
     const revise = await createRun(input(c, '20260806-005-revise-propose', 'revise-propose', {
       sourceReviewRun: '20260806-004-review-propose', sourceReviewVerdict: 'changes-requested',

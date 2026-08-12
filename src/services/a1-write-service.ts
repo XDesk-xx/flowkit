@@ -193,21 +193,34 @@ export function buildOwnerDecisionRecord(input: {
   readonly deliveryId: string;
   readonly sourceRef: string;
   readonly changeId?: string;
+  readonly scope?: string;
+  readonly requiredOutcomes?: readonly string[];
 }): OwnerDecisionRecord {
   const deliveryId = nonEmpty(input.deliveryId, 'deliveryId');
   const sourceRef = nonEmpty(input.sourceRef, 'sourceRef');
   const changeId = input.changeId === undefined ? undefined : nonEmpty(input.changeId, 'changeId');
+  const scope = input.scope === undefined ? undefined : nonEmpty(input.scope, 'scope');
+  const requiredOutcomes = input.requiredOutcomes === undefined
+    ? undefined
+    : [...new Set(input.requiredOutcomes.map((value, index) => nonEmpty(value, `requiredOutcomes[${index}]`)))].sort();
+  if (requiredOutcomes !== undefined && requiredOutcomes.length === 0) {
+    throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'requiredOutcomes must not be empty');
+  }
   const ref = ownerDecisionRefFor({
     decision: input.decision,
     deliveryId,
     sourceRef,
     ...(changeId !== undefined ? { changeId } : {}),
+    ...(scope !== undefined ? { scope } : {}),
+    ...(requiredOutcomes !== undefined ? { requiredOutcomes } : {}),
   });
   return {
     ref,
     decision: input.decision,
     deliveryId,
     ...(changeId !== undefined ? { changeId } : {}),
+    ...(scope !== undefined ? { scope } : {}),
+    ...(requiredOutcomes !== undefined ? { requiredOutcomes } : {}),
     sourceRef,
   };
 }
@@ -377,29 +390,33 @@ export async function recordOwnerDecision(
     readonly decision: string;
     readonly sourceRef: string;
     readonly changeId?: string;
+    readonly scope?: string;
+    readonly requiredOutcomes?: readonly string[];
   },
   options: A1ServiceOptions = {},
 ): Promise<WriteOperationResult> {
-  if (!(AUTHORIZATION_ONLY_OWNER_DECISIONS as readonly string[]).includes(input.decision)) {
+  const isAuthorization = (AUTHORIZATION_ONLY_OWNER_DECISIONS as readonly string[]).includes(input.decision);
+  const isContractReset = input.decision === 'contract-reset';
+  if (!isAuthorization && !isContractReset) {
     throw new FlowkitError('OWNER_DECISION_NOT_RECORDABLE', `owner record does not support ${input.decision}`);
   }
-  const decision = input.decision as AuthorizationOnlyOwnerDecision;
+  const decision = input.decision as OwnerDecisionRecordKind;
   const deliveryId = await discoverActiveDelivery(repoRoot);
+  if (isContractReset) {
+    if (input.changeId === undefined || input.scope === undefined || input.requiredOutcomes === undefined) {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'contract-reset requires --change, scope and requiredOutcomes');
+    }
+  }
   const record = buildOwnerDecisionRecord({
     decision,
     deliveryId,
     sourceRef: nonEmpty(input.sourceRef, 'sourceRef'),
     ...(input.changeId !== undefined ? { changeId: input.changeId } : {}),
+    ...(input.scope !== undefined ? { scope: input.scope } : {}),
+    ...(input.requiredOutcomes !== undefined ? { requiredOutcomes: input.requiredOutcomes } : {}),
   });
   const path = manifestPath(repoRoot, deliveryId);
 
-  // Exact-existing retries are read-only idempotent observations, not new
-  // authority admission. Detect them before consulting the current Policy:
-  // the first successful authorization may legitimately advance Policy away
-  // from the owner-decision gate. A byte-identical retry MUST still return the
-  // same deterministic ref without appending a second record. `appendOwnerDecision`
-  // is intentionally used on an in-memory document here so an exact record is
-  // distinguished from a same-ref/different-content collision fail-closed.
   const retryProbe = DeliveryManifestDocument.parse(await readFile(path, 'utf8'));
   const retryProbeResult = retryProbe.appendOwnerDecision(record);
   if (!retryProbeResult.changed) {
@@ -411,20 +428,30 @@ export async function recordOwnerDecision(
     };
   }
 
-  // New authorization writes still require a fresh formal-fact snapshot and
-  // exact current Policy decision/target match.
   const snapshot = await readSnapshot(repoRoot, deliveryId);
   assertConflictFree(snapshot);
-  const current = next(snapshot);
-  if (current.kind !== 'owner-decision' || current.decision !== decision) {
-    throw new FlowkitError('OWNER_DECISION_GATE_MISMATCH', `current Policy is not requesting ${decision}`);
-  }
-  const expectedChangeId = expectedAuthorizationTarget(snapshot, decision, current);
-  if (expectedChangeId !== input.changeId) {
-    throw new FlowkitError('OWNER_DECISION_TARGET_MISMATCH', 'requested Owner record target does not match current Policy', {
-      expectedChangeId,
-      requestedChangeId: input.changeId,
-    });
+
+  if (isContractReset) {
+    const target = snapshot.changes.find((change) => change.id === input.changeId);
+    if (target === undefined || target.state !== 'active') {
+      throw new FlowkitError('OWNER_DECISION_TARGET_MISMATCH', 'contract-reset target must be the active Change', {
+        requestedChangeId: input.changeId,
+        targetState: target?.state,
+      });
+    }
+  } else {
+    const authorizationDecision = decision as AuthorizationOnlyOwnerDecision;
+    const current = next(snapshot);
+    if (current.kind !== 'owner-decision' || current.decision !== authorizationDecision) {
+      throw new FlowkitError('OWNER_DECISION_GATE_MISMATCH', `current Policy is not requesting ${authorizationDecision}`);
+    }
+    const expectedChangeId = expectedAuthorizationTarget(snapshot, authorizationDecision, current);
+    if (expectedChangeId !== input.changeId) {
+      throw new FlowkitError('OWNER_DECISION_TARGET_MISMATCH', 'requested Owner record target does not match current Policy', {
+        expectedChangeId,
+        requestedChangeId: input.changeId,
+      });
+    }
   }
 
   const original = await readFile(path, 'utf8');

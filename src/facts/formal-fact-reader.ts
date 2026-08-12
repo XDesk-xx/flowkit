@@ -45,6 +45,7 @@ import type {
   ReviewVerdictFact,
   RunFact,
   OwnerAuthorizationFact,
+  OwnerDecisionFact,
 } from './formal-fact-snapshot.js';
 
 export interface ReadFormalFactSnapshotInput {
@@ -89,6 +90,7 @@ export async function readFormalFactSnapshot(
   }
 
   const ownerAuthorizations = manifestResult.ownerAuthorizations;
+  const ownerDecisionFacts = manifestResult.ownerDecisionFacts;
   conflicts.push(...manifestResult.conflicts);
 
   const bindingResult = await validateReviewExactBindings(
@@ -128,6 +130,7 @@ export async function readFormalFactSnapshot(
     openSpecArtifacts,
     gitBoundaries,
     ownerAuthorizations,
+    ownerDecisionFacts,
     reviewVerdicts: admittedReviewVerdicts,
     conflicts,
   };
@@ -138,6 +141,7 @@ interface ManifestResult {
   readonly deliveryFullTestStatus: FormalFactSnapshot['deliveryFullTestStatus'];
   readonly changes: readonly ChangeFact[];
   readonly ownerAuthorizations: readonly OwnerAuthorizationFact[];
+  readonly ownerDecisionFacts: readonly OwnerDecisionFact[];
   readonly conflicts: readonly FactConflict[];
 }
 
@@ -150,6 +154,7 @@ async function readDeliveryManifest(input: ReadFormalFactSnapshotInput): Promise
       deliveryFullTestStatus: undefined,
       changes: [],
       ownerAuthorizations: [],
+      ownerDecisionFacts: [],
       conflicts,
     };
   }
@@ -168,6 +173,7 @@ async function readDeliveryManifest(input: ReadFormalFactSnapshotInput): Promise
       deliveryFullTestStatus: undefined,
       changes: [],
       ownerAuthorizations: [],
+      ownerDecisionFacts: [],
       conflicts,
     };
   }
@@ -190,7 +196,8 @@ async function readDeliveryManifest(input: ReadFormalFactSnapshotInput): Promise
       deliveryState: undefined,
       deliveryFullTestStatus: undefined,
       changes: readChangeFacts(input.deliveryId, manifest['changes'], conflicts, manifestPath),
-      ownerAuthorizations: readOwnerAuthorizations(input.deliveryId, manifest['ownerDecisions'], manifest['changes'], conflicts, manifestPath),
+      ownerAuthorizations: [],
+      ownerDecisionFacts: [],
       conflicts,
     };
   }
@@ -234,12 +241,14 @@ async function readDeliveryManifest(input: ReadFormalFactSnapshotInput): Promise
   }
 
   const changes = readChangeFacts(input.deliveryId, manifest['changes'], conflicts, manifestPath);
+  const ownerDecisionFacts: OwnerDecisionFact[] = [];
   const ownerAuthorizations = readOwnerAuthorizations(
     input.deliveryId,
     manifest['ownerDecisions'],
     manifest['changes'],
     conflicts,
     manifestPath,
+    ownerDecisionFacts,
   );
 
   return {
@@ -247,8 +256,22 @@ async function readDeliveryManifest(input: ReadFormalFactSnapshotInput): Promise
     deliveryFullTestStatus: fullTestStatus,
     changes,
     ownerAuthorizations,
+    ownerDecisionFacts: latestCurrentOwnerDecisionFacts(ownerDecisionFacts),
     conflicts,
   };
+}
+
+function latestCurrentOwnerDecisionFacts(facts: readonly OwnerDecisionFact[]): readonly OwnerDecisionFact[] {
+  const latestByScope = new Map<string, OwnerDecisionFact>();
+  const passthrough: OwnerDecisionFact[] = [];
+  for (const fact of facts) {
+    if (fact.decision !== 'contract-reset') {
+      passthrough.push(fact);
+      continue;
+    }
+    latestByScope.set(`${fact.deliveryId}\0${fact.changeId ?? ''}\0${fact.scope ?? ''}`, fact);
+  }
+  return [...passthrough, ...latestByScope.values()];
 }
 
 function readChangeFacts(
@@ -310,6 +333,7 @@ function readOwnerAuthorizations(
   changesValue: unknown,
   conflicts: FactConflict[],
   manifestPath: string,
+  ownerDecisionFacts: OwnerDecisionFact[] = [],
 ): OwnerAuthorizationFact[] {
   if (value === undefined) return [];
   if (!Array.isArray(value)) {
@@ -347,6 +371,8 @@ function readOwnerAuthorizations(
     const decision = obj['decision'];
     const recordDeliveryId = obj['deliveryId'];
     const changeId = obj['changeId'];
+    const scope = obj['scope'];
+    const requiredOutcomes = obj['requiredOutcomes'];
     const sourceRef = obj['sourceRef'];
     if (
       typeof ref !== 'string' ||
@@ -381,11 +407,34 @@ function readOwnerAuthorizations(
       continue;
     }
     const typedRecordDecision = decision as OwnerDecisionRecordKind;
+    let normalizedRequiredOutcomes: readonly string[] | undefined;
+    if (typedRecordDecision === 'contract-reset') {
+      if (typeof changeId !== 'string' || typeof scope !== 'string' || scope.trim() === '' ||
+          !Array.isArray(requiredOutcomes) || requiredOutcomes.length === 0 ||
+          requiredOutcomes.some((outcome) => typeof outcome !== 'string' || outcome.trim() === '')) {
+        conflicts.push({
+          dimension: 'owner-decision-record',
+          authority: manifestPath,
+          message: `Owner contract-reset ${ref} missing structured scope/requiredOutcomes/changeId`,
+        });
+        continue;
+      }
+      normalizedRequiredOutcomes = [...new Set((requiredOutcomes as string[]).map((outcome) => outcome.trim()))].sort();
+    } else if (scope !== undefined || requiredOutcomes !== undefined) {
+      conflicts.push({
+        dimension: 'owner-decision-record',
+        authority: manifestPath,
+        message: `Owner record ${ref} carries contract-reset-only fields`,
+      });
+      continue;
+    }
     const expectedRef = ownerDecisionRefFor({
       decision: typedRecordDecision,
       deliveryId: recordDeliveryId,
       sourceRef,
       ...(typeof changeId === 'string' ? { changeId } : {}),
+      ...(typeof scope === 'string' ? { scope } : {}),
+      ...(normalizedRequiredOutcomes !== undefined ? { requiredOutcomes: normalizedRequiredOutcomes } : {}),
     });
     if (ref !== expectedRef) {
       conflicts.push({
@@ -401,6 +450,8 @@ function readOwnerAuthorizations(
       decision,
       deliveryId: recordDeliveryId,
       ...(typeof changeId === 'string' ? { changeId } : {}),
+      ...(typeof scope === 'string' ? { scope } : {}),
+      ...(normalizedRequiredOutcomes !== undefined ? { requiredOutcomes: normalizedRequiredOutcomes } : {}),
       sourceRef,
     });
     const prior = seenRefs.get(ref);
@@ -417,6 +468,7 @@ function readOwnerAuthorizations(
     const changeScopedRecord =
       typedRecordDecision === 'create-change' ||
       typedRecordDecision === 'activate-change' ||
+      typedRecordDecision === 'contract-reset' ||
       typedRecordDecision === 'authorize-apply' ||
       typedRecordDecision === 'authorize-archive' ||
       typedRecordDecision === 'authorize-checkpoint';
@@ -440,8 +492,18 @@ function readOwnerAuthorizations(
       continue;
     }
 
+    ownerDecisionFacts.push({
+      ref,
+      decision: typedRecordDecision,
+      deliveryId,
+      ...(typeof changeId === 'string' ? { changeId } : {}),
+      ...(typeof scope === 'string' ? { scope } : {}),
+      ...(normalizedRequiredOutcomes !== undefined ? { requiredOutcomes: normalizedRequiredOutcomes } : {}),
+      sourceRef,
+    });
+
     if (!(AUTHORIZATION_ONLY_OWNER_DECISIONS as readonly string[]).includes(typedRecordDecision)) {
-      // create-delivery/create-change/activate-change are provenance, not Policy authorization facts.
+      // Non-authorization Owner decisions remain formal facts but are not Policy authorization gates.
       continue;
     }
     const typedDecision = typedRecordDecision as AuthorizationOnlyOwnerDecision;
@@ -450,6 +512,8 @@ function readOwnerAuthorizations(
       decision: typedDecision,
       deliveryId,
       ...(typeof changeId === 'string' ? { changeId } : {}),
+      ...(typeof scope === 'string' ? { scope } : {}),
+      ...(normalizedRequiredOutcomes !== undefined ? { requiredOutcomes: normalizedRequiredOutcomes } : {}),
       sourceRef,
     });
   }
@@ -722,6 +786,7 @@ function readC1Run(
     ...(contextFile.semanticInputFingerprint !== undefined && {
       semanticInputFingerprint: contextFile.semanticInputFingerprint,
     }),
+    ...(contextFile.ownerFactRefs !== undefined && { ownerFactRefs: contextFile.ownerFactRefs }),
     ...(contextFile.inputRef !== undefined && { inputRef: contextFile.inputRef }),
     ...(consumedInputRefs !== undefined && { consumedInputRefs }),
     ...(reviewVerdictRef !== undefined && { reviewVerdictRef }),

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 2,
+  "runId": "20260812-081-apply",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "apply",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "semanticInputFingerprint": "e3888718c96ed8c7d90f0c8fa9d9e97ee132bec7b79f7efaf6cf6a598947eb85",
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/review-findings-and-blocker-authority/20260812-081-apply/",
+  "changeKey": "D1",
+  "changeId": "review-findings-and-blocker-authority",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/review-findings-and-blocker-authority/20260812-080-review-propose/result.json",
+    "versionFingerprint": "8b55ac3e347d02f1a68c2dfc4ce2838ede7a7b8906ef2f5e323cdd9126452cf2",
+    "kind": "run-result"
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": true,
+    "mayWriteTestCode": true,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

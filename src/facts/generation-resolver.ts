@@ -58,3 +58,30 @@ export function latestCompletedArtifactRunId(
     .sort((a, b) => a.localeCompare(b));
   return candidates.at(-1);
 }
+
+/**
+ * D1 bounded reset identity helper. This is not a generation registry: it only
+ * compares the current Manifest-projected Contract Reset refs with the refs
+ * frozen into one Run at preparation time.
+ */
+export function currentContractResetRefs(
+  ownerDecisionFacts: readonly { readonly ref: string; readonly decision: string; readonly changeId?: string }[] | undefined,
+  changeId: string,
+): readonly string[] {
+  return (ownerDecisionFacts ?? [])
+    .filter((fact) => fact.decision === 'contract-reset' && fact.changeId === changeId)
+    .map((fact) => fact.ref)
+    .sort();
+}
+
+export function runMatchesContractResetIdentity(
+  run: { readonly ownerFactRefs?: readonly { readonly ref: string; readonly decision: string }[] },
+  currentRefs: readonly string[],
+): boolean {
+  if (currentRefs.length === 0) return true;
+  const runRefs = (run.ownerFactRefs ?? [])
+    .filter((fact) => fact.decision === 'contract-reset')
+    .map((fact) => fact.ref)
+    .sort();
+  return JSON.stringify(runRefs) === JSON.stringify([...currentRefs].sort());
+}

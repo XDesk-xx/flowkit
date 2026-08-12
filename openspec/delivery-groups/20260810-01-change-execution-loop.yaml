@@ -158,7 +158,7 @@ changes:
     required: true
     dependsOn:
       - openspec-1-7-thin-integration
-    state: planned
+    state: completed
     outputs:
       - typed Finding model
       - blockingAuthority: author / owner / verification / external
@@ -255,6 +255,21 @@ ownerDecisions:
     deliveryId: "20260810-01-change-execution-loop"
     changeId: "openspec-1-7-thin-integration"
     sourceRef: "chat-owner-input:2026-08-12T06:22+08:00:authorize-archive:C1"
+  - ref: "owner:7a0a0914da59e02bff5fe554477143b45dc1de760c6b4a363ebcbd49956d00c1"
+    decision: "activate-change"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "review-findings-and-blocker-authority"
+    sourceRef: "owner-input:2026-08-12T15:36+08:00:restart-D1"
+  - ref: "owner:7079e1e74b4bf46a2e309da169898079b8f4b9b279d37dada1dd397d51e4e62c"
+    decision: "authorize-apply"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "review-findings-and-blocker-authority"
+    sourceRef: "owner-input:2026-08-12T18:03+08:00"
+  - ref: "owner:48cb9972fea5509a6a150941f521d0244c5049aa9d199b0ca833393ede1e306d"
+    decision: "authorize-archive"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "review-findings-and-blocker-authority"
+    sourceRef: "owner-input:2026-08-12T20:59+08:00"
 verification:
   change:
     requireApplicableChecks: true

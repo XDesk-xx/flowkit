@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 2,
+  "runId": "20260812-072-review-explore",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "review-explore",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "38d6de624b25bacc5a03b276c1866d26b1d944633d2c3eccd918236b9a5e067d",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:fe7b374dbe2ba66268c5737fff7de1111a4d56185892c7abccdbd27463b339c4",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "review-findings-and-blocker-authority",
+      "scope": "D1/current-contract",
+      "requiredOutcomes": [
+        ".ps1 first-class support; PowerShell path has priority over .cmd fallback; prior cmd-only generation is abandoned.",
+        "Applicable Owner decisions and Contract Reset must be Core-admitted structured formal facts/refs available to detached role handoff and semantic input identity.",
+        "Manifest.ownerDecisions remains the sole Owner authority store; Run/context/Action Package carry only bounded verified projection and do not persist chat transcripts or create a second decision database."
+      ],
+      "sourceRef": "owner-input:2026-08-12T15:36+08:00"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/review-findings-and-blocker-authority/20260812-072-review-explore/",
+  "changeKey": "D1",
+  "changeId": "review-findings-and-blocker-authority",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/review-findings-and-blocker-authority/20260812-071-explore/result.json",
+    "versionFingerprint": "e395b5269af4174547ba30a1a0204c6b41b9f03abf0459456eff3b37e4cadd9b",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260812-071-explore",
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

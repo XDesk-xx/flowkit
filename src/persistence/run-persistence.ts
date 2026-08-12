@@ -74,7 +74,7 @@ import {
   latestCompletedArtifactRunId,
   type LineageFact,
 } from '../facts/generation-resolver.js';
-import type { ReviewFinding } from './serialization.js';
+import type { FindingConvergence, ReviewFinding, ReviewFindingV2 } from './serialization.js';
 
 // ---------------------------------------------------------------------------
 // createRun
@@ -100,6 +100,8 @@ export interface CreateRunInput {
   readonly ownerAuthorization: string;
   /** B1 compact semantic input identity persisted in context.json. */
   readonly semanticInputFingerprint?: string;
+  /** Bootstrap/D1 bounded applicable Owner facts persisted for detached handoff. */
+  readonly ownerFactRefs?: readonly import('../domain/types.js').OwnerFactRef[];
   /**
    * Q1: Typed descriptor for the Run whose result.json is the input.
    * Core reads this Run's result.json and derives `context.inputRef`.
@@ -1095,7 +1097,9 @@ export interface CompleteRunInput {
   /** Reviewer-owned verdict (completed `review-*` Runs only). */
   readonly reviewVerdict?: ReviewVerdictValue;
   /** Reviewer-owned findings (completed `review-*` Runs only). */
-  readonly reviewFindings?: readonly ReviewFinding[];
+  readonly reviewFindings?: readonly (ReviewFinding | ReviewFindingV2)[];
+  /** D1 v2 previous→current finding convergence (completed review-* only). */
+  readonly reviewFindingConvergence?: readonly FindingConvergence[];
   /** Present → `runStatus = failed` (no actionResult). */
   readonly failureDiagnosis?: string;
   /** Present → `runStatus = cancelled` (no actionResult). */
@@ -1118,7 +1122,119 @@ export async function completeRun(
   validateContextFileIdentity(contextFile, runDir);
   validateCompleteRunInput(contextFile, input);
   const result = await buildRunResultFromDescriptors(contextFile, runDir, input);
+  if (contextFile.action.startsWith('review-') && result.runStatus === 'completed') {
+    await validateReviewFindingConvergenceAgainstPrevious(contextFile, runDir, result);
+  }
   await writeRunResult(runDir, result);
+}
+
+async function validateReviewFindingConvergenceAgainstPrevious(
+  contextFile: ContextFile,
+  runDir: string,
+  result: RunResultFile,
+): Promise<void> {
+  const current = (result.reviewFindings ?? []) as readonly (ReviewFinding | ReviewFindingV2)[];
+  const convergence = result.reviewFindingConvergence ?? [];
+  const previousRunId = await resolvePreviousMatchingReviewRunId(contextFile, runDir);
+  if (previousRunId === undefined) {
+    if (convergence.length !== 0) {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'first matching Review convergence MUST be empty', {
+        runId: contextFile.runId,
+      });
+    }
+    return;
+  }
+
+  const previousPath = join(dirname(runDir), previousRunId, 'result.json');
+  const previousRaw = JSON.parse(await readFile(previousPath, 'utf8')) as RunResultFile;
+  validateRunResultFileCombination(previousRaw);
+  const previous = previousRaw.reviewFindings ?? [];
+  const previousById = new Map(previous.map((finding) => [finding.id, finding] as const));
+  const currentById = new Map(current.map((finding) => [finding.id, finding] as const));
+  const convergenceById = new Map(convergence.map((entry) => [entry.findingId, entry] as const));
+  const union = new Set([...previousById.keys(), ...currentById.keys()]);
+  if (convergenceById.size !== union.size || [...union].some((id) => !convergenceById.has(id))) {
+    throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'reviewFindingConvergence MUST cover previous/current finding union exactly once', {
+      previousRunId,
+    });
+  }
+  for (const id of union) {
+    const prior = previousById.get(id);
+    const now = currentById.get(id);
+    const entry = convergenceById.get(id)!;
+    if (prior !== undefined && now !== undefined) {
+      if (entry.state !== 'still-open') {
+        throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `finding ${id} present in previous/current MUST be still-open`);
+      }
+      if ('contractRef' in prior && 'contractRef' in now && (prior.contractRef !== now.contractRef || prior.invariant !== now.invariant)) {
+        throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `finding ${id} stable identity changed; use superseded + new ID`);
+      }
+      continue;
+    }
+    if (prior === undefined && now !== undefined) {
+      if (entry.state !== 'new') throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `finding ${id} current-only MUST be new`);
+      continue;
+    }
+    if (prior !== undefined && now === undefined && entry.state !== 'resolved' && entry.state !== 'superseded') {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `finding ${id} previous-only MUST be resolved|superseded`);
+    }
+  }
+}
+
+async function resolvePreviousMatchingReviewRunId(
+  contextFile: ContextFile,
+  runDir: string,
+): Promise<string | undefined> {
+  if (contextFile.reviewedRunId === undefined) return undefined;
+  const changeDir = dirname(runDir);
+  const reviewedDir = join(changeDir, contextFile.reviewedRunId);
+  const currentResetRefs = normalizedContractResetRefs(contextFile.ownerFactRefs ?? []);
+  try {
+    const reviewedContext = validateContextFile(JSON.parse(await readFile(join(reviewedDir, 'context.json'), 'utf8')) as unknown);
+    if (
+      (reviewedContext.action === 'revise-explore' || reviewedContext.action === 'revise-propose' || reviewedContext.action === 'revise-apply') &&
+      reviewedContext.sourceReviewRun !== undefined
+    ) {
+      const sourceContext = validateContextFile(JSON.parse(await readFile(join(changeDir, reviewedContext.sourceReviewRun, 'context.json'), 'utf8')) as unknown);
+      const reviewedResetRefs = normalizedContractResetRefs(reviewedContext.ownerFactRefs ?? []);
+      const sourceResetRefs = normalizedContractResetRefs(sourceContext.ownerFactRefs ?? []);
+      if (
+        stableStringifyLocal(reviewedResetRefs) === stableStringifyLocal(currentResetRefs) &&
+        stableStringifyLocal(sourceResetRefs) === stableStringifyLocal(currentResetRefs)
+      ) {
+        return reviewedContext.sourceReviewRun;
+      }
+      return undefined;
+    }
+  } catch {
+    // The ordinary review entry validator owns malformed reviewed/source-target diagnosis.
+  }
+
+  const entries = (await readdir(changeDir, { withFileTypes: true }))
+    .filter((entry) => entry.isDirectory() && entry.name < contextFile.runId)
+    .map((entry) => entry.name)
+    .sort((a, b) => b.localeCompare(a));
+  for (const candidate of entries) {
+    try {
+      const candidateDir = join(changeDir, candidate);
+      const candidateContext = validateContextFile(JSON.parse(await readFile(join(candidateDir, 'context.json'), 'utf8')) as unknown);
+      if (candidateContext.action !== contextFile.action || candidateContext.reviewedRunId !== contextFile.reviewedRunId) continue;
+      if (stableStringifyLocal(normalizedContractResetRefs(candidateContext.ownerFactRefs ?? [])) !== stableStringifyLocal(currentResetRefs)) continue;
+      await readFile(join(candidateDir, 'result.json'));
+      return candidate;
+    } catch {
+      continue;
+    }
+  }
+  return undefined;
+}
+
+function normalizedContractResetRefs(facts: readonly import('../domain/types.js').OwnerFactRef[]): readonly string[] {
+  return facts.filter((fact) => fact.decision === 'contract-reset').map((fact) => fact.ref).sort();
+}
+
+function stableStringifyLocal(value: unknown): string {
+  return JSON.stringify(value);
 }
 
 /** Runtime-validate caller descriptors before filesystem resolution. */
@@ -1182,7 +1298,11 @@ async function buildRunResultFromDescriptors(
     runStatus: 'completed',
     actionResult,
     ...(isReviewAction && input.reviewVerdict !== undefined && { reviewVerdict: input.reviewVerdict }),
-    ...(isReviewAction && input.reviewFindings !== undefined && { reviewFindings: input.reviewFindings }),
+    ...(isReviewAction && {
+      reviewFindingSchemaVersion: 2 as const,
+      reviewFindings: input.reviewFindings ?? [],
+      reviewFindingConvergence: input.reviewFindingConvergence ?? [],
+    }),
   };
 }
 
@@ -1839,7 +1959,7 @@ function buildContextFile(
   verificationInputRef: ResultRef | undefined,
 ): ContextFile {
   const contextFile: ContextFile = {
-    schemaVersion: 2,
+    schemaVersion: 3,
     runId: input.runId,
     deliveryId: input.deliveryId,
     action: input.action,
@@ -1848,6 +1968,7 @@ function buildContextFile(
     ...(input.semanticInputFingerprint !== undefined && {
       semanticInputFingerprint: input.semanticInputFingerprint,
     }),
+    ...(input.ownerFactRefs !== undefined && { ownerFactRefs: input.ownerFactRefs }),
     runPath,
     changeKey: input.changeKey,
     changeId: input.changeId,

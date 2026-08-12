@@ -33,7 +33,8 @@ import type {
   RunFact,
 } from '../facts/formal-fact-snapshot.js';
 import { computeLineage } from './lineage.js';
-import type { Stage } from './stage-detector.js';
+import { detectStage, type Stage } from './stage-detector.js';
+import { currentContractResetRefs, runMatchesContractResetIdentity } from '../facts/generation-resolver.js';
 import { hasOwnerAuthorization } from './owner-decision.js';
 import {
   evaluateVerificationGate,
@@ -200,6 +201,49 @@ function hasCompletedRun(
   );
 }
 
+
+function lineageForStage(
+  snapshot: FormalFactSnapshot,
+  changeId: string,
+  stage: Stage,
+): ReturnType<typeof computeLineage> {
+  const detectedStage = detectStage(snapshot.runs, changeId);
+  if (detectedStage !== stage) {
+    return computeLineage(snapshot.runs, snapshot.reviewVerdicts, changeId, stage);
+  }
+  const resetRefs = currentContractResetRefs(snapshot.ownerDecisionFacts, changeId);
+  if (resetRefs.length === 0) {
+    return computeLineage(snapshot.runs, snapshot.reviewVerdicts, changeId, stage);
+  }
+  const runs = snapshot.runs.filter((run) => run.changeId !== changeId || runMatchesContractResetIdentity(run, resetRefs));
+  const runIds = new Set(runs.map((run) => run.runId));
+  const verdicts = snapshot.reviewVerdicts.filter((verdict) => runIds.has(verdict.reviewRunId));
+  return computeLineage(runs, verdicts, changeId, stage);
+}
+
+function completedRunForCurrentStage(
+  snapshot: FormalFactSnapshot,
+  changeId: string,
+  action: FormalAction,
+): boolean {
+  const detectedStage = detectStage(snapshot.runs, changeId);
+  const actionStage: Stage | undefined = action === 'explore' || action === 'review-explore' || action === 'revise-explore'
+    ? 'explore'
+    : action === 'propose' || action === 'review-propose' || action === 'revise-propose'
+      ? 'propose'
+      : action === 'apply' || action === 'review-apply' || action === 'revise-apply'
+        ? 'apply'
+        : action === 'archive'
+          ? 'archive'
+          : undefined;
+  if (actionStage !== detectedStage) return hasCompletedRun(snapshot.runs, changeId, action);
+  const resetRefs = currentContractResetRefs(snapshot.ownerDecisionFacts, changeId);
+  const runs = resetRefs.length === 0
+    ? snapshot.runs
+    : snapshot.runs.filter((run) => run.changeId !== changeId || runMatchesContractResetIdentity(run, resetRefs));
+  return hasCompletedRun(runs, changeId, action);
+}
+
 // ---------------------------------------------------------------------------
 // Change-level action preconditions
 // ---------------------------------------------------------------------------
@@ -215,12 +259,7 @@ function explorePreconditions(snapshot: FormalFactSnapshot): readonly string[] {
     unmet.push('no-active-change');
     return unmet;
   }
-  const lineage = computeLineage(
-    snapshot.runs,
-    snapshot.reviewVerdicts,
-    change.id,
-    'explore',
-  );
+  const lineage = lineageForStage(snapshot, change.id, 'explore');
   if (lineage.artifact !== null) {
     unmet.push('explore-already-run');
   }
@@ -247,12 +286,7 @@ function reviewSPreconditions(
     unmet.push('no-active-change');
     return unmet;
   }
-  const lineage = computeLineage(
-    snapshot.runs,
-    snapshot.reviewVerdicts,
-    change.id,
-    stage,
-  );
+  const lineage = lineageForStage(snapshot, change.id, stage);
   if (lineage.artifact === null) {
     unmet.push(`${stage}-no-artifact`);
     return unmet;
@@ -302,12 +336,7 @@ function reviseSPreconditions(
     unmet.push('no-active-change');
     return unmet;
   }
-  const lineage = computeLineage(
-    snapshot.runs,
-    snapshot.reviewVerdicts,
-    change.id,
-    stage,
-  );
+  const lineage = lineageForStage(snapshot, change.id, stage);
   if (lineage.review === null) {
     unmet.push('no-current-review');
   }
@@ -338,21 +367,11 @@ function proposePreconditions(snapshot: FormalFactSnapshot): readonly string[] {
     unmet.push('no-active-change');
     return unmet;
   }
-  const exploreLineage = computeLineage(
-    snapshot.runs,
-    snapshot.reviewVerdicts,
-    change.id,
-    'explore',
-  );
+  const exploreLineage = lineageForStage(snapshot, change.id, 'explore');
   if (!(exploreLineage.match && exploreLineage.verdict === 'approved')) {
     unmet.push('explore-not-approved');
   }
-  const proposeLineage = computeLineage(
-    snapshot.runs,
-    snapshot.reviewVerdicts,
-    change.id,
-    'propose',
-  );
+  const proposeLineage = lineageForStage(snapshot, change.id, 'propose');
   if (proposeLineage.artifact !== null) {
     unmet.push('propose-already-run');
   }
@@ -370,19 +389,14 @@ function applyPreconditions(snapshot: FormalFactSnapshot): readonly string[] {
     unmet.push('no-active-change');
     return unmet;
   }
-  const proposeLineage = computeLineage(
-    snapshot.runs,
-    snapshot.reviewVerdicts,
-    change.id,
-    'propose',
-  );
+  const proposeLineage = lineageForStage(snapshot, change.id, 'propose');
   if (!(proposeLineage.match && proposeLineage.verdict === 'approved')) {
     unmet.push('propose-not-approved');
   }
   if (!hasOwnerAuthorization(snapshot.ownerAuthorizations, 'authorize-apply', snapshot.deliveryId, change.id)) {
     unmet.push('apply-not-authorized');
   }
-  if (hasCompletedRun(snapshot.runs, change.id, 'apply')) {
+  if (completedRunForCurrentStage(snapshot, change.id, 'apply')) {
     unmet.push('apply-already-completed');
   }
   return unmet;
@@ -401,12 +415,7 @@ function archivePreconditions(snapshot: FormalFactSnapshot): readonly string[] {
     unmet.push('no-active-change');
     return unmet;
   }
-  const applyLineage = computeLineage(
-    snapshot.runs,
-    snapshot.reviewVerdicts,
-    change.id,
-    'apply',
-  );
+  const applyLineage = lineageForStage(snapshot, change.id, 'apply');
   // match + approved ⇒ blocking findings = 0 (an approved verdict carries no
   // blocking findings). Without match+approved, archive cannot proceed.
   if (!(applyLineage.match && applyLineage.verdict === 'approved')) {

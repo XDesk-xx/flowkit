@@ -44,6 +44,7 @@ import type {
   ReviewVerdictValue,
   Role,
   BlockingAuthority,
+  OwnerFactRef,
 } from '../domain/types.js';
 import { BLOCKING_AUTHORITIES } from '../domain/types.js';
 import {
@@ -100,6 +101,27 @@ export interface ReviewFinding {
   readonly requiredChange?: string;
 }
 
+export interface ReviewFindingV2 {
+  readonly id: string;
+  readonly severity: 'blocking' | 'non-blocking';
+  readonly title: string;
+  readonly problem: string;
+  readonly contractRef: string;
+  readonly invariant: string;
+  readonly evidence: readonly string[];
+  readonly impact: string;
+  readonly location?: string;
+  readonly blockingAuthority?: BlockingAuthority;
+  readonly requiredOutcome?: string;
+  readonly acceptance?: readonly string[];
+}
+
+export interface FindingConvergence {
+  readonly findingId: string;
+  readonly state: 'new' | 'still-open' | 'resolved' | 'superseded';
+  readonly supersededByFindingId?: string;
+}
+
 // ---------------------------------------------------------------------------
 // RunResultFile (result.json physical schema)
 // ---------------------------------------------------------------------------
@@ -135,8 +157,12 @@ export interface RunResultFile {
   readonly cancellationReason?: string;
   /** Present for completed `review-*` Runs (C1-AP-004 canonical verdict payload). */
   readonly reviewVerdict?: ReviewVerdictValue;
-  /** Q1: typed Reviewer findings for completed `review-*` Runs. */
-  readonly reviewFindings?: readonly ReviewFinding[];
+  /** D1 writer marker; absent means historical Q1 transitional finding shape. */
+  readonly reviewFindingSchemaVersion?: 2;
+  /** Reviewer-owned findings. */
+  readonly reviewFindings?: readonly (ReviewFinding | ReviewFindingV2)[];
+  /** D1 pairwise previous→current finding closure. */
+  readonly reviewFindingConvergence?: readonly FindingConvergence[];
 }
 
 // ---------------------------------------------------------------------------
@@ -173,8 +199,8 @@ export interface ContextFileConstraints {
  * `revise-*` Run.
  */
 export interface ContextFile {
-  /** C1 format marker — fixed to `2`. */
-  readonly schemaVersion: 2;
+  /** C1/D1 format marker. Historical v2 remains read-only compatible; new Runs write v3. */
+  readonly schemaVersion: 2 | 3;
   readonly runId: string;
   readonly deliveryId: string;
   /** Every current schemaVersion 2 Run is Change-scoped. */
@@ -189,6 +215,8 @@ export interface ContextFile {
    * high-level surface persists it.
    */
   readonly semanticInputFingerprint?: string;
+  /** D1 bounded structured Owner fact refs; current writers use v3. Transitional v2 bytes are read-only and ignored. */
+  readonly ownerFactRefs?: readonly OwnerFactRef[];
   /** Optional ResultRef projecting directly to `Run.inputRef`. */
   readonly inputRef?: ResultRef;
   /**
@@ -523,7 +551,9 @@ const RUN_RESULT_FILE_KNOWN_FIELDS = new Set([
   'failureDiagnosis',
   'cancellationReason',
   'reviewVerdict',
+  'reviewFindingSchemaVersion',
   'reviewFindings',
+  'reviewFindingConvergence',
 ]);
 
 /**
@@ -588,7 +618,12 @@ export function validateRunResultFileCombination(value: RunResultFile): void {
     }
   }
 
-  // Q1: reviewFindings — when present, MUST be a valid typed array.
+  const findingSchemaVersion = obj['reviewFindingSchemaVersion'];
+  if (findingSchemaVersion !== undefined && findingSchemaVersion !== 2) {
+    schemaFail('RunResultFile.reviewFindingSchemaVersion must equal 2 when present');
+  }
+
+  // reviewFindings — v2 when versioned, historical transitional otherwise.
   const reviewFindingsRaw = obj['reviewFindings'];
   if (reviewFindingsRaw !== undefined) {
     if (!Array.isArray(reviewFindingsRaw)) {
@@ -597,8 +632,41 @@ export function validateRunResultFileCombination(value: RunResultFile): void {
       });
     }
     for (let i = 0; i < reviewFindingsRaw.length; i++) {
-      validateReviewFinding(reviewFindingsRaw[i], i);
+      if (findingSchemaVersion === 2) validateReviewFindingV2(reviewFindingsRaw[i], i);
+      else validateReviewFinding(reviewFindingsRaw[i], i);
     }
+    const ids = reviewFindingsRaw.map((finding) => asObject(finding, 'reviewFinding')['id']);
+    if (new Set(ids).size !== ids.length) schemaFail('reviewFindings contains duplicate finding IDs');
+  }
+  const convergenceRaw = obj['reviewFindingConvergence'];
+  if (findingSchemaVersion === 2) {
+    if (!Array.isArray(convergenceRaw)) schemaFail('v2 review result requires reviewFindingConvergence array');
+    for (let i = 0; i < convergenceRaw.length; i += 1) validateFindingConvergence(convergenceRaw[i], i);
+    const currentIds = new Set((reviewFindingsRaw ?? []).map((finding) => asObject(finding, 'reviewFinding')['id'] as string));
+    const convergence = convergenceRaw as unknown[];
+    const convergenceIds = convergence.map((entry) => requireNonEmptyString(asObject(entry, 'reviewFindingConvergence'), 'findingId'));
+    if (new Set(convergenceIds).size !== convergenceIds.length) schemaFail('reviewFindingConvergence contains duplicate findingId entries');
+    const newIds = new Set<string>();
+    for (const entry of convergence) {
+      const record = asObject(entry, 'reviewFindingConvergence');
+      const findingId = record['findingId'] as string;
+      const state = record['state'];
+      if ((state === 'new' || state === 'still-open') && !currentIds.has(findingId)) {
+        schemaFail(`${state} convergence findingId must exist in current reviewFindings`, { findingId });
+      }
+      if ((state === 'resolved' || state === 'superseded') && currentIds.has(findingId)) {
+        schemaFail(`${state} convergence findingId must be absent from current reviewFindings`, { findingId });
+      }
+      if (state === 'new') newIds.add(findingId);
+    }
+    for (const entry of convergence) {
+      const record = asObject(entry, 'reviewFindingConvergence');
+      if (record['state'] === 'superseded' && !newIds.has(record['supersededByFindingId'] as string)) {
+        schemaFail('supersededByFindingId must reference a current new finding');
+      }
+    }
+  } else if (convergenceRaw !== undefined) {
+    schemaFail('transitional review result must not carry reviewFindingConvergence');
   }
 
   const hasActionResult = obj['actionResult'] !== undefined;
@@ -972,6 +1040,58 @@ function validateReviewFinding(value: unknown, index: number): void {
   }
 }
 
+function nonEmptyStringArray(value: unknown, field: string): readonly string[] {
+  if (!Array.isArray(value) || value.length === 0 || value.some((item) => typeof item !== 'string' || item.trim() === '')) {
+    schemaFail(`${field} must be a non-empty string array`);
+  }
+  return value as string[];
+}
+
+function validateReviewFindingV2(value: unknown, index: number): void {
+  const obj = asObject(value, `reviewFindings[${index}]`);
+  const knownFields = new Set([
+    'id', 'severity', 'title', 'problem', 'contractRef', 'invariant', 'evidence', 'impact',
+    'location', 'blockingAuthority', 'requiredOutcome', 'acceptance',
+  ]);
+  for (const key of Object.keys(obj)) {
+    if (!knownFields.has(key)) schemaFail(`reviewFindings[${index}] contains unknown field: ${key}`);
+  }
+  requireNonEmptyString(obj, 'id');
+  const severity = obj['severity'];
+  if (severity !== 'blocking' && severity !== 'non-blocking') schemaFail(`reviewFindings[${index}].severity must be blocking|non-blocking`);
+  requireNonEmptyString(obj, 'title');
+  requireNonEmptyString(obj, 'problem');
+  requireNonEmptyString(obj, 'contractRef');
+  requireNonEmptyString(obj, 'invariant');
+  nonEmptyStringArray(obj['evidence'], `reviewFindings[${index}].evidence`);
+  requireNonEmptyString(obj, 'impact');
+  if (obj['location'] !== undefined) requireNonEmptyString(obj, 'location');
+  if (severity === 'blocking') {
+    if (typeof obj['blockingAuthority'] !== 'string' || !(BLOCKING_AUTHORITIES as readonly string[]).includes(obj['blockingAuthority'])) {
+      schemaFail(`reviewFindings[${index}].blockingAuthority must be author|owner|verification|external`);
+    }
+    requireNonEmptyString(obj, 'requiredOutcome');
+    nonEmptyStringArray(obj['acceptance'], `reviewFindings[${index}].acceptance`);
+  } else {
+    for (const field of ['blockingAuthority', 'requiredOutcome', 'acceptance']) {
+      if (obj[field] !== undefined) schemaFail(`non-blocking reviewFindings[${index}] MUST NOT carry ${field}`);
+    }
+  }
+}
+
+function validateFindingConvergence(value: unknown, index: number): void {
+  const obj = asObject(value, `reviewFindingConvergence[${index}]`);
+  const known = new Set(['findingId', 'state', 'supersededByFindingId']);
+  for (const key of Object.keys(obj)) if (!known.has(key)) schemaFail(`reviewFindingConvergence[${index}] contains unknown field: ${key}`);
+  requireNonEmptyString(obj, 'findingId');
+  const state = obj['state'];
+  if (state !== 'new' && state !== 'still-open' && state !== 'resolved' && state !== 'superseded') {
+    schemaFail(`reviewFindingConvergence[${index}].state is invalid`);
+  }
+  if (state === 'superseded') requireNonEmptyString(obj, 'supersededByFindingId');
+  else if (obj['supersededByFindingId'] !== undefined) schemaFail(`reviewFindingConvergence[${index}].supersededByFindingId only allowed for superseded`);
+}
+
 // ---------------------------------------------------------------------------
 // validateReviewVerdictIntegrity (C1-AP-006)
 // ---------------------------------------------------------------------------
@@ -1009,6 +1129,8 @@ export function validateReviewVerdictIntegrity(
   const isReviewAction = action.startsWith('review-');
   const hasReviewVerdict = result.reviewVerdict !== undefined;
   const hasReviewFindings = result.reviewFindings !== undefined;
+  const hasReviewFindingVersion = result.reviewFindingSchemaVersion !== undefined;
+  const hasReviewConvergence = result.reviewFindingConvergence !== undefined;
   const findings = result.reviewFindings ?? [];
 
   // Non-review Runs: MUST NOT carry reviewVerdict or reviewFindings.
@@ -1026,6 +1148,9 @@ export function validateReviewVerdictIntegrity(
         `Non-review Run result MUST NOT contain reviewFindings (action=${action})`,
         { action, runStatus: result.runStatus },
       );
+    }
+    if (hasReviewFindingVersion || hasReviewConvergence) {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `Non-review Run result MUST NOT contain review finding version/convergence (action=${action})`);
     }
     return;
   }
@@ -1047,6 +1172,9 @@ export function validateReviewVerdictIntegrity(
         `Non-completed review-* Run MUST NOT contain reviewFindings (action=${action}, runStatus=${result.runStatus})`,
         { action, runStatus: result.runStatus },
       );
+    }
+    if (hasReviewFindingVersion || hasReviewConvergence) {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `Non-completed review-* Run MUST NOT contain review finding version/convergence (action=${action})`);
     }
     return;
   }
@@ -1106,10 +1234,11 @@ export function validateReviewVerdictIntegrity(
 export function validateContextFile(value: unknown): ContextFile {
   const obj = asObject(value, 'ContextFile');
 
-  // schemaVersion MUST be exactly 2 (C1 format marker).
-  if (obj['schemaVersion'] !== 2) {
-    schemaFail('ContextFile.schemaVersion must equal 2', { schemaVersion: obj['schemaVersion'] });
+  // Historical C1 v2 remains readable; D1 current writers use v3.
+  if (obj['schemaVersion'] !== 2 && obj['schemaVersion'] !== 3) {
+    schemaFail('ContextFile.schemaVersion must equal 2 or 3', { schemaVersion: obj['schemaVersion'] });
   }
+  const schemaVersion = obj['schemaVersion'];
 
   const runId = requireNonEmptyString(obj, 'runId');
   const deliveryId = requireNonEmptyString(obj, 'deliveryId');
@@ -1143,7 +1272,66 @@ export function validateContextFile(value: unknown): ContextFile {
     semanticInputFingerprint = semanticInputFingerprintRaw;
   }
 
-  // Current schemaVersion 2 Standard Runs are Change-only.
+  const ownerFactRefsRaw = obj['ownerFactRefs'];
+  // A bounded bootstrap generation created schemaVersion 2 contexts carrying
+  // provisional ownerFactRefs before D1 froze schemaVersion 3. Historical v2
+  // bytes remain immutable/read-only compatible, but those projections MUST
+  // NOT participate in current Owner authority or reset identity. Validate the
+  // shape so malformed bytes still fail closed, then omit them from the typed
+  // v2 projection below. New writers only emit ownerFactRefs with v3.
+  let ownerFactRefs: OwnerFactRef[] | undefined;
+  if (ownerFactRefsRaw !== undefined) {
+    if (!Array.isArray(ownerFactRefsRaw)) schemaFail('ownerFactRefs must be an array');
+    const knownOwnerFactFields = new Set([
+      'ref', 'decision', 'deliveryId', 'changeId', 'scope', 'requiredOutcomes', 'sourceRef',
+    ]);
+    ownerFactRefs = ownerFactRefsRaw.map((entry, index) => {
+      const fact = asObject(entry, `ownerFactRefs[${index}]`);
+      for (const key of Object.keys(fact)) {
+        if (!knownOwnerFactFields.has(key)) schemaFail(`ownerFactRefs[${index}] contains unknown field: ${key}`);
+      }
+      const ref = requireNonEmptyString(fact, 'ref');
+      if (!/^owner:[0-9a-f]{64}$/.test(ref)) {
+        schemaFail('ownerFactRefs.ref must be a stable owner:<sha256> identity', { index, ref });
+      }
+      if (fact['decision'] !== 'contract-reset') {
+        schemaFail('ownerFactRefs.decision must be contract-reset', { index, decision: fact['decision'] });
+      }
+      const factDeliveryId = requireNonEmptyString(fact, 'deliveryId');
+      const factChangeId = requireNonEmptyString(fact, 'changeId');
+      const scope = requireNonEmptyString(fact, 'scope');
+      const sourceRef = requireNonEmptyString(fact, 'sourceRef');
+      const outcomesRaw = fact['requiredOutcomes'];
+      if (
+        !Array.isArray(outcomesRaw)
+        || outcomesRaw.length === 0
+        || outcomesRaw.some((value) => typeof value !== 'string' || value.trim() === '')
+      ) {
+        schemaFail('ownerFactRefs.requiredOutcomes must be a non-empty string array', { index });
+      }
+      const requiredOutcomes = outcomesRaw as string[];
+      const normalizedOutcomes = [...new Set(requiredOutcomes.map((value) => value.trim()))].sort();
+      if (
+        normalizedOutcomes.length !== requiredOutcomes.length
+        || normalizedOutcomes.some((value, outcomeIndex) => value !== requiredOutcomes[outcomeIndex])
+      ) {
+        schemaFail('ownerFactRefs.requiredOutcomes must be normalized sorted unique strings', { index });
+      }
+      return {
+        ref,
+        decision: 'contract-reset' as const,
+        deliveryId: factDeliveryId,
+        changeId: factChangeId,
+        scope,
+        requiredOutcomes: normalizedOutcomes,
+        sourceRef,
+      };
+    });
+    const refs = ownerFactRefs.map((fact) => fact.ref);
+    if (new Set(refs).size !== refs.length) schemaFail('ownerFactRefs must not contain duplicate refs');
+  }
+
+  // Current schemaVersion 2/3 Standard Runs are Change-only.
   if (!isChangeAction(action)) {
     throw new FlowkitError('UNKNOWN_ACTION', `Unknown Change action: ${action}`, { action });
   }
@@ -1175,6 +1363,19 @@ export function validateContextFile(value: unknown): ContextFile {
 
   const changeKey = requireNonEmptyString(obj, 'changeKey');
   const changeId = requireNonEmptyString(obj, 'changeId');
+  if (ownerFactRefs !== undefined) {
+    for (const fact of ownerFactRefs) {
+      if (fact.deliveryId !== deliveryId || fact.changeId !== changeId) {
+        schemaFail('ownerFactRefs target must match the Run Delivery/Change identity', {
+          runDeliveryId: deliveryId,
+          runChangeId: changeId,
+          factDeliveryId: fact.deliveryId,
+          factChangeId: fact.changeId,
+          ref: fact.ref,
+        });
+      }
+    }
+  }
 
   // inputRef: optional ResultRef object (MUST NOT be string).
   const inputRefRaw = obj['inputRef'];
@@ -1325,13 +1526,14 @@ export function validateContextFile(value: unknown): ContextFile {
   const constraints = validateOptionalConstraints(obj['constraints']);
 
   const result: ContextFile = {
-    schemaVersion: 2,
+    schemaVersion,
     runId,
     deliveryId,
     action: action as ChangeAction,
     role: role as Role,
     ownerAuthorization,
     ...(semanticInputFingerprint !== undefined && { semanticInputFingerprint }),
+    ...(schemaVersion === 3 && ownerFactRefs !== undefined && { ownerFactRefs }),
     runPath,
     changeKey,
     changeId,

@@ -79,6 +79,13 @@ describe('discriminateRun — three-way discriminator', () => {
     assert.equal(mutated.kind, 'conflict');
   });
 
+
+  it('schemaVersion === 3 → current D1 Run path', () => {
+    const result = discriminateRun({ ...c1Context, schemaVersion: 3 }, runDir);
+    assert.equal(result.kind, 'c1');
+    if (result.kind === 'c1') assert.equal(result.contextFile.schemaVersion, 3);
+  });
+
   it('schemaVersion === 1 → legacy path, does not call validateContextFile (task 12.49)', () => {
     const legacy = {
       schemaVersion: 1,
@@ -102,8 +109,8 @@ describe('discriminateRun — three-way discriminator', () => {
     assert.equal(result.kind, 'legacy');
   });
 
-  it('schemaVersion === 0 / 3 / negative → FactConflict (task 12.51)', () => {
-    for (const sv of [0, 3, -1]) {
+  it('unknown schemaVersion values still fail closed', () => {
+    for (const sv of [0, 4, -1]) {
       const result = discriminateRun({
         schemaVersion: sv,
         runId: '20260806-001-explore',

@@ -9,11 +9,13 @@ import {
 } from '../domain/actions.js';
 import type {
   ActionPackage,
+  ActionPackageFindingConvergenceView,
   ActionPackageFindingView,
   ActionPackageReviewView,
   ActionPackageVerificationView,
   LogicalActionResultInput,
   OwnerAuthorizationRef,
+  OwnerFactRef,
   VersionedAuthorityRef,
 } from '../domain/types.js';
 import { readFormalFactSnapshot } from '../facts/formal-fact-reader.js';
@@ -23,6 +25,8 @@ import type {
   RunFact,
 } from '../facts/formal-fact-snapshot.js';
 import { computeLineage } from '../policy/lineage.js';
+import { detectStage, type Stage } from '../policy/stage-detector.js';
+import { currentContractResetRefs, runMatchesContractResetIdentity } from '../facts/generation-resolver.js';
 import { next } from '../policy/next.js';
 import { getActiveChange } from '../policy/preconditions.js';
 import { resolveReview } from '../policy/unified-entry.js';
@@ -92,6 +96,17 @@ export async function inspectPreparedRun(
   const base = { runId: run.runId, action: run.action, role: run.role === 'reviewer' ? 'reviewer' as const : 'author' as const };
   if (run.semanticInputFingerprint === undefined) return { ...base, status: 'fingerprint-missing' };
 
+  const runDir = join(repoRoot, RUNS_PREFIX, deliveryId, change.id, run.runId);
+  try {
+    const context = await readContextFile(runDir);
+    if (await isContractResetOnlyPendingDrift(repoRoot, deliveryId, snapshot, change.id, context)) {
+      return { ...base, status: 'recovery-required' };
+    }
+  } catch {
+    // Continue with the normal resumability diagnostic. A malformed or otherwise
+    // unreadable pending context is not eligible for Contract Reset recovery.
+  }
+
   const normal = next(snapshot);
   const review = run.action.startsWith('review-') ? resolveReview(snapshot) : undefined;
   const resolved = normal.kind === 'action' && normal.action === run.action
@@ -120,6 +135,18 @@ export interface AdmitActionResultInput {
   readonly result: LogicalActionResultInput;
 }
 
+export interface RecoverContractResetPendingInput {
+  readonly repoRoot: string;
+  readonly deliveryId: string;
+}
+
+export interface RecoverContractResetPendingResult {
+  readonly runId: string;
+  readonly action: ChangeAction;
+  readonly status: 'cancelled';
+  readonly cancellationReason: 'superseded-by-owner-contract-reset';
+}
+
 interface RunDescriptors {
   readonly consumedRunId?: string;
   readonly reviewedRunId?: string;
@@ -132,6 +159,7 @@ interface SemanticInputs {
   readonly handoffRefs: readonly VersionedAuthorityRef[];
   readonly reviewView?: ActionPackageReviewView;
   readonly ownerAuthorizationRefs: readonly OwnerAuthorizationRef[];
+  readonly ownerFactRefs: readonly OwnerFactRef[];
   readonly verificationView?: ActionPackageVerificationView;
   readonly openSpecContext?: OpenSpecPreparedActionContextView;
   readonly externalContextFingerprint?: string;
@@ -249,6 +277,7 @@ export async function prepareActionExecution(
     role,
     ownerAuthorization,
     semanticInputFingerprint: semantic.semanticInputFingerprint,
+    ownerFactRefs: semantic.ownerFactRefs,
     ...descriptors,
     constraints: constraintsForAction(action),
     actionMd: renderPreparedActionMd({
@@ -535,6 +564,49 @@ async function readPersistedChangeLineage(
  * to descriptor-driven `completeRun()`, which remains the sole physical
  * terminal publisher and ResultRef authority.
  */
+/**
+ * D1 narrow reset-vs-pending recovery surface.
+ *
+ * This is deliberately not a generic Run cancellation API. It may cancel the
+ * active Change's sole pending Standard Run only when recomputing the Run's
+ * original semantic identity against current formal facts proves that the
+ * *only* drift is the applicable structured Owner Contract Reset projection.
+ * All other drift remains fail-closed.
+ */
+export async function recoverContractResetPendingRun(
+  input: RecoverContractResetPendingInput,
+): Promise<RecoverContractResetPendingResult> {
+  const snapshot = await readSnapshot(input.repoRoot, input.deliveryId);
+  assertConflictFree(snapshot);
+  const change = getActiveChange(snapshot);
+  if (change === null) {
+    throw new FlowkitError('RESET_PENDING_RECOVERY_NOT_ALLOWED', 'Contract Reset pending recovery requires one active Change');
+  }
+  const pending = snapshot.runs.filter((run) => run.changeId === change.id && run.status === 'pending');
+  if (pending.length !== 1) {
+    throw new FlowkitError(
+      'RESET_PENDING_RECOVERY_NOT_ALLOWED',
+      `Contract Reset pending recovery requires exactly one pending Run; found ${pending.length}`,
+      { changeId: change.id, pendingRunIds: pending.map((run) => run.runId).sort() },
+    );
+  }
+
+  const run = pending[0]!;
+  const runDir = join(input.repoRoot, RUNS_PREFIX, input.deliveryId, change.id, run.runId);
+  const context = await readContextFile(runDir);
+  if (!(await isContractResetOnlyPendingDrift(input.repoRoot, input.deliveryId, snapshot, change.id, context))) {
+    throw new FlowkitError(
+      'RESET_PENDING_RECOVERY_NOT_ALLOWED',
+      `Pending Run ${run.runId} is not stale solely because of an applicable Owner Contract Reset`,
+      { runId: run.runId, action: run.action },
+    );
+  }
+
+  const cancellationReason = 'superseded-by-owner-contract-reset' as const;
+  await completeRun(runDir, { cancellationReason });
+  return { runId: run.runId, action: run.action, status: 'cancelled', cancellationReason };
+}
+
 export async function admitActionResult(input: AdmitActionResultInput): Promise<void> {
   const pkg = input.actionPackage;
   if (pkg.run.deliveryId !== input.deliveryId) {
@@ -592,6 +664,24 @@ export async function admitActionResult(input: AdmitActionResultInput): Promise<
 
   const snapshot = await readSnapshot(input.repoRoot, input.deliveryId);
   assertConflictFree(snapshot);
+
+  // Owner authority remains Manifest.ownerDecisions. Run context and the Action
+  // Package carry only a bounded, re-verifiable projection. Re-check that the
+  // projection prepared at entry still equals the current applicable Owner
+  // facts without recomputing Action-owned mutable outputs.
+  const persistedOwnerFacts = [...(context.ownerFactRefs ?? [])].sort((a, b) => a.ref.localeCompare(b.ref));
+  const packageOwnerFacts = [...(pkg.ownerFactRefs ?? [])].sort((a, b) => a.ref.localeCompare(b.ref));
+  if (stableStringify(persistedOwnerFacts) !== stableStringify(packageOwnerFacts)) {
+    throw new FlowkitError('PENDING_INPUT_DRIFT', 'Action Package Owner fact projection differs from persisted pending Run');
+  }
+  const currentOwnerFacts = collectApplicableOwnerFactRefs(snapshot, pkg.run.changeId);
+  if (stableStringify(currentOwnerFacts) !== stableStringify(persistedOwnerFacts)) {
+    throw new FlowkitError(
+      'PENDING_INPUT_DRIFT',
+      'Applicable Owner facts changed after Action preparation',
+      { runId: context.runId },
+    );
+  }
 
   const c1OpenSpecActive = await isOpenSpecThinIntegrationActive(input.repoRoot, pkg.run.changeId);
   if (c1OpenSpecActive && (pkg.run.action === 'propose' || pkg.run.action === 'revise-propose')
@@ -651,6 +741,61 @@ export async function admitActionResult(input: AdmitActionResultInput): Promise<
   await completeRun(runDir, logicalToCompleteRunInput(input.result));
 }
 
+function descriptorsFromContext(context: ContextFile): RunDescriptors {
+  const inputRunId = context.inputRef?.kind === 'run-result'
+    ? context.inputRef.ref.match(/\/([^/]+)\/result\.json$/)?.[1]
+    : undefined;
+  const consumesInputRun = !context.action.startsWith('review-') && !context.action.startsWith('revise-');
+  return {
+    ...(consumesInputRun && inputRunId !== undefined && { consumedRunId: inputRunId }),
+    ...(context.reviewedRunId !== undefined && { reviewedRunId: context.reviewedRunId }),
+    ...(context.sourceReviewRun !== undefined && { sourceReviewRun: context.sourceReviewRun }),
+    ...(context.sourceReviewVerdict !== undefined && { sourceReviewVerdict: context.sourceReviewVerdict }),
+  };
+}
+
+async function isContractResetOnlyPendingDrift(
+  repoRoot: string,
+  deliveryId: string,
+  snapshot: FormalFactSnapshot,
+  changeId: string,
+  context: ContextFile,
+): Promise<boolean> {
+  if (context.changeId !== changeId || context.semanticInputFingerprint === undefined) return false;
+  const frozenOwnerFacts = [...(context.ownerFactRefs ?? [])].sort((a, b) => a.ref.localeCompare(b.ref));
+  const currentOwnerFacts = [...collectApplicableOwnerFactRefs(snapshot, changeId)].sort((a, b) => a.ref.localeCompare(b.ref));
+  if (stableStringify(frozenOwnerFacts) === stableStringify(currentOwnerFacts)) return false;
+
+  const frozenResetRefs = frozenOwnerFacts.filter((fact) => fact.decision === 'contract-reset').map((fact) => fact.ref).sort();
+  const currentResetRefs = currentOwnerFacts.filter((fact) => fact.decision === 'contract-reset').map((fact) => fact.ref).sort();
+  if (stableStringify(frozenResetRefs) === stableStringify(currentResetRefs)) return false;
+
+  const semantic = await deriveSemanticInputs(
+    repoRoot,
+    deliveryId,
+    snapshot,
+    changeId,
+    context.action,
+    descriptorsFromContext(context),
+  );
+  if (semantic.semanticInputFingerprint === context.semanticInputFingerprint) return false;
+
+  const resetNeutralFingerprint = sha256(stableStringify(buildSemanticDescriptor({
+    deliveryId,
+    changeId,
+    action: context.action,
+    definition: getActionDefinition(context.action),
+    contractRefs: semantic.contractRefs,
+    handoffRefs: semantic.handoffRefs,
+    ...(semantic.reviewView !== undefined && { reviewView: semantic.reviewView }),
+    ownerAuthorizationRefs: semantic.ownerAuthorizationRefs,
+    ownerFactRefs: frozenOwnerFacts,
+    ...(semantic.verificationView !== undefined && { verificationView: semantic.verificationView }),
+    ...(semantic.externalContextFingerprint !== undefined && { externalContextFingerprint: semantic.externalContextFingerprint }),
+  })));
+  return resetNeutralFingerprint === context.semanticInputFingerprint;
+}
+
 function buildActionPackage(
   deliveryId: string,
   changeId: string,
@@ -674,6 +819,7 @@ function buildActionPackage(
     handoffRefs: semantic.handoffRefs,
     ...(semantic.reviewView !== undefined && { reviewView: semantic.reviewView }),
     ownerAuthorizationRefs: semantic.ownerAuthorizationRefs,
+    ownerFactRefs: semantic.ownerFactRefs,
     ...(semantic.verificationView !== undefined && { verificationView: semantic.verificationView }),
     ...(semantic.externalContextFingerprint !== undefined && { externalContextFingerprint: semantic.externalContextFingerprint }),
     requiredResultContract: definition.terminalContract,
@@ -723,8 +869,64 @@ export async function buildOpenSpecPreparedActionContext(
 
 export function fingerprintOpenSpecPreparedActionContext(
   view: OpenSpecPreparedActionContextView | undefined,
+  action?: ChangeAction,
 ): string | undefined {
-  return view === undefined ? undefined : sha256(stableStringify(view));
+  if (view === undefined) return undefined;
+  // Compatibility: callers that do not identify an Action retain the C1/B1
+  // raw-context digest. New prepared Runs always provide the Action and use
+  // the D1 action-sensitive semantic projection below.
+  if (action === undefined) return sha256(stableStringify(view));
+  return sha256(stableStringify(projectOpenSpecSemanticContext(view, action)));
+}
+
+function projectOpenSpecSemanticContext(
+  view: OpenSpecPreparedActionContextView,
+  action: ChangeAction,
+): unknown {
+  const identity = {
+    version: view.version,
+    changeId: view.changeId,
+    changeRootLogical: view.changeRootLogical,
+  };
+
+  if (action === 'propose' || action === 'revise-propose') {
+    const instructions = view.artifactInstructions;
+    if (instructions === undefined) return identity;
+    return {
+      ...identity,
+      artifactInstructions: Object.fromEntries(OPENSPEC_SUPPORTED_ARTIFACT_IDS.map((artifactId) => {
+        const instruction = instructions[artifactId];
+        return [artifactId, {
+          changeId: instruction.changeId,
+          artifactId: instruction.artifactId,
+          schemaName: instruction.schemaName,
+          resolvedOutputLogicalPath: instruction.resolvedOutputLogicalPath,
+          dependencies: [...instruction.dependencies].sort(),
+          unlocks: [...instruction.unlocks].sort(),
+          instruction: instruction.instruction,
+          template: instruction.template,
+        }];
+      })),
+    };
+  }
+
+  if (action === 'apply' || action === 'revise-apply') {
+    const apply = view.applyInstructions;
+    if (apply === undefined) return identity;
+    return {
+      ...identity,
+      applyInstructions: {
+        changeId: apply.changeId,
+        schemaName: apply.schemaName,
+        contextFiles: Object.fromEntries(OPENSPEC_SUPPORTED_ARTIFACT_IDS.map((artifactId) => [
+          artifactId,
+          [...apply.contextFiles[artifactId]].sort(),
+        ])),
+      },
+    };
+  }
+
+  return view;
 }
 
 async function deriveSemanticInputs(
@@ -744,8 +946,9 @@ async function deriveSemanticInputs(
     action,
   );
   const handoffRefs = await collectHandoffRefs(repoRoot, deliveryId, changeId, descriptors);
-  const reviewView = await buildRelevantReviewView(repoRoot, deliveryId, snapshot, changeId, action);
+  const reviewView = await buildRelevantReviewView(repoRoot, deliveryId, snapshot, changeId, action, descriptors);
   const ownerAuthorizationRefs = collectApplicableOwnerRefs(snapshot, changeId, action);
+  const ownerFactRefs = collectApplicableOwnerFactRefs(snapshot, changeId);
   const verificationView = await buildVerificationView(
     repoRoot,
     deliveryId,
@@ -755,7 +958,7 @@ async function deriveSemanticInputs(
     descriptors,
   );
   const openSpecContext = await buildOpenSpecPreparedActionContext(repoRoot, changeId, action);
-  const externalContextFingerprint = fingerprintOpenSpecPreparedActionContext(openSpecContext);
+  const externalContextFingerprint = fingerprintOpenSpecPreparedActionContext(openSpecContext, action);
 
   const semanticInputFingerprint = sha256(stableStringify(buildSemanticDescriptor({
     deliveryId,
@@ -766,6 +969,7 @@ async function deriveSemanticInputs(
     handoffRefs,
     reviewView,
     ownerAuthorizationRefs,
+    ownerFactRefs,
     verificationView,
     externalContextFingerprint,
   })));
@@ -774,11 +978,30 @@ async function deriveSemanticInputs(
     handoffRefs,
     ...(reviewView !== undefined && { reviewView }),
     ownerAuthorizationRefs,
+    ownerFactRefs,
     ...(verificationView !== undefined && { verificationView }),
     ...(openSpecContext !== undefined && { openSpecContext }),
     ...(externalContextFingerprint !== undefined && { externalContextFingerprint }),
     semanticInputFingerprint,
   };
+}
+
+function computeResetAwareLineage(
+  snapshot: FormalFactSnapshot,
+  changeId: string,
+  stage: Stage,
+): ReturnType<typeof computeLineage> {
+  if (detectStage(snapshot.runs, changeId) !== stage) {
+    return computeLineage(snapshot.runs, snapshot.reviewVerdicts, changeId, stage);
+  }
+  const resetRefs = currentContractResetRefs(snapshot.ownerDecisionFacts, changeId);
+  if (resetRefs.length === 0) {
+    return computeLineage(snapshot.runs, snapshot.reviewVerdicts, changeId, stage);
+  }
+  const runs = snapshot.runs.filter((run) => run.changeId !== changeId || runMatchesContractResetIdentity(run, resetRefs));
+  const runIds = new Set(runs.map((run) => run.runId));
+  const verdicts = snapshot.reviewVerdicts.filter((verdict) => runIds.has(verdict.reviewRunId));
+  return computeLineage(runs, verdicts, changeId, stage);
 }
 
 function deriveRunDescriptors(
@@ -787,7 +1010,7 @@ function deriveRunDescriptors(
   action: ChangeAction,
 ): RunDescriptors {
   const lineageFor = (stage: 'explore' | 'propose' | 'apply') =>
-    computeLineage(snapshot.runs, snapshot.reviewVerdicts, changeId, stage);
+    computeResetAwareLineage(snapshot, changeId, stage);
 
   switch (action) {
     case 'explore':
@@ -1100,20 +1323,31 @@ async function buildRelevantReviewView(
   snapshot: FormalFactSnapshot,
   changeId: string,
   action: ChangeAction,
+  descriptors: RunDescriptors,
 ): Promise<ActionPackageReviewView | undefined> {
+  if (action === 'review-explore' || action === 'review-propose' || action === 'review-apply') {
+    const previousReviewRunId = await previousMatchingReviewRunIdForPackage(
+      repoRoot,
+      deliveryId,
+      snapshot,
+      changeId,
+      action,
+      descriptors.reviewedRunId,
+    );
+    return previousReviewRunId === undefined
+      ? undefined
+      : buildReviewViewForRunId(repoRoot, deliveryId, snapshot, changeId, previousReviewRunId);
+  }
   let stage: 'explore' | 'propose' | 'apply' | undefined;
   switch (action) {
-    case 'review-explore':
     case 'revise-explore':
     case 'propose':
       stage = 'explore';
       break;
-    case 'review-propose':
     case 'revise-propose':
     case 'apply':
       stage = 'propose';
       break;
-    case 'review-apply':
     case 'revise-apply':
     case 'archive':
       stage = 'apply';
@@ -1121,17 +1355,70 @@ async function buildRelevantReviewView(
     case 'explore':
       return undefined;
   }
-  const review = computeLineage(snapshot.runs, snapshot.reviewVerdicts, changeId, stage).review;
+  const review = computeResetAwareLineage(snapshot, changeId, stage).review;
   if (review === null) return undefined;
+  return buildReviewViewForRunId(repoRoot, deliveryId, snapshot, changeId, review.reviewRunId);
+}
+
+async function buildReviewViewForRunId(
+  repoRoot: string,
+  deliveryId: string,
+  snapshot: FormalFactSnapshot,
+  changeId: string,
+  reviewRunId: string,
+): Promise<ActionPackageReviewView | undefined> {
+  const review = snapshot.reviewVerdicts.find((verdict) => verdict.reviewRunId === reviewRunId);
+  if (review === undefined) return undefined;
   const resultRef = await runResultRef(repoRoot, deliveryId, changeId, review.reviewRunId);
   const findings = await readReviewFindingView(repoRoot, deliveryId, changeId, review.reviewRunId);
+  const convergence = await readReviewFindingConvergenceView(repoRoot, deliveryId, changeId, review.reviewRunId);
   return {
     reviewRunId: review.reviewRunId,
     verdict: review.verdict,
     resultRef,
     blockingAuthorities: [...review.blockingAuthorities],
     findings,
+    ...(convergence.length > 0 && { convergence }),
   };
+}
+
+async function previousMatchingReviewRunIdForPackage(
+  repoRoot: string,
+  deliveryId: string,
+  snapshot: FormalFactSnapshot,
+  changeId: string,
+  action: Extract<ChangeAction, `review-${string}`>,
+  reviewedRunId: string | undefined,
+): Promise<string | undefined> {
+  if (reviewedRunId === undefined) return undefined;
+  const reviewed = snapshot.runs.find((run) => run.runId === reviewedRunId);
+  const resetRefs = currentContractResetRefs(snapshot.ownerDecisionFacts, changeId);
+  if (
+    reviewed !== undefined &&
+    (reviewed.action === 'revise-explore' || reviewed.action === 'revise-propose' || reviewed.action === 'revise-apply') &&
+    reviewed.sourceReviewRun !== undefined
+  ) {
+    const source = snapshot.runs.find((run) => run.runId === reviewed.sourceReviewRun);
+    if (
+      source !== undefined &&
+      runMatchesContractResetIdentity(reviewed, resetRefs) &&
+      runMatchesContractResetIdentity(source, resetRefs)
+    ) {
+      return reviewed.sourceReviewRun;
+    }
+    return undefined;
+  }
+
+  return snapshot.runs
+    .filter((run) =>
+      run.changeId === changeId &&
+      run.status === 'completed' &&
+      run.action === action &&
+      run.reviewedRunId === reviewedRunId &&
+      runMatchesContractResetIdentity(run, resetRefs)
+    )
+    .map((run) => run.runId)
+    .sort((a, b) => b.localeCompare(a))[0];
 }
 
 function collectApplicableOwnerRefs(
@@ -1157,6 +1444,34 @@ function collectApplicableOwnerRefs(
       decision: fact.decision,
       deliveryId: fact.deliveryId,
       ...(fact.changeId !== undefined && { changeId: fact.changeId }),
+      sourceRef: fact.sourceRef,
+    }))
+    .sort((a, b) => a.ref.localeCompare(b.ref));
+}
+
+function collectApplicableOwnerFactRefs(
+  snapshot: FormalFactSnapshot,
+  changeId: string,
+): readonly OwnerFactRef[] {
+  return (snapshot.ownerDecisionFacts ?? [])
+    .filter((fact) =>
+      fact.decision === 'contract-reset' &&
+      fact.deliveryId === snapshot.deliveryId &&
+      fact.changeId === changeId
+    )
+    .filter((fact): fact is typeof fact & {
+      readonly decision: 'contract-reset';
+      readonly changeId: string;
+      readonly scope: string;
+      readonly requiredOutcomes: readonly string[];
+    } => fact.changeId !== undefined && fact.scope !== undefined && fact.requiredOutcomes !== undefined)
+    .map((fact) => ({
+      ref: fact.ref,
+      decision: 'contract-reset' as const,
+      deliveryId: fact.deliveryId,
+      changeId: fact.changeId,
+      scope: fact.scope,
+      requiredOutcomes: [...fact.requiredOutcomes],
       sourceRef: fact.sourceRef,
     }))
     .sort((a, b) => a.ref.localeCompare(b.ref));
@@ -1265,6 +1580,9 @@ async function readReviewFindingView(
     if (typeof item !== 'object' || item === null || Array.isArray(item)) continue;
     const finding = item as Record<string, unknown>;
     if (typeof finding['id'] !== 'string' || (finding['severity'] !== 'blocking' && finding['severity'] !== 'non-blocking')) continue;
+    const acceptance = Array.isArray(finding['acceptance'])
+      ? finding['acceptance'].filter((value): value is string => typeof value === 'string')
+      : undefined;
     result.push({
       id: finding['id'],
       severity: finding['severity'],
@@ -1272,10 +1590,56 @@ async function readReviewFindingView(
         blockingAuthority: finding['blockingAuthority'] as ActionPackageFindingView['blockingAuthority'],
       }),
       ...(typeof finding['title'] === 'string' && { title: finding['title'] }),
-      ...(typeof finding['requiredChange'] === 'string' && { requiredOutcome: finding['requiredChange'] }),
+      ...(typeof finding['problem'] === 'string' && { problem: finding['problem'] }),
+      ...(typeof finding['contractRef'] === 'string' && { contractRef: finding['contractRef'] }),
+      ...(typeof finding['invariant'] === 'string' && { invariant: finding['invariant'] }),
+      ...(typeof finding['requiredOutcome'] === 'string'
+        ? { requiredOutcome: finding['requiredOutcome'] }
+        : typeof finding['requiredChange'] === 'string'
+          ? { requiredOutcome: finding['requiredChange'] }
+          : {}),
+      ...(acceptance !== undefined && acceptance.length > 0 && { acceptance }),
     });
   }
   return result;
+}
+
+async function readReviewFindingConvergenceView(
+  repoRoot: string,
+  deliveryId: string,
+  changeId: string,
+  reviewRunId: string,
+): Promise<readonly ActionPackageFindingConvergenceView[]> {
+  const path = join(repoRoot, RUNS_PREFIX, deliveryId, changeId, reviewRunId, 'result.json');
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(await readFile(path, 'utf8')) as unknown;
+  } catch {
+    return [];
+  }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return [];
+  const raw = (parsed as Record<string, unknown>)['reviewFindingConvergence'];
+  if (!Array.isArray(raw)) return [];
+  const result: ActionPackageFindingConvergenceView[] = [];
+  for (const item of raw) {
+    if (typeof item !== 'object' || item === null || Array.isArray(item)) continue;
+    const entry = item as Record<string, unknown>;
+    if (
+      typeof entry['findingId'] !== 'string'
+      || (entry['state'] !== 'new'
+        && entry['state'] !== 'still-open'
+        && entry['state'] !== 'resolved'
+        && entry['state'] !== 'superseded')
+    ) continue;
+    result.push({
+      findingId: entry['findingId'],
+      state: entry['state'],
+      ...(typeof entry['supersededByFindingId'] === 'string' && {
+        supersededByFindingId: entry['supersededByFindingId'],
+      }),
+    });
+  }
+  return result.sort((a, b) => a.findingId.localeCompare(b.findingId));
 }
 
 async function runResultRef(
@@ -1388,6 +1752,7 @@ function buildSemanticDescriptor(input: {
   readonly handoffRefs: readonly VersionedAuthorityRef[];
   readonly reviewView?: ActionPackageReviewView;
   readonly ownerAuthorizationRefs: readonly OwnerAuthorizationRef[];
+  readonly ownerFactRefs?: readonly OwnerFactRef[];
   readonly verificationView?: ActionPackageVerificationView;
   readonly externalContextFingerprint?: string;
 }): unknown {
@@ -1409,6 +1774,7 @@ function buildSemanticDescriptor(input: {
         },
     verificationAuthority: input.verificationView ?? null,
     ownerAuthorizationRefs: [...input.ownerAuthorizationRefs].sort((a, b) => a.ref.localeCompare(b.ref)),
+    ...(input.ownerFactRefs !== undefined && { ownerFactRefs: [...input.ownerFactRefs].sort((a, b) => a.ref.localeCompare(b.ref)) }),
     externalContextFingerprint: input.externalContextFingerprint ?? null,
   };
 }
@@ -1423,6 +1789,7 @@ function fingerprintActionPackageSemantics(pkg: ActionPackage): string {
     handoffRefs: pkg.handoffRefs,
     ...(pkg.reviewView !== undefined && { reviewView: pkg.reviewView }),
     ownerAuthorizationRefs: pkg.ownerAuthorizationRefs,
+    ...(pkg.ownerFactRefs !== undefined && { ownerFactRefs: pkg.ownerFactRefs }),
     ...(pkg.verificationView !== undefined && { verificationView: pkg.verificationView }),
     ...(pkg.externalContextFingerprint !== undefined && { externalContextFingerprint: pkg.externalContextFingerprint }),
   })));
@@ -1534,7 +1901,7 @@ function validateLogicalResultInput(action: ChangeAction, input: LogicalActionRe
         throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${action} completed logical result requires reviewVerdict`);
       }
     }
-  } else if (input.reviewVerdict !== undefined || input.reviewFindings !== undefined) {
+  } else if (input.reviewVerdict !== undefined || input.reviewFindings !== undefined || input.reviewFindingConvergence !== undefined) {
     throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${action} must not submit Reviewer verdict/findings`);
   }
   if (input.failureDiagnosis !== undefined && input.cancellationReason !== undefined) {
@@ -1548,6 +1915,9 @@ function logicalToCompleteRunInput(input: LogicalActionResultInput): CompleteRun
     ...(input.summary !== undefined && { summary: input.summary }),
     ...(input.reviewVerdict !== undefined && { reviewVerdict: input.reviewVerdict }),
     ...(input.reviewFindings !== undefined && { reviewFindings: input.reviewFindings as readonly ReviewFinding[] }),
+    ...(input.reviewFindingConvergence !== undefined && {
+      reviewFindingConvergence: input.reviewFindingConvergence as CompleteRunInput['reviewFindingConvergence'],
+    }),
     ...(input.failureDiagnosis !== undefined && { failureDiagnosis: input.failureDiagnosis }),
     ...(input.cancellationReason !== undefined && { cancellationReason: input.cancellationReason }),
   };

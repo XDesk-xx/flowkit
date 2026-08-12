@@ -840,3 +840,78 @@ describe('A1 write CLI', () => {
     assert.match(stale.stderr, /current Policy is not requesting authorize-apply/);
   });
 });
+
+describe('D1 structured Contract Reset authority', () => {
+  async function activeResetFixture() {
+    const root = await freshRoot();
+    const deliveryId = '20990120-01-reset';
+    const changeId = 'reset-change';
+    await writeManifest(root, deliveryId, [
+      `id: ${deliveryId}`,
+      'delivery:',
+      '  state: active',
+      '  fullTestStatus: not-ready',
+      'changes:',
+      '  - key: D1',
+      `    id: ${changeId}`,
+      '    state: active',
+      '    architectureImpact: false',
+      '    required: true',
+      '    dependsOn: []',
+      '    outputs: []',
+    ].join('\n'));
+    await mkdir(join(root, 'openspec', 'changes', changeId), { recursive: true });
+    await writeFile(join(root, 'openspec', 'changes', changeId, '.openspec.yaml'), 'schema: spec-driven\ncreated: 2099-01-20\n', 'utf8');
+    return { root, deliveryId, changeId };
+  }
+
+  it('normalizes/idempotently persists Contract Reset and Reader projects latest per scope without creating authorization', async () => {
+    const { root, deliveryId, changeId } = await activeResetFixture();
+    const first = await recordOwnerDecision(root, {
+      decision: 'contract-reset', changeId, scope: 'contract',
+      requiredOutcomes: ['B', 'A', 'B'], sourceRef: 'owner:reset:first',
+    });
+    const retry = await recordOwnerDecision(root, {
+      decision: 'contract-reset', changeId, scope: 'contract',
+      requiredOutcomes: ['A', 'B'], sourceRef: 'owner:reset:first',
+    });
+    assert.equal(retry.ownerDecisionRef, first.ownerDecisionRef);
+    assert.equal(retry.idempotent, true);
+
+    const second = await recordOwnerDecision(root, {
+      decision: 'contract-reset', changeId, scope: 'contract',
+      requiredOutcomes: ['C'], sourceRef: 'owner:reset:second',
+    });
+    const otherScope = await recordOwnerDecision(root, {
+      decision: 'contract-reset', changeId, scope: 'launcher',
+      requiredOutcomes: ['PowerShell first'], sourceRef: 'owner:reset:launcher',
+    });
+    const s = await snapshot(root, deliveryId);
+    const resets = (s.ownerDecisionFacts ?? []).filter((fact) => fact.decision === 'contract-reset');
+    assert.deepEqual(resets.map((fact) => fact.ref).sort(), [second.ownerDecisionRef, otherScope.ownerDecisionRef].sort());
+    assert.deepEqual(resets.find((fact) => fact.ref === second.ownerDecisionRef)?.requiredOutcomes, ['C']);
+    assert.equal(s.ownerAuthorizations.some((fact) => fact.ref === second.ownerDecisionRef), false);
+    const manifest = await readFile(join(root, 'openspec', 'delivery-groups', `${deliveryId}.yaml`), 'utf8');
+    assert.equal((manifest.match(new RegExp(first.ownerDecisionRef!, 'g')) ?? []).length, 1);
+  });
+
+  it('rejects Contract Reset for a non-active Change and Reader fails closed on an unknown target', async () => {
+    const { root, deliveryId, changeId } = await activeResetFixture();
+    const manifestPath = join(root, 'openspec', 'delivery-groups', `${deliveryId}.yaml`);
+    const original = await readFile(manifestPath, 'utf8');
+    await writeFile(manifestPath, original.replace('    state: active', '    state: planned'), 'utf8');
+    await assert.rejects(
+      recordOwnerDecision(root, {
+        decision: 'contract-reset', changeId, scope: 'contract', requiredOutcomes: ['X'], sourceRef: 'owner:reset:bad',
+      }),
+      /active Change/,
+    );
+
+    const forged = buildOwnerDecisionRecord({
+      decision: 'contract-reset', deliveryId, changeId: 'unknown-change', scope: 'contract', requiredOutcomes: ['X'], sourceRef: 'owner:reset:forged',
+    });
+    await writeFile(manifestPath, `${await readFile(manifestPath, 'utf8')}ownerDecisions:\n  - ref: "${forged.ref}"\n    decision: "contract-reset"\n    deliveryId: "${deliveryId}"\n    changeId: "unknown-change"\n    scope: "contract"\n    requiredOutcomes:\n      - "X"\n    sourceRef: "owner:reset:forged"\n`, 'utf8');
+    const s = await snapshot(root, deliveryId);
+    assert.ok(s.conflicts.some((conflict) => conflict.dimension === 'owner-decision-applicability'));
+  });
+});

@@ -210,8 +210,17 @@ export interface ActionPackageFindingView {
   readonly severity: FindingSeverity;
   readonly blockingAuthority?: BlockingAuthority;
   readonly title?: string;
+  readonly problem?: string;
+  readonly contractRef?: string;
+  readonly invariant?: string;
   readonly requiredOutcome?: string;
-  readonly acceptance?: string;
+  readonly acceptance?: readonly string[];
+}
+
+export interface ActionPackageFindingConvergenceView {
+  readonly findingId: string;
+  readonly state: 'new' | 'still-open' | 'resolved' | 'superseded';
+  readonly supersededByFindingId?: string;
 }
 
 export interface ActionPackageReviewView {
@@ -220,6 +229,7 @@ export interface ActionPackageReviewView {
   readonly resultRef: VersionedAuthorityRef;
   readonly blockingAuthorities: readonly BlockingAuthority[];
   readonly findings: readonly ActionPackageFindingView[];
+  readonly convergence?: readonly ActionPackageFindingConvergenceView[];
 }
 
 export interface ActionPackageVerificationView {
@@ -242,6 +252,8 @@ export interface ActionPackage {
   readonly handoffRefs: readonly VersionedAuthorityRef[];
   readonly reviewView?: ActionPackageReviewView;
   readonly ownerAuthorizationRefs: readonly OwnerAuthorizationRef[];
+  /** Bootstrap/D1 bounded applicable Owner facts; authority remains Manifest.ownerDecisions. */
+  readonly ownerFactRefs?: readonly OwnerFactRef[];
   readonly verificationView?: ActionPackageVerificationView;
   /** Bounded digest of external structured execution context participating in same-Run drift protection. */
   readonly externalContextFingerprint?: string;
@@ -257,6 +269,7 @@ export interface LogicalActionResultInput {
   readonly summary?: string;
   readonly reviewVerdict?: ReviewVerdictValue;
   readonly reviewFindings?: readonly unknown[];
+  readonly reviewFindingConvergence?: readonly unknown[];
   readonly failureDiagnosis?: string;
   readonly cancellationReason?: string;
 }
@@ -358,6 +371,17 @@ export interface OwnerAuthorizationRef {
   readonly decision: string;
   readonly deliveryId: string;
   readonly changeId?: string;
+  readonly sourceRef: string;
+}
+
+/** Bounded, non-authoritative projection of an Owner decision for role handoff. */
+export interface OwnerFactRef {
+  readonly ref: string;
+  readonly decision: 'contract-reset';
+  readonly deliveryId: string;
+  readonly changeId: string;
+  readonly scope: string;
+  readonly requiredOutcomes: readonly string[];
   readonly sourceRef: string;
 }
 

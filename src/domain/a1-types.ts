@@ -6,6 +6,7 @@ export const OWNER_DECISION_RECORD_KINDS = [
   'create-delivery',
   'create-change',
   'activate-change',
+  'contract-reset',
   'authorize-apply',
   'authorize-archive',
   'authorize-checkpoint',
@@ -31,7 +32,19 @@ export interface OwnerDecisionRecord {
   readonly decision: OwnerDecisionRecordKind;
   readonly deliveryId: string;
   readonly changeId?: string;
+  /** Bootstrap/D1: structured scope for non-authorization Owner facts such as contract-reset. */
+  readonly scope?: string;
+  /** Bootstrap/D1: bounded semantic value; sourceRef remains provenance only. */
+  readonly requiredOutcomes?: readonly string[];
   readonly sourceRef: string;
+}
+
+export interface ContractResetInput {
+  readonly decision: 'contract-reset';
+  readonly sourceRef: string;
+  readonly changeId: string;
+  readonly scope: string;
+  readonly requiredOutcomes: readonly string[];
 }
 
 export interface ChangeCreateInput {

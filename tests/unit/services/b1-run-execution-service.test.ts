@@ -10,6 +10,7 @@ import {
   admitActionResult,
   inspectPreparedRun,
   prepareActionExecution,
+  recoverContractResetPendingRun,
 } from '../../../src/services/b1-run-execution-service.js';
 import { recordOwnerDecision } from '../../../src/services/a1-write-service.js';
 import { runCli } from '../../../src/cli/main.js';
@@ -273,8 +274,15 @@ describe('B1 preparation and admission', () => {
           severity: 'blocking',
           title: 'Owner fact required',
           problem: 'Owner fact is not available yet.',
+          contractRef: 'spec:owner-authority',
+          invariant: 'Owner fact must exist before progress.',
+          evidence: ['fixture has no Owner fact'],
+          impact: 'review remains blocked',
           blockingAuthority: 'owner',
+          requiredOutcome: 'Owner supplies the required fact.',
+          acceptance: ['Owner fact is admitted.'],
         }],
+        reviewFindingConvergence: [],
       },
     });
     const blocked = next(await snapshot(root, deliveryId));
@@ -432,9 +440,15 @@ describe('B1 preparation and admission', () => {
           severity: 'blocking',
           title: 'Author fix required',
           problem: 'fixture',
-          requiredChange: 'Fix the fixture implementation.',
+          contractRef: 'spec:apply',
+          invariant: 'Implementation must satisfy the approved contract.',
+          evidence: ['fixture implementation mismatch'],
+          impact: 'apply cannot be approved',
+          requiredOutcome: 'Fix the fixture implementation.',
+          acceptance: ['The fixture implementation is corrected.'],
           blockingAuthority: 'author',
         }],
+        reviewFindingConvergence: [],
       },
     });
 
@@ -704,4 +718,157 @@ describe('B1 preparation and admission', () => {
   });
 
 
+});
+
+describe('D1 structured Owner facts and reset-aware lineage', () => {
+  it('projects latest Contract Reset into context/package and fails pending admission when the Owner fact changes', async () => {
+    const { root, deliveryId, changeId, now } = await freshActiveFixture();
+    const firstReset = await recordOwnerDecision(root, {
+      decision: 'contract-reset',
+      changeId,
+      scope: 'D1/current-contract',
+      requiredOutcomes: ['PowerShell first-class', 'structured Owner handoff', 'PowerShell first-class'],
+      sourceRef: 'owner:d1-reset:1',
+    });
+    const prepared = await prepareActionExecution({ repoRoot: root, deliveryId, entry: 'next', now });
+    assert.equal(prepared.package.ownerFactRefs?.length, 1);
+    assert.equal(prepared.package.ownerFactRefs?.[0]?.ref, firstReset.ownerDecisionRef);
+    assert.deepEqual(prepared.package.ownerFactRefs?.[0]?.requiredOutcomes, ['PowerShell first-class', 'structured Owner handoff']);
+    const context = JSON.parse(await readFile(join(root, '.flowkit', 'runs', deliveryId, changeId, prepared.package.run.runId, 'context.json'), 'utf8'));
+    assert.equal(context.schemaVersion, 3);
+    assert.deepEqual(context.ownerFactRefs, prepared.package.ownerFactRefs);
+
+    await recordOwnerDecision(root, {
+      decision: 'contract-reset',
+      changeId,
+      scope: 'D1/current-contract',
+      requiredOutcomes: ['PowerShell first-class', 'structured Owner handoff v2'],
+      sourceRef: 'owner:d1-reset:2',
+    });
+    await assert.rejects(
+      prepareActionExecution({ repoRoot: root, deliveryId, entry: 'next', now }),
+      (error: unknown) => error instanceof FlowkitError && error.code === 'PENDING_INPUT_DRIFT',
+    );
+    await assert.rejects(
+      admitActionResult({
+        repoRoot: root,
+        deliveryId,
+        actionPackage: prepared.package,
+        result: { executionStatus: 'completed', summary: 'stale Owner fact' },
+      }),
+      (error: unknown) => error instanceof FlowkitError && error.code === 'PENDING_INPUT_DRIFT',
+    );
+
+    assert.equal((await inspectPreparedRun(root, deliveryId)).status, 'recovery-required');
+    const recovered = await recoverContractResetPendingRun({ repoRoot: root, deliveryId });
+    assert.deepEqual(recovered, {
+      runId: prepared.package.run.runId,
+      action: 'explore',
+      status: 'cancelled',
+      cancellationReason: 'superseded-by-owner-contract-reset',
+    });
+    const cancelledResult = JSON.parse(await readFile(join(root, '.flowkit', 'runs', deliveryId, changeId, prepared.package.run.runId, 'result.json'), 'utf8'));
+    assert.equal(cancelledResult.runStatus, 'cancelled');
+    assert.equal(cancelledResult.cancellationReason, 'superseded-by-owner-contract-reset');
+    assert.deepEqual(next(await snapshot(root, deliveryId)), { kind: 'action', action: 'explore' });
+
+    const replacement = await prepareActionExecution({ repoRoot: root, deliveryId, entry: 'next', now });
+    assert.equal(replacement.package.run.action, 'explore');
+    assert.notEqual(replacement.package.run.runId, prepared.package.run.runId);
+    assert.equal(replacement.package.ownerFactRefs?.[0]?.ref, (await snapshot(root, deliveryId)).ownerDecisionFacts?.filter((fact) => fact.decision === 'contract-reset').at(-1)?.ref);
+  });
+
+  it('exposes exact CLI recovery but rejects reset recovery when non-Owner semantic input also drifted', async () => {
+    const { root, deliveryId, changeId, now } = await freshActiveFixture();
+    const prepared = await prepareActionExecution({ repoRoot: root, deliveryId, entry: 'next', now });
+    await recordOwnerDecision(root, {
+      decision: 'contract-reset',
+      changeId,
+      scope: 'D1/current-contract',
+      requiredOutcomes: ['new contract'],
+      sourceRef: 'owner:d1-reset:cli',
+    });
+    const cli = await runCli({ argv: ['recover', 'contract-reset-pending'], cwd: root });
+    assert.equal(cli.exitCode, 0);
+    assert.match(cli.stdout, /superseded-by-owner-contract-reset/);
+
+    const nextRun = await prepareActionExecution({ repoRoot: root, deliveryId, entry: 'next', now });
+    assert.notEqual(nextRun.package.run.runId, prepared.package.run.runId);
+    await recordOwnerDecision(root, {
+      decision: 'contract-reset',
+      changeId,
+      scope: 'D1/current-contract',
+      requiredOutcomes: ['newer contract'],
+      sourceRef: 'owner:d1-reset:cli:2',
+    });
+    await writeFile(join(root, 'openspec', 'changes', changeId, '.openspec.yaml'), 'schema: spec-driven\ncreated: 2099-02-02\n', 'utf8');
+    await assert.rejects(
+      recoverContractResetPendingRun({ repoRoot: root, deliveryId }),
+      (error: unknown) => error instanceof FlowkitError && error.code === 'RESET_PENDING_RECOVERY_NOT_ALLOWED',
+    );
+  });
+
+  it('replaces an approved proposal generation after Contract Reset without inheriting its approval or findings', async () => {
+    const { root, deliveryId, changeId, now } = await freshActiveFixture();
+    await completeExplore(root, deliveryId, changeId, now);
+    const reviewExplore = await prepareActionExecution({ repoRoot: root, deliveryId, entry: 'next', now });
+    await admitActionResult({
+      repoRoot: root,
+      deliveryId,
+      actionPackage: reviewExplore.package,
+      result: { executionStatus: 'completed', summary: 'approved explore', reviewVerdict: 'approved', reviewFindings: [] },
+    });
+    const p1 = await prepareActionExecution({ repoRoot: root, deliveryId, entry: 'next', now });
+    const changeRoot = join(root, 'openspec', 'changes', changeId);
+    await writeFile(join(changeRoot, 'proposal.md'), '# Proposal P1\n', 'utf8');
+    await writeFile(join(changeRoot, 'design.md'), '# Design P1\n', 'utf8');
+    await writeFile(join(changeRoot, 'tasks.md'), '# Tasks P1\n', 'utf8');
+    await mkdir(join(changeRoot, 'specs', 'cap-a'), { recursive: true });
+    await writeFile(join(changeRoot, 'specs', 'cap-a', 'spec.md'), '## ADDED Requirements\n\n### Requirement: X\nX MUST work.\n\n#### Scenario: X\n- **WHEN** x\n- **THEN** y\n', 'utf8');
+    await admitActionResult({ repoRoot: root, deliveryId, actionPackage: p1.package, result: { executionStatus: 'completed', summary: 'P1' } });
+    const r1 = await prepareActionExecution({ repoRoot: root, deliveryId, entry: 'next', now });
+    await admitActionResult({
+      repoRoot: root,
+      deliveryId,
+      actionPackage: r1.package,
+      result: { executionStatus: 'completed', summary: 'R1 approved', reviewVerdict: 'approved', reviewFindings: [] },
+    });
+    assert.equal(next(await snapshot(root, deliveryId)).kind, 'owner-decision');
+
+    await recordOwnerDecision(root, {
+      decision: 'contract-reset',
+      changeId,
+      scope: 'D1/proposal-contract',
+      requiredOutcomes: ['replace proposal generation'],
+      sourceRef: 'owner:d1-reset:proposal',
+    });
+    assert.deepEqual(next(await snapshot(root, deliveryId)), { kind: 'action', action: 'propose' });
+
+    const p2 = await prepareActionExecution({ repoRoot: root, deliveryId, entry: 'next', now });
+    assert.equal(p2.package.run.action, 'propose');
+    assert.notEqual(p2.package.run.runId, p1.package.run.runId);
+    assert.equal(p2.package.reviewView?.reviewRunId, reviewExplore.package.run.runId);
+    assert.equal(p2.package.ownerFactRefs?.length, 1);
+    await writeFile(join(changeRoot, 'proposal.md'), '# Proposal P2\n', 'utf8');
+    await writeFile(join(changeRoot, 'design.md'), '# Design P2\n', 'utf8');
+    await writeFile(join(changeRoot, 'tasks.md'), '# Tasks P2\n', 'utf8');
+    await admitActionResult({ repoRoot: root, deliveryId, actionPackage: p2.package, result: { executionStatus: 'completed', summary: 'P2' } });
+
+    const r2 = await prepareActionExecution({ repoRoot: root, deliveryId, entry: 'next', now });
+    assert.equal(r2.package.run.action, 'review-propose');
+    assert.equal(r2.package.run.runId === r1.package.run.runId, false);
+    assert.equal(r2.package.reviewView, undefined);
+    await admitActionResult({
+      repoRoot: root,
+      deliveryId,
+      actionPackage: r2.package,
+      result: { executionStatus: 'completed', summary: 'R2 approved', reviewVerdict: 'approved', reviewFindings: [] },
+    });
+    const after = await snapshot(root, deliveryId);
+    assert.equal(after.runs.find((run) => run.runId === p1.package.run.runId)?.status, 'completed');
+    assert.equal(after.runs.find((run) => run.runId === r1.package.run.runId)?.status, 'completed');
+    const boundary = next(after);
+    assert.equal(boundary.kind, 'owner-decision');
+    if (boundary.kind === 'owner-decision') assert.equal(boundary.decision, 'authorize-apply');
+  });
 });

@@ -31,8 +31,9 @@ import type {
   Role,
   RunStatus,
   BlockingAuthority,
+  OwnerFactRef,
 } from '../domain/types.js';
-import type { ArchitectureImpactFact, AuthorizationOnlyOwnerDecision } from '../domain/a1-types.js';
+import type { ArchitectureImpactFact, AuthorizationOnlyOwnerDecision, OwnerDecisionRecordKind } from '../domain/a1-types.js';
 import type { FormalAction } from '../domain/actions.js';
 
 /**
@@ -87,6 +88,8 @@ export interface RunFact {
   readonly status: RunStatus;
   /** B1 compact semantic input identity for pending-run continuation. */
   readonly semanticInputFingerprint?: string;
+  /** D1 bounded prepared Owner facts; authority remains Manifest.ownerDecisions. */
+  readonly ownerFactRefs?: readonly OwnerFactRef[];
   /** Present when the Run consumed a prior result as input. */
   readonly inputRef?: ResultRef;
   /** Terminal result reference, present when `status` is terminal. */
@@ -146,6 +149,22 @@ export interface OwnerAuthorizationFact {
   readonly sourceRef: string;
 }
 
+
+/**
+ * Read-only bounded projection of an applicable Owner decision fact.
+ * The Delivery Manifest ownerDecisions record remains the authority source;
+ * this projection is only for execution handoff / semantic identity.
+ */
+export interface OwnerDecisionFact {
+  readonly ref: string;
+  readonly decision: OwnerDecisionRecordKind;
+  readonly deliveryId: string;
+  readonly changeId?: string;
+  readonly scope?: string;
+  readonly requiredOutcomes?: readonly string[];
+  readonly sourceRef: string;
+}
+
 /**
  * Read-only summary of a reviewer Verdict attached to a Run.
  */
@@ -185,8 +204,10 @@ export interface FormalFactSnapshot {
   readonly openSpecArtifacts: readonly OpenSpecArtifactFact[];
   /** Git formal boundary summaries (read-only, not persisted). */
   readonly gitBoundaries: readonly GitBoundaryFact[];
-  /** Owner authorization facts. */
+  /** Owner authorization facts used by Policy gates. */
   readonly ownerAuthorizations: readonly OwnerAuthorizationFact[];
+  /** Bounded Owner decision facts for role handoff; authority remains Manifest.ownerDecisions. */
+  readonly ownerDecisionFacts?: readonly OwnerDecisionFact[];
   /** Reviewer Verdicts attached to Runs. */
   readonly reviewVerdicts: readonly ReviewVerdictFact[];
   /** Collected conflicts — non-empty ⇒ Policy MUST block. */

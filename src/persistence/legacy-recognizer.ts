@@ -7,7 +7,7 @@
  * `schemaVersion: 2`. The three-way discriminator classifies a `context.json`
  * record:
  *
- *   1. `schemaVersion === 2`           → C1 Run path (validateContextFile +
+ *   1. `schemaVersion === 2 | 3`       → current C1/D1 Run path (validateContextFile +
  *      validateContextFileIdentity; failure ⇒ FactConflict, MUST NOT degrade
  *      to Bootstrap).
  *   2. `schemaVersion === 1` / missing → legacy path (bounded recognizer,
@@ -288,7 +288,7 @@ export function isLegacyDeliveryAction(value: string): value is LegacyDeliveryAc
  * Three-way discriminator (D16, C1-PR-006). Classifies a parsed `context.json`
  * record into C1 Run, legacy Bootstrap Run, or `FactConflict`.
  *
- *   1. `schemaVersion === 2` → C1 Run path: `validateContextFile` +
+ *   1. `schemaVersion === 2 | 3` → current Run path: `validateContextFile` +
  *      `validateContextFileIdentity`. Failure ⇒ `FactConflict` (fail-closed,
  *      MUST NOT degrade to Bootstrap).
  *   2. `schemaVersion === 1` or missing → legacy path: `recognizeLegacyRun`
@@ -305,7 +305,7 @@ export function discriminateRun(
 ): RunClassification {
   const schemaVersion = readSchemaVersion(contextJson);
 
-  if (schemaVersion === 2) {
+  if (schemaVersion === 2 || schemaVersion === 3) {
     // C1 Run path (fail-closed, MUST NOT degrade).
     try {
       const contextFile = validateContextFile(contextJson);

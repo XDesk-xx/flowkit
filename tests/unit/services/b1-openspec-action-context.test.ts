@@ -81,27 +81,66 @@ function adapterFor(f: Awaited<ReturnType<typeof fixture>>, progress: { total: n
 }
 
 describe('B1 OpenSpec production Action context', () => {
-  it('exposes Propose instructions and Apply context/progress, and includes progress/state in the drift fingerprint', async () => {
+  it('keeps raw OpenSpec context for executors while action-sensitive fingerprints exclude Action-owned self mutation', async () => {
     const f = await fixture();
     const beforeAdapter = adapterFor(f, { total: 4, complete: 1, remaining: 3, state: 'ready' });
 
     const propose = await buildOpenSpecPreparedActionContext(f.root, f.changeId, 'propose', beforeAdapter);
     assert.ok(propose?.artifactInstructions !== undefined);
-    assert.deepEqual(Object.keys(propose.artifactInstructions).sort(), ['design', 'proposal', 'specs', 'tasks']);
     assert.equal(propose.artifactInstructions.proposal.instruction, 'instruction:proposal');
+    const proposeAfterSelfWrite = {
+      ...propose,
+      artifactPaths: { ...propose.artifactPaths, proposal: [...propose.artifactPaths.proposal, 'self-generated-proposal-path'] },
+      artifactInstructions: {
+        ...propose.artifactInstructions,
+        proposal: {
+          ...propose.artifactInstructions.proposal,
+          existingOutputLogicalPaths: [...propose.artifactInstructions.proposal.existingOutputLogicalPaths, 'self-generated-proposal-path'],
+        },
+      },
+    };
+    assert.notEqual(
+      fingerprintOpenSpecPreparedActionContext(propose),
+      fingerprintOpenSpecPreparedActionContext(proposeAfterSelfWrite),
+      'legacy/raw context digest still observes the full executor view',
+    );
+    assert.equal(
+      fingerprintOpenSpecPreparedActionContext(propose, 'propose'),
+      fingerprintOpenSpecPreparedActionContext(proposeAfterSelfWrite, 'propose'),
+      'propose self-owned artifact existence/output-set changes must not drift semantic input',
+    );
 
     const applyBefore = await buildOpenSpecPreparedActionContext(f.root, f.changeId, 'apply', beforeAdapter);
     assert.ok(applyBefore?.applyInstructions !== undefined);
     assert.deepEqual(applyBefore.applyInstructions.contextFiles.tasks, [`openspec/changes/${f.changeId}/tasks.md`]);
-    assert.deepEqual(applyBefore.applyInstructions.progress, { total: 4, complete: 1, remaining: 3 });
-    assert.equal(applyBefore.applyInstructions.state, 'ready');
-
     const afterAdapter = adapterFor(f, { total: 4, complete: 2, remaining: 2, state: 'in-progress' });
     const applyAfter = await buildOpenSpecPreparedActionContext(f.root, f.changeId, 'apply', afterAdapter);
     assert.notEqual(
       fingerprintOpenSpecPreparedActionContext(applyBefore),
       fingerprintOpenSpecPreparedActionContext(applyAfter),
-      'OpenSpec progress/state drift must change the pending Run external semantic identity',
+      'legacy/raw context digest still observes progress/state',
+    );
+    assert.equal(
+      fingerprintOpenSpecPreparedActionContext(applyBefore, 'apply'),
+      fingerprintOpenSpecPreparedActionContext(applyAfter, 'apply'),
+      'apply self-owned progress/state must not drift semantic input',
+    );
+
+    const changedContextFiles = {
+      ...applyAfter!,
+      applyInstructions: {
+        ...applyAfter!.applyInstructions!,
+        contextFiles: {
+          ...applyAfter!.applyInstructions!.contextFiles,
+          tasks: ['openspec/changes/other/tasks.md'],
+        },
+      },
+    };
+    assert.notEqual(
+      fingerprintOpenSpecPreparedActionContext(applyAfter, 'apply'),
+      fingerprintOpenSpecPreparedActionContext(changedContextFiles, 'apply'),
+      'external apply contextFiles remain semantic input and fail closed',
     );
   });
+
 });

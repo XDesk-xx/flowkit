@@ -51,6 +51,94 @@ function statusRunner(f: Awaited<ReturnType<typeof rootFixture>>, version = '1.7
 }
 
 describe('OpenSpecCliAdapter', () => {
+  it('prefers openspec.ps1 anywhere on Windows PATH before falling back to openspec.cmd', async () => {
+    const f = await rootFixture();
+    const first = join(f.root, 'path-first');
+    const second = join(f.root, 'path-second');
+    await mkdir(first, { recursive: true });
+    await mkdir(second, { recursive: true });
+    await writeFile(join(first, 'openspec.cmd'), 'cmd');
+    await writeFile(join(second, 'openspec.ps1'), 'ps1');
+    const calls: Array<{ command: string; platform?: NodeJS.Platform }> = [];
+    const adapter = new OpenSpecCliAdapter({
+      repoRoot: f.root,
+      platform: 'win32',
+      env: { PATH: `${first};${second}` },
+      runner: async (command, _args, options) => {
+        calls.push({ command, ...(options.platform !== undefined && { platform: options.platform }) });
+        return result('1.7.0\n');
+      },
+    });
+    assert.equal(await adapter.getVersion(), '1.7.0');
+    assert.equal(calls[0]?.command, join(second, 'openspec.ps1'));
+    assert.equal(calls[0]?.platform, 'win32');
+  });
+
+  it('does not fall back to openspec.cmd after a selected openspec.ps1 execution fails', async () => {
+    const f = await rootFixture();
+    const bin = join(f.root, 'path-ps1-fail');
+    await mkdir(bin, { recursive: true });
+    await writeFile(join(bin, 'openspec.ps1'), 'ps1');
+    await writeFile(join(bin, 'openspec.cmd'), 'cmd');
+    const calls: string[] = [];
+    const adapter = new OpenSpecCliAdapter({
+      repoRoot: f.root,
+      platform: 'win32',
+      env: { PATH: bin },
+      runner: async (command) => {
+        calls.push(command);
+        return result('', 9, { stderr: 'ps1 failed' });
+      },
+    });
+    await assert.rejects(adapter.getVersion(), /failed|exit/i);
+    assert.deepEqual(calls, [join(bin, 'openspec.ps1')]);
+  });
+
+  it('uses openspec.cmd only when no openspec.ps1 shim exists on Windows PATH', async () => {
+    const f = await rootFixture();
+    const bin = join(f.root, 'path-cmd');
+    await mkdir(bin, { recursive: true });
+    await writeFile(join(bin, 'openspec.cmd'), 'cmd');
+    let command = '';
+    const adapter = new OpenSpecCliAdapter({
+      repoRoot: f.root,
+      platform: 'win32',
+      env: { PATH: bin },
+      runner: async (resolved) => { command = resolved; return result('1.7.0\n'); },
+    });
+    assert.equal(await adapter.getVersion(), '1.7.0');
+    assert.equal(command, join(bin, 'openspec.cmd'));
+  });
+
+  it('preserves explicit executable authority without Windows shim discovery', async () => {
+    const f = await rootFixture();
+    const explicit = 'C:/custom/openspec.ps1';
+    let command = '';
+    const adapter = new OpenSpecCliAdapter({
+      repoRoot: f.root,
+      executable: explicit,
+      platform: 'win32',
+      env: { PATH: '' },
+      runner: async (resolved) => { command = resolved; return result('1.7.0\n'); },
+    });
+    assert.equal(await adapter.getVersion(), '1.7.0');
+    assert.equal(command, explicit);
+  });
+
+  it('fails closed when neither Windows OpenSpec shim exists', async () => {
+    const f = await rootFixture();
+    const empty = join(f.root, 'path-empty');
+    await mkdir(empty, { recursive: true });
+    let called = false;
+    const adapter = new OpenSpecCliAdapter({
+      repoRoot: f.root,
+      platform: 'win32',
+      env: { PATH: empty },
+      runner: async () => { called = true; return result('1.7.0\n'); },
+    });
+    await assert.rejects(adapter.getVersion(), /shim not found/i);
+    assert.equal(called, false);
+  });
   it('admits stable 1.7.0 baseline and higher stable versions while prerelease/below-baseline/malformed fail closed', async () => {
     const f = await rootFixture();
     for (const version of ['1.7.0', '1.7.9', '1.8.0', '2.0.0', '10.4.3+build.7']) {

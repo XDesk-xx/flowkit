@@ -1,4 +1,5 @@
-import { resolve } from 'node:path';
+import { access } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
 
 import { runCommand, type RunCommandResult } from '../../shared/external-command.js';
 import { FlowkitError } from '../../shared/errors.js';
@@ -32,7 +33,7 @@ const DEFAULT_TIMEOUT_MS = 30_000;
 type CommandRunner = (
   command: string,
   args: string[],
-  options: { cwd: string; env: NodeJS.ProcessEnv; timeout: number },
+  options: { cwd: string; env: NodeJS.ProcessEnv; timeout: number; platform?: NodeJS.Platform },
 ) => Promise<RunCommandResult>;
 
 export interface OpenSpecCliAdapterOptions {
@@ -41,6 +42,8 @@ export interface OpenSpecCliAdapterOptions {
   readonly timeoutMs?: number;
   readonly env?: NodeJS.ProcessEnv;
   readonly runner?: CommandRunner;
+  /** D1 deterministic platform seam for real Windows behavior and focused tests. */
+  readonly platform?: NodeJS.Platform;
 }
 
 function record(value: unknown, label: string): Record<string, unknown> {
@@ -158,11 +161,16 @@ export class OpenSpecCliAdapter {
   readonly timeoutMs: number;
   private readonly env: NodeJS.ProcessEnv;
   private readonly runner: CommandRunner;
+  private readonly platform: NodeJS.Platform;
+  private readonly explicitExecutable?: string;
+  private defaultExecutablePromise?: Promise<string>;
   private versionPromise?: Promise<string>;
 
   constructor(options: OpenSpecCliAdapterOptions) {
     this.repoRoot = resolve(options.repoRoot);
-    this.executable = options.executable ?? 'openspec';
+    this.platform = options.platform ?? process.platform;
+    this.explicitExecutable = options.executable;
+    this.executable = options.executable ?? (this.platform === 'win32' ? 'openspec.ps1' : 'openspec');
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     if (!Number.isFinite(this.timeoutMs) || this.timeoutMs <= 0) {
       throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'OpenSpec timeout must be positive');
@@ -569,7 +577,41 @@ export class OpenSpecCliAdapter {
     });
   }
 
-  private invokeRaw(args: string[]): Promise<RunCommandResult> {
-    return this.runner(this.executable, args, { cwd: this.repoRoot, env: this.env, timeout: this.timeoutMs });
+  private async invokeRaw(args: string[]): Promise<RunCommandResult> {
+    const executable = this.explicitExecutable ?? await this.resolveDefaultExecutable();
+    return this.runner(executable, args, {
+      cwd: this.repoRoot,
+      env: this.env,
+      timeout: this.timeoutMs,
+      platform: this.platform,
+    });
+  }
+
+  private async resolveDefaultExecutable(): Promise<string> {
+    if (this.platform !== 'win32') return 'openspec';
+    this.defaultExecutablePromise ??= this.resolveDefaultWindowsShim();
+    return this.defaultExecutablePromise;
+  }
+
+  private async resolveDefaultWindowsShim(): Promise<string> {
+    const pathValue = Object.entries(this.env).filter(([key]) => key.toLowerCase() === 'path').at(-1)?.[1] ?? '';
+    const directories = pathValue.split(';').map((entry) => entry.trim()).filter((entry) => entry.length > 0);
+    for (const shim of ['openspec.ps1', 'openspec.cmd'] as const) {
+      for (const directory of directories) {
+        const candidate = join(directory, shim);
+        try {
+          await access(candidate);
+          return candidate;
+        } catch {
+          // Continue deterministic PATH search. `.cmd` is considered only
+          // after the complete `.ps1` search has found no shim.
+        }
+      }
+    }
+    throw new FlowkitError(
+      'OPENSPEC_SPAWN_FAILED',
+      'OpenSpec Windows shim not found on PATH (expected openspec.ps1, fallback openspec.cmd)',
+      { pathEntries: directories.length },
+    );
   }
 }

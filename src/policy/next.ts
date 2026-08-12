@@ -32,6 +32,7 @@ import {
 } from './types.js';
 import { computeLineage } from './lineage.js';
 import { detectStage } from './stage-detector.js';
+import { currentContractResetRefs, runMatchesContractResetIdentity } from '../facts/generation-resolver.js';
 import {
   allRequiredCompleted,
   countActiveChanges,
@@ -121,18 +122,24 @@ function decideActiveChange(
   snapshot: FormalFactSnapshot,
   change: ChangeFact,
 ): PolicyResult {
+  const resetRefs = currentContractResetRefs(snapshot.ownerDecisionFacts, change.id);
+  const currentRuns = resetRefs.length === 0
+    ? snapshot.runs
+    : snapshot.runs.filter((run) => run.changeId !== change.id || runMatchesContractResetIdentity(run, resetRefs));
+  const currentRunIds = new Set(currentRuns.map((run) => run.runId));
+  const currentVerdicts = snapshot.reviewVerdicts.filter((verdict) => currentRunIds.has(verdict.reviewRunId));
   // 6.11: retry the latest failed/cancelled Run (scope persists; owner need
   // not re-authorize). Lineage agrees because failed/cancelled Runs are not
   // "completed" and thus do not become Current Artifact/Review.
-  const latest = latestRunForChange(snapshot.runs, change.id);
+  const latest = latestRunForChange(currentRuns, change.id);
   if (latest !== null && (latest.status === 'failed' || latest.status === 'cancelled')) {
     return actionResult(latest.action);
   }
 
   const stage = detectStage(snapshot.runs, change.id);
   const lineage = computeLineage(
-    snapshot.runs,
-    snapshot.reviewVerdicts,
+    currentRuns,
+    currentVerdicts,
     change.id,
     stage,
   );

@@ -1,0 +1,20 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-explore",
+    "executionStatus": "completed",
+    "summary": "仅规范化 explore.md EOF：删除一个额外换行，使文件以恰好一个 LF 结束；未修改 Explore 语义或其他 contract。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/review-findings-and-blocker-authority/explore.md",
+        "versionFingerprint": "85bf110b6b4a6d4984ddfa2199b90e6899077c0f59553f4c353bba22bce4d996",
+        "kind": "produced-artifact"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/review-findings-and-blocker-authority/20260812-074-review-explore/result.json",
+      "versionFingerprint": "0ead172ce2e2d4d02fd888d6dc30116ac00d05ef535a9d2139b04e500885a242",
+      "kind": "run-result"
+    }
+  }
+}

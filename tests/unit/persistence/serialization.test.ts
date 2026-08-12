@@ -434,6 +434,38 @@ describe('validateContextFile', () => {
     assert.equal(cf.changeId, 'formal-fact-reader-and-persistence');
   });
 
+  it('accepts transitional v2 ownerFactRefs as immutable history but strips them from the typed projection', () => {
+    const cf = validateContextFile({
+      ...validChangeContext,
+      ownerFactRefs: [{
+        ref: `owner:${'a'.repeat(64)}`,
+        decision: 'contract-reset',
+        deliveryId: validChangeContext.deliveryId,
+        changeId: validChangeContext.changeId,
+        scope: 'D1/current-contract',
+        requiredOutcomes: ['structured Owner handoff'],
+        sourceRef: 'owner-input:bootstrap',
+      }],
+    });
+    assert.equal(cf.schemaVersion, 2);
+    assert.equal(cf.ownerFactRefs, undefined);
+  });
+
+  it('retains ownerFactRefs in the current v3 typed projection', () => {
+    const ownerFactRefs = [{
+      ref: `owner:${'b'.repeat(64)}`,
+      decision: 'contract-reset',
+      deliveryId: validChangeContext.deliveryId,
+      changeId: validChangeContext.changeId,
+      scope: 'D1/current-contract',
+      requiredOutcomes: ['structured Owner handoff'],
+      sourceRef: 'owner-input:formal',
+    }];
+    const cf = validateContextFile({ ...validChangeContext, schemaVersion: 3, ownerFactRefs });
+    assert.equal(cf.schemaVersion, 3);
+    assert.deepEqual(cf.ownerFactRefs, ownerFactRefs);
+  });
+
   it('rejects retired Delivery behavior as a current schemaVersion 2 ContextFile', () => {
     assert.throws(
       () => validateContextFile(validDeliveryContext),

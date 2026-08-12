@@ -1,6 +1,12 @@
-import { describe, it } from 'node:test';
+import { afterEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { resolveCommandForPlatform, runCommand } from '../../src/shared/external-command.js';
+import { chmod, rm, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { createTempDir } from '../fixtures/helpers.js';
+import { resolveCommandForPlatform, resolvePowerShellScriptCommand, runCommand } from '../../src/shared/external-command.js';
+
+const roots: string[] = [];
+afterEach(async () => Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true }))));
 
 describe('runCommand', () => {
   it('captures stdout and exit code', async () => {
@@ -41,6 +47,82 @@ describe('runCommand', () => {
     assert.equal(result.spawned, true);
     assert.equal(result.timedOut, true);
     assert.notEqual(result.exitCode, 0);
+  });
+
+
+
+  it('routes Windows .ps1 through bounded PowerShell argv without shell evaluation', () => {
+    assert.deepEqual(resolvePowerShellScriptCommand('C:/tools/openspec.ps1', ['status', '--json'], 'pwsh.exe'), {
+      command: 'pwsh.exe',
+      args: ['-NoLogo', '-NoProfile', '-NonInteractive', '-File', 'C:/tools/openspec.ps1', 'status', '--json'],
+      usedWindowsLauncher: true,
+    });
+  });
+
+  it('falls back from missing pwsh to Windows PowerShell but not after a launcher starts', async () => {
+    const root = await createTempDir();
+    roots.push(root);
+    const isWin32 = process.platform === 'win32';
+
+    // The runCommand Windows .ps1 branch spawns the launcher directly (bounded
+    // PowerShell argv), so the launcher MUST be a real executable on Windows.
+    // POSIX shebang + chmod launchers only work on non-Windows. On Windows we
+    // use the real pwsh.exe with real .ps1 fixtures so the fallback/terminal
+    // semantics are still exercised with real spawn semantics.
+    let okLauncher: string;
+    let failingLauncher: string;
+    let forbiddenFallback: string;
+    let okCommand = 'openspec.ps1';
+    let failingCommand = 'openspec.ps1';
+
+    if (isWin32) {
+      okLauncher = process.env['PWSH_EXE'] ?? 'pwsh.exe';
+      failingLauncher = okLauncher;
+      forbiddenFallback = okLauncher;
+      okCommand = join(root, 'openspec-ok.ps1');
+      failingCommand = join(root, 'openspec-fail.ps1');
+      await writeFile(okCommand, '[Console]::Write("ok")\n');
+      await writeFile(failingCommand, 'exit 7\n');
+    } else {
+      okLauncher = join(root, 'powershell-ok');
+      failingLauncher = join(root, 'powershell-fail');
+      forbiddenFallback = join(root, 'powershell-forbidden');
+      await writeFile(okLauncher, `#!/bin/sh
+printf "ok"
+`);
+      await writeFile(failingLauncher, `#!/bin/sh
+exit 7
+`);
+      await writeFile(forbiddenFallback, `#!/bin/sh
+printf "should-not-run"
+`);
+      await Promise.all([okLauncher, failingLauncher, forbiddenFallback].map((path) => chmod(path, 0o755)));
+    }
+
+    const fallback = await runCommand(okCommand, ['status'], {
+      platform: 'win32',
+      powerShellCandidates: ['__missing_pwsh__', okLauncher],
+    });
+    assert.equal(fallback.spawned, true);
+    assert.equal(fallback.exitCode, 0);
+    assert.equal(fallback.stdout, 'ok');
+
+    const terminal = await runCommand(failingCommand, ['status'], {
+      platform: 'win32',
+      powerShellCandidates: [failingLauncher, forbiddenFallback],
+    });
+    assert.equal(terminal.spawned, true);
+    assert.equal(terminal.exitCode, 7);
+    assert.equal(terminal.stdout, '');
+  });
+
+  it('reports a machine-distinguishable failure when no PowerShell launcher exists', async () => {
+    const result = await runCommand('openspec.ps1', [], {
+      platform: 'win32',
+      powerShellCandidates: ['__missing_pwsh_a__', '__missing_pwsh_b__'],
+    });
+    assert.equal(result.spawned, false);
+    assert.equal(result.spawnError?.code, 'POWERSHELL_NOT_FOUND');
   });
 
   it('routes Windows command shims through explicit ComSpec but leaves non-Windows direct', () => {

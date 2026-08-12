@@ -1,0 +1,41 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "081 主体实现与验证基本满足 approved contract，但 Contract Reset 在 pending Run 存在时会使旧 pending Run 因 PENDING_INPUT_DRIFT 无法继续或 terminalize，且阻止新 generation 启动；需要最小 reset-vs-pending recovery boundary。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/review-findings-and-blocker-authority/verification.md",
+      "versionFingerprint": "4cdf39f0f2d56aac58a4f02e61179471ff5299a5aa8f309a0ea47e7207eac2e8",
+      "kind": "verification-summary"
+    }
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "D1-RA-001",
+      "severity": "blocking",
+      "title": "Contract Reset 后 stale pending Run 缺少合法 recovery boundary",
+      "problem": "当前实现允许 active Change 在存在 pending Standard Run 时接纳新的 contract-reset；Reset 会改变 applicable Owner facts，使该 pending Run 的 prepare/resume 与 terminal admission 均触发 PENDING_INPUT_DRIFT。现有 lifecycle 没有让这条 stale pending execution 合法进入 terminal/non-current 状态的路径，因此旧 pending Run 会持续占用 Change，新的 reset generation 也无法通过正常 preparation 创建。",
+      "contractRef": "openspec/changes/review-findings-and-blocker-authority/design.md D2/D5-D7；flowkit-lean-run-and-action-package 与 flowkit-delivery-change-creation-and-owner-input delta specs",
+      "invariant": "Contract Reset 必须使旧 pending execution 失去继续执行资格，但不得把 Change 永久卡在不可恢复的 pending Run；恢复必须经过正式 Flowkit lifecycle，而不是手工删除 Run 或伪造 terminal result。",
+      "evidence": [
+        "Owner contract-reset 改变 applicable ownerFactRefs 后，prepare/resume 对旧 pending Run返回 PENDING_INPUT_DRIFT。",
+        "admitActionResult 会重新校验 persisted/package/current Owner fact projection；Reset 后旧 pending Run 的 completed/cancelled admission同样因 PENDING_INPUT_DRIFT 被拒绝。",
+        "当前实现未提供独立的 stale-pending cancellation/abandonment admission，因此新的 normal producer/review generation 无法开始。"
+      ],
+      "impact": "合法 Owner Contract Reset 可能把 active Change 永久锁死，迫使人工删除 .flowkit/runs/** 或绕过正式 admission，破坏 deterministic resume、authority boundary 与 reset generation recovery。",
+      "location": "src/services/b1-run-execution-service.ts pending semantic drift/admission；Owner contract-reset write-side 与 pending Run lifecycle 交界",
+      "blockingAuthority": "author",
+      "requiredOutcome": "提供最小、确定性的 reset-vs-pending recovery boundary：Reset 后旧 pending execution 不得继续，但必须能合法退出 current/pending 占用并允许新的 normal producer→review generation 启动；不得依赖手工删除 Run、手写 result.json，也不得引入 generic generation registry/authority ledger。",
+      "acceptance": [
+        "存在 pending Run 时发生合法 Contract Reset，旧 Run 不能 resume/complete 为旧 generation 成果。",
+        "旧 pending Run 能通过正式 Flowkit surface 合法进入 terminal 或 non-current 状态，不需要手工删除 Run 或直接写 result.json。",
+        "旧 pending 不再阻塞后，Policy/preparation 能创建新的 reset generation producer→review 流程。",
+        "历史 Run 保持可审计，且实现不引入 generic generation manager、authority event ledger 或第二套 Owner authority store。"
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}
