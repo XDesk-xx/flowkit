@@ -113,12 +113,25 @@ describe('next — Archive closes Change, Checkpoint follows', () => {
   it('completed Change without checkpoint → owner-decision authorize-checkpoint', () => {
     const snap = buildSnapshot({
       changes: [buildChange({ key: 'Q2', id: 'q2', state: 'completed', required: true })],
+      checkpointArchiveTerminal: { changeId: 'q2', runId: '20260806-085-archive', status: 'completed' },
     });
     const r = next(snap);
     assert.equal(r.kind, 'owner-decision');
     if (r.kind === 'owner-decision') {
       assert.equal(r.decision, 'authorize-checkpoint');
       assert.equal(r.context.changeKey, 'Q2');
+    }
+  });
+
+  it('completed Change with non-terminal archive blocks checkpoint until archive recovery completes', () => {
+    const snap = buildSnapshot({
+      changes: [buildChange({ key: 'Q2', id: 'q2', state: 'completed', required: true })],
+      checkpointArchiveTerminal: { changeId: 'q2', runId: '20260806-085-archive', status: 'pending' },
+    });
+    const r = next(snap);
+    assert.equal(r.kind, 'blocked');
+    if (r.kind === 'blocked') {
+      assert.equal(r.diagnosis.reason, 'archive-terminal-recovery-required');
     }
   });
 
@@ -133,6 +146,7 @@ describe('next — Archive closes Change, Checkpoint follows', () => {
       changes,
       runs: [],
       gitBoundaries: [buildCheckpointBoundary('q1')],
+      checkpointArchiveTerminal: { changeId: 'q2', runId: '20260806-085-archive', status: 'completed' },
     }));
     assert.equal(beforeCheckpoint.kind, 'owner-decision');
     if (beforeCheckpoint.kind === 'owner-decision') {

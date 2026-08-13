@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 3,
+  "runId": "20260812-090-revise-propose",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "revise-propose",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "fe4cf0ec24695ad6c4fbe5883e0796ed7a0d679c4881858df9424d83297233c0",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/archive-terminal-continuation-correction/20260812-090-revise-propose/",
+  "changeKey": "D2",
+  "changeId": "archive-terminal-continuation-correction",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/archive-terminal-continuation-correction/20260812-089-review-propose/result.json",
+    "versionFingerprint": "26edbe327a838e6d0da1f9f494028bce5e1acf7f6bbdc6c8f563dd348e7e3a51",
+    "kind": "run-result"
+  },
+  "sourceReviewRun": "20260812-089-review-propose",
+  "sourceReviewVerdict": "changes-requested",
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": true,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

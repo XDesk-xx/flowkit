@@ -67,15 +67,15 @@ describe('createRun', () => {
     const contextJson = await readFile(join(runDir, 'context.json'), 'utf-8');
     assert.ok(actionMd.includes('explore'));
     const ctx = JSON.parse(contextJson);
-    assert.equal(ctx.schemaVersion, 3);
+    assert.equal(ctx.schemaVersion, 4);
     assert.equal(ctx.runId, '20260806-001-explore');
   });
 
-  it('writes current context.json with schemaVersion: 3 while retaining v2 read compatibility', async () => {
+  it('writes current context.json with schemaVersion: 4 while retaining v2/v3 read compatibility', async () => {
     const runDir = await createRun(createRunInput({ runId: '20260806-002-explore' }));
     const contextJson = await readFile(join(runDir, 'context.json'), 'utf-8');
     const ctx = validateContextFile(JSON.parse(contextJson));
-    assert.equal(ctx.schemaVersion, 3);
+    assert.equal(ctx.schemaVersion, 4);
   });
 
   it('staging directory is invisible to readdir (task 3.6, 12.12)', async () => {

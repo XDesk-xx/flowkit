@@ -8,7 +8,7 @@ import { renderDoctor, diagnoseRepository } from '../diagnostics/doctor.js';
 import { renderNext } from '../diagnostics/next.js';
 import { renderResumeContext } from '../diagnostics/resume-context.js';
 import { renderStatus } from '../diagnostics/status.js';
-import { inspectPreparedRun, recoverContractResetPendingRun } from '../services/b1-run-execution-service.js';
+import { inspectPreparedRun, recoverArchiveTerminalRun, recoverContractResetPendingRun } from '../services/b1-run-execution-service.js';
 import { getVersion } from './version.js';
 import {
   activateChange,
@@ -31,7 +31,7 @@ export interface CliResult {
 const DIAGNOSTIC_COMMANDS = new Set(['status', 'next', 'doctor', 'resume-context']);
 
 const USAGE =
-  'usage: flowkit <status|next|doctor|resume-context|create delivery|create change|owner record|recover contract-reset-pending|activate|--version>\n';
+  'usage: flowkit <status|next|doctor|resume-context|create delivery|create change|owner record|recover contract-reset-pending|recover archive-terminal|activate|--version>\n';
 
 function optionValue(args: readonly string[], name: string): string | undefined {
   const index = args.indexOf(name);
@@ -101,6 +101,12 @@ export async function runCli(invocation: CliInvocation): Promise<CliResult> {
     if (args[0] === 'recover' && args[1] === 'contract-reset-pending') {
       const { deliveryId } = await loadDiagnosticContext(invocation.cwd);
       const result = await recoverContractResetPendingRun({ repoRoot, deliveryId });
+      return { exitCode: 0, stdout: renderWriteResult(result), stderr: '' };
+    }
+
+    if (args[0] === 'recover' && args[1] === 'archive-terminal') {
+      const { deliveryId } = await loadDiagnosticContext(invocation.cwd);
+      const result = await recoverArchiveTerminalRun({ repoRoot, deliveryId });
       return { exitCode: 0, stdout: renderWriteResult(result), stderr: '' };
     }
 

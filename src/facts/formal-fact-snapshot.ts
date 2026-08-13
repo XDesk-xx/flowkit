@@ -138,6 +138,16 @@ export interface GitBoundaryFact {
 }
 
 /**
+ * D2 bounded archive terminal projection for the one completed/uncheckpointed
+ * Change considered by the no-active-Change checkpoint gate.
+ */
+export interface ArchiveTerminalFact {
+  readonly changeId: string;
+  readonly status: RunStatus | 'missing' | 'ambiguous';
+  readonly runId?: string;
+}
+
+/**
  * Read-only summary of an owner authorization fact.
  */
 export interface OwnerAuthorizationFact {
@@ -204,6 +214,8 @@ export interface FormalFactSnapshot {
   readonly openSpecArtifacts: readonly OpenSpecArtifactFact[];
   /** Git formal boundary summaries (read-only, not persisted). */
   readonly gitBoundaries: readonly GitBoundaryFact[];
+  /** D2 bounded archive terminal fact for the current checkpoint candidate. */
+  readonly checkpointArchiveTerminal?: ArchiveTerminalFact;
   /** Owner authorization facts used by Policy gates. */
   readonly ownerAuthorizations: readonly OwnerAuthorizationFact[];
   /** Bounded Owner decision facts for role handoff; authority remains Manifest.ownerDecisions. */

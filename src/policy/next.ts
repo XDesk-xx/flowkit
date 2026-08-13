@@ -31,8 +31,8 @@ import {
   blockedResult,
 } from './types.js';
 import { computeLineage } from './lineage.js';
-import { detectStage } from './stage-detector.js';
-import { currentContractResetRefs, runMatchesContractResetIdentity } from '../facts/generation-resolver.js';
+import { detectCurrentStage } from './stage-detector.js';
+import { projectCurrentContractResetLifecycle } from '../facts/generation-resolver.js';
 import {
   allRequiredCompleted,
   countActiveChanges,
@@ -58,6 +58,7 @@ import {
   noActiveDeliveryDiagnosis,
   tasksFactsUnavailableDiagnosis,
   tasksIncompleteDiagnosis,
+  archiveTerminalRecoveryRequiredDiagnosis,
 } from './blocked-diagnosis.js';
 
 // ---------------------------------------------------------------------------
@@ -122,12 +123,9 @@ function decideActiveChange(
   snapshot: FormalFactSnapshot,
   change: ChangeFact,
 ): PolicyResult {
-  const resetRefs = currentContractResetRefs(snapshot.ownerDecisionFacts, change.id);
-  const currentRuns = resetRefs.length === 0
-    ? snapshot.runs
-    : snapshot.runs.filter((run) => run.changeId !== change.id || runMatchesContractResetIdentity(run, resetRefs));
-  const currentRunIds = new Set(currentRuns.map((run) => run.runId));
-  const currentVerdicts = snapshot.reviewVerdicts.filter((verdict) => currentRunIds.has(verdict.reviewRunId));
+  const current = projectCurrentContractResetLifecycle(snapshot, change.id);
+  const currentRuns = current.runs;
+  const currentVerdicts = current.reviewVerdicts;
   // 6.11: retry the latest failed/cancelled Run (scope persists; owner need
   // not re-authorize). Lineage agrees because failed/cancelled Runs are not
   // "completed" and thus do not become Current Artifact/Review.
@@ -136,7 +134,7 @@ function decideActiveChange(
     return actionResult(latest.action);
   }
 
-  const stage = detectStage(snapshot.runs, change.id);
+  const stage = detectCurrentStage(snapshot, change.id);
   const lineage = computeLineage(
     currentRuns,
     currentVerdicts,
@@ -310,9 +308,21 @@ function decideNoActiveChange(snapshot: FormalFactSnapshot): PolicyResult {
   const checkpointPending = getCompletedUncheckpointedChanges(snapshot);
   if (checkpointPending.length === 1) {
     const change = checkpointPending[0]!;
+    const archiveTerminal = snapshot.checkpointArchiveTerminal;
+    if (
+      archiveTerminal === undefined
+      || archiveTerminal.changeId !== change.id
+      || archiveTerminal.status !== 'completed'
+    ) {
+      return blockedResult(archiveTerminalRecoveryRequiredDiagnosis(
+        change.id,
+        archiveTerminal?.status ?? 'missing',
+        archiveTerminal?.runId,
+      ));
+    }
     return ownerDecisionResult('authorize-checkpoint', {
       changeKey: change.key,
-      detail: 'Change is closed by OpenSpec archive; Change Checkpoint Git boundary awaits owner authorization',
+      detail: 'Change is closed by OpenSpec archive and its archive Run is terminal; Change Checkpoint Git boundary awaits owner authorization',
     });
   }
   if (checkpointPending.length > 1) {

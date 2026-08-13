@@ -67,7 +67,9 @@ D1 MUST 实现 `canRun`、`next`、`diagnose` 三个公开纯函数。三个函�
 
 ### Requirement: next 计算唯一合法下一 Action
 
-`next(snapshot)` MUST 返回 `PolicyResult` 互斥联合类型：`action`（唯一合法 Action）、`owner-decision`（需 owner 授权）、`blocked`（无法推进）。`snapshot.conflicts` 非空时 MUST 返回 `blocked`。无 active Delivery 时 MUST 返回 `blocked`。有 active Change 时按 Change 生命周期决策树计算；**无 active Change 时 MUST 先判断是否存在已 completed 但尚未形成 Change Checkpoint 的 Change，若唯一则进入 `owner-decision: authorize-checkpoint`，Checkpoint 完成后才继续下一 Change 激活或 Delivery-level 流程。** 多解或歧义时 MUST 返回 `blocked`。
+`next(snapshot)` MUST 返回 `PolicyResult` 互斥联合类型：`action`（唯一合法 Action）、`owner-decision`（需 owner 授权）、`blocked`（无法推进）。`snapshot.conflicts` 非空时 MUST 返回 `blocked`。无 active Delivery 时 MUST 返回 `blocked`。有 active Change 时按 Change 生命周期决策树计算；**无 active Change 时 MUST 先判断是否存在已 completed 但尚未形成 Change Checkpoint 的 Change。只有该 Change 的 matching archive Run 已合法 terminal completed 时，才可进入 `owner-decision: authorize-checkpoint`；若 archive Run仍 pending/non-terminal，则 MUST保持 archive recovery/blocked boundary。Checkpoint 完成后才继续下一 Change 激活或 Delivery-level 流程。** 多解或歧义时 MUST 返回 `blocked`。
+
+当 active Change存在current Contract Reset时，Policy MUST把该reset解释为新的proposal contract generation boundary：最近合法approved Explore可继续作为handoff；旧 `propose/revise-propose/review-propose/apply/revise-apply/review-apply/archive` Runs若不匹配current reset identity，MUST不参与current stage/currentArtifactRun/current review/lineage。若尚无current propose producer，`next(snapshot)` MUST返回`action: propose`。stage detection、`next`与`canRun` MUST使用同一reset-aware projection，MUST NOT通过all-historical stage fallback重新激活旧approval。
 
 #### Scenario: PolicyResult 为互斥联合类型
 
@@ -100,10 +102,19 @@ D1 MUST 实现 `canRun`、`next`、`diagnose` 三个公开纯函数。三个函�
 
 - **WHEN** Manifest 显示某 required Change 已 `completed`
 - **AND** 当前无 active Change
+- **AND**该 Change matching archive Run 已合法terminal completed
 - **AND** Git authority 尚无该 Change 的 `change-checkpoint` boundary
 - **THEN** `next(snapshot)` MUST 返回 `owner-decision: authorize-checkpoint`
 - **AND** context MUST 标识该 completed Change
-- **AND** MUST NOT 通过重新投影该 Change 的历史 Runs 获得此结论
+- **AND** MUST NOT 通过重新投影无关历史 Runs 获得此结论
+
+#### Scenario: Change completed 但 archive Run non-terminal 不得提前 Checkpoint
+
+- **WHEN** Manifest 显示某 Change 已 `completed`
+- **AND** 当前无 active Change且Git尚无该 Change checkpoint
+- **BUT** matching archive Run仍pending或其它non-terminal状态
+- **THEN** `next(snapshot)` MUST NOT返回 `authorize-checkpoint`
+- **AND** MUST返回bounded blocked/recovery diagnosis，使同一archive continuation先合法terminalize
 
 #### Scenario: Checkpoint 完成后才继续下一流程
 
@@ -130,6 +141,29 @@ D1 MUST 实现 `canRun`、`next`、`diagnose` 三个公开纯函数。三个函�
 - **BUT** Manifest 仍声明该 Change 为 `active`
 - **THEN** `next(snapshot)` MUST fail closed 为 `blocked: ambiguous-state`
 - **AND** MUST NOT 直接把 active Change 当作 checkpoint-pending 状态
+
+#### Scenario: Contract Reset 后回到 fresh Proposal generation
+
+- **WHEN** active Change历史上已有旧proposal/apply/review/archive Runs
+- **AND** Owner记录新的Contract Reset并声明旧generation abandoned
+- **AND**当前reset identity尚无completed propose producer
+- **THEN** `next(snapshot)` MUST返回`action: propose`
+- **AND** MUST NOT返回`apply`、`review-apply`或`archive`
+- **AND**旧revise-propose/review-propose/revise-apply/review-apply artifact或approval MUST NOT跨reset generation继续生效
+
+#### Scenario: reset-aware stage 与 lineage 使用同一 current Run projection
+
+- **WHEN** current Contract Reset identity存在
+- **THEN** active stage、Current Artifact、Current Review、`next`与`canRun` MUST基于同一current reset-aware Run/Review projection
+- **AND** Proposal之前的合法 Explore handoff MAY继续使用
+- **AND** Proposal及之后 MUST NOT因全历史Run fallback重新选择旧generation
+
+#### Scenario: revise producer 与 base producer 使用同一 Reset currentness
+- **WHEN** proposal stage历史中存在090-revise-propose且apply stage历史中存在094-revise-apply
+- **AND** 两个Run均不匹配current完整Contract Reset identity
+- **THEN** stage detection与Current Artifact MUST NOT选择090或094
+- **AND** `next`/`canRun` MUST与reset-aware review lineage保持一致
+- **AND** fresh generation不得因旧revise producer存在而跳过新的producer/review边界
 
 ### Requirement: Review/Revision lineage by reviewed Run
 
@@ -162,6 +196,7 @@ Policy MUST 使用 reviewed-Run lineage 追踪每个阶段 S ∈ {explore, propo
 - **AND** Current Review 仍指向前一个 artifact
 - **THEN** lineage MUST no-match
 - **AND** `next` MUST 返回 `review-S`
+
 ### Requirement: Change-level Action 前置条件矩阵
 
 Policy MUST 为全部 10 个 Change-level Action 定义语义前置条件。`revise-S` MUST 要求 lineage match + `changes-requested` + 非空 author-only blocking authorities。matching `changes-requested` 包含任一 non-author authority时 `canRun(revise-S)` MUST false。`review-S` 在通常 no-match 时 MUST allowed；对 matching `changes-requested` **只要包含任一 non-author authority（pure 或 mixed）**，explicit same-stage `review-S` MUST 作为合法 direct re-review admission 被确定性允许，且 candidate target 未变化 MUST NOT 成为拒绝理由。Policy MUST NOT 把“相关 non-author authority fact 是否已到位”作为 `canRun(review-S)` machine prerequisite。`next()` MUST 继续返回 blocked authority boundary，MUST NOT 自动形成 review loop，也 MUST NOT 提前执行 Author mutation。其他 explore/propose/apply/review-apply/archive 的既有 Verification、Tasks 与 Owner gates 保持。
@@ -217,6 +252,7 @@ Policy MUST 为全部 10 个 Change-level Action 定义语义前置条件。`rev
 - **WHEN** 校验 `archive`
 - **THEN** MUST 继续要求 apply stage approved、blocking findings=0、Verification satisfied、Tasks complete、Owner archive authorization
 - **AND** Q1 MUST NOT 放宽 Archive gate
+
 ### Requirement: Delivery-level Action 前置条件
 
 Standard `canRun` MUST NOT 接受 `full-test` 或 `delivery-finalize`，因为二者不再是 Standard Formal Action。Delivery Full Test / Finalize 的完整 machine behavior contract 后置到 03。Q1→03 期间 Policy 的 no-active-change 分支 MUST 继续消费 `fullTestStatus` 与 Owner authorization 做 deterministic/fail-closed transition，但不得把 Delivery behavior 伪装为 Action/Run。
@@ -248,6 +284,7 @@ Standard `canRun` MUST NOT 接受 `full-test` 或 `delivery-finalize`，因为�
 - **AND** Owner finalize authorization 已存在
 - **THEN** `next` MUST 返回 deterministic blocked diagnosis
 - **AND** MUST NOT 返回 `action: delivery-finalize`
+
 ### Requirement: fail-closed 冲突优先于一切决策
 
 `snapshot.conflicts` 非空时，`next` MUST 返回 `blocked`，`canRun` MUST 返回 `allowed: false`。冲突优先于 lineage 推断、owner 决策边界、阶段推进和 Action 前置条件。这是 C1 `One fact, one authority` 在 Policy 层的延续。
@@ -297,6 +334,7 @@ Standard `canRun` MUST NOT 接受 `full-test` 或 `delivery-finalize`，因为�
 - **AND** finding 没有唯一映射到既有 OwnerDecision enum 的正式 machine scope
 - **THEN** Policy MUST 返回 blocked non-author authority boundary
 - **AND** MUST NOT 自创 Owner decision 或从 Finding prose 推断授权
+
 ### Requirement: ownerAuthorizations 空数组时 owner-decision
 
 `snapshot.ownerAuthorizations` 为空数组时，既有 apply/archive 与 `awaiting-user-decision` / passed 的 Owner authorization gate MUST 继续返回对应 owner-decision；空数组本身 MUST NOT 产生 blocked。对于已经进入 `authorized` 的 Delivery Full Test 或已经有 finalize authorization 的 passed Delivery，由于 03 behavior 尚未实现，Q1→03 过渡 MUST 返回 Delivery-behavior blocked，而不是 Action。
@@ -314,6 +352,7 @@ Standard `canRun` MUST NOT 接受 `full-test` 或 `delivery-finalize`，因为�
 - **AND** 03 Delivery behavior machine model/executor 尚未实现
 - **THEN** `next` MUST 返回 Delivery-behavior blocked
 - **AND** MUST NOT 把 authorization presence 转成 `full-test` / `delivery-finalize` Action
+
 ### Requirement: Verification 事实不可用时 blocked
 
 `FormalFactSnapshot` MAY 携带 active Change 的 `changeVerificationStatus`。D1 对 verification-gated actions（`review-apply`、`archive`）MUST 只从该 Snapshot fact 读取 Verification status，MUST NOT 从 Run 历史、OpenSpec artifact existence、Verification 正文自由文本或聊天历史推断状态。`changeVerificationStatus` 缺失时 MUST 返回 `blocked: verification-facts-unavailable`；`failed` 与 `not-run` MUST 分别映射为 `verification-failed` 与 `verification-not-run`；`passed` 或 `not-applicable` MUST 满足既有 Verification gate。该修改只接通 D1 已冻结的 status-aware gate，不改变其业务语义。
@@ -390,6 +429,7 @@ Standard `canRun` MUST NOT 接受 `full-test` 或 `delivery-finalize`，因为�
 - **AND** MUST NOT 创建 Author Revision Run
 - **AND** Policy MUST NOT 以“尚未证明新 non-author fact 到位”为由拒绝该 Review
 - **AND** 新 Review result MUST 成为后续 authority/revise 判断使用的 matching Review
+
 ### Requirement: diagnose 生成 blocked diagnosis
 
 `diagnose(snapshot)` MUST 返回 `BlockedDiagnosis`，并继续包含 `reason`、`unmetPreconditions`、`conflicts`、`suggestedOwnerActions`。Q1 MUST 增加稳定 blocked reason 以区分 non-author Review blocker 与 Q1→03 Delivery behavior 尚未实现的过渡阻塞；diagnose MUST NOT 把二者转换为 Action。
@@ -407,6 +447,7 @@ Standard `canRun` MUST NOT 接受 `full-test` 或 `delivery-finalize`，因为�
 - **AND** 03 machine behavior 尚未实现
 - **THEN** `diagnose` MUST 返回稳定 delivery-behavior-not-implemented reason
 - **AND** MUST NOT 返回 `full-test` / `delivery-finalize` Action
+
 ### Requirement: blocked diagnosis 条件
 
 D1 MUST 为以下 blocked 原因生成对应 diagnosis：`formal-fact-conflict`（conflicts 非空）、`no-active-delivery`（无 active Delivery）、`no-actionable-change`（无 active Change 且无可激活 Change）、`verification-facts-unavailable`（Verification 事实不可用）、`verification-failed`（事实可用但不通过）、`verification-not-run`（事实可用但未运行）、`tasks-facts-unavailable`（Tasks 完成事实不可用，仅 archive 门控）、`ambiguous-state`（多解或歧义）、`dependency-incomplete`（依赖未完成）、`full-test-failed`（Full Test 失败，`deliveryFullTestStatus` = `failed`）。`tasks-facts-unavailable` MUST 与 `verification-facts-unavailable` 区分——前者表示 Tasks 完成事实不可用（archive 门控），后者表示 Change Verification 事实不可用（review-apply/archive 门控）。`full-test-failed` MUST 严格遵循 frozen `verification-model.md` Section 6：`fullTestStatus` 保持 `failed`，Policy MUST NOT 自动创建 corrective Change 或自动重试 `full-test`，MUST 返回 `blocked` 并在 `suggestedOwnerActions` 列出 owner 的合法选择（授权创建 corrective Change 或取消 Delivery）；只有 owner 明确授权 corrective Change 后 `fullTestStatus` 才返回 `not-ready`，重新进入 Full Test 生命周期（D1-13）。

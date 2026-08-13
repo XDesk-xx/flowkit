@@ -84,6 +84,7 @@ export const BLOCKED_REASONS = [
   'full-test-failed',
   'non-author-review-blocker',
   'delivery-behavior-not-implemented',
+  'archive-terminal-recovery-required',
 ] as const;
 
 /**

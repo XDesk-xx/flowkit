@@ -1,0 +1,15 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "archive",
+    "executionStatus": "completed",
+    "summary": "OpenSpec archive completed as 2026-08-12-review-findings-and-blocker-authority",
+    "consumedInputRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/review-findings-and-blocker-authority/20260812-084-review-apply/result.json",
+        "versionFingerprint": "e8222a6fe07da4d9ef53e9871f98a1433542ffcca001caecb5667cffc0250f9f",
+        "kind": "run-result"
+      }
+    ]
+  }
+}

@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
-import { readFile, readdir, stat } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readFile, readdir, rm, stat } from 'node:fs/promises';
 import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 
 import {
   getActionDefinition,
@@ -25,10 +26,10 @@ import type {
   RunFact,
 } from '../facts/formal-fact-snapshot.js';
 import { computeLineage } from '../policy/lineage.js';
-import { detectStage, type Stage } from '../policy/stage-detector.js';
-import { currentContractResetRefs, runMatchesContractResetIdentity } from '../facts/generation-resolver.js';
+import { type Stage } from '../policy/stage-detector.js';
+import { currentContractResetRefs, projectCurrentContractResetLifecycle, runMatchesContractResetIdentity } from '../facts/generation-resolver.js';
 import { next } from '../policy/next.js';
-import { getActiveChange } from '../policy/preconditions.js';
+import { getActiveChange, getCompletedUncheckpointedChanges } from '../policy/preconditions.js';
 import { resolveReview } from '../policy/unified-entry.js';
 import { allocateNextRunId } from '../persistence/run-id-fs.js';
 import {
@@ -46,7 +47,11 @@ import {
 import { FlowkitError } from '../shared/errors.js';
 import { normalizeSeparators } from '../shared/paths.js';
 import { OpenSpecCliAdapter } from '../integrations/openspec/openspec-cli-adapter.js';
-import { OPENSPEC_SUPPORTED_ARTIFACT_IDS, type OpenSpecPreparedActionContextView } from '../integrations/openspec/openspec-types.js';
+import {
+  OPENSPEC_SUPPORTED_ARTIFACT_IDS,
+  type ArchiveEntryOpenSpecProjection,
+  type OpenSpecPreparedActionContextView,
+} from '../integrations/openspec/openspec-types.js';
 import { isOpenSpecThinIntegrationActive } from '../integrations/openspec/openspec-integration-state.js';
 import { inspectOpenSpecArchiveRecovery } from '../integrations/openspec/openspec-archive-service.js';
 
@@ -83,7 +88,7 @@ export async function inspectPreparedRun(
   const snapshot = await readSnapshot(repoRoot, deliveryId);
   const change = getActiveChange(snapshot);
   if (change === null) {
-    const persistedArchive = await findPersistedPendingArchive(repoRoot, deliveryId);
+    const persistedArchive = await findPersistedPendingArchive(repoRoot, deliveryId, snapshot);
     if (persistedArchive !== undefined) {
       return inspectPersistedPendingArchive(repoRoot, deliveryId, snapshot, persistedArchive);
     }
@@ -147,6 +152,18 @@ export interface RecoverContractResetPendingResult {
   readonly cancellationReason: 'superseded-by-owner-contract-reset';
 }
 
+export interface RecoverArchiveTerminalInput {
+  readonly repoRoot: string;
+  readonly deliveryId: string;
+}
+
+export interface RecoverArchiveTerminalResult {
+  readonly runId: string;
+  readonly changeId: string;
+  readonly status: 'completed';
+  readonly archivedAs: string;
+}
+
 interface RunDescriptors {
   readonly consumedRunId?: string;
   readonly reviewedRunId?: string;
@@ -181,20 +198,22 @@ export async function prepareActionExecution(
   const snapshot = await readSnapshot(input.repoRoot, input.deliveryId);
   assertConflictFree(snapshot);
 
-  const pendingArchive = await findPersistedPendingArchive(input.repoRoot, input.deliveryId);
-  if (pendingArchive !== undefined) {
-    if (input.entry !== 'next') {
-      throw new FlowkitError(
-        'RUN_PREPARATION_NOT_ALLOWED',
-        'A persisted pending archive may only resume through the normal next entry',
-      );
-    }
-    return resumePendingArchive(input, snapshot, pendingArchive);
-  }
-
+  // D2: bind normal preparation to the current active Change before consulting
+  // Delivery-wide historical archive continuations. A checkpointed historical
+  // terminal-observation (for example D1/085) must never steal D2/E1 execution.
   const change = getActiveChange(snapshot);
   if (change === null) {
-    throw new FlowkitError('RUN_PREPARATION_NOT_ALLOWED', 'B1 preparation requires one active Change');
+    const pendingArchive = await findPersistedPendingArchive(input.repoRoot, input.deliveryId, snapshot);
+    if (pendingArchive !== undefined) {
+      if (input.entry !== 'next') {
+        throw new FlowkitError(
+          'RUN_PREPARATION_NOT_ALLOWED',
+          'A persisted pending archive may only resume through the normal next entry',
+        );
+      }
+      return resumePendingArchive(input, snapshot, pendingArchive);
+    }
+    throw new FlowkitError('RUN_PREPARATION_NOT_ALLOWED', 'B1 preparation requires one active Change or one relevant pending archive continuation');
   }
 
   const policy = input.entry === 'next' ? next(snapshot) : resolveReview(snapshot);
@@ -278,6 +297,9 @@ export async function prepareActionExecution(
     ownerAuthorization,
     semanticInputFingerprint: semantic.semanticInputFingerprint,
     ownerFactRefs: semantic.ownerFactRefs,
+    ...(action === 'archive' && semantic.openSpecContext !== undefined && {
+      archiveEntryOpenSpecProjection: buildArchiveEntryOpenSpecProjection(semantic.openSpecContext),
+    }),
     ...descriptors,
     constraints: constraintsForAction(action),
     actionMd: renderPreparedActionMd({
@@ -305,6 +327,7 @@ export async function prepareActionExecution(
 async function findPersistedPendingArchive(
   repoRoot: string,
   deliveryId: string,
+  snapshot: FormalFactSnapshot,
 ): Promise<ContextFile | undefined> {
   const deliveryRunsDir = join(repoRoot, RUNS_PREFIX, deliveryId);
   let changeEntries;
@@ -339,15 +362,55 @@ async function findPersistedPendingArchive(
     }
   }
 
-  const archives = pending.filter((context) => context.action === 'archive');
+  const relevantChangeIds = new Set(getCompletedUncheckpointedChanges(snapshot).map((change) => change.id));
+  const archives = pending.filter(
+    (context) => context.action === 'archive' && relevantChangeIds.has(context.changeId),
+  );
   if (archives.length === 0) return undefined;
-  if (pending.length !== 1 || archives.length !== 1) {
+  if (archives.length !== 1) {
     throw new FlowkitError(
       'AMBIGUOUS_PENDING_RUNS',
-      `Delivery has multiple persisted pending Runs while archive recovery is required: ${pending.map((run) => run.runId).sort().join(', ')}`,
+      `Delivery has multiple lifecycle-relevant pending archives: ${archives.map((run) => run.runId).sort().join(', ')}`,
     );
   }
   return archives[0];
+}
+
+async function findPersistedPendingArchiveCandidates(
+  repoRoot: string,
+  deliveryId: string,
+): Promise<readonly ContextFile[]> {
+  const deliveryRunsDir = join(repoRoot, RUNS_PREFIX, deliveryId);
+  let changeEntries;
+  try {
+    changeEntries = await readdir(deliveryRunsDir, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+  const archives: ContextFile[] = [];
+  for (const changeEntry of changeEntries) {
+    if (!changeEntry.isDirectory() || changeEntry.name.startsWith('.')) continue;
+    const changeDir = join(deliveryRunsDir, changeEntry.name);
+    let runEntries;
+    try {
+      runEntries = await readdir(changeDir, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const runEntry of runEntries) {
+      if (!runEntry.isDirectory() || runEntry.name.startsWith('.')) continue;
+      const runDir = join(changeDir, runEntry.name);
+      if (await isFile(join(runDir, 'result.json'))) continue;
+      try {
+        const context = validateContextFile(JSON.parse(await readFile(join(runDir, 'context.json'), 'utf8')) as unknown);
+        if (context.deliveryId === deliveryId && context.action === 'archive') archives.push(context);
+      } catch {
+        // Explicit archive-terminal recovery is intentionally narrow: malformed
+        // historical Runs are not silently selected as recovery candidates.
+      }
+    }
+  }
+  return archives.sort((a, b) => a.runId.localeCompare(b.runId));
 }
 
 async function resumePendingArchive(
@@ -417,6 +480,106 @@ async function inspectPersistedPendingArchive(
   }
 }
 
+async function reconstructPersistedArchiveOpenSpecContext(
+  repoRoot: string,
+  existing: ContextFile,
+): Promise<OpenSpecPreparedActionContextView | undefined> {
+  if (existing.action !== 'archive') return undefined;
+
+  if (existing.archiveEntryOpenSpecProjection !== undefined) {
+    const currentVersion = await new OpenSpecCliAdapter({ repoRoot }).getVersion();
+    if (currentVersion !== existing.archiveEntryOpenSpecProjection.version) {
+      throw new FlowkitError(
+        'PENDING_INPUT_DRIFT',
+        `OpenSpec version changed after archive entry (${existing.archiveEntryOpenSpecProjection.version} → ${currentVersion})`,
+        { runId: existing.runId },
+      );
+    }
+    return openSpecContextFromArchiveProjection(existing.archiveEntryOpenSpecProjection);
+  }
+
+  // Historical v2/v3 archives predate the D2 keyed projection. Only a durable
+  // known-success observation may use the bounded legacy reconstruction path;
+  // ordinary pre-mutation pending archives keep the original active-status path.
+  const terminal = existing.archiveMutationGuard?.terminalObservation?.normalized;
+  if ((existing.schemaVersion === 2 || existing.schemaVersion === 3) && terminal?.kind === 'success') {
+    return reconstructLegacyArchiveOpenSpecContext(repoRoot, existing);
+  }
+  return undefined;
+}
+
+async function reconstructLegacyArchiveOpenSpecContext(
+  repoRoot: string,
+  existing: ContextFile,
+): Promise<OpenSpecPreparedActionContextView> {
+  const guard = existing.archiveMutationGuard;
+  const terminal = guard?.terminalObservation?.normalized;
+  if (guard === undefined || terminal?.kind !== 'success') {
+    throw new FlowkitError('OPENSPEC_ARCHIVE_RESULT_NOT_ADMISSIBLE', 'legacy archive reconstruction requires a durable success observation');
+  }
+  if (terminal.change !== existing.changeId) {
+    throw new FlowkitError('PENDING_INPUT_DRIFT', 'legacy archive observation change identity mismatch', {
+      runId: existing.runId, expected: existing.changeId, actual: terminal.change,
+    });
+  }
+  const expectedArchivePath = `${OPEN_SPEC_CHANGE_PREFIX}/archive/${terminal.archivedAs}`;
+  const archivedPath = normalizeSeparators(terminal.path);
+  if (
+    archivedPath !== expectedArchivePath
+    || archivedPath.startsWith('/')
+    || archivedPath.includes('\\')
+    || archivedPath.split('/').some((part) => part === '' || part === '..' || part === '.')
+  ) {
+    throw new FlowkitError('PENDING_INPUT_DRIFT', 'legacy archive observation path identity is not safely reconstructable', {
+      runId: existing.runId, path: terminal.path, expectedArchivePath,
+    });
+  }
+
+  const tempRoot = await mkdtemp(join(tmpdir(), 'flowkit-archive-terminal-'));
+  try {
+    const configSource = join(repoRoot, 'openspec/config.yaml');
+    const configTarget = join(tempRoot, 'openspec/config.yaml');
+    await mkdir(join(tempRoot, 'openspec/changes'), { recursive: true });
+    if (await isFile(configSource)) {
+      await mkdir(join(tempRoot, 'openspec'), { recursive: true });
+      await cp(configSource, configTarget);
+    }
+    const archivedSource = join(repoRoot, archivedPath);
+    if (!(await isDirectory(archivedSource))) {
+      throw new FlowkitError('PENDING_INPUT_DRIFT', 'legacy archive observation target is missing', {
+        runId: existing.runId, archivedPath,
+      });
+    }
+    const tempChangeRoot = join(tempRoot, guard.changeRoot);
+    await mkdir(join(tempChangeRoot, '..'), { recursive: true });
+    await cp(archivedSource, tempChangeRoot, { recursive: true, force: false });
+
+    const adapter = new OpenSpecCliAdapter({ repoRoot: tempRoot });
+    const version = await adapter.getVersion();
+    const status = await adapter.getChangeStatus(existing.changeId);
+    if (status.changeId !== existing.changeId || status.changeRootLogical !== guard.changeRoot) {
+      throw new FlowkitError('PENDING_INPUT_DRIFT', 'legacy disposable OpenSpec status returned a different Change identity', {
+        runId: existing.runId,
+        expectedChangeId: existing.changeId,
+        actualChangeId: status.changeId,
+        expectedChangeRoot: guard.changeRoot,
+        actualChangeRoot: status.changeRootLogical,
+      });
+    }
+    return {
+      version,
+      changeId: existing.changeId,
+      changeRootLogical: status.changeRootLogical,
+      artifactPaths: Object.fromEntries(OPENSPEC_SUPPORTED_ARTIFACT_IDS.map((artifactId) => [
+        artifactId,
+        [...status.artifactPaths[artifactId].logicalPaths].map(normalizeSeparators).sort(),
+      ])) as unknown as Readonly<Record<(typeof OPENSPEC_SUPPORTED_ARTIFACT_IDS)[number], readonly string[]>>,
+    };
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
+}
+
 async function recoverPersistedPendingArchive(
   repoRoot: string,
   deliveryId: string,
@@ -451,6 +614,7 @@ async function recoverPersistedPendingArchive(
     reviewVerdicts: recovered.reviewVerdicts,
   };
   const descriptors = deriveRunDescriptors(recoverySnapshot, existing.changeId, 'archive');
+  const archiveOpenSpecContext = await reconstructPersistedArchiveOpenSpecContext(repoRoot, existing);
   const semantic = await deriveSemanticInputs(
     repoRoot,
     deliveryId,
@@ -458,6 +622,7 @@ async function recoverPersistedPendingArchive(
     existing.changeId,
     'archive',
     descriptors,
+    archiveOpenSpecContext,
   );
   return { semantic, run };
 }
@@ -549,6 +714,7 @@ async function readPersistedChangeLineage(
       ...(context.semanticInputFingerprint !== undefined && {
         semanticInputFingerprint: context.semanticInputFingerprint,
       }),
+      ...(context.ownerFactRefs !== undefined && { ownerFactRefs: context.ownerFactRefs }),
       ...(context.sourceReviewRun !== undefined && { sourceReviewRun: context.sourceReviewRun }),
       ...(context.sourceReviewVerdict !== undefined && { sourceReviewVerdict: context.sourceReviewVerdict }),
       ...(context.reviewedRunId !== undefined && { reviewedRunId: context.reviewedRunId }),
@@ -605,6 +771,62 @@ export async function recoverContractResetPendingRun(
   const cancellationReason = 'superseded-by-owner-contract-reset' as const;
   await completeRun(runDir, { cancellationReason });
   return { runId: run.runId, action: run.action, status: 'cancelled', cancellationReason };
+}
+
+/**
+ * D2 bounded recovery for a durable known-success archive terminal observation.
+ * This is not a generic Run completion API: callers cannot choose a Run or
+ * provide a terminal payload, and OpenSpec archive is never respawned here.
+ */
+export async function recoverArchiveTerminalRun(
+  input: RecoverArchiveTerminalInput,
+): Promise<RecoverArchiveTerminalResult> {
+  const snapshot = await readSnapshot(input.repoRoot, input.deliveryId);
+  assertConflictFree(snapshot);
+  const candidates = await findPersistedPendingArchiveCandidates(input.repoRoot, input.deliveryId);
+  const eligible: ContextFile[] = [];
+  for (const candidate of candidates) {
+    const guard = candidate.archiveMutationGuard;
+    if (guard?.terminalObservation?.normalized.kind !== 'success') continue;
+    const classification = await inspectOpenSpecArchiveRecovery(
+      input.repoRoot,
+      join(input.repoRoot, candidate.runPath),
+    );
+    if (classification === 'known-success') eligible.push(candidate);
+  }
+  if (eligible.length !== 1) {
+    throw new FlowkitError(
+      'OPENSPEC_ARCHIVE_TERMINAL_RECOVERY_NOT_ALLOWED',
+      `archive-terminal recovery requires exactly one durable known-success pending archive; found ${eligible.length}`,
+      { candidateRunIds: eligible.map((candidate) => candidate.runId) },
+    );
+  }
+
+  const existing = eligible[0]!;
+  const recovered = await recoverPersistedPendingArchive(
+    input.repoRoot,
+    input.deliveryId,
+    snapshot,
+    existing,
+  );
+  assertRecoveredArchiveFingerprint(existing, recovered.semantic);
+  const terminal = existing.archiveMutationGuard!.terminalObservation!.normalized;
+  if (terminal.kind !== 'success') {
+    throw new FlowkitError('OPENSPEC_ARCHIVE_TERMINAL_RECOVERY_NOT_ALLOWED', 'eligible archive lost its success observation');
+  }
+
+  const descriptors = descriptorsFromContext(existing);
+  await completeRun(join(input.repoRoot, existing.runPath), {
+    executionStatus: 'completed',
+    summary: `OpenSpec archive completed as ${terminal.archivedAs}`,
+    ...(descriptors.consumedRunId !== undefined && { consumedRunIds: [descriptors.consumedRunId] }),
+  });
+  return {
+    runId: existing.runId,
+    changeId: existing.changeId,
+    status: 'completed',
+    archivedAs: terminal.archivedAs,
+  };
 }
 
 export async function admitActionResult(input: AdmitActionResultInput): Promise<void> {
@@ -695,24 +917,17 @@ export async function admitActionResult(input: AdmitActionResultInput): Promise<
   }
 
   if (pkg.run.action === 'archive') {
-    const persistedArchive = await findPersistedPendingArchive(input.repoRoot, input.deliveryId);
-    if (
-      persistedArchive === undefined
-      || persistedArchive.runId !== pkg.run.runId
-      || persistedArchive.changeId !== pkg.run.changeId
-    ) {
-      throw new FlowkitError(
-        'RUN_NOT_PENDING',
-        `Run ${pkg.run.runId} is not the persisted pending archive execution`,
-      );
-    }
+    // D2: bind terminal admission to the exact persisted archive Run from the
+    // Action Package, not to a Delivery-wide historical pending-Run scan.
+    // Post-relocation semantic reconstruction uses the Run's entry projection
+    // (or the bounded pre-D2 legacy adapter) and never requires active status.
     const recovered = await recoverPersistedPendingArchive(
       input.repoRoot,
       input.deliveryId,
       snapshot,
-      persistedArchive,
+      context,
     );
-    assertRecoveredArchiveFingerprint(persistedArchive, recovered.semantic);
+    assertRecoveredArchiveFingerprint(context, recovered.semantic);
     if (c1OpenSpecActive) {
       const recovery = await inspectOpenSpecArchiveRecovery(input.repoRoot, runDir);
       if (recovery !== 'known-success') {
@@ -867,6 +1082,35 @@ export async function buildOpenSpecPreparedActionContext(
 }
 
 
+export function buildArchiveEntryOpenSpecProjection(
+  view: OpenSpecPreparedActionContextView,
+): ArchiveEntryOpenSpecProjection {
+  return {
+    projectionVersion: 1,
+    version: view.version,
+    changeId: view.changeId,
+    changeRootLogical: normalizeSeparators(view.changeRootLogical),
+    artifactPaths: Object.fromEntries(OPENSPEC_SUPPORTED_ARTIFACT_IDS.map((artifactId) => [
+      artifactId,
+      [...view.artifactPaths[artifactId]].map(normalizeSeparators).sort(),
+    ])) as unknown as Readonly<Record<(typeof OPENSPEC_SUPPORTED_ARTIFACT_IDS)[number], readonly string[]>>,
+  };
+}
+
+function openSpecContextFromArchiveProjection(
+  projection: ArchiveEntryOpenSpecProjection,
+): OpenSpecPreparedActionContextView {
+  return {
+    version: projection.version,
+    changeId: projection.changeId,
+    changeRootLogical: projection.changeRootLogical,
+    artifactPaths: Object.fromEntries(OPENSPEC_SUPPORTED_ARTIFACT_IDS.map((artifactId) => [
+      artifactId,
+      [...projection.artifactPaths[artifactId]],
+    ])) as unknown as Readonly<Record<(typeof OPENSPEC_SUPPORTED_ARTIFACT_IDS)[number], readonly string[]>>,
+  };
+}
+
 export function fingerprintOpenSpecPreparedActionContext(
   view: OpenSpecPreparedActionContextView | undefined,
   action?: ChangeAction,
@@ -936,6 +1180,7 @@ async function deriveSemanticInputs(
   changeId: string,
   action: ChangeAction,
   descriptors: RunDescriptors,
+  archiveOpenSpecContextOverride?: OpenSpecPreparedActionContextView,
 ): Promise<SemanticInputs> {
   const definition = getActionDefinition(action);
   const contractRefs = await collectContractRefs(
@@ -944,6 +1189,7 @@ async function deriveSemanticInputs(
     snapshot,
     changeId,
     action,
+    archiveOpenSpecContextOverride,
   );
   const handoffRefs = await collectHandoffRefs(repoRoot, deliveryId, changeId, descriptors);
   const reviewView = await buildRelevantReviewView(repoRoot, deliveryId, snapshot, changeId, action, descriptors);
@@ -957,7 +1203,7 @@ async function deriveSemanticInputs(
     action,
     descriptors,
   );
-  const openSpecContext = await buildOpenSpecPreparedActionContext(repoRoot, changeId, action);
+  const openSpecContext = archiveOpenSpecContextOverride ?? await buildOpenSpecPreparedActionContext(repoRoot, changeId, action);
   const externalContextFingerprint = fingerprintOpenSpecPreparedActionContext(openSpecContext, action);
 
   const semanticInputFingerprint = sha256(stableStringify(buildSemanticDescriptor({
@@ -991,17 +1237,8 @@ function computeResetAwareLineage(
   changeId: string,
   stage: Stage,
 ): ReturnType<typeof computeLineage> {
-  if (detectStage(snapshot.runs, changeId) !== stage) {
-    return computeLineage(snapshot.runs, snapshot.reviewVerdicts, changeId, stage);
-  }
-  const resetRefs = currentContractResetRefs(snapshot.ownerDecisionFacts, changeId);
-  if (resetRefs.length === 0) {
-    return computeLineage(snapshot.runs, snapshot.reviewVerdicts, changeId, stage);
-  }
-  const runs = snapshot.runs.filter((run) => run.changeId !== changeId || runMatchesContractResetIdentity(run, resetRefs));
-  const runIds = new Set(runs.map((run) => run.runId));
-  const verdicts = snapshot.reviewVerdicts.filter((verdict) => runIds.has(verdict.reviewRunId));
-  return computeLineage(runs, verdicts, changeId, stage);
+  const current = projectCurrentContractResetLifecycle(snapshot, changeId);
+  return computeLineage(current.runs, current.reviewVerdicts, changeId, stage);
 }
 
 function deriveRunDescriptors(
@@ -1098,11 +1335,20 @@ async function collectContractRefs(
   snapshot: FormalFactSnapshot,
   changeId: string,
   action: ChangeAction,
+  archiveOpenSpecContextOverride?: OpenSpecPreparedActionContextView,
 ): Promise<readonly VersionedAuthorityRef[]> {
   const refs: VersionedAuthorityRef[] = [];
   const c1Active = await isOpenSpecThinIntegrationActive(repoRoot, changeId);
-  const status = c1Active ? await new OpenSpecCliAdapter({ repoRoot }).getChangeStatus(changeId) : undefined;
-  const changeRoot = status?.changeRootLogical ?? `${OPEN_SPEC_CHANGE_PREFIX}/${changeId}`;
+  const archiveOverride = action === 'archive' ? archiveOpenSpecContextOverride : undefined;
+  if (archiveOverride !== undefined && archiveOverride.changeId !== changeId) {
+    throw new FlowkitError('PENDING_INPUT_DRIFT', 'archive OpenSpec entry projection change identity mismatch', {
+      expected: changeId, actual: archiveOverride.changeId,
+    });
+  }
+  const status = c1Active && archiveOverride === undefined
+    ? await new OpenSpecCliAdapter({ repoRoot }).getChangeStatus(changeId)
+    : undefined;
+  const changeRoot = archiveOverride?.changeRootLogical ?? status?.changeRootLogical ?? `${OPEN_SPEC_CHANGE_PREFIX}/${changeId}`;
   const metadata = `${changeRoot}/.openspec.yaml`;
   const metadataRef = action === 'archive'
     ? await versionedActiveOrArchivedChangeFileRef(repoRoot, changeId, metadata, 'openspec-metadata')
@@ -1114,24 +1360,32 @@ async function collectContractRefs(
   const stage = contractGenerationStage(action);
   if (stage === undefined) return sortRefs(refs);
 
-  const producer = computeLineage(snapshot.runs, snapshot.reviewVerdicts, changeId, stage).artifact;
+  const producer = computeResetAwareLineage(snapshot, changeId, stage).artifact;
   if (producer === null) {
     throw new FlowkitError('RUN_PREPARATION_BINDING_MISSING', `${action} has no immutable ${stage} producer generation`);
   }
   const produced = await readProducedAuthorityRefs(repoRoot, deliveryId, changeId, producer.runId);
-  const stageIdentities = c1Active && status !== undefined
+  const structuredArtifactPaths = archiveOverride !== undefined
+    ? archiveOverride.artifactPaths
+    : status !== undefined
+      ? Object.fromEntries(OPENSPEC_SUPPORTED_ARTIFACT_IDS.map((artifactId) => [
+          artifactId,
+          status.artifactPaths[artifactId].logicalPaths,
+        ])) as unknown as Readonly<Record<(typeof OPENSPEC_SUPPORTED_ARTIFACT_IDS)[number], readonly string[]>>
+      : undefined;
+  const stageIdentities = c1Active && structuredArtifactPaths !== undefined
     ? new Set(stage === 'explore'
-      ? [`${status.changeRootLogical}/explore.md`]
+      ? [`${changeRoot}/explore.md`]
       : [
-          ...status.artifactPaths.proposal.logicalPaths,
-          ...status.artifactPaths.design.logicalPaths,
-          ...status.artifactPaths.tasks.logicalPaths,
-          ...status.artifactPaths.specs.logicalPaths,
+          ...structuredArtifactPaths.proposal,
+          ...structuredArtifactPaths.design,
+          ...structuredArtifactPaths.tasks,
+          ...structuredArtifactPaths.specs,
         ])
     : undefined;
 
-  const currentTasksRef = c1Active && status !== undefined
-    ? requireExactlyOnePath(status.artifactPaths.tasks.logicalPaths, changeId, 'tasks')
+  const currentTasksRef = c1Active && structuredArtifactPaths !== undefined
+    ? requireExactlyOnePath(structuredArtifactPaths.tasks, changeId, 'tasks')
     : `${OPEN_SPEC_CHANGE_PREFIX}/${changeId}/tasks.md`;
 
   // Apply execution consumes OpenSpec's structured contextFiles, not a second
@@ -1159,7 +1413,7 @@ async function collectContractRefs(
     if (tasks !== undefined) refs.push(tasks);
   }
 
-  await assertImmutableContractRefsForAction(repoRoot, refs, changeId, action, status?.changeRootLogical);
+  await assertImmutableContractRefsForAction(repoRoot, refs, changeId, action, changeRoot);
   return sortRefs(refs);
 }
 
@@ -1818,6 +2072,14 @@ function canonicalize(value: unknown): unknown {
 
 function sha256(value: string | Uint8Array): string {
   return createHash('sha256').update(value).digest('hex');
+}
+
+async function isDirectory(path: string): Promise<boolean> {
+  try {
+    return (await stat(path)).isDirectory();
+  } catch {
+    return false;
+  }
 }
 
 async function isFile(path: string): Promise<boolean> {

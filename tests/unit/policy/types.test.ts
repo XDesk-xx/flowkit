@@ -56,6 +56,7 @@ describe('policy types (task 1.1-1.7, 10.1)', () => {
         'full-test-failed',
         'non-author-review-blocker',
         'delivery-behavior-not-implemented',
+        'archive-terminal-recovery-required',
       ];
       assert.deepEqual([...BLOCKED_REASONS], [...expected]);
     });

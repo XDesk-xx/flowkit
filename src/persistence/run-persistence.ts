@@ -68,7 +68,7 @@ import {
   VERIFICATION_SUMMARY_KIND,
 } from './result-ref-adapter.js';
 import { validateCandidateRunId } from './run-id-fs.js';
-import type { ArchiveMutationGuard } from '../integrations/openspec/openspec-types.js';
+import type { ArchiveMutationGuard, ArchiveEntryOpenSpecProjection } from '../integrations/openspec/openspec-types.js';
 import {
   artifactStage,
   latestCompletedArtifactRunId,
@@ -102,6 +102,8 @@ export interface CreateRunInput {
   readonly semanticInputFingerprint?: string;
   /** Bootstrap/D1 bounded applicable Owner facts persisted for detached handoff. */
   readonly ownerFactRefs?: readonly import('../domain/types.js').OwnerFactRef[];
+  /** D2 archive-only keyed OpenSpec entry projection. */
+  readonly archiveEntryOpenSpecProjection?: ArchiveEntryOpenSpecProjection;
   /**
    * Q1: Typed descriptor for the Run whose result.json is the input.
    * Core reads this Run's result.json and derives `context.inputRef`.
@@ -1959,7 +1961,7 @@ function buildContextFile(
   verificationInputRef: ResultRef | undefined,
 ): ContextFile {
   const contextFile: ContextFile = {
-    schemaVersion: 3,
+    schemaVersion: 4,
     runId: input.runId,
     deliveryId: input.deliveryId,
     action: input.action,
@@ -1969,6 +1971,7 @@ function buildContextFile(
       semanticInputFingerprint: input.semanticInputFingerprint,
     }),
     ...(input.ownerFactRefs !== undefined && { ownerFactRefs: input.ownerFactRefs }),
+    ...(input.archiveEntryOpenSpecProjection !== undefined && { archiveEntryOpenSpecProjection: input.archiveEntryOpenSpecProjection }),
     runPath,
     changeKey: input.changeKey,
     changeId: input.changeId,

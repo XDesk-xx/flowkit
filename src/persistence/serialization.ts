@@ -52,6 +52,8 @@ import {
   type ArchiveMutationGuard,
   type OpenSpecArchiveSuccessObservation,
   type OpenSpecArchiveFailureObservation,
+  type ArchiveEntryOpenSpecProjection,
+  OPENSPEC_SUPPORTED_ARTIFACT_IDS,
 } from '../integrations/openspec/openspec-types.js';
 
 // ---------------------------------------------------------------------------
@@ -199,8 +201,8 @@ export interface ContextFileConstraints {
  * `revise-*` Run.
  */
 export interface ContextFile {
-  /** C1/D1 format marker. Historical v2 remains read-only compatible; new Runs write v3. */
-  readonly schemaVersion: 2 | 3;
+  /** C1/D1/D2 format marker. Historical v2/v3 remain read-only compatible; new Runs write v4. */
+  readonly schemaVersion: 2 | 3 | 4;
   readonly runId: string;
   readonly deliveryId: string;
   /** Every current schemaVersion 2 Run is Change-scoped. */
@@ -232,6 +234,8 @@ export interface ContextFile {
   readonly sourceReviewVerdict?: ReviewVerdictValue;
   /** Run being reviewed by a `review-*` Run (C1-AP-004 canonical linkage). */
   readonly reviewedRunId?: string;
+  /** D2 future archive entry semantic projection; v4 archive-only. */
+  readonly archiveEntryOpenSpecProjection?: ArchiveEntryOpenSpecProjection;
   /** C1 OpenSpec archive-only machine operational recovery field. */
   readonly archiveMutationGuard?: ArchiveMutationGuard;
   readonly constraints?: ContextFileConstraints;
@@ -1234,9 +1238,9 @@ export function validateReviewVerdictIntegrity(
 export function validateContextFile(value: unknown): ContextFile {
   const obj = asObject(value, 'ContextFile');
 
-  // Historical C1 v2 remains readable; D1 current writers use v3.
-  if (obj['schemaVersion'] !== 2 && obj['schemaVersion'] !== 3) {
-    schemaFail('ContextFile.schemaVersion must equal 2 or 3', { schemaVersion: obj['schemaVersion'] });
+  // Historical C1/D1 v2/v3 remain readable; D2 current writers use v4.
+  if (obj['schemaVersion'] !== 2 && obj['schemaVersion'] !== 3 && obj['schemaVersion'] !== 4) {
+    schemaFail('ContextFile.schemaVersion must equal 2, 3, or 4', { schemaVersion: obj['schemaVersion'] });
   }
   const schemaVersion = obj['schemaVersion'];
 
@@ -1331,7 +1335,7 @@ export function validateContextFile(value: unknown): ContextFile {
     if (new Set(refs).size !== refs.length) schemaFail('ownerFactRefs must not contain duplicate refs');
   }
 
-  // Current schemaVersion 2/3 Standard Runs are Change-only.
+  // Current schemaVersion 2/3/4 Standard Runs are Change-only.
   if (!isChangeAction(action)) {
     throw new FlowkitError('UNKNOWN_ACTION', `Unknown Change action: ${action}`, { action });
   }
@@ -1520,6 +1524,12 @@ export function validateContextFile(value: unknown): ContextFile {
     reviewedRunId = s;
   }
 
+  const archiveEntryOpenSpecProjection = validateArchiveEntryOpenSpecProjection(
+    obj['archiveEntryOpenSpecProjection'],
+    schemaVersion,
+    action as ChangeAction,
+    changeId,
+  );
   const archiveMutationGuard = validateArchiveMutationGuard(obj['archiveMutationGuard'], action as ChangeAction);
 
   // constraints (optional object).
@@ -1533,7 +1543,7 @@ export function validateContextFile(value: unknown): ContextFile {
     role: role as Role,
     ownerAuthorization,
     ...(semanticInputFingerprint !== undefined && { semanticInputFingerprint }),
-    ...(schemaVersion === 3 && ownerFactRefs !== undefined && { ownerFactRefs }),
+    ...((schemaVersion === 3 || schemaVersion === 4) && ownerFactRefs !== undefined && { ownerFactRefs }),
     runPath,
     changeKey,
     changeId,
@@ -1542,10 +1552,100 @@ export function validateContextFile(value: unknown): ContextFile {
     ...(sourceReviewRun !== undefined && { sourceReviewRun }),
     ...(sourceReviewVerdict !== undefined && { sourceReviewVerdict }),
     ...(reviewedRunId !== undefined && { reviewedRunId }),
+    ...(archiveEntryOpenSpecProjection !== undefined && { archiveEntryOpenSpecProjection }),
     ...(archiveMutationGuard !== undefined && { archiveMutationGuard }),
     ...(constraints !== undefined && { constraints }),
   };
   return result;
+}
+
+function validateArchiveEntryOpenSpecProjection(
+  value: unknown,
+  schemaVersion: 2 | 3 | 4,
+  action: ChangeAction,
+  changeId: string,
+): ArchiveEntryOpenSpecProjection | undefined {
+  if (value === undefined) {
+    // C1 pre-thin-integration archive fixtures/historical bootstrap paths have
+    // no structured OpenSpec entry view to persist. The high-level B1
+    // preparation path MUST supply this projection whenever structured
+    // OpenSpec integration is active; the serializer only enforces that a
+    // supplied projection is archive-only/current-schema and structurally
+    // exact.
+    return undefined;
+  }
+  if (schemaVersion !== 4) {
+    schemaFail('archiveEntryOpenSpecProjection is only allowed on schemaVersion 4 Runs', { schemaVersion, action });
+  }
+  if (action !== 'archive') {
+    schemaFail('archiveEntryOpenSpecProjection is only allowed on archive Runs', { action });
+  }
+  const obj = asObject(value, 'archiveEntryOpenSpecProjection');
+  const known = new Set(['projectionVersion', 'version', 'changeId', 'changeRootLogical', 'artifactPaths']);
+  for (const key of Object.keys(obj)) {
+    if (!known.has(key)) schemaFail(`archiveEntryOpenSpecProjection contains unknown field: ${key}`);
+  }
+  if (obj['projectionVersion'] !== 1) {
+    schemaFail('archiveEntryOpenSpecProjection.projectionVersion must equal 1');
+  }
+  const version = requireNonEmptyString(obj, 'version');
+  const projectedChangeId = requireNonEmptyString(obj, 'changeId');
+  if (projectedChangeId !== changeId) {
+    schemaFail('archiveEntryOpenSpecProjection.changeId must match ContextFile.changeId', {
+      projectedChangeId, changeId,
+    });
+  }
+  const changeRootLogical = requireNonEmptyString(obj, 'changeRootLogical');
+  if (
+    changeRootLogical.startsWith('/')
+    || changeRootLogical.includes('\\')
+    || changeRootLogical.split('/').some((part) => part === '' || part === '..' || part === '.')
+  ) {
+    schemaFail('archiveEntryOpenSpecProjection.changeRootLogical must be a normalized repo-relative POSIX path', {
+      changeRootLogical,
+    });
+  }
+  const artifactPathsObj = asObject(obj['artifactPaths'], 'archiveEntryOpenSpecProjection.artifactPaths');
+  const expectedKeys = [...OPENSPEC_SUPPORTED_ARTIFACT_IDS];
+  const actualKeys = Object.keys(artifactPathsObj).sort();
+  const sortedExpected = [...expectedKeys].sort();
+  if (actualKeys.length !== sortedExpected.length || actualKeys.some((key, index) => key !== sortedExpected[index])) {
+    schemaFail('archiveEntryOpenSpecProjection.artifactPaths must use the closed OpenSpec artifact-id shape', {
+      expected: sortedExpected,
+      actual: actualKeys,
+    });
+  }
+  const artifactPaths = Object.fromEntries(OPENSPEC_SUPPORTED_ARTIFACT_IDS.map((artifactId) => {
+    const raw = artifactPathsObj[artifactId];
+    if (!Array.isArray(raw) || raw.some((path) => typeof path !== 'string' || path.trim() === '')) {
+      schemaFail(`archiveEntryOpenSpecProjection.artifactPaths.${artifactId} must be a string array`);
+    }
+    const paths = (raw as string[]).map((path) => normalizeSeparators(path));
+    for (const path of paths) {
+      if (
+        path.startsWith('/')
+        || path.includes('\\')
+        || path.split('/').some((part) => part === '' || part === '..' || part === '.')
+        || !path.startsWith(`${changeRootLogical}/`)
+      ) {
+        schemaFail(`archiveEntryOpenSpecProjection.artifactPaths.${artifactId} must contain normalized paths under changeRootLogical`, {
+          path, changeRootLogical,
+        });
+      }
+    }
+    const normalized = [...new Set(paths)].sort();
+    if (normalized.length !== paths.length || normalized.some((path, index) => path !== paths[index])) {
+      schemaFail(`archiveEntryOpenSpecProjection.artifactPaths.${artifactId} must be normalized sorted unique paths`);
+    }
+    return [artifactId, normalized] as const;
+  })) as unknown as Readonly<Record<(typeof OPENSPEC_SUPPORTED_ARTIFACT_IDS)[number], readonly string[]>>;
+  return {
+    projectionVersion: 1,
+    version,
+    changeId,
+    changeRootLogical,
+    artifactPaths,
+  };
 }
 
 function validateArchiveMutationGuard(value: unknown, action: ChangeAction): ArchiveMutationGuard | undefined {

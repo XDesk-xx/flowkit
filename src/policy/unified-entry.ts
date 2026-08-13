@@ -23,7 +23,7 @@ import {
   blockedResult,
 } from './types.js';
 import { canRun } from './can-run.js';
-import { detectStage, reviewAction, reviseAction } from './stage-detector.js';
+import { detectCurrentStage, reviewAction, reviseAction } from './stage-detector.js';
 import type { Stage } from './stage-detector.js';
 import { getActiveChange } from './preconditions.js';
 import { ambiguousStateDiagnosis } from './blocked-diagnosis.js';
@@ -49,7 +49,7 @@ export function resolveReview(snapshot: FormalFactSnapshot): PolicyResult {
       ambiguousStateDiagnosis('review: no active Change to review'),
     );
   }
-  const stage = detectStage(snapshot.runs, change.id);
+  const stage = detectCurrentStage(snapshot, change.id);
   if (!(REVIEWABLE_STAGES as readonly string[]).includes(stage)) {
     return blockedResult(
       ambiguousStateDiagnosis(`review: stage ${stage} has no review action`),
@@ -82,7 +82,7 @@ export function resolveRevise(snapshot: FormalFactSnapshot): PolicyResult {
       ambiguousStateDiagnosis('revise: no active Change to revise'),
     );
   }
-  const stage = detectStage(snapshot.runs, change.id);
+  const stage = detectCurrentStage(snapshot, change.id);
   if (!(REVIEWABLE_STAGES as readonly string[]).includes(stage)) {
     return blockedResult(
       ambiguousStateDiagnosis(`revise: stage ${stage} has no revise action`),

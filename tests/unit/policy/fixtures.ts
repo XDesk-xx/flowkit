@@ -7,6 +7,7 @@
  */
 
 import type { ChangeAction } from '../../../src/domain/actions.js';
+import type { OwnerFactRef } from '../../../src/domain/types.js';
 import type {
   ChangeState,
   DeliveryState,
@@ -16,12 +17,14 @@ import type {
   RunStatus,
 } from '../../../src/domain/types.js';
 import type {
+  ArchiveTerminalFact,
   ChangeFact,
   FactConflict,
   FormalFactSnapshot,
   GitBoundaryFact,
   OpenSpecArtifactFact,
   OwnerAuthorizationFact,
+  OwnerDecisionFact,
   ReviewVerdictFact,
   RunFact,
 } from '../../../src/facts/formal-fact-snapshot.js';
@@ -62,6 +65,7 @@ export interface RunSpec {
   readonly status?: RunStatus;
   readonly changeId?: string;
   readonly role?: 'owner' | 'author' | 'reviewer';
+  readonly ownerFactRefs?: readonly OwnerFactRef[];
 }
 
 /**
@@ -78,6 +82,7 @@ export function buildRun(spec: RunSpec): RunFact {
     action: spec.action,
     role: spec.role ?? 'author',
     status: spec.status ?? 'completed',
+    ...(spec.ownerFactRefs !== undefined ? { ownerFactRefs: spec.ownerFactRefs } : {}),
   };
 }
 
@@ -164,7 +169,9 @@ export interface SnapshotSpec {
   readonly runs?: readonly RunFact[];
   readonly reviewVerdicts?: readonly ReviewVerdictFact[];
   readonly ownerAuthorizations?: readonly OwnerAuthorizationFact[];
+  readonly ownerDecisionFacts?: readonly OwnerDecisionFact[];
   readonly gitBoundaries?: readonly GitBoundaryFact[];
+  readonly checkpointArchiveTerminal?: ArchiveTerminalFact;
   readonly openSpecArtifacts?: readonly OpenSpecArtifactFact[];
   readonly conflicts?: readonly FactConflict[];
 }
@@ -180,7 +187,9 @@ export function buildSnapshot(spec: SnapshotSpec = {}): FormalFactSnapshot {
     runs: spec.runs ?? [],
     reviewVerdicts: spec.reviewVerdicts ?? [],
     ownerAuthorizations: spec.ownerAuthorizations ?? [],
+    ...(spec.ownerDecisionFacts !== undefined ? { ownerDecisionFacts: spec.ownerDecisionFacts } : {}),
     gitBoundaries: spec.gitBoundaries ?? [],
+    ...(spec.checkpointArchiveTerminal !== undefined && { checkpointArchiveTerminal: spec.checkpointArchiveTerminal }),
     openSpecArtifacts: spec.openSpecArtifacts ?? [],
     conflicts: spec.conflicts ?? [],
   };

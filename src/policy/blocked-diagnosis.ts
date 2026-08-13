@@ -172,3 +172,13 @@ export function deliveryBehaviorNotImplementedDiagnosis(
     `delivery-behavior-not-implemented:${behavior}`,
   ]);
 }
+
+export function archiveTerminalRecoveryRequiredDiagnosis(
+  changeId: string,
+  status: string,
+  runId?: string,
+): BlockedDiagnosis {
+  return blockedDiagnosis('archive-terminal-recovery-required', [
+    `archive-terminal:${changeId}:${status}${runId === undefined ? '' : `:${runId}`}`,
+  ]);
+}

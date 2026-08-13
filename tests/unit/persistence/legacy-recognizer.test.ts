@@ -86,6 +86,12 @@ describe('discriminateRun — three-way discriminator', () => {
     if (result.kind === 'c1') assert.equal(result.contextFile.schemaVersion, 3);
   });
 
+  it('schemaVersion === 4 → current D2 Run path', () => {
+    const result = discriminateRun({ ...c1Context, schemaVersion: 4 }, runDir);
+    assert.equal(result.kind, 'c1');
+    if (result.kind === 'c1') assert.equal(result.contextFile.schemaVersion, 4);
+  });
+
   it('schemaVersion === 1 → legacy path, does not call validateContextFile (task 12.49)', () => {
     const legacy = {
       schemaVersion: 1,

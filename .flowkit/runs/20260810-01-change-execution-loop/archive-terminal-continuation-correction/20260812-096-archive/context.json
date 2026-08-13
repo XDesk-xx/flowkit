@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 4,
+  "runId": "20260812-096-archive",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "archive",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "semanticInputFingerprint": "deac00c701d22eb02d6e1aecef0d00e3010705c88f32d9588316363c187c816a",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/archive-terminal-continuation-correction/20260812-096-archive/",
+  "changeKey": "D2",
+  "changeId": "archive-terminal-continuation-correction",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/archive-terminal-continuation-correction/20260812-095-review-apply/result.json",
+    "versionFingerprint": "a49827f71083256ae8513391c787929c22c52009339854c0c9270ba916a3acdb",
+    "kind": "run-result"
+  },
+  "archiveEntryOpenSpecProjection": {
+    "projectionVersion": 1,
+    "version": "1.7.0",
+    "changeId": "archive-terminal-continuation-correction",
+    "changeRootLogical": "openspec/changes/archive-terminal-continuation-correction",
+    "artifactPaths": {
+      "proposal": [
+        "openspec/changes/archive-terminal-continuation-correction/proposal.md"
+      ],
+      "specs": [
+        "openspec/changes/archive-terminal-continuation-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "openspec/changes/archive-terminal-continuation-correction/specs/flowkit-lean-run-and-action-package/spec.md",
+        "openspec/changes/archive-terminal-continuation-correction/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+        "openspec/changes/archive-terminal-continuation-correction/specs/flowkit-policy-engine/spec.md"
+      ],
+      "design": [
+        "openspec/changes/archive-terminal-continuation-correction/design.md"
+      ],
+      "tasks": [
+        "openspec/changes/archive-terminal-continuation-correction/tasks.md"
+      ]
+    }
+  },
+  "archiveMutationGuard": {
+    "state": "armed",
+    "surfaceVersion": "openspec-archive-mutation-v1",
+    "changeRoot": "openspec/changes/archive-terminal-continuation-correction",
+    "canonicalSpecsRoot": "openspec/specs",
+    "archiveNamespaceRoot": "openspec/changes/archive",
+    "preArchiveGenerationFingerprint": "872e25651b44c694d23c4b1718f585890639d18ddea3789e39d9e76590f257ef",
+    "terminalObservation": {
+      "kind": "failure",
+      "resultFingerprint": "38284352362ab0bcf32afe692e0dc4ae6be653d1e74fee9feaa62674dec87909",
+      "normalized": {
+        "kind": "failure",
+        "exitCode": 1,
+        "status": [
+          {
+            "severity": "error",
+            "code": "archive_spec_update_failed"
+          }
+        ]
+      }
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

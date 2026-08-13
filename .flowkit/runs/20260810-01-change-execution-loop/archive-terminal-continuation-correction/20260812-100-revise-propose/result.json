@@ -1,0 +1,50 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-propose",
+    "executionStatus": "completed",
+    "summary": "根据099的D2-RP-002修订Proposal：Contract Reset currentness覆盖propose/revise-propose/review-propose与apply/revise-apply/review-apply全部同stage actions，旧090/094只能作为immutable history；补齐stage/currentArtifactRun/review/producer binding与regression acceptance，不新增generation framework。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/archive-terminal-continuation-correction/design.md",
+        "versionFingerprint": "6ad13f280620b613fbc9d72fbef27bac2a3be4b774e73eedc5ba2f17e7f0362c",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-terminal-continuation-correction/proposal.md",
+        "versionFingerprint": "3fa21f2aac22f81e8392914dd898ad555579acedf75fc71bb84f4fd74fdec717",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-terminal-continuation-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "69e62b7a0169e2dd1a6cbd92ff6d652f954a8a2109541aa704cfa2cae12a2010",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-terminal-continuation-correction/specs/flowkit-lean-run-and-action-package/spec.md",
+        "versionFingerprint": "44f0189b588576dd2c7c77940b30b00b8b6d9f90e27da470bfada11e5a768ca0",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-terminal-continuation-correction/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+        "versionFingerprint": "d11fcd8ad87b7e88acdc1068ba4fe4c1b3c56622c21c6a9be5f5dbeb42114790",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-terminal-continuation-correction/specs/flowkit-policy-engine/spec.md",
+        "versionFingerprint": "6f4cf9e14d2c1f66a119d12294701668d98d789ea1161adefbb7a18a223d66cc",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-terminal-continuation-correction/tasks.md",
+        "versionFingerprint": "f467ac5afadd15b156da8270089a730394fcf55caf5c4bc99d1c918e94cb3a89",
+        "kind": "produced-artifact"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/archive-terminal-continuation-correction/20260812-099-review-propose/result.json",
+      "versionFingerprint": "b58632f0f45294c458a6f64d9e594bc12fc670d9b03674a252e43c9d8f35eb7a",
+      "kind": "run-result"
+    }
+  }
+}

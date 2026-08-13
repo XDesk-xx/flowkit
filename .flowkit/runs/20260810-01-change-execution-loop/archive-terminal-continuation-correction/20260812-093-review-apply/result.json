@@ -1,0 +1,41 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "092 主实现与现有 focused/affected/static verification 通过，但 approved Task 4.2 要求的 real OpenSpec 1.7 Flowkit archive terminal-continuation E2E 未实际新增；现有 real-cli test 只覆盖 OpenSpec adapter/archive guard，未证明 normal future archive 无需 recovery CLI 即完成 same Run → Change completed → checkpoint boundary。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/archive-terminal-continuation-correction/verification.md",
+      "versionFingerprint": "1056f778468c079d4fb2f9d8c67abecb3d75286652b56e073f38a1b9118bb9bf",
+      "kind": "verification-summary"
+    }
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "D2-RA-001",
+      "severity": "blocking",
+      "title": "approved Task 4.2 的 real OpenSpec Flowkit E2E 未实现却被标记完成",
+      "problem": "091-approved tasks 4.2 明确要求增加 real OpenSpec 1.7 integration/E2E，覆盖 archive structured success + relocation → same archive Run completed → Change completed → checkpoint Owner boundary。092 package 没有新增或修改 tests/integration/openspec-1-7-real-cli.test.ts，也没有其它 real-CLI E2E 文件；verification.md 所列 real OpenSpec check 仍是该既有 2-test suite，其内容只验证 OpenSpec status/instructions/apply/strict/archive 以及 archive mutation failure/recovery guard，没有调用 Flowkit prepare/admit/Policy 把 successful relocation 收口为同一 archive Run completed，再证明 checkpoint gate。",
+      "contractRef": "openspec/changes/archive-terminal-continuation-correction/tasks.md 4.2；flowkit-openspec-1-7-thin-integration D2 delta “structured success relocation 后同一 Run completed”；flowkit-policy-engine D2 checkpoint gate",
+      "invariant": "D2 必须用真实 OpenSpec 1.7 证明正常 future archive 路径可在原有 archive Action 内完成 terminal continuation，并且只有 archive Run terminal completed 后才暴露 Checkpoint；bounded recover archive-terminal 只能是 legacy/exceptional recovery，不能替代 normal-path E2E。",
+      "evidence": [
+        "092 package operations 只修改 unit tests；没有 tests/integration/openspec-1-7-real-cli.test.ts 或其它 real-CLI integration/E2E test mutation。",
+        "现有 tests/integration/openspec-1-7-real-cli.test.ts 的两个 tests 分别验证 adapter structured contract/archive success，以及 archive_target_exists mutation recovery；没有 prepareActionExecution/admitActionResult/next 的 normal future archive terminal-continuation chain。",
+        "verification.md 将 FLOWKIT_OPENSPEC_BIN real-cli suite 的 2 tests 记录为通过，同时 tasks.md 4.2 标为 [x]，但这 2 tests 不覆盖 4.2 描述的 Flowkit lifecycle acceptance。"
+      ],
+      "impact": "当前 unit/focused 证据支持实现方向，但缺少 approved contract 明确要求的真实 OpenSpec cross-boundary proof；因此不能确认真实 OpenSpec relocation 后 normal future archive 一定无需 explicit recovery surface 就能 same-Run terminalize，并正确进入 checkpoint gate。",
+      "location": "tests/integration/openspec-1-7-real-cli.test.ts / D2 Tasks 4.2 / verification.md Real OpenSpec 1.7 CLI",
+      "blockingAuthority": "author",
+      "requiredOutcome": "补充最小 real OpenSpec 1.7 Flowkit integration/E2E，使用 future schemaVersion 4 archive entry projection 走正常 archive path，真实产生 structured success + relocation，然后通过正常 B1 terminal admission完成同一 archive Run，投影 Change completed，并验证 next 仅在 archive Run terminal completed 后返回 authorize-checkpoint；该正常路径不得调用 recover archive-terminal。同步修正 tasks/verification，使其只声明实际执行过的覆盖。",
+      "acceptance": [
+        "real OpenSpec 1.7 test 实际执行 future archive entry → structured archive success/relocation → normal terminal admission，最终同一 archive Run result.json=completed。",
+        "同一测试或紧邻 integration test 证明 Change completed 且 matching archive Run terminal 后 next=owner-decision authorize-checkpoint；若 result 尚未 terminal，则 checkpoint gate 不得开放。",
+        "normal future E2E 不调用 recover archive-terminal；该 surface 继续只用于 bounded legacy/exception recovery。",
+        "测试使用真实 OpenSpec structured artifactPaths/projection，而不是 fake adapter 或手工 rename 代替真实 CLI relocation。"
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}

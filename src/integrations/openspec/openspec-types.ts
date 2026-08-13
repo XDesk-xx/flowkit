@@ -77,6 +77,19 @@ export interface OpenSpecPreparedActionContextView {
   readonly applyInstructions?: OpenSpecApplyInstructionsView;
 }
 
+/**
+ * D2 archive-only persisted entry projection. It deliberately preserves only
+ * the OpenSpec keyed identity needed to reconstruct the archive Action's
+ * external semantic context after the active Change has been relocated.
+ */
+export interface ArchiveEntryOpenSpecProjection {
+  readonly projectionVersion: 1;
+  readonly version: string;
+  readonly changeId: string;
+  readonly changeRootLogical: string;
+  readonly artifactPaths: Readonly<Record<OpenSpecArtifactId, readonly string[]>>;
+}
+
 export interface OpenSpecValidationIssue {
   readonly severity?: string;
   readonly path?: string;

@@ -221,11 +221,11 @@ async function writeApprovedProposeFixture(
 }
 
 describe('A1 owner provenance and architectureImpact', () => {
-  it('reads the exact pre-A1 3-Delivery / 21-Change corpus as explicit legacy unknown without self-brick', async () => {
+  it('reads the legacy corpus plus the current D2 explicit architectureImpact without self-brick', async () => {
     const expectedCounts: Readonly<Record<string, number>> = {
       '20260805-01-product-baseline': 5,
       '20260806-01-deterministic-core': 8,
-      '20260810-01-change-execution-loop': 8,
+      '20260810-01-change-execution-loop': 9,
     };
     for (const [deliveryId, expectedCount] of Object.entries(expectedCounts)) {
       const s = await readFormalFactSnapshot({
@@ -241,10 +241,23 @@ describe('A1 owner provenance and architectureImpact', () => {
         deliveryId,
       );
       assert.equal(s.changes.length, expectedCount, deliveryId);
-      assert.ok(
-        s.changes.every((change) => change.architectureImpact === 'pre-a1-legacy-missing'),
-        deliveryId,
-      );
+      if (deliveryId === '20260810-01-change-execution-loop') {
+        assert.equal(
+          s.changes.filter((change) => change.architectureImpact === 'pre-a1-legacy-missing').length,
+          8,
+          deliveryId,
+        );
+        assert.equal(
+          s.changes.find((change) => change.id === 'archive-terminal-continuation-correction')?.architectureImpact,
+          false,
+          deliveryId,
+        );
+      } else {
+        assert.ok(
+          s.changes.every((change) => change.architectureImpact === 'pre-a1-legacy-missing'),
+          deliveryId,
+        );
+      }
     }
   });
 
@@ -823,6 +836,29 @@ describe('A1 write CLI', () => {
       '    architectureImpact: false',
       '    outputs: []',
     ].join('\n'));
+
+    const archiveRunId = '20990108-001-archive';
+    const archiveRunDir = join(root, '.flowkit', 'runs', deliveryId, 'completed-change', archiveRunId);
+    await mkdir(archiveRunDir, { recursive: true });
+    await writeFile(join(archiveRunDir, 'context.json'), JSON.stringify({
+      schemaVersion: 2,
+      runId: archiveRunId,
+      deliveryId,
+      changeKey: 'A1',
+      changeId: 'completed-change',
+      action: 'archive',
+      role: 'author',
+      ownerAuthorization: 'explicit',
+      runPath: `.flowkit/runs/${deliveryId}/completed-change/${archiveRunId}/`,
+    }, null, 2) + '\n', 'utf8');
+    await writeFile(join(archiveRunDir, 'result.json'), JSON.stringify({
+      runStatus: 'completed',
+      actionResult: {
+        action: 'archive',
+        executionStatus: 'completed',
+        summary: 'archived',
+      },
+    }, null, 2) + '\n', 'utf8');
 
     const record = await runCli({
       argv: ['owner', 'record', '--decision', 'authorize-checkpoint', '--change', 'completed-change', '--source-ref', 'owner:cli-checkpoint'],

@@ -219,6 +219,20 @@ changes:
       - review convergence observation
 
 
+
+  - key: "D2"
+    id: "archive-terminal-continuation-correction"
+    goal: "修复 OpenSpec archive 已结构化成功并迁移 active Change 后，Flowkit archive terminal admission 仍依赖已移除 active Change 状态而无法闭合 pending Run 的缺口；使既有 085 terminal-observation 可通过正式 recovery/admission surface 闭合，并保证后续 archive 在相同 post-mutation 语义下直接 terminalize。"
+    required: true
+    dependsOn:
+      - "review-findings-and-blocker-authority"
+    state: completed
+    architectureImpact: false
+    outputs:
+      - "archive post-mutation terminal admission contract"
+      - "preArchive semantic identity 与 structured terminal observation 的 fail-closed validation"
+      - "existing 085 terminal-observation formal recovery"
+      - "future archive success relocation regression coverage"
 ownerDecisions:
   - ref: "owner:71a3cd250fc5674228d9617217e5a5423c7ee90b0c077e394e9767ce3c2de446"
     decision: "authorize-archive"
@@ -270,6 +284,55 @@ ownerDecisions:
     deliveryId: "20260810-01-change-execution-loop"
     changeId: "review-findings-and-blocker-authority"
     sourceRef: "owner-input:2026-08-12T20:59+08:00"
+  - ref: "owner:324daa33e2f17d01b4b2687df546bca2578864ede4594fe416ad1b4c66df3c81"
+    decision: "create-change"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "archive-terminal-continuation-correction"
+    sourceRef: "owner-input:2026-08-12T21:50+08:00:create-D2"
+  - ref: "owner:401b8fc46462652a0e06dcff9e746020e6f3b5b61a241207f62959282637ed7d"
+    decision: "activate-change"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "archive-terminal-continuation-correction"
+    sourceRef: "owner-input:2026-08-12T21:50+08:00:authorize-explore-D2"
+  - ref: "owner:4ba42a53b0dcf3794442456b5fee1d095f22cf0d200704b99c2d4bb8a9079cd1"
+    decision: "authorize-apply"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "archive-terminal-continuation-correction"
+    sourceRef: "owner-input:2026-08-13T00:40+08:00"
+  - ref: "owner:7bc932db8a5e3081b99b99b41bb81daa6b2cb1199f257bd512f486485ad924ae"
+    decision: "authorize-archive"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "archive-terminal-continuation-correction"
+    sourceRef: "owner-input:2026-08-13T01:50+08:00"
+  - ref: "owner:de0e7445c4615313a4a50ecde9d03379f44dc420cffbbfc757ab3a6dea175806"
+    decision: "contract-reset"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "archive-terminal-continuation-correction"
+    scope: "archive-sync-scenario-identity"
+    requiredOutcomes:
+      - "保留 archive Run terminal completed 后才允许 checkpoint 的新语义"
+      - "保留 canonical checkpoint scenario identity"
+    sourceRef: "owner-input:2026-08-13T02:03+08:00"
+  - ref: "owner:ea5bf797f441ad3abb1f62afc08026fc5cb1059ef2a253521f94ca7e6c3799e0"
+    decision: "contract-reset"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "archive-terminal-continuation-correction"
+    scope: "archive-sync-scenario-identity-and-reset-currentness-routing"
+    requiredOutcomes:
+      - "Abandon the current 097 apply generation; the new contract generation must follow normal propose producer -> review-propose -> apply -> review-apply -> archive currentness."
+      - "Close the reset-currentness routing inconsistency so stage, lineage, next, and formal preparation agree on the same current Contract Reset generation without introducing a generic generation-management framework."
+      - "Preserve canonical checkpoint scenario identity while retaining the semantic requirement that the matching archive Run must be terminal completed before checkpoint readiness."
+    sourceRef: "owner-input:2026-08-13T02:32+08:00"
+  - ref: "owner:75b112fdedcecbc6f6c5f934d62c96090015a49dd24aef205586d4d43470b829"
+    decision: "authorize-apply"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "archive-terminal-continuation-correction"
+    sourceRef: "owner-input:2026-08-13T03:10+08:00"
+  - ref: "owner:ae95653ad571076a36dfb9a5894f8225465be1207fc7cdd19189b598a940b7a1"
+    decision: "authorize-archive"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "archive-terminal-continuation-correction"
+    sourceRef: "owner-input:2026-08-13T07:56+08:00"
 verification:
   change:
     requireApplicableChecks: true

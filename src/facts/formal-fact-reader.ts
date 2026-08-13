@@ -41,6 +41,7 @@ import type {
   FactConflict,
   FormalFactSnapshot,
   GitBoundaryFact,
+  ArchiveTerminalFact,
   OpenSpecArtifactFact,
   ReviewVerdictFact,
   RunFact,
@@ -89,6 +90,16 @@ export async function readFormalFactSnapshot(
     // Git boundaries are best-effort at Reader level.
   }
 
+  let checkpointArchiveTerminal: ArchiveTerminalFact | undefined;
+  if (activeChangeId === undefined) {
+    const checkpointCandidates = completedUncheckpointedChangesForReader(manifestResult.changes, gitBoundaries);
+    if (checkpointCandidates.length === 1) {
+      const projection = await readCheckpointArchiveTerminal(deliveryRunsDir, checkpointCandidates[0]!.id);
+      checkpointArchiveTerminal = projection.fact;
+      conflicts.push(...projection.conflicts);
+    }
+  }
+
   const ownerAuthorizations = manifestResult.ownerAuthorizations;
   const ownerDecisionFacts = manifestResult.ownerDecisionFacts;
   conflicts.push(...manifestResult.conflicts);
@@ -129,6 +140,7 @@ export async function readFormalFactSnapshot(
     runs,
     openSpecArtifacts,
     gitBoundaries,
+    ...(checkpointArchiveTerminal !== undefined && { checkpointArchiveTerminal }),
     ownerAuthorizations,
     ownerDecisionFacts,
     reviewVerdicts: admittedReviewVerdicts,
@@ -355,9 +367,10 @@ function readOwnerAuthorizations(
     }
   }
 
-  const facts: OwnerAuthorizationFact[] = [];
+  const authorizationCandidates: Array<{ readonly index: number; readonly fact: OwnerAuthorizationFact }> = [];
+  const latestResetIndexByChange = new Map<string, number>();
   const seenRefs = new Map<string, string>();
-  for (const item of value) {
+  for (const [index, item] of value.entries()) {
     if (typeof item !== 'object' || item === null || Array.isArray(item)) {
       conflicts.push({
         dimension: 'owner-decision-record',
@@ -502,22 +515,120 @@ function readOwnerAuthorizations(
       sourceRef,
     });
 
+    if (typedRecordDecision === 'contract-reset' && typeof changeId === 'string') {
+      latestResetIndexByChange.set(changeId, index);
+    }
+
     if (!(AUTHORIZATION_ONLY_OWNER_DECISIONS as readonly string[]).includes(typedRecordDecision)) {
       // Non-authorization Owner decisions remain formal facts but are not Policy authorization gates.
       continue;
     }
     const typedDecision = typedRecordDecision as AuthorizationOnlyOwnerDecision;
-    facts.push({
-      ref,
-      decision: typedDecision,
-      deliveryId,
-      ...(typeof changeId === 'string' ? { changeId } : {}),
-      ...(typeof scope === 'string' ? { scope } : {}),
-      ...(normalizedRequiredOutcomes !== undefined ? { requiredOutcomes: normalizedRequiredOutcomes } : {}),
-      sourceRef,
+    authorizationCandidates.push({
+      index,
+      fact: {
+        ref,
+        decision: typedDecision,
+        deliveryId,
+        ...(typeof changeId === 'string' ? { changeId } : {}),
+        ...(typeof scope === 'string' ? { scope } : {}),
+        ...(normalizedRequiredOutcomes !== undefined ? { requiredOutcomes: normalizedRequiredOutcomes } : {}),
+        sourceRef,
+      },
     });
   }
-  return facts;
+
+  // D2 Contract Reset currentness: Change-scoped apply/archive/checkpoint
+  // authorizations recorded before the latest reset are historical authority
+  // facts, not current gates for the fresh proposal generation. Manifest order
+  // is the existing append-only provenance; no generation registry is added.
+  return authorizationCandidates
+    .filter(({ index, fact }) => {
+      if (fact.changeId === undefined) return true;
+      const resetIndex = latestResetIndexByChange.get(fact.changeId);
+      return resetIndex === undefined || index > resetIndex;
+    })
+    .map(({ fact }) => fact);
+}
+
+function completedUncheckpointedChangesForReader(
+  changes: readonly ChangeFact[],
+  gitBoundaries: readonly GitBoundaryFact[],
+): readonly ChangeFact[] {
+  const completed = changes.filter((change) => change.required && change.state === 'completed');
+  const checkpoints = gitBoundaries.filter((boundary) => boundary.kind === 'change-checkpoint');
+  const structured = new Set(checkpoints.flatMap((boundary) => boundary.changeId === undefined ? [] : [boundary.changeId]));
+  const legacyCount = checkpoints.filter((boundary) => boundary.changeId === undefined).length;
+  const legacyCovered = new Set(
+    completed.filter((change) => !structured.has(change.id)).slice(0, legacyCount).map((change) => change.id),
+  );
+  return completed.filter((change) => !structured.has(change.id) && !legacyCovered.has(change.id));
+}
+
+async function readCheckpointArchiveTerminal(
+  deliveryRunsDir: string,
+  changeId: string,
+): Promise<{ readonly fact: ArchiveTerminalFact; readonly conflicts: readonly FactConflict[] }> {
+  const changeDir = join(deliveryRunsDir, changeId);
+  const conflicts: FactConflict[] = [];
+  let entries: string[];
+  try {
+    entries = await readdir(changeDir);
+  } catch {
+    return { fact: { changeId, status: 'missing' }, conflicts };
+  }
+
+  const archives: Array<{ readonly runId: string; readonly status: RunStatus }> = [];
+  for (const runId of entries.filter((entry) => looksLikeRunId(entry) && entry.endsWith('-archive')).sort()) {
+    const runDir = join(changeDir, runId);
+    if (!(await isDirectory(runDir))) continue;
+    let context: ContextFile;
+    try {
+      context = validateContextFile(JSON.parse(await readFile(join(runDir, 'context.json'), 'utf8')) as unknown);
+    } catch (error) {
+      conflicts.push({
+        dimension: 'archive-terminal-context',
+        authority: runDir,
+        message: `archive Run context is unreadable for checkpoint projection: ${(error as Error).message}`,
+      });
+      continue;
+    }
+    if (context.action !== 'archive' || context.changeId !== changeId) {
+      conflicts.push({
+        dimension: 'archive-terminal-context',
+        authority: runDir,
+        message: 'archive-suffixed Run does not carry matching archive Change identity',
+      });
+      continue;
+    }
+
+    let status: RunStatus = 'pending';
+    try {
+      const raw = await readFile(join(runDir, 'result.json'), 'utf8');
+      const result = admitC1RunResultForReader(raw, 'archive', {
+        runId: context.runId,
+        deliveryId: context.deliveryId,
+        changeId: context.changeId,
+      });
+      status = result.runStatus;
+    } catch (error) {
+      if (!isErrnoENOENT(error)) {
+        conflicts.push({
+          dimension: 'archive-terminal-result',
+          authority: join(runDir, 'result.json'),
+          message: `archive result is unreadable for checkpoint projection: ${(error as Error).message}`,
+        });
+        continue;
+      }
+    }
+    archives.push({ runId: context.runId, status });
+  }
+
+  if (archives.length === 0) return { fact: { changeId, status: 'missing' }, conflicts };
+  const pending = archives.filter((archive) => archive.status === 'pending');
+  if (pending.length > 1) return { fact: { changeId, status: 'ambiguous' }, conflicts };
+  const latest = archives.sort((a, b) => b.runId.localeCompare(a.runId))[0]!;
+  return { fact: { changeId, runId: latest.runId, status: latest.status }, conflicts };
 }
 
 interface RunsResult {

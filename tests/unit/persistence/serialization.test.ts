@@ -466,6 +466,41 @@ describe('validateContextFile', () => {
     assert.deepEqual(cf.ownerFactRefs, ownerFactRefs);
   });
 
+  it('accepts current v4 and enforces archive-only keyed OpenSpec projection shape', () => {
+    const archive = {
+      ...validChangeContext,
+      schemaVersion: 4,
+      runId: '20260806-009-archive',
+      action: 'archive',
+      archiveEntryOpenSpecProjection: {
+        projectionVersion: 1,
+        version: '1.7.0',
+        changeId: validChangeContext.changeId,
+        changeRootLogical: `openspec/changes/${validChangeContext.changeId}`,
+        artifactPaths: {
+          proposal: [`openspec/changes/${validChangeContext.changeId}/custom/proposal.md`],
+          specs: [`openspec/changes/${validChangeContext.changeId}/delta/spec.md`],
+          design: [`openspec/changes/${validChangeContext.changeId}/custom/design.md`],
+          tasks: [`openspec/changes/${validChangeContext.changeId}/work/tasks.md`],
+        },
+      },
+    };
+    const cf = validateContextFile(archive);
+    assert.equal(cf.schemaVersion, 4);
+    assert.deepEqual(cf.archiveEntryOpenSpecProjection?.artifactPaths.proposal, [
+      `openspec/changes/${validChangeContext.changeId}/custom/proposal.md`,
+    ]);
+
+    assert.throws(
+      () => validateContextFile({
+        ...validChangeContext,
+        schemaVersion: 4,
+        archiveEntryOpenSpecProjection: archive.archiveEntryOpenSpecProjection,
+      }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
   it('rejects retired Delivery behavior as a current schemaVersion 2 ContextFile', () => {
     assert.throws(
       () => validateContextFile(validDeliveryContext),
@@ -473,7 +508,7 @@ describe('validateContextFile', () => {
     );
   });
 
-  it('rejects schemaVersion !== 2 (task 12.16)', () => {
+  it('rejects unsupported historical schemaVersion 1 (task 12.16)', () => {
     assert.throws(
       () => validateContextFile({ ...validChangeContext, schemaVersion: 1 }),
       (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',

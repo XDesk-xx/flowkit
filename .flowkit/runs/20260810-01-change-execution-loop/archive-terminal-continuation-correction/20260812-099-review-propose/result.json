@@ -1,0 +1,36 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "098 已正确回到 fresh Proposal generation 并冻结 reset-currentness 主方向，但 contract 漏掉 revise-propose / revise-apply 两类同 stage producer，旧 090/094 仍可能跨 Reset 被 current lineage 重新选中。"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "D2-RP-002",
+      "severity": "blocking",
+      "title": "reset-currentness contract 漏掉 revise-propose / revise-apply lineage",
+      "problem": "098 将 Contract Reset 后需要失去 currentness 的 downstream lineage 具体限定为 proposal/review-propose/apply/review-apply/archive，但没有覆盖 revise-propose 与 revise-apply。当前 stage model 明确把 revise-propose / revise-apply 作为各自 stage 的 artifact producer；D2 历史中也真实存在 090-revise-propose 与 094-revise-apply。若实现按当前枚举过滤，旧 reset generation 的 revise artifact 仍可能参与 currentArtifactRun、stage detection、producer binding 或后续 review lineage。",
+      "contractRef": "proposal.md Contract Reset currentness；design.md Decision 7；flowkit-formal-fact-reader-and-persistence / flowkit-lean-run-and-action-package / flowkit-policy-engine D2 delta；Standard Change Action catalog",
+      "invariant": "Contract Reset 建立新的 proposal contract generation 时，Proposal 及之后的全部同 stage producer/reviewer/archive Runs 都必须按 current完整 Contract Reset identity 判断 currentness；旧 generation 的 revise-* Run 只能保留 immutable history，不能重新成为 current artifact/approval/binding。",
+      "evidence": [
+        "098 Proposal/Design/Specs/Tasks 中没有出现 revise-propose 或 revise-apply；相关枚举反复只列 propose/review-propose/apply/review-apply/archive。",
+        "当前 src/policy/stage-detector.ts 将 propose stage 定义为 propose/revise-propose/review-propose，将 apply stage 定义为 apply/revise-apply/review-apply；currentArtifactRun 会从 stage artifact actions 中选择 revise-propose / revise-apply。",
+        "当前 D2 formal history 已存在 20260812-090-revise-propose 与 20260812-094-revise-apply；两者均早于最新 Owner Contract Reset，因此正是必须被投影为 historical non-current 的真实样本。"
+      ],
+      "impact": "若遗漏 revise-*，reset-aware projection 可能只过滤旧 base producer/review，却让旧 revise artifact 重新成为 current stage artifact，导致 stage/lineage/next/preparation 再次分裂，破坏本次 corrective 的核心目标。",
+      "location": "proposal.md What Changes / design.md Decision 7 / D2 delta specs / tasks 1.x",
+      "blockingAuthority": "author",
+      "requiredOutcome": "在 Proposal contract 中明确 Proposal/Apply stage 的 reset-currentness 覆盖 revise-propose 与 revise-apply，并让 stage detection、lineage/currentArtifactRun、review binding、producer selection 与 tests 对全部同 stage actions 使用同一 current reset identity；不得因此新增 generation registry。",
+      "acceptance": [
+        "旧 generation 的 propose、revise-propose、review-propose、apply、revise-apply、review-apply、archive Runs 若不匹配 current完整 Contract Reset identity，都只能作为 immutable history。",
+        "reset 后 fresh propose / review-propose / apply 路径不得因旧 090-revise-propose 或 094-revise-apply 被 currentArtifactRun、stage detection、review lineage 或 Action Package producer binding 重新选中。",
+        "regression 至少覆盖历史 revise-propose 与 revise-apply 两类 Run，并证明 status/next/canRun/preparation 对同一 reset generation 一致。",
+        "approved Explore 可继续作为 fresh Proposal handoff；不新增 Generation Registry、Run rewrite或通用 generation-management framework。"
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}

@@ -33,8 +33,8 @@ import type {
   RunFact,
 } from '../facts/formal-fact-snapshot.js';
 import { computeLineage } from './lineage.js';
-import { detectStage, type Stage } from './stage-detector.js';
-import { currentContractResetRefs, runMatchesContractResetIdentity } from '../facts/generation-resolver.js';
+import { type Stage } from './stage-detector.js';
+import { projectCurrentContractResetLifecycle } from '../facts/generation-resolver.js';
 import { hasOwnerAuthorization } from './owner-decision.js';
 import {
   evaluateVerificationGate,
@@ -207,18 +207,8 @@ function lineageForStage(
   changeId: string,
   stage: Stage,
 ): ReturnType<typeof computeLineage> {
-  const detectedStage = detectStage(snapshot.runs, changeId);
-  if (detectedStage !== stage) {
-    return computeLineage(snapshot.runs, snapshot.reviewVerdicts, changeId, stage);
-  }
-  const resetRefs = currentContractResetRefs(snapshot.ownerDecisionFacts, changeId);
-  if (resetRefs.length === 0) {
-    return computeLineage(snapshot.runs, snapshot.reviewVerdicts, changeId, stage);
-  }
-  const runs = snapshot.runs.filter((run) => run.changeId !== changeId || runMatchesContractResetIdentity(run, resetRefs));
-  const runIds = new Set(runs.map((run) => run.runId));
-  const verdicts = snapshot.reviewVerdicts.filter((verdict) => runIds.has(verdict.reviewRunId));
-  return computeLineage(runs, verdicts, changeId, stage);
+  const current = projectCurrentContractResetLifecycle(snapshot, changeId);
+  return computeLineage(current.runs, current.reviewVerdicts, changeId, stage);
 }
 
 function completedRunForCurrentStage(
@@ -226,22 +216,8 @@ function completedRunForCurrentStage(
   changeId: string,
   action: FormalAction,
 ): boolean {
-  const detectedStage = detectStage(snapshot.runs, changeId);
-  const actionStage: Stage | undefined = action === 'explore' || action === 'review-explore' || action === 'revise-explore'
-    ? 'explore'
-    : action === 'propose' || action === 'review-propose' || action === 'revise-propose'
-      ? 'propose'
-      : action === 'apply' || action === 'review-apply' || action === 'revise-apply'
-        ? 'apply'
-        : action === 'archive'
-          ? 'archive'
-          : undefined;
-  if (actionStage !== detectedStage) return hasCompletedRun(snapshot.runs, changeId, action);
-  const resetRefs = currentContractResetRefs(snapshot.ownerDecisionFacts, changeId);
-  const runs = resetRefs.length === 0
-    ? snapshot.runs
-    : snapshot.runs.filter((run) => run.changeId !== changeId || runMatchesContractResetIdentity(run, resetRefs));
-  return hasCompletedRun(runs, changeId, action);
+  const current = projectCurrentContractResetLifecycle(snapshot, changeId);
+  return hasCompletedRun(current.runs, changeId, action);
 }
 
 // ---------------------------------------------------------------------------

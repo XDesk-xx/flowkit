@@ -38,6 +38,7 @@ const POLICY_SEVERITY: Readonly<Record<Exclude<BlockedReason, 'formal-fact-confl
   'full-test-failed': 'warning',
   'non-author-review-blocker': 'warning',
   'delivery-behavior-not-implemented': 'warning',
+  'archive-terminal-recovery-required': 'warning',
 };
 
 function readerConflictFinding(conflict: FactConflict): DoctorFinding {

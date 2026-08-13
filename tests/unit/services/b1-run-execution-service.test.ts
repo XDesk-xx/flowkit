@@ -5,11 +5,16 @@ import { join } from 'node:path';
 
 import { ACTION_DEFINITIONS, CHANGE_ACTIONS } from '../../../src/domain/actions.js';
 import { readFormalFactSnapshot } from '../../../src/facts/formal-fact-reader.js';
+import { invokeOpenSpecArchive } from '../../../src/integrations/openspec/openspec-archive-service.js';
+import type { OpenSpecCliAdapter } from '../../../src/integrations/openspec/openspec-cli-adapter.js';
 import { next } from '../../../src/policy/next.js';
 import {
   admitActionResult,
+  buildArchiveEntryOpenSpecProjection,
+  fingerprintOpenSpecPreparedActionContext,
   inspectPreparedRun,
   prepareActionExecution,
+  recoverArchiveTerminalRun,
   recoverContractResetPendingRun,
 } from '../../../src/services/b1-run-execution-service.js';
 import { recordOwnerDecision } from '../../../src/services/a1-write-service.js';
@@ -208,6 +213,164 @@ describe('B1 fixed ActionDefinition catalog', () => {
     }
     assert.equal('full-test' in ACTION_DEFINITIONS, false);
     assert.equal('delivery-finalize' in ACTION_DEFINITIONS, false);
+  });
+});
+
+describe('D2 archive terminal continuation regressions', () => {
+  it('preserves non-default keyed OpenSpec artifact identity without path inference', () => {
+    const changeId = 'non-default-layout';
+    const view = {
+      version: '1.7.0',
+      changeId,
+      changeRootLogical: `openspec/changes/${changeId}`,
+      artifactPaths: {
+        proposal: [`openspec/changes/${changeId}/planning/p.md`],
+        specs: [`openspec/changes/${changeId}/delta/custom/spec.md`],
+        design: [`openspec/changes/${changeId}/architecture/d.md`],
+        tasks: [`openspec/changes/${changeId}/work/t.md`],
+      },
+    } as const;
+    const projection = buildArchiveEntryOpenSpecProjection(view);
+    assert.deepEqual(projection.artifactPaths, view.artifactPaths);
+    assert.equal(
+      fingerprintOpenSpecPreparedActionContext(view, 'archive'),
+      fingerprintOpenSpecPreparedActionContext({
+        version: projection.version,
+        changeId: projection.changeId,
+        changeRootLogical: projection.changeRootLogical,
+        artifactPaths: projection.artifactPaths,
+      }, 'archive'),
+    );
+  });
+
+  it('keeps the active Change authoritative even when another Change has a historical pending archive', async () => {
+    const { root, deliveryId, now } = await freshActiveFixture();
+    const oldChangeId = 'historical-archive';
+    const oldRunId = '20990201-085-archive';
+    const oldRunDir = join(root, '.flowkit', 'runs', deliveryId, oldChangeId, oldRunId);
+    await mkdir(oldRunDir, { recursive: true });
+    await writeFile(join(oldRunDir, 'context.json'), JSON.stringify({
+      schemaVersion: 3,
+      runId: oldRunId,
+      deliveryId,
+      changeKey: 'OLD',
+      changeId: oldChangeId,
+      action: 'archive',
+      role: 'author',
+      ownerAuthorization: 'explicit',
+      semanticInputFingerprint: '0'.repeat(64),
+      ownerFactRefs: [],
+      runPath: `.flowkit/runs/${deliveryId}/${oldChangeId}/${oldRunId}/`,
+    }, null, 2) + '\n', 'utf8');
+
+    const prepared = await prepareActionExecution({ repoRoot: root, deliveryId, entry: 'next', now });
+    assert.equal(prepared.package.run.action, 'explore');
+    assert.equal(prepared.package.run.changeId, 'lean-run-fixture');
+    assert.equal(prepared.package.run.runId, '20990201-086-explore');
+  });
+
+  it('fails closed when a durable known-success archive has review semantic drift', async () => {
+    const { root, deliveryId, changeId, now } = await freshActiveFixture();
+    await advanceToArchiveReady(root, deliveryId, changeId, now);
+    const prepared = await prepareActionExecution({ repoRoot: root, deliveryId, entry: 'next', now });
+    assert.equal(prepared.package.run.action, 'archive');
+
+    const activeRoot = join(root, 'openspec', 'changes', changeId);
+    const archivedAs = `2099-02-01-${changeId}`;
+    const archivedRoot = join(root, 'openspec', 'changes', 'archive', archivedAs);
+    const fakeAdapter = {
+      getChangeStatus: async () => ({
+        changeId,
+        changeRoot: activeRoot,
+        changeRootLogical: `openspec/changes/${changeId}`,
+        archiveNamespaceRoot: join(root, 'openspec', 'changes', 'archive'),
+        archiveNamespaceRootLogical: 'openspec/changes/archive',
+      }),
+      archiveChange: async () => {
+        await mkdir(join(root, 'openspec', 'changes', 'archive'), { recursive: true });
+        await rename(activeRoot, archivedRoot);
+        return {
+          spawned: true,
+          exitCode: 0,
+          stdout: '',
+          stderr: '',
+          timedOut: false,
+          observation: {
+            kind: 'success' as const,
+            change: changeId,
+            archivedAs,
+            path: `openspec/changes/archive/${archivedAs}`,
+            specsUpdated: false,
+            totals: { added: 0, modified: 0, removed: 0, renamed: 0 },
+          },
+        };
+      },
+    } as unknown as OpenSpecCliAdapter;
+    const outcome = await invokeOpenSpecArchive(root, prepared.package, { adapter: fakeAdapter });
+    assert.equal(outcome.status, 'success');
+    await markFixtureChangeCompleted(root, deliveryId, changeId);
+
+    const reviewRef = prepared.package.handoffRefs.find((ref) => ref.ref.includes('review-apply/result.json'));
+    assert.ok(reviewRef);
+    const reviewPath = join(root, reviewRef.ref);
+    const reviewResult = JSON.parse(await readFile(reviewPath, 'utf8')) as { actionResult: { summary: string } };
+    reviewResult.actionResult.summary = 'semantically drifted review result';
+    await writeFile(reviewPath, JSON.stringify(reviewResult, null, 2) + '\n', 'utf8');
+
+    await assert.rejects(
+      recoverArchiveTerminalRun({ repoRoot: root, deliveryId }),
+      (error: unknown) => error instanceof FlowkitError && error.code === 'PENDING_INPUT_DRIFT',
+    );
+    await assert.rejects(readFile(join(root, '.flowkit', 'runs', deliveryId, changeId, prepared.package.run.runId, 'result.json'), 'utf8'));
+  });
+
+  it('rejects archive-terminal recovery when more than one durable known-success pending archive exists', async () => {
+    const { root, deliveryId } = await freshActiveFixture();
+    for (const [index, changeId] of ['old-a', 'old-b'].entries()) {
+      const runId = `20990201-${String(85 + index).padStart(3, '0')}-archive`;
+      const runDir = join(root, '.flowkit', 'runs', deliveryId, changeId, runId);
+      await mkdir(runDir, { recursive: true });
+      await writeFile(join(runDir, 'context.json'), JSON.stringify({
+        schemaVersion: 3,
+        runId,
+        deliveryId,
+        changeKey: `OLD${index + 1}`,
+        changeId,
+        action: 'archive',
+        role: 'author',
+        ownerAuthorization: 'explicit',
+        semanticInputFingerprint: String(index + 1).repeat(64),
+        ownerFactRefs: [],
+        runPath: `.flowkit/runs/${deliveryId}/${changeId}/${runId}/`,
+        archiveMutationGuard: {
+          state: 'armed',
+          surfaceVersion: 'openspec-archive-mutation-v1',
+          changeRoot: `openspec/changes/${changeId}`,
+          canonicalSpecsRoot: 'openspec/specs',
+          archiveNamespaceRoot: 'openspec/changes/archive',
+          preArchiveGenerationFingerprint: index === 0 ? 'a'.repeat(64) : 'b'.repeat(64),
+          terminalObservation: {
+            kind: 'success',
+            resultFingerprint: index === 0 ? 'c'.repeat(64) : 'd'.repeat(64),
+            normalized: {
+              kind: 'success',
+              change: changeId,
+              archivedAs: `2099-02-01-${changeId}`,
+              path: `openspec/changes/archive/2099-02-01-${changeId}`,
+              specsUpdated: false,
+              totals: { added: 0, modified: 0, removed: 0, renamed: 0 },
+            },
+          },
+        },
+      }, null, 2) + '\n', 'utf8');
+    }
+
+    await assert.rejects(
+      recoverArchiveTerminalRun({ repoRoot: root, deliveryId }),
+      (error: unknown) => error instanceof FlowkitError
+        && error.code === 'OPENSPEC_ARCHIVE_TERMINAL_RECOVERY_NOT_ALLOWED'
+        && /found 2/.test(error.message),
+    );
   });
 });
 
@@ -539,6 +702,10 @@ describe('B1 preparation and admission', () => {
     const archivedRoot = join(root, 'openspec', 'changes', 'archive', `2099-02-01-${changeId}`);
     await mkdir(join(root, 'openspec', 'changes', 'archive'), { recursive: true });
     await rename(activeRoot, archivedRoot);
+    // OpenSpec relocation and Manifest completion are one archive mutation
+    // boundary; a post-relocation continuation is checkpoint-relevant only
+    // after the Change has closed.
+    await markFixtureChangeCompleted(root, deliveryId, changeId);
 
     const resumed = await prepareActionExecution({ repoRoot: root, deliveryId, entry: 'next', now });
     assert.equal(resumed.resumed, true);
@@ -735,7 +902,7 @@ describe('D1 structured Owner facts and reset-aware lineage', () => {
     assert.equal(prepared.package.ownerFactRefs?.[0]?.ref, firstReset.ownerDecisionRef);
     assert.deepEqual(prepared.package.ownerFactRefs?.[0]?.requiredOutcomes, ['PowerShell first-class', 'structured Owner handoff']);
     const context = JSON.parse(await readFile(join(root, '.flowkit', 'runs', deliveryId, changeId, prepared.package.run.runId, 'context.json'), 'utf8'));
-    assert.equal(context.schemaVersion, 3);
+    assert.equal(context.schemaVersion, 4);
     assert.deepEqual(context.ownerFactRefs, prepared.package.ownerFactRefs);
 
     await recordOwnerDecision(root, {
@@ -834,6 +1001,12 @@ describe('D1 structured Owner facts and reset-aware lineage', () => {
       result: { executionStatus: 'completed', summary: 'R1 approved', reviewVerdict: 'approved', reviewFindings: [] },
     });
     assert.equal(next(await snapshot(root, deliveryId)).kind, 'owner-decision');
+    const oldApplyAuthorization = await recordOwnerDecision(root, {
+      decision: 'authorize-apply',
+      changeId,
+      sourceRef: 'owner:d1-reset:proposal:old-apply',
+    });
+    assert.deepEqual(next(await snapshot(root, deliveryId)), { kind: 'action', action: 'apply' });
 
     await recordOwnerDecision(root, {
       decision: 'contract-reset',
@@ -843,6 +1016,7 @@ describe('D1 structured Owner facts and reset-aware lineage', () => {
       sourceRef: 'owner:d1-reset:proposal',
     });
     assert.deepEqual(next(await snapshot(root, deliveryId)), { kind: 'action', action: 'propose' });
+    assert.equal((await snapshot(root, deliveryId)).ownerAuthorizations.some((fact) => fact.ref === oldApplyAuthorization.ownerDecisionRef), false);
 
     const p2 = await prepareActionExecution({ repoRoot: root, deliveryId, entry: 'next', now });
     assert.equal(p2.package.run.action, 'propose');
@@ -870,5 +1044,12 @@ describe('D1 structured Owner facts and reset-aware lineage', () => {
     const boundary = next(after);
     assert.equal(boundary.kind, 'owner-decision');
     if (boundary.kind === 'owner-decision') assert.equal(boundary.decision, 'authorize-apply');
+    const newApplyAuthorization = await recordOwnerDecision(root, {
+      decision: 'authorize-apply',
+      changeId,
+      sourceRef: 'owner:d1-reset:proposal:new-apply',
+    });
+    assert.notEqual(newApplyAuthorization.ownerDecisionRef, oldApplyAuthorization.ownerDecisionRef);
+    assert.deepEqual(next(await snapshot(root, deliveryId)), { kind: 'action', action: 'apply' });
   });
 });

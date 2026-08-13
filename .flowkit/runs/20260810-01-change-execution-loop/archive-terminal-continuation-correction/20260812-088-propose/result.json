@@ -1,0 +1,45 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "propose",
+    "executionStatus": "completed",
+    "summary": "D2 Proposal freezes archive terminal continuation semantic reconstruction, current-binding precedence, bounded known-success recovery, and terminal archive checkpoint gate.",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/archive-terminal-continuation-correction/design.md",
+        "versionFingerprint": "34240f00f9d5db3121ba0767e7dbac4f0dffa65b03fbf9d206cb5c751512f591",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-terminal-continuation-correction/proposal.md",
+        "versionFingerprint": "da5e1178c9369b83100cd60f3e7ed493d86991c78a2bda0ba65d08835d95a8d7",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-terminal-continuation-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "0efec69bbbb6bb0af03ad5812f9e253f63e9aacceaa1d3d857fd16a02faa8a64",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-terminal-continuation-correction/specs/flowkit-lean-run-and-action-package/spec.md",
+        "versionFingerprint": "0248422b46f5aec198d9b81b1f4d56836bd7c9aaa65a253a416c0f2b24b47b65",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-terminal-continuation-correction/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+        "versionFingerprint": "19a51017f94c387f8e16942f371d96a6bd4e8894946d6447a1d555ae8f34bc1e",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-terminal-continuation-correction/specs/flowkit-policy-engine/spec.md",
+        "versionFingerprint": "3153b8b6e6546ede9f2c6d2ee740c974ccfc304dec9780d436a7195c4b21786c",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-terminal-continuation-correction/tasks.md",
+        "versionFingerprint": "ffaa6e809455ca7cad90acb3cde7ea8ad242de6716653944b41f15da4a56cf4e",
+        "kind": "produced-artifact"
+      }
+    ]
+  }
+}
