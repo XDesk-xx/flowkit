@@ -14,6 +14,7 @@ export async function deriveActualChangeSetFromCanonicalBase(
   repoRoot: string,
   canonicalBase: string,
   postAction: EntryWorkspaceSnapshot,
+  reservedCoreOwnedPaths: ReadonlySet<string> = new Set(),
 ): Promise<readonly ActualChangeSetEntry[]> {
   if (postAction.canonicalBase !== canonicalBase) {
     throw new FlowkitError('POST_ACTION_BASE_DRIFT', 'Post-action state must retain the persisted canonical base');
@@ -32,7 +33,7 @@ export async function deriveActualChangeSetFromCanonicalBase(
     });
   }
   const postFiles = new Map(postAction.files.map((file) => [file.path, file.contentFingerprint]));
-  const changed = parseNameStatus(result.stdout);
+  const changed = parseNameStatus(result.stdout).filter(({ path }) => !reservedCoreOwnedPaths.has(path));
   const entries = changed.map(({ status, path }) => changeEntryForStatus(status, path, postFiles));
   const trackedChangedPaths = new Set(changed.map((entry) => entry.path));
   const untracked = await runCommand('git', ['ls-files', '-o', '--exclude-standard', '-z'], { cwd: repoRoot, timeout: 15_000 });
@@ -45,7 +46,7 @@ export async function deriveActualChangeSetFromCanonicalBase(
       stderr: untracked.stderr,
     });
   }
-  for (const path of untracked.stdout.split('\0').filter((path) => path !== '' && !path.startsWith('.flowkit/')).sort()) {
+  for (const path of untracked.stdout.split('\0').filter((path) => path !== '' && !path.startsWith('.flowkit/') && !reservedCoreOwnedPaths.has(path)).sort()) {
     if (trackedChangedPaths.has(path)) continue;
     const contentFingerprintAfter = postFiles.get(path);
     if (contentFingerprintAfter === undefined) {
@@ -65,12 +66,13 @@ export function derivePostActionChangeObservation(
   entry: EntryWorkspaceSnapshot,
   postAction: EntryWorkspaceSnapshot,
   declaration: MutationDeclaration,
+  reservedCoreOwnedPaths: ReadonlySet<string> = new Set(),
 ): PostActionChangeObservation {
   if (base.canonicalBase !== entry.canonicalBase || base.canonicalBase !== postAction.canonicalBase) {
     throw new FlowkitError('POST_ACTION_BASE_DRIFT', 'Base, entry, and post-action observations must share the persisted canonical base');
   }
-  const actualChangeSet = deriveChangeSet(base, postAction);
-  const observedActionMutations = deriveChangeSet(entry, postAction);
+  const actualChangeSet = deriveChangeSet(base, postAction).filter((change) => !reservedCoreOwnedPaths.has(change.path));
+  const observedActionMutations = deriveChangeSet(entry, postAction).filter((change) => !reservedCoreOwnedPaths.has(change.path));
   const undeclared = observedActionMutations.filter((entry) => !matchesDeclaration(entry.path, declaration));
   if (undeclared.length > 0) {
     throw new FlowkitError('UNDECLARED_ACTION_MUTATION', 'Post-action observation contains paths outside the persisted mutation declaration', {

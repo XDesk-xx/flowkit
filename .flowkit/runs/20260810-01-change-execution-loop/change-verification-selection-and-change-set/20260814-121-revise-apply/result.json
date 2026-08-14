@@ -1,0 +1,8 @@
+{
+  "runStatus": "failed",
+  "failureDiagnosis": "BOOTSTRAP_ENTRY_WORKSPACE_CONTAMINATION",
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "1bfe77bc494d92cce659461cbe9a7f5180a74884483b5a60fdb0702d99f4c3f6"
+  }
+}

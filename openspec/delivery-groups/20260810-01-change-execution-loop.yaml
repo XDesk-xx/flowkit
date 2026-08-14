@@ -182,7 +182,7 @@ changes:
     required: true
     dependsOn:
       - review-findings-and-blocker-authority
-    state: active
+    state: completed
     outputs:
       - immutable context v5 entry identity / ActionPackage v2 declaration migration
       - Core-owned post-action actualChangeSet / verification-selection record
@@ -367,6 +367,32 @@ ownerDecisions:
     deliveryId: "20260810-01-change-execution-loop"
     changeId: "change-verification-selection-and-change-set"
     sourceRef: "owner:chat:20260814-authorize-apply"
+  - ref: "owner:4956543c132c633712434103a3c7e97d072eb25386079a1020bc720a376af005"
+    decision: "authorize-archive"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "change-verification-selection-and-change-set"
+    sourceRef: "owner:chat:20260814T1314+08:00:authorize-archive:E1"
+  - ref: "owner:a2756785a2a56e69a4dc4695ea3d085c4c2af4228b8f1e1884cfa68a5ca2022d"
+    decision: "contract-reset"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "change-verification-selection-and-change-set"
+    scope: "e1-openspec-modified-requirement-completeness-after-archive-failure"
+    requiredOutcomes:
+      - "Abandon the proposal/apply/archive generation culminating in 20260814-129-archive; prior proposal/apply/review approval must not authorize the new generation."
+      - "For flowkit-formal-fact-reader-and-persistence, every MODIFIED Requirement must carry forward the canonical requirement scenario identities and semantics that remain applicable, while integrating the intended v5 contract so archive sync cannot silently delete canonical scenarios."
+      - "Re-propose E1 without expanding implementation scope: preserve the accepted E1 runtime/verification outcomes while correcting the OpenSpec delta contract exposed by archive_spec_update_failed."
+      - "The new proposal/review/apply generation must pass OpenSpec strict validation and demonstrate archive-sync compatibility before a new archive authorization is requested."
+    sourceRef: "owner-input:2026-08-14T13:23+08:00:contract-reset:E1-repropose"
+  - ref: "owner:a7999f5642218e356f99dd4e029e2f91717685d0e8dace587bed1e8ba23b897d"
+    decision: "authorize-apply"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "change-verification-selection-and-change-set"
+    sourceRef: "owner-input:2026-08-14T13:43+08:00:authorize-apply:E1-reproposal"
+  - ref: "owner:3878c38664b821b188d5fa081d4057ef0f020ad2323f278d6583961e7c8c5aac"
+    decision: "authorize-archive"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "change-verification-selection-and-change-set"
+    sourceRef: "owner-input:2026-08-14T14:11+08:00:authorize-archive:E1"
 verification:
   change:
     requireApplicableChecks: true

@@ -1,0 +1,364 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260814-123-review-apply",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "review-apply",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "0dd5e1703feb245a078e6140893c11b525c738cbe52cfb11a01f1b74d0eb0a1f",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:52c2f519e846da1aab0ba16b4f2e2355ae362d0fb846f2a21302a2b5bdf17b6d",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-verification-selection-and-change-set",
+      "scope": "e1-two-time-boundaries-and-execution-reliability-primitives",
+      "requiredOutcomes": [
+        "E1 must preserve the immutable entry versus Core-owned post-action fact model, context v5 and ActionPackage v2 migration, actualChangeSet, deterministic module/dependency/capability verificationScope selection, and bootstrap verification.",
+        "E1 scope is expanded to implement bounded operation-scoped OpenSpec projection deduplication and Windows process-tree cancellation with fail-closed outcome-unknown fallback.",
+        "E1 scope is expanded to implement exact target Run resume, timeout outcome-unknown, idempotent terminal replay, and late-completion generation safety.",
+        "G1 retains ownership of Change CLI surface, full Change E2E, checkout/resume recovery validation, Run/package size observation, focused/affected timing observation, and review convergence observation; G1 consumes E1 primitives and does not duplicate their implementation.",
+        "Historical Run contexts and results remain immutable; the new Owner fact must be projected through the official write-side and Policy must determine the next legal boundary."
+      ],
+      "sourceRef": "owner-input:2026-08-13:authorize-E1-expanded-scope-before-108-revision"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260814-123-review-apply/",
+  "changeKey": "E1",
+  "changeId": "change-verification-selection-and-change-set",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260814-122-revise-apply/result.json",
+    "versionFingerprint": "30a138b1e6dad30dce89da49d7f9ff4fe06765b394a01f350d4ea854db9b7f5d",
+    "kind": "run-result"
+  },
+  "verificationInputRef": {
+    "ref": "openspec/changes/change-verification-selection-and-change-set/verification.md",
+    "versionFingerprint": "324b87da22b2eac35ed7264ecab704892ffc21c1ef6d1a75f6e6c14d8cd28f09",
+    "kind": "verification-summary"
+  },
+  "reviewedRunId": "20260814-122-revise-apply",
+  "canonicalBase": "57e5453c3fde64d5f8d00befff29bce3e81aec8c",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260814-122-revise-apply/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "30a138b1e6dad30dce89da49d7f9ff4fe06765b394a01f350d4ea854db9b7f5d"
+    },
+    {
+      "ref": "openspec/changes/change-verification-selection-and-change-set/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "f740855436b3c2a28e0536ca9061ceca2f40e0f98cc324b643527bc63b0d9ae2"
+    },
+    {
+      "ref": "openspec/changes/change-verification-selection-and-change-set/design.md",
+      "versionFingerprint": "cc7e8bc95af25f32ee995871eb6ef2e8c6db640cfe9fb5f999948d6eb1a967d8",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-selection-and-change-set/proposal.md",
+      "versionFingerprint": "8aadcefaa91a1dda71458c92b3c59b34f95b11da02d29e83d65ba944e592be67",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-change-verification-selection/spec.md",
+      "versionFingerprint": "30d7230649aa5aa239c94d5f64c61ae2efe196675768e4dc035fd82f09f252ac",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-core-model/spec.md",
+      "versionFingerprint": "edec8d0d0f1296111b29c2f6523541a7922ea92c8de077a000a6460f6fec7a62",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "versionFingerprint": "f84903a43405b5c1cd73f3e4722cd3b35b5bea8ece2ab2c771044a12e390f1b1",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-lean-run-and-action-package/spec.md",
+      "versionFingerprint": "83b2f607dc408a1d22ee34a10b191f042b0370c16c6292fba5838b500ec8dd86",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+      "versionFingerprint": "ae23ff4ec84d48adfbb98e15b765dd77b304bd062404a72ff7b7c65e8cf39926",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-policy-engine/spec.md",
+      "versionFingerprint": "5b0b495fa4900df960bcff60d8a58fda1714c3230731a5906e16d0fbc3d4c588",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-runtime-foundation/spec.md",
+      "versionFingerprint": "e85b627d4a1c6ed3f3a647db6fac0f756d2e059a30eed8f2671eafa8250fd01d",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-selection-and-change-set/tasks.md",
+      "kind": "openspec-contract",
+      "versionFingerprint": "9e1e1cec2b3d45c8f81f4814c6024e53ffef4a00bfe419cdac7deab737eed9e5"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-verification-selection-and-change-set",
+      "runId": "20260814-123-review-apply",
+      "action": "review-apply",
+      "role": "reviewer",
+      "semanticInputFingerprint": "0dd5e1703feb245a078e6140893c11b525c738cbe52cfb11a01f1b74d0eb0a1f"
+    },
+    "definition": {
+      "action": "review-apply",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-implementation-and-verification",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings-plus-verification-ref",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "core-derived",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "f740855436b3c2a28e0536ca9061ceca2f40e0f98cc324b643527bc63b0d9ae2"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/design.md",
+        "versionFingerprint": "cc7e8bc95af25f32ee995871eb6ef2e8c6db640cfe9fb5f999948d6eb1a967d8",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/proposal.md",
+        "versionFingerprint": "8aadcefaa91a1dda71458c92b3c59b34f95b11da02d29e83d65ba944e592be67",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "30d7230649aa5aa239c94d5f64c61ae2efe196675768e4dc035fd82f09f252ac",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-core-model/spec.md",
+        "versionFingerprint": "edec8d0d0f1296111b29c2f6523541a7922ea92c8de077a000a6460f6fec7a62",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "f84903a43405b5c1cd73f3e4722cd3b35b5bea8ece2ab2c771044a12e390f1b1",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-lean-run-and-action-package/spec.md",
+        "versionFingerprint": "83b2f607dc408a1d22ee34a10b191f042b0370c16c6292fba5838b500ec8dd86",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+        "versionFingerprint": "ae23ff4ec84d48adfbb98e15b765dd77b304bd062404a72ff7b7c65e8cf39926",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-policy-engine/spec.md",
+        "versionFingerprint": "5b0b495fa4900df960bcff60d8a58fda1714c3230731a5906e16d0fbc3d4c588",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-runtime-foundation/spec.md",
+        "versionFingerprint": "e85b627d4a1c6ed3f3a647db6fac0f756d2e059a30eed8f2671eafa8250fd01d",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/tasks.md",
+        "kind": "openspec-contract",
+        "versionFingerprint": "9e1e1cec2b3d45c8f81f4814c6024e53ffef4a00bfe419cdac7deab737eed9e5"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260814-122-revise-apply/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "30a138b1e6dad30dce89da49d7f9ff4fe06765b394a01f350d4ea854db9b7f5d"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260814-119-review-apply",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260814-119-review-apply/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "70027abc57da02f3ecea01a8b87bb8fa745ac11c7beee0fbf7e7360cf740caab"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "E1-RA-001",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "exact resume、terminal replay 与并发 generation safety 尚未实现",
+          "problem": "resumeRun 在发现 result.json 时直接抛出 EXACT_RESUME_NOT_PENDING，admitActionResult 对 terminal Run 也只会落入 RUN_NOT_PENDING/RUN_TERMINAL；接口没有 persisted terminal/equivalent/conflicting replay outcome，也没有保存并比较 canonical logical descriptor digest。prepareNewExecution 的 pending 检查与 allocator/create 之间亦没有同一原子边界，两个并发 caller 可同时越过检查。",
+          "contractRef": "design.md Decision 3；specs/flowkit-lean-run-and-action-package Requirement: new preparation 与 exact Run resume 必须是不同入口；Requirement: terminal replay 必须 exact 且幂等",
+          "invariant": "target-pinned retry 必须在 exact persisted Run 上幂等恢复；同一 legal boundary 的并发 new preparation 至多发布一个 pending Run，不能因 timeout、late completion 或 race 推进 generation。",
+          "requiredOutcome": "实现 persisted pending/terminal exact-resume result union、canonical logical descriptor binding、equivalent/conflicting replay，以及覆盖 pending check 与 allocator/create 的 Core 原子唯一性；补齐 timeout、late completion、concurrent caller 和 wrong Run/descriptor tests。",
+          "acceptance": [
+            "exact retry 指向 terminal Run 时返回 persisted terminal 或 equivalent replay outcome，不调用 Policy/allocator",
+            "不同 logical descriptor、Role、Action、Run identity 的 replay deterministic fail closed",
+            "并发 next/review preparation 在同一 boundary 至多产生一个 pending Run，其余返回同一 persisted identity或 deterministic conflict",
+            "focused tests 覆盖 preparation timeout、late terminal、equivalent/conflicting replay、wrong Run id 与 generation safety"
+          ]
+        },
+        {
+          "id": "E1-RA-002",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "post-action record 没有与 terminal result 建立可恢复的 exact binding",
+          "problem": "verification-selection record 在 completeRun 之前写入，但 terminal ActionResult 没有该 record 的 ResultRef/identity；record-present pending replay 只校验当前 canonical Markdown 的 hash，未校验 package、semantic fingerprint 与 logical descriptor。validatePublishedVerificationSelection 对所有调用都读取 mutable canonical verification.md，无法支持 historical terminal point-in-time replay。另有一个 validateVerificationSelectionRecord closed validator，其 schema 与实际 publication 多出的 producingSemanticInputFingerprint、selection、verificationMarkdownLogicalRef 字段不一致且未被 Reader 使用。",
+          "contractRef": "design.md Decisions 3 and 8；specs/flowkit-formal-fact-reader-and-persistence Requirement: post-action record 必须独立持久化；specs/flowkit-change-verification-selection Requirement: Core 必须发布 immutable verification-selection record",
+          "invariant": "commit marker 必须在 terminal CAS 前完整存在，并由 terminal result exact-bind；pending recovery 可检查 current Markdown，historical terminal replay只能校验 persisted result 与 immutable per-Run authority，不能读取未来 mutable bytes。",
+          "requiredOutcome": "统一实际 record type与唯一 closed validator，在 terminal preflight/CAS 中 Core 派生并 exact-bind per-Run record identity及 logical descriptor；按 absent/Markdown-only/record+pending/terminal-present 四态实现恢复，historical terminal 路径不得读取 current Markdown。",
+          "acceptance": [
+            "实际 publication bytes 可被唯一 production closed validator完整验证，unknown/extra/malformed字段 fail closed",
+            "completed Apply/revise-apply result exact-bind producing Run 的 immutable record，缺失/mismatch 阻止 terminal CAS",
+            "record-present pending equivalent replay只执行 terminal CAS，conflicting replay fail closed",
+            "old terminal exact replay不读取未来 verification.md，且四态 crash/recovery tests 完整"
+          ]
+        },
+        {
+          "id": "E1-RA-003",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "production actualChangeSet 错把 entry 当 canonical base",
+          "problem": "publishV5ApplyVerificationSelection 调用 derivePostActionChangeObservation(entry, entry, postAction, declaration)，所以 actualChangeSet 实际是 entry→post，而不是 canonical base→post。仓库虽有 deriveActualChangeSetFromCanonicalBase primitive，production call path没有使用它。",
+          "contractRef": "design.md Decision 6；tasks.md 4.2；specs/flowkit-change-verification-selection Requirement: Core 必须从 actualChangeSet 选择 verification scope",
+          "invariant": "actualChangeSet 必须描述 canonical base→post-action 的最终 candidate，并保留 Apply entry 时已经存在、Action 内未变化的 candidate bytes；observedActionMutations 才是 entry→post。",
+          "requiredOutcome": "在 production admission 中从 persisted canonical base 重建真实 base state并派生 base→post actualChangeSet，同时独立保持 entry→post observedActionMutations；用 entry 已有 dirty candidate 的 service/integration test证明。",
+          "acceptance": [
+            "production record包含 entry前已存在但Action内未变化的base差异",
+            "observedActionMutations仅包含entry后变化，并继续拒绝 declaration外路径",
+            "create/modify/delete、untracked、rename-like、line ending与reserved Core path测试通过production call path"
+          ]
+        },
+        {
+          "id": "E1-RA-004",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "Formal Reader 未实现 current-lineage 与 pending publication 语义",
+          "problem": "readActiveChangeVerificationStatus 仅按最大 runId选择最近 completed apply/revise-apply；它不按 Policy/Review producer lineage判断 current producer，也不识别 pending Apply/revise-apply 已发布 Markdown/record 的 in-flight 状态。若后续 pending revision覆盖 canonical Markdown，它会拿旧 completed record对照新 bytes并产生历史 conflict。record读取也只是 loose object + 两字段比较。",
+          "contractRef": "design.md Decision 8 steps 1-5；tasks.md 5.6/5.8；specs/flowkit-formal-fact-reader-and-persistence Reader current-lineage scenarios",
+          "invariant": "Reader 只验证唯一 current applicable completed producer；pending publication使 projection unavailable/in-flight，不能升级为 authority或让旧 terminal对照future bytes。",
+          "requiredOutcome": "按现有 review/revision lineage选择唯一 current producer，加入 pending publication in-flight投影，使用统一closed validator完整绑定 producer/result/record/current Markdown，并增加 Apply→review changes-requested→revise-apply old/new lineage tests。",
+          "acceptance": [
+            "初次Apply、被changes-requested的Apply、完成revise-apply三种lineage均选择正确唯一producer",
+            "pending Markdown-only或record publication均使Verification unavailable/in-flight，不比较previous terminal record与新bytes",
+            "current producer/record/result/Markdown任一缺失、歧义或mismatch fail closed",
+            "合法successor publication不产生historical FactConflict"
+          ]
+        },
+        {
+          "id": "E1-RA-005",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "verification module authority、not-applicable 与 deterministic record contract 未闭合",
+          "problem": "module-map validator只检查module id排序、非空字段、unknown dependency、跨module ownership overlap和cycle；它接受module内部重复/乱序selectors、dependsOn/scopes/capabilities以及任意unknown scope/capability。VerificationModule/record没有noApplicable predicate/proof、module-map logical ref或capability relation outcome。renderer固定写入status not-run，current record又exact-bind该Markdown，因此正常v5 Apply无法形成passed Verification而不破坏binding。",
+          "contractRef": "design.md Decisions 7-8；tasks.md 5.1/5.4/5.5/5.7；specs/flowkit-change-verification-selection deterministic selection and explicit not-applicable requirements",
+          "invariant": "module/capability authority必须closed、唯一、稳定排序；not-applicable只能由closed predicate显式证明；record保存完整relation/proof authority并生成可进入正式Verification lifecycle的deterministic Markdown。",
+          "requiredOutcome": "补全closed module/scope/capability/predicate schema与validator，保存module-map ref、relation outcome及可选not-applicable proof，定义并实现Verification status如何与immutable selection publication一致进入passed/failed/not-applicable lifecycle；补齐负向determinism tests。",
+          "acceptance": [
+            "duplicate/overlap/unknown/cycle/nondeterministic module map全部fail closed",
+            "modules/capabilities/scopes stable sorted/deduped且record保存完整authority/ref/relation outcome",
+            "not-applicable只有closed predicate proof时可产生，missing mapping不得降级",
+            "v5 Apply后的canonical Verification可合法达到passed/failed/not-applicable而不破坏record binding"
+          ]
+        },
+        {
+          "id": "E1-RA-006",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "OpenSpec projection 未跨完整 formal operation 共享，Windows cancellation 也只有无诊断 fallback",
+          "problem": "prepareNewExecution 先调用readSnapshot；Formal Reader在readOpenSpecArtifacts中自行new adapter/getChangeStatus，随后deriveSemanticInputs又创建另一OpenSpecOperationProjection，故同一preparation仍重复version/status process。Windows timeout分支只child.kill launcher后立即返回outcome-unknown，没有owned process-tree cancellation seam或launcher/descendant diagnostics。",
+          "contractRef": "design.md Decisions 4-5；tasks.md 3.1-3.6；specs/flowkit-openspec-1-7-thin-integration formal operation projection requirement；specs/flowkit-runtime-foundation Windows timeout requirements",
+          "invariant": "formal snapshot、contract refs、tasks、verification与prepared context必须共享一次operation projection；Windows无法证明process tree终止时必须保留可诊断的ownership/descendant信息并fail closed。",
+          "requiredOutcome": "把一个OpenSpecOperationProjection贯穿每次完整formal read/preparation并用invocation-count/real CLI test证明；实现可注入的Windows owned process-tree cancellation seam，confirmed时返回timed-out-cancelled，无法确认时携带完整diagnostics返回outcome-unknown。",
+          "acceptance": [
+            "同一preparation中的snapshot/artifacts/tasks/verification/contract/action context共享一次version/status projection",
+            "post-action admission使用全新projection且不跨mutation cache",
+            "fake与real CLI invocation-count tests覆盖完整operation而非单adapter方法",
+            "Windows confirmed whole-tree termination与unconfirmed diagnostics/race/late-exit测试齐全"
+          ]
+        },
+        {
+          "id": "E1-RA-007",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "bootstrap integration、长期文档与Verification证据尚未完成",
+          "problem": "当前E1 integration仅直接组合snapshot/change-set/selection/publication primitives，没有经过prepareNewExecution→v5 context/ActionPackage v2→resume/admit→Reader，因此不能证明task 6.1/6.2联动。approved mutation scope指定的tests/fixtures/e1-change-verification-selection目录不存在，长期docs/flowkit-self-hosting-bootstrap-and-migration.md也不存在。独立npm run typecheck当前在integration第37行失败，但verification.md声称typecheck与quality通过。除1.3外tasks仍未按真实完成情况勾选。",
+          "contractRef": "tasks.md 6.1-6.4 and 7.1-7.5；design.md Decision 10；AGENTS.md Review=完整审查与正式Verification事实要求",
+          "invariant": "Verification evidence必须与当前bytes和exact commands一致；bootstrap integration必须验证正式production链路，长期migration边界必须落入canonical文档；tasks只能在实际完成后勾选。",
+          "requiredOutcome": "关闭前述实现blocker后建立真正production v5 disposable integration与historical fixtures，补齐长期migration文档，修复typecheck并重跑/如实更新exact verification evidence；最后逐项核验并勾选所有实际完成tasks，未完成项不得勾选。",
+          "acceptance": [
+            "disposable integration走完整prepare/resume/admit/read链并产生真实v5 context、ActionPackage v2、record与terminal binding",
+            "historical v2/v3/v4 fixtures及unknown/cross-version regression完整，且不改写105-116",
+            "长期self-hosting/migration文档明确bootstrap、attribution限制与后续dogfood边界",
+            "npm run typecheck及记录的focused/quality/full/strict/hygiene commands在当前bytes上通过",
+            "Author按真实完成状态勾选tasks.md全部条目，并保留G1边界"
+          ]
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [
+      {
+        "ref": "owner:52c2f519e846da1aab0ba16b4f2e2355ae362d0fb846f2a21302a2b5bdf17b6d",
+        "decision": "contract-reset",
+        "deliveryId": "20260810-01-change-execution-loop",
+        "changeId": "change-verification-selection-and-change-set",
+        "scope": "e1-two-time-boundaries-and-execution-reliability-primitives",
+        "requiredOutcomes": [
+          "E1 must preserve the immutable entry versus Core-owned post-action fact model, context v5 and ActionPackage v2 migration, actualChangeSet, deterministic module/dependency/capability verificationScope selection, and bootstrap verification.",
+          "E1 scope is expanded to implement bounded operation-scoped OpenSpec projection deduplication and Windows process-tree cancellation with fail-closed outcome-unknown fallback.",
+          "E1 scope is expanded to implement exact target Run resume, timeout outcome-unknown, idempotent terminal replay, and late-completion generation safety.",
+          "G1 retains ownership of Change CLI surface, full Change E2E, checkout/resume recovery validation, Run/package size observation, focused/affected timing observation, and review convergence observation; G1 consumes E1 primitives and does not duplicate their implementation.",
+          "Historical Run contexts and results remain immutable; the new Owner fact must be projected through the official write-side and Policy must determine the next legal boundary."
+        ],
+        "sourceRef": "owner-input:2026-08-13:authorize-E1-expanded-scope-before-108-revision"
+      }
+    ],
+    "verificationView": {
+      "status": "passed",
+      "resultRef": {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/verification.md",
+        "kind": "verification-summary",
+        "versionFingerprint": "324b87da22b2eac35ed7264ecab704892ffc21c1ef6d1a75f6e6c14d8cd28f09"
+      }
+    },
+    "externalContextFingerprint": "424b9e261c431ec2c5d0061435bfcd892267cc369ff790b0972b5c2d6b4c35f1",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "core-derived",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

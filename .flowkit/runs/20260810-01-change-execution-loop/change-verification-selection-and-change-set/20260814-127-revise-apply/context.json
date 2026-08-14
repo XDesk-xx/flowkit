@@ -1,0 +1,600 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260814-127-revise-apply",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "revise-apply",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "4ac526e0e711c1926f8947835f83669ed8fcfcc81d0f9efdf68f14e9c8a73622",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:52c2f519e846da1aab0ba16b4f2e2355ae362d0fb846f2a21302a2b5bdf17b6d",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-verification-selection-and-change-set",
+      "scope": "e1-two-time-boundaries-and-execution-reliability-primitives",
+      "requiredOutcomes": [
+        "E1 must preserve the immutable entry versus Core-owned post-action fact model, context v5 and ActionPackage v2 migration, actualChangeSet, deterministic module/dependency/capability verificationScope selection, and bootstrap verification.",
+        "E1 scope is expanded to implement bounded operation-scoped OpenSpec projection deduplication and Windows process-tree cancellation with fail-closed outcome-unknown fallback.",
+        "E1 scope is expanded to implement exact target Run resume, timeout outcome-unknown, idempotent terminal replay, and late-completion generation safety.",
+        "G1 retains ownership of Change CLI surface, full Change E2E, checkout/resume recovery validation, Run/package size observation, focused/affected timing observation, and review convergence observation; G1 consumes E1 primitives and does not duplicate their implementation.",
+        "Historical Run contexts and results remain immutable; the new Owner fact must be projected through the official write-side and Policy must determine the next legal boundary."
+      ],
+      "sourceRef": "owner-input:2026-08-13:authorize-E1-expanded-scope-before-108-revision"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260814-127-revise-apply/",
+  "changeKey": "E1",
+  "changeId": "change-verification-selection-and-change-set",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260814-126-review-apply/result.json",
+    "versionFingerprint": "4c4cd8b0ae0c45ed8f75ac76af498de9e80b9bb7a61ef9e43e50e3e3047e0ed6",
+    "kind": "run-result"
+  },
+  "sourceReviewRun": "20260814-126-review-apply",
+  "sourceReviewVerdict": "changes-requested",
+  "canonicalBase": "57e5453c3fde64d5f8d00befff29bce3e81aec8c",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260814-126-review-apply/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "4c4cd8b0ae0c45ed8f75ac76af498de9e80b9bb7a61ef9e43e50e3e3047e0ed6"
+    },
+    {
+      "ref": "openspec/changes/change-verification-selection-and-change-set/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "f740855436b3c2a28e0536ca9061ceca2f40e0f98cc324b643527bc63b0d9ae2"
+    },
+    {
+      "ref": "openspec/changes/change-verification-selection-and-change-set/design.md",
+      "versionFingerprint": "cc7e8bc95af25f32ee995871eb6ef2e8c6db640cfe9fb5f999948d6eb1a967d8",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-selection-and-change-set/proposal.md",
+      "versionFingerprint": "8aadcefaa91a1dda71458c92b3c59b34f95b11da02d29e83d65ba944e592be67",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-change-verification-selection/spec.md",
+      "versionFingerprint": "30d7230649aa5aa239c94d5f64c61ae2efe196675768e4dc035fd82f09f252ac",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-core-model/spec.md",
+      "versionFingerprint": "edec8d0d0f1296111b29c2f6523541a7922ea92c8de077a000a6460f6fec7a62",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "versionFingerprint": "f84903a43405b5c1cd73f3e4722cd3b35b5bea8ece2ab2c771044a12e390f1b1",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-lean-run-and-action-package/spec.md",
+      "versionFingerprint": "83b2f607dc408a1d22ee34a10b191f042b0370c16c6292fba5838b500ec8dd86",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+      "versionFingerprint": "ae23ff4ec84d48adfbb98e15b765dd77b304bd062404a72ff7b7c65e8cf39926",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-policy-engine/spec.md",
+      "versionFingerprint": "5b0b495fa4900df960bcff60d8a58fda1714c3230731a5906e16d0fbc3d4c588",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-runtime-foundation/spec.md",
+      "versionFingerprint": "e85b627d4a1c6ed3f3a647db6fac0f756d2e059a30eed8f2671eafa8250fd01d",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-selection-and-change-set/tasks.md",
+      "versionFingerprint": "e7c44dddad94557ddf4f0a2bf478f302ee9bb031734b17dd4d4410c963c2f5e7",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-verification-selection-and-change-set",
+      "runId": "20260814-127-revise-apply",
+      "action": "revise-apply",
+      "role": "author",
+      "semanticInputFingerprint": "4ac526e0e711c1926f8947835f83669ed8fcfcc81d0f9efdf68f14e9c8a73622"
+    },
+    "definition": {
+      "action": "revise-apply",
+      "version": 1,
+      "role": "author",
+      "goalClass": "close-apply-author-findings",
+      "mutationClass": "implementation-and-verification-revision",
+      "outputClass": "revised-implementation-candidate",
+      "terminalContract": {
+        "kind": "implementation",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": true,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "f740855436b3c2a28e0536ca9061ceca2f40e0f98cc324b643527bc63b0d9ae2"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/design.md",
+        "versionFingerprint": "cc7e8bc95af25f32ee995871eb6ef2e8c6db640cfe9fb5f999948d6eb1a967d8",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/proposal.md",
+        "versionFingerprint": "8aadcefaa91a1dda71458c92b3c59b34f95b11da02d29e83d65ba944e592be67",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "30d7230649aa5aa239c94d5f64c61ae2efe196675768e4dc035fd82f09f252ac",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-core-model/spec.md",
+        "versionFingerprint": "edec8d0d0f1296111b29c2f6523541a7922ea92c8de077a000a6460f6fec7a62",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "f84903a43405b5c1cd73f3e4722cd3b35b5bea8ece2ab2c771044a12e390f1b1",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-lean-run-and-action-package/spec.md",
+        "versionFingerprint": "83b2f607dc408a1d22ee34a10b191f042b0370c16c6292fba5838b500ec8dd86",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+        "versionFingerprint": "ae23ff4ec84d48adfbb98e15b765dd77b304bd062404a72ff7b7c65e8cf39926",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-policy-engine/spec.md",
+        "versionFingerprint": "5b0b495fa4900df960bcff60d8a58fda1714c3230731a5906e16d0fbc3d4c588",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-runtime-foundation/spec.md",
+        "versionFingerprint": "e85b627d4a1c6ed3f3a647db6fac0f756d2e059a30eed8f2671eafa8250fd01d",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/tasks.md",
+        "versionFingerprint": "e7c44dddad94557ddf4f0a2bf478f302ee9bb031734b17dd4d4410c963c2f5e7",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260814-126-review-apply/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "4c4cd8b0ae0c45ed8f75ac76af498de9e80b9bb7a61ef9e43e50e3e3047e0ed6"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260814-126-review-apply",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260814-126-review-apply/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "4c4cd8b0ae0c45ed8f75ac76af498de9e80b9bb7a61ef9e43e50e3e3047e0ed6"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "E1-RA-008",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "Contract Reset recovery 仍用 post-reset current generation 重建 historical pending Run",
+          "problem": "新 E1 spec 已明确 recoverContractResetPendingRun 必须基于 target pending Run 的 persisted entry lineage；122 production implementation 仍在 isContractResetOnlyPendingDrift 中调用 deriveSemanticInputs(current snapshot, context.action, descriptorsFromContext(context))。deriveSemanticInputs→collectContractRefs 又调用 computeResetAwareLineage(snapshot,...).artifact，因此 Reset 正确排除旧 proposal/apply generation 后，旧 pending Apply/revise-apply recovery 仍会要求 current generation producer，重现 `apply has no immutable propose producer generation` deadlock。",
+          "contractRef": "specs/flowkit-formal-fact-reader-and-persistence Requirement: Contract Reset recovery 必须保持 narrow admission；docs/flowkit-self-hosting-bootstrap-and-migration.md persisted-entry invariant",
+          "invariant": "historical pending Run 的 entry truth 来自其 persisted context/inputRef/producer-review lineage；Contract Reset 只改变 currentness，不能迫使 recovery 用新 generation 重新解释旧 Run。",
+          "requiredOutcome": "为 reset recovery 增加严格 historical reconstruction：以 target context.inputRef、consumed review result、reviewed producer ResultRefs及其 persisted contract/Owner refs重建原始 entry semantic view；只将 current applicable Contract Reset作为允许的唯一差异。缺失、歧义、hash mismatch或 mixed drift 均 fail closed，不得 fallback 到 current-generation producer lookup。",
+          "acceptance": [
+            "synthetic approved proposal/review→pending apply→Contract Reset 后，旧 proposal generation 已 non-current 仍可由 official recovery取消为 superseded-by-owner-contract-reset",
+            "同样覆盖 pending revise-apply historical lineage",
+            "recovery 不要求 post-reset current propose producer",
+            "missing/ambiguous historical refs、multiple pending 与 mixed semantic drift 全部 fail closed"
+          ]
+        },
+        {
+          "id": "E1-RA-011",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "125 actualChangeSet 收录了 Core-owned verification.md 的 pre-publication bytes，record 不再描述最终 candidate",
+          "problem": "125 在 Core 写入本 Run的 canonical verification.md 之前就从 Git base→post-action snapshot计算 actualChangeSet；deriveActualChangeSetFromCanonicalBase 只排除 .flowkit 路径，没有排除当前 Change 的 Core-owned verification.md。随后 publishVerificationSelection 重写 verification.md。因此 immutable selection record 中 verification.md 的 contentFingerprintAfter 绑定的是旧 publication，而最终 candidate 已是新 publication。",
+          "contractRef": "openspec/changes/change-verification-selection-and-change-set/design.md §6 entry snapshot 与 actualChangeSet；tasks.md 4.2/4.3；specs/flowkit-change-verification-selection/spec.md Requirement: Core 必须派生 canonical actualChangeSet",
+          "invariant": "reserved Core-owned verification publication 不进入 Author candidate sets；对 actualChangeSet 中保留的每个 file，contentFingerprintAfter 必须描述最终 candidate bytes，而不是 publication 前的临时状态。",
+          "requiredOutcome": "按 approved reserved-path contract 修正 observation/selection：当前 Run 的 Core-owned verification publication 不得作为 candidate mutation 参与 observedActionMutations/actualChangeSet/verificationScope；对仍保留在 actualChangeSet 的每个 file，最终 immutable record fingerprint 必须与 terminal candidate bytes一致。不得通过在 record 中保留 pre-publication verification.md hash 规避。",
+          "acceptance": [
+            "v5 Apply/revise-apply publication 后，actualChangeSet 不包含当前 Run 的 Core-owned canonical verification.md publication",
+            "对 immutable selection actualChangeSet 的所有 non-delete files 重算 terminal candidate SHA-256，全部与 contentFingerprintAfter 一致",
+            "verificationScope 不因 Core 自己写 verification.md 而扩大",
+            "增加 regression 覆盖 entry 时已有旧 verification.md、Core publication 后 bytes变化的场景"
+          ]
+        }
+      ],
+      "convergence": [
+        {
+          "findingId": "E1-RA-008",
+          "state": "still-open"
+        },
+        {
+          "findingId": "E1-RA-009",
+          "state": "resolved"
+        },
+        {
+          "findingId": "E1-RA-010",
+          "state": "resolved"
+        },
+        {
+          "findingId": "E1-RA-011",
+          "state": "new"
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [
+      {
+        "ref": "owner:52c2f519e846da1aab0ba16b4f2e2355ae362d0fb846f2a21302a2b5bdf17b6d",
+        "decision": "contract-reset",
+        "deliveryId": "20260810-01-change-execution-loop",
+        "changeId": "change-verification-selection-and-change-set",
+        "scope": "e1-two-time-boundaries-and-execution-reliability-primitives",
+        "requiredOutcomes": [
+          "E1 must preserve the immutable entry versus Core-owned post-action fact model, context v5 and ActionPackage v2 migration, actualChangeSet, deterministic module/dependency/capability verificationScope selection, and bootstrap verification.",
+          "E1 scope is expanded to implement bounded operation-scoped OpenSpec projection deduplication and Windows process-tree cancellation with fail-closed outcome-unknown fallback.",
+          "E1 scope is expanded to implement exact target Run resume, timeout outcome-unknown, idempotent terminal replay, and late-completion generation safety.",
+          "G1 retains ownership of Change CLI surface, full Change E2E, checkout/resume recovery validation, Run/package size observation, focused/affected timing observation, and review convergence observation; G1 consumes E1 primitives and does not duplicate their implementation.",
+          "Historical Run contexts and results remain immutable; the new Owner fact must be projected through the official write-side and Policy must determine the next legal boundary."
+        ],
+        "sourceRef": "owner-input:2026-08-13:authorize-E1-expanded-scope-before-108-revision"
+      }
+    ],
+    "verificationView": {
+      "status": "unavailable",
+      "resultRef": {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/verification.md",
+        "versionFingerprint": "3ff76afe7e925caffe3bcabadfbac07149a45463a7d1126ab8a2981edf6ca1c0",
+        "kind": "verification-summary"
+      }
+    },
+    "externalContextFingerprint": "25be2ba48b204b0dd24642c29e9a640111046e3b74eaa67ac66f9449e68cc28c",
+    "requiredResultContract": {
+      "kind": "implementation",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": true,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    },
+    "entryWorkspaceIdentity": {
+      "canonicalBase": "57e5453c3fde64d5f8d00befff29bce3e81aec8c",
+      "workspaceFingerprint": "8b6ebcce68427366fcaac4f7c8489cc84ecf8d570a3a9686f136ff09e9a8b66f"
+    },
+    "mutationDeclaration": {
+      "schemaVersion": 1,
+      "action": "revise-apply",
+      "designRef": {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/design.md",
+        "kind": "produced-artifact",
+        "versionFingerprint": "cc7e8bc95af25f32ee995871eb6ef2e8c6db640cfe9fb5f999948d6eb1a967d8"
+      },
+      "selectors": [
+        {
+          "kind": "exact",
+          "path": "02-change-execution-loop-delivery-implementation-reference-v3.md"
+        },
+        {
+          "kind": "exact",
+          "path": "docs/flowkit-self-hosting-bootstrap-and-migration.md"
+        },
+        {
+          "kind": "exact",
+          "path": "openspec/changes/change-verification-selection-and-change-set/tasks.md"
+        },
+        {
+          "kind": "exact",
+          "path": "package.json"
+        },
+        {
+          "kind": "exact",
+          "path": "scripts/affected-scopes.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/domain/types.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/facts/formal-fact-reader.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/integrations/openspec/openspec-cli-adapter.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/integrations/openspec/openspec-types.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/persistence/legacy-recognizer.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/persistence/run-persistence.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/persistence/serialization.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/policy/next.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/services/b1-run-execution-service.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/shared/external-command.ts"
+        },
+        {
+          "kind": "prefix",
+          "path": "src/verification/change-selection"
+        },
+        {
+          "kind": "prefix",
+          "path": "tests/fixtures/e1-change-verification-selection"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/integration/e1-change-verification-selection.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/integration/openspec-1-7-real-cli.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/integration/verification-commands.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/external-command.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/facts/formal-fact-reader-e1-verification.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/facts/formal-fact-reader-ra007-admission.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/facts/formal-fact-reader.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/integrations/openspec-cli-adapter.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/persistence/legacy-recognizer.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/persistence/run-persistence.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/persistence/serialization.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/policy/next.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/services/b1-openspec-action-context.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/services/b1-run-execution-service.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/verification/affected-scopes.test.ts"
+        },
+        {
+          "kind": "prefix",
+          "path": "tests/unit/verification/change-selection"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/verification/package-scripts.test.ts"
+        }
+      ]
+    }
+  },
+  "entryWorkspaceIdentity": {
+    "canonicalBase": "57e5453c3fde64d5f8d00befff29bce3e81aec8c",
+    "workspaceFingerprint": "8b6ebcce68427366fcaac4f7c8489cc84ecf8d570a3a9686f136ff09e9a8b66f"
+  },
+  "mutationDeclaration": {
+    "schemaVersion": 1,
+    "action": "revise-apply",
+    "designRef": {
+      "ref": "openspec/changes/change-verification-selection-and-change-set/design.md",
+      "kind": "produced-artifact",
+      "versionFingerprint": "cc7e8bc95af25f32ee995871eb6ef2e8c6db640cfe9fb5f999948d6eb1a967d8"
+    },
+    "selectors": [
+      {
+        "kind": "exact",
+        "path": "02-change-execution-loop-delivery-implementation-reference-v3.md"
+      },
+      {
+        "kind": "exact",
+        "path": "docs/flowkit-self-hosting-bootstrap-and-migration.md"
+      },
+      {
+        "kind": "exact",
+        "path": "openspec/changes/change-verification-selection-and-change-set/tasks.md"
+      },
+      {
+        "kind": "exact",
+        "path": "package.json"
+      },
+      {
+        "kind": "exact",
+        "path": "scripts/affected-scopes.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/domain/types.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/facts/formal-fact-reader.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/integrations/openspec/openspec-cli-adapter.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/integrations/openspec/openspec-types.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/persistence/legacy-recognizer.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/persistence/run-persistence.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/persistence/serialization.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/policy/next.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/services/b1-run-execution-service.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/shared/external-command.ts"
+      },
+      {
+        "kind": "prefix",
+        "path": "src/verification/change-selection"
+      },
+      {
+        "kind": "prefix",
+        "path": "tests/fixtures/e1-change-verification-selection"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/integration/e1-change-verification-selection.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/integration/openspec-1-7-real-cli.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/integration/verification-commands.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/external-command.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/facts/formal-fact-reader-e1-verification.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/facts/formal-fact-reader-ra007-admission.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/facts/formal-fact-reader.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/integrations/openspec-cli-adapter.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/persistence/legacy-recognizer.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/persistence/run-persistence.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/persistence/serialization.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/policy/next.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/services/b1-openspec-action-context.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/services/b1-run-execution-service.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/verification/affected-scopes.test.ts"
+      },
+      {
+        "kind": "prefix",
+        "path": "tests/unit/verification/change-selection"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/verification/package-scripts.test.ts"
+      }
+    ]
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": true,
+    "mayWriteTestCode": true,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

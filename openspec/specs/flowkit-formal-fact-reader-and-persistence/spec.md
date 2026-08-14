@@ -363,59 +363,91 @@ C1 MUST 手写最小子集 YAML 解析器解析 Delivery Manifest。MUST NOT 引
 
 ### Requirement: context.json 物理 schema + 确定性投影 + 身份校验
 
-持久化层 MUST 定义 `ContextFile` 物理 schema 作为 `createRun` 创建的 current Standard Run 输入上下文和确定性 current-Run 投影。schemaVersion 2 current Run MUST 只允许 Change Action，MUST 使用 Core-derived ResultRef，并 MUST 携带 `changeKey` / `changeId`。review-* Run 的 `inputRef` MUST 由 Core 从 `reviewedRunId` 实际 result.json 派生。
+持久化层 MUST 定义 closed `ContextFile` version union。migration 后 new Standard Run writer MUST 只写 schemaVersion 5；v2/v3/v4 MUST 保持 immutable historical read-only contracts。v5 common variant MUST 保存 `runId`、Delivery/Change/Action/Role、`runPath`、canonical base、applicable facts 与 semantic fingerprint；`apply` / `revise-apply` variant MUST 另外保存 entry workspace identity、Core-derived typed declaration 与 approved Design source identity。review/revise/archive action-specific fields 继续使用 closed discriminators。
 
 #### Scenario: ContextFile 必填字段
 
-- **WHEN** 校验新建 schemaVersion 2 `ContextFile`
-- **THEN** `schemaVersion` MUST 等于 `2`
-- **AND** MUST 包含 `runId`、`deliveryId`、`changeKey`、`changeId`、`action`、`role`、`ownerAuthorization`、`runPath`
+- **WHEN** 校验 new schemaVersion 5 Standard Run
+- **THEN** `schemaVersion` MUST 等于 `5`
+- **AND** MUST 包含 `runId`、`deliveryId`、`changeKey`、`changeId`、`action`、`role`、`ownerAuthorization`、`runPath`、canonical base、applicable facts 与 semantic fingerprint
 - **AND** `action` MUST 在 10 个 Change-only Standard Action Catalog 中
+- **AND** action/role 或 version/field combination mismatch MUST fail closed
 
 #### Scenario: 新 current Run 不允许 Delivery-level shape
 
-- **WHEN** `createRun` 输入缺失 `changeKey` / `changeId`
+- **WHEN** v5 create input 缺失 `changeKey` / `changeId`
 - **OR** action 为历史 `full-test` / `delivery-finalize`
-- **THEN** MUST reject
+- **THEN** writer MUST reject
 - **AND** MUST NOT publish pending Run
 
 #### Scenario: review Run inputRef 必须绑定 reviewedRunId
 
-- **WHEN** 创建 `review-explore`、`review-propose` 或 `review-apply`
+- **WHEN** 创建 schemaVersion 5 `review-explore`、`review-propose` 或 `review-apply`
 - **THEN** `reviewedRunId` MUST 存在
 - **AND** Core MUST 从对应实际 `result.json` 构造 immutable `context.inputRef`
 - **AND** 目标缺失、不可读或 fingerprint 不匹配 MUST 在 Run publish 前 fail closed
 
 #### Scenario: context 身份必须匹配 Change path
 
-- **WHEN** 校验 schemaVersion 2 current Run
+- **WHEN** 校验 schemaVersion 5 current Run
 - **THEN** `deliveryId`、`changeId`、`runId` 与 `runPath` MUST 和实际目录一致
 - **AND** 任一不一致 MUST reject 或收集 `FactConflict`
 
+#### Scenario: v5 Apply entry 必须完整
+
+- **WHEN** 创建 schemaVersion 5 `apply` 或 `revise-apply` Run
+- **THEN** context MUST 包含 persisted entry workspace identity 与 matching approved Design 派生的 typed declaration
+- **AND** 任一 authority 缺失 MUST 在 pending Run publish 前 fail closed
+
 ### Requirement: Bootstrap Run 兼容性 + 三路判别器
 
-Reader MUST 兼容既有 Bootstrap/legacy Run。schemaVersion 2 current Change Run MUST 走严格 current schema，验证失败 MUST fail closed，MUST NOT 泛化降级。schemaVersion 1 或缺失 MUST 走 bounded legacy recognizer；该 recognizer MAY 识别历史 `full-test` / `delivery-finalize` Delivery-level Run，但只用于历史读取/Run-ID 兼容，MUST NOT 将其提升为 current `FormalAction`、current Policy Run 或新 Run 创建能力。其他 schemaVersion MUST fail closed。
+Reader MUST 使用 closed version-first discriminator：schemaVersion 5 走 strict current validator；v2/v3/v4 分别走各自 bounded historical validator；schemaVersion 1 或缺失只走既有 bounded Bootstrap/legacy recognizer；unknown version MUST fail closed。任何 historical path MUST NOT 修改 bytes、补字段、升级 authority 或降级到其它版本 parser。
 
 #### Scenario: schemaVersion 2 current Change Run 严格校验
 
-- **WHEN** Reader 读取 `schemaVersion=2` 的 current Change Run
-- **THEN** MUST 使用 Change-only `ContextFile` schema + identity validation
-- **AND** malformed current Run MUST 收集 `FactConflict`
-- **AND** MUST NOT 因失败退回 legacy best-effort
+- **WHEN** Reader 读取 schemaVersion 2 historical Change Run
+- **THEN** normal C1 shape MUST 使用 v2 strict Change-only/identity validation
+- **AND** provisional `ownerFactRefs` MAY 只校验 shape 后从 typed authority projection 忽略
+- **AND** pre-Q1 revision exception MUST 只接受既有 run/change/action/sourceReviewRun + immutable SHA-256 allowlist 完全匹配的 corpus
+- **AND** malformed v2 MUST 收集 `FactConflict`，MUST NOT 因失败退回 legacy best-effort
 
 #### Scenario: legacy recognizer 可识别历史 Delivery Action
 
-- **WHEN** Reader/NNN enumeration 遇到 `schemaVersion=1` 或缺失的历史 Run
+- **WHEN** Reader/NNN enumeration 遇到 schemaVersion 1 或缺失的历史 Run
 - **AND** action 为 `full-test` 或 `delivery-finalize`
 - **THEN** MAY 识别为 bounded legacy Delivery Run
 - **AND** MUST NOT 将该 action 加回 current Action Catalog
-- **AND** MUST NOT 允许 `createRun` / `writeRunResult` 新建或继续该模型
+- **AND** MUST NOT 允许 new writer 继续该模型
 
 #### Scenario: legacy terminal bytes 不迁移
 
-- **WHEN** bounded legacy reader 识别历史 Delivery-level Run
+- **WHEN** bounded historical reader 识别 v1/v2/v3/v4 Run
 - **THEN** MUST NOT 修改、迁移或重写其 `context.json` / `result.json`
-- **AND** current Policy MUST 从 Delivery Manifest/Verification/Owner/Git facts 读取 Delivery lifecycle，而不是 replay 该 Run
+- **AND** current Policy MUST 从当前正式 facts 计算 lifecycle，而不是升级旧 Run authority
+
+#### Scenario: historical v3 保留 Owner fact contract
+
+- **WHEN** Reader 读取 schemaVersion 3 context
+- **THEN** MUST 按 D1 bounded `ownerFactRefs` 与既有 identity rules 只读投影
+- **AND** MUST NOT 获得 v4 archive projection 或 v5 entry/declaration authority
+
+#### Scenario: historical v4 保留 archive projection contract
+
+- **WHEN** Reader 读取 schemaVersion 4 context
+- **THEN** MUST 按 D2 rules 校验 Owner facts、archive-only `archiveEntryOpenSpecProjection` 与 existing action-specific fields
+- **AND** MUST NOT 将它宣称为 v5 evidence 或 ActionPackage v2 authority
+
+#### Scenario: v5 current context 严格校验
+
+- **WHEN** Reader 读取 schemaVersion 5 context
+- **THEN** MUST 使用 v5 Action-discriminated schema + identity validation
+- **AND** malformed v5 MUST 收集 conflict，MUST NOT fallback 到 v2/v3/v4/legacy recognizer
+
+#### Scenario: unknown version 不降级
+
+- **WHEN** context schemaVersion 不属于 1/2/3/4/5 且也不是 missing legacy shape
+- **THEN** Reader MUST fail closed
+- **AND** MUST NOT 猜测最接近版本或静默丢弃 unknown fields
 
 ### Requirement: Delivery Manifest 嵌套 delivery 状态读取 + fail-closed
 
@@ -1330,3 +1362,61 @@ Owner Contract Reset 改变 Change contract generation 时，FormalFact projecti
 - **AND** reset required outcome要求建立新的contract generation
 - **THEN**最近合法 approved Explore artifact/review MUST仍可作为fresh `propose`的输入
 - **AND** MUST NOT要求无关的`explore → review-explore`重跑
+
+### Requirement: post-action record 必须独立持久化
+
+Core MUST 将 actualChangeSet 与 verification-selection facts 写入独立 immutable per-Run record，不得修改 entry context。record identity MUST 绑定 producing Run、canonical base、entry identity、post-action observation、renderer version 与 generated `verification.md` point-in-time fingerprint。对 Apply/revise-apply，writer MUST 先发布 deterministic Markdown，再 atomic create immutable record commit marker，最后 terminal CAS。terminal result MUST exact-bind producing Run 的 immutable record；canonical Markdown current-byte exact validation 只适用于 current pending/completion/recovery 或唯一 current applicable producer lineage，MUST NOT 反向重验 historical terminal。
+
+#### Scenario: terminal 后尝试修改 context
+
+- **WHEN** post-action facts 已产生
+- **THEN** writer MUST 发布独立 record
+- **AND** MUST NOT terminal-time 注入或回填 `context.json`
+
+#### Scenario: record absent 而 Markdown present
+
+- **WHEN** crash 后 Run pending、record absent 且 `verification.md` present
+- **THEN** exact recovery MUST 从 persisted entry/package 重算 deterministic Markdown
+- **AND** bytes 完全一致才可创建 immutable record，否则 MUST fail closed
+
+#### Scenario: terminal result 不得早于 commit marker
+
+- **WHEN** Apply/revise-apply terminal result 首次发布
+- **THEN** producing Run 的 immutable record 与当时 canonical Markdown MUST 已完整存在且 binding 有效
+- **AND** result MUST exact-bind 该 record，缺失或 mismatch MUST 阻止 terminal CAS
+
+#### Scenario: Reader 只验证 current applicable selection lineage
+
+- **WHEN** Formal Reader 投影 current Change Verification
+- **THEN** MUST 按现有 Policy/Review producer lineage 选择唯一 current completed `apply` / `revise-apply` producer 的 immutable record
+- **AND** MUST 只将该 current record fingerprint 与 current canonical `verification.md` bytes exact-check
+- **AND** record 缺失、多个 current candidates、producer/result/record mismatch 或 current bytes mismatch MUST fail closed
+
+#### Scenario: pending post-action publication 不替换 current authority
+
+- **WHEN** pending Apply/revise-apply 已发布 Markdown 或 record，但尚无 terminal result
+- **THEN** Reader MUST 将 verification projection 标记为 unavailable/in-flight
+- **AND** MAY 为 exact recovery 校验 pending record/Markdown
+- **AND** MUST NOT 将 pending record 投影为 satisfied authority，或将 previous terminal record 对照新 Markdown bytes
+
+#### Scenario: historical terminal binding 是 point-in-time fact
+
+- **WHEN** 后续合法 revise-apply 发布新的 record 与同一路径 `verification.md`
+- **THEN** earlier Apply/revise-apply result、record 与 ResultRefs MUST 保持有效
+- **AND** Reader MUST NOT 将 future current-path bytes 与 historical fingerprint 比较或产生 historical FactConflict
+
+#### Scenario: old terminal exact replay 不读取 future Markdown
+
+- **WHEN** `resumeRun(expectedRunId)` 或 equivalent replay 指向 non-current historical terminal
+- **THEN** Core MUST 直接返回 persisted terminal，并校验其 persisted result ↔ per-Run record identity
+- **AND** MUST NOT 读取 current canonical `verification.md` 或 current selection lineage
+
+### Requirement: Contract Reset recovery 必须保持 narrow admission
+
+`recoverContractResetPendingRun` MUST 基于 target pending Run 的 persisted entry lineage，只在唯一 drift 来自 applicable Owner Contract Reset 时取消为 `superseded-by-owner-contract-reset`。它 MUST NOT 成为 generic cancellation、history rewrite 或 generation manager。
+
+#### Scenario: reset 之外还存在 semantic drift
+
+- **WHEN** target pending Run 同时存在 undeclared/unowned path 或其他 non-reset semantic drift
+- **THEN** recovery MUST fail closed
+- **AND** MUST 保持 context 与历史 Run 不变

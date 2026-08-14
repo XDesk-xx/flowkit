@@ -1,0 +1,8 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "archive",
+    "executionStatus": "completed",
+    "summary": "OpenSpec archive completed successfully as 2026-08-14-change-verification-selection-and-change-set; Flowkit Change state transitioned active -> completed."
+  }
+}

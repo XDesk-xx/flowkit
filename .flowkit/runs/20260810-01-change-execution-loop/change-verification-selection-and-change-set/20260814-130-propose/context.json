@@ -1,0 +1,179 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260814-130-propose",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "propose",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "b91195800b1ccfc04dc4039d61014b57fae477aeb83124bc1d8511878d6b9386",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:52c2f519e846da1aab0ba16b4f2e2355ae362d0fb846f2a21302a2b5bdf17b6d",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-verification-selection-and-change-set",
+      "scope": "e1-two-time-boundaries-and-execution-reliability-primitives",
+      "requiredOutcomes": [
+        "E1 must preserve the immutable entry versus Core-owned post-action fact model, context v5 and ActionPackage v2 migration, actualChangeSet, deterministic module/dependency/capability verificationScope selection, and bootstrap verification.",
+        "E1 scope is expanded to implement bounded operation-scoped OpenSpec projection deduplication and Windows process-tree cancellation with fail-closed outcome-unknown fallback.",
+        "E1 scope is expanded to implement exact target Run resume, timeout outcome-unknown, idempotent terminal replay, and late-completion generation safety.",
+        "G1 retains ownership of Change CLI surface, full Change E2E, checkout/resume recovery validation, Run/package size observation, focused/affected timing observation, and review convergence observation; G1 consumes E1 primitives and does not duplicate their implementation.",
+        "Historical Run contexts and results remain immutable; the new Owner fact must be projected through the official write-side and Policy must determine the next legal boundary."
+      ],
+      "sourceRef": "owner-input:2026-08-13:authorize-E1-expanded-scope-before-108-revision"
+    },
+    {
+      "ref": "owner:a2756785a2a56e69a4dc4695ea3d085c4c2af4228b8f1e1884cfa68a5ca2022d",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-verification-selection-and-change-set",
+      "scope": "e1-openspec-modified-requirement-completeness-after-archive-failure",
+      "requiredOutcomes": [
+        "Abandon the proposal/apply/archive generation culminating in 20260814-129-archive; prior proposal/apply/review approval must not authorize the new generation.",
+        "For flowkit-formal-fact-reader-and-persistence, every MODIFIED Requirement must carry forward the canonical requirement scenario identities and semantics that remain applicable, while integrating the intended v5 contract so archive sync cannot silently delete canonical scenarios.",
+        "Re-propose E1 without expanding implementation scope: preserve the accepted E1 runtime/verification outcomes while correcting the OpenSpec delta contract exposed by archive_spec_update_failed.",
+        "The new proposal/review/apply generation must pass OpenSpec strict validation and demonstrate archive-sync compatibility before a new archive authorization is requested."
+      ],
+      "sourceRef": "owner-input:2026-08-14T13:23+08:00:contract-reset:E1-repropose"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260814-130-propose/",
+  "changeKey": "E1",
+  "changeId": "change-verification-selection-and-change-set",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260813-111-review-explore/result.json",
+    "versionFingerprint": "b3812e33b09b68f317b64a8235acf0426dd6b7e2910fe68dbf3b6811d316cb07",
+    "kind": "run-result"
+  },
+  "canonicalBase": "57e5453c3fde64d5f8d00befff29bce3e81aec8c",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260813-111-review-explore/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "b3812e33b09b68f317b64a8235acf0426dd6b7e2910fe68dbf3b6811d316cb07"
+    },
+    {
+      "ref": "openspec/changes/change-verification-selection-and-change-set/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "f740855436b3c2a28e0536ca9061ceca2f40e0f98cc324b643527bc63b0d9ae2"
+    },
+    {
+      "ref": "openspec/changes/change-verification-selection-and-change-set/explore.md",
+      "versionFingerprint": "9dc75d57727930f2aa15efb2ae7ebc3f22323f6a6ba0ad082d34732ee7298c49",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-verification-selection-and-change-set",
+      "runId": "20260814-130-propose",
+      "action": "propose",
+      "role": "author",
+      "semanticInputFingerprint": "b91195800b1ccfc04dc4039d61014b57fae477aeb83124bc1d8511878d6b9386"
+    },
+    "definition": {
+      "action": "propose",
+      "version": 1,
+      "role": "author",
+      "goalClass": "freeze-change-contract",
+      "mutationClass": "proposal-bundle-only",
+      "outputClass": "current-proposal-bundle-set",
+      "terminalContract": {
+        "kind": "artifact",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "f740855436b3c2a28e0536ca9061ceca2f40e0f98cc324b643527bc63b0d9ae2"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/explore.md",
+        "versionFingerprint": "9dc75d57727930f2aa15efb2ae7ebc3f22323f6a6ba0ad082d34732ee7298c49",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260813-111-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "b3812e33b09b68f317b64a8235acf0426dd6b7e2910fe68dbf3b6811d316cb07"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260813-111-review-explore",
+      "verdict": "approved",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260813-111-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "b3812e33b09b68f317b64a8235acf0426dd6b7e2910fe68dbf3b6811d316cb07"
+      },
+      "blockingAuthorities": [],
+      "findings": [],
+      "convergence": [
+        {
+          "findingId": "E1-RE-003",
+          "state": "resolved"
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [
+      {
+        "ref": "owner:52c2f519e846da1aab0ba16b4f2e2355ae362d0fb846f2a21302a2b5bdf17b6d",
+        "decision": "contract-reset",
+        "deliveryId": "20260810-01-change-execution-loop",
+        "changeId": "change-verification-selection-and-change-set",
+        "scope": "e1-two-time-boundaries-and-execution-reliability-primitives",
+        "requiredOutcomes": [
+          "E1 must preserve the immutable entry versus Core-owned post-action fact model, context v5 and ActionPackage v2 migration, actualChangeSet, deterministic module/dependency/capability verificationScope selection, and bootstrap verification.",
+          "E1 scope is expanded to implement bounded operation-scoped OpenSpec projection deduplication and Windows process-tree cancellation with fail-closed outcome-unknown fallback.",
+          "E1 scope is expanded to implement exact target Run resume, timeout outcome-unknown, idempotent terminal replay, and late-completion generation safety.",
+          "G1 retains ownership of Change CLI surface, full Change E2E, checkout/resume recovery validation, Run/package size observation, focused/affected timing observation, and review convergence observation; G1 consumes E1 primitives and does not duplicate their implementation.",
+          "Historical Run contexts and results remain immutable; the new Owner fact must be projected through the official write-side and Policy must determine the next legal boundary."
+        ],
+        "sourceRef": "owner-input:2026-08-13:authorize-E1-expanded-scope-before-108-revision"
+      },
+      {
+        "ref": "owner:a2756785a2a56e69a4dc4695ea3d085c4c2af4228b8f1e1884cfa68a5ca2022d",
+        "decision": "contract-reset",
+        "deliveryId": "20260810-01-change-execution-loop",
+        "changeId": "change-verification-selection-and-change-set",
+        "scope": "e1-openspec-modified-requirement-completeness-after-archive-failure",
+        "requiredOutcomes": [
+          "Abandon the proposal/apply/archive generation culminating in 20260814-129-archive; prior proposal/apply/review approval must not authorize the new generation.",
+          "For flowkit-formal-fact-reader-and-persistence, every MODIFIED Requirement must carry forward the canonical requirement scenario identities and semantics that remain applicable, while integrating the intended v5 contract so archive sync cannot silently delete canonical scenarios.",
+          "Re-propose E1 without expanding implementation scope: preserve the accepted E1 runtime/verification outcomes while correcting the OpenSpec delta contract exposed by archive_spec_update_failed.",
+          "The new proposal/review/apply generation must pass OpenSpec strict validation and demonstrate archive-sync compatibility before a new archive authorization is requested."
+        ],
+        "sourceRef": "owner-input:2026-08-14T13:23+08:00:contract-reset:E1-repropose"
+      }
+    ],
+    "externalContextFingerprint": "97f7ab223fabb0a514811592500c2fd3b7641ae026e5c59cc0bf81e8ec8d3d83",
+    "requiredResultContract": {
+      "kind": "artifact",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": true,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 4,
+  "runId": "20260814-134-review-apply",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "review-apply",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "20dc6d052e28d9f0883d7676d420c36e47e8630a6c36e949b339256d10a5fb52",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:52c2f519e846da1aab0ba16b4f2e2355ae362d0fb846f2a21302a2b5bdf17b6d",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-verification-selection-and-change-set",
+      "scope": "e1-two-time-boundaries-and-execution-reliability-primitives",
+      "requiredOutcomes": [
+        "E1 must preserve the immutable entry versus Core-owned post-action fact model, context v5 and ActionPackage v2 migration, actualChangeSet, deterministic module/dependency/capability verificationScope selection, and bootstrap verification.",
+        "E1 scope is expanded to implement bounded operation-scoped OpenSpec projection deduplication and Windows process-tree cancellation with fail-closed outcome-unknown fallback.",
+        "E1 scope is expanded to implement exact target Run resume, timeout outcome-unknown, idempotent terminal replay, and late-completion generation safety.",
+        "G1 retains ownership of Change CLI surface, full Change E2E, checkout/resume recovery validation, Run/package size observation, focused/affected timing observation, and review convergence observation; G1 consumes E1 primitives and does not duplicate their implementation.",
+        "Historical Run contexts and results remain immutable; the new Owner fact must be projected through the official write-side and Policy must determine the next legal boundary."
+      ],
+      "sourceRef": "owner-input:2026-08-13:authorize-E1-expanded-scope-before-108-revision"
+    },
+    {
+      "ref": "owner:a2756785a2a56e69a4dc4695ea3d085c4c2af4228b8f1e1884cfa68a5ca2022d",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-verification-selection-and-change-set",
+      "scope": "e1-openspec-modified-requirement-completeness-after-archive-failure",
+      "requiredOutcomes": [
+        "Abandon the proposal/apply/archive generation culminating in 20260814-129-archive; prior proposal/apply/review approval must not authorize the new generation.",
+        "For flowkit-formal-fact-reader-and-persistence, every MODIFIED Requirement must carry forward the canonical requirement scenario identities and semantics that remain applicable, while integrating the intended v5 contract so archive sync cannot silently delete canonical scenarios.",
+        "Re-propose E1 without expanding implementation scope: preserve the accepted E1 runtime/verification outcomes while correcting the OpenSpec delta contract exposed by archive_spec_update_failed.",
+        "The new proposal/review/apply generation must pass OpenSpec strict validation and demonstrate archive-sync compatibility before a new archive authorization is requested."
+      ],
+      "sourceRef": "owner-input:2026-08-14T13:23+08:00:contract-reset:E1-repropose"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260814-134-review-apply/",
+  "changeKey": "E1",
+  "changeId": "change-verification-selection-and-change-set",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260814-133-apply/result.json",
+    "versionFingerprint": "792fcb4be74b99e3b2d6bc9fd48989e4ee7eda9d23359b94aa8427f1ba41396d",
+    "kind": "run-result"
+  },
+  "verificationInputRef": {
+    "ref": "openspec/changes/change-verification-selection-and-change-set/verification.md",
+    "versionFingerprint": "2024a3d9e3d12a9f47bc52bb3988cc5923d6cd9156df5e4c51ed3d77cc32d9d8",
+    "kind": "verification-summary"
+  },
+  "reviewedRunId": "20260814-133-apply",
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

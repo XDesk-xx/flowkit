@@ -154,6 +154,18 @@ export interface FindingConvergence {
  * `archiveResults`, `manifestUpdate`, `policyRoute`, `commitPolicy`,
  * `consistencyScan`).
  */
+
+export interface RunTerminalBinding {
+  readonly schemaVersion: 1;
+  /** Canonical digest of the provider/executor logical terminal descriptor. */
+  readonly logicalDescriptorDigest: string;
+  /** Required only for completed v5 Apply/revise-apply terminals. */
+  readonly verificationSelection?: {
+    readonly logicalRef: string;
+    readonly versionFingerprint: string;
+  };
+}
+
 export interface RunResultFile {
   readonly runStatus: TerminalRunStatus;
   /** Required when `runStatus === 'completed'`. */
@@ -170,6 +182,8 @@ export interface RunResultFile {
   readonly reviewFindings?: readonly (ReviewFinding | ReviewFindingV2)[];
   /** D1 pairwise previous→current finding closure. */
   readonly reviewFindingConvergence?: readonly FindingConvergence[];
+  /** E1 v5 exact replay binding; absent on immutable historical terminal results. */
+  readonly terminalBinding?: RunTerminalBinding;
 }
 
 // ---------------------------------------------------------------------------
@@ -575,6 +589,41 @@ function validateOptionalString(
   return v;
 }
 
+
+function validateRunTerminalBinding(value: unknown): RunTerminalBinding {
+  const obj = asObject(value, 'terminalBinding');
+  const keys = Object.keys(obj).sort();
+  const allowed = obj['verificationSelection'] === undefined
+    ? ['logicalDescriptorDigest', 'schemaVersion']
+    : ['logicalDescriptorDigest', 'schemaVersion', 'verificationSelection'];
+  if (obj['schemaVersion'] !== 1 || keys.length !== allowed.length || keys.some((key, index) => key !== allowed[index])) {
+    schemaFail('terminalBinding must use the closed schemaVersion 1 shape');
+  }
+  const digest = obj['logicalDescriptorDigest'];
+  if (typeof digest !== 'string' || !/^[0-9a-f]{64}$/.test(digest)) {
+    schemaFail('terminalBinding.logicalDescriptorDigest must be SHA-256');
+  }
+  const verificationRaw = obj['verificationSelection'];
+  let verificationSelection: RunTerminalBinding['verificationSelection'];
+  if (verificationRaw !== undefined) {
+    const verification = asObject(verificationRaw, 'terminalBinding.verificationSelection');
+    const verificationKeys = Object.keys(verification).sort();
+    if (verificationKeys.length !== 2 || verificationKeys[0] !== 'logicalRef' || verificationKeys[1] !== 'versionFingerprint') {
+      schemaFail('terminalBinding.verificationSelection must use the closed logicalRef/versionFingerprint shape');
+    }
+    const logicalRef = verification['logicalRef'];
+    const versionFingerprint = verification['versionFingerprint'];
+    if (typeof logicalRef !== 'string' || logicalRef === '' || logicalRef.startsWith('/') || logicalRef.includes('\\') || logicalRef.split('/').some((part) => part === '' || part === '.' || part === '..')) {
+      schemaFail('terminalBinding.verificationSelection.logicalRef must be a normalized repository-relative path');
+    }
+    if (typeof versionFingerprint !== 'string' || !/^[0-9a-f]{64}$/.test(versionFingerprint)) {
+      schemaFail('terminalBinding.verificationSelection.versionFingerprint must be SHA-256');
+    }
+    verificationSelection = { logicalRef, versionFingerprint };
+  }
+  return { schemaVersion: 1, logicalDescriptorDigest: digest, ...(verificationSelection !== undefined && { verificationSelection }) };
+}
+
 // ---------------------------------------------------------------------------
 // validateRunResultFileCombination
 // ---------------------------------------------------------------------------
@@ -591,6 +640,7 @@ const RUN_RESULT_FILE_KNOWN_FIELDS = new Set([
   'reviewFindingSchemaVersion',
   'reviewFindings',
   'reviewFindingConvergence',
+  'terminalBinding',
 ]);
 
 /**
@@ -705,6 +755,9 @@ export function validateRunResultFileCombination(value: RunResultFile): void {
   } else if (convergenceRaw !== undefined) {
     schemaFail('transitional review result must not carry reviewFindingConvergence');
   }
+
+  const terminalBindingRaw = obj['terminalBinding'];
+  if (terminalBindingRaw !== undefined) validateRunTerminalBinding(terminalBindingRaw);
 
   const hasActionResult = obj['actionResult'] !== undefined;
 

@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { cp, mkdir, mkdtemp, readFile, readdir, rm, stat } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, open, readFile, readdir, rm, stat, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -25,7 +25,8 @@ import type {
   MutationDeclaration,
   VersionedAuthorityRef,
 } from '../domain/types.js';
-import { readFormalFactSnapshot } from '../facts/formal-fact-reader.js';
+import { readFormalFactSnapshot, readFormalFactSnapshotOperation, type FormalFactReadOperation } from '../facts/formal-fact-reader.js';
+import { parseYaml } from '../facts/yaml-parser.js';
 import type {
   FormalFactSnapshot,
   ReviewVerdictFact,
@@ -50,6 +51,8 @@ import {
   type ContextFile,
   type ContextFileConstraints,
   type ReviewFinding,
+  type RunResultFile,
+  type RunTerminalBinding,
 } from '../persistence/serialization.js';
 import { FlowkitError } from '../shared/errors.js';
 import { normalizeSeparators } from '../shared/paths.js';
@@ -58,6 +61,7 @@ import {
   OPENSPEC_SUPPORTED_ARTIFACT_IDS,
   type ArchiveEntryOpenSpecProjection,
   type OpenSpecPreparedActionContextView,
+  type OpenSpecOperationProjection,
 } from '../integrations/openspec/openspec-types.js';
 import { isOpenSpecThinIntegrationActive } from '../integrations/openspec/openspec-integration-state.js';
 import { inspectOpenSpecArchiveRecovery } from '../integrations/openspec/openspec-archive-service.js';
@@ -66,13 +70,21 @@ import {
   captureEntryWorkspaceSnapshot,
   validateEntryWorkspaceSnapshotRecord,
 } from '../verification/change-selection/entry-snapshot.js';
-import { derivePostActionChangeObservation } from '../verification/change-selection/actual-change-set.js';
+import { deriveActualChangeSetFromCanonicalBase, derivePostActionChangeObservation } from '../verification/change-selection/actual-change-set.js';
 import { buildVerificationSelection } from '../verification/change-selection/selection.js';
 import {
   buildVerificationSelectionPublication,
   publishVerificationSelection,
-  validatePublishedVerificationSelection,
+  validatePendingVerificationSelection,
+  validateTerminalVerificationSelectionBinding,
+  type VerificationSelectionBinding,
 } from '../verification/change-selection/publication.js';
+import {
+  executeVerificationSelection,
+  readVerificationEvidenceRecord,
+  validateVerificationEvidenceForSelection,
+  type VerificationSelectionExecutor,
+} from '../verification/change-selection/evidence.js';
 
 export type RunPreparationEntry = 'next' | 'review';
 
@@ -82,6 +94,8 @@ export interface PrepareActionExecutionInput {
   /** Unified execution intent. Caller MUST NOT name a concrete formal Action. */
   readonly entry: RunPreparationEntry;
   readonly now?: () => Date;
+  /** Bounded OpenSpec adapter injection; production callers normally omit it. */
+  readonly openSpecAdapter?: OpenSpecCliAdapter;
 }
 
 export interface PreparedActionExecution {
@@ -99,13 +113,19 @@ export interface ResumeRunInput {
   readonly repoRoot: string;
   readonly deliveryId: string;
   readonly expectedRunId: string;
+  /** Bounded OpenSpec adapter injection for exact external semantic revalidation. */
+  readonly openSpecAdapter?: OpenSpecCliAdapter;
 }
+
+export type ExactResumeOutcome =
+  | { readonly kind: 'pending'; readonly package: ActionPackageV2 }
+  | { readonly kind: 'already-terminal'; readonly runId: string; readonly result: RunResultFile };
 
 /**
  * Exact v5 continuation surface. It intentionally reads only the persisted
  * Run identity; it does not re-enter Policy or allocate a replacement Run.
  */
-export async function resumeRun(input: ResumeRunInput): Promise<ActionPackageV2> {
+export async function resumeRun(input: ResumeRunInput): Promise<ExactResumeOutcome> {
   const deliveryRunsDir = join(input.repoRoot, RUNS_PREFIX, input.deliveryId);
   const matches = await findExactPersistedRunDirectories(deliveryRunsDir, input.expectedRunId);
   if (matches.length !== 1) {
@@ -116,11 +136,6 @@ export async function resumeRun(input: ResumeRunInput): Promise<ActionPackageV2>
   }
   const runDir = matches[0]!;
   const resultPath = join(runDir, 'result.json');
-  if (await isFile(resultPath)) {
-    throw new FlowkitError('EXACT_RESUME_NOT_PENDING', 'Exact resume requires a pending Run', {
-      expectedRunId: input.expectedRunId,
-    });
-  }
   const context = await readContextFile(runDir);
   validateContextFileIdentity(context, runDir);
   if (context.schemaVersion !== 5) {
@@ -128,6 +143,26 @@ export async function resumeRun(input: ResumeRunInput): Promise<ActionPackageV2>
       expectedRunId: input.expectedRunId,
       schemaVersion: context.schemaVersion,
     });
+  }
+  if (await isFile(resultPath)) {
+    const raw = await readFile(resultPath, 'utf8');
+    const result = admitC1RunResultForReader(raw, context.action, { runId: context.runId, deliveryId: context.deliveryId, changeId: context.changeId });
+    if (result.terminalBinding === undefined) {
+      throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'v5 terminal result is missing its exact replay binding', { expectedRunId: input.expectedRunId });
+    }
+    if (result.runStatus === 'completed' && (context.action === 'apply' || context.action === 'revise-apply')) {
+      if (result.terminalBinding.verificationSelection === undefined) {
+        throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'completed v5 Apply terminal is missing verification-selection binding', { expectedRunId: input.expectedRunId });
+      }
+      await validateTerminalVerificationSelectionBinding({
+        runDir,
+        binding: result.terminalBinding.verificationSelection,
+        producingRunId: context.runId,
+        producingSemanticInputFingerprint: context.semanticInputFingerprint ?? '',
+        logicalDescriptorDigest: result.terminalBinding.logicalDescriptorDigest,
+      });
+    }
+    return { kind: 'already-terminal', runId: context.runId, result };
   }
   const actionPackage = context.actionPackage;
   if (
@@ -142,6 +177,7 @@ export async function resumeRun(input: ResumeRunInput): Promise<ActionPackageV2>
       expectedRunId: input.expectedRunId,
     });
   }
+  await validateV5ExactResumeExternalSemantics(input, context, actionPackage);
   if (actionPackage.run.action === 'apply' || actionPackage.run.action === 'revise-apply') {
     const applyPackage = actionPackage as ActionPackageV2Apply;
     let entrySnapshot: unknown;
@@ -172,7 +208,74 @@ export async function resumeRun(input: ResumeRunInput): Promise<ActionPackageV2>
       applyPackage.mutationDeclaration,
     );
   }
-  return actionPackage;
+  return { kind: 'pending', package: actionPackage };
+}
+
+async function validateV5ExactResumeExternalSemantics(
+  input: ResumeRunInput,
+  context: Extract<ContextFile, { readonly schemaVersion: 5 }>,
+  actionPackage: ActionPackageV2,
+): Promise<void> {
+  const adapter = input.openSpecAdapter ?? new OpenSpecCliAdapter({ repoRoot: input.repoRoot });
+  const operation = await readSnapshotOperation(input.repoRoot, input.deliveryId, adapter);
+  const snapshot = operation.snapshot;
+  assertConflictFree(snapshot);
+  const activeChange = getActiveChange(snapshot);
+  if (activeChange === null || activeChange.id !== context.changeId) {
+    throw new FlowkitError('PENDING_INPUT_DRIFT', 'Exact resume target is no longer bound to the active Change', { runId: context.runId });
+  }
+
+  const persistedOwnerFacts = [...(actionPackage.ownerFactRefs ?? [])].sort((a, b) => a.ref.localeCompare(b.ref));
+  const currentOwnerFacts = [...collectApplicableOwnerFactRefs(snapshot, context.changeId)].sort((a, b) => a.ref.localeCompare(b.ref));
+  if (stableStringify(persistedOwnerFacts) !== stableStringify(currentOwnerFacts)) {
+    throw new FlowkitError('PENDING_INPUT_DRIFT', 'Applicable Owner facts changed after v5 Action entry', { runId: context.runId, dimension: 'owner-facts' });
+  }
+  const persistedOwnerAuthorizations = [...actionPackage.ownerAuthorizationRefs].sort((a, b) => a.ref.localeCompare(b.ref));
+  const currentOwnerAuthorizations = [...collectApplicableOwnerRefs(snapshot, context.changeId, context.action)].sort((a, b) => a.ref.localeCompare(b.ref));
+  if (stableStringify(persistedOwnerAuthorizations) !== stableStringify(currentOwnerAuthorizations)) {
+    throw new FlowkitError('PENDING_INPUT_DRIFT', 'Applicable Owner authorization changed after v5 Action entry', { runId: context.runId, dimension: 'owner-authorization' });
+  }
+
+  const openSpecContext = await buildOpenSpecPreparedActionContext(
+    input.repoRoot,
+    context.changeId,
+    context.action,
+    adapter,
+    operation.openSpecProjection,
+  );
+  const externalContextFingerprint = fingerprintOpenSpecPreparedActionContext(openSpecContext, context.action);
+  if ((actionPackage.externalContextFingerprint ?? undefined) !== (externalContextFingerprint ?? undefined)) {
+    throw new FlowkitError('PENDING_INPUT_DRIFT', 'External structured Action context changed after v5 Action entry', { runId: context.runId, dimension: 'external-context' });
+  }
+
+  await assertImmutableContractRefsForAction(
+    input.repoRoot,
+    actionPackage.contractRefs,
+    context.changeId,
+    context.action,
+    openSpecContext?.changeRootLogical,
+  );
+  await assertVersionedAuthorityRefsCurrent(input.repoRoot, actionPackage.handoffRefs, 'handoff');
+  if (actionPackage.verificationView?.resultRef !== undefined) {
+    await assertVersionedAuthorityRefsCurrent(input.repoRoot, [actionPackage.verificationView.resultRef], 'verification');
+  }
+}
+
+async function assertVersionedAuthorityRefsCurrent(
+  repoRoot: string,
+  refs: readonly VersionedAuthorityRef[],
+  dimension: string,
+): Promise<void> {
+  for (const ref of refs) {
+    const content = await readFileIfPresent(join(repoRoot, ref.ref));
+    if (content === undefined) {
+      throw new FlowkitError('PENDING_INPUT_DRIFT', `Persisted ${dimension} authority disappeared after Action entry: ${ref.ref}`, { ref: ref.ref });
+    }
+    const current = sha256(content);
+    if (current !== ref.versionFingerprint) {
+      throw new FlowkitError('PENDING_INPUT_DRIFT', `Persisted ${dimension} authority drifted after Action entry: ${ref.ref}`, { ref: ref.ref, expected: ref.versionFingerprint, current });
+    }
+  }
 }
 
 async function findExactPersistedRunDirectories(deliveryRunsDir: string, expectedRunId: string): Promise<readonly string[]> {
@@ -223,11 +326,22 @@ export async function inspectPreparedRun(
   const runDir = join(repoRoot, RUNS_PREFIX, deliveryId, change.id, run.runId);
   try {
     const context = await readContextFile(runDir);
+    if (context.schemaVersion === 5) {
+      try {
+        const resumed = await resumeRun({ repoRoot, deliveryId, expectedRunId: run.runId });
+        return { ...base, status: resumed.kind === 'pending' ? 'resumable' : 'not-resumable' };
+      } catch {
+        if (await isContractResetOnlyPendingDrift(repoRoot, deliveryId, snapshot, change.id, context)) {
+          return { ...base, status: 'recovery-required' };
+        }
+        return { ...base, status: 'input-drift' };
+      }
+    }
     if (await isContractResetOnlyPendingDrift(repoRoot, deliveryId, snapshot, change.id, context)) {
       return { ...base, status: 'recovery-required' };
     }
   } catch {
-    // Continue with the normal resumability diagnostic. A malformed or otherwise
+    // Continue with the historical resumability diagnostic. A malformed or otherwise
     // unreadable pending context is not eligible for Contract Reset recovery.
   }
 
@@ -259,6 +373,8 @@ export interface AdmitActionResultInput {
   readonly result: LogicalActionResultInput;
   /** Focused bootstrap seam; production uses the canonical adapter. */
   readonly openSpecAdapter?: OpenSpecCliAdapter;
+  /** Focused Verification seam; production executes the exact selected scopes. */
+  readonly verificationExecutor?: VerificationSelectionExecutor;
 }
 
 export interface RecoverContractResetPendingInput {
@@ -317,7 +433,8 @@ const MANIFEST_PREFIX = 'openspec/delivery-groups';
 export async function prepareActionExecution(
   input: PrepareActionExecutionInput,
 ): Promise<PreparedActionExecution> {
-  const snapshot = await readSnapshot(input.repoRoot, input.deliveryId);
+  const operation = await readSnapshotOperation(input.repoRoot, input.deliveryId, input.openSpecAdapter);
+  const snapshot = operation.snapshot;
   assertConflictFree(snapshot);
 
   // D2: bind normal preparation to the current active Change before consulting
@@ -357,6 +474,9 @@ export async function prepareActionExecution(
     change.id,
     action,
     descriptors,
+    undefined,
+    operation.openSpecProjection,
+    input.openSpecAdapter,
   );
 
   const pending = snapshot.runs.filter(
@@ -453,7 +573,9 @@ export async function prepareActionExecution(
 export async function prepareNewExecution(
   input: PrepareActionExecutionInput,
 ): Promise<PreparedNewExecution> {
-  const snapshot = await readSnapshot(input.repoRoot, input.deliveryId);
+  return withPreparationLock(input.repoRoot, input.deliveryId, async () => {
+  const operation = await readSnapshotOperation(input.repoRoot, input.deliveryId, input.openSpecAdapter);
+  const snapshot = operation.snapshot;
   assertConflictFree(snapshot);
   const change = getActiveChange(snapshot);
   if (change === null) {
@@ -472,7 +594,7 @@ export async function prepareNewExecution(
   const action = policy.action;
   const role = expectedRoleForAction(action);
   const descriptors = deriveRunDescriptors(snapshot, change.id, action);
-  const baseSemantic = await deriveSemanticInputs(input.repoRoot, input.deliveryId, snapshot, change.id, action, descriptors);
+  const baseSemantic = await deriveSemanticInputs(input.repoRoot, input.deliveryId, snapshot, change.id, action, descriptors, undefined, operation.openSpecProjection, input.openSpecAdapter);
   const entrySnapshot = await captureEntryWorkspaceSnapshot(input.repoRoot);
   const entryWorkspaceIdentity = toEntryWorkspaceIdentity(entrySnapshot);
   let mutationDeclaration: MutationDeclaration | undefined;
@@ -530,6 +652,25 @@ export async function prepareNewExecution(
     package: actionPackage,
     ...(semantic.openSpecContext !== undefined && { openSpecContext: semantic.openSpecContext }),
   };
+  });
+}
+
+async function withPreparationLock<T>(repoRoot: string, deliveryId: string, operation: () => Promise<T>): Promise<T> {
+  const lockPath = join(repoRoot, RUNS_PREFIX, deliveryId, '.prepare-new-execution.lock');
+  await mkdir(join(repoRoot, RUNS_PREFIX, deliveryId), { recursive: true });
+  for (let attempt = 0; attempt < 200; attempt += 1) {
+    let handle;
+    try {
+      handle = await open(lockPath, 'wx');
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      continue;
+    }
+    try { return await operation(); }
+    finally { await handle.close(); await unlink(lockPath).catch(() => undefined); }
+  }
+  throw new FlowkitError('RUN_PREPARATION_CONCURRENT_CONFLICT', 'Could not acquire the Core new-execution preparation boundary', { deliveryId });
 }
 
 function toEntryWorkspaceIdentity(snapshot: { readonly canonicalBase: string; readonly workspaceFingerprint: string }): EntryWorkspaceIdentity {
@@ -982,7 +1123,10 @@ export async function recoverContractResetPendingRun(
   }
 
   const cancellationReason = 'superseded-by-owner-contract-reset' as const;
-  await completeRun(runDir, { cancellationReason });
+  const terminalBinding: RunTerminalBinding | undefined = context.schemaVersion === 5
+    ? { schemaVersion: 1, logicalDescriptorDigest: fingerprintLogicalResult({ cancellationReason }) }
+    : undefined;
+  await completeRun(runDir, { cancellationReason, ...(terminalBinding !== undefined && { terminalBinding }) });
   return { runId: run.runId, action: run.action, status: 'cancelled', cancellationReason };
 }
 
@@ -1090,12 +1234,28 @@ export async function admitActionResult(input: AdmitActionResultInput): Promise<
     throw new FlowkitError(
       'PENDING_INPUT_DRIFT',
       'Action Package semantic content does not match the persisted pending Run fingerprint',
-      {
-        runId: context.runId,
-        stored: context.semanticInputFingerprint,
-        packageSemanticFingerprint,
-      },
+      { runId: context.runId, stored: context.semanticInputFingerprint, packageSemanticFingerprint },
     );
+  }
+
+  validateLogicalResultInput(pkg.run.action, input.result);
+  const logicalDescriptorDigest = fingerprintLogicalResult(input.result);
+  const existingResultPath = join(runDir, 'result.json');
+  if (await isFile(existingResultPath)) {
+    if (context.schemaVersion !== 5) {
+      throw new FlowkitError('RUN_TERMINAL', `Historical Run ${context.runId} is already terminal`);
+    }
+    const raw = await readFile(existingResultPath, 'utf8');
+    const persisted = admitC1RunResultForReader(raw, context.action, { runId: context.runId, deliveryId: context.deliveryId, changeId: context.changeId });
+    if (persisted.terminalBinding?.logicalDescriptorDigest !== logicalDescriptorDigest) {
+      throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'Repeated terminal admission uses a conflicting logical descriptor', { runId: context.runId });
+    }
+    if (persisted.runStatus === 'completed' && (context.action === 'apply' || context.action === 'revise-apply')) {
+      const binding = persisted.terminalBinding.verificationSelection;
+      if (binding === undefined) throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'completed v5 Apply terminal is missing verification-selection binding', { runId: context.runId });
+      await validateTerminalVerificationSelectionBinding({ runDir, binding, producingRunId: context.runId, producingSemanticInputFingerprint: context.semanticInputFingerprint, logicalDescriptorDigest });
+    }
+    return;
   }
 
   const snapshot = await readSnapshot(input.repoRoot, input.deliveryId);
@@ -1159,13 +1319,18 @@ export async function admitActionResult(input: AdmitActionResultInput): Promise<
     }
   }
 
-  if (context.schemaVersion === 5 && (pkg.run.action === 'apply' || pkg.run.action === 'revise-apply')) {
-    await publishV5ApplyVerificationSelection({
+  let verificationSelectionBinding: VerificationSelectionBinding | undefined;
+  if (context.schemaVersion === 5 && (pkg.run.action === 'apply' || pkg.run.action === 'revise-apply')
+      && input.result.failureDiagnosis === undefined && input.result.cancellationReason === undefined) {
+    verificationSelectionBinding = await publishV5ApplyVerificationSelection({
       repoRoot: input.repoRoot,
       runDir,
       context,
       actionPackage: pkg as ActionPackageV2Apply,
       openSpecAdapter,
+      logicalDescriptorDigest,
+      deliveryFullTestStatus: snapshot.deliveryFullTestStatus,
+      verificationExecutor: input.verificationExecutor ?? executeVerificationSelection,
     });
   }
 
@@ -1176,8 +1341,10 @@ export async function admitActionResult(input: AdmitActionResultInput): Promise<
   // Entry-time drift is guarded by prepare/resume; terminal admission instead
   // exact-matches the persisted package fingerprint and delegates authoritative
   // reviewed/source-review/verification binding checks to completeRun().
-  validateLogicalResultInput(pkg.run.action, input.result);
-  await completeRun(runDir, logicalToCompleteRunInput(input.result));
+  const terminalBinding: RunTerminalBinding | undefined = context.schemaVersion === 5
+    ? { schemaVersion: 1, logicalDescriptorDigest, ...(verificationSelectionBinding !== undefined && { verificationSelection: verificationSelectionBinding }) }
+    : undefined;
+  await completeRun(runDir, logicalToCompleteRunInput(input.result, terminalBinding));
 }
 
 async function publishV5ApplyVerificationSelection(input: {
@@ -1186,13 +1353,19 @@ async function publishV5ApplyVerificationSelection(input: {
   readonly context: ContextFile;
   readonly actionPackage: ActionPackageV2Apply;
   readonly openSpecAdapter: OpenSpecCliAdapter;
-}): Promise<void> {
+  readonly logicalDescriptorDigest: string;
+  readonly deliveryFullTestStatus: import('../domain/types.js').FullTestStatus | undefined;
+  readonly verificationExecutor: VerificationSelectionExecutor;
+}): Promise<VerificationSelectionBinding> {
   const expectedVerificationPath = join(input.repoRoot, 'openspec', 'changes', input.context.changeId, 'verification.md');
-  if (await validatePublishedVerificationSelection({
+  const existingBinding = await validatePendingVerificationSelection({
     runDir: input.runDir,
     canonicalVerificationPath: expectedVerificationPath,
     producingRunId: input.context.runId,
-  })) return;
+    producingSemanticInputFingerprint: input.actionPackage.run.semanticInputFingerprint,
+    logicalDescriptorDigest: input.logicalDescriptorDigest,
+  });
+  if (existingBinding !== undefined) return existingBinding;
   let entryRaw: unknown;
   try {
     entryRaw = JSON.parse(await readFile(join(input.runDir, 'entry-workspace.json'), 'utf8')) as unknown;
@@ -1212,35 +1385,58 @@ async function publishV5ApplyVerificationSelection(input: {
     });
   }
   const postAction = await captureEntryWorkspaceSnapshot(input.repoRoot);
-  const observation = derivePostActionChangeObservation(
+  const verificationLogicalRef = `openspec/changes/${input.context.changeId}/verification.md`;
+  const reservedCoreOwnedPaths = new Set([verificationLogicalRef]);
+  const observed = derivePostActionChangeObservation(
     entry,
     entry,
     postAction,
     input.actionPackage.mutationDeclaration,
+    reservedCoreOwnedPaths,
+  );
+  const actualChangeSet = await deriveActualChangeSetFromCanonicalBase(
+    input.repoRoot,
+    entry.canonicalBase,
+    postAction,
+    reservedCoreOwnedPaths,
   );
   const projection = await input.openSpecAdapter.createOperationProjection(input.context.changeId);
-  const selection = buildVerificationSelection(
-    observation.actualChangeSet,
-    projection.status.artifactPaths.specs.logicalPaths,
-  );
+  const selection = buildVerificationSelection(actualChangeSet, projection.status.artifactPaths.specs.logicalPaths);
+  if (input.deliveryFullTestStatus === undefined) {
+    throw new FlowkitError('VERIFICATION_EVIDENCE_CONFLICT', 'Change Verification publication requires a Delivery Full Test status projection');
+  }
+  const existingEvidence = await readVerificationEvidenceRecord(input.runDir, false);
+  const evidence = existingEvidence === undefined
+    ? await input.verificationExecutor({
+        repoRoot: input.repoRoot,
+        changeId: input.context.changeId,
+        runDir: input.runDir,
+        producingRunId: input.context.runId,
+        selection,
+        fullTestStatus: input.deliveryFullTestStatus,
+        openSpecAdapter: input.openSpecAdapter,
+      })
+    : existingEvidence.record;
+  validateVerificationEvidenceForSelection(evidence, selection, input.context.runId);
+  // `observed` is intentionally evaluated for declaration enforcement even though
+  // the publication stores the canonical base-to-post actualChangeSet.
+  void observed;
   const record = buildVerificationSelectionPublication({
     producingRunId: input.context.runId,
     producingSemanticInputFingerprint: input.actionPackage.run.semanticInputFingerprint,
+    logicalDescriptorDigest: input.logicalDescriptorDigest,
     canonicalBase: entry.canonicalBase,
-    entryWorkspaceIdentity: {
-      schemaVersion: 1,
-      canonicalBase: entry.canonicalBase,
-      workspaceFingerprint: entry.workspaceFingerprint,
-    },
+    entryWorkspaceIdentity: { schemaVersion: 1, canonicalBase: entry.canonicalBase, workspaceFingerprint: entry.workspaceFingerprint },
     postActionWorkspaceFingerprint: postAction.workspaceFingerprint,
-    actualChangeSet: observation.actualChangeSet,
+    actualChangeSet,
     selection,
-    verificationMarkdownLogicalRef: `openspec/changes/${input.context.changeId}/verification.md`,
-  });
-  await publishVerificationSelection({
+    verificationMarkdownLogicalRef: verificationLogicalRef,
+  }, evidence);
+  return publishVerificationSelection({
     runDir: input.runDir,
     canonicalVerificationPath: join(projection.status.changeRoot, 'verification.md'),
     record,
+    evidence,
   });
 }
 
@@ -1265,38 +1461,212 @@ async function isContractResetOnlyPendingDrift(
   context: ContextFile,
 ): Promise<boolean> {
   if (context.changeId !== changeId || context.semanticInputFingerprint === undefined) return false;
+  if (context.schemaVersion === 5) {
+    return isV5ContractResetOnlyPendingDrift(repoRoot, deliveryId, snapshot, context);
+  }
+
+  return isHistoricalContractResetOnlyPendingDrift(repoRoot, deliveryId, snapshot, context);
+}
+
+
+async function isHistoricalContractResetOnlyPendingDrift(
+  repoRoot: string,
+  deliveryId: string,
+  snapshot: FormalFactSnapshot,
+  context: Extract<ContextFile, { readonly schemaVersion: 2 | 3 | 4 }>,
+): Promise<boolean> {
   const frozenOwnerFacts = [...(context.ownerFactRefs ?? [])].sort((a, b) => a.ref.localeCompare(b.ref));
-  const currentOwnerFacts = [...collectApplicableOwnerFactRefs(snapshot, changeId)].sort((a, b) => a.ref.localeCompare(b.ref));
-  if (stableStringify(frozenOwnerFacts) === stableStringify(currentOwnerFacts)) return false;
+  const currentOwnerFacts = [...collectApplicableOwnerFactRefs(snapshot, context.changeId)].sort((a, b) => a.ref.localeCompare(b.ref));
+  if (!hasExactlyOneNewContractReset(frozenOwnerFacts, currentOwnerFacts)) return false;
+  if ((context.action === 'apply' || context.action === 'revise-apply') && context.inputRef === undefined) return false;
 
-  const frozenResetRefs = frozenOwnerFacts.filter((fact) => fact.decision === 'contract-reset').map((fact) => fact.ref).sort();
-  const currentResetRefs = currentOwnerFacts.filter((fact) => fact.decision === 'contract-reset').map((fact) => fact.ref).sort();
-  if (stableStringify(frozenResetRefs) === stableStringify(currentResetRefs)) return false;
+  try {
+    const historicalOwnerAuthorizations = await collectHistoricalOwnerAuthorizationsForReset(
+      repoRoot,
+      deliveryId,
+      snapshot,
+      context,
+      frozenOwnerFacts,
+      currentOwnerFacts[0]!,
+    );
+    const historicalSnapshot: FormalFactSnapshot = {
+      ...snapshot,
+      ownerAuthorizations: historicalOwnerAuthorizations,
+      ownerDecisionFacts: [
+        ...(snapshot.ownerDecisionFacts ?? []).filter((fact) => fact.decision !== 'contract-reset'),
+        ...frozenOwnerFacts,
+      ],
+    };
+    const semantic = await deriveSemanticInputs(
+      repoRoot,
+      deliveryId,
+      historicalSnapshot,
+      context.changeId,
+      context.action,
+      descriptorsFromContext(context),
+    );
+    if (semantic.semanticInputFingerprint !== context.semanticInputFingerprint) return false;
 
-  const semantic = await deriveSemanticInputs(
-    repoRoot,
-    deliveryId,
-    snapshot,
-    changeId,
-    context.action,
-    descriptorsFromContext(context),
+    // Historical continuation is anchored to persisted handoff lineage. The
+    // reconstructed package must still bind the exact persisted input ref; a
+    // missing, ambiguous or rewritten producer/review result therefore fails
+    // closed instead of falling back to the post-reset current generation.
+    if (context.inputRef !== undefined) {
+      const matches = semantic.handoffRefs.filter((ref) => ref.ref === context.inputRef!.ref);
+      if (matches.length !== 1 || stableStringify(matches[0]) !== stableStringify(context.inputRef)) return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function collectHistoricalOwnerAuthorizationsForReset(
+  repoRoot: string,
+  deliveryId: string,
+  snapshot: FormalFactSnapshot,
+  context: Extract<ContextFile, { readonly schemaVersion: 2 | 3 | 4 }>,
+  frozenOwnerFacts: readonly OwnerFactRef[],
+  currentReset: OwnerFactRef,
+): Promise<FormalFactSnapshot['ownerAuthorizations']> {
+  const requiredDecision = context.action === 'apply'
+    ? 'authorize-apply'
+    : context.action === 'archive'
+      ? 'authorize-archive'
+      : undefined;
+  if (requiredDecision === undefined) {
+    if (context.ownerAuthorization === 'explicit') {
+      throw new FlowkitError('RESET_PENDING_RECOVERY_NOT_ALLOWED', 'Historical Run claims unexpected explicit Owner authorization');
+    }
+    return [];
+  }
+  if (context.ownerAuthorization !== 'explicit') {
+    throw new FlowkitError('RESET_PENDING_RECOVERY_NOT_ALLOWED', 'Historical Run is missing its required explicit Owner authorization');
+  }
+
+  const manifestPath = join(repoRoot, MANIFEST_PREFIX, `${deliveryId}.yaml`);
+  const parsed = parseYaml(await readFile(manifestPath, 'utf8'));
+  if (!parsed.ok || typeof parsed.value !== 'object' || parsed.value === null || Array.isArray(parsed.value)) {
+    throw new FlowkitError('RESET_PENDING_RECOVERY_NOT_ALLOWED', 'Cannot reconstruct historical Owner authorization ordering');
+  }
+  const decisions = (parsed.value as Record<string, unknown>)['ownerDecisions'];
+  if (!Array.isArray(decisions)) {
+    throw new FlowkitError('RESET_PENDING_RECOVERY_NOT_ALLOWED', 'Delivery Manifest ownerDecisions is unavailable for historical recovery');
+  }
+  const refs = decisions.map((item) =>
+    typeof item === 'object' && item !== null && !Array.isArray(item) && typeof (item as Record<string, unknown>)['ref'] === 'string'
+      ? (item as Record<string, unknown>)['ref'] as string
+      : undefined
   );
-  if (semantic.semanticInputFingerprint === context.semanticInputFingerprint) return false;
+  const currentResetIndex = refs.indexOf(currentReset.ref);
+  if (currentResetIndex < 0 || refs.lastIndexOf(currentReset.ref) !== currentResetIndex) {
+    throw new FlowkitError('RESET_PENDING_RECOVERY_NOT_ALLOWED', 'Current Contract Reset ref is missing or ambiguous in Owner provenance');
+  }
+  let frozenResetIndex = -1;
+  if (frozenOwnerFacts.length > 0) {
+    if (frozenOwnerFacts.length !== 1) throw new FlowkitError('RESET_PENDING_RECOVERY_NOT_ALLOWED', 'Historical Contract Reset lineage is ambiguous');
+    frozenResetIndex = refs.indexOf(frozenOwnerFacts[0]!.ref);
+    if (frozenResetIndex < 0 || refs.lastIndexOf(frozenOwnerFacts[0]!.ref) !== frozenResetIndex || frozenResetIndex >= currentResetIndex) {
+      throw new FlowkitError('RESET_PENDING_RECOVERY_NOT_ALLOWED', 'Historical Contract Reset ref is missing, ambiguous or ordered after current Reset');
+    }
+  }
 
-  const resetNeutralFingerprint = sha256(stableStringify(buildSemanticDescriptor({
-    deliveryId,
-    changeId,
-    action: context.action,
-    definition: getActionDefinition(context.action),
-    contractRefs: semantic.contractRefs,
-    handoffRefs: semantic.handoffRefs,
-    ...(semantic.reviewView !== undefined && { reviewView: semantic.reviewView }),
-    ownerAuthorizationRefs: semantic.ownerAuthorizationRefs,
-    ownerFactRefs: frozenOwnerFacts,
-    ...(semantic.verificationView !== undefined && { verificationView: semantic.verificationView }),
-    ...(semantic.externalContextFingerprint !== undefined && { externalContextFingerprint: semantic.externalContextFingerprint }),
-  })));
-  return resetNeutralFingerprint === context.semanticInputFingerprint;
+  const validated = new Map(
+    (snapshot.ownerDecisionFacts ?? [])
+      .filter((fact) => fact.decision === requiredDecision && fact.changeId === context.changeId)
+      .map((fact) => [fact.ref, fact] as const),
+  );
+  const selected: Array<FormalFactSnapshot['ownerAuthorizations'][number]> = decisions.slice(frozenResetIndex + 1, currentResetIndex).flatMap((item) => {
+    if (typeof item !== 'object' || item === null || Array.isArray(item)) return [];
+    const record = item as Record<string, unknown>;
+    if (record['decision'] !== requiredDecision || record['changeId'] !== context.changeId || typeof record['ref'] !== 'string') return [];
+    const fact = validated.get(record['ref']);
+    if (fact === undefined) throw new FlowkitError('RESET_PENDING_RECOVERY_NOT_ALLOWED', 'Historical Owner authorization ref is not a validated manifest fact');
+    return [{
+      ref: fact.ref,
+      decision: requiredDecision,
+      deliveryId: fact.deliveryId,
+      ...(fact.changeId !== undefined && { changeId: fact.changeId }),
+      sourceRef: fact.sourceRef,
+    }];
+  });
+  if (selected.length === 0) {
+    throw new FlowkitError('RESET_PENDING_RECOVERY_NOT_ALLOWED', 'Historical Run has no reconstructable Owner authorization before Contract Reset');
+  }
+  return selected;
+}
+async function isV5ContractResetOnlyPendingDrift(
+  repoRoot: string,
+  deliveryId: string,
+  snapshot: FormalFactSnapshot,
+  context: Extract<ContextFile, { readonly schemaVersion: 5 }>,
+): Promise<boolean> {
+  const pkg = context.actionPackage;
+  if (fingerprintActionPackageSemantics(pkg) !== context.semanticInputFingerprint) return false;
+  const frozenOwnerFacts = [...(pkg.ownerFactRefs ?? [])].sort((a, b) => a.ref.localeCompare(b.ref));
+  const currentOwnerFacts = [...collectApplicableOwnerFactRefs(snapshot, context.changeId)].sort((a, b) => a.ref.localeCompare(b.ref));
+  if (!hasExactlyOneNewContractReset(frozenOwnerFacts, currentOwnerFacts)) return false;
+
+  try {
+    const adapter = new OpenSpecCliAdapter({ repoRoot });
+    const operation = await readSnapshotOperation(repoRoot, deliveryId, adapter);
+    const currentSnapshot = operation.snapshot;
+    assertConflictFree(currentSnapshot);
+    const activeChange = getActiveChange(currentSnapshot);
+    if (activeChange === null || activeChange.id !== context.changeId) return false;
+    const openSpecContext = await buildOpenSpecPreparedActionContext(
+      repoRoot,
+      context.changeId,
+      context.action,
+      adapter,
+      operation.openSpecProjection,
+    );
+    const currentExternal = fingerprintOpenSpecPreparedActionContext(openSpecContext, context.action);
+    if ((pkg.externalContextFingerprint ?? undefined) !== (currentExternal ?? undefined)) return false;
+    await assertImmutableContractRefsForAction(repoRoot, pkg.contractRefs, context.changeId, context.action, openSpecContext?.changeRootLogical);
+    await assertVersionedAuthorityRefsCurrent(repoRoot, pkg.handoffRefs, 'handoff');
+    if (pkg.verificationView?.resultRef !== undefined) {
+      await assertVersionedAuthorityRefsCurrent(repoRoot, [pkg.verificationView.resultRef], 'verification');
+    }
+    if (context.action === 'apply' || context.action === 'revise-apply') {
+      const entryRaw = JSON.parse(await readFile(join(repoRoot, context.runPath, 'entry-workspace.json'), 'utf8')) as unknown;
+      const entry = validateEntryWorkspaceSnapshotRecord(entryRaw);
+      const currentWorkspace = await captureEntryWorkspaceSnapshot(repoRoot);
+      // Contract Reset authority is persisted in the Delivery Manifest itself.
+      // For reset-only recovery, neutralize exactly that authority-owned path
+      // before checking the Action-owned mutation surface; every other path
+      // remains subject to the persisted declaration and therefore fails closed.
+      const manifestLogicalPath = `openspec/delivery-groups/${deliveryId}.yaml`;
+      const entryManifest = entry.files.find((file) => file.path === manifestLogicalPath);
+      const resetNeutralWorkspace = entryManifest === undefined
+        ? currentWorkspace
+        : {
+            ...currentWorkspace,
+            files: currentWorkspace.files
+              .filter((file) => file.path !== manifestLogicalPath)
+              .concat(entryManifest)
+              .sort((left, right) => left.path.localeCompare(right.path)),
+          };
+      derivePostActionChangeObservation(entry, entry, resetNeutralWorkspace, (pkg as ActionPackageV2Apply).mutationDeclaration);
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function hasExactlyOneNewContractReset(
+  frozen: readonly OwnerFactRef[],
+  current: readonly OwnerFactRef[],
+): boolean {
+  // Owner fact projection is currentness-aware: a later Contract Reset replaces
+  // the previous reset in the current projection rather than appending beside it.
+  // Recovery therefore accepts exactly one current Reset that differs from the
+  // persisted entry Reset (or is the first Reset for an entry with none).
+  if (current.length !== 1 || current[0]!.decision !== 'contract-reset') return false;
+  if (frozen.length === 0) return true;
+  if (frozen.length !== 1 || frozen[0]!.decision !== 'contract-reset') return false;
+  return stableStringify(frozen[0]) !== stableStringify(current[0]);
 }
 
 function buildActionPackage(
@@ -1398,6 +1768,7 @@ export async function buildOpenSpecPreparedActionContext(
   changeId: string,
   action: ChangeAction,
   adapter: OpenSpecCliAdapter = new OpenSpecCliAdapter({ repoRoot }),
+  baseProjection?: OpenSpecOperationProjection,
 ): Promise<OpenSpecPreparedActionContextView | undefined> {
   if (!(await isOpenSpecThinIntegrationActive(repoRoot, changeId))) return undefined;
 
@@ -1408,6 +1779,7 @@ export async function buildOpenSpecPreparedActionContext(
     ...(action === 'apply' || action === 'revise-apply'
       ? { includeStrictValidation: true, includeApplyInstructions: true }
       : {}),
+    ...(baseProjection !== undefined && { baseProjection }),
   });
   const { version, status } = projection;
   const base = {
@@ -1543,15 +1915,20 @@ async function deriveSemanticInputs(
   action: ChangeAction,
   descriptors: RunDescriptors,
   archiveOpenSpecContextOverride?: OpenSpecPreparedActionContextView,
+  operationProjection?: OpenSpecOperationProjection,
+  openSpecAdapter?: OpenSpecCliAdapter,
 ): Promise<SemanticInputs> {
   const definition = getActionDefinition(action);
+  const openSpecContext = archiveOpenSpecContextOverride ?? await buildOpenSpecPreparedActionContext(
+    repoRoot, changeId, action, openSpecAdapter ?? new OpenSpecCliAdapter({ repoRoot }), operationProjection,
+  );
   const contractRefs = await collectContractRefs(
     repoRoot,
     deliveryId,
     snapshot,
     changeId,
     action,
-    archiveOpenSpecContextOverride,
+    openSpecContext,
   );
   const handoffRefs = await collectHandoffRefs(repoRoot, deliveryId, changeId, descriptors);
   const reviewView = await buildRelevantReviewView(repoRoot, deliveryId, snapshot, changeId, action, descriptors);
@@ -1565,7 +1942,6 @@ async function deriveSemanticInputs(
     action,
     descriptors,
   );
-  const openSpecContext = archiveOpenSpecContextOverride ?? await buildOpenSpecPreparedActionContext(repoRoot, changeId, action);
   const externalContextFingerprint = fingerprintOpenSpecPreparedActionContext(openSpecContext, action);
 
   const semanticInputFingerprint = sha256(stableStringify(buildSemanticDescriptor({
@@ -1697,20 +2073,16 @@ async function collectContractRefs(
   snapshot: FormalFactSnapshot,
   changeId: string,
   action: ChangeAction,
-  archiveOpenSpecContextOverride?: OpenSpecPreparedActionContextView,
+  openSpecContext?: OpenSpecPreparedActionContextView,
 ): Promise<readonly VersionedAuthorityRef[]> {
   const refs: VersionedAuthorityRef[] = [];
   const c1Active = await isOpenSpecThinIntegrationActive(repoRoot, changeId);
-  const archiveOverride = action === 'archive' ? archiveOpenSpecContextOverride : undefined;
-  if (archiveOverride !== undefined && archiveOverride.changeId !== changeId) {
-    throw new FlowkitError('PENDING_INPUT_DRIFT', 'archive OpenSpec entry projection change identity mismatch', {
-      expected: changeId, actual: archiveOverride.changeId,
+  if (openSpecContext !== undefined && openSpecContext.changeId !== changeId) {
+    throw new FlowkitError('PENDING_INPUT_DRIFT', 'OpenSpec operation projection change identity mismatch', {
+      expected: changeId, actual: openSpecContext.changeId,
     });
   }
-  const status = c1Active && archiveOverride === undefined
-    ? await new OpenSpecCliAdapter({ repoRoot }).getChangeStatus(changeId)
-    : undefined;
-  const changeRoot = archiveOverride?.changeRootLogical ?? status?.changeRootLogical ?? `${OPEN_SPEC_CHANGE_PREFIX}/${changeId}`;
+  const changeRoot = openSpecContext?.changeRootLogical ?? `${OPEN_SPEC_CHANGE_PREFIX}/${changeId}`;
   const metadata = `${changeRoot}/.openspec.yaml`;
   const metadataRef = action === 'archive'
     ? await versionedActiveOrArchivedChangeFileRef(repoRoot, changeId, metadata, 'openspec-metadata')
@@ -1727,14 +2099,7 @@ async function collectContractRefs(
     throw new FlowkitError('RUN_PREPARATION_BINDING_MISSING', `${action} has no immutable ${stage} producer generation`);
   }
   const produced = await readProducedAuthorityRefs(repoRoot, deliveryId, changeId, producer.runId);
-  const structuredArtifactPaths = archiveOverride !== undefined
-    ? archiveOverride.artifactPaths
-    : status !== undefined
-      ? Object.fromEntries(OPENSPEC_SUPPORTED_ARTIFACT_IDS.map((artifactId) => [
-          artifactId,
-          status.artifactPaths[artifactId].logicalPaths,
-        ])) as unknown as Readonly<Record<(typeof OPENSPEC_SUPPORTED_ARTIFACT_IDS)[number], readonly string[]>>
-      : undefined;
+  const structuredArtifactPaths = openSpecContext?.artifactPaths;
   const stageIdentities = c1Active && structuredArtifactPaths !== undefined
     ? new Set(stage === 'explore'
       ? [`${changeRoot}/explore.md`]
@@ -1754,7 +2119,10 @@ async function collectContractRefs(
   // Flowkit path graph. Exact producer refs still carry the immutable bytes.
   let applyContextSet: ReadonlySet<string> | undefined;
   if (c1Active && (action === 'apply' || action === 'revise-apply')) {
-    const apply = await new OpenSpecCliAdapter({ repoRoot }).getApplyInstructions(changeId);
+    const apply = openSpecContext?.applyInstructions;
+    if (apply === undefined) {
+      throw new FlowkitError('OPENSPEC_OPERATION_PROJECTION_INCOMPLETE', 'OpenSpec Apply operation projection omitted apply instructions', { changeId, action });
+    }
     applyContextSet = new Set(Object.values(apply.contextFiles).flat());
   }
 
@@ -2485,6 +2853,17 @@ async function readSnapshot(repoRoot: string, deliveryId: string): Promise<Forma
   });
 }
 
+async function readSnapshotOperation(repoRoot: string, deliveryId: string, openSpecAdapter?: OpenSpecCliAdapter): Promise<FormalFactReadOperation> {
+  return readFormalFactSnapshotOperation({
+    repoRoot,
+    deliveryId,
+    runsPathPrefix: RUNS_PREFIX,
+    openspecChangesPath: OPEN_SPEC_CHANGE_PREFIX,
+    manifestPathPrefix: MANIFEST_PREFIX,
+    ...(openSpecAdapter !== undefined && { openSpecAdapter }),
+  });
+}
+
 function assertConflictFree(snapshot: FormalFactSnapshot): void {
   if (snapshot.conflicts.length === 0) return;
   throw new FlowkitError('FORMAL_FACT_CONFLICT', 'formal facts contain conflicts', {
@@ -2556,7 +2935,7 @@ function validateLogicalResultInput(action: ChangeAction, input: LogicalActionRe
   }
 }
 
-function logicalToCompleteRunInput(input: LogicalActionResultInput): CompleteRunInput {
+function logicalToCompleteRunInput(input: LogicalActionResultInput, terminalBinding?: RunTerminalBinding): CompleteRunInput {
   return {
     ...(input.executionStatus !== undefined && { executionStatus: input.executionStatus }),
     ...(input.summary !== undefined && { summary: input.summary }),
@@ -2567,5 +2946,10 @@ function logicalToCompleteRunInput(input: LogicalActionResultInput): CompleteRun
     }),
     ...(input.failureDiagnosis !== undefined && { failureDiagnosis: input.failureDiagnosis }),
     ...(input.cancellationReason !== undefined && { cancellationReason: input.cancellationReason }),
+    ...(terminalBinding !== undefined && { terminalBinding }),
   };
+}
+
+function fingerprintLogicalResult(input: LogicalActionResultInput): string {
+  return sha256(stableStringify(input));
 }

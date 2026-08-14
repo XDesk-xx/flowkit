@@ -1,0 +1,133 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "122 closes E1-RA-001/002/003/004/006/007. E1-RA-005 is superseded by a narrower remaining Verification lifecycle finding, and two new persisted-entry/reset-resume blockers were found.",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/change-verification-selection-and-change-set/verification.md",
+      "versionFingerprint": "324b87da22b2eac35ed7264ecab704892ffc21c1ef6d1a75f6e6c14d8cd28f09",
+      "kind": "verification-summary"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "d93f9d4baf006cabd92d67bc885493066bfe547e4e97f45c97ebcd8f82005dda"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "E1-RA-008",
+      "severity": "blocking",
+      "title": "Contract Reset recovery 仍用 post-reset current generation 重建 historical pending Run",
+      "problem": "新 E1 spec 已明确 recoverContractResetPendingRun 必须基于 target pending Run 的 persisted entry lineage；122 production implementation 仍在 isContractResetOnlyPendingDrift 中调用 deriveSemanticInputs(current snapshot, context.action, descriptorsFromContext(context))。deriveSemanticInputs→collectContractRefs 又调用 computeResetAwareLineage(snapshot,...).artifact，因此 Reset 正确排除旧 proposal/apply generation 后，旧 pending Apply/revise-apply recovery 仍会要求 current generation producer，重现 `apply has no immutable propose producer generation` deadlock。",
+      "contractRef": "specs/flowkit-formal-fact-reader-and-persistence Requirement: Contract Reset recovery 必须保持 narrow admission；docs/flowkit-self-hosting-bootstrap-and-migration.md persisted-entry invariant",
+      "invariant": "historical pending Run 的 entry truth 来自其 persisted context/inputRef/producer-review lineage；Contract Reset 只改变 currentness，不能迫使 recovery 用新 generation 重新解释旧 Run。",
+      "evidence": [
+        "src/services/b1-run-execution-service.ts:1360-1367 isContractResetOnlyPendingDrift 仍调用 deriveSemanticInputs(current snapshot, context.action, descriptorsFromContext(context))。",
+        "src/services/b1-run-execution-service.ts:1811-1814 collectContractRefs 仍通过 computeResetAwareLineage(current snapshot) 查 current stage producer，缺失时抛 `has no immutable ... producer generation`。",
+        "现有 reset recovery tests 只覆盖 pending explore；没有 approved proposal→pending apply/revise-apply→Contract Reset→old generation non-current 的 regression。"
+      ],
+      "impact": "historical Apply/revise-apply 仍可能成为 orphan pending Run，阻断 fresh proposal generation，违反本次 E1 restart 后已冻结的 recovery contract。",
+      "location": "src/services/b1-run-execution-service.ts isContractResetOnlyPendingDrift / deriveSemanticInputs / collectContractRefs",
+      "blockingAuthority": "author",
+      "requiredOutcome": "为 reset recovery 增加严格 historical reconstruction：以 target context.inputRef、consumed review result、reviewed producer ResultRefs及其 persisted contract/Owner refs重建原始 entry semantic view；只将 current applicable Contract Reset作为允许的唯一差异。缺失、歧义、hash mismatch或 mixed drift 均 fail closed，不得 fallback 到 current-generation producer lookup。",
+      "acceptance": [
+        "synthetic approved proposal/review→pending apply→Contract Reset 后，旧 proposal generation 已 non-current 仍可由 official recovery取消为 superseded-by-owner-contract-reset",
+        "同样覆盖 pending revise-apply historical lineage",
+        "recovery 不要求 post-reset current propose producer",
+        "missing/ambiguous historical refs、multiple pending 与 mixed semantic drift 全部 fail closed"
+      ]
+    },
+    {
+      "id": "E1-RA-009",
+      "severity": "blocking",
+      "title": "v5 exact resume 没有重验 applicable Owner/contract semantic drift",
+      "problem": "resumeRun 对 v5 target 只验证 persisted context/ActionPackage identity，并对 Apply/revise-apply 检查 entry→current workspace 的 declared mutation；它不比较当前 applicable Owner facts、contract/declaration source或其它 external semantic inputs。inspectPreparedRun 对 schema v5 又优先直接调用 resumeRun。因此 pending v5 Run 在 Owner Contract Reset 或 contract drift 后仍可能被报告/返回为 resumable。",
+      "contractRef": "specs/flowkit-lean-run-and-action-package Requirement: pending self-drift 必须基于 persisted entry identity；design.md exact resume boundary；docs/flowkit-self-hosting-bootstrap-and-migration.md",
+      "invariant": "resume 不重新用 post-action worktree定义 entry identity，但必须从 persisted entry refs重验当前 external/unowned semantic facts；Action-owned mutation不是 self-drift，Owner/contract/declaration-source drift必须 fail closed。",
+      "evidence": [
+        "src/services/b1-run-execution-service.ts:130-202 resumeRun 未读取 current FormalFactSnapshot/Owner projection/contract refs；非 Apply action在 persisted package identity校验后直接返回 pending。",
+        "src/services/b1-run-execution-service.ts:253-259 inspectPreparedRun 对 schema v5 调用 resumeRun，成功即返回 resumable，不再进入 reset-only recovery classification。",
+        "独立最小 fixture：fresh v5 explore Run→record Owner contract-reset→resumeRun(expectedRunId) 实际返回 `pending`，而非 semantic drift/recovery boundary。"
+      ],
+      "impact": "Contract Reset 或其它 external semantic input改变后，旧 v5 execution instance仍可继续执行/被诊断为可恢复，破坏 reset currentness 与 deterministic resume。",
+      "location": "src/services/b1-run-execution-service.ts resumeRun / inspectPreparedRun",
+      "blockingAuthority": "author",
+      "requiredOutcome": "exact resume 必须以 persisted entry identity为 anchor，重新验证当前 applicable Owner/contract/declaration-source及其它非 Action-owned semantic inputs；发生 drift 时 fail closed。若唯一 drift 是 Contract Reset，应允许现有 narrow recovery path进一步分类，而不是把 Run误判为 resumable。",
+      "acceptance": [
+        "v5 pending Run 后新增 Contract Reset，resumeRun 不得返回 pending/resumable",
+        "contract/declaration source 或其它 external semantic input drift 同样 fail closed",
+        "declaration覆盖的正常 Apply mutation仍可 exact resume，不产生 self-drift",
+        "inspectPreparedRun 对 reset-only v5 pending 能进入正确 recovery-required/not-resumable projection，而非 resumable"
+      ]
+    },
+    {
+      "id": "E1-RA-010",
+      "severity": "blocking",
+      "title": "新 verification selection 的 passed 状态仍可由预置 marker 注入，canonical Verification 证据被 renderer 丢弃",
+      "problem": "122 在 terminal admission 才从 actualChangeSet 派生 verification selection，但 matched selection 的 verificationStatus 直接读取 admission 前 current verification.md 的 status marker；随后 Core renderer 覆盖 verification.md，只保留 overall marker、selected modules/capabilities/scopes 与 actualChangeSet。当前路径没有基于刚派生的 exact scopes 执行/接纳 Verification-owned results，也丢失 canonical Verification record 必须包含的每项检查适用性、命令/方法、状态、摘要、结果引用/环境说明与 Full Test 状态。因此预先写入 passed marker 即可让 immutable selection record 固化 passed，而没有 exact evidence 证明该 selection 已通过。",
+      "contractRef": "supersedes E1-RA-005 remaining status-lifecycle concern；02-change-execution-loop-delivery-implementation-reference-v3.md §13.5；canonical flowkit-formal-fact-reader-and-persistence Change Verification record requirement；design.md Decision 8",
+      "invariant": "verificationScope 必须先由 Core post-action observation确定；passed/failed 必须来自 Verification authority 对该 exact scope 的结果。verification.md 仍是完整 Change Verification 正式记录，不能把 caller/Author 预写 status marker 当作新 selection 的通过证据。",
+      "evidence": [
+        "src/services/b1-run-execution-service.ts:1303-1311 在 terminal admission 中刚 buildVerificationSelection 后，直接从既有 verification.md marker 读取 verificationStatus；不存在 selected scopes 的 Verification execution/result admission。",
+        "src/verification/change-selection/publication.ts:189-220 renderer 仅写 overall marker、modules/capabilities/scopes 与 actualChangeSet，未写每项检查适用性/执行结果/摘要/result refs/environment/Full Test 状态。",
+        "122 verification-selection.json 固化 verificationStatus=passed；122 verification.md 已覆盖 base 中包含实际执行证据的旧 verification.md。"
+      ],
+      "impact": "review-apply 可以看到 passed，但该 passed 不与刚派生的 exact verification scope 的执行证据建立 authority binding；Change Verification 可被预写 marker 伪满足。",
+      "location": "src/services/b1-run-execution-service.ts publishV5ApplyVerificationSelection；src/verification/change-selection/publication.ts；openspec/changes/.../verification.md",
+      "blockingAuthority": "author",
+      "requiredOutcome": "闭合 selection→Verification result→canonical verification record 的时间与 authority 顺序：Core 先确定 exact selection，passed/failed 只能由该 selection 的 Verification authority result产生；canonical verification.md 保留 contract 要求的完整检查证据，并与 immutable per-Run selection identity可复验绑定。不得接受仅有预置 status marker 的新 selection 为 passed。",
+      "acceptance": [
+        "预先存在 passed marker、但没有 matching selected-check results 时，v5 Apply publication不得产生 passed Verification authority",
+        "selected scope 的 passed/failed/not-applicable 均有 deterministic authority path；not-applicable 仍只来自 closed proof",
+        "canonical verification.md 包含 scope、每项检查适用性、command/method、status、summary、result ref/environment、Full Test 状态和 overall status",
+        "review-apply 读取的 passed/failed generation exact-bind current selection 与对应 Verification evidence"
+      ]
+    }
+  ],
+  "reviewFindingConvergence": [
+    {
+      "findingId": "E1-RA-001",
+      "state": "resolved"
+    },
+    {
+      "findingId": "E1-RA-002",
+      "state": "resolved"
+    },
+    {
+      "findingId": "E1-RA-003",
+      "state": "resolved"
+    },
+    {
+      "findingId": "E1-RA-004",
+      "state": "resolved"
+    },
+    {
+      "findingId": "E1-RA-005",
+      "state": "superseded",
+      "supersededByFindingId": "E1-RA-010"
+    },
+    {
+      "findingId": "E1-RA-006",
+      "state": "resolved"
+    },
+    {
+      "findingId": "E1-RA-007",
+      "state": "resolved"
+    },
+    {
+      "findingId": "E1-RA-008",
+      "state": "new"
+    },
+    {
+      "findingId": "E1-RA-009",
+      "state": "new"
+    },
+    {
+      "findingId": "E1-RA-010",
+      "state": "new"
+    }
+  ]
+}

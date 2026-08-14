@@ -662,29 +662,49 @@ A1 write-side 在持久化 authorization-only record 前 MUST 使用 current Pol
 
 ### Requirement: B1 preparation 必须消费 shared Policy 的 bounded dual-entry 而不得复制 decision tree
 
-B1 execution preparation MUST以fresh FormalFactSnapshot消费shared Policy，并且只接受两个高层intent：
+B1 new execution preparation MUST 以 fresh FormalFactSnapshot 消费 shared Policy，并且只接受 `next` 与 `review` 两个 high-level intents。`next` MUST 调用 shared `next(snapshot)`；`review` MUST 调用 shared `resolveReview(snapshot)` / `canRun(review-S)` 等价 unified review admission。Caller MUST NOT 直接指定 concrete Action。
 
-```text
-next
-review
-```
+matching `changes-requested` 含任一 non-author blocker 时，shared `next()` MUST 继续保持 blocked authority boundary；explicit `review` MUST 仍可通过 Policy 解析 same-stage `review-S`。B1 MUST NOT 自行判断 non-author fact 是否到位、自动 review、要求 Author revision 或复制 blockingAuthority/Stage legality。
 
-`next` MUST调用shared `next(snapshot)`并且仅当结果为Standard Change Action时prepare Run。`review` MUST调用shared `resolveReview(snapshot)`/`canRun(review-S)`等价统一review admission，由Policy解析具体review Action。Caller MUST NOT直接指定concrete Action。
-
-这必须保留Q1语义：matching `changes-requested`含任一non-author blocker时，shared `next()`继续blocked authority boundary；explicit `review`仍可通过Policy合法解析same-stage review并创建new Reviewer generation。B1 MUST NOT自行判断“non-author fact是否已到位”，MUST NOT自动review，MUST NOT复制blockingAuthority/Stage transition table。
-
-#### Scenario: pending Run存在时不复制 Policy推进
-- **WHEN** selected Policy entry仍处在同一formal Action boundary且已有matching pending Run
-- **THEN** preparation MUST resume该Run
-- **AND** MUST NOT自行推导下一Stage/Action
+Policy 解析 concrete Action 后，new preparation MUST 先检查 current pending identity。若存在 pending Run，new preparation MUST 返回 `exact-resume-required`，MUST NOT 沿 shared continuation path 隐式恢复、改选或分配 NNN；继续该 execution 只能调用不经过 Policy 的 `resumeRun(expectedRunId)`。
 
 #### Scenario: direct re-review 不改变 blocked next
-- **WHEN** non-author blocker使`next()`返回blocked
-- **AND** explicit unified `review`经shared Policy允许same-stage `review-S`
-- **THEN** B1 MAY创建/恢复该Reviewer Run
-- **AND** subsequent `next()` semantics MUST仍完全由shared Policy计算
-- **AND** B1 MUST NOT把review recommendation当authority
+
+- **WHEN** non-author blocker 使 `next()` 返回 blocked
+- **AND** explicit unified `review` 经 shared Policy 允许 same-stage `review-S`
+- **THEN** B1 MAY 在无 pending 时创建 new Reviewer generation
+- **AND** subsequent `next()` semantics MUST 仍完全由 shared Policy 计算
+- **AND** B1 MUST NOT 把 review recommendation 当 authority
+
+#### Scenario: pending Run存在时不复制 Policy推进
+
+- **WHEN** `next` 或 `review` 已经由 Policy 解析 concrete Action
+- **AND** current Change 存在 pending Run
+- **THEN** new preparation MUST 返回 `exact-resume-required` 与 persisted target identity
+- **AND** MUST NOT 调用另一 Policy intent、隐式恢复 target、推导下一 Stage/Action 或创建新 NNN
+- **AND** continuation MUST 只通过 `resumeRun(expectedRunId)` 绑定该 persisted Run identity
 
 #### Scenario: concrete caller-selected Action 被拒绝
-- **WHEN** caller绕过bounded intent直接要求`review-propose`、`apply`或其它Action
-- **THEN** B1 high-level preparation MUST拒绝
+
+- **WHEN** caller 绕过 bounded intent 直接要求 `review-propose`、`apply` 或其它 Action
+- **THEN** B1 high-level new preparation MUST 拒绝
+
+### Requirement: Policy new Action selection 不得成为 retry 入口
+
+Policy MUST 只根据 current formal facts 计算新的 legal boundary。target-pinned resume 与 terminal replay MUST 在指定 persisted Run identity 上执行，MUST NOT 调用 Policy 选择另一 Action，也 MUST NOT 以 timeout、retry 或 declaration 为理由推进 lifecycle。
+
+#### Scenario: caller retry 指向已完成 Run
+
+- **WHEN** expected Run 已 terminal 且 current Policy 已指向下一 Action
+- **THEN** exact retry MUST 返回 expected Run 的 persisted terminal state
+- **AND** MUST NOT 准备 Policy 当前下一 Action
+
+### Requirement: Policy 必须先于 mutation declaration 选择 Action
+
+Policy MUST 先从 formal facts 决定唯一 legal Action；仅在选择 `apply` / `revise-apply` 后，Core 才能从 matching approved Design 派生同名 declaration entry。declaration MUST NOT 反向选择、创造或推进 Action。
+
+#### Scenario: Core-derived Action entry 缺失或 identity 不匹配
+
+- **WHEN** approved `flowkitMutationScope` 缺失 Policy-selected Action entry，或该 entry 与 persisted context v5 / ActionPackage v2 identity 不匹配
+- **THEN** preparation 或 resume MUST 产生 deterministic fail-closed diagnostic
+- **AND** MUST NOT 接受 caller/terminal declaration 作为修复

@@ -4,6 +4,8 @@
 
 当前 E1 由 `owner:52c2f519e846da1aab0ba16b4f2e2355ae362d0fb846f2a21302a2b5bdf17b6d` 扩展授权。E1 实现 retry/projection/cancellation/verification-selection primitives；G1 保留 Change CLI、full Change E2E、checkout/resume recovery validation 与 observations。
 
+`20260814-129-archive` 在 OpenSpec 1.7 archive sync 阶段以 structured `archive_spec_update_failed` fail-closed，并明确未修改文件。根因不是 runtime implementation，而是 existing-capability delta 的 `MODIFIED Requirement` 使用 full replacement 语义时遗漏 canonical scenario identity。随后全量审计发现同类 drift 共涉及三个 requirement：formal-fact-reader 的 context schema requirement、Bootstrap compatibility requirement，以及 policy-engine 的 bounded dual-entry requirement。`owner:a2756785a2a56e69a4dc4695ea3d085c4c2af4228b8f1e1884cfa68a5ca2022d` 已 Contract Reset，129 前 proposal/apply/review approval 不跨 generation 生效。
+
 ## Goals / Non-Goals
 
 **Goals:**
@@ -14,6 +16,8 @@
 - 从 approved Design 派生 closed mutation declaration，并由 Core 观察 actualChangeSet。
 - 以 deterministic module/capability authority 生成 immutable verification selection。
 - 降低重复 OpenSpec process startup，并正确处理 Windows process-tree timeout。
+- 对 existing capability 的 `MODIFIED Requirement` 保持 OpenSpec full-replacement completeness：canonical scenario identity 不因 E1 改写而被静默删除。
+- 在再次请求 archive authorization 前，以 disposable repository 的真实 OpenSpec archive sync 证明当前 delta 可安全合并。
 
 **Non-Goals:**
 
@@ -21,6 +25,7 @@
 - 不重写 historical context/result，不把 E1 v4 Run 声称为 v5 dogfood。
 - 不把 heuristic rename 作为 authoritative primitive，不用 hash 证明写入来源。
 - 不实现 G1 的 Change CLI、full E2E、checkout/resume validation 或 observation reports。
+- 不新增 generic OpenSpec migration/rewrite engine，不把 scenario-name audit 做成新的 runtime authority；本 generation 只修复 E1 当前 delta contract。
 
 ## flowkitMutationScope
 
@@ -294,7 +299,24 @@ E1 交付 service/persistence/adapter/runner/selection primitives 与 focused in
 
 E1 使用 isolated context v5 / ActionPackage v2 fixtures、fake/real OpenSpec invocation-count harness、Windows cancellation seam 与 integration Run 验证新模型。E1 canonical `verification.md` 标记 bootstrap verification，并明确当前 105–116 context v4 不是 v5 dogfood。后续 Change 才通过正常 canonical Apply 入口产生第一份 dogfood v5 evidence。
 
+### 11. OpenSpec `MODIFIED Requirement` 使用完整替换并保留 canonical scenario identity
+
+Owner Reset 后的新 proposal generation 将 existing-capability delta 视为 **full updated requirement block**，而不是 patch fragment。对 canonical requirement 中仍适用的 scenario，scenario header identity MUST 保持原名；行为发生 E1 intentional change 时，在同名 scenario 内更新 WHEN/THEN，而不是通过 rename 让 archive 把旧 scenario 当作删除。
+
+本 generation 固定三处修复：
+
+1. `flowkit-formal-fact-reader-and-persistence / context.json 物理 schema + 确定性投影 + 身份校验`：恢复 `ContextFile 必填字段`、`新 current Run 不允许 Delivery-level shape`、`context 身份必须匹配 Change path`，保留既有 `review Run inputRef 必须绑定 reviewedRunId`，并继续保留新增 `v5 Apply entry 必须完整`。
+2. `flowkit-formal-fact-reader-and-persistence / Bootstrap Run 兼容性 + 三路判别器`：恢复 `schemaVersion 2 current Change Run 严格校验` 与 `legacy terminal bytes 不迁移`；v3/v4/v5/unknown-version 新场景继续作为追加行为。
+3. `flowkit-policy-engine / B1 preparation 必须消费 shared Policy 的 bounded dual-entry 而不得复制 decision tree`：恢复 `pending Run存在时不复制 Policy推进` identity，但将其 THEN 更新为 E1 已冻结的 `exact-resume-required → resumeRun(expectedRunId)` 语义。
+
+选择这种方式而不是只补 129 报出的第一个 missing scenario，是因为 OpenSpec archive 逐 capability/requirement 合并，首个错误会掩盖后续同类问题；一次性 audit 全部 `MODIFIED Requirements` 才能证明 archive-safety。
+
+Acceptance 除 strict validate 外，还必须在 disposable repository 中对当前 cumulative candidate 真实执行 OpenSpec archive sync，并检查 archive success 后对应 canonical requirement scenario set 不丢失。该 disposable archive 只属于 contract verification evidence，不改变 active workspace，也不构成 Flowkit lifecycle `archive` success。
+
 ## Risks / Trade-offs
+
+- [scenario identity 与 intentional behavior change 混淆] → 保留 canonical scenario header，行为变更写入同一 scenario WHEN/THEN；新增行为使用新 scenario。
+- [只靠 `openspec validate --strict` 仍无法证明 archive merge] → 在 disposable repository 额外执行真实 archive sync 并核对 merged scenario inventory。
 
 - [E1 scope 较大，涉及 persistence、policy、adapter、runner 与 verification] → 按 schema/retry、projection/cancellation、selection/writer 三个可独立验证的增量实现，并在每步运行 focused tests。
 - [terminal replay 与跨路径 post-action publication 可能出现 partial state] → 使用 deterministic staging、immutable record commit marker、terminal CAS-last 与 exact recovery，并为 crash-between-steps 增加 tests。
@@ -304,6 +326,15 @@ E1 使用 isolated context v5 / ActionPackage v2 fixtures、fake/real OpenSpec i
 - [没有 exclusive worktree 时无法证明 actor] → 明确 observation-only capability，并保持 canonical bootstrap single-writer operating rule。
 
 ## Migration Plan
+
+**Contract Reset generation：**
+
+1. 以 Owner Contract Reset 创建新的 `propose → review-propose → apply → review-apply` generation；129 前 approval 只保留 historical point-in-time fact。
+2. Proposal generation 修复三处 full-replacement scenario identity，并完成 strict validation + disposable archive-sync proof。
+3. Apply generation 只实现/验证新 contract 尚需的最小差异；既有 E1 runtime bytes 可复用为 cumulative candidate，但必须重新接受本 generation 的 review 与 Change Verification。
+4. 只有新 review-apply approved、Verification satisfied 且 Owner 再次授权 archive 后，才允许新的 formal archive Run。
+
+**原 E1 migration sequence（继续适用）：**
 
 1. 增加 context v2/v3/v4/v5 与 ActionPackage v1/v2 closed readers/writers，用每个 historical discriminator/fixture 证明 bytes 与既有 authority semantics 不变。
 2. 将现有 bounded dual-entry preparation 改为 `prepareNewExecution(intent: next | review)`，把全部 pending continuation 移入 `resumeRun(expectedRunId)`，再实现 commit-marker-first / terminal CAS-last replay。

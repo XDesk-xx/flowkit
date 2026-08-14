@@ -36,7 +36,11 @@ import { ownerDecisionRefFor } from '../domain/owner-provenance.js';
 import { isPreA1LegacyArchitectureImpactIdentity } from './pre-a1-legacy-architecture-impact.js';
 import { FlowkitError } from '../shared/errors.js';
 import { OpenSpecCliAdapter } from '../integrations/openspec/openspec-cli-adapter.js';
+import { computeLineage } from '../policy/lineage.js';
+import { projectCurrentContractResetLifecycle } from './generation-resolver.js';
+import { validateTerminalVerificationSelectionBinding } from '../verification/change-selection/publication.js';
 import { isOpenSpecThinIntegrationActive } from '../integrations/openspec/openspec-integration-state.js';
+import type { OpenSpecOperationProjection } from '../integrations/openspec/openspec-types.js';
 import type {
   ChangeFact,
   FactConflict,
@@ -56,28 +60,44 @@ export interface ReadFormalFactSnapshotInput {
   readonly runsPathPrefix: string;
   readonly openspecChangesPath: string;
   readonly manifestPathPrefix: string;
+  /** Optional bounded adapter injection for one formal read operation/test harness. */
+  readonly openSpecAdapter?: OpenSpecCliAdapter;
 }
 
 interface ImmutableValidationResult {
   readonly conflicts: readonly FactConflict[];
 }
 
-export async function readFormalFactSnapshot(
+export interface FormalFactReadOperation {
+  readonly snapshot: FormalFactSnapshot;
+  readonly openSpecProjection?: OpenSpecOperationProjection;
+}
+
+export async function readFormalFactSnapshot(input: ReadFormalFactSnapshotInput): Promise<FormalFactSnapshot> {
+  return (await readFormalFactSnapshotOperation(input)).snapshot;
+}
+
+export async function readFormalFactSnapshotOperation(
   input: ReadFormalFactSnapshotInput,
-): Promise<FormalFactSnapshot> {
+): Promise<FormalFactReadOperation> {
   const conflicts: FactConflict[] = [];
   const deliveryRunsDir = join(input.repoRoot, input.runsPathPrefix, input.deliveryId);
 
   const manifestResult = await readDeliveryManifest(input);
   const activeChangeId = manifestResult.changes.find((change) => change.state === 'active')?.id;
+  let openSpecProjection: OpenSpecOperationProjection | undefined;
+  if (activeChangeId !== undefined && await isOpenSpecThinIntegrationActive(input.repoRoot, activeChangeId)) {
+    openSpecProjection = await (input.openSpecAdapter ?? new OpenSpecCliAdapter({ repoRoot: input.repoRoot })).createOperationProjection(activeChangeId);
+  }
   const { runs, reviewVerdicts, c1RunIds, runConflicts } = await readRuns(deliveryRunsDir, activeChangeId);
   conflicts.push(...runConflicts);
-  const openSpecArtifacts = await readOpenSpecArtifacts(input, manifestResult.changes);
-  const verificationProjection = await readActiveChangeVerificationStatus(input, activeChangeId, runs);
+  const openSpecArtifacts = await readOpenSpecArtifacts(input, manifestResult.changes, openSpecProjection);
+  const verificationProjection = await readActiveChangeVerificationStatus(input, activeChangeId, runs, reviewVerdicts, manifestResult.ownerDecisionFacts, openSpecProjection);
   conflicts.push(...verificationProjection.conflicts);
   const tasksProjection = await readActiveChangeTasksCompletion(
     input,
     activeChangeId,
+    openSpecProjection,
   );
   conflicts.push(...tasksProjection.conflicts);
 
@@ -124,7 +144,7 @@ export async function readFormalFactSnapshot(
 
 
 
-  return {
+  const snapshot: FormalFactSnapshot = {
     deliveryId: input.deliveryId,
     deliveryState: manifestResult.deliveryState,
     deliveryFullTestStatus: manifestResult.deliveryFullTestStatus,
@@ -144,6 +164,7 @@ export async function readFormalFactSnapshot(
     reviewVerdicts: admittedReviewVerdicts,
     conflicts,
   };
+  return { snapshot, ...(openSpecProjection !== undefined && { openSpecProjection }) };
 }
 
 interface ManifestResult {
@@ -1009,12 +1030,15 @@ function extractLegacyReviewedRunId(parsedContext: unknown): string | undefined 
 async function readOpenSpecArtifacts(
   input: ReadFormalFactSnapshotInput,
   changes: readonly ChangeFact[],
+  operationProjection?: OpenSpecOperationProjection,
 ): Promise<OpenSpecArtifactFact[]> {
   const artifacts: OpenSpecArtifactFact[] = [];
   for (const change of changes) {
     const integrationActive = await isOpenSpecThinIntegrationActive(input.repoRoot, change.id);
     if (integrationActive && change.state === 'active') {
-      const status = await new OpenSpecCliAdapter({ repoRoot: input.repoRoot }).getChangeStatus(change.id);
+      const status = operationProjection?.changeId === change.id
+        ? operationProjection.status
+        : await new OpenSpecCliAdapter({ repoRoot: input.repoRoot }).getChangeStatus(change.id);
       const structuredCandidates = [
         { kind: 'change-explore' as const, logical: `${status.changeRootLogical}/explore.md` },
         { kind: 'change-proposal' as const, logical: status.artifactPaths.proposal.logicalPaths[0] ?? '' },
@@ -1081,94 +1105,87 @@ async function readActiveChangeVerificationStatus(
   input: ReadFormalFactSnapshotInput,
   activeChangeId: string | undefined,
   runs: readonly RunFact[],
+  reviewVerdicts: readonly ReviewVerdictFact[],
+  ownerDecisionFacts: readonly OwnerDecisionFact[],
+  operationProjection?: OpenSpecOperationProjection,
 ): Promise<VerificationProjectionResult> {
-  if (activeChangeId === undefined) {
-    return { conflicts: [] };
-  }
+  if (activeChangeId === undefined) return { conflicts: [] };
 
-  const verificationPath = await resolveActiveOpenSpecOwnedPath(input, activeChangeId, 'verification');
-  if (!(await pathExists(verificationPath))) {
-    return { conflicts: [] };
-  }
+  const verificationPath = await resolveActiveOpenSpecOwnedPath(input, activeChangeId, 'verification', operationProjection);
+  const authority = normalizeSeparators(verificationPath.slice(input.repoRoot.length + 1));
+  let content: string | undefined;
+  try { content = await readFile(verificationPath, 'utf-8'); }
+  catch { content = undefined; }
 
-  let content: string;
-  try {
-    content = await readFile(verificationPath, 'utf-8');
-  } catch (error) {
-    return {
-      conflicts: [
-        {
-          dimension: 'change-verification-status',
-          authority: normalizeSeparators(
-            verificationPath.slice(input.repoRoot.length + 1),
-          ),
-          message: `verification.md unreadable: ${error instanceof Error ? error.message : String(error)}`,
-        },
-      ],
-    };
-  }
-
-  const matches = [...content.matchAll(CHANGE_VERIFICATION_MARKER)];
-  const authority = normalizeSeparators(
-    verificationPath.slice(input.repoRoot.length + 1),
-  );
-  if (matches.length !== 1) {
-    return {
-      conflicts: [
-        {
-          dimension: 'change-verification-status',
-          authority,
-          message:
-            matches.length === 0
-              ? 'verification.md exists but has no flowkit-change-verification-status marker'
-              : `verification.md must contain exactly one flowkit-change-verification-status marker (found ${matches.length})`,
-        },
-      ],
-    };
-  }
-
-  const raw = matches[0]?.[1];
-  if (raw === undefined || !VALID_VERIFICATION_STATUSES.has(raw)) {
-    return {
-      conflicts: [
-        {
-          dimension: 'change-verification-status',
-          authority,
-          message: `verification.md contains invalid flowkit-change-verification-status value: ${String(raw)}`,
-        },
-      ],
-    };
-  }
-
-  const producer = [...runs]
-    .filter((run) => run.changeId === activeChangeId && (run.action === 'apply' || run.action === 'revise-apply') && run.status === 'completed')
+  const projection = projectCurrentContractResetLifecycle({ runs, reviewVerdicts, ownerDecisionFacts }, activeChangeId);
+  const currentApply = computeLineage(projection.runs, projection.reviewVerdicts, activeChangeId, 'apply').artifact;
+  const pendingApply = projection.runs
+    .filter((run) => run.changeId === activeChangeId && (run.action === 'apply' || run.action === 'revise-apply') && run.status === 'pending')
     .sort((left, right) => right.runId.localeCompare(left.runId))[0];
-  if (producer !== undefined) {
-    const contextPath = join(input.repoRoot, input.runsPathPrefix, input.deliveryId, activeChangeId, producer.runId, 'context.json');
-    let schemaVersion: unknown;
-    try {
-      schemaVersion = (JSON.parse(await readFile(contextPath, 'utf8')) as Record<string, unknown>)['schemaVersion'];
-    } catch (error) {
-      return { conflicts: [{ dimension: 'change-verification-selection', authority, message: `current verification producer context unavailable: ${error instanceof Error ? error.message : String(error)}` }] };
-    }
-    // Historical v2-v4 evidence remains readable under its pre-E1 contract.
-    if (schemaVersion !== 5) return { status: raw as VerificationStatus, conflicts: [] };
-    const recordPath = join(input.repoRoot, input.runsPathPrefix, input.deliveryId, activeChangeId, producer.runId, 'verification-selection.json');
-    let record: Record<string, unknown>;
-    try {
-      const parsed = JSON.parse(await readFile(recordPath, 'utf8')) as unknown;
-      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) throw new Error('record must be an object');
-      record = parsed as Record<string, unknown>;
-    } catch (error) {
-      return { conflicts: [{ dimension: 'change-verification-selection', authority, message: `current verification producer record unavailable: ${error instanceof Error ? error.message : String(error)}` }] };
-    }
-    const markdownFingerprint = createHash('sha256').update(content).digest('hex');
-    if (record['producingRunId'] !== producer.runId || record['verificationMarkdownFingerprint'] !== markdownFingerprint) {
-      return { conflicts: [{ dimension: 'change-verification-selection', authority, message: 'current verification producer record does not exact-bind Run identity and canonical Markdown bytes' }] };
+
+  if (pendingApply !== undefined) {
+    const pendingDir = join(input.repoRoot, input.runsPathPrefix, input.deliveryId, activeChangeId, pendingApply.runId);
+    let pendingSchema: unknown;
+    try { pendingSchema = (JSON.parse(await readFile(join(pendingDir, 'context.json'), 'utf8')) as Record<string, unknown>)['schemaVersion']; }
+    catch { pendingSchema = undefined; }
+    if (pendingSchema === 5) {
+      // A current v5 Apply/revise-apply owns the verification publication
+      // window from immutable entry until terminal CAS. During that window the
+      // canonical Markdown may still be the previous producer, Action-mutated
+      // pre-publication bytes, Markdown-only publication, or record+pending.
+      // None is current terminal authority yet, so never compare a previous
+      // terminal record to successor-window bytes.
+      return { conflicts: [] };
     }
   }
 
-  return { status: raw as VerificationStatus, conflicts: [] };
+  if (content === undefined) return { conflicts: [] };
+  const status = parseVerificationStatusMarker(content, authority);
+  if ('conflict' in status) return { conflicts: [status.conflict] };
+
+  if (currentApply === null) return { status: status.value, conflicts: [] };
+  const producerDir = join(input.repoRoot, input.runsPathPrefix, input.deliveryId, activeChangeId, currentApply.runId);
+  let context: ContextFile;
+  try { context = validateContextFile(JSON.parse(await readFile(join(producerDir, 'context.json'), 'utf8')) as unknown); }
+  catch (error) { return { conflicts: [{ dimension: 'change-verification-selection', authority, message: `current verification producer context unavailable: ${error instanceof Error ? error.message : String(error)}` }] }; }
+  if (context.schemaVersion !== 5) return { status: status.value, conflicts: [] };
+
+  let resultRaw: string;
+  try { resultRaw = await readFile(join(producerDir, 'result.json'), 'utf8'); }
+  catch (error) { return { conflicts: [{ dimension: 'change-verification-selection', authority, message: `current verification producer result unavailable: ${error instanceof Error ? error.message : String(error)}` }] }; }
+  let result: ReturnType<typeof admitC1RunResultForReader>;
+  try { result = admitC1RunResultForReader(resultRaw, context.action, { runId: context.runId, deliveryId: context.deliveryId, changeId: context.changeId }); }
+  catch (error) { return { conflicts: [{ dimension: 'change-verification-selection', authority, message: `current verification producer result invalid: ${error instanceof Error ? error.message : String(error)}` }] }; }
+  const binding = result.terminalBinding?.verificationSelection;
+  if (result.runStatus !== 'completed' || binding === undefined || result.terminalBinding === undefined || context.semanticInputFingerprint === undefined) {
+    return { conflicts: [{ dimension: 'change-verification-selection', authority, message: 'current v5 verification producer lacks completed terminal/selection binding' }] };
+  }
+  try {
+    const record = await validateTerminalVerificationSelectionBinding({
+      runDir: producerDir,
+      binding,
+      producingRunId: context.runId,
+      producingSemanticInputFingerprint: context.semanticInputFingerprint,
+      logicalDescriptorDigest: result.terminalBinding.logicalDescriptorDigest,
+    });
+    if (record.verificationMarkdownFingerprint !== createHash('sha256').update(content).digest('hex')) {
+      return { conflicts: [{ dimension: 'change-verification-selection', authority, message: 'current verification producer record does not exact-bind current canonical Markdown bytes' }] };
+    }
+    if (record.verificationStatus !== status.value) {
+      return { conflicts: [{ dimension: 'change-verification-selection', authority, message: 'current verification status marker differs from immutable selection record status' }] };
+    }
+    return { status: status.value, conflicts: [] };
+  } catch (error) {
+    return { conflicts: [{ dimension: 'change-verification-selection', authority, message: `current verification producer binding invalid: ${error instanceof Error ? error.message : String(error)}` }] };
+  }
+}
+
+function parseVerificationStatusMarker(content: string, authority: string): { readonly value: VerificationStatus } | { readonly conflict: FactConflict } {
+  const matches = [...content.matchAll(CHANGE_VERIFICATION_MARKER)];
+  if (matches.length !== 1) return { conflict: { dimension: 'change-verification-status', authority, message: matches.length === 0 ? 'verification.md exists but has no flowkit-change-verification-status marker' : `verification.md must contain exactly one flowkit-change-verification-status marker (found ${matches.length})` } };
+  const raw = matches[0]?.[1];
+  if (raw === undefined || !VALID_VERIFICATION_STATUSES.has(raw)) return { conflict: { dimension: 'change-verification-status', authority, message: `verification.md contains invalid flowkit-change-verification-status value: ${String(raw)}` } };
+  return { value: raw as VerificationStatus };
 }
 
 interface TasksCompletionProjectionResult {
@@ -1181,12 +1198,13 @@ const REQUIRED_TASK_LINE = /^\s*-\s+\[([ xX])\]/gm;
 async function readActiveChangeTasksCompletion(
   input: ReadFormalFactSnapshotInput,
   activeChangeId: string | undefined,
+  operationProjection?: OpenSpecOperationProjection,
 ): Promise<TasksCompletionProjectionResult> {
   if (activeChangeId === undefined) {
     return { conflicts: [] };
   }
 
-  const tasksPath = await resolveActiveOpenSpecOwnedPath(input, activeChangeId, 'tasks');
+  const tasksPath = await resolveActiveOpenSpecOwnedPath(input, activeChangeId, 'tasks', operationProjection);
   if (!(await pathExists(tasksPath))) {
     return { conflicts: [] };
   }
@@ -1218,11 +1236,12 @@ async function resolveActiveOpenSpecOwnedPath(
   input: ReadFormalFactSnapshotInput,
   changeId: string,
   kind: 'tasks' | 'verification',
+  operationProjection?: OpenSpecOperationProjection,
 ): Promise<string> {
   if (!(await isOpenSpecThinIntegrationActive(input.repoRoot, changeId))) {
     return join(input.repoRoot, input.openspecChangesPath, changeId, `${kind}.md`);
   }
-  const status = await new OpenSpecCliAdapter({ repoRoot: input.repoRoot }).getChangeStatus(changeId);
+  const status = operationProjection?.changeId === changeId ? operationProjection.status : await new OpenSpecCliAdapter({ repoRoot: input.repoRoot }).getChangeStatus(changeId);
   if (kind === 'verification') return join(input.repoRoot, status.changeRootLogical, 'verification.md');
   const paths = status.artifactPaths.tasks.physicalPaths;
   if (paths.length !== 1) {

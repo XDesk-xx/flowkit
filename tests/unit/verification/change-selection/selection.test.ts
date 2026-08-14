@@ -20,4 +20,21 @@ describe('verification selection', () => {
     ], ['openspec/changes/e1/specs/flowkit-policy-engine/spec.md']), (error: unknown) =>
       error instanceof FlowkitError && error.code === 'VERIFICATION_CAPABILITY_SELECTION_FAILED');
   });
+
+  it('emits not-applicable only from the closed no-candidate-change proof', () => {
+    const selection = buildVerificationSelection([], []);
+    assert.deepEqual(selection.capabilityRelation, { kind: 'not-applicable', predicateId: 'no-candidate-change' });
+    assert.deepEqual(selection.moduleIds, []);
+    assert.deepEqual(selection.verificationScopes, []);
+    assert.throws(() => buildVerificationSelection([], [
+      'openspec/changes/e1/specs/flowkit-core-model/spec.md',
+    ]), (error: unknown) => error instanceof FlowkitError && error.code === 'VERIFICATION_CAPABILITY_SELECTION_FAILED');
+  });
+
+  it('rejects unmapped candidate paths instead of degrading to not-applicable', () => {
+    assert.throws(() => buildVerificationSelection([
+      { path: 'unmapped/a.ts', kind: 'create', pathKindBefore: 'missing', pathKindAfter: 'file', contentFingerprintAfter: 'a'.repeat(64) },
+    ], []), (error: unknown) => error instanceof FlowkitError && error.code === 'VERIFICATION_MODULE_SELECTION_FAILED');
+  });
+
 });

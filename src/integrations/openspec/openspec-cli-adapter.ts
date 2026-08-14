@@ -385,11 +385,18 @@ export class OpenSpecCliAdapter {
       readonly artifactInstructionIds?: readonly OpenSpecArtifactId[];
       readonly includeApplyInstructions?: boolean;
       readonly includeStrictValidation?: boolean;
+      readonly baseProjection?: OpenSpecOperationProjection;
     } = {},
   ): Promise<OpenSpecOperationProjection> {
-    const version = await this.getVersion();
-    const status = await this.getChangeStatus(changeId);
-    const invocationDiagnostics = ['version', 'status'];
+    const baseProjection = request.baseProjection;
+    if (baseProjection !== undefined && baseProjection.changeId !== changeId) {
+      throw new FlowkitError('OPENSPEC_CHANGE_IDENTITY_MISMATCH', 'OpenSpec base operation projection belongs to a different Change', {
+        expected: changeId, actual: baseProjection.changeId,
+      });
+    }
+    const version = baseProjection?.version ?? await this.getVersion();
+    const status = baseProjection?.status ?? await this.getChangeStatus(changeId);
+    const invocationDiagnostics = baseProjection === undefined ? ['version', 'status'] : [...baseProjection.invocationDiagnostics];
     const artifactInstructionIds = request.artifactInstructionIds ?? [];
     const artifactInstructions = artifactInstructionIds.length === 0
       ? undefined

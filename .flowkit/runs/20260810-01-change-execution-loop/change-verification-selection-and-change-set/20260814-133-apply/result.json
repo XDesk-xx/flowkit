@@ -1,0 +1,16 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "apply",
+    "executionStatus": "completed",
+    "summary": "Applied the Contract Reset generation by adding scenario-preserving OpenSpec archive regression coverage and re-running E1 verification for the current cumulative candidate."
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "071d634c3c3968fd8d9cff1011d1a53b3d381bb893ab31d1a28616c26cf3df30",
+    "verificationSelection": {
+      "logicalRef": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260814-133-apply/verification-selection.json",
+      "versionFingerprint": "aa9fcd90143be9d75c65cd6273db6f9820d903988d3b5581f4225cfbb1f47434"
+    }
+  }
+}

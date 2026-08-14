@@ -94,6 +94,7 @@ Review 与 Revision Action MUST 使用 `review-<stage> ↔ revise-<stage>` 对�
 - **WHEN** matching `changes-requested` Review 存在任一 `blockingAuthority ∈ {owner, verification, external}`
 - **THEN** MUST NOT 推导 `revise-<stage>`
 - **AND** MUST 停在对应 authority boundary
+
 ### Requirement: Review 必须是正式边界
 
 Explore、Propose 和 Apply 结果 MUST 经过对应 Review Action。Review MAY 多轮执行。
@@ -134,6 +135,7 @@ Review `approved` 时，Revision/Fix MUST 被视为不适用。存在任一 non-
 - **WHEN** matching `changes-requested` Review 的 blocking findings 不包含可独立推进的 author-only集合
 - **THEN** Author `revise` MUST 被拒绝
 - **AND** MUST NOT 创建空 Revision Run、仅改文案的 authority 伪造或 placeholder mutation
+
 ### Requirement: Owner 不得绕过正式 Verdict
 
 当 Review Verdict 为 `changes-requested` 时，Owner MUST NOT 直接推进下一主 Action。Flowkit MUST 先消费 Reviewer-owned blocking authority：author-only blocker 进入 Author Revision；owner / verification / external blocker 使 `next()` 停在对应 non-author authority boundary。只要当前 matching Review 含任一 non-author blocker（包括 mixed author+non-author），explicit same-stage re-review MUST 在 Policy 层保持合法，unchanged candidate target MUST 可进入新的 Reviewer generation，而不是制造 Author Revision。Policy 不负责机器证明 non-author authority fact 是否已经到位；是否值得现在重新 Review 由显式执行者确认。新的 Reviewer generation MUST 使用执行时最新可用 authority facts 重新评估完整 target；只有新的 matching Review 把剩余 blockers 重新分类为 author-only 后，Author Revision 才重新适用。
@@ -162,6 +164,7 @@ Review `approved` 时，Revision/Fix MUST 被视为不适用。存在任一 non-
 - **AND** MUST NOT 先创建 Author Revision
 - **AND** 新 Reviewer generation MUST 使用执行时最新可用 authority facts 重新评估完整 target
 - **AND** 只有新的 matching Review 为 author-only 时 Revision 才 MUST 按 author-only 规则合法
+
 ### Requirement: Policy 必须计算唯一合法下一 Action
 
 Flowkit MUST 根据正式事实计算唯一下一 Action，MUST NOT 依赖 `currentAction` 或其他 pointer。
@@ -210,6 +213,7 @@ Policy 输出 MUST 为一个合法 Action、一个 owner 决策边界或一个 b
 - **WHEN** 不存在有效 matching `changes-requested` Review、blocking finding 缺失、或事实存在冲突/多解
 - **THEN** Flowkit MUST 返回 blocked diagnosis
 - **AND** MUST NOT 创建 Revision Run
+
 ### Requirement: Run 必须表示一次 Action 执行
 
 每个 current Standard Run MUST 绑定一个 Delivery、一个 Change、一个正式 Change Action 和一个角色。Delivery Full Test / Delivery Finalize MUST NOT 创建 Standard Run。
@@ -227,6 +231,7 @@ Policy 输出 MUST 为一个合法 Action、一个 owner 决策边界或一个 b
 - **WHEN** Delivery 进入 Full Test 或 Finalize behavior boundary
 - **THEN** MUST NOT 创建 `full-test` 或 `delivery-finalize` Standard Run
 - **AND** MUST NOT 使用缺失 Change identity 的 current Standard Run 表达 Delivery behavior
+
 ### Requirement: Reviewer Run 必须在真正执行时创建
 
 Author 完成 Action 后 MUST 只记录推荐下一 Review Action，MUST NOT 预建空 reviewer Run 或 pending Review 占位目录。
@@ -255,6 +260,7 @@ Current Standard Run MUST 使用 `.flowkit/runs/<delivery-id>/<change-id>/<run-i
 - **THEN** Flowkit MAY 为历史读取或 Delivery-wide NNN 唯一性识别该 path
 - **AND** MUST NOT 迁移、改写或复制该 terminal Run
 - **AND** MUST NOT 允许创建新的同类 Run
+
 ### Requirement: Change 和 Delivery 取消必须由 owner 授权
 
 Change MAY 从 planned 或 active 转换为 cancelled。Delivery MAY 从 active 转换为 cancelled。上述转换 MUST 由 owner 明确授权。
@@ -297,6 +303,7 @@ Change Verification 状态 MUST 为 `not-run | passed | failed | not-applicable`
 - **AND** Delivery Full Test behavior executor 尚未由 03 实现
 - **THEN** Policy MUST 保持 deterministic/fail-closed
 - **AND** MUST NOT 返回 `action: full-test`
+
 ### Requirement: Full Test 失败必须进入 owner 决策边界
 
 Full Test failed 时，Flowkit MUST NOT 重新打开已 archived/completed Change，也 MUST NOT 自动创建 Change 或扩张 Delivery 范围。`fullTestStatus` MUST 保持 failed，直到 owner 作出合法决策。
@@ -395,3 +402,33 @@ B1 MUST拥有 Standard Change Action的logical Action Package preparation contra
 - **WHEN** current matching changes-requested包含non-author blocker
 - **THEN** `next()` MAY保持blocked authority boundary
 - **AND** explicit unified review MUST仍可由Policy合法解析same-stage review
+
+### Requirement: Standard Action 必须分离 entry 与 post-action facts
+
+Standard Action entry contract MUST 只包含当时可知的 immutable inputs。对 `apply` / `revise-apply`，这些 inputs MUST 包含 canonical base、persisted entry workspace identity、Policy-first typed allowed-mutation declaration、applicable contract / Owner facts 与 semantic input fingerprint。最终 actual changes 与 verification facts MUST 只属于 post-action Core-owned authority，MUST NOT 回填 immutable entry context。
+
+#### Scenario: Action 产生 declaration 范围内输出
+
+- **WHEN** Action 在 persisted typed allowed-mutation declaration 范围内产生 post-entry output
+- **THEN** entry semantic identity MUST 保持 immutable
+- **AND** Core MUST 在 post-action record 中观察并分类实际输出
+
+### Requirement: mutation declaration 必须来自 approved Design authority
+
+对 `apply` / `revise-apply`，Core MUST 在 Policy 选择 Action 后，从 matching `review-propose` approved current Proposal bundle 的唯一 closed `flowkitMutationScope` block 派生同名 Action entry。declaration MUST 是有限、非空且可决定性匹配的允许范围，不是 candidate manifest；caller、executor 与 terminal result MUST NOT 提供、替换、合并或扩大它。
+
+#### Scenario: Design declaration 无效
+
+- **WHEN** approved Design 缺失对应 Action entry，或 selector 为空、非 normalized、包含 repository root/glob、重复、重叠或无法唯一归属
+- **THEN** preparation MUST fail closed
+- **AND** MUST NOT 使用 ActionDefinition、manifest outputs 或 caller paths 作为 fallback
+
+### Requirement: workspace observation 不得伪造写入来源证明
+
+若系统没有 exclusive worktree / lease authority，Core MUST 将 actualChangeSet 解释为 base/entry/post path 与 bytes 的观察结果，而非特定 actor 的来源证明。
+
+#### Scenario: declared root 内出现 observed mutation
+
+- **WHEN** Core 仅拥有 persisted snapshots 与 content fingerprints
+- **THEN** Core MUST NOT 声称 hash 能证明 mutation 来源
+- **AND** contract MUST 保留 single-writer bootstrap requirement 或明确的 authority limitation

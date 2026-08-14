@@ -17,17 +17,6 @@ export interface ActualChangeSetEntry {
   readonly contentFingerprintAfter?: string;
 }
 
-export interface VerificationSelectionRecord {
-  readonly schemaVersion: 1;
-  readonly producingRunId: string;
-  readonly canonicalBase: string;
-  readonly entryWorkspaceIdentity: EntryWorkspaceSnapshot;
-  readonly postActionWorkspaceFingerprint: string;
-  readonly actualChangeSet: readonly ActualChangeSetEntry[];
-  readonly rendererVersion: 1;
-  readonly verificationMarkdownFingerprint: string;
-}
-
 function fail(message: string): never {
   throw new FlowkitError('SCHEMA_VALIDATION_FAILED', message);
 }
@@ -38,16 +27,12 @@ function asObject(value: unknown, label: string): Record<string, unknown> {
 }
 
 function requireSha(value: unknown, label: string, git = false): string {
-  if (typeof value !== 'string' || !(git ? /^[0-9a-f]{40,64}$/ : /^[0-9a-f]{64}$/).test(value)) {
-    fail(`${label} must be a lowercase ${git ? 'Git object id' : 'SHA-256'} fingerprint`);
-  }
+  if (typeof value !== 'string' || !(git ? /^[0-9a-f]{40,64}$/ : /^[0-9a-f]{64}$/).test(value)) fail(`${label} must be a lowercase ${git ? 'Git object id' : 'SHA-256'} fingerprint`);
   return value;
 }
 
 function requirePath(value: unknown, label: string): string {
-  if (typeof value !== 'string' || value === '' || value.startsWith('/') || value.includes('\\') || value.startsWith('.flowkit/') || value.split('/').some((part) => part === '' || part === '.' || part === '..')) {
-    fail(`${label} must be a normalized candidate repository path`);
-  }
+  if (typeof value !== 'string' || value === '' || value.startsWith('/') || value.includes('\\') || value.startsWith('.flowkit/') || value.split('/').some((part) => part === '' || part === '.' || part === '..')) fail(`${label} must be a normalized candidate repository path`);
   return value;
 }
 
@@ -55,48 +40,29 @@ export function validateEntryWorkspaceSnapshot(value: unknown): EntryWorkspaceSn
   const object = asObject(value, 'entryWorkspaceIdentity');
   const keys = Object.keys(object).sort();
   const expected = ['canonicalBase', 'schemaVersion', 'workspaceFingerprint'];
-  if (keys.length !== expected.length || keys.some((key, index) => key !== expected[index]) || object['schemaVersion'] !== 1) {
-    fail('entryWorkspaceIdentity must use the closed schemaVersion 1 shape');
-  }
-  return {
-    schemaVersion: 1,
-    canonicalBase: requireSha(object['canonicalBase'], 'entryWorkspaceIdentity.canonicalBase', true),
-    workspaceFingerprint: requireSha(object['workspaceFingerprint'], 'entryWorkspaceIdentity.workspaceFingerprint'),
-  };
+  if (keys.length !== expected.length || keys.some((key, index) => key !== expected[index]) || object['schemaVersion'] !== 1) fail('entryWorkspaceIdentity must use the closed schemaVersion 1 shape');
+  return { schemaVersion: 1, canonicalBase: requireSha(object['canonicalBase'], 'entryWorkspaceIdentity.canonicalBase', true), workspaceFingerprint: requireSha(object['workspaceFingerprint'], 'entryWorkspaceIdentity.workspaceFingerprint') };
 }
 
-export function validateVerificationSelectionRecord(value: unknown): VerificationSelectionRecord {
-  const object = asObject(value, 'verification-selection record');
-  const keys = Object.keys(object).sort();
-  const expected = ['actualChangeSet', 'canonicalBase', 'entryWorkspaceIdentity', 'postActionWorkspaceFingerprint', 'producingRunId', 'rendererVersion', 'schemaVersion', 'verificationMarkdownFingerprint'];
-  if (keys.length !== expected.length || keys.some((key, index) => key !== expected[index]) || object['schemaVersion'] !== 1 || object['rendererVersion'] !== 1) {
-    fail('verification-selection record must use the closed schemaVersion 1 shape');
-  }
-  if (typeof object['producingRunId'] !== 'string' || object['producingRunId'] === '') fail('verification-selection record producingRunId is required');
-  if (!Array.isArray(object['actualChangeSet'])) fail('verification-selection record actualChangeSet must be an array');
-  const actualChangeSet = object['actualChangeSet'].map((value, index) => validateActualChangeSetEntry(value, index));
+export function validateActualChangeSetEntries(value: unknown): readonly ActualChangeSetEntry[] {
+  if (!Array.isArray(value)) fail('actualChangeSet must be an array');
+  const actualChangeSet = value.map((entry, index) => validateActualChangeSetEntry(entry, index));
   const ordered = [...actualChangeSet].sort((a, b) => a.path.localeCompare(b.path));
-  if (ordered.some((entry, index) => entry.path !== actualChangeSet[index]!.path)) fail('actualChangeSet must be lexical sorted and unique');
-  return {
-    schemaVersion: 1,
-    producingRunId: object['producingRunId'],
-    canonicalBase: requireSha(object['canonicalBase'], 'verification-selection record canonicalBase', true),
-    entryWorkspaceIdentity: validateEntryWorkspaceSnapshot(object['entryWorkspaceIdentity']),
-    postActionWorkspaceFingerprint: requireSha(object['postActionWorkspaceFingerprint'], 'postActionWorkspaceFingerprint'),
-    actualChangeSet,
-    rendererVersion: 1,
-    verificationMarkdownFingerprint: requireSha(object['verificationMarkdownFingerprint'], 'verificationMarkdownFingerprint'),
-  };
+  if (ordered.some((entry, index) => entry.path !== actualChangeSet[index]!.path) || new Set(actualChangeSet.map((entry) => entry.path)).size !== actualChangeSet.length) fail('actualChangeSet must be lexical sorted and unique');
+  return actualChangeSet;
 }
 
 function validateActualChangeSetEntry(value: unknown, index: number): ActualChangeSetEntry {
   const object = asObject(value, `actualChangeSet[${index}]`);
+  const expectedKeys = object['contentFingerprintAfter'] === undefined
+    ? ['kind', 'path', 'pathKindAfter', 'pathKindBefore']
+    : ['contentFingerprintAfter', 'kind', 'path', 'pathKindAfter', 'pathKindBefore'];
+  const keys = Object.keys(object).sort();
+  if (keys.length !== expectedKeys.length || keys.some((key, i) => key !== expectedKeys[i])) fail(`actualChangeSet[${index}] must use the closed shape`);
   const kind = object['kind'];
   const before = object['pathKindBefore'];
   const after = object['pathKindAfter'];
-  if ((kind !== 'create' && kind !== 'modify' && kind !== 'delete') ||
-      (before !== 'file' && before !== 'directory' && before !== 'missing') ||
-      (after !== 'file' && after !== 'directory' && after !== 'missing')) fail(`actualChangeSet[${index}] has invalid kinds`);
+  if ((kind !== 'create' && kind !== 'modify' && kind !== 'delete') || (before !== 'file' && before !== 'directory' && before !== 'missing') || (after !== 'file' && after !== 'directory' && after !== 'missing')) fail(`actualChangeSet[${index}] has invalid kinds`);
   if ((kind === 'create' && before !== 'missing') || (kind === 'delete' && after !== 'missing') || (kind === 'modify' && (before === 'missing' || after === 'missing'))) fail(`actualChangeSet[${index}] kind does not match path states`);
   const contentFingerprintAfter = object['contentFingerprintAfter'];
   if (after === 'file') requireSha(contentFingerprintAfter, `actualChangeSet[${index}].contentFingerprintAfter`);

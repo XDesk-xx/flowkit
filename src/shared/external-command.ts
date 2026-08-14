@@ -8,6 +8,8 @@ export interface RunCommandOptions {
   comSpec?: string;
   /** D1 bounded test/host override. Normal Windows order is pwsh.exe then powershell.exe. */
   powerShellCandidates?: readonly string[];
+  /** E1 owned Windows process-tree cancellation seam. Absence means termination cannot be proven. */
+  windowsProcessTreeCanceller?: (input: { readonly pid: number; readonly command: string; readonly args: readonly string[] }) => Promise<{ readonly terminated: boolean; readonly diagnostics: readonly string[] }>;
 }
 
 export interface ResolvedCommand {
@@ -28,6 +30,8 @@ interface RunCommandBase {
     readonly code?: string;
     readonly message: string;
   };
+  /** E1 timeout ownership/termination diagnostics. */
+  readonly processTreeDiagnostics?: readonly string[];
 }
 
 export type ExternalCommandOutcome =
@@ -162,6 +166,7 @@ function runResolvedCommand(
 
     child.once('close', (exitCode: number | null) => {
       if (timedOut) {
+        if ((options?.platform ?? process.platform) === 'win32') return;
         finish({ kind: 'timed-out-cancelled', stdout, stderr, exitCode: exitCode ?? 1, spawned: true, timedOut: true });
         return;
       }
@@ -173,29 +178,29 @@ function runResolvedCommand(
       timeoutHandle = setTimeout(() => {
         timedOut = true;
         if ((options?.platform ?? process.platform) === 'win32') {
-          // A launcher kill cannot prove descendant ownership/termination.
-          // Keep the bounded diagnostics and force the caller to recover from
-          // persisted authoritative state rather than assuming cancellation.
-          try {
-            child.kill('SIGKILL');
-          } catch {
-            // The observation remains unknown either way.
+          const pid = child.pid;
+          const canceller = options?.windowsProcessTreeCanceller;
+          if (pid === undefined || canceller === undefined) {
+            try { child.kill('SIGKILL'); } catch { /* launcher best-effort only */ }
+            finish({ kind: 'outcome-unknown', stdout, stderr, exitCode: 1, spawned, timedOut: true, processTreeDiagnostics: [
+              `launcherPid=${String(pid ?? 'unknown')}`,
+              `command=${resolved.command}`,
+              'owned-process-tree-cancellation=unavailable',
+            ] });
+            return;
           }
-          finish({
-            kind: 'outcome-unknown',
-            stdout,
-            stderr,
-            exitCode: 1,
-            spawned,
-            timedOut: true,
+          void canceller({ pid, command: resolved.command, args: resolved.args }).then((outcome) => {
+            if (outcome.terminated) {
+              finish({ kind: 'timed-out-cancelled', stdout, stderr, exitCode: 1, spawned: true, timedOut: true, processTreeDiagnostics: outcome.diagnostics });
+            } else {
+              finish({ kind: 'outcome-unknown', stdout, stderr, exitCode: 1, spawned: true, timedOut: true, processTreeDiagnostics: outcome.diagnostics });
+            }
+          }).catch((error) => {
+            finish({ kind: 'outcome-unknown', stdout, stderr, exitCode: 1, spawned: true, timedOut: true, processTreeDiagnostics: [`cancellation-error=${error instanceof Error ? error.message : String(error)}`] });
           });
           return;
         }
-        try {
-          child.kill('SIGKILL');
-        } catch {
-          // close/error remains the terminal transport signal.
-        }
+        try { child.kill('SIGKILL'); } catch { /* close/error remains terminal transport signal */ }
       }, timeout);
       timeoutHandle.unref?.();
     }

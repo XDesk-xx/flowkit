@@ -52,6 +52,7 @@ import {
   type ContextFile,
   type ContextFileConstraints,
   type RunResultFile,
+  type RunTerminalBinding,
   type ActionResultWithoutRunRef,
   type TerminalRunStatus,
 } from './serialization.js';
@@ -1130,6 +1131,8 @@ export interface CompleteRunInput {
   readonly failureDiagnosis?: string;
   /** Present → `runStatus = cancelled` (no actionResult). */
   readonly cancellationReason?: string;
+  /** E1 Core-derived exact terminal replay binding. Required for every v5 terminal write. */
+  readonly terminalBinding?: RunTerminalBinding;
 }
 
 /**
@@ -1283,6 +1286,21 @@ function validateCompleteRunInput(
       validateRunIdDescriptor(runId);
     }
   }
+  const terminalStatus = input.failureDiagnosis !== undefined ? 'failed' : input.cancellationReason !== undefined ? 'cancelled' : 'completed';
+  if (contextFile.schemaVersion === 5) {
+    if (input.terminalBinding === undefined) {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'v5 terminal write requires Core-derived terminalBinding', { runId: contextFile.runId });
+    }
+    const isApply = contextFile.action === 'apply' || contextFile.action === 'revise-apply';
+    if (isApply && terminalStatus === 'completed' && input.terminalBinding.verificationSelection === undefined) {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'completed v5 Apply terminal requires verification-selection binding', { runId: contextFile.runId });
+    }
+    if ((!isApply || terminalStatus !== 'completed') && input.terminalBinding.verificationSelection !== undefined) {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'verification-selection terminal binding is only allowed on completed v5 Apply/revise-apply', { runId: contextFile.runId });
+    }
+  } else if (input.terminalBinding !== undefined) {
+    throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'historical v2/v3/v4 terminal writes must not synthesize v5 terminalBinding', { runId: contextFile.runId });
+  }
 }
 
 async function buildRunResultFromDescriptors(
@@ -1307,6 +1325,7 @@ async function buildRunResultFromDescriptors(
       runStatus,
       ...(runStatus === 'failed' && { failureDiagnosis: input.failureDiagnosis }),
       ...(runStatus === 'cancelled' && { cancellationReason: input.cancellationReason }),
+      ...(input.terminalBinding !== undefined && { terminalBinding: input.terminalBinding }),
     };
   }
 
@@ -1323,6 +1342,7 @@ async function buildRunResultFromDescriptors(
   return {
     runStatus: 'completed',
     actionResult,
+    ...(input.terminalBinding !== undefined && { terminalBinding: input.terminalBinding }),
     ...(isReviewAction && input.reviewVerdict !== undefined && { reviewVerdict: input.reviewVerdict }),
     ...(isReviewAction && {
       reviewFindingSchemaVersion: 2 as const,

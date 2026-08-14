@@ -62,7 +62,37 @@ describe('runCommand', () => {
     });
     assert.equal(result.kind, 'outcome-unknown');
     assert.equal(result.timedOut, true);
+  })
+
+  it('returns timed-out-cancelled only when the injected Windows process-tree authority confirms termination', async () => {
+    let seenPid = 0;
+    const result = await runCommand('node', ['-e', 'setInterval(() => {}, 1000)'], {
+      timeout: 40,
+      platform: 'win32',
+      windowsProcessTreeCanceller: async ({ pid, command, args }) => {
+        seenPid = pid;
+        try { process.kill(pid, 'SIGKILL'); } catch { /* process may have exited in the timeout race */ }
+        assert.equal(command.endsWith('node') || command.endsWith('node.exe'), true);
+        assert.ok(args.length > 0);
+        return { terminated: true, diagnostics: [`ownedPid=${pid}`, 'tree=terminated'] };
+      },
+    });
+    assert.ok(seenPid > 0);
+    assert.equal(result.kind, 'timed-out-cancelled');
+    assert.deepEqual(result.processTreeDiagnostics, [`ownedPid=${seenPid}`, 'tree=terminated']);
   });
+
+  it('keeps outcome-unknown with diagnostics when Windows whole-tree termination cannot be confirmed', async () => {
+    const result = await runCommand('node', ['-e', 'setInterval(() => {}, 1000)'], {
+      timeout: 40,
+      platform: 'win32',
+      windowsProcessTreeCanceller: async ({ pid }) => { try { process.kill(pid, 'SIGKILL'); } catch { /* process may have exited in the timeout race */ } return { terminated: false, diagnostics: [`ownedPid=${pid}`, 'descendant=still-running'] }; },
+    });
+    assert.equal(result.kind, 'outcome-unknown');
+    assert.equal(result.timedOut, true);
+    assert.ok(result.processTreeDiagnostics?.some((line) => line === 'descendant=still-running'));
+  });
+;
 
 
 

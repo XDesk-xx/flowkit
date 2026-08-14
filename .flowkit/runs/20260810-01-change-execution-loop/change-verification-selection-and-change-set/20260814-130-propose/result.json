@@ -1,0 +1,64 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "propose",
+    "executionStatus": "completed",
+    "summary": "Owner Contract Reset 后重新冻结 E1 Proposal generation：保留既有 runtime scope，修复三个 existing-capability MODIFIED Requirement 的 canonical scenario identity；OpenSpec strict valid，disposable archive-sync probe 成功且 canonical scenarios 无丢失。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/design.md",
+        "versionFingerprint": "4d1cb1da1b3fb0683e8cb45aa6bbfdc928d657e06dc859c9073723c9de1d9784",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/proposal.md",
+        "versionFingerprint": "442d1d6b468c03a51cc33cf71359ca725df0c141d188541126693785a10b08ca",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "30d7230649aa5aa239c94d5f64c61ae2efe196675768e4dc035fd82f09f252ac",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-core-model/spec.md",
+        "versionFingerprint": "edec8d0d0f1296111b29c2f6523541a7922ea92c8de077a000a6460f6fec7a62",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "e7d3dfb7c3f39e3fa1ed01afde63d88ef3403290dd566c19157852b37d4a66b0",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-lean-run-and-action-package/spec.md",
+        "versionFingerprint": "83b2f607dc408a1d22ee34a10b191f042b0370c16c6292fba5838b500ec8dd86",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+        "versionFingerprint": "ae23ff4ec84d48adfbb98e15b765dd77b304bd062404a72ff7b7c65e8cf39926",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-policy-engine/spec.md",
+        "versionFingerprint": "3abd2493a14d2681b21fb43d024d8ca2b08fdac28e55b331755bf443ee378174",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-runtime-foundation/spec.md",
+        "versionFingerprint": "e85b627d4a1c6ed3f3a647db6fac0f756d2e059a30eed8f2671eafa8250fd01d",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/tasks.md",
+        "versionFingerprint": "525ed72ca31dfbe97b775a2c55eeda324b636abac51ad5d46eb8dd1f601f27bd",
+        "kind": "produced-artifact"
+      }
+    ]
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "5fb40a14be061dc64028402a2adc23bff6d3a96427916ac4cc1fd9b6336fcce1"
+  }
+}

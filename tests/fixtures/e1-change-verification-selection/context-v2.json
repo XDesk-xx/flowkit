@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 2,
+  "runId": "20990101-001-explore",
+  "deliveryId": "D1",
+  "changeKey": "E1",
+  "changeId": "e1-fixture",
+  "action": "explore",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "runPath": ".flowkit/runs/D1/e1-fixture/20990101-001-explore/"
+}

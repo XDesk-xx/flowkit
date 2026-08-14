@@ -16,12 +16,13 @@ Policy 解析 concrete Action 后，new preparation MUST 先检查 current pendi
 - **AND** subsequent `next()` semantics MUST 仍完全由 shared Policy 计算
 - **AND** B1 MUST NOT 把 review recommendation 当 authority
 
-#### Scenario: pending Run 阻止两个 new preparation intents
+#### Scenario: pending Run存在时不复制 Policy推进
 
 - **WHEN** `next` 或 `review` 已经由 Policy 解析 concrete Action
 - **AND** current Change 存在 pending Run
-- **THEN** B1 MUST 返回 `exact-resume-required` 与 persisted target identity
-- **AND** MUST NOT 调用另一 Policy intent、恢复 target 或创建新 NNN
+- **THEN** new preparation MUST 返回 `exact-resume-required` 与 persisted target identity
+- **AND** MUST NOT 调用另一 Policy intent、隐式恢复 target、推导下一 Stage/Action 或创建新 NNN
+- **AND** continuation MUST 只通过 `resumeRun(expectedRunId)` 绑定该 persisted Run identity
 
 #### Scenario: concrete caller-selected Action 被拒绝
 

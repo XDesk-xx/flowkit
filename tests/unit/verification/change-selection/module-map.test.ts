@@ -31,8 +31,26 @@ describe('verification module map', () => {
   it('rejects overlap and dependency cycles', () => {
     assert.doesNotThrow(() => validateVerificationModuleMap(VERIFICATION_MODULE_MAP));
     assert.throws(() => validateVerificationModuleMap([
-      { id: 'a', ownershipSelectors: ['src'], dependsOn: ['b'], verificationScopes: ['x'], capabilityIds: ['x'] },
-      { id: 'b', ownershipSelectors: ['src/b'], dependsOn: ['a'], verificationScopes: ['y'], capabilityIds: ['y'] },
+      { id: 'a', ownershipSelectors: ['src'], dependsOn: ['b'], verificationScopes: ['npm run typecheck'], capabilityIds: ['flowkit-core-model'] },
+      { id: 'b', ownershipSelectors: ['src/b'], dependsOn: ['a'], verificationScopes: ['npm run typecheck'], capabilityIds: ['flowkit-core-model'] },
     ]), /overlap/);
   });
+
+  it('fails closed for nondeterministic, unknown scope/capability, and cycles', () => {
+    const base = VERIFICATION_MODULE_MAP[0]!;
+    assert.throws(() => validateVerificationModuleMap([
+      { ...base, ownershipSelectors: [...base.ownershipSelectors].reverse() },
+    ]), /lexical sorted/);
+    assert.throws(() => validateVerificationModuleMap([
+      { ...base, verificationScopes: ['unknown scope'] },
+    ]), /scope is outside/);
+    assert.throws(() => validateVerificationModuleMap([
+      { ...base, capabilityIds: ['flowkit-unknown-capability'] },
+    ]), /capability is outside/);
+    assert.throws(() => validateVerificationModuleMap([
+      { id: 'a', ownershipSelectors: ['a'], dependsOn: ['b'], verificationScopes: ['npm run typecheck'], capabilityIds: ['flowkit-core-model'] },
+      { id: 'b', ownershipSelectors: ['b'], dependsOn: ['a'], verificationScopes: ['npm run typecheck'], capabilityIds: ['flowkit-core-model'] },
+    ]), /cycle/);
+  });
+
 });

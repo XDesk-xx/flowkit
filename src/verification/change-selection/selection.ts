@@ -1,15 +1,25 @@
 import { createHash } from 'node:crypto';
 
 import type { ActualChangeSetEntry } from './contracts.js';
-import { selectAffectedVerificationModules, VERIFICATION_MODULE_MAP } from './module-map.js';
+import {
+  selectAffectedVerificationModules,
+  VERIFICATION_MODULE_MAP,
+  VERIFICATION_MODULE_MAP_LOGICAL_REF,
+} from './module-map.js';
 import { FlowkitError } from '../../shared/errors.js';
 
+export type CapabilityRelation =
+  | { readonly kind: 'matched' }
+  | { readonly kind: 'not-applicable'; readonly predicateId: 'no-candidate-change' };
+
 export interface VerificationSelection {
+  readonly moduleMapLogicalRef: string;
   readonly moduleMapFingerprint: string;
   readonly seedModuleIds: readonly string[];
   readonly moduleIds: readonly string[];
   readonly capabilityIds: readonly string[];
   readonly capabilityRefs: readonly string[];
+  readonly capabilityRelation: CapabilityRelation;
   readonly verificationScopes: readonly string[];
   readonly selectionFingerprint: string;
 }
@@ -25,32 +35,72 @@ export function buildVerificationSelection(
     throw new FlowkitError('VERIFICATION_CAPABILITY_SELECTION_FAILED', 'OpenSpec delta capability ids must be unique', { capabilityRefs: normalizedCapabilityRefs });
   }
   const selection = selectAffectedVerificationModules(actualChangeSet.map((entry) => entry.path));
+  if (selection.notApplicableProof !== undefined) {
+    if (capabilityIds.length !== 0) {
+      throw new FlowkitError('VERIFICATION_CAPABILITY_SELECTION_FAILED', 'not-applicable requires no delta capability relation to prove', { capabilityIds });
+    }
+    const payload = {
+      moduleMapLogicalRef: VERIFICATION_MODULE_MAP_LOGICAL_REF,
+      moduleMapFingerprint: fingerprint(VERIFICATION_MODULE_MAP),
+      seedModuleIds: [] as readonly string[],
+      moduleIds: [] as readonly string[],
+      capabilityIds: [] as readonly string[],
+      capabilityRefs: [] as readonly string[],
+      capabilityRelation: { kind: 'not-applicable' as const, predicateId: selection.notApplicableProof.predicateId },
+      verificationScopes: [] as readonly string[],
+    };
+    return { ...payload, selectionFingerprint: fingerprint(payload) };
+  }
   for (const moduleId of selection.seedModuleIds) {
     const required = selectionForModule(moduleId);
     if (!required.some((capabilityId) => capabilityIds.includes(capabilityId))) {
-      throw new FlowkitError('VERIFICATION_CAPABILITY_SELECTION_FAILED', 'Every seed verification module requires an applicable OpenSpec delta capability', {
-        moduleId,
-        required,
-        available: capabilityIds,
-      });
+      throw new FlowkitError('VERIFICATION_CAPABILITY_SELECTION_FAILED', 'Every seed verification module requires an applicable OpenSpec delta capability', { moduleId, required, available: capabilityIds });
     }
   }
   const unknownCapabilities = capabilityIds.filter((capabilityId) => !selection.capabilityIds.includes(capabilityId));
   if (unknownCapabilities.length > 0) {
-    throw new FlowkitError('VERIFICATION_CAPABILITY_SELECTION_FAILED', 'Current OpenSpec delta contains a capability unrelated to the selected verification modules', {
-      unknownCapabilities,
-      selectedModuleIds: selection.moduleIds,
-    });
+    throw new FlowkitError('VERIFICATION_CAPABILITY_SELECTION_FAILED', 'Current OpenSpec delta contains a capability unrelated to the selected verification modules', { unknownCapabilities, selectedModuleIds: selection.moduleIds });
   }
   const payload = {
+    moduleMapLogicalRef: VERIFICATION_MODULE_MAP_LOGICAL_REF,
+    moduleMapFingerprint: fingerprint(VERIFICATION_MODULE_MAP),
     seedModuleIds: selection.seedModuleIds,
     moduleIds: selection.moduleIds,
-    moduleMapFingerprint: fingerprint(VERIFICATION_MODULE_MAP),
     capabilityIds,
     capabilityRefs: normalizedCapabilityRefs,
+    capabilityRelation: { kind: 'matched' as const },
     verificationScopes: selection.verificationScopes,
   };
   return { ...payload, selectionFingerprint: fingerprint(payload) };
+}
+
+export function validateVerificationSelection(value: unknown): VerificationSelection {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) fail('verification selection must be an object');
+  const obj = value as Record<string, unknown>;
+  const expected = ['capabilityIds', 'capabilityRefs', 'capabilityRelation', 'moduleIds', 'moduleMapFingerprint', 'moduleMapLogicalRef', 'seedModuleIds', 'selectionFingerprint', 'verificationScopes'];
+  const keys = Object.keys(obj).sort();
+  if (keys.length !== expected.length || keys.some((key, index) => key !== expected[index])) fail('verification selection must use the closed shape');
+  if (obj['moduleMapLogicalRef'] !== VERIFICATION_MODULE_MAP_LOGICAL_REF) fail('verification selection moduleMapLogicalRef is not canonical');
+  const moduleMapFingerprint = requireSha(obj['moduleMapFingerprint'], 'moduleMapFingerprint');
+  if (moduleMapFingerprint !== fingerprint(VERIFICATION_MODULE_MAP)) fail('verification selection moduleMapFingerprint is stale');
+  const seedModuleIds = sortedStrings(obj['seedModuleIds'], 'seedModuleIds');
+  const moduleIds = sortedStrings(obj['moduleIds'], 'moduleIds');
+  const capabilityIds = sortedStrings(obj['capabilityIds'], 'capabilityIds');
+  const capabilityRefs = sortedStrings(obj['capabilityRefs'], 'capabilityRefs');
+  const verificationScopes = sortedStrings(obj['verificationScopes'], 'verificationScopes');
+  const relationRaw = obj['capabilityRelation'];
+  if (typeof relationRaw !== 'object' || relationRaw === null || Array.isArray(relationRaw)) fail('capabilityRelation must be an object');
+  const relationObj = relationRaw as Record<string, unknown>;
+  let capabilityRelation: CapabilityRelation;
+  if (relationObj['kind'] === 'matched' && Object.keys(relationObj).length === 1) capabilityRelation = { kind: 'matched' };
+  else if (relationObj['kind'] === 'not-applicable' && relationObj['predicateId'] === 'no-candidate-change' && Object.keys(relationObj).sort().join(',') === 'kind,predicateId') capabilityRelation = { kind: 'not-applicable', predicateId: 'no-candidate-change' };
+  else fail('capabilityRelation must be matched or closed not-applicable proof');
+  if (capabilityRelation.kind === 'not-applicable' && (seedModuleIds.length !== 0 || moduleIds.length !== 0 || capabilityIds.length !== 0 || capabilityRefs.length !== 0 || verificationScopes.length !== 0)) fail('not-applicable selection must not carry selected authority');
+  if (capabilityRelation.kind === 'matched' && (moduleIds.length === 0 || capabilityIds.length === 0 || verificationScopes.length === 0)) fail('matched selection requires module/capability/scope authority');
+  const payload = { moduleMapLogicalRef: VERIFICATION_MODULE_MAP_LOGICAL_REF, moduleMapFingerprint, seedModuleIds, moduleIds, capabilityIds, capabilityRefs, capabilityRelation, verificationScopes };
+  const selectionFingerprint = requireSha(obj['selectionFingerprint'], 'selectionFingerprint');
+  if (selectionFingerprint !== fingerprint(payload)) fail('selectionFingerprint does not bind the stable selection payload');
+  return { ...payload, selectionFingerprint };
 }
 
 function selectionForModule(moduleId: string): readonly string[] {
@@ -66,6 +116,22 @@ function capabilityIdFromRef(ref: string): string {
     throw new FlowkitError('VERIFICATION_CAPABILITY_SELECTION_FAILED', 'OpenSpec capability ref must be a concrete delta spec path', { ref });
   }
   return match[1];
+}
+
+function sortedStrings(value: unknown, label: string): readonly string[] {
+  if (!Array.isArray(value) || value.some((item) => typeof item !== 'string' || item === '')) fail(`${label} must be a string array`);
+  const items = value as string[];
+  if (new Set(items).size !== items.length || [...items].sort().some((item, index) => item !== items[index])) fail(`${label} must be lexical sorted and unique`);
+  return items;
+}
+
+function requireSha(value: unknown, label: string): string {
+  if (typeof value !== 'string' || !/^[0-9a-f]{64}$/.test(value)) fail(`${label} must be SHA-256`);
+  return value;
+}
+
+function fail(message: string): never {
+  throw new FlowkitError('SCHEMA_VALIDATION_FAILED', message);
 }
 
 function fingerprint(value: unknown): string {

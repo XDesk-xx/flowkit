@@ -1,9 +1,13 @@
 import { afterEach, describe, it } from 'node:test';
+import { createHash } from 'node:crypto';
 import assert from 'node:assert/strict';
-import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 
 import { ACTION_DEFINITIONS, CHANGE_ACTIONS } from '../../../src/domain/actions.js';
+import type { ActionPackage } from '../../../src/domain/types.js';
 import { readFormalFactSnapshot } from '../../../src/facts/formal-fact-reader.js';
 import { invokeOpenSpecArchive } from '../../../src/integrations/openspec/openspec-archive-service.js';
 import type { OpenSpecCliAdapter } from '../../../src/integrations/openspec/openspec-cli-adapter.js';
@@ -23,8 +27,18 @@ import { recordOwnerDecision } from '../../../src/services/a1-write-service.js';
 import { runCli } from '../../../src/cli/main.js';
 import { FlowkitError } from '../../../src/shared/errors.js';
 import { createTempDir } from '../../fixtures/helpers.js';
+import type { VerificationSelectionExecutor } from '../../../src/verification/change-selection/evidence.js';
 
 const roots: string[] = [];
+
+const execFileAsync = promisify(execFile);
+
+async function initializeGit(root: string): Promise<void> {
+  await execFileAsync('git', ['init'], { cwd: root });
+  await execFileAsync('git', ['add', '.'], { cwd: root });
+  await execFileAsync('git', ['-c', 'user.name=Flowkit Test', '-c', 'user.email=flowkit@example.invalid', 'commit', '-m', 'base'], { cwd: root });
+}
+
 afterEach(async () => {
   await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 });
@@ -72,6 +86,141 @@ async function snapshot(root: string, deliveryId: string) {
   });
 }
 
+
+function fixtureOpenSpecAdapter(root: string, changeId: string): OpenSpecCliAdapter {
+  const changeRoot = join(root, 'openspec', 'changes', changeId);
+  return {
+    createOperationProjection: async () => ({
+      projectionVersion: 1 as const,
+      version: '1.7.0',
+      changeId,
+      status: {
+        changeId,
+        schemaName: 'spec-driven' as const,
+        root: { path: root },
+        planningHome: { kind: 'repo' as const, root, changesDir: join(root, 'openspec', 'changes') },
+        changeRoot,
+        changeRootLogical: `openspec/changes/${changeId}`,
+        archiveNamespaceRoot: join(root, 'openspec', 'changes', 'archive'),
+        archiveNamespaceRootLogical: 'openspec/changes/archive',
+        actionContext: { mode: 'repo-local' as const, sourceOfTruth: 'repo' as const, allowedEditRoots: [changeRoot] },
+        artifactPaths: {
+          proposal: { artifactId: 'proposal' as const, logicalPaths: [`openspec/changes/${changeId}/proposal.md`], physicalPaths: [join(changeRoot, 'proposal.md')] },
+          design: { artifactId: 'design' as const, logicalPaths: [`openspec/changes/${changeId}/design.md`], physicalPaths: [join(changeRoot, 'design.md')] },
+          tasks: { artifactId: 'tasks' as const, logicalPaths: [`openspec/changes/${changeId}/tasks.md`], physicalPaths: [join(changeRoot, 'tasks.md')] },
+          specs: { artifactId: 'specs' as const, logicalPaths: [`openspec/changes/${changeId}/specs/flowkit-core-model/spec.md`], physicalPaths: [join(changeRoot, 'specs', 'flowkit-core-model', 'spec.md')] },
+        },
+        status: [],
+      },
+      invocationDiagnostics: [],
+    }),
+  } as unknown as OpenSpecCliAdapter;
+}
+
+const fixtureVerificationExecutor = (status: 'passed' | 'failed'): VerificationSelectionExecutor => async (input) => {
+  if (input.selection.capabilityRelation.kind === 'not-applicable') {
+    return {
+      schemaVersion: 1, producingRunId: input.producingRunId, selectionFingerprint: input.selection.selectionFingerprint,
+      overallStatus: 'not-applicable', fullTestStatus: input.fullTestStatus, environment: 'fixture', checks: [],
+      notApplicableProof: { predicateId: input.selection.capabilityRelation.predicateId },
+    };
+  }
+  return {
+    schemaVersion: 1, producingRunId: input.producingRunId, selectionFingerprint: input.selection.selectionFingerprint,
+    overallStatus: status, fullTestStatus: input.fullTestStatus, environment: 'fixture',
+    checks: input.selection.verificationScopes.map((scope, index) => ({
+      scope, applicability: 'applicable', commandOrMethod: `fixture:${scope}`, status,
+      summary: `${status} fixture check`,
+      resultRef: `.flowkit/runs/${input.producingRunId}/verification-evidence.json#check-${index + 1}`,
+      environment: 'fixture', outcomeKind: 'exited', exitCode: status === 'passed' ? 0 : 1,
+      stdoutFingerprint: 'a'.repeat(64), stderrFingerprint: 'b'.repeat(64),
+    })),
+  };
+};
+
+async function prepareV5ApplyReady() {
+  const fixture = await freshActiveFixture({ changeId: 'change-verification-selection-and-change-set' });
+  const { root, deliveryId, changeId, now } = fixture;
+  await mkdir(join(root, 'src', 'domain'), { recursive: true });
+  await writeFile(join(root, 'src', 'domain', 'types.ts'), 'export const value = 1;\n', 'utf8');
+  await initializeGit(root);
+  await completeExplore(root, deliveryId, changeId, now);
+  const reviewExplore = await prepareActionExecution({ repoRoot: root, deliveryId, entry: 'next', now });
+  await admitActionResult({ repoRoot: root, deliveryId, actionPackage: reviewExplore.package, result: { executionStatus: 'completed', summary: 'approved', reviewVerdict: 'approved', reviewFindings: [] } });
+  const propose = await prepareActionExecution({ repoRoot: root, deliveryId, entry: 'next', now });
+  const changeRoot = join(root, 'openspec', 'changes', changeId);
+  const mutationScope = { schemaVersion: 1, actions: {
+    apply: { selectors: [
+      { kind: 'exact', path: `openspec/changes/${changeId}/tasks.md` },
+      { kind: 'exact', path: `openspec/changes/${changeId}/verification.md` },
+      { kind: 'exact', path: 'src/domain/types.ts' },
+    ] },
+    'revise-apply': { selectors: [
+      { kind: 'exact', path: `openspec/changes/${changeId}/tasks.md` },
+      { kind: 'exact', path: `openspec/changes/${changeId}/verification.md` },
+      { kind: 'exact', path: 'src/domain/types.ts' },
+    ] },
+  } };
+  await writeFile(join(changeRoot, 'proposal.md'), '# Proposal\n', 'utf8');
+  await writeFile(join(changeRoot, 'design.md'), `# Design\n\n## flowkitMutationScope\n\n\`\`\`json\n${JSON.stringify(mutationScope, null, 2)}\n\`\`\`\n`, 'utf8');
+  await writeFile(join(changeRoot, 'tasks.md'), '# Tasks\n\n- [ ] fixture\n', 'utf8');
+  const specDir = join(changeRoot, 'specs', 'flowkit-core-model');
+  await mkdir(specDir, { recursive: true });
+  await writeFile(join(specDir, 'spec.md'), '## ADDED Requirements\n\n### Requirement: fixture\nThe fixture MUST work.\n\n#### Scenario: fixture\n- **WHEN** it runs\n- **THEN** it works\n', 'utf8');
+  await admitActionResult({ repoRoot: root, deliveryId, actionPackage: propose.package, result: { executionStatus: 'completed', summary: 'proposed' } });
+  const reviewPropose = await prepareActionExecution({ repoRoot: root, deliveryId, entry: 'next', now });
+  await admitActionResult({ repoRoot: root, deliveryId, actionPackage: reviewPropose.package, result: { executionStatus: 'completed', summary: 'approved', reviewVerdict: 'approved', reviewFindings: [] } });
+  await recordOwnerDecision(root, { decision: 'authorize-apply', changeId, sourceRef: 'owner:e1-v5-fixture:apply' });
+  const prepared = await prepareNewExecution({ repoRoot: root, deliveryId, entry: 'next', now });
+  assert.equal(prepared.kind, 'prepared');
+  if (prepared.kind !== 'prepared') assert.fail('expected v5 Apply preparation');
+  assert.equal(prepared.package.run.action, 'apply');
+  return { ...fixture, changeRoot, apply: prepared.package };
+}
+
+function historicalV1SemanticFingerprint(pkg: ActionPackage): string {
+  const descriptor = {
+    schemaVersion: 1,
+    deliveryId: pkg.run.deliveryId,
+    changeId: pkg.run.changeId,
+    action: pkg.run.action,
+    actionDefinition: pkg.definition,
+    contractRefs: [...pkg.contractRefs].sort((a, b) => `${a.ref}\0${a.kind}\0${a.versionFingerprint}`.localeCompare(`${b.ref}\0${b.kind}\0${b.versionFingerprint}`)),
+    handoffRefs: [...pkg.handoffRefs].sort((a, b) => `${a.ref}\0${a.kind}\0${a.versionFingerprint}`.localeCompare(`${b.ref}\0${b.kind}\0${b.versionFingerprint}`)),
+    reviewAuthority: pkg.reviewView === undefined ? null : {
+      reviewRunId: pkg.reviewView.reviewRunId,
+      verdict: pkg.reviewView.verdict,
+      resultRef: pkg.reviewView.resultRef,
+      blockingAuthorities: [...pkg.reviewView.blockingAuthorities].sort(),
+    },
+    verificationAuthority: pkg.verificationView ?? null,
+    ownerAuthorizationRefs: [...pkg.ownerAuthorizationRefs].sort((a, b) => a.ref.localeCompare(b.ref)),
+    ...(pkg.ownerFactRefs !== undefined && { ownerFactRefs: [...pkg.ownerFactRefs].sort((a, b) => a.ref.localeCompare(b.ref)) }),
+    externalContextFingerprint: pkg.externalContextFingerprint ?? null,
+  };
+  return createHash('sha256').update(JSON.stringify(canonicalizeForTest(descriptor))).digest('hex');
+}
+
+function canonicalizeForTest(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonicalizeForTest);
+  if (typeof value !== 'object' || value === null) return value;
+  const record = value as Record<string, unknown>;
+  return Object.fromEntries(Object.keys(record).sort().map((key) => [key, canonicalizeForTest(record[key])]));
+}
+
+async function downgradePendingV5ContextToHistoricalV4(root: string, deliveryId: string, changeId: string, pkg: ActionPackage): Promise<void> {
+  const runDir = join(root, '.flowkit', 'runs', deliveryId, changeId, pkg.run.runId);
+  const path = join(runDir, 'context.json');
+  const current = JSON.parse(await readFile(path, 'utf8')) as Record<string, unknown>;
+  const semanticInputFingerprint = historicalV1SemanticFingerprint(pkg);
+  const historical: Record<string, unknown> = { ...current, schemaVersion: 4, semanticInputFingerprint };
+  for (const field of ['canonicalBase', 'applicableFactRefs', 'actionPackage', 'entryWorkspaceIdentity', 'mutationDeclaration']) delete historical[field];
+  await writeFile(path, `${JSON.stringify(historical, null, 2)}\n`, 'utf8');
+  const actionPath = join(runDir, 'action.md');
+  const action = await readFile(actionPath, 'utf8');
+  await writeFile(actionPath, action.replace(/semanticInputFingerprint: `[^`]+`/, `semanticInputFingerprint: \`${semanticInputFingerprint}\``), 'utf8');
+}
+
 async function completeExplore(root: string, deliveryId: string, changeId: string, now: () => Date) {
   const prepared = await prepareActionExecution({ repoRoot: root, deliveryId, entry: 'next', now });
   assert.equal(prepared.package.run.action, 'explore');
@@ -91,6 +240,87 @@ describe('E1 new preparation boundary', () => {
     const pending = await prepareActionExecution({ repoRoot: root, deliveryId, entry: 'next', now });
     const result = await prepareNewExecution({ repoRoot: root, deliveryId, entry: 'next', now });
     assert.deepEqual(result, { kind: 'exact-resume-required', expectedRunId: pending.package.run.runId });
+  });
+
+  it('returns persisted terminal on exact retry and rejects a conflicting terminal descriptor without advancing generation', async () => {
+    const { root, deliveryId, changeId, now } = await freshActiveFixture();
+    await initializeGit(root);
+    const prepared = await prepareNewExecution({ repoRoot: root, deliveryId, entry: 'next', now });
+    assert.equal(prepared.kind, 'prepared');
+    if (prepared.kind !== 'prepared') assert.fail('expected fresh v5 preparation');
+    await writeFile(join(root, 'openspec', 'changes', changeId, 'explore.md'), '# Explore v5\n', 'utf8');
+    const logicalResult = { executionStatus: 'completed' as const, summary: 'v5 explored' };
+    await admitActionResult({ repoRoot: root, deliveryId, actionPackage: prepared.package, result: logicalResult });
+
+    const resumed = await resumeRun({ repoRoot: root, deliveryId, expectedRunId: prepared.package.run.runId });
+    assert.equal(resumed.kind, 'already-terminal');
+    if (resumed.kind !== 'already-terminal') assert.fail('expected persisted terminal');
+    assert.equal(resumed.result.runStatus, 'completed');
+
+    await admitActionResult({ repoRoot: root, deliveryId, actionPackage: prepared.package, result: logicalResult });
+    await assert.rejects(
+      admitActionResult({ repoRoot: root, deliveryId, actionPackage: prepared.package, result: { ...logicalResult, summary: 'different descriptor' } }),
+      (error: unknown) => error instanceof FlowkitError && error.code === 'TERMINAL_REPLAY_CONFLICT',
+    );
+    const runs = await readdir(join(root, '.flowkit', 'runs', deliveryId, changeId));
+    assert.deepEqual(runs.filter((name) => /^\d{8}-\d{3}-/.test(name)), [prepared.package.run.runId]);
+  });
+
+  it('serializes concurrent new preparation so only one pending Run is published', async () => {
+    const { root, deliveryId, changeId, now } = await freshActiveFixture();
+    await initializeGit(root);
+    const [left, right] = await Promise.all([
+      prepareNewExecution({ repoRoot: root, deliveryId, entry: 'next', now }),
+      prepareNewExecution({ repoRoot: root, deliveryId, entry: 'next', now }),
+    ]);
+    const outcomes = [left, right];
+    const prepared = outcomes.filter((outcome) => outcome.kind === 'prepared');
+    const resumes = outcomes.filter((outcome) => outcome.kind === 'exact-resume-required');
+    assert.equal(prepared.length, 1);
+    assert.equal(resumes.length, 1);
+    if (prepared[0]?.kind !== 'prepared' || resumes[0]?.kind !== 'exact-resume-required') assert.fail('unexpected concurrent outcomes');
+    assert.equal(resumes[0].expectedRunId, prepared[0].package.run.runId);
+    const runs = await readdir(join(root, '.flowkit', 'runs', deliveryId, changeId));
+    assert.deepEqual(runs.filter((name) => /^\d{8}-\d{3}-/.test(name)), [prepared[0].package.run.runId]);
+  });
+
+  it('shares one OpenSpec version/status base projection across the full new-preparation operation', async () => {
+    const { root, deliveryId, changeId, now } = await freshActiveFixture();
+    await initializeGit(root);
+    await mkdir(join(root, 'openspec', 'specs', 'flowkit-openspec-1-7-thin-integration'), { recursive: true });
+    await writeFile(join(root, 'openspec', 'specs', 'flowkit-openspec-1-7-thin-integration', 'spec.md'), '# active\n', 'utf8');
+    let baseReads = 0;
+    let extensionReads = 0;
+    const status = {
+      changeId,
+      schemaName: 'spec-driven' as const,
+      root: { path: root },
+      planningHome: { kind: 'repo' as const, root, changesDir: join(root, 'openspec', 'changes') },
+      changeRoot: join(root, 'openspec', 'changes', changeId),
+      changeRootLogical: `openspec/changes/${changeId}`,
+      archiveNamespaceRoot: join(root, 'openspec', 'changes', 'archive'),
+      archiveNamespaceRootLogical: 'openspec/changes/archive',
+      actionContext: { mode: 'repo-local' as const, sourceOfTruth: 'repo' as const, allowedEditRoots: [join(root, 'openspec', 'changes', changeId)] },
+      artifactPaths: {
+        proposal: { artifactId: 'proposal' as const, logicalPaths: [`openspec/changes/${changeId}/proposal.md`], physicalPaths: [join(root, 'openspec', 'changes', changeId, 'proposal.md')] },
+        design: { artifactId: 'design' as const, logicalPaths: [`openspec/changes/${changeId}/design.md`], physicalPaths: [join(root, 'openspec', 'changes', changeId, 'design.md')] },
+        tasks: { artifactId: 'tasks' as const, logicalPaths: [`openspec/changes/${changeId}/tasks.md`], physicalPaths: [join(root, 'openspec', 'changes', changeId, 'tasks.md')] },
+        specs: { artifactId: 'specs' as const, logicalPaths: [], physicalPaths: [] },
+      },
+      status: [],
+    };
+    const fakeAdapter = {
+      createOperationProjection: async (_changeId: string, request: { baseProjection?: unknown } = {}) => {
+        if (request.baseProjection === undefined) baseReads += 1;
+        else extensionReads += 1;
+        return request.baseProjection ?? { projectionVersion: 1 as const, version: '1.7.0', changeId, status, invocationDiagnostics: ['version', 'status'] };
+      },
+    } as unknown as OpenSpecCliAdapter;
+
+    const prepared = await prepareNewExecution({ repoRoot: root, deliveryId, entry: 'next', now, openSpecAdapter: fakeAdapter });
+    assert.equal(prepared.kind, 'prepared');
+    assert.equal(baseReads, 1, 'formal snapshot must read version/status only once');
+    assert.equal(extensionReads, 1, 'Action context must extend the persisted operation projection rather than re-read version/status');
   });
 
   it('reconstructs a v5 package from the exact persisted pending Run without re-entering Policy', async () => {
@@ -128,10 +358,176 @@ describe('E1 new preparation boundary', () => {
     assert.equal(facts.conflicts.length, 0, JSON.stringify(facts.conflicts));
     assert.equal(facts.runs.filter((run) => run.runId === runId).length, 1, JSON.stringify(facts.runs));
     const resumed = await resumeRun({ repoRoot: root, deliveryId, expectedRunId: runId });
-    assert.equal(resumed.schemaVersion, 2);
-    assert.equal(resumed.run.runId, runId);
-    assert.equal(resumed.run.action, 'explore');
+    assert.equal(resumed.kind, 'pending');
+    if (resumed.kind !== 'pending') assert.fail('expected pending exact resume');
+    assert.equal(resumed.package.schemaVersion, 2);
+    assert.equal(resumed.package.run.runId, runId);
+    assert.equal(resumed.package.run.action, 'explore');
   });
+  it('recovers a historical v4 pending Apply from its persisted pre-reset proposal/review lineage', async () => {
+    const { root, deliveryId, changeId, apply } = await prepareV5ApplyReady();
+    await downgradePendingV5ContextToHistoricalV4(root, deliveryId, changeId, apply);
+    await recordOwnerDecision(root, {
+      decision: 'contract-reset', changeId, scope: 'E1/historical-v4-reset', requiredOutcomes: ['fresh contract generation'], sourceRef: 'owner:e1-historical-v4-reset:apply',
+    });
+    assert.equal((await inspectPreparedRun(root, deliveryId)).status, 'recovery-required');
+    const recovered = await recoverContractResetPendingRun({ repoRoot: root, deliveryId });
+    assert.deepEqual(recovered, { runId: apply.run.runId, action: 'apply', status: 'cancelled', cancellationReason: 'superseded-by-owner-contract-reset' });
+    assert.deepEqual(next(await snapshot(root, deliveryId)), { kind: 'action', action: 'propose' });
+  });
+
+  it('recovers a historical v4 pending revise-apply from persisted review/apply lineage after Contract Reset', async () => {
+    const { root, deliveryId, changeId, changeRoot, apply, now } = await prepareV5ApplyReady();
+    await writeFile(join(root, 'src', 'domain', 'types.ts'), 'export const value = 2;\n', 'utf8');
+    await writeFile(join(changeRoot, 'tasks.md'), '# Tasks\n\n- [x] fixture\n', 'utf8');
+    await admitActionResult({ repoRoot: root, deliveryId, actionPackage: apply, result: { executionStatus: 'completed', summary: 'applied' }, verificationExecutor: fixtureVerificationExecutor('passed'), openSpecAdapter: fixtureOpenSpecAdapter(root, changeId) });
+    const review = await prepareNewExecution({ repoRoot: root, deliveryId, entry: 'review', now });
+    assert.equal(review.kind, 'prepared');
+    if (review.kind !== 'prepared') assert.fail('expected review-apply');
+    await admitActionResult({ repoRoot: root, deliveryId, actionPackage: review.package, result: {
+      executionStatus: 'completed', summary: 'changes requested', reviewVerdict: 'changes-requested',
+      reviewFindings: [{ id: 'E1-HIST-RESET-001', severity: 'blocking', blockingAuthority: 'author', title: 'revise', problem: 'fixture', contractRef: 'spec:fixture', invariant: 'fixture', evidence: ['fixture'], impact: 'blocked', requiredOutcome: 'revise', acceptance: ['revised'] }],
+    } });
+    const revise = await prepareNewExecution({ repoRoot: root, deliveryId, entry: 'next', now });
+    assert.equal(revise.kind, 'prepared');
+    if (revise.kind !== 'prepared') assert.fail('expected revise-apply');
+    await downgradePendingV5ContextToHistoricalV4(root, deliveryId, changeId, revise.package);
+    await recordOwnerDecision(root, {
+      decision: 'contract-reset', changeId, scope: 'E1/historical-v4-reset', requiredOutcomes: ['fresh contract generation'], sourceRef: 'owner:e1-historical-v4-reset:revise',
+    });
+    assert.equal((await inspectPreparedRun(root, deliveryId)).status, 'recovery-required');
+    const recovered = await recoverContractResetPendingRun({ repoRoot: root, deliveryId });
+    assert.deepEqual(recovered, { runId: revise.package.run.runId, action: 'revise-apply', status: 'cancelled', cancellationReason: 'superseded-by-owner-contract-reset' });
+    assert.deepEqual(next(await snapshot(root, deliveryId)), { kind: 'action', action: 'propose' });
+  });
+
+  it('fails closed when historical v4 Apply recovery is missing its persisted producer inputRef', async () => {
+    const { root, deliveryId, changeId, apply } = await prepareV5ApplyReady();
+    await downgradePendingV5ContextToHistoricalV4(root, deliveryId, changeId, apply);
+    await recordOwnerDecision(root, {
+      decision: 'contract-reset', changeId, scope: 'E1/historical-v4-reset', requiredOutcomes: ['fresh contract generation'], sourceRef: 'owner:e1-historical-v4-reset:missing-input',
+    });
+    const runDir = join(root, '.flowkit', 'runs', deliveryId, changeId, apply.run.runId);
+    const contextPath = join(runDir, 'context.json');
+    const context = JSON.parse(await readFile(contextPath, 'utf8')) as Record<string, unknown>;
+    delete context['inputRef'];
+    await writeFile(contextPath, `${JSON.stringify(context, null, 2)}\n`, 'utf8');
+    assert.equal((await inspectPreparedRun(root, deliveryId)).status, 'not-resumable');
+    await assert.rejects(
+      recoverContractResetPendingRun({ repoRoot: root, deliveryId }),
+      (error: unknown) => error instanceof FlowkitError && (error.code === 'RESET_PENDING_RECOVERY_NOT_ALLOWED' || error.code === 'FORMAL_FACT_CONFLICT'),
+    );
+  });
+
+  it('rejects historical v4 Contract Reset recovery when immutable contract bytes also drift', async () => {
+    const { root, deliveryId, changeId, changeRoot, apply } = await prepareV5ApplyReady();
+    await downgradePendingV5ContextToHistoricalV4(root, deliveryId, changeId, apply);
+    await recordOwnerDecision(root, {
+      decision: 'contract-reset', changeId, scope: 'E1/historical-v4-reset', requiredOutcomes: ['fresh contract generation'], sourceRef: 'owner:e1-historical-v4-reset:mixed',
+    });
+    await writeFile(join(changeRoot, 'proposal.md'), '# Proposal mixed historical drift\n', 'utf8');
+    await assert.rejects(
+      recoverContractResetPendingRun({ repoRoot: root, deliveryId }),
+      (error: unknown) => error instanceof FlowkitError && error.code === 'RESET_PENDING_RECOVERY_NOT_ALLOWED',
+    );
+  });
+
+  it('fails exact v5 Apply resume on Contract Reset and recovers the historical pending Run without current producer lookup', async () => {
+    const { root, deliveryId, changeId, apply } = await prepareV5ApplyReady();
+    await recordOwnerDecision(root, {
+      decision: 'contract-reset', changeId, scope: 'E1/v5-reset', requiredOutcomes: ['fresh contract generation'], sourceRef: 'owner:e1-v5-reset:apply',
+    });
+    await assert.rejects(
+      resumeRun({ repoRoot: root, deliveryId, expectedRunId: apply.run.runId }),
+      (error: unknown) => error instanceof FlowkitError && error.code === 'PENDING_INPUT_DRIFT',
+    );
+    assert.equal((await inspectPreparedRun(root, deliveryId)).status, 'recovery-required');
+    const recovered = await recoverContractResetPendingRun({ repoRoot: root, deliveryId });
+    assert.deepEqual(recovered, { runId: apply.run.runId, action: 'apply', status: 'cancelled', cancellationReason: 'superseded-by-owner-contract-reset' });
+    assert.deepEqual(next(await snapshot(root, deliveryId)), { kind: 'action', action: 'propose' });
+  });
+
+  it('recovers a historical pending v5 revise-apply after Contract Reset without requiring the superseded proposal generation', async () => {
+    const { root, deliveryId, changeId, changeRoot, apply, now } = await prepareV5ApplyReady();
+    await writeFile(join(root, 'src', 'domain', 'types.ts'), 'export const value = 2;\n', 'utf8');
+    await writeFile(join(changeRoot, 'tasks.md'), '# Tasks\n\n- [x] fixture\n', 'utf8');
+    await admitActionResult({ repoRoot: root, deliveryId, actionPackage: apply, result: { executionStatus: 'completed', summary: 'applied' }, verificationExecutor: fixtureVerificationExecutor('passed'), openSpecAdapter: fixtureOpenSpecAdapter(root, changeId) });
+    const review = await prepareNewExecution({ repoRoot: root, deliveryId, entry: 'review', now });
+    assert.equal(review.kind, 'prepared');
+    if (review.kind !== 'prepared') assert.fail('expected review-apply');
+    await admitActionResult({ repoRoot: root, deliveryId, actionPackage: review.package, result: {
+      executionStatus: 'completed', summary: 'changes requested', reviewVerdict: 'changes-requested',
+      reviewFindings: [{ id: 'E1-V5-RESET-001', severity: 'blocking', blockingAuthority: 'author', title: 'revise', problem: 'fixture', contractRef: 'spec:fixture', invariant: 'fixture', evidence: ['fixture'], impact: 'blocked', requiredOutcome: 'revise', acceptance: ['revised'] }],
+    } });
+    const revise = await prepareNewExecution({ repoRoot: root, deliveryId, entry: 'next', now });
+    assert.equal(revise.kind, 'prepared');
+    if (revise.kind !== 'prepared') assert.fail('expected revise-apply');
+    assert.equal(revise.package.run.action, 'revise-apply');
+    await recordOwnerDecision(root, {
+      decision: 'contract-reset', changeId, scope: 'E1/v5-reset', requiredOutcomes: ['fresh contract generation'], sourceRef: 'owner:e1-v5-reset:revise',
+    });
+    await assert.rejects(
+      resumeRun({ repoRoot: root, deliveryId, expectedRunId: revise.package.run.runId }),
+      (error: unknown) => error instanceof FlowkitError && error.code === 'PENDING_INPUT_DRIFT',
+    );
+    assert.equal((await inspectPreparedRun(root, deliveryId)).status, 'recovery-required');
+    const recovered = await recoverContractResetPendingRun({ repoRoot: root, deliveryId });
+    assert.deepEqual(recovered, { runId: revise.package.run.runId, action: 'revise-apply', status: 'cancelled', cancellationReason: 'superseded-by-owner-contract-reset' });
+    assert.deepEqual(next(await snapshot(root, deliveryId)), { kind: 'action', action: 'propose' });
+  });
+
+  it('rejects Contract Reset recovery when the v5 pending Apply also has immutable contract drift', async () => {
+    const { root, deliveryId, changeId, changeRoot } = await prepareV5ApplyReady();
+    await recordOwnerDecision(root, {
+      decision: 'contract-reset', changeId, scope: 'E1/v5-reset', requiredOutcomes: ['fresh contract generation'], sourceRef: 'owner:e1-v5-reset:mixed',
+    });
+    await writeFile(join(changeRoot, 'proposal.md'), '# Proposal mixed drift\n', 'utf8');
+    await assert.rejects(
+      recoverContractResetPendingRun({ repoRoot: root, deliveryId }),
+      (error: unknown) => error instanceof FlowkitError && error.code === 'RESET_PENDING_RECOVERY_NOT_ALLOWED',
+    );
+  });
+
+  it('revalidates external contract drift on exact v5 resume while allowing declaration-covered Apply mutation', async () => {
+    const allowed = await prepareV5ApplyReady();
+    await writeFile(join(allowed.changeRoot, 'tasks.md'), '# Tasks\n\n- [x] in flight\n', 'utf8');
+    const resumed = await resumeRun({ repoRoot: allowed.root, deliveryId: allowed.deliveryId, expectedRunId: allowed.apply.run.runId });
+    assert.equal(resumed.kind, 'pending');
+
+    const drifted = await prepareV5ApplyReady();
+    await writeFile(join(drifted.changeRoot, 'proposal.md'), '# Proposal drifted after approval\n', 'utf8');
+    await assert.rejects(
+      resumeRun({ repoRoot: drifted.root, deliveryId: drifted.deliveryId, expectedRunId: drifted.apply.run.runId }),
+      (error: unknown) => error instanceof FlowkitError && error.code === 'PENDING_INPUT_DRIFT',
+    );
+    assert.equal((await inspectPreparedRun(drifted.root, drifted.deliveryId)).status, 'input-drift');
+  });
+
+  it('does not let a prewritten passed marker manufacture v5 Verification success without matching selected-check evidence', async () => {
+    const { root, deliveryId, changeRoot, apply } = await prepareV5ApplyReady();
+    await writeFile(join(root, 'src', 'domain', 'types.ts'), 'export const value = 2;\n', 'utf8');
+    await writeFile(join(changeRoot, 'tasks.md'), '# Tasks\n\n- [x] fixture\n', 'utf8');
+    await writeFile(join(changeRoot, 'verification.md'), '<!-- flowkit-change-verification-status: passed -->\n', 'utf8');
+    await admitActionResult({
+      repoRoot: root, deliveryId, actionPackage: apply,
+      result: { executionStatus: 'completed', summary: 'apply with failing verification evidence' },
+      verificationExecutor: fixtureVerificationExecutor('failed'),
+      openSpecAdapter: fixtureOpenSpecAdapter(root, apply.run.changeId),
+    });
+    const runDir = join(root, '.flowkit', 'runs', deliveryId, apply.run.changeId, apply.run.runId);
+    const selection = JSON.parse(await readFile(join(runDir, 'verification-selection.json'), 'utf8')) as { verificationStatus: string };
+    const evidence = JSON.parse(await readFile(join(runDir, 'verification-evidence.json'), 'utf8')) as { overallStatus: string; checks: Array<{ status: string }> };
+    const markdown = await readFile(join(changeRoot, 'verification.md'), 'utf8');
+    assert.equal(selection.verificationStatus, 'failed');
+    assert.equal(evidence.overallStatus, 'failed');
+    assert.equal(evidence.checks.every((check) => check.status === 'failed'), true);
+    assert.match(markdown, /flowkit-change-verification-status: failed/);
+    assert.match(markdown, /## Verification checks/);
+    assert.match(markdown, /result ref:/);
+    const facts = await snapshot(root, deliveryId);
+    assert.equal(facts.changeVerificationStatus, 'failed');
+  });
+
 });
 
 async function advanceToApplyReady(root: string, deliveryId: string, changeId: string, now: () => Date) {
