@@ -237,8 +237,28 @@ export interface ActionPackageVerificationView {
   readonly resultRef?: VersionedAuthorityRef;
 }
 
-export interface ActionPackage {
+export interface MutationSelector {
+  readonly kind: 'exact' | 'prefix';
+  readonly path: string;
+}
+
+/**
+ * Core-derived, Design-bound allowed mutation boundary for an Apply Action.
+ * It constrains observed writes; it is deliberately not a candidate manifest.
+ */
+export interface MutationDeclaration {
   readonly schemaVersion: 1;
+  readonly action: 'apply' | 'revise-apply';
+  readonly designRef: VersionedAuthorityRef;
+  readonly selectors: readonly MutationSelector[];
+}
+
+export interface EntryWorkspaceIdentity {
+  readonly canonicalBase: string;
+  readonly workspaceFingerprint: string;
+}
+
+interface ActionPackageBase {
   readonly run: {
     readonly deliveryId: string;
     readonly changeId: string;
@@ -259,6 +279,32 @@ export interface ActionPackage {
   readonly externalContextFingerprint?: string;
   readonly requiredResultContract: ActionTerminalContract;
 }
+
+/** Historical ActionPackage contract. Immutable contexts v2/v3/v4 reconstruct only this form. */
+export interface ActionPackageV1 extends ActionPackageBase {
+  readonly schemaVersion: 1;
+}
+
+interface ActionPackageV2Common extends ActionPackageBase {
+  readonly schemaVersion: 2;
+}
+
+/** Current Apply package: v5 entry identity and declaration are mandatory. */
+export interface ActionPackageV2Apply extends ActionPackageV2Common {
+  readonly run: ActionPackageBase['run'] & { readonly action: 'apply' | 'revise-apply' };
+  readonly entryWorkspaceIdentity: EntryWorkspaceIdentity;
+  readonly mutationDeclaration: MutationDeclaration;
+}
+
+/** Other current Actions must not synthesize Apply-only authority. */
+export interface ActionPackageV2NonApply extends ActionPackageV2Common {
+  readonly run: ActionPackageBase['run'] & { readonly action: Exclude<FormalAction, 'apply' | 'revise-apply'> };
+  readonly entryWorkspaceIdentity?: never;
+  readonly mutationDeclaration?: never;
+}
+
+export type ActionPackageV2 = ActionPackageV2Apply | ActionPackageV2NonApply;
+export type ActionPackage = ActionPackageV1 | ActionPackageV2;
 
 /**
  * Provider/executor-owned logical terminal descriptor. Core derives physical

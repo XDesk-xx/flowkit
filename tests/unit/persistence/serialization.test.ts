@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { FlowkitError } from '../../../src/shared/errors.js';
+import { getActionDefinition } from '../../../src/domain/actions.js';
 import {
   validateActionResultWithoutRunRef,
   validateResultRefProjection,
@@ -496,6 +497,73 @@ describe('validateContextFile', () => {
         ...validChangeContext,
         schemaVersion: 4,
         archiveEntryOpenSpecProjection: archive.archiveEntryOpenSpecProjection,
+      }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('accepts only a complete v5 Apply context and rejects historical v5 field synthesis', () => {
+    const designRef = {
+      ref: 'openspec/changes/formal-fact-reader-and-persistence/design.md',
+      kind: 'produced-artifact',
+      versionFingerprint: 'c'.repeat(64),
+    };
+    const entryWorkspaceIdentity = {
+      canonicalBase: 'b'.repeat(40),
+      workspaceFingerprint: 'd'.repeat(64),
+    };
+    const mutationDeclaration = {
+      schemaVersion: 1,
+      action: 'apply',
+      designRef,
+      selectors: [{ kind: 'exact', path: 'src/domain/types.ts' }],
+    };
+    const v5 = {
+      ...validChangeContext,
+      schemaVersion: 5,
+      runId: '20260806-010-apply',
+      action: 'apply',
+      semanticInputFingerprint: 'a'.repeat(64),
+      canonicalBase: 'b'.repeat(40),
+      applicableFactRefs: [designRef],
+      entryWorkspaceIdentity,
+      mutationDeclaration,
+      actionPackage: {
+        schemaVersion: 2,
+        run: {
+          runId: '20260806-010-apply',
+          deliveryId: validChangeContext.deliveryId,
+          changeId: validChangeContext.changeId,
+          action: 'apply',
+          role: 'author',
+          semanticInputFingerprint: 'a'.repeat(64),
+        },
+        definition: getActionDefinition('apply'),
+        contractRefs: [designRef],
+        handoffRefs: [],
+        ownerAuthorizationRefs: [],
+        requiredResultContract: getActionDefinition('apply').terminalContract,
+        entryWorkspaceIdentity,
+        mutationDeclaration,
+      },
+    };
+    const context = validateContextFile(v5);
+    assert.equal(context.schemaVersion, 5);
+    assert.equal(context.action, 'apply');
+    assert.equal(context.mutationDeclaration?.selectors[0]?.path, 'src/domain/types.ts');
+
+    assert.throws(
+      () => validateContextFile({ ...validChangeContext, canonicalBase: 'b'.repeat(40) }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+    assert.throws(
+      () => validateContextFile({ ...v5, mutationDeclaration: { ...v5.mutationDeclaration, selectors: [{ kind: 'prefix', path: 'src' }, { kind: 'exact', path: 'src/domain/types.ts' }] } }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+    assert.throws(
+      () => validateContextFile({
+        ...v5,
+        actionPackage: { ...v5.actionPackage, mutationDeclaration: { ...mutationDeclaration, selectors: [{ kind: 'exact', path: 'src/domain/actions.ts' }] } },
       }),
       (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
     );

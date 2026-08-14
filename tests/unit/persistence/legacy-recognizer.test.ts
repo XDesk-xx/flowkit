@@ -2,6 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { ACTION_DEFINITIONS } from '../../../src/domain/actions.js';
 
 import {
   recognizeLegacyRun,
@@ -90,6 +91,34 @@ describe('discriminateRun — three-way discriminator', () => {
     const result = discriminateRun({ ...c1Context, schemaVersion: 4 }, runDir);
     assert.equal(result.kind, 'c1');
     if (result.kind === 'c1') assert.equal(result.contextFile.schemaVersion, 4);
+  });
+
+  it('schemaVersion === 5 → current v5 Run path', () => {
+    const result = discriminateRun({
+      ...c1Context,
+      schemaVersion: 5,
+      semanticInputFingerprint: 'a'.repeat(64),
+      canonicalBase: 'b'.repeat(40),
+      applicableFactRefs: [],
+      actionPackage: {
+        schemaVersion: 2,
+        run: {
+          runId: c1Context.runId,
+          deliveryId: c1Context.deliveryId,
+          changeId: c1Context.changeId,
+          action: 'explore',
+          role: 'author',
+          semanticInputFingerprint: 'a'.repeat(64),
+        },
+        definition: ACTION_DEFINITIONS.explore,
+        contractRefs: [],
+        handoffRefs: [],
+        ownerAuthorizationRefs: [],
+        requiredResultContract: ACTION_DEFINITIONS.explore.terminalContract,
+      },
+    }, runDir);
+    assert.equal(result.kind, 'c1');
+    if (result.kind === 'c1') assert.equal(result.contextFile.schemaVersion, 5);
   });
 
   it('schemaVersion === 1 → legacy path, does not call validateContextFile (task 12.49)', () => {

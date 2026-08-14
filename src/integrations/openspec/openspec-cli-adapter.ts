@@ -23,6 +23,7 @@ import {
   type OpenSpecArtifactPathView,
   type OpenSpecChangeStatusView,
   type OpenSpecPlanningHomeView,
+  type OpenSpecOperationProjection,
   type OpenSpecStatusEntry,
   type OpenSpecValidationIssue,
   type OpenSpecValidationView,
@@ -223,11 +224,15 @@ export class OpenSpecCliAdapter {
     return this.parseChangeStatus(parsed, changeId);
   }
 
-  async getArtifactInstructions(changeId: string, artifactId: OpenSpecArtifactId): Promise<OpenSpecArtifactInstructionsView> {
+  async getArtifactInstructions(
+    changeId: string,
+    artifactId: OpenSpecArtifactId,
+    persistedStatus?: OpenSpecChangeStatusView,
+  ): Promise<OpenSpecArtifactInstructionsView> {
     if (!(OPENSPEC_SUPPORTED_ARTIFACT_IDS as readonly string[]).includes(artifactId)) {
       throw new FlowkitError('OPENSPEC_UNSUPPORTED_ARTIFACT', `Unsupported OpenSpec artifact id: ${String(artifactId)}`);
     }
-    const status = await this.getChangeStatus(changeId);
+    const status = persistedStatus ?? await this.getChangeStatus(changeId);
     const parsed = await this.invokeReadOnlyJson(['instructions', artifactId, '--change', changeId, '--json'], `instructions ${artifactId}`);
     const obj = record(parsed, `instructions.${artifactId}`);
     if (string(obj['changeName'], 'changeName') !== changeId || string(obj['artifactId'], 'artifactId') !== artifactId) {
@@ -281,8 +286,11 @@ export class OpenSpecCliAdapter {
     };
   }
 
-  async getApplyInstructions(changeId: string): Promise<OpenSpecApplyInstructionsView> {
-    const status = await this.getChangeStatus(changeId);
+  async getApplyInstructions(
+    changeId: string,
+    persistedStatus?: OpenSpecChangeStatusView,
+  ): Promise<OpenSpecApplyInstructionsView> {
+    const status = persistedStatus ?? await this.getChangeStatus(changeId);
     const parsed = await this.invokeReadOnlyJson(['instructions', 'apply', '--change', changeId, '--json'], 'instructions apply');
     const obj = record(parsed, 'instructions.apply');
     if (string(obj['changeName'], 'changeName') !== changeId) {
@@ -332,6 +340,9 @@ export class OpenSpecCliAdapter {
     const args = ['validate', changeId, '--type', 'change', ...(strict ? ['--strict'] : []), '--json', '--no-interactive'];
     const result = await this.invokeRaw(args);
     if (result.spawnError !== undefined || !result.spawned) this.throwSpawnFailure(result, 'validate');
+    if (result.kind === 'outcome-unknown') {
+      throw new FlowkitError('OPENSPEC_COMMAND_OUTCOME_UNKNOWN', 'OpenSpec validate outcome is unknown after transport recovery', { changeId });
+    }
     if (result.timedOut) throw new FlowkitError('OPENSPEC_COMMAND_TIMEOUT', 'OpenSpec validate timed out', { changeId });
     const parsed = parseJson(result.stdout, 'validate');
     const obj = record(parsed, 'validate');
@@ -366,6 +377,45 @@ export class OpenSpecCliAdapter {
       });
     }
     return { changeId, valid, issues, status, exitCode: result.exitCode };
+  }
+
+  async createOperationProjection(
+    changeId: string,
+    request: {
+      readonly artifactInstructionIds?: readonly OpenSpecArtifactId[];
+      readonly includeApplyInstructions?: boolean;
+      readonly includeStrictValidation?: boolean;
+    } = {},
+  ): Promise<OpenSpecOperationProjection> {
+    const version = await this.getVersion();
+    const status = await this.getChangeStatus(changeId);
+    const invocationDiagnostics = ['version', 'status'];
+    const artifactInstructionIds = request.artifactInstructionIds ?? [];
+    const artifactInstructions = artifactInstructionIds.length === 0
+      ? undefined
+      : Object.fromEntries(await Promise.all(artifactInstructionIds.map(async (artifactId) => {
+        const instruction = await this.getArtifactInstructions(changeId, artifactId, status);
+        return [artifactId, instruction] as const;
+      }))) as Readonly<Record<OpenSpecArtifactId, OpenSpecArtifactInstructionsView>>;
+    if (artifactInstructions !== undefined) invocationDiagnostics.push(...artifactInstructionIds.map((artifactId) => `instructions:${artifactId}`));
+
+    const validation = request.includeStrictValidation ? await this.validateChange(changeId, true) : undefined;
+    if (validation !== undefined) invocationDiagnostics.push('validate:strict');
+    const applyInstructions = request.includeApplyInstructions
+      ? await this.getApplyInstructions(changeId, status)
+      : undefined;
+    if (applyInstructions !== undefined) invocationDiagnostics.push('instructions:apply');
+
+    return {
+      projectionVersion: 1,
+      version,
+      changeId,
+      status,
+      ...(artifactInstructions !== undefined && { artifactInstructions }),
+      ...(validation !== undefined && { validation }),
+      ...(applyInstructions !== undefined && { applyInstructions }),
+      invocationDiagnostics,
+    };
   }
 
   /**
@@ -562,6 +612,11 @@ export class OpenSpecCliAdapter {
 
   private assertReadOnlyProcessSuccess(result: RunCommandResult, operation: string): void {
     if (result.spawnError !== undefined || !result.spawned) this.throwSpawnFailure(result, operation);
+    if (result.kind === 'outcome-unknown') {
+      throw new FlowkitError('OPENSPEC_COMMAND_OUTCOME_UNKNOWN', `OpenSpec ${operation} outcome is unknown after transport recovery`, {
+        timeoutMs: this.timeoutMs,
+      });
+    }
     if (result.timedOut) throw new FlowkitError('OPENSPEC_COMMAND_TIMEOUT', `OpenSpec ${operation} timed out`, { timeoutMs: this.timeoutMs });
     if (result.exitCode !== 0) {
       let status: readonly OpenSpecStatusEntry[] = [];

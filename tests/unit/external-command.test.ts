@@ -16,6 +16,7 @@ describe('runCommand', () => {
     ]);
     assert.equal(result.stdout, 'hello');
     assert.equal(result.exitCode, 0);
+    assert.equal(result.kind, 'exited');
   });
 
   it('captures stderr', async () => {
@@ -39,6 +40,7 @@ describe('runCommand', () => {
     assert.equal(result.spawned, false);
     assert.equal(result.exitCode, 1);
     assert.equal(result.timedOut, false);
+    assert.equal(result.kind, 'spawn-failed');
     assert.ok(result.spawnError?.message);
   });
 
@@ -47,6 +49,19 @@ describe('runCommand', () => {
     assert.equal(result.spawned, true);
     assert.equal(result.timedOut, true);
     assert.notEqual(result.exitCode, 0);
+    assert.equal(
+      result.kind,
+      process.platform === 'win32' ? 'outcome-unknown' : 'timed-out-cancelled',
+    );
+  });
+
+  it('returns outcome-unknown for a Windows timeout without proven process-tree ownership', async () => {
+    const result = await runCommand('node', ['-e', 'setInterval(() => {}, 1000)'], {
+      timeout: 40,
+      platform: 'win32',
+    });
+    assert.equal(result.kind, 'outcome-unknown');
+    assert.equal(result.timedOut, true);
   });
 
 

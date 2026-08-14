@@ -28,7 +28,7 @@ import { link, mkdir, open, readFile, readdir, rename, rm, stat, unlink, writeFi
 import { dirname, join } from 'node:path';
 import { assertMutable } from '../domain/terminal.js';
 import { validateRun } from '../domain/schema-validator.js';
-import type { Run, BlockingAuthority } from '../domain/types.js';
+import type { Run, BlockingAuthority, ActionPackageV2, EntryWorkspaceIdentity, MutationDeclaration, VersionedAuthorityRef } from '../domain/types.js';
 import { BLOCKING_AUTHORITIES } from '../domain/types.js';
 import { isChangeAction, isRoleAllowedForAction } from '../domain/actions.js';
 import type { ChangeAction } from '../domain/actions.js';
@@ -37,6 +37,10 @@ import type { ExecutionStatus, ResultRef, ReviewVerdictValue, Role, RunStatus } 
 import { FlowkitError } from '../shared/errors.js';
 import { atomicWriteFile } from '../shared/atomic-write.js';
 import { normalizeSeparators } from '../shared/paths.js';
+import {
+  validateEntryWorkspaceSnapshotRecord,
+  type EntryWorkspaceSnapshot,
+} from '../verification/change-selection/entry-snapshot.js';
 import {
   validateContextFile,
   validateContextFileIdentity,
@@ -98,6 +102,20 @@ export interface CreateRunInput {
   readonly action: ChangeAction;
   readonly role: Role;
   readonly ownerAuthorization: string;
+  /** New high-level preparation writes v5; omitted only for bounded historical fixtures. */
+  readonly contextVersion?: 4 | 5;
+  /** Required by all v5 contexts. */
+  readonly canonicalBase?: string;
+  /** Required by all v5 contexts. */
+  readonly applicableFactRefs?: readonly VersionedAuthorityRef[];
+  /** Required by all v5 contexts for exact package reconstruction. */
+  readonly actionPackage?: ActionPackageV2;
+  /** Required only by v5 Apply/revise-apply contexts. */
+  readonly entryWorkspaceIdentity?: EntryWorkspaceIdentity;
+  /** Required only by v5 Apply/revise-apply contexts. */
+  readonly mutationDeclaration?: MutationDeclaration;
+  /** Required only by v5 Apply/revise-apply contexts; published with the Run. */
+  readonly entryWorkspaceSnapshot?: EntryWorkspaceSnapshot;
   /** B1 compact semantic input identity persisted in context.json. */
   readonly semanticInputFingerprint?: string;
   /** Bootstrap/D1 bounded applicable Owner facts persisted for detached handoff. */
@@ -241,6 +259,12 @@ export async function createRun(input: CreateRunInput): Promise<string> {
     const contextJsonPath = join(stagingDir, 'context.json');
     await atomicWriteFile(actionMdPath, input.actionMd);
     await atomicWriteFile(contextJsonPath, serializeContextFile(contextFile));
+    if (input.contextVersion === 5 && (input.action === 'apply' || input.action === 'revise-apply')) {
+      await atomicWriteFile(
+        join(stagingDir, 'entry-workspace.json'),
+        `${JSON.stringify(input.entryWorkspaceSnapshot, null, 2)}\n`,
+      );
+    }
 
     // 7. Atomically publish via directory rename.
     //
@@ -1960,6 +1984,68 @@ function buildContextFile(
   inputRef: ResultRef | undefined,
   verificationInputRef: ResultRef | undefined,
 ): ContextFile {
+  if (input.contextVersion === 5) {
+    if (input.canonicalBase === undefined || input.applicableFactRefs === undefined || input.actionPackage === undefined) {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'v5 Run creation requires canonicalBase, applicableFactRefs, and actionPackage');
+    }
+    if (input.action === 'apply' || input.action === 'revise-apply') {
+      if (input.entryWorkspaceIdentity === undefined || input.mutationDeclaration === undefined || input.entryWorkspaceSnapshot === undefined) {
+        throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'v5 Apply creation requires entry workspace identity, snapshot, and mutation declaration');
+      }
+      const entrySnapshot = validateEntryWorkspaceSnapshotRecord(input.entryWorkspaceSnapshot);
+      if (
+        entrySnapshot.canonicalBase !== input.entryWorkspaceIdentity.canonicalBase ||
+        entrySnapshot.workspaceFingerprint !== input.entryWorkspaceIdentity.workspaceFingerprint ||
+        entrySnapshot.canonicalBase !== input.canonicalBase
+      ) {
+        throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'v5 Apply entry workspace snapshot must exactly match the context identity and canonical base');
+      }
+      return {
+        schemaVersion: 5,
+        runId: input.runId,
+        deliveryId: input.deliveryId,
+        action: input.action,
+        role: input.role,
+        ownerAuthorization: input.ownerAuthorization,
+        semanticInputFingerprint: input.semanticInputFingerprint ?? '',
+        ...(input.ownerFactRefs !== undefined && { ownerFactRefs: input.ownerFactRefs }),
+        runPath,
+        changeKey: input.changeKey,
+        changeId: input.changeId,
+        ...(inputRef !== undefined && { inputRef }),
+        ...(input.sourceReviewRun !== undefined && { sourceReviewRun: input.sourceReviewRun }),
+        ...(input.sourceReviewVerdict !== undefined && { sourceReviewVerdict: input.sourceReviewVerdict }),
+        canonicalBase: input.canonicalBase,
+        applicableFactRefs: input.applicableFactRefs,
+        actionPackage: input.actionPackage,
+        entryWorkspaceIdentity: input.entryWorkspaceIdentity,
+        mutationDeclaration: input.mutationDeclaration,
+        ...(input.constraints !== undefined && { constraints: input.constraints }),
+      };
+    }
+    return {
+      schemaVersion: 5,
+      runId: input.runId,
+      deliveryId: input.deliveryId,
+      action: input.action,
+      role: input.role,
+      ownerAuthorization: input.ownerAuthorization,
+      semanticInputFingerprint: input.semanticInputFingerprint ?? '',
+      ...(input.ownerFactRefs !== undefined && { ownerFactRefs: input.ownerFactRefs }),
+      runPath,
+      changeKey: input.changeKey,
+      changeId: input.changeId,
+      ...(inputRef !== undefined && { inputRef }),
+      ...(verificationInputRef !== undefined && { verificationInputRef }),
+      ...(input.sourceReviewRun !== undefined && { sourceReviewRun: input.sourceReviewRun }),
+      ...(input.sourceReviewVerdict !== undefined && { sourceReviewVerdict: input.sourceReviewVerdict }),
+      ...(input.reviewedRunId !== undefined && { reviewedRunId: input.reviewedRunId }),
+      canonicalBase: input.canonicalBase,
+      applicableFactRefs: input.applicableFactRefs,
+      actionPackage: input.actionPackage,
+      ...(input.constraints !== undefined && { constraints: input.constraints }),
+    };
+  }
   const contextFile: ContextFile = {
     schemaVersion: 4,
     runId: input.runId,

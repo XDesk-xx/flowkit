@@ -78,6 +78,22 @@ export interface OpenSpecPreparedActionContextView {
 }
 
 /**
+ * A read-only OpenSpec snapshot scoped to one formal Flowkit operation.
+ * It is intentionally not persisted or reused after an action mutates the
+ * working tree.
+ */
+export interface OpenSpecOperationProjection {
+  readonly projectionVersion: 1;
+  readonly version: string;
+  readonly changeId: string;
+  readonly status: OpenSpecChangeStatusView;
+  readonly artifactInstructions?: Readonly<Record<OpenSpecArtifactId, OpenSpecArtifactInstructionsView>>;
+  readonly applyInstructions?: OpenSpecApplyInstructionsView;
+  readonly validation?: OpenSpecValidationView;
+  readonly invocationDiagnostics: readonly string[];
+}
+
+/**
  * D2 archive-only persisted entry projection. It deliberately preserves only
  * the OpenSpec keyed identity needed to reconstruct the archive Action's
  * external semantic context after the active Change has been relocated.

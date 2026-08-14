@@ -48,6 +48,9 @@ scope:
     - Finding convergence
     - non-author facts 到位后的 direct re-review
     - no-op revise rejection
+    - immutable Action entry / Core-owned post-action fact boundary
+    - exact target Run resume / timeout outcome-unknown / idempotent terminal replay
+    - operation-scoped OpenSpec projection / Windows process-tree cancellation
     - actualChangeSet
     - verificationScope
     - focused / affected Change Verification
@@ -169,14 +172,23 @@ changes:
   - key: E1
     id: change-verification-selection-and-change-set
     goal: >
-      基于 canonical Git boundary、actualChangeSet、确定性 module ownership /
-      dependency mapping 与 OpenSpec affected capability，
-      生成最小 verificationScope 并执行 Change Verification。
+      同时修复两类已观测的执行时间边界缺口：分离 Apply / revise-apply
+      immutable entry facts 与 Core-owned post-action facts，并分离 Policy-selected
+      new Run preparation 与 exact target Run retry；在 timeout outcome-unknown、
+      terminal replay、Windows process tree 和重复 OpenSpec projection 下保持
+      fail-closed。基于 canonical Git boundary、actualChangeSet、确定性 module
+      ownership / dependency mapping 与 OpenSpec affected capability，生成最小
+      verificationScope 并执行 Change Verification。
     required: true
     dependsOn:
       - review-findings-and-blocker-authority
-    state: planned
+    state: active
     outputs:
+      - immutable context v5 entry identity / ActionPackage v2 declaration migration
+      - Core-owned post-action actualChangeSet / verification-selection record
+      - exact target Run resume / idempotent terminal replay
+      - timeout outcome-unknown / late-completion generation safety
+      - operation-scoped OpenSpec projection / bounded external command cancellation
       - actualChangeSet
       - change-set classification
       - deterministic verificationScope
@@ -333,6 +345,28 @@ ownerDecisions:
     deliveryId: "20260810-01-change-execution-loop"
     changeId: "archive-terminal-continuation-correction"
     sourceRef: "owner-input:2026-08-13T07:56+08:00"
+  - ref: "owner:7935d82cc0f67fe28c695432f35a1609612da350c45c83c07301dbd9e2605c4d"
+    decision: "activate-change"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "change-verification-selection-and-change-set"
+    sourceRef: "owner-input:2026-08-13:restart-E1-after-checkpoint-reset"
+  - ref: "owner:52c2f519e846da1aab0ba16b4f2e2355ae362d0fb846f2a21302a2b5bdf17b6d"
+    decision: "contract-reset"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "change-verification-selection-and-change-set"
+    scope: "e1-two-time-boundaries-and-execution-reliability-primitives"
+    requiredOutcomes:
+      - "E1 must preserve the immutable entry versus Core-owned post-action fact model, context v5 and ActionPackage v2 migration, actualChangeSet, deterministic module/dependency/capability verificationScope selection, and bootstrap verification."
+      - "E1 scope is expanded to implement bounded operation-scoped OpenSpec projection deduplication and Windows process-tree cancellation with fail-closed outcome-unknown fallback."
+      - "E1 scope is expanded to implement exact target Run resume, timeout outcome-unknown, idempotent terminal replay, and late-completion generation safety."
+      - "G1 retains ownership of Change CLI surface, full Change E2E, checkout/resume recovery validation, Run/package size observation, focused/affected timing observation, and review convergence observation; G1 consumes E1 primitives and does not duplicate their implementation."
+      - "Historical Run contexts and results remain immutable; the new Owner fact must be projected through the official write-side and Policy must determine the next legal boundary."
+    sourceRef: "owner-input:2026-08-13:authorize-E1-expanded-scope-before-108-revision"
+  - ref: "owner:fe638dcc71cf90138e74a23faf64ddf7ce13ce19801c4bea8005377a45e31f63"
+    decision: "authorize-apply"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "change-verification-selection-and-change-set"
+    sourceRef: "owner:chat:20260814-authorize-apply"
 verification:
   change:
     requireApplicableChecks: true
@@ -348,6 +382,9 @@ verification:
       - typed Findings / blockingAuthority
       - no-op revise rejection
       - non-author fact direct re-review
+      - immutable entry / post-action fact boundary
+      - exact target Run retry / timeout outcome-unknown / terminal replay
+      - OpenSpec projection deduplication / Windows process-tree cancellation
       - actualChangeSet / verificationScope
       - Change Verification selection
       - archive / completed / checkpoint boundary
@@ -377,6 +414,9 @@ acceptance:
   - changes-requested ≠ revise-required 已机器化
   - non-author blocker 在 bytes 不变时可 direct re-review
   - no-op revise 可被拒绝
+  - timeout / late completion 后 exact target retry 不会创建下一 Action generation
+  - terminal replay 绑定 persisted Run identity 并保持幂等或 fail closed
+  - 单次 formal operation 共享 bounded OpenSpec projection，Windows timeout 不伪装为 writer 已停止
   - actualChangeSet / verificationScope 可确定性生成
   - Change Verification 可用，且任何 Change path 不自动运行 Delivery Full Test
   - Change CLI / resume-context 可用

@@ -25,6 +25,7 @@ import {
   isChangeAction,
   isRoleAllowedForAction,
   CHANGE_ACTIONS,
+  getActionDefinition,
 } from '../domain/actions.js';
 import type { ChangeAction } from '../domain/actions.js';
 import { isExecutionStatus } from '../domain/schema-validator.js';
@@ -45,6 +46,10 @@ import type {
   Role,
   BlockingAuthority,
   OwnerFactRef,
+  EntryWorkspaceIdentity,
+  MutationDeclaration,
+  VersionedAuthorityRef,
+  ActionPackageV2,
 } from '../domain/types.js';
 import { BLOCKING_AUTHORITIES } from '../domain/types.js';
 import {
@@ -200,9 +205,7 @@ export interface ContextFileConstraints {
  * `sourceReviewRun`, which is the prior review being addressed by a
  * `revise-*` Run.
  */
-export interface ContextFile {
-  /** C1/D1/D2 format marker. Historical v2/v3 remain read-only compatible; new Runs write v4. */
-  readonly schemaVersion: 2 | 3 | 4;
+interface ContextFileBase {
   readonly runId: string;
   readonly deliveryId: string;
   /** Every current schemaVersion 2 Run is Change-scoped. */
@@ -242,6 +245,36 @@ export interface ContextFile {
   /** MUST be consistent with the actual filesystem Run directory path. */
   readonly runPath: string;
 }
+
+/** Immutable historical context contracts. They never acquire v5 fields. */
+export interface HistoricalContextFile extends ContextFileBase {
+  readonly schemaVersion: 2 | 3 | 4;
+}
+
+interface ContextFileV5Common extends ContextFileBase {
+  readonly schemaVersion: 5;
+  /** Git identity used by Core to derive the final actualChangeSet. */
+  readonly canonicalBase: string;
+  /** Frozen applicable contract / Owner fact identities at Action entry. */
+  readonly applicableFactRefs: readonly VersionedAuthorityRef[];
+  /** Immutable minimal package view used by exact resume; never recomputed through Policy. */
+  readonly actionPackage: ActionPackageV2;
+}
+
+export interface ContextFileV5Apply extends ContextFileV5Common {
+  readonly action: 'apply' | 'revise-apply';
+  readonly entryWorkspaceIdentity: EntryWorkspaceIdentity;
+  readonly mutationDeclaration: MutationDeclaration;
+}
+
+export interface ContextFileV5NonApply extends ContextFileV5Common {
+  readonly action: Exclude<ChangeAction, 'apply' | 'revise-apply'>;
+  readonly entryWorkspaceIdentity?: never;
+  readonly mutationDeclaration?: never;
+}
+
+/** Closed physical context schema. New writers only emit the v5 variants. */
+export type ContextFile = HistoricalContextFile | ContextFileV5Apply | ContextFileV5NonApply;
 
 // ---------------------------------------------------------------------------
 // Validation helpers
@@ -1238,9 +1271,9 @@ export function validateReviewVerdictIntegrity(
 export function validateContextFile(value: unknown): ContextFile {
   const obj = asObject(value, 'ContextFile');
 
-  // Historical C1/D1 v2/v3 remain readable; D2 current writers use v4.
-  if (obj['schemaVersion'] !== 2 && obj['schemaVersion'] !== 3 && obj['schemaVersion'] !== 4) {
-    schemaFail('ContextFile.schemaVersion must equal 2, 3, or 4', { schemaVersion: obj['schemaVersion'] });
+  // Historical C1/D1/D2 v2/v3/v4 remain readable. New Standard Runs use v5.
+  if (obj['schemaVersion'] !== 2 && obj['schemaVersion'] !== 3 && obj['schemaVersion'] !== 4 && obj['schemaVersion'] !== 5) {
+    schemaFail('ContextFile.schemaVersion must equal 2, 3, 4, or 5', { schemaVersion: obj['schemaVersion'] });
   }
   const schemaVersion = obj['schemaVersion'];
 
@@ -1274,6 +1307,26 @@ export function validateContextFile(value: unknown): ContextFile {
       });
     }
     semanticInputFingerprint = semanticInputFingerprintRaw;
+  }
+
+  const canonicalBase = obj['canonicalBase'];
+  const applicableFactRefs = obj['applicableFactRefs'];
+  const actionPackageRaw = obj['actionPackage'];
+  const entryWorkspaceIdentity = obj['entryWorkspaceIdentity'];
+  const mutationDeclaration = obj['mutationDeclaration'];
+  if (schemaVersion === 5) {
+    if (typeof canonicalBase !== 'string' || !/^[0-9a-f]{40,64}$/.test(canonicalBase)) {
+      schemaFail('schemaVersion 5 canonicalBase must be a lowercase Git object id', { canonicalBase });
+    }
+    if (semanticInputFingerprint === undefined) {
+      schemaFail('schemaVersion 5 requires semanticInputFingerprint');
+    }
+    validateVersionedAuthorityRefs(applicableFactRefs, 'applicableFactRefs', { allowEmpty: true });
+    if (actionPackageRaw === undefined) schemaFail('schemaVersion 5 requires actionPackage');
+  } else if (
+    canonicalBase !== undefined || applicableFactRefs !== undefined || actionPackageRaw !== undefined || entryWorkspaceIdentity !== undefined || mutationDeclaration !== undefined
+  ) {
+    schemaFail('v5-only ContextFile fields are forbidden in historical v2/v3/v4 contexts', { schemaVersion });
   }
 
   const ownerFactRefsRaw = obj['ownerFactRefs'];
@@ -1535,7 +1588,7 @@ export function validateContextFile(value: unknown): ContextFile {
   // constraints (optional object).
   const constraints = validateOptionalConstraints(obj['constraints']);
 
-  const result: ContextFile = {
+  const baseResult = {
     schemaVersion,
     runId,
     deliveryId,
@@ -1543,7 +1596,7 @@ export function validateContextFile(value: unknown): ContextFile {
     role: role as Role,
     ownerAuthorization,
     ...(semanticInputFingerprint !== undefined && { semanticInputFingerprint }),
-    ...((schemaVersion === 3 || schemaVersion === 4) && ownerFactRefs !== undefined && { ownerFactRefs }),
+    ...((schemaVersion === 3 || schemaVersion === 4 || schemaVersion === 5) && ownerFactRefs !== undefined && { ownerFactRefs }),
     runPath,
     changeKey,
     changeId,
@@ -1556,12 +1609,326 @@ export function validateContextFile(value: unknown): ContextFile {
     ...(archiveMutationGuard !== undefined && { archiveMutationGuard }),
     ...(constraints !== undefined && { constraints }),
   };
-  return result;
+  if (schemaVersion !== 5) return baseResult as HistoricalContextFile;
+
+  const commonV5 = {
+    ...baseResult,
+    schemaVersion: 5 as const,
+    canonicalBase: canonicalBase as string,
+    applicableFactRefs: applicableFactRefs as readonly VersionedAuthorityRef[],
+  };
+  if (action === 'apply' || action === 'revise-apply') {
+    const validatedEntryWorkspaceIdentity = validateEntryWorkspaceIdentity(entryWorkspaceIdentity);
+    const validatedMutationDeclaration = validateMutationDeclaration(mutationDeclaration, action);
+    const actionPackage = validateV5ActionPackage(
+      actionPackageRaw,
+      runId,
+      deliveryId,
+      changeId,
+      action,
+      semanticInputFingerprint!,
+      canonicalBase as string,
+      applicableFactRefs as readonly VersionedAuthorityRef[],
+      validatedEntryWorkspaceIdentity,
+      validatedMutationDeclaration,
+      ownerFactRefs,
+    );
+    return {
+      ...commonV5,
+      action,
+      actionPackage,
+      entryWorkspaceIdentity: validatedEntryWorkspaceIdentity,
+      mutationDeclaration: validatedMutationDeclaration,
+    };
+  }
+  if (entryWorkspaceIdentity !== undefined || mutationDeclaration !== undefined) {
+    schemaFail('entryWorkspaceIdentity/mutationDeclaration are only allowed on v5 apply/revise-apply contexts', { action });
+  }
+  return {
+    ...commonV5,
+    action: action as Exclude<ChangeAction, 'apply' | 'revise-apply'>,
+    actionPackage: validateV5ActionPackage(
+      actionPackageRaw,
+      runId,
+      deliveryId,
+      changeId,
+      action as Exclude<ChangeAction, 'apply' | 'revise-apply'>,
+      semanticInputFingerprint!,
+      canonicalBase as string,
+      applicableFactRefs as readonly VersionedAuthorityRef[],
+      undefined,
+      undefined,
+      ownerFactRefs,
+    ),
+  };
+}
+
+function validateVersionedAuthorityRefs(
+  value: unknown,
+  label: string,
+  options: { readonly allowEmpty?: boolean } = {},
+): readonly VersionedAuthorityRef[] {
+  if (!Array.isArray(value) || (!options.allowEmpty && value.length === 0)) {
+    schemaFail(`${label} must be ${options.allowEmpty ? 'an array' : 'a non-empty array'}`);
+  }
+  const refs = value.map((raw, index) => {
+    const obj = asObject(raw, `${label}[${index}]`);
+    const keys = Object.keys(obj).sort();
+    const expected = ['kind', 'ref', 'versionFingerprint'];
+    if (keys.length !== expected.length || keys.some((key, keyIndex) => key !== expected[keyIndex])) {
+      schemaFail(`${label}[${index}] must use the closed VersionedAuthorityRef shape`);
+    }
+    const ref = requireNonEmptyString(obj, 'ref');
+    const kind = requireNonEmptyString(obj, 'kind');
+    const versionFingerprint = requireNonEmptyString(obj, 'versionFingerprint');
+    if (!/^[0-9a-f]{64}$/.test(versionFingerprint)) {
+      schemaFail(`${label}[${index}].versionFingerprint must be a lowercase SHA-256 hex string`);
+    }
+    return { ref, kind, versionFingerprint };
+  });
+  const ordered = [...refs].sort((a, b) => a.ref.localeCompare(b.ref) || a.kind.localeCompare(b.kind));
+  if (ordered.some((ref, index) => ref.ref !== refs[index]!.ref || ref.kind !== refs[index]!.kind)) {
+    schemaFail(`${label} must be lexical sorted`);
+  }
+  if (new Set(refs.map((ref) => `${ref.kind}:${ref.ref}`)).size !== refs.length) {
+    schemaFail(`${label} must not contain duplicate identities`);
+  }
+  return refs;
+}
+
+function validateEntryWorkspaceIdentity(value: unknown): EntryWorkspaceIdentity {
+  const obj = asObject(value, 'entryWorkspaceIdentity');
+  const keys = Object.keys(obj).sort();
+  const expected = ['canonicalBase', 'workspaceFingerprint'];
+  if (keys.length !== expected.length || keys.some((key, index) => key !== expected[index])) {
+    schemaFail('entryWorkspaceIdentity must use the closed schema');
+  }
+  const canonicalBase = requireNonEmptyString(obj, 'canonicalBase');
+  const workspaceFingerprint = requireNonEmptyString(obj, 'workspaceFingerprint');
+  if (!/^[0-9a-f]{40,64}$/.test(canonicalBase) || !/^[0-9a-f]{64}$/.test(workspaceFingerprint)) {
+    schemaFail('entryWorkspaceIdentity contains an invalid fingerprint');
+  }
+  return { canonicalBase, workspaceFingerprint };
+}
+
+function validateV5ActionPackage(
+  value: unknown,
+  runId: string,
+  deliveryId: string,
+  changeId: string,
+  action: ChangeAction,
+  semanticInputFingerprint: string,
+  canonicalBase: string,
+  applicableFactRefs: readonly VersionedAuthorityRef[],
+  expectedEntryWorkspaceIdentity?: EntryWorkspaceIdentity,
+  expectedMutationDeclaration?: MutationDeclaration,
+  expectedOwnerFactRefs?: readonly OwnerFactRef[],
+): ActionPackageV2 {
+  const obj = asObject(value, 'actionPackage');
+  if (obj['schemaVersion'] !== 2) schemaFail('v5 context actionPackage must use schemaVersion 2');
+  const run = asObject(obj['run'], 'actionPackage.run');
+  assertClosedKeys(run, 'actionPackage.run', [
+    'action', 'changeId', 'deliveryId', 'role', 'runId', 'semanticInputFingerprint',
+  ]);
+  if (
+    run['runId'] !== runId || run['deliveryId'] !== deliveryId || run['changeId'] !== changeId ||
+    run['action'] !== action || run['role'] !== getActionDefinition(action).role
+  ) {
+    schemaFail('v5 context actionPackage.run must exactly match context identity');
+  }
+  const fingerprint = run['semanticInputFingerprint'];
+  if (fingerprint !== semanticInputFingerprint) {
+    schemaFail('v5 context actionPackage.run semanticInputFingerprint must equal the context fingerprint');
+  }
+  assertCanonicalValue(obj['definition'], getActionDefinition(action), 'actionPackage.definition must equal the canonical Action definition');
+  assertCanonicalValue(obj['requiredResultContract'], getActionDefinition(action).terminalContract, 'actionPackage.requiredResultContract must equal the canonical terminal contract');
+  const contractRefs = validateVersionedAuthorityRefs(obj['contractRefs'], 'actionPackage.contractRefs', { allowEmpty: true });
+  const handoffRefs = validateVersionedAuthorityRefs(obj['handoffRefs'], 'actionPackage.handoffRefs', { allowEmpty: true });
+  const packageApplicableFactRefs = [...contractRefs, ...handoffRefs]
+    .sort((left, right) => `${left.ref}\u0000${left.kind}\u0000${left.versionFingerprint}`.localeCompare(`${right.ref}\u0000${right.kind}\u0000${right.versionFingerprint}`));
+  if (!canonicalValuesEqual(packageApplicableFactRefs, applicableFactRefs)) {
+    schemaFail('v5 context applicableFactRefs must equal the ActionPackage contract/handoff union');
+  }
+  validateOwnerAuthorizationRefs(obj['ownerAuthorizationRefs']);
+  validateOptionalActionPackageViews(obj, expectedOwnerFactRefs);
+  const packageAction = run['action'];
+  const hasEntry = obj['entryWorkspaceIdentity'] !== undefined;
+  const hasDeclaration = obj['mutationDeclaration'] !== undefined;
+  if (packageAction === 'apply' || packageAction === 'revise-apply') {
+    if (!hasEntry || !hasDeclaration) schemaFail('v2 Apply package requires entryWorkspaceIdentity and mutationDeclaration');
+    assertClosedKeys(obj, 'actionPackage', expectedActionPackageKeys(obj, true));
+    const packageEntry = validateEntryWorkspaceIdentity(obj['entryWorkspaceIdentity']);
+    const packageDeclaration = validateMutationDeclaration(obj['mutationDeclaration'], packageAction);
+    if (
+      expectedEntryWorkspaceIdentity === undefined || expectedMutationDeclaration === undefined ||
+      packageEntry.canonicalBase !== canonicalBase ||
+      !canonicalValuesEqual(packageEntry, expectedEntryWorkspaceIdentity) ||
+      !canonicalValuesEqual(packageDeclaration, expectedMutationDeclaration)
+    ) {
+      schemaFail('v2 Apply package entry fields must exactly equal their sibling v5 context fields');
+    }
+    return obj as unknown as ActionPackageV2;
+  }
+  if (hasEntry || hasDeclaration) schemaFail('v2 non-Apply package must not carry Apply fields');
+  assertClosedKeys(obj, 'actionPackage', expectedActionPackageKeys(obj, false));
+  return obj as unknown as ActionPackageV2;
+}
+
+function expectedActionPackageKeys(obj: Record<string, unknown>, isApply: boolean): readonly string[] {
+  const required = [
+    'contractRefs', 'definition', 'handoffRefs', 'ownerAuthorizationRefs',
+    'requiredResultContract', 'run', 'schemaVersion',
+    ...(isApply ? ['entryWorkspaceIdentity', 'mutationDeclaration'] : []),
+  ];
+  const optional = ['ownerFactRefs', 'reviewView', 'verificationView', 'externalContextFingerprint']
+    .filter((key) => obj[key] !== undefined);
+  return [...required, ...optional];
+}
+
+function assertClosedKeys(obj: Record<string, unknown>, label: string, expected: readonly string[]): void {
+  const actual = Object.keys(obj).sort();
+  const normalizedExpected = [...expected].sort();
+  if (actual.length !== normalizedExpected.length || actual.some((key, index) => key !== normalizedExpected[index])) {
+    schemaFail(`${label} must use a closed schema`, { actual, expected: normalizedExpected });
+  }
+}
+
+function canonicalValuesEqual(left: unknown, right: unknown): boolean {
+  return canonicalValue(left) === canonicalValue(right);
+}
+
+function assertCanonicalValue(actual: unknown, expected: unknown, message: string): void {
+  if (!canonicalValuesEqual(actual, expected)) schemaFail(message);
+}
+
+function canonicalValue(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalValue).join(',')}]`;
+  if (value !== null && typeof value === 'object') {
+    const obj = value as Record<string, unknown>;
+    return `{${Object.keys(obj).sort().map((key) => `${JSON.stringify(key)}:${canonicalValue(obj[key])}`).join(',')}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function validateOwnerAuthorizationRefs(value: unknown): void {
+  if (!Array.isArray(value)) schemaFail('actionPackage.ownerAuthorizationRefs must be an array');
+  const refs = value.map((raw, index) => {
+    const obj = asObject(raw, `actionPackage.ownerAuthorizationRefs[${index}]`);
+    assertClosedKeys(obj, `actionPackage.ownerAuthorizationRefs[${index}]`, [
+      'decision', 'deliveryId', 'ref', 'sourceRef',
+      ...(obj['changeId'] === undefined ? [] : ['changeId']),
+    ]);
+    const ref = requireNonEmptyString(obj, 'ref');
+    requireNonEmptyString(obj, 'decision');
+    requireNonEmptyString(obj, 'deliveryId');
+    requireNonEmptyString(obj, 'sourceRef');
+    if (obj['changeId'] !== undefined) requireNonEmptyString(obj, 'changeId');
+    return ref;
+  });
+  if ([...refs].sort().some((ref, index) => ref !== refs[index]) || new Set(refs).size !== refs.length) {
+    schemaFail('actionPackage.ownerAuthorizationRefs must be lexical sorted without duplicate refs');
+  }
+}
+
+function validateOptionalActionPackageViews(
+  obj: Record<string, unknown>,
+  expectedOwnerFactRefs: readonly OwnerFactRef[] | undefined,
+): void {
+  if (obj['externalContextFingerprint'] !== undefined &&
+    (typeof obj['externalContextFingerprint'] !== 'string' || !/^[0-9a-f]{64}$/.test(obj['externalContextFingerprint']))) {
+    schemaFail('actionPackage.externalContextFingerprint must be a lowercase SHA-256 hex string');
+  }
+  if (obj['reviewView'] !== undefined) validateReviewView(obj['reviewView']);
+  if (obj['verificationView'] !== undefined) validateVerificationView(obj['verificationView']);
+  if (obj['ownerFactRefs'] !== undefined) {
+    if (expectedOwnerFactRefs === undefined || !canonicalValuesEqual(obj['ownerFactRefs'], expectedOwnerFactRefs)) {
+      schemaFail('actionPackage.ownerFactRefs must exactly equal the sibling v5 context ownerFactRefs');
+    }
+  }
+}
+
+function validateReviewView(value: unknown): void {
+  const obj = asObject(value, 'actionPackage.reviewView');
+  const required = ['blockingAuthorities', 'findings', 'resultRef', 'reviewRunId', 'verdict'];
+  const expected = obj['convergence'] === undefined ? required : [...required, 'convergence'];
+  assertClosedKeys(obj, 'actionPackage.reviewView', expected);
+  requireNonEmptyString(obj, 'reviewRunId');
+  if (obj['verdict'] !== 'approved' && obj['verdict'] !== 'changes-requested') schemaFail('actionPackage.reviewView.verdict is invalid');
+  validateVersionedAuthorityRefs([obj['resultRef']], 'actionPackage.reviewView.resultRef');
+  if (!Array.isArray(obj['blockingAuthorities']) || obj['blockingAuthorities'].some((authority) =>
+    typeof authority !== 'string' || !(BLOCKING_AUTHORITIES as readonly string[]).includes(authority))) {
+    schemaFail('actionPackage.reviewView.blockingAuthorities is invalid');
+  }
+  if (!Array.isArray(obj['findings']) || !Array.isArray(obj['convergence'] ?? [])) {
+    schemaFail('actionPackage.reviewView findings/convergence must be arrays');
+  }
+}
+
+function validateVerificationView(value: unknown): void {
+  const obj = asObject(value, 'actionPackage.verificationView');
+  assertClosedKeys(obj, 'actionPackage.verificationView', obj['resultRef'] === undefined ? ['status'] : ['resultRef', 'status']);
+  if (!['not-run', 'passed', 'failed', 'not-applicable', 'unavailable'].includes(obj['status'] as string)) {
+    schemaFail('actionPackage.verificationView.status is invalid');
+  }
+  if (obj['resultRef'] !== undefined) validateVersionedAuthorityRefs([obj['resultRef']], 'actionPackage.verificationView.resultRef');
+}
+
+export function validateMutationDeclaration(value: unknown, action: 'apply' | 'revise-apply'): MutationDeclaration {
+  const obj = asObject(value, 'mutationDeclaration');
+  const keys = Object.keys(obj).sort();
+  const expected = ['action', 'designRef', 'schemaVersion', 'selectors'];
+  if (keys.length !== expected.length || keys.some((key, index) => key !== expected[index])) {
+    schemaFail('mutationDeclaration must use the closed schema');
+  }
+  if (obj['schemaVersion'] !== 1 || obj['action'] !== action) {
+    schemaFail('mutationDeclaration schemaVersion/action must match the v5 Apply context', { action });
+  }
+  const [designRef] = validateVersionedAuthorityRefs([obj['designRef']], 'mutationDeclaration.designRef');
+  if (!Array.isArray(obj['selectors']) || obj['selectors'].length === 0) {
+    schemaFail('mutationDeclaration.selectors must be a non-empty array');
+  }
+  const selectors = obj['selectors'].map((raw, index) => {
+    const selector = asObject(raw, `mutationDeclaration.selectors[${index}]`);
+    const selectorKeys = Object.keys(selector).sort();
+    if (selectorKeys.length !== 2 || selectorKeys[0] !== 'kind' || selectorKeys[1] !== 'path') {
+      schemaFail(`mutationDeclaration.selectors[${index}] must use the closed selector shape`);
+    }
+    const kind = selector['kind'];
+    const path = requireNonEmptyString(selector, 'path');
+    if ((kind !== 'exact' && kind !== 'prefix') || !isCanonicalMutationPath(path)) {
+      schemaFail(`mutationDeclaration.selectors[${index}] is not a canonical selector`, { kind, path });
+    }
+    return { kind, path } as const;
+  });
+  const ordered = [...selectors].sort((a, b) => a.path.localeCompare(b.path) || a.kind.localeCompare(b.kind));
+  if (ordered.some((selector, index) => selector.path !== selectors[index]!.path || selector.kind !== selectors[index]!.kind)) {
+    schemaFail('mutationDeclaration.selectors must be lexical sorted');
+  }
+  for (let index = 0; index < selectors.length; index += 1) {
+    for (let other = index + 1; other < selectors.length; other += 1) {
+      if (selectorsOverlap(selectors[index]!, selectors[other]!)) {
+        schemaFail('mutationDeclaration.selectors must not overlap', { first: selectors[index], second: selectors[other] });
+      }
+    }
+  }
+  return { schemaVersion: 1, action, designRef, selectors };
+}
+
+function isCanonicalMutationPath(path: string): boolean {
+  return !path.startsWith('.') && !path.startsWith('/') && !path.includes('\\') &&
+    !path.includes('*') && !path.includes('?') && !path.split('/').some((part) => part === '' || part === '.' || part === '..') &&
+    !path.startsWith('.flowkit/');
+}
+
+function selectorsOverlap(first: { readonly kind: 'exact' | 'prefix'; readonly path: string }, second: { readonly kind: 'exact' | 'prefix'; readonly path: string }): boolean {
+  if (first.path === second.path) return true;
+  return (first.kind === 'prefix' && second.path.startsWith(`${first.path}/`)) ||
+    (second.kind === 'prefix' && first.path.startsWith(`${second.path}/`));
 }
 
 function validateArchiveEntryOpenSpecProjection(
   value: unknown,
-  schemaVersion: 2 | 3 | 4,
+  schemaVersion: 2 | 3 | 4 | 5,
   action: ChangeAction,
   changeId: string,
 ): ArchiveEntryOpenSpecProjection | undefined {

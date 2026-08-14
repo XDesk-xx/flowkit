@@ -13,6 +13,7 @@ import {
 import type { ContextFile } from '../../../src/persistence/serialization.js';
 import { validateContextFile } from '../../../src/persistence/serialization.js';
 import { computeResultFileHash } from '../../../src/persistence/result-ref-adapter.js';
+import { ACTION_DEFINITIONS } from '../../../src/domain/actions.js';
 
 // ---------------------------------------------------------------------------
 // Test fixture helpers
@@ -76,6 +77,33 @@ describe('createRun', () => {
     const contextJson = await readFile(join(runDir, 'context.json'), 'utf-8');
     const ctx = validateContextFile(JSON.parse(contextJson));
     assert.equal(ctx.schemaVersion, 4);
+  });
+
+  it('writes a closed v5 ContextFile with a paired v2 ActionPackage when explicitly requested', async () => {
+    const runId = '20260806-001-explore';
+    const deliveryId = 'D5';
+    const semanticInputFingerprint = 'a'.repeat(64);
+    const runDir = await createRun(createRunInput({
+      runId,
+      deliveryId,
+      deliveryRunsDir: join(tempRoot, '.flowkit', 'runs', deliveryId),
+      contextVersion: 5,
+      canonicalBase: 'b'.repeat(40),
+      applicableFactRefs: [],
+      semanticInputFingerprint,
+      actionPackage: {
+        schemaVersion: 2,
+        run: { runId, deliveryId, changeId: 'C1', action: 'explore', role: 'author', semanticInputFingerprint },
+        definition: ACTION_DEFINITIONS.explore,
+        contractRefs: [],
+        handoffRefs: [],
+        ownerAuthorizationRefs: [],
+        requiredResultContract: ACTION_DEFINITIONS.explore.terminalContract,
+      },
+    }));
+    const context = validateContextFile(JSON.parse(await readFile(join(runDir, 'context.json'), 'utf8')));
+    assert.equal(context.schemaVersion, 5);
+    assert.equal(context.actionPackage.schemaVersion, 2);
   });
 
   it('staging directory is invisible to readdir (task 3.6, 12.12)', async () => {

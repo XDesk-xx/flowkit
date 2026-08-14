@@ -16,19 +16,39 @@ export interface ResolvedCommand {
   readonly usedWindowsLauncher: boolean;
 }
 
-export interface RunCommandResult {
+interface RunCommandBase {
   readonly stdout: string;
   readonly stderr: string;
   readonly exitCode: number;
-  /** True only after Node emitted the child's `spawn` event. */
   readonly spawned: boolean;
-  /** True when the configured timeout elapsed before terminal close/error. */
   readonly timedOut: boolean;
+  readonly kind: 'spawn-failed' | 'exited' | 'timed-out-cancelled' | 'outcome-unknown';
   /** Bounded process fact for failures that occur before/while spawning. */
   readonly spawnError?: {
     readonly code?: string;
     readonly message: string;
   };
+}
+
+export type ExternalCommandOutcome =
+  | (RunCommandBase & { readonly kind: 'spawn-failed'; readonly spawned: false; readonly timedOut: false; readonly spawnError: { readonly code?: string; readonly message: string } })
+  | (RunCommandBase & { readonly kind: 'exited'; readonly timedOut: false })
+  | (RunCommandBase & { readonly kind: 'timed-out-cancelled'; readonly spawned: true; readonly timedOut: true })
+  | (RunCommandBase & { readonly kind: 'outcome-unknown' });
+
+/**
+ * Injection boundary retained for existing adapters/tests. Production
+ * `runCommand` always returns ExternalCommandOutcome; adapters may supply a
+ * legacy-shaped fake while they are migrated to assert an explicit outcome.
+ */
+export interface RunCommandResult {
+  readonly stdout: string;
+  readonly stderr: string;
+  readonly exitCode: number;
+  readonly spawned: boolean;
+  readonly timedOut: boolean;
+  readonly kind?: ExternalCommandOutcome['kind'];
+  readonly spawnError?: { readonly code?: string; readonly message: string };
 }
 
 /**
@@ -74,7 +94,7 @@ export function resolvePowerShellScriptCommand(
 function runResolvedCommand(
   resolved: ResolvedCommand,
   options?: RunCommandOptions,
-): Promise<RunCommandResult> {
+): Promise<ExternalCommandOutcome> {
   return new Promise((resolve) => {
     let child;
     try {
@@ -87,6 +107,7 @@ function runResolvedCommand(
     } catch (error) {
       const err = error as NodeJS.ErrnoException;
       resolve({
+        kind: 'spawn-failed',
         stdout: '',
         stderr: '',
         exitCode: 1,
@@ -107,7 +128,7 @@ function runResolvedCommand(
     let settled = false;
     let timeoutHandle: NodeJS.Timeout | undefined;
 
-    const finish = (result: RunCommandResult): void => {
+    const finish = (result: ExternalCommandOutcome): void => {
       if (settled) return;
       settled = true;
       if (timeoutHandle !== undefined) clearTimeout(timeoutHandle);
@@ -126,33 +147,50 @@ function runResolvedCommand(
     });
 
     child.once('error', (error: NodeJS.ErrnoException) => {
+      if (!spawned) {
+        finish({
+          kind: 'spawn-failed', stdout, stderr, exitCode: 1, spawned: false, timedOut: false,
+          spawnError: { ...(error.code !== undefined && { code: error.code }), message: error.message },
+        });
+        return;
+      }
       finish({
-        stdout,
-        stderr,
-        exitCode: 1,
-        spawned,
-        timedOut,
-        spawnError: {
-          ...(error.code !== undefined && { code: error.code }),
-          message: error.message,
-        },
+        kind: 'outcome-unknown', stdout, stderr, exitCode: 1, spawned: true, timedOut,
+        spawnError: { ...(error.code !== undefined && { code: error.code }), message: error.message },
       });
     });
 
     child.once('close', (exitCode: number | null) => {
-      finish({
-        stdout,
-        stderr,
-        exitCode: exitCode ?? 1,
-        spawned,
-        timedOut,
-      });
+      if (timedOut) {
+        finish({ kind: 'timed-out-cancelled', stdout, stderr, exitCode: exitCode ?? 1, spawned: true, timedOut: true });
+        return;
+      }
+      finish({ kind: 'exited', stdout, stderr, exitCode: exitCode ?? 1, spawned, timedOut: false });
     });
 
     const timeout = options?.timeout;
     if (timeout !== undefined && Number.isFinite(timeout) && timeout > 0) {
       timeoutHandle = setTimeout(() => {
         timedOut = true;
+        if ((options?.platform ?? process.platform) === 'win32') {
+          // A launcher kill cannot prove descendant ownership/termination.
+          // Keep the bounded diagnostics and force the caller to recover from
+          // persisted authoritative state rather than assuming cancellation.
+          try {
+            child.kill('SIGKILL');
+          } catch {
+            // The observation remains unknown either way.
+          }
+          finish({
+            kind: 'outcome-unknown',
+            stdout,
+            stderr,
+            exitCode: 1,
+            spawned,
+            timedOut: true,
+          });
+          return;
+        }
         try {
           child.kill('SIGKILL');
         } catch {
@@ -177,7 +215,7 @@ export async function runCommand(
   command: string,
   args: string[],
   options?: RunCommandOptions,
-): Promise<RunCommandResult> {
+): Promise<ExternalCommandOutcome> {
   const platform = options?.platform ?? process.platform;
   if (platform === 'win32' && /\.ps1$/i.test(command)) {
     const candidates = options?.powerShellCandidates ?? ['pwsh.exe', 'powershell.exe'];

@@ -14,6 +14,8 @@ import {
   fingerprintOpenSpecPreparedActionContext,
   inspectPreparedRun,
   prepareActionExecution,
+  prepareNewExecution,
+  resumeRun,
   recoverArchiveTerminalRun,
   recoverContractResetPendingRun,
 } from '../../../src/services/b1-run-execution-service.js';
@@ -82,6 +84,55 @@ async function completeExplore(root: string, deliveryId: string, changeId: strin
   });
   return prepared;
 }
+
+describe('E1 new preparation boundary', () => {
+  it('returns exact-resume-required without allocating or implicitly resuming a pending Run', async () => {
+    const { root, deliveryId, now } = await freshActiveFixture();
+    const pending = await prepareActionExecution({ repoRoot: root, deliveryId, entry: 'next', now });
+    const result = await prepareNewExecution({ repoRoot: root, deliveryId, entry: 'next', now });
+    assert.deepEqual(result, { kind: 'exact-resume-required', expectedRunId: pending.package.run.runId });
+  });
+
+  it('reconstructs a v5 package from the exact persisted pending Run without re-entering Policy', async () => {
+    const { root, deliveryId, changeId } = await freshActiveFixture();
+    const runId = '20990201-001-explore';
+    const runDir = join(root, '.flowkit', 'runs', deliveryId, changeId, runId);
+    const semanticInputFingerprint = 'a'.repeat(64);
+    await mkdir(runDir, { recursive: true });
+    await writeFile(join(runDir, 'action.md'), '# Prepared\n', 'utf8');
+    await writeFile(join(runDir, 'context.json'), JSON.stringify({
+      schemaVersion: 5,
+      runId,
+      deliveryId,
+      changeKey: 'B1',
+      changeId,
+      action: 'explore',
+      role: 'author',
+      ownerAuthorization: 'not-required',
+      semanticInputFingerprint,
+      canonicalBase: 'b'.repeat(40),
+      applicableFactRefs: [],
+      actionPackage: {
+        schemaVersion: 2,
+        run: { runId, deliveryId, changeId, action: 'explore', role: 'author', semanticInputFingerprint },
+        definition: ACTION_DEFINITIONS.explore,
+        contractRefs: [],
+        handoffRefs: [],
+        ownerAuthorizationRefs: [],
+        requiredResultContract: ACTION_DEFINITIONS.explore.terminalContract,
+      },
+      runPath: `.flowkit/runs/${deliveryId}/${changeId}/${runId}/`,
+    }, null, 2), 'utf8');
+
+    const facts = await snapshot(root, deliveryId);
+    assert.equal(facts.conflicts.length, 0, JSON.stringify(facts.conflicts));
+    assert.equal(facts.runs.filter((run) => run.runId === runId).length, 1, JSON.stringify(facts.runs));
+    const resumed = await resumeRun({ repoRoot: root, deliveryId, expectedRunId: runId });
+    assert.equal(resumed.schemaVersion, 2);
+    assert.equal(resumed.run.runId, runId);
+    assert.equal(resumed.run.action, 'explore');
+  });
+});
 
 async function advanceToApplyReady(root: string, deliveryId: string, changeId: string, now: () => Date) {
   await completeExplore(root, deliveryId, changeId, now);

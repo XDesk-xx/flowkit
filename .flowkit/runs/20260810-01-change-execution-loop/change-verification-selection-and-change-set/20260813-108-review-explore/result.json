@@ -1,0 +1,74 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-explore",
+    "executionStatus": "completed",
+    "summary": "Complete review of 107-revise-explore: E1-RE-002 is resolved, E1-RE-001 remains open as an Owner authority blocker, and E1-RE-003 newly identifies the unresolved E1/G1 formal scope conflict. CodeGraph authority tracing and 84 focused tests completed; exact bindings and text hygiene passed."
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "E1-RE-001",
+      "severity": "blocking",
+      "title": "105 将 exact Run retry 扩入 E1，但没有 formal scope authority",
+      "problem": "107 已把 exact retry、OpenSpec projection 与 Windows cancellation 写入 Delivery Manifest 和 Explore，但没有产生可接纳的独立 Owner scope authority。Manifest ownerDecisions 对 E1 仍只有原 activate-change；没有 E1 contract-reset、scope 或 requiredOutcomes。107 context.ownerFactRefs 也为空。Author result 中“Owner 明确授权扩展”的陈述和普通 Manifest mutation 都不能创造 Owner authority，且 107 正是原 finding 要求在选择扩 scope 时停止 Author revision、先取得正式 Owner fact 的反例。因此扩展后的 target bytes 尚不能批准。",
+      "contractRef": "openspec/delivery-groups/20260810-01-change-execution-loop.yaml E1 goal/outputs and ownerDecisions; openspec/specs/flowkit-lean-run-and-action-package/spec.md bounded dual-entry preparation; AGENTS.md Owner Authority / Write-side",
+      "invariant": "Active Change 的 implementation/review scope 必须来自正式 Change/Delivery contract 或 Owner 独立明确的 contract reset；非权威参考、Author Explore 和 activation fact都不能自行扩大冻结 scope。",
+      "evidence": [
+        "Current Manifest expands Delivery scope, E1 goal/outputs, verification plan and acceptance, but ownerDecisions adds only owner:7935d82c... decision=activate-change",
+        "No contract-reset for change-verification-selection-and-change-set exists in the current Manifest, and 107 context.json persists ownerFactRefs=[]",
+        "CodeGraph: collectApplicableOwnerFactRefs projects only decision=contract-reset with matching deliveryId/changeId plus scope and requiredOutcomes; activate-change is not a scope authority",
+        "CodeGraph: recordOwnerDecision requires contract-reset to carry changeId, scope and non-empty requiredOutcomes, preserving distinct provenance from activation",
+        "106 requiredOutcome explicitly required Author to stop and obtain a separate explicit formal scope/reset decision if Owner intended expansion; 107 instead completed revise-explore while claiming the absent authority",
+        "Independent verification: 107 produced Explore ref and source Review ref exact-match; 84 focused tests passed; formal text hygiene and git diff --check passed"
+      ],
+      "impact": "Accepting 107 would authorize a material Delivery/Change scope rewrite through Author prose and unsigned Manifest bytes, bypassing the repository’s Owner-provenance and generation-reset boundary.",
+      "location": "openspec/changes/change-verification-selection-and-change-set/explore.md Sections 1, 9 and 12; openspec/delivery-groups/20260810-01-change-execution-loop.yaml E1 and ownerDecisions",
+      "blockingAuthority": "owner",
+      "requiredOutcome": "Owner must independently decide whether E1 is expanded. If approved, materialize that exact E1 scope/reset through the current official Owner write-side with matching changeId, scope and requiredOutcomes, then let Policy recompute the boundary; unchanged target bytes may receive an explicit same-stage re-review after the new fact. If not approved, Owner must direct rollback/restart to the checkpoint-scoped E1 contract. Author must STOP and must not create another revise-explore to retroactively manufacture the authority.",
+      "acceptance": [
+        "A new independently sourced formal Owner fact exactly identifies E1, the expanded scope and required outcomes, or Owner explicitly directs rollback to the frozen scope.",
+        "The authority is recorded through the official write-side and appears in the applicable formal Owner fact projection; activation alone is not reused as scope authorization.",
+        "No Author no-op revision or prose claim is used to close the authority blocker."
+      ]
+    },
+    {
+      "id": "E1-RE-003",
+      "severity": "blocking",
+      "title": "107 对 G1 剩余职责的声明与正式 Manifest 冲突",
+      "problem": "Explore Section 9 声明后续 G1 只收口 phase timing diagnostics 与 Change CLI performance budget，并明确 G1 不再拥有 retry、projection、cancellation 或 verification selection implementation。但当前 Manifest 的 G1 goal/outputs 未随 107 scope materialization 调整，仍正式拥有 Change CLI surface、Change E2E matrix、checkout/resume recovery、Action Package/Run size observation、focused/affected verification timing observation 和 review convergence observation。因而 E1/G1 对 resume/recovery 与 CLI/E2E 的 ownership boundary 仍有冲突，Proposal 无法判断哪些 production surface 和 acceptance 应在 E1 实现。",
+      "contractRef": "openspec/delivery-groups/20260810-01-change-execution-loop.yaml G1 goal/outputs; openspec/changes/change-verification-selection-and-change-set/explore.md Section 9",
+      "invariant": "相邻 Change 的正式 scope/outputs 与当前 Explore 的范围分界必须一致且可唯一执行；当前 Change 不得以 Author artifact 静默缩减或重写 planned Change 的 formal ownership。",
+      "evidence": [
+        "explore.md Section 9 says G1 only closes phase timing diagnostics and Change CLI performance budget",
+        "Manifest G1 still lists Change CLI surface, Change E2E matrix, checkout/resume recovery, Action Package/Run size observation, focused/affected timing and review convergence outputs",
+        "Manifest G1 goal still requires Change CLI, resume-context, full Change E2E and deterministic recovery to checkpoint boundary",
+        "107 Manifest diff expands E1 but does not modify the G1 record, so the claimed boundary is not materialized in the formal Delivery decomposition"
+      ],
+      "impact": "Without one coherent boundary, E1 may absorb G1 implementation or omit required E1 primitives while both Changes claim recovery/CLI outcomes, making later acceptance and verification non-deterministic.",
+      "location": "openspec/changes/change-verification-selection-and-change-set/explore.md Section 9; openspec/delivery-groups/20260810-01-change-execution-loop.yaml G1",
+      "blockingAuthority": "author",
+      "requiredOutcome": "After the Owner scope decision is formally resolved, align Explore Section 9 with the actual Manifest G1 contract. Preserve G1 ownership of its existing CLI/E2E/checkout-resume/observation outputs unless Owner separately changes that formal scope; define E1 only as the underlying exact-retry/projection/cancellation primitives consumed by G1, with an explicit non-overlapping implementation-versus-E2E boundary.",
+      "acceptance": [
+        "Explore and Manifest name the same G1 outputs and do not claim G1 has been reduced when its formal record remains unchanged.",
+        "E1 primitive implementation and G1 CLI/E2E/checkout-recovery verification ownership are separated without overlap or omission.",
+        "Proposal preflight can map every retry, projection, cancellation, CLI and recovery acceptance to exactly one Change-owned deliverable."
+      ]
+    }
+  ],
+  "reviewFindingConvergence": [
+    {
+      "findingId": "E1-RE-001",
+      "state": "still-open"
+    },
+    {
+      "findingId": "E1-RE-002",
+      "state": "resolved"
+    },
+    {
+      "findingId": "E1-RE-003",
+      "state": "new"
+    }
+  ]
+}

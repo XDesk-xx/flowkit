@@ -273,6 +273,38 @@ describe('OpenSpecCliAdapter', () => {
     await assert.rejects(wrongApply.getApplyInstructions(f.changeId), /requested Change identity/);
   });
 
+  it('freezes one status per operation projection before reading instructions', async () => {
+    const f = await rootFixture();
+    const calls: string[] = [];
+    const runner = async (_command: string, args: string[]) => {
+      calls.push(args.slice(0, 2).join(' '));
+      if (args[0] === '--version') return result('1.7.0\n');
+      if (args[0] === 'status') return result(JSON.stringify(f.status));
+      if (args[0] === 'instructions' && args[1] === 'proposal') return result(JSON.stringify({
+        changeName: f.changeId, artifactId: 'proposal', schemaName: 'spec-driven', changeDir: f.changeRoot,
+        planningHome: f.status.planningHome, resolvedOutputPath: join(f.changeRoot, 'proposal.md'),
+        existingOutputPaths: [join(f.changeRoot, 'proposal.md')], dependencies: [], unlocks: [], instruction: 'write', template: '# Proposal',
+      }));
+      throw new Error(args.join(' '));
+    };
+    const projection = await new OpenSpecCliAdapter({ repoRoot: f.root, runner }).createOperationProjection(f.changeId, {
+      artifactInstructionIds: ['proposal'],
+    });
+    assert.equal(projection.status.changeId, f.changeId);
+    assert.equal(projection.artifactInstructions?.proposal.artifactId, 'proposal');
+    assert.deepEqual(calls, ['--version', 'status --change', 'instructions proposal']);
+    assert.deepEqual(projection.invocationDiagnostics, ['version', 'status', 'instructions:proposal']);
+  });
+
+  it('fails closed when the runner cannot prove a terminal OpenSpec outcome', async () => {
+    const f = await rootFixture();
+    const adapter = new OpenSpecCliAdapter({
+      repoRoot: f.root,
+      runner: async () => ({ ...result(''), kind: 'outcome-unknown', spawned: true, timedOut: true }),
+    });
+    await assert.rejects(adapter.getChangeStatus(f.changeId), /outcome is unknown/);
+  });
+
   it('fails closed on valid=true validation contradictions while preserving structured invalid results', async () => {
     const f = await rootFixture();
     const validation = (valid: boolean, status: unknown[] = [], issues: unknown[] = []) => JSON.stringify({

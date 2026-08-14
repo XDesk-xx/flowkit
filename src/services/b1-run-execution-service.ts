@@ -10,6 +10,10 @@ import {
 } from '../domain/actions.js';
 import type {
   ActionPackage,
+  ActionPackageV1,
+  ActionPackageV2,
+  ActionPackageV2Apply,
+  ActionPackageV2NonApply,
   ActionPackageFindingConvergenceView,
   ActionPackageFindingView,
   ActionPackageReviewView,
@@ -17,6 +21,8 @@ import type {
   LogicalActionResultInput,
   OwnerAuthorizationRef,
   OwnerFactRef,
+  EntryWorkspaceIdentity,
+  MutationDeclaration,
   VersionedAuthorityRef,
 } from '../domain/types.js';
 import { readFormalFactSnapshot } from '../facts/formal-fact-reader.js';
@@ -40,6 +46,7 @@ import {
 import {
   admitC1RunResultForReader,
   validateContextFile,
+  validateContextFileIdentity,
   type ContextFile,
   type ContextFileConstraints,
   type ReviewFinding,
@@ -54,6 +61,18 @@ import {
 } from '../integrations/openspec/openspec-types.js';
 import { isOpenSpecThinIntegrationActive } from '../integrations/openspec/openspec-integration-state.js';
 import { inspectOpenSpecArchiveRecovery } from '../integrations/openspec/openspec-archive-service.js';
+import { deriveMutationDeclaration } from '../verification/change-selection/mutation-declaration.js';
+import {
+  captureEntryWorkspaceSnapshot,
+  validateEntryWorkspaceSnapshotRecord,
+} from '../verification/change-selection/entry-snapshot.js';
+import { derivePostActionChangeObservation } from '../verification/change-selection/actual-change-set.js';
+import { buildVerificationSelection } from '../verification/change-selection/selection.js';
+import {
+  buildVerificationSelectionPublication,
+  publishVerificationSelection,
+  validatePublishedVerificationSelection,
+} from '../verification/change-selection/publication.js';
 
 export type RunPreparationEntry = 'next' | 'review';
 
@@ -70,6 +89,106 @@ export interface PreparedActionExecution {
   readonly resumed: boolean;
   /** Bounded external OpenSpec execution view for the single resolved Action. */
   readonly openSpecContext?: OpenSpecPreparedActionContextView;
+}
+
+export type PreparedNewExecution =
+  | { readonly kind: 'prepared'; readonly package: ActionPackage; readonly openSpecContext?: OpenSpecPreparedActionContextView }
+  | { readonly kind: 'exact-resume-required'; readonly expectedRunId: string };
+
+export interface ResumeRunInput {
+  readonly repoRoot: string;
+  readonly deliveryId: string;
+  readonly expectedRunId: string;
+}
+
+/**
+ * Exact v5 continuation surface. It intentionally reads only the persisted
+ * Run identity; it does not re-enter Policy or allocate a replacement Run.
+ */
+export async function resumeRun(input: ResumeRunInput): Promise<ActionPackageV2> {
+  const deliveryRunsDir = join(input.repoRoot, RUNS_PREFIX, input.deliveryId);
+  const matches = await findExactPersistedRunDirectories(deliveryRunsDir, input.expectedRunId);
+  if (matches.length !== 1) {
+    throw new FlowkitError('EXACT_RESUME_RUN_NOT_FOUND', 'Expected exactly one persisted Run for exact resume', {
+      expectedRunId: input.expectedRunId,
+      matches: matches.length,
+    });
+  }
+  const runDir = matches[0]!;
+  const resultPath = join(runDir, 'result.json');
+  if (await isFile(resultPath)) {
+    throw new FlowkitError('EXACT_RESUME_NOT_PENDING', 'Exact resume requires a pending Run', {
+      expectedRunId: input.expectedRunId,
+    });
+  }
+  const context = await readContextFile(runDir);
+  validateContextFileIdentity(context, runDir);
+  if (context.schemaVersion !== 5) {
+    throw new FlowkitError('EXACT_RESUME_V5_CONTEXT_REQUIRED', 'Exact resume requires a persisted v5 ActionPackage', {
+      expectedRunId: input.expectedRunId,
+      schemaVersion: context.schemaVersion,
+    });
+  }
+  const actionPackage = context.actionPackage;
+  if (
+    actionPackage.run.runId !== input.expectedRunId ||
+    actionPackage.run.deliveryId !== input.deliveryId ||
+    actionPackage.run.changeId !== context.changeId ||
+    actionPackage.run.action !== context.action ||
+    actionPackage.run.role !== context.role ||
+    actionPackage.run.semanticInputFingerprint !== context.semanticInputFingerprint
+  ) {
+    throw new FlowkitError('EXACT_RESUME_CONTEXT_IDENTITY_MISMATCH', 'Persisted ActionPackage does not match the pending Run identity', {
+      expectedRunId: input.expectedRunId,
+    });
+  }
+  if (actionPackage.run.action === 'apply' || actionPackage.run.action === 'revise-apply') {
+    const applyPackage = actionPackage as ActionPackageV2Apply;
+    let entrySnapshot: unknown;
+    try {
+      entrySnapshot = JSON.parse(await readFile(join(runDir, 'entry-workspace.json'), 'utf8')) as unknown;
+    } catch (error) {
+      throw new FlowkitError('EXACT_RESUME_ENTRY_SNAPSHOT_MISSING', 'v5 Apply exact resume requires its immutable entry workspace record', {
+        expectedRunId: input.expectedRunId,
+        detail: error instanceof Error ? error.message : String(error),
+      });
+    }
+    const validatedEntrySnapshot = validateEntryWorkspaceSnapshotRecord(entrySnapshot);
+    if (
+      validatedEntrySnapshot.canonicalBase !== applyPackage.entryWorkspaceIdentity.canonicalBase ||
+      validatedEntrySnapshot.workspaceFingerprint !== applyPackage.entryWorkspaceIdentity.workspaceFingerprint
+    ) {
+      throw new FlowkitError('EXACT_RESUME_ENTRY_SNAPSHOT_MISMATCH', 'v5 Apply entry workspace record does not match its persisted ActionPackage', {
+        expectedRunId: input.expectedRunId,
+      });
+    }
+    const currentWorkspace = await captureEntryWorkspaceSnapshot(input.repoRoot);
+    // The actual base-to-post candidate set is computed at terminal admission.
+    // Resume only answers the self-drift question from immutable entry to now.
+    derivePostActionChangeObservation(
+      validatedEntrySnapshot,
+      validatedEntrySnapshot,
+      currentWorkspace,
+      applyPackage.mutationDeclaration,
+    );
+  }
+  return actionPackage;
+}
+
+async function findExactPersistedRunDirectories(deliveryRunsDir: string, expectedRunId: string): Promise<readonly string[]> {
+  let changeDirectories: readonly import('node:fs').Dirent[];
+  try {
+    changeDirectories = await readdir(deliveryRunsDir, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+  const matches: string[] = [];
+  for (const changeDirectory of changeDirectories) {
+    if (!changeDirectory.isDirectory() || changeDirectory.name.startsWith('.')) continue;
+    const candidate = join(deliveryRunsDir, changeDirectory.name, expectedRunId);
+    if (await isDirectory(candidate)) matches.push(candidate);
+  }
+  return matches;
 }
 
 
@@ -138,6 +257,8 @@ export interface AdmitActionResultInput {
   readonly deliveryId: string;
   readonly actionPackage: ActionPackage;
   readonly result: LogicalActionResultInput;
+  /** Focused bootstrap seam; production uses the canonical adapter. */
+  readonly openSpecAdapter?: OpenSpecCliAdapter;
 }
 
 export interface RecoverContractResetPendingInput {
@@ -180,6 +301,7 @@ interface SemanticInputs {
   readonly verificationView?: ActionPackageVerificationView;
   readonly openSpecContext?: OpenSpecPreparedActionContextView;
   readonly externalContextFingerprint?: string;
+  readonly mutationDeclaration?: MutationDeclaration;
   readonly semanticInputFingerprint: string;
 }
 
@@ -321,6 +443,97 @@ export async function prepareActionExecution(
     resumed: false,
     ...(semantic.openSpecContext !== undefined && { openSpecContext: semantic.openSpecContext }),
   };
+}
+
+/**
+ * E1 new-execution boundary. Pending continuation is intentionally not
+ * performed here: callers receive the persisted identity and must use the
+ * exact-resume surface once it is available.
+ */
+export async function prepareNewExecution(
+  input: PrepareActionExecutionInput,
+): Promise<PreparedNewExecution> {
+  const snapshot = await readSnapshot(input.repoRoot, input.deliveryId);
+  assertConflictFree(snapshot);
+  const change = getActiveChange(snapshot);
+  if (change === null) {
+    throw new FlowkitError('RUN_PREPARATION_NOT_ALLOWED', 'new execution preparation requires an active Change');
+  }
+  const policy = input.entry === 'next' ? next(snapshot) : resolveReview(snapshot);
+  if (policy.kind !== 'action') {
+    throw new FlowkitError('RUN_PREPARATION_NOT_ALLOWED', `Policy entry ${input.entry} did not resolve a Standard Change Action`);
+  }
+  const pending = snapshot.runs.filter((run) => run.changeId === change.id && run.status === 'pending');
+  if (pending.length > 1) {
+    throw new FlowkitError('AMBIGUOUS_PENDING_RUNS', `Active Change has multiple pending Runs: ${pending.map((run) => run.runId).sort().join(', ')}`);
+  }
+  if (pending.length === 1) return { kind: 'exact-resume-required', expectedRunId: pending[0]!.runId };
+
+  const action = policy.action;
+  const role = expectedRoleForAction(action);
+  const descriptors = deriveRunDescriptors(snapshot, change.id, action);
+  const baseSemantic = await deriveSemanticInputs(input.repoRoot, input.deliveryId, snapshot, change.id, action, descriptors);
+  const entrySnapshot = await captureEntryWorkspaceSnapshot(input.repoRoot);
+  const entryWorkspaceIdentity = toEntryWorkspaceIdentity(entrySnapshot);
+  let mutationDeclaration: MutationDeclaration | undefined;
+  let semantic = baseSemantic;
+  if (action === 'apply' || action === 'revise-apply') {
+    mutationDeclaration = await deriveMutationDeclaration(input.repoRoot, action, baseSemantic.contractRefs);
+    semantic = withMutationDeclaration(
+      baseSemantic,
+      input.deliveryId,
+      change.id,
+      action,
+      mutationDeclaration,
+      entryWorkspaceIdentity,
+    );
+  }
+  const allocated = await allocateNextRunId(join(input.repoRoot, RUNS_PREFIX, input.deliveryId), (input.now ?? (() => new Date()))().toISOString().slice(0, 10).replaceAll('-', ''), action);
+  const applyEntryWorkspaceIdentity = mutationDeclaration === undefined ? undefined : entryWorkspaceIdentity;
+  const actionPackage = buildActionPackageV2(
+    input.deliveryId,
+    change.id,
+    allocated.runId,
+    action,
+    semantic,
+    mutationDeclaration,
+    applyEntryWorkspaceIdentity,
+  );
+  await createRun({
+    runId: allocated.runId,
+    deliveryId: input.deliveryId,
+    changeKey: change.key,
+    changeId: change.id,
+    action,
+    role,
+    ownerAuthorization: semantic.ownerAuthorizationRefs.length > 0 ? 'explicit' : 'not-required',
+    contextVersion: 5,
+    canonicalBase: entrySnapshot.canonicalBase,
+    applicableFactRefs: sortRefs([...semantic.contractRefs, ...semantic.handoffRefs]),
+    actionPackage,
+    ...(mutationDeclaration !== undefined && {
+      entryWorkspaceIdentity: applyEntryWorkspaceIdentity,
+      entryWorkspaceSnapshot: entrySnapshot,
+      mutationDeclaration,
+    }),
+    semanticInputFingerprint: semantic.semanticInputFingerprint,
+    ownerFactRefs: semantic.ownerFactRefs,
+    ...descriptors,
+    constraints: constraintsForAction(action),
+    actionMd: renderPreparedActionMd({ runId: allocated.runId, deliveryId: input.deliveryId, changeKey: change.key, changeId: change.id, action, role, semanticInputFingerprint: semantic.semanticInputFingerprint }),
+    deliveryRunsDir: join(input.repoRoot, RUNS_PREFIX, input.deliveryId),
+    runsPathPrefix: RUNS_PREFIX,
+    repoRoot: input.repoRoot,
+  });
+  return {
+    kind: 'prepared',
+    package: actionPackage,
+    ...(semantic.openSpecContext !== undefined && { openSpecContext: semantic.openSpecContext }),
+  };
+}
+
+function toEntryWorkspaceIdentity(snapshot: { readonly canonicalBase: string; readonly workspaceFingerprint: string }): EntryWorkspaceIdentity {
+  return { canonicalBase: snapshot.canonicalBase, workspaceFingerprint: snapshot.workspaceFingerprint };
 }
 
 
@@ -831,6 +1044,7 @@ export async function recoverArchiveTerminalRun(
 
 export async function admitActionResult(input: AdmitActionResultInput): Promise<void> {
   const pkg = input.actionPackage;
+  const openSpecAdapter = input.openSpecAdapter ?? new OpenSpecCliAdapter({ repoRoot: input.repoRoot });
   if (pkg.run.deliveryId !== input.deliveryId) {
     throw new FlowkitError('ACTION_PACKAGE_IDENTITY_MISMATCH', 'Action Package Delivery mismatch');
   }
@@ -908,7 +1122,7 @@ export async function admitActionResult(input: AdmitActionResultInput): Promise<
   const c1OpenSpecActive = await isOpenSpecThinIntegrationActive(input.repoRoot, pkg.run.changeId);
   if (c1OpenSpecActive && (pkg.run.action === 'propose' || pkg.run.action === 'revise-propose')
       && input.result.failureDiagnosis === undefined && input.result.cancellationReason === undefined) {
-    const validation = await new OpenSpecCliAdapter({ repoRoot: input.repoRoot }).validateChange(pkg.run.changeId, true);
+    const validation = await openSpecAdapter.validateChange(pkg.run.changeId, true);
     if (!validation.valid) {
       throw new FlowkitError('OPENSPEC_STRICT_VALIDATION_FAILED', `OpenSpec strict validation failed before ${pkg.run.action} terminal admission`, {
         changeId: pkg.run.changeId, issues: validation.issues, status: validation.status,
@@ -945,6 +1159,16 @@ export async function admitActionResult(input: AdmitActionResultInput): Promise<
     }
   }
 
+  if (context.schemaVersion === 5 && (pkg.run.action === 'apply' || pkg.run.action === 'revise-apply')) {
+    await publishV5ApplyVerificationSelection({
+      repoRoot: input.repoRoot,
+      runDir,
+      context,
+      actionPackage: pkg as ActionPackageV2Apply,
+      openSpecAdapter,
+    });
+  }
+
   // Do not recompute the entry fingerprint from the post-execution working tree.
   // The current Action may legitimately mutate its own output artifacts (for
   // example Apply updates tasks/verification), so hashing those current bytes
@@ -954,6 +1178,70 @@ export async function admitActionResult(input: AdmitActionResultInput): Promise<
   // reviewed/source-review/verification binding checks to completeRun().
   validateLogicalResultInput(pkg.run.action, input.result);
   await completeRun(runDir, logicalToCompleteRunInput(input.result));
+}
+
+async function publishV5ApplyVerificationSelection(input: {
+  readonly repoRoot: string;
+  readonly runDir: string;
+  readonly context: ContextFile;
+  readonly actionPackage: ActionPackageV2Apply;
+  readonly openSpecAdapter: OpenSpecCliAdapter;
+}): Promise<void> {
+  const expectedVerificationPath = join(input.repoRoot, 'openspec', 'changes', input.context.changeId, 'verification.md');
+  if (await validatePublishedVerificationSelection({
+    runDir: input.runDir,
+    canonicalVerificationPath: expectedVerificationPath,
+    producingRunId: input.context.runId,
+  })) return;
+  let entryRaw: unknown;
+  try {
+    entryRaw = JSON.parse(await readFile(join(input.runDir, 'entry-workspace.json'), 'utf8')) as unknown;
+  } catch (error) {
+    throw new FlowkitError('VERIFICATION_PUBLICATION_ENTRY_MISSING', 'v5 Apply terminal publication requires its immutable entry workspace record', {
+      runId: input.context.runId,
+      detail: error instanceof Error ? error.message : String(error),
+    });
+  }
+  const entry = validateEntryWorkspaceSnapshotRecord(entryRaw);
+  if (
+    entry.canonicalBase !== input.actionPackage.entryWorkspaceIdentity.canonicalBase ||
+    entry.workspaceFingerprint !== input.actionPackage.entryWorkspaceIdentity.workspaceFingerprint
+  ) {
+    throw new FlowkitError('VERIFICATION_PUBLICATION_ENTRY_MISMATCH', 'v5 Apply entry workspace record does not match persisted ActionPackage', {
+      runId: input.context.runId,
+    });
+  }
+  const postAction = await captureEntryWorkspaceSnapshot(input.repoRoot);
+  const observation = derivePostActionChangeObservation(
+    entry,
+    entry,
+    postAction,
+    input.actionPackage.mutationDeclaration,
+  );
+  const projection = await input.openSpecAdapter.createOperationProjection(input.context.changeId);
+  const selection = buildVerificationSelection(
+    observation.actualChangeSet,
+    projection.status.artifactPaths.specs.logicalPaths,
+  );
+  const record = buildVerificationSelectionPublication({
+    producingRunId: input.context.runId,
+    producingSemanticInputFingerprint: input.actionPackage.run.semanticInputFingerprint,
+    canonicalBase: entry.canonicalBase,
+    entryWorkspaceIdentity: {
+      schemaVersion: 1,
+      canonicalBase: entry.canonicalBase,
+      workspaceFingerprint: entry.workspaceFingerprint,
+    },
+    postActionWorkspaceFingerprint: postAction.workspaceFingerprint,
+    actualChangeSet: observation.actualChangeSet,
+    selection,
+    verificationMarkdownLogicalRef: `openspec/changes/${input.context.changeId}/verification.md`,
+  });
+  await publishVerificationSelection({
+    runDir: input.runDir,
+    canonicalVerificationPath: join(projection.status.changeRoot, 'verification.md'),
+    record,
+  });
 }
 
 function descriptorsFromContext(context: ContextFile): RunDescriptors {
@@ -1017,7 +1305,7 @@ function buildActionPackage(
   runId: string,
   action: ChangeAction,
   semantic: SemanticInputs,
-): ActionPackage {
+): ActionPackageV1 {
   const definition = getActionDefinition(action);
   return {
     schemaVersion: 1,
@@ -1041,6 +1329,70 @@ function buildActionPackage(
   };
 }
 
+function buildActionPackageV2(
+  deliveryId: string,
+  changeId: string,
+  runId: string,
+  action: ChangeAction,
+  semantic: SemanticInputs,
+  mutationDeclaration: MutationDeclaration | undefined,
+  entryWorkspaceIdentity: EntryWorkspaceIdentity | undefined,
+): ActionPackageV2 {
+  const common = <T extends ChangeAction>(resolvedAction: T) => ({
+    schemaVersion: 2 as const,
+    run: { deliveryId, changeId, runId, action: resolvedAction, role: getActionDefinition(resolvedAction).role, semanticInputFingerprint: semantic.semanticInputFingerprint },
+    definition: getActionDefinition(resolvedAction),
+    contractRefs: semantic.contractRefs,
+    handoffRefs: semantic.handoffRefs,
+    ...(semantic.reviewView !== undefined && { reviewView: semantic.reviewView }),
+    ownerAuthorizationRefs: semantic.ownerAuthorizationRefs,
+    ownerFactRefs: semantic.ownerFactRefs,
+    ...(semantic.verificationView !== undefined && { verificationView: semantic.verificationView }),
+    ...(semantic.externalContextFingerprint !== undefined && { externalContextFingerprint: semantic.externalContextFingerprint }),
+    requiredResultContract: getActionDefinition(resolvedAction).terminalContract,
+  });
+  if (action === 'apply' || action === 'revise-apply') {
+    if (mutationDeclaration === undefined || entryWorkspaceIdentity === undefined) {
+      throw new FlowkitError('ACTION_PACKAGE_SCHEMA_MISMATCH', 'v2 Apply package requires entry workspace identity and mutation declaration');
+    }
+    return { ...common(action), entryWorkspaceIdentity, mutationDeclaration } as ActionPackageV2Apply;
+  }
+  if (mutationDeclaration !== undefined || entryWorkspaceIdentity !== undefined) {
+    throw new FlowkitError('ACTION_PACKAGE_SCHEMA_MISMATCH', 'non-Apply v2 package must not carry Apply authority');
+  }
+  return common(action) as ActionPackageV2NonApply;
+}
+
+function withMutationDeclaration(
+  semantic: SemanticInputs,
+  deliveryId: string,
+  changeId: string,
+  action: 'apply' | 'revise-apply',
+  mutationDeclaration: MutationDeclaration,
+  entryWorkspaceIdentity: EntryWorkspaceIdentity,
+): SemanticInputs {
+  const definition = getActionDefinition(action);
+  return {
+    ...semantic,
+    mutationDeclaration,
+    semanticInputFingerprint: sha256(stableStringify(buildV2ApplySemanticDescriptor({
+      deliveryId,
+      changeId,
+      action,
+      definition,
+      contractRefs: semantic.contractRefs,
+      handoffRefs: semantic.handoffRefs,
+      ...(semantic.reviewView !== undefined && { reviewView: semantic.reviewView }),
+      ownerAuthorizationRefs: semantic.ownerAuthorizationRefs,
+      ownerFactRefs: semantic.ownerFactRefs,
+      ...(semantic.verificationView !== undefined && { verificationView: semantic.verificationView }),
+      ...(semantic.externalContextFingerprint !== undefined && { externalContextFingerprint: semantic.externalContextFingerprint }),
+      entryWorkspaceIdentity,
+      mutationDeclaration,
+    }))),
+  };
+}
+
 export async function buildOpenSpecPreparedActionContext(
   repoRoot: string,
   changeId: string,
@@ -1049,8 +1401,15 @@ export async function buildOpenSpecPreparedActionContext(
 ): Promise<OpenSpecPreparedActionContextView | undefined> {
   if (!(await isOpenSpecThinIntegrationActive(repoRoot, changeId))) return undefined;
 
-  const version = await adapter.getVersion();
-  const status = await adapter.getChangeStatus(changeId);
+  const projection = await adapter.createOperationProjection(changeId, {
+    ...(action === 'propose' || action === 'revise-propose'
+      ? { artifactInstructionIds: OPENSPEC_SUPPORTED_ARTIFACT_IDS }
+      : {}),
+    ...(action === 'apply' || action === 'revise-apply'
+      ? { includeStrictValidation: true, includeApplyInstructions: true }
+      : {}),
+  });
+  const { version, status } = projection;
   const base = {
     version,
     changeId,
@@ -1062,20 +1421,23 @@ export async function buildOpenSpecPreparedActionContext(
   };
 
   if (action === 'propose' || action === 'revise-propose') {
-    const artifactInstructions = Object.fromEntries(await Promise.all(
-      OPENSPEC_SUPPORTED_ARTIFACT_IDS.map(async (artifactId) => [artifactId, await adapter.getArtifactInstructions(changeId, artifactId)] as const),
-    )) as Readonly<Record<(typeof OPENSPEC_SUPPORTED_ARTIFACT_IDS)[number], Awaited<ReturnType<OpenSpecCliAdapter['getArtifactInstructions']>>>>;
-    return { ...base, artifactInstructions };
+    if (projection.artifactInstructions === undefined) {
+      throw new FlowkitError('OPENSPEC_OPERATION_PROJECTION_INCOMPLETE', 'OpenSpec proposal projection omitted artifact instructions', { changeId, action });
+    }
+    return { ...base, artifactInstructions: projection.artifactInstructions };
   }
 
   if (action === 'apply' || action === 'revise-apply') {
-    const validation = await adapter.validateChange(changeId, true);
+    const validation = projection.validation;
+    if (validation === undefined || projection.applyInstructions === undefined) {
+      throw new FlowkitError('OPENSPEC_OPERATION_PROJECTION_INCOMPLETE', 'OpenSpec Apply projection omitted required views', { changeId, action });
+    }
     if (!validation.valid) {
       throw new FlowkitError('OPENSPEC_STRICT_VALIDATION_FAILED', `OpenSpec strict validation failed before ${action}`, {
         changeId, issues: validation.issues, status: validation.status,
       });
     }
-    return { ...base, applyInstructions: await adapter.getApplyInstructions(changeId) };
+    return { ...base, applyInstructions: projection.applyInstructions };
   }
 
   return base;
@@ -2034,7 +2396,7 @@ function buildSemanticDescriptor(input: {
 }
 
 function fingerprintActionPackageSemantics(pkg: ActionPackage): string {
-  return sha256(stableStringify(buildSemanticDescriptor({
+  const base = {
     deliveryId: pkg.run.deliveryId,
     changeId: pkg.run.changeId,
     action: pkg.run.action,
@@ -2046,7 +2408,30 @@ function fingerprintActionPackageSemantics(pkg: ActionPackage): string {
     ...(pkg.ownerFactRefs !== undefined && { ownerFactRefs: pkg.ownerFactRefs }),
     ...(pkg.verificationView !== undefined && { verificationView: pkg.verificationView }),
     ...(pkg.externalContextFingerprint !== undefined && { externalContextFingerprint: pkg.externalContextFingerprint }),
-  })));
+  };
+  const descriptor = pkg.schemaVersion === 2 && (pkg.run.action === 'apply' || pkg.run.action === 'revise-apply')
+    ? (() => {
+      const applyPackage = pkg as ActionPackageV2Apply;
+      return buildV2ApplySemanticDescriptor({
+      ...base,
+      entryWorkspaceIdentity: applyPackage.entryWorkspaceIdentity,
+      mutationDeclaration: applyPackage.mutationDeclaration,
+      });
+    })()
+    : buildSemanticDescriptor(base);
+  return sha256(stableStringify(descriptor));
+}
+
+function buildV2ApplySemanticDescriptor(input: Parameters<typeof buildSemanticDescriptor>[0] & {
+  readonly entryWorkspaceIdentity: EntryWorkspaceIdentity;
+  readonly mutationDeclaration: MutationDeclaration;
+}): unknown {
+  return {
+    schemaVersion: 2,
+    base: buildSemanticDescriptor(input),
+    entryWorkspaceIdentity: input.entryWorkspaceIdentity,
+    mutationDeclaration: input.mutationDeclaration,
+  };
 }
 
 function sortRefs(refs: readonly VersionedAuthorityRef[]): readonly VersionedAuthorityRef[] {

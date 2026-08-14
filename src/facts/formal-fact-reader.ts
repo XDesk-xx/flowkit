@@ -10,6 +10,7 @@
  * - pending/failed/cancelled Runs are validated only for status-applicable facts.
  */
 
+import { createHash } from 'node:crypto';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { normalizeSeparators } from '../shared/paths.js';
@@ -72,10 +73,7 @@ export async function readFormalFactSnapshot(
   const { runs, reviewVerdicts, c1RunIds, runConflicts } = await readRuns(deliveryRunsDir, activeChangeId);
   conflicts.push(...runConflicts);
   const openSpecArtifacts = await readOpenSpecArtifacts(input, manifestResult.changes);
-  const verificationProjection = await readActiveChangeVerificationStatus(
-    input,
-    activeChangeId,
-  );
+  const verificationProjection = await readActiveChangeVerificationStatus(input, activeChangeId, runs);
   conflicts.push(...verificationProjection.conflicts);
   const tasksProjection = await readActiveChangeTasksCompletion(
     input,
@@ -1082,6 +1080,7 @@ const VALID_VERIFICATION_STATUSES: ReadonlySet<string> = new Set([
 async function readActiveChangeVerificationStatus(
   input: ReadFormalFactSnapshotInput,
   activeChangeId: string | undefined,
+  runs: readonly RunFact[],
 ): Promise<VerificationProjectionResult> {
   if (activeChangeId === undefined) {
     return { conflicts: [] };
@@ -1139,6 +1138,34 @@ async function readActiveChangeVerificationStatus(
         },
       ],
     };
+  }
+
+  const producer = [...runs]
+    .filter((run) => run.changeId === activeChangeId && (run.action === 'apply' || run.action === 'revise-apply') && run.status === 'completed')
+    .sort((left, right) => right.runId.localeCompare(left.runId))[0];
+  if (producer !== undefined) {
+    const contextPath = join(input.repoRoot, input.runsPathPrefix, input.deliveryId, activeChangeId, producer.runId, 'context.json');
+    let schemaVersion: unknown;
+    try {
+      schemaVersion = (JSON.parse(await readFile(contextPath, 'utf8')) as Record<string, unknown>)['schemaVersion'];
+    } catch (error) {
+      return { conflicts: [{ dimension: 'change-verification-selection', authority, message: `current verification producer context unavailable: ${error instanceof Error ? error.message : String(error)}` }] };
+    }
+    // Historical v2-v4 evidence remains readable under its pre-E1 contract.
+    if (schemaVersion !== 5) return { status: raw as VerificationStatus, conflicts: [] };
+    const recordPath = join(input.repoRoot, input.runsPathPrefix, input.deliveryId, activeChangeId, producer.runId, 'verification-selection.json');
+    let record: Record<string, unknown>;
+    try {
+      const parsed = JSON.parse(await readFile(recordPath, 'utf8')) as unknown;
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) throw new Error('record must be an object');
+      record = parsed as Record<string, unknown>;
+    } catch (error) {
+      return { conflicts: [{ dimension: 'change-verification-selection', authority, message: `current verification producer record unavailable: ${error instanceof Error ? error.message : String(error)}` }] };
+    }
+    const markdownFingerprint = createHash('sha256').update(content).digest('hex');
+    if (record['producingRunId'] !== producer.runId || record['verificationMarkdownFingerprint'] !== markdownFingerprint) {
+      return { conflicts: [{ dimension: 'change-verification-selection', authority, message: 'current verification producer record does not exact-bind Run identity and canonical Markdown bytes' }] };
+    }
   }
 
   return { status: raw as VerificationStatus, conflicts: [] };

@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 4,
+  "runId": "20260813-105-explore",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "explore",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "54fbea3346cfc3103622d4c0669f5b6c3321131f7941bcdccc68fe3bd0c045bc",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260813-105-explore/",
+  "changeKey": "E1",
+  "changeId": "change-verification-selection-and-change-set",
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

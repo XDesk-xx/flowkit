@@ -1,0 +1,85 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "Complete review of the 105→114 chain: E1-RP-001/002/003 are resolved, but 114 has two new author-owned blockers. Historical verification bindings are not explicitly point-in-time/current-lineage scoped, and the Design mutation declaration omits the production discriminator file required by its v5 migration."
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "E1-RP-004",
+      "severity": "blocking",
+      "title": "verification-selection terminal binding 缺少 point-in-time 与 current-lineage 边界",
+      "problem": "114 要求 completed Apply/revise-apply terminal exact-bind matching immutable record 与 canonical verification.md，并把 record/Markdown mismatch 交给 Reader/admission fail closed；但同一 canonical verification.md 会在后续合法 revise-apply 中更新。record 只保存 mutable logical path 与当时 fingerprint，没有 immutable Markdown bytes。当前措辞未区分当前 pending/completion 的 exact validation 与历史 terminal 的 point-in-time binding，也未定义哪个 record 是 current verification lineage，因而后续合法 generation 可能反向使旧 terminal conflict，exact retry 旧 terminal 也可能错误地重新校验 current path。",
+      "contractRef": "openspec/specs/flowkit-formal-fact-reader-and-persistence/spec.md Requirement: ResultRef versionFingerprint 使用 content hash; Requirement: Run completion preflight 在 terminal publish 前验证所有引用; Requirement: review-apply 必须区分 entry verification binding 与 terminal point-in-time summary; openspec/changes/change-verification-selection-and-change-set/design.md Decisions 3 and 8",
+      "invariant": "mutable artifact/verification ref 必须是建立引用时的 point-in-time 记录；current exact validation 只能服务明确的当前 entry/completion/recovery correctness，后续合法 revise-apply 修改同一路径不得反向使历史 Run、record 或 ResultRef 失效。",
+      "evidence": [
+        "Design Decision 3 terminal-present row says result must exact-bind complete record and Markdown, with any binding mismatch fail closed, but does not limit this to the current producing generation",
+        "Design Decision 8 stores verification path/content fingerprint in an immutable per-Run record while canonical verification.md remains a mutable single path",
+        "delta persistence scenario says any visible Apply/revise-apply terminal requires matching record and canonical Markdown and mismatch becomes Reader conflict, without historical/current-lineage qualification",
+        "canonical ResultRef contract explicitly says historical verification-summary is point-in-time and future current-path bytes must not be replayed against its old fingerprint",
+        "canonical review-apply contract explicitly requires legal revise-apply updates not to create historical FactConflict"
+      ],
+      "impact": "第一次 changes-requested → revise-apply 更新 verification.md 后，旧 Apply terminal/record 可能被 Reader 判 conflict；Policy、checkout recovery 或对旧 expectedRunId 的 exact replay 会被合法新 generation 反向破坏。",
+      "location": "openspec/changes/change-verification-selection-and-change-set/design.md Decisions 3 and 8; specs/flowkit-formal-fact-reader-and-persistence/spec.md post-action record scenarios; specs/flowkit-change-verification-selection/spec.md terminal scenarios",
+      "blockingAuthority": "author",
+      "requiredOutcome": "在 revise-propose 中冻结 current-lineage 与 point-in-time 规则：pending/current producing Run 在 commit-marker/terminal boundary exact-check current Markdown；terminal 后 record/result 保存当时 binding，后续合法 revise-apply 不以新 current bytes反向校验历史 generation。明确 Formal Reader 如何选择唯一 current applicable selection record、旧 terminal exact replay 如何直接返回 persisted terminal，以及 current record/Markdown mismatch 如何 fail closed。若需要永久 byte verification，使用 immutable per-Run content authority而不是重读未来 mutable path。",
+      "acceptance": [
+        "Design、persistence delta 与 selection delta 明确区分 current pending/completion exact binding 和 historical point-in-time binding",
+        "合法 revise-apply 发布新 verification.md/record 后，旧 Apply/revise-apply result与record保持有效且不产生 historical FactConflict",
+        "Formal Reader 只用唯一 current applicable lineage record验证 current verification projection；current mismatch仍 fail closed",
+        "对旧 terminal expectedRunId 的 equivalent exact replay返回既有 terminal，不把未来 verification.md bytes与旧 fingerprint比较",
+        "tasks/tests覆盖 Apply terminal → review changes-requested → revise-apply新 record/Markdown →旧/新 lineage读取与 replay"
+      ]
+    },
+    {
+      "id": "E1-RP-005",
+      "severity": "blocking",
+      "title": "flowkitMutationScope 遗漏 v5 discriminator 必改生产文件",
+      "problem": "114 已把 context v2/v3/v4/v5 closed version-first discriminator 与 unknown-version fail-closed列为 Decision 2 和 tasks 1.1/1.2 的必做实现，但 approved Design 的 apply/revise-apply selectors 不包含 src/persistence/legacy-recognizer.ts。CodeGraph 精确显示 Formal Reader 使用的 discriminateRun 与 discriminateRunForReader 都位于该文件，且 discriminateRun 当前只把 v2/v3/v4送入 strict current validator；不修改它，new v5 context 会直接进入 unknown-version conflict。",
+      "contractRef": "openspec/changes/change-verification-selection-and-change-set/design.md flowkitMutationScope and Decision 2; tasks.md 1.1-1.2; specs/flowkit-formal-fact-reader-and-persistence/spec.md modified Bootstrap Run compatibility requirement",
+      "invariant": "approved Design 的 typed mutation declaration 必须完整覆盖实现其 frozen tasks/requirements 所必需的 production-owned paths，同时保持有限、可审计；Apply 不得靠 declaration 外写入、运行时扩大 scope 或跳过 required implementation 完成 contract。",
+      "evidence": [
+        "CodeGraph locates discriminateRun at src/persistence/legacy-recognizer.ts:302 and discriminateRunForReader at the same production file",
+        "current discriminateRun strict branch accepts only schemaVersion 2 | 3 | 4; every other non-legacy version is returned as unknown schemaVersion conflict",
+        "tasks 1.1 requires a v2/v3/v4/v5 closed union and tasks 1.2 requires v5 current-writer plus historical discriminator fixtures",
+        "both apply and revise-apply flowkitMutationScope selector arrays omit src/persistence/legacy-recognizer.ts",
+        "the existing focused test tests/unit/persistence/legacy-recognizer.test.ts is also omitted while 114 explicitly requires discriminator regressions"
+      ],
+      "impact": "Author cannot legally implement the v5 Reader path under the approved declaration；either Apply must write out of scope and be rejected by observedActionMutations, or v5 Runs become unreadable/conflicting immediately after writer migration。",
+      "location": "openspec/changes/change-verification-selection-and-change-set/design.md flowkitMutationScope; src/persistence/legacy-recognizer.ts discriminator implementation; tasks.md 1.1-1.2",
+      "blockingAuthority": "author",
+      "requiredOutcome": "在 revise-propose 的 Design mutation declaration 中为 apply 与 revise-apply 加入 src/persistence/legacy-recognizer.ts，并加入实施 Decision 2 所需的 focused discriminator test path（至少 tests/unit/persistence/legacy-recognizer.test.ts，或给出完整且等价的合法测试落点）。再次枚举 v5 create → persist → read → formal consume 链的所有 production/test paths，确保没有同类必改文件落在 declaration 外。",
+      "acceptance": [
+        "apply 与 revise-apply selectors 均覆盖 src/persistence/legacy-recognizer.ts，且不以 broad/root/glob selector替代",
+        "mutation scope覆盖 v5 discriminator与 historical compatibility所需的 focused regression tests",
+        "从 v5 context create/persist 到 discriminate/read/FormalFactSnapshot consume的每个必改生产路径均可在 declaration 内实现",
+        "v2 exact compatibility、v3、v4、v5与unknown-version regression tasks可在不越界的情况下完成"
+      ]
+    }
+  ],
+  "reviewFindingConvergence": [
+    {
+      "findingId": "E1-RP-001",
+      "state": "resolved"
+    },
+    {
+      "findingId": "E1-RP-002",
+      "state": "resolved"
+    },
+    {
+      "findingId": "E1-RP-003",
+      "state": "resolved"
+    },
+    {
+      "findingId": "E1-RP-004",
+      "state": "new"
+    },
+    {
+      "findingId": "E1-RP-005",
+      "state": "new"
+    }
+  ]
+}
