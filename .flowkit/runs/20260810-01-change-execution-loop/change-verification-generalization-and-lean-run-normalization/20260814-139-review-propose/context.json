@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 4,
+  "runId": "20260814-139-review-propose",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "review-propose",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "17bc2a111d4418e4b216ecaed776e77a8a64871d65107f4a95145887d2343347",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-generalization-and-lean-run-normalization/20260814-139-review-propose/",
+  "changeKey": "E2",
+  "changeId": "change-verification-generalization-and-lean-run-normalization",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-generalization-and-lean-run-normalization/20260814-138-propose/result.json",
+    "versionFingerprint": "2b3433b3a4ba2eac240b0e143466853d6cbc121a3b514268749409f94d379206",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260814-138-propose",
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

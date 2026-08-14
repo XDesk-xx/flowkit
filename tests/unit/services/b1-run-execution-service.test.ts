@@ -39,6 +39,19 @@ async function initializeGit(root: string): Promise<void> {
   await execFileAsync('git', ['-c', 'user.name=Flowkit Test', '-c', 'user.email=flowkit@example.invalid', 'commit', '-m', 'base'], { cwd: root });
 }
 
+async function recordPostE2WriterBoundary(root: string, deliveryId: string): Promise<void> {
+  const migrationDeliveryId = '20260810-01-change-execution-loop';
+  await execFileAsync('git', ['-c', 'user.name=Flowkit Test', '-c', 'user.email=flowkit@example.invalid', 'commit', '--allow-empty', '-m', `chore(flowkit): start ${migrationDeliveryId}`], { cwd: root });
+  await execFileAsync('git', ['-c', 'user.name=Flowkit Test', '-c', 'user.email=flowkit@example.invalid', 'commit', '--allow-empty', '-m', 'chore(flowkit): checkpoint change-verification-generalization-and-lean-run-normalization'], { cwd: root });
+  await execFileAsync('git', ['-c', 'user.name=Flowkit Test', '-c', 'user.email=flowkit@example.invalid', 'commit', '--allow-empty', '-m', `chore(flowkit): finalize ${migrationDeliveryId}`], { cwd: root });
+  await execFileAsync('git', ['-c', 'user.name=Flowkit Test', '-c', 'user.email=flowkit@example.invalid', 'commit', '--allow-empty', '-m', `chore(flowkit): start ${deliveryId}`], { cwd: root });
+}
+
+async function recordPreE2WriterMigrationStart(root: string): Promise<void> {
+  const migrationDeliveryId = '20260810-01-change-execution-loop';
+  await execFileAsync('git', ['-c', 'user.name=Flowkit Test', '-c', 'user.email=flowkit@example.invalid', 'commit', '--allow-empty', '-m', `chore(flowkit): start ${migrationDeliveryId}`], { cwd: root });
+}
+
 afterEach(async () => {
   await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 });
@@ -131,19 +144,21 @@ const fixtureVerificationExecutor = (status: 'passed' | 'failed'): VerificationS
     checks: input.selection.verificationScopes.map((scope, index) => ({
       scope, applicability: 'applicable', commandOrMethod: `fixture:${scope}`, status,
       summary: `${status} fixture check`,
-      resultRef: `.flowkit/runs/${input.producingRunId}/verification-evidence.json#check-${index + 1}`,
+      resultRef: `${input.resultRefBase ?? `.flowkit/runs/${input.producingRunId}/verification-evidence.json`}#check-${index + 1}`,
       environment: 'fixture', outcomeKind: 'exited', exitCode: status === 'passed' ? 0 : 1,
       stdoutFingerprint: 'a'.repeat(64), stderrFingerprint: 'b'.repeat(64),
     })),
   };
 };
 
-async function prepareV5ApplyReady() {
-  const fixture = await freshActiveFixture({ changeId: 'change-verification-selection-and-change-set' });
+async function prepareV5ApplyReady(options: { changeId?: string; postE2Writer?: boolean; freshConsumer?: boolean } = {}) {
+  const fixture = await freshActiveFixture({ changeId: options.changeId ?? 'change-verification-selection-and-change-set' });
   const { root, deliveryId, changeId, now } = fixture;
   await mkdir(join(root, 'src', 'domain'), { recursive: true });
   await writeFile(join(root, 'src', 'domain', 'types.ts'), 'export const value = 1;\n', 'utf8');
   await initializeGit(root);
+  if (options.postE2Writer) await recordPostE2WriterBoundary(root, deliveryId);
+  else if (!options.freshConsumer) await recordPreE2WriterMigrationStart(root);
   await completeExplore(root, deliveryId, changeId, now);
   const reviewExplore = await prepareActionExecution({ repoRoot: root, deliveryId, entry: 'next', now });
   await admitActionResult({ repoRoot: root, deliveryId, actionPackage: reviewExplore.package, result: { executionStatus: 'completed', summary: 'approved', reviewVerdict: 'approved', reviewFindings: [] } });
@@ -632,6 +647,148 @@ async function markFixtureChangeCompleted(root: string, deliveryId: string, chan
   assert.ok(current.includes(expected));
   await writeFile(manifest, current.replace(expected, replacement), 'utf8');
 }
+
+describe('E2 post-checkpoint three-file writer', () => {
+  it('uses the current three-file writer in a fresh repository without Flowkit migration history', async () => {
+    const { root, deliveryId, changeId, changeRoot, apply } = await prepareV5ApplyReady({
+      changeId: 'fresh-downstream-consumer',
+      freshConsumer: true,
+    });
+    const gitSubjects = (await execFileAsync('git', ['log', '--format=%s'], { cwd: root })).stdout;
+    assert.doesNotMatch(gitSubjects, /chore\(flowkit\): start 20260810-01-change-execution-loop/);
+    assert.equal(apply.run.action, 'apply');
+    assert.equal('compactEntryWorkspaceIdentity' in apply, true);
+    const runDir = join(root, '.flowkit', 'runs', deliveryId, changeId, apply.run.runId);
+    assert.deepEqual((await readdir(runDir)).sort(), ['action.md', 'context.json']);
+    await writeFile(join(root, 'src', 'domain', 'types.ts'), 'export const value = 2;\n', 'utf8');
+    await writeFile(join(changeRoot, 'tasks.md'), '# Tasks\n\n- [x] fixture\n', 'utf8');
+    await admitActionResult({ repoRoot: root, deliveryId, actionPackage: apply, result: { executionStatus: 'completed', summary: 'applied' }, verificationExecutor: fixtureVerificationExecutor('passed'), openSpecAdapter: fixtureOpenSpecAdapter(root, changeId) });
+    assert.deepEqual((await readdir(runDir)).sort(), ['action.md', 'context.json', 'result.json']);
+  });
+
+  it('keeps the post-E2 three-file writer active across the later Delivery Start and terminal admission', async () => {
+    const { root, deliveryId, changeId, changeRoot, apply } = await prepareV5ApplyReady({ changeId: 'archive-and-checkpoint-boundary', postE2Writer: true });
+    const gitSubjects = (await execFileAsync('git', ['log', '--format=%s'], { cwd: root })).stdout;
+    assert.match(gitSubjects, /chore\(flowkit\): start 20260810-01-change-execution-loop/);
+    assert.match(gitSubjects, new RegExp(`chore\\(flowkit\\): start ${deliveryId}`));
+    assert.equal(apply.run.action, 'apply');
+    assert.equal('compactEntryWorkspaceIdentity' in apply, true);
+    const runDir = join(root, '.flowkit', 'runs', deliveryId, changeId, apply.run.runId);
+    assert.deepEqual((await readdir(runDir)).sort(), ['action.md', 'context.json']);
+    await writeFile(join(root, 'src', 'domain', 'types.ts'), 'export const value = 2;\n', 'utf8');
+    await writeFile(join(changeRoot, 'tasks.md'), '# Tasks\n\n- [x] fixture\n', 'utf8');
+    await admitActionResult({ repoRoot: root, deliveryId, actionPackage: apply, result: { executionStatus: 'completed', summary: 'applied' }, verificationExecutor: fixtureVerificationExecutor('passed'), openSpecAdapter: fixtureOpenSpecAdapter(root, changeId) });
+    assert.deepEqual((await readdir(runDir)).sort(), ['action.md', 'context.json', 'result.json']);
+    const result = JSON.parse(await readFile(join(runDir, 'result.json'), 'utf8')) as { terminalBinding?: { currentVerification?: { logicalRef: string } } };
+    assert.equal(result.terminalBinding?.currentVerification?.logicalRef, `openspec/changes/${changeId}/verification.md`);
+    assert.match(await readFile(join(changeRoot, 'verification.md'), 'utf8'), /flowkit-change-verification-status: passed/);
+  });
+
+  it('covers the prospective crash window from entry through verification publication and terminal replay', async () => {
+    const { root, deliveryId, changeId, changeRoot, apply } = await prepareV5ApplyReady({ changeId: 'archive-and-checkpoint-boundary', postE2Writer: true });
+    const runDir = join(root, '.flowkit', 'runs', deliveryId, changeId, apply.run.runId);
+
+    // Crash point 1: entry was durably prepared before any Action mutation.
+    assert.equal((await resumeRun({ repoRoot: root, deliveryId, expectedRunId: apply.run.runId })).kind, 'pending');
+    assert.deepEqual((await readdir(runDir)).sort(), ['action.md', 'context.json']);
+
+    // Crash point 2: Action mutation is declaration-covered but Verification has not run.
+    await writeFile(join(root, 'src', 'domain', 'types.ts'), 'export const value = 2;\n', 'utf8');
+    await writeFile(join(changeRoot, 'tasks.md'), '# Tasks\n\n- [x] fixture\n', 'utf8');
+    assert.equal((await resumeRun({ repoRoot: root, deliveryId, expectedRunId: apply.run.runId })).kind, 'pending');
+
+    // Crash point 3: executor failure leaves the Run pending and does not manufacture a terminal.
+    const crashingExecutor: VerificationSelectionExecutor = async () => { throw new Error('fixture verification crash'); };
+    await assert.rejects(
+      admitActionResult({ repoRoot: root, deliveryId, actionPackage: apply, result: { executionStatus: 'completed', summary: 'applied' }, verificationExecutor: crashingExecutor, openSpecAdapter: fixtureOpenSpecAdapter(root, changeId) }),
+      /fixture verification crash/,
+    );
+    await assert.rejects(readFile(join(runDir, 'result.json'), 'utf8'));
+    assert.equal((await resumeRun({ repoRoot: root, deliveryId, expectedRunId: apply.run.runId })).kind, 'pending');
+
+    // Crash point 4: Markdown alone is inside the pending publication window and is not Verification authority.
+    await writeFile(join(changeRoot, 'verification.md'), '<!-- flowkit-change-verification-status: passed -->\n\n# Interrupted publication\n', 'utf8');
+    const pendingFacts = await snapshot(root, deliveryId);
+    assert.equal(pendingFacts.changeVerificationStatus, undefined);
+    assert.equal(pendingFacts.conflicts.length, 0);
+
+    // Successful retry publishes the exact terminal binding. Crash point 5: terminal replay is idempotent.
+    const logicalResult = { executionStatus: 'completed' as const, summary: 'applied' };
+    await admitActionResult({ repoRoot: root, deliveryId, actionPackage: apply, result: logicalResult, verificationExecutor: fixtureVerificationExecutor('passed'), openSpecAdapter: fixtureOpenSpecAdapter(root, changeId) });
+    const terminalBytes = await readFile(join(runDir, 'result.json'), 'utf8');
+    await admitActionResult({ repoRoot: root, deliveryId, actionPackage: apply, result: logicalResult, verificationExecutor: fixtureVerificationExecutor('passed'), openSpecAdapter: fixtureOpenSpecAdapter(root, changeId) });
+    assert.equal(await readFile(join(runDir, 'result.json'), 'utf8'), terminalBytes);
+    assert.equal((await snapshot(root, deliveryId)).changeVerificationStatus, 'passed');
+  });
+
+  it('fails closed for prospective undeclared mutation, Base drift, Owner drift, and mixed persistence shape', async () => {
+    const undeclared = await prepareV5ApplyReady({ changeId: 'archive-and-checkpoint-boundary', postE2Writer: true });
+    await writeFile(join(undeclared.root, 'README.md'), 'undeclared\n', 'utf8');
+    await assert.rejects(
+      resumeRun({ repoRoot: undeclared.root, deliveryId: undeclared.deliveryId, expectedRunId: undeclared.apply.run.runId }),
+      (error: unknown) => error instanceof FlowkitError && error.code === 'UNDECLARED_ACTION_MUTATION',
+    );
+
+    const baseDrift = await prepareV5ApplyReady({ changeId: 'archive-and-checkpoint-boundary', postE2Writer: true });
+    await execFileAsync('git', ['-c', 'user.name=Flowkit Test', '-c', 'user.email=flowkit@example.invalid', 'commit', '--allow-empty', '-m', 'unexpected boundary'], { cwd: baseDrift.root });
+    await assert.rejects(
+      resumeRun({ repoRoot: baseDrift.root, deliveryId: baseDrift.deliveryId, expectedRunId: baseDrift.apply.run.runId }),
+      (error: unknown) => error instanceof FlowkitError && (error.code === 'POST_ACTION_BASE_DRIFT' || error.code === 'PENDING_INPUT_DRIFT'),
+    );
+
+    const ownerDrift = await prepareV5ApplyReady({ changeId: 'archive-and-checkpoint-boundary', postE2Writer: true });
+    await recordOwnerDecision(ownerDrift.root, {
+      decision: 'contract-reset', changeId: ownerDrift.changeId, scope: 'post-e2-drift', requiredOutcomes: ['new owner contract'], sourceRef: 'owner:post-e2-drift',
+    });
+    await assert.rejects(
+      resumeRun({ repoRoot: ownerDrift.root, deliveryId: ownerDrift.deliveryId, expectedRunId: ownerDrift.apply.run.runId }),
+      (error: unknown) => error instanceof FlowkitError && error.code === 'PENDING_INPUT_DRIFT',
+    );
+
+    const mixed = await prepareV5ApplyReady({ changeId: 'archive-and-checkpoint-boundary', postE2Writer: true });
+    const mixedRunDir = join(mixed.root, '.flowkit', 'runs', mixed.deliveryId, mixed.changeId, mixed.apply.run.runId);
+    const mixedContext = JSON.parse(await readFile(join(mixedRunDir, 'context.json'), 'utf8')) as Record<string, unknown>;
+    mixedContext['entryWorkspaceIdentity'] = { canonicalBase: 'a'.repeat(40), workspaceFingerprint: 'b'.repeat(64) };
+    await writeFile(join(mixedRunDir, 'context.json'), `${JSON.stringify(mixedContext, null, 2)}\n`, 'utf8');
+    await assert.rejects(
+      resumeRun({ repoRoot: mixed.root, deliveryId: mixed.deliveryId, expectedRunId: mixed.apply.run.runId }),
+      /exactly one legacy or compact entry workspace identity/,
+    );
+  });
+
+  it('makes revise-apply the current prospective publication while preserving the prior Apply terminal bytes', async () => {
+    const { root, deliveryId, changeId, changeRoot, apply, now } = await prepareV5ApplyReady({ changeId: 'archive-and-checkpoint-boundary', postE2Writer: true });
+    await writeFile(join(root, 'src', 'domain', 'types.ts'), 'export const value = 2;\n', 'utf8');
+    await writeFile(join(changeRoot, 'tasks.md'), '# Tasks\n\n- [x] fixture\n', 'utf8');
+    await admitActionResult({ repoRoot: root, deliveryId, actionPackage: apply, result: { executionStatus: 'completed', summary: 'applied' }, verificationExecutor: fixtureVerificationExecutor('passed'), openSpecAdapter: fixtureOpenSpecAdapter(root, changeId) });
+    const applyRunDir = join(root, '.flowkit', 'runs', deliveryId, changeId, apply.run.runId);
+    const firstResult = await readFile(join(applyRunDir, 'result.json'), 'utf8');
+    const firstVerification = await readFile(join(changeRoot, 'verification.md'), 'utf8');
+
+    const review = await prepareNewExecution({ repoRoot: root, deliveryId, entry: 'review', now });
+    assert.equal(review.kind, 'prepared');
+    if (review.kind !== 'prepared') assert.fail('expected review-apply');
+    await admitActionResult({ repoRoot: root, deliveryId, actionPackage: review.package, result: {
+      executionStatus: 'completed', summary: 'revise', reviewVerdict: 'changes-requested',
+      reviewFindings: [{ id: 'E2-POST-001', severity: 'blocking', blockingAuthority: 'author', title: 'revise', problem: 'fixture', contractRef: 'spec:fixture', invariant: 'fixture', evidence: ['fixture'], impact: 'blocked', requiredOutcome: 'revise', acceptance: ['revised'] }],
+    } });
+    const revise = await prepareNewExecution({ repoRoot: root, deliveryId, entry: 'next', now });
+    assert.equal(revise.kind, 'prepared');
+    if (revise.kind !== 'prepared') assert.fail('expected revise-apply');
+    assert.equal(revise.package.run.action, 'revise-apply');
+    await writeFile(join(root, 'src', 'domain', 'types.ts'), 'export const value = 3;\n', 'utf8');
+    await admitActionResult({ repoRoot: root, deliveryId, actionPackage: revise.package, result: { executionStatus: 'completed', summary: 'revised' }, verificationExecutor: fixtureVerificationExecutor('passed'), openSpecAdapter: fixtureOpenSpecAdapter(root, changeId) });
+
+    const reviseRunDir = join(root, '.flowkit', 'runs', deliveryId, changeId, revise.package.run.runId);
+    assert.deepEqual((await readdir(reviseRunDir)).sort(), ['action.md', 'context.json', 'result.json']);
+    assert.equal(await readFile(join(applyRunDir, 'result.json'), 'utf8'), firstResult);
+    assert.notEqual(await readFile(join(changeRoot, 'verification.md'), 'utf8'), firstVerification);
+    const current = await snapshot(root, deliveryId);
+    assert.equal(current.changeVerificationStatus, 'passed');
+    assert.equal(current.runs.find((run) => run.runId === apply.run.runId)?.status, 'completed');
+    assert.equal(current.runs.find((run) => run.runId === revise.package.run.runId)?.status, 'completed');
+  });
+});
 
 describe('B1 fixed ActionDefinition catalog', () => {
   it('matches the complete 037 normative mapping and excludes Delivery behaviors', () => {

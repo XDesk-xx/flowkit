@@ -3,14 +3,14 @@ import assert from 'node:assert/strict';
 
 import { deriveMutationDeclaration } from '../../../../src/verification/change-selection/mutation-declaration.js';
 
-const changeId = 'change-verification-selection-and-change-set';
+const changeId = 'change-verification-generalization-and-lean-run-normalization';
 const designRef = {
   ref: `openspec/changes/${changeId}/design.md`,
   kind: 'produced-artifact',
   versionFingerprint: 'a'.repeat(64),
 };
 
-describe('E1 mutation declaration derivation', () => {
+describe('current mutation declaration derivation', () => {
   it('derives the approved Design apply boundary without a candidate manifest fallback', async () => {
     const declaration = await deriveMutationDeclaration(process.cwd(), 'apply', [designRef]);
     assert.equal(declaration.action, 'apply');

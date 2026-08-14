@@ -1,0 +1,21 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "140 revise-propose closes E2-RP-001 and E2-RP-002. The proposal now freezes a closed historical E1-v5 / current E2-migration-v5 / prospective v6 bridge, gates v6/v3 on the existing recognized Change Checkpoint fact, reconnects F1 to E2, and adds matching migration/crash/dependency regressions."
+  },
+  "reviewVerdict": "approved",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [],
+  "reviewFindingConvergence": [
+    {
+      "findingId": "E2-RP-001",
+      "state": "resolved"
+    },
+    {
+      "findingId": "E2-RP-002",
+      "state": "resolved"
+    }
+  ]
+}

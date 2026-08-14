@@ -1,0 +1,63 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "142 re-propose correctly removes the internal version-family design from Proposal/Design/Specs, but two author-owned formal contract residues remain: the Delivery Manifest still requires a versioned renderer output, and the OpenSpec delta performs zero renames so canonical Requirement identities still encode the superseded verification-selection sidecar and ActionPackage v2 model."
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "a73ebceac1e95c4240e0ff90fbe7c66fb65d756cf96f642a7a6b56337ad78341"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "E2-RP-003",
+      "severity": "blocking",
+      "title": "Delivery Manifest 仍把 versioned renderer 作为 E2 正式 output",
+      "problem": "Owner Contract Reset 明确废弃 renderer 独立版本生命周期，142 Proposal/Design 也改为 current implementation + persisted content identity + bounded legacy recognition；但 Delivery Manifest 的 E2 outputs 仍保留 `versioned generic verification renderer / historical selection independence`。该 output 是 Delivery 的 durable formal plan，继续要求一个已被 Owner supersede 的 versioned renderer 产物。",
+      "contractRef": "openspec/delivery-groups/20260810-01-change-execution-loop.yaml E2 outputs; owner:1f4b0ee08f7de45ac707d0dea97d84fe95dd6940254b61106bc3d0be70c805fe; proposal.md What Changes",
+      "invariant": "Owner Contract Reset 后，current Delivery Manifest、Proposal、Design、Specs 必须表达同一 current contract；不得让已被 supersede 的 renderer version lifecycle 继续作为 E2 formal output。",
+      "evidence": [
+        "Manifest E2 outputs 仍包含 `versioned generic verification renderer / historical selection independence`。",
+        "同一 Manifest 的 Owner Contract Reset requiredOutcomes 明确写 `Do not establish independent long-lived version lifecycles for ... renderer ...`。",
+        "142 Proposal 明确改为 historical persisted bytes/fingerprint/binding，不通过 renderer-version replay 证明历史 authority。"
+      ],
+      "impact": "即使 142 其余 artifacts 不再实现 renderer version family，Apply/Archive 后 Delivery durable plan 仍会宣称 E2 必须交付 versioned renderer，造成 formal contract 自相矛盾，并可能诱导 Author/Reviewer 重新实现被 Owner 废弃的版本机制。",
+      "location": "openspec/delivery-groups/20260810-01-change-execution-loop.yaml E2.outputs",
+      "blockingAuthority": "author",
+      "requiredOutcome": "把 E2 formal output 更新为与 Owner Reset 一致的非版本化 verification publication / historical selection independence 表达；不得继续要求 versioned renderer lifecycle。",
+      "acceptance": [
+        "E2 Manifest outputs 不再包含 `versioned generic verification renderer` 或等价 renderer version-family 要求。",
+        "Manifest、Proposal、Design、Specs 对 historical verification authority 的表达一致：persisted identity + bounded legacy read，current renderer 不成为历史 currentness authority。"
+      ]
+    },
+    {
+      "id": "E2-RP-004",
+      "severity": "blocking",
+      "title": "OpenSpec delta 未重命名仍编码旧 sidecar/ActionPackage 版本模型的 canonical Requirement 身份",
+      "problem": "142 删除了 140 中全部 RENAMED Requirements。OpenSpec strict 虽通过，但 disposable OpenSpec 1.7 archive-sync 实际结果为 modified=8、renamed=0；archive 后 canonical specs 仍保留 `Core 必须发布 immutable verification-selection record` 与 `ActionPackage v2 必须携带 typed declaration identity` 这些旧 Requirement 名称。前者把 post-E2 不再存在的 per-Run verification-selection record 固化为 canonical Requirement identity，后者继续把 ActionPackage v2 固化为 current canonical Requirement identity，均与 Owner Reset 的 current implementation + bounded legacy compatibility 方向不一致。",
+      "contractRef": "specs/flowkit-change-verification-selection/spec.md; specs/flowkit-lean-run-and-action-package/spec.md; owner:1f4b0ee08f7de45ac707d0dea97d84fe95dd6940254b61106bc3d0be70c805fe",
+      "invariant": "E2 archive 后的 canonical OpenSpec contract 必须描述 post-E2 current product model；历史 E1/v1/v2/v5 名称可以作为 scenario 中的 bounded legacy facts，但不得继续作为 current Requirement identity 固化已被 supersede 的 sidecar或 component-version architecture。",
+      "evidence": [
+        "142 三个 delta spec 只有 `## MODIFIED Requirements`，没有任何 `## RENAMED Requirements`。",
+        "Disposable OpenSpec 1.7 archive-sync 返回 totals: added=0, modified=8, removed=0, renamed=0。",
+        "archive 后 `flowkit-change-verification-selection` canonical spec 仍有 Requirement `Core 必须发布 immutable verification-selection record`。",
+        "archive 后 `flowkit-lean-run-and-action-package` canonical spec 仍有 Requirement `ActionPackage v2 必须携带 typed declaration identity`。",
+        "142 自身又要求 post-E2 writer 不再生成 verification-selection sidecar，且 current ActionPackage 直接跟随 current implementation而不建立独立 version lifecycle。"
+      ],
+      "impact": "E2 即使实现正确，archive 后 canonical specs 仍会把旧 E1 sidecar文件/ActionPackage v2 当成长期 Requirement identity；03 或后续 self-hosted Change 读取 canonical OpenSpec 时会再次得到与最新代码相冲突的版本化/sidecar contract。",
+      "location": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-change-verification-selection/spec.md; specs/flowkit-lean-run-and-action-package/spec.md",
+      "blockingAuthority": "author",
+      "requiredOutcome": "在 current E2 delta 中对仍编码 superseded sidecar/component-version architecture 的 canonical Requirement identity 做必要的 RENAMED，名称应描述非版本化 current semantics；historical v1/v2/v5/renderer 字段只留在 bounded legacy scenarios。不要恢复 140 中 `ActionPackage 必须版本化...` 这种同样被 Owner Reset 废弃的名称。",
+      "acceptance": [
+        "OpenSpec delta 对至少 `immutable verification-selection record` 与 `ActionPackage v2 ...` 的 current Requirement identity 完成非版本化 rename（具体新名称由 Author 在 current contract 下选择）。",
+        "Disposable OpenSpec 1.7 archive-sync 显示对应 RENAMED operations，并且 MODIFIED/RENAMED 后 canonical Requirement 数量与 scenarios 完整保留。",
+        "archive 后 canonical Requirement 名称不再把 post-E2 current model表述为 per-Run verification-selection sidecar或 ActionPackage component version。",
+        "不得采用 140 已 supersede 的 `ActionPackage 必须版本化...` 等 version-family 名称。"
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}

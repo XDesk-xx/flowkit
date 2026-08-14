@@ -147,7 +147,7 @@ describe('verification selection publication', () => {
     const current = fixture();
     const input = { runDir, canonicalVerificationPath: markdown, ...current };
     await publishVerificationSelection(input);
-    assert.match(await readFile(markdown, 'utf8'), /Bootstrap verification/);
+    assert.match(await readFile(markdown, 'utf8'), /Flowkit Change Verification publication/);
     assert.deepEqual(JSON.parse(await readFile(join(runDir, VERIFICATION_SELECTION_FILE), 'utf8')), current.record);
     await publishVerificationSelection(input);
     const binding = await validatePendingVerificationSelection({

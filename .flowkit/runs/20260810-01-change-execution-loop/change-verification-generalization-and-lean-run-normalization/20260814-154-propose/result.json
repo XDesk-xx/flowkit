@@ -1,0 +1,44 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "propose",
+    "executionStatus": "completed",
+    "summary": "Owner Contract Reset 后重新冻结 E2 Proposal：保留既有架构与 RA-003 required outcome，将 Flowkit E2 checkpoint 收敛为 self-migration guard，fresh/downstream repository 默认 current three-file writer，并将 historical E1 integration fixture 纳入 apply/revise-apply mutation scope。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/design.md",
+        "versionFingerprint": "578c9b2d8e8d4079ede6a90d1352baacea2008de2e48945d4fb85cb962698679",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/proposal.md",
+        "versionFingerprint": "120af89304108e9494ce1b32da1c84a229fef6cb1cbfd9b028f635b641d72b28",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "b159bb82160be2172e919622b3cf8cc92ee68529fa112795397b87282b9f47c4",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "f47a2b714591e680eb0f99e4d2cd4d71690a69fa024eb81cfbd05e309a705bc5",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-lean-run-and-action-package/spec.md",
+        "versionFingerprint": "fa0c8a670c4c473f132f062a36fd89c7bb9d49b38af456c5894aa1905f90434d",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/tasks.md",
+        "versionFingerprint": "fbb4b0c1cc2cda6dd8c30eff737a572e80661e6808e3c658ca8261262df790b7",
+        "kind": "produced-artifact"
+      }
+    ]
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "ade6d9dbb2990f8f9096b013aba8bcf73ee41a79316268af2b48783ffc0e331d"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 4,
+  "runId": "20260814-142-propose",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "propose",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "998509bcd4dccd594f01712a78fcff0f01114d4923c34009efcc922f19b5d192",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:1f4b0ee08f7de45ac707d0dea97d84fe95dd6940254b61106bc3d0be70c805fe",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-verification-generalization-and-lean-run-normalization",
+      "scope": "E2 Proposal internal version design: supersede the 140/141 Proposal generation version-family architecture while preserving the approved 136 Explore feasibility facts and E2 required outcomes.",
+      "requiredOutcomes": [
+        "Do not establish independent long-lived version lifecycles for Context, ActionPackage, verification selection/evidence schema, renderer, or Verification Catalog.",
+        "E2 itself continues on the pre-E2/current runner and may implement generic Verification; post-E2 prospective three-file writer activates only after the E2 checkpoint, with F1 as first formal dogfood consumer.",
+        "Flowkit product version remains the product-level version; current Git/source defines current internal implementation.",
+        "Historical E1 persisted shapes remain immutable and readable through small bounded legacy compatibility; do not migrate historical E1 Runs or build a generic migration/version framework.",
+        "Historical verification publication should validate persisted bytes/fingerprint/binding rather than require renderer-version replay; keep only the minimum bounded compatibility mechanism actually required.",
+        "Preserve generic Change Verification, current-Change decoupling, prospective three-file Run, historical E1 readability, crash/recovery correctness, next-consumer regressions, and E1→E2→F1→G1 dependency boundary without expanding into F1/G1/03 scope.",
+        "Use a minimal formatVersion only when a persisted breaking format cannot be reliably discriminated structurally by the latest reader; formatVersion is only a serialization discriminator.",
+        "Verification Catalog has no generation lifecycle; current source is authority and point-in-time identity uses content fingerprint when needed."
+      ],
+      "sourceRef": "owner-explicit-contract-reset-20260814-e2-internal-version-design"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-generalization-and-lean-run-normalization/20260814-142-propose/",
+  "changeKey": "E2",
+  "changeId": "change-verification-generalization-and-lean-run-normalization",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-generalization-and-lean-run-normalization/20260814-137-review-explore/result.json",
+    "versionFingerprint": "6ed76f0c11f7df19b4eae44918bdd9ce0ee5a2e42cf46a48b90371ab5779922b",
+    "kind": "run-result"
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": true,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

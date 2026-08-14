@@ -47,6 +47,7 @@ import type {
   BlockingAuthority,
   OwnerFactRef,
   EntryWorkspaceIdentity,
+  CompactEntryWorkspaceIdentity,
   MutationDeclaration,
   VersionedAuthorityRef,
   ActionPackageV2,
@@ -159,10 +160,17 @@ export interface RunTerminalBinding {
   readonly schemaVersion: 1;
   /** Canonical digest of the provider/executor logical terminal descriptor. */
   readonly logicalDescriptorDigest: string;
-  /** Required only for completed v5 Apply/revise-apply terminals. */
+  /** Historical E1/E2-migration sidecar binding. */
   readonly verificationSelection?: {
     readonly logicalRef: string;
     readonly versionFingerprint: string;
+  };
+  /** Post-E2 three-file binding directly to the formal verification.md authority. */
+  readonly currentVerification?: {
+    readonly logicalRef: string;
+    readonly versionFingerprint: string;
+    readonly selectionFingerprint: string;
+    readonly status: 'passed' | 'failed' | 'not-applicable';
   };
 }
 
@@ -278,6 +286,15 @@ interface ContextFileV5Common extends ContextFileBase {
 export interface ContextFileV5Apply extends ContextFileV5Common {
   readonly action: 'apply' | 'revise-apply';
   readonly entryWorkspaceIdentity: EntryWorkspaceIdentity;
+  readonly compactEntryWorkspaceIdentity?: never;
+  readonly mutationDeclaration: MutationDeclaration;
+}
+
+/** Post-E2 current Apply context: compact entry identity is embedded in context.json; no sidecar. */
+export interface CurrentCompactApplyContextFile extends ContextFileV5Common {
+  readonly action: 'apply' | 'revise-apply';
+  readonly compactEntryWorkspaceIdentity: CompactEntryWorkspaceIdentity;
+  readonly entryWorkspaceIdentity?: never;
   readonly mutationDeclaration: MutationDeclaration;
 }
 
@@ -287,8 +304,8 @@ export interface ContextFileV5NonApply extends ContextFileV5Common {
   readonly mutationDeclaration?: never;
 }
 
-/** Closed physical context schema. New writers only emit the v5 variants. */
-export type ContextFile = HistoricalContextFile | ContextFileV5Apply | ContextFileV5NonApply;
+/** Closed physical context schema. Current compact-vs-legacy Apply shape is structurally discriminated; no new component generation is introduced. */
+export type ContextFile = HistoricalContextFile | ContextFileV5Apply | CurrentCompactApplyContextFile | ContextFileV5NonApply;
 
 // ---------------------------------------------------------------------------
 // Validation helpers
@@ -593,35 +610,51 @@ function validateOptionalString(
 function validateRunTerminalBinding(value: unknown): RunTerminalBinding {
   const obj = asObject(value, 'terminalBinding');
   const keys = Object.keys(obj).sort();
-  const allowed = obj['verificationSelection'] === undefined
-    ? ['logicalDescriptorDigest', 'schemaVersion']
-    : ['logicalDescriptorDigest', 'schemaVersion', 'verificationSelection'];
+  const hasLegacy = obj['verificationSelection'] !== undefined;
+  const hasCurrent = obj['currentVerification'] !== undefined;
+  if (hasLegacy && hasCurrent) schemaFail('terminalBinding must not mix historical sidecar and current verification bindings');
+  const allowed = [
+    'logicalDescriptorDigest',
+    'schemaVersion',
+    ...(hasLegacy ? ['verificationSelection'] : []),
+    ...(hasCurrent ? ['currentVerification'] : []),
+  ].sort();
   if (obj['schemaVersion'] !== 1 || keys.length !== allowed.length || keys.some((key, index) => key !== allowed[index])) {
-    schemaFail('terminalBinding must use the closed schemaVersion 1 shape');
+    schemaFail('terminalBinding must use the closed schemaVersion 1 structural shape');
   }
   const digest = obj['logicalDescriptorDigest'];
-  if (typeof digest !== 'string' || !/^[0-9a-f]{64}$/.test(digest)) {
-    schemaFail('terminalBinding.logicalDescriptorDigest must be SHA-256');
-  }
-  const verificationRaw = obj['verificationSelection'];
+  if (typeof digest !== 'string' || !/^[0-9a-f]{64}$/.test(digest)) schemaFail('terminalBinding.logicalDescriptorDigest must be SHA-256');
+
   let verificationSelection: RunTerminalBinding['verificationSelection'];
-  if (verificationRaw !== undefined) {
-    const verification = asObject(verificationRaw, 'terminalBinding.verificationSelection');
-    const verificationKeys = Object.keys(verification).sort();
-    if (verificationKeys.length !== 2 || verificationKeys[0] !== 'logicalRef' || verificationKeys[1] !== 'versionFingerprint') {
-      schemaFail('terminalBinding.verificationSelection must use the closed logicalRef/versionFingerprint shape');
-    }
-    const logicalRef = verification['logicalRef'];
-    const versionFingerprint = verification['versionFingerprint'];
-    if (typeof logicalRef !== 'string' || logicalRef === '' || logicalRef.startsWith('/') || logicalRef.includes('\\') || logicalRef.split('/').some((part) => part === '' || part === '.' || part === '..')) {
-      schemaFail('terminalBinding.verificationSelection.logicalRef must be a normalized repository-relative path');
-    }
-    if (typeof versionFingerprint !== 'string' || !/^[0-9a-f]{64}$/.test(versionFingerprint)) {
-      schemaFail('terminalBinding.verificationSelection.versionFingerprint must be SHA-256');
-    }
+  if (hasLegacy) {
+    const verification = asObject(obj['verificationSelection'], 'terminalBinding.verificationSelection');
+    assertClosedKeys(verification, 'terminalBinding.verificationSelection', ['logicalRef', 'versionFingerprint']);
+    const logicalRef = normalizedLogicalRefForBinding(verification['logicalRef'], 'terminalBinding.verificationSelection.logicalRef');
+    const versionFingerprint = shaForBinding(verification['versionFingerprint'], 'terminalBinding.verificationSelection.versionFingerprint');
     verificationSelection = { logicalRef, versionFingerprint };
   }
-  return { schemaVersion: 1, logicalDescriptorDigest: digest, ...(verificationSelection !== undefined && { verificationSelection }) };
+
+  let currentVerification: RunTerminalBinding['currentVerification'];
+  if (hasCurrent) {
+    const verification = asObject(obj['currentVerification'], 'terminalBinding.currentVerification');
+    assertClosedKeys(verification, 'terminalBinding.currentVerification', ['logicalRef', 'selectionFingerprint', 'status', 'versionFingerprint']);
+    const logicalRef = normalizedLogicalRefForBinding(verification['logicalRef'], 'terminalBinding.currentVerification.logicalRef');
+    const versionFingerprint = shaForBinding(verification['versionFingerprint'], 'terminalBinding.currentVerification.versionFingerprint');
+    const selectionFingerprint = shaForBinding(verification['selectionFingerprint'], 'terminalBinding.currentVerification.selectionFingerprint');
+    const status = verification['status'];
+    if (status !== 'passed' && status !== 'failed' && status !== 'not-applicable') schemaFail('terminalBinding.currentVerification.status is invalid');
+    currentVerification = { logicalRef, versionFingerprint, selectionFingerprint, status };
+  }
+  return { schemaVersion: 1, logicalDescriptorDigest: digest, ...(verificationSelection !== undefined && { verificationSelection }), ...(currentVerification !== undefined && { currentVerification }) };
+}
+
+function normalizedLogicalRefForBinding(value: unknown, label: string): string {
+  if (typeof value !== 'string' || value === '' || value.startsWith('/') || value.includes('\\') || value.split('/').some((part) => part === '' || part === '.' || part === '..')) schemaFail(`${label} must be a normalized repository-relative path`);
+  return value;
+}
+function shaForBinding(value: unknown, label: string): string {
+  if (typeof value !== 'string' || !/^[0-9a-f]{64}$/.test(value)) schemaFail(`${label} must be SHA-256`);
+  return value;
 }
 
 // ---------------------------------------------------------------------------
@@ -1366,6 +1399,7 @@ export function validateContextFile(value: unknown): ContextFile {
   const applicableFactRefs = obj['applicableFactRefs'];
   const actionPackageRaw = obj['actionPackage'];
   const entryWorkspaceIdentity = obj['entryWorkspaceIdentity'];
+  const compactEntryWorkspaceIdentity = obj['compactEntryWorkspaceIdentity'];
   const mutationDeclaration = obj['mutationDeclaration'];
   if (schemaVersion === 5) {
     if (typeof canonicalBase !== 'string' || !/^[0-9a-f]{40,64}$/.test(canonicalBase)) {
@@ -1377,7 +1411,7 @@ export function validateContextFile(value: unknown): ContextFile {
     validateVersionedAuthorityRefs(applicableFactRefs, 'applicableFactRefs', { allowEmpty: true });
     if (actionPackageRaw === undefined) schemaFail('schemaVersion 5 requires actionPackage');
   } else if (
-    canonicalBase !== undefined || applicableFactRefs !== undefined || actionPackageRaw !== undefined || entryWorkspaceIdentity !== undefined || mutationDeclaration !== undefined
+    canonicalBase !== undefined || applicableFactRefs !== undefined || actionPackageRaw !== undefined || entryWorkspaceIdentity !== undefined || compactEntryWorkspaceIdentity !== undefined || mutationDeclaration !== undefined
   ) {
     schemaFail('v5-only ContextFile fields are forbidden in historical v2/v3/v4 contexts', { schemaVersion });
   }
@@ -1671,31 +1705,27 @@ export function validateContextFile(value: unknown): ContextFile {
     applicableFactRefs: applicableFactRefs as readonly VersionedAuthorityRef[],
   };
   if (action === 'apply' || action === 'revise-apply') {
-    const validatedEntryWorkspaceIdentity = validateEntryWorkspaceIdentity(entryWorkspaceIdentity);
+    if ((entryWorkspaceIdentity === undefined) === (compactEntryWorkspaceIdentity === undefined)) {
+      schemaFail('v5 Apply context must carry exactly one legacy or compact entry workspace identity');
+    }
     const validatedMutationDeclaration = validateMutationDeclaration(mutationDeclaration, action);
+    if (compactEntryWorkspaceIdentity !== undefined) {
+      const compact = validateCompactEntryWorkspaceIdentity(compactEntryWorkspaceIdentity);
+      const actionPackage = validateV5ActionPackage(
+        actionPackageRaw, runId, deliveryId, changeId, action, semanticInputFingerprint!, canonicalBase as string,
+        applicableFactRefs as readonly VersionedAuthorityRef[], undefined, validatedMutationDeclaration, ownerFactRefs, compact,
+      );
+      return { ...commonV5, action, actionPackage, compactEntryWorkspaceIdentity: compact, mutationDeclaration: validatedMutationDeclaration };
+    }
+    const legacy = validateEntryWorkspaceIdentity(entryWorkspaceIdentity);
     const actionPackage = validateV5ActionPackage(
-      actionPackageRaw,
-      runId,
-      deliveryId,
-      changeId,
-      action,
-      semanticInputFingerprint!,
-      canonicalBase as string,
-      applicableFactRefs as readonly VersionedAuthorityRef[],
-      validatedEntryWorkspaceIdentity,
-      validatedMutationDeclaration,
-      ownerFactRefs,
+      actionPackageRaw, runId, deliveryId, changeId, action, semanticInputFingerprint!, canonicalBase as string,
+      applicableFactRefs as readonly VersionedAuthorityRef[], legacy, validatedMutationDeclaration, ownerFactRefs, undefined,
     );
-    return {
-      ...commonV5,
-      action,
-      actionPackage,
-      entryWorkspaceIdentity: validatedEntryWorkspaceIdentity,
-      mutationDeclaration: validatedMutationDeclaration,
-    };
+    return { ...commonV5, action, actionPackage, entryWorkspaceIdentity: legacy, mutationDeclaration: validatedMutationDeclaration };
   }
-  if (entryWorkspaceIdentity !== undefined || mutationDeclaration !== undefined) {
-    schemaFail('entryWorkspaceIdentity/mutationDeclaration are only allowed on v5 apply/revise-apply contexts', { action });
+  if (entryWorkspaceIdentity !== undefined || compactEntryWorkspaceIdentity !== undefined || mutationDeclaration !== undefined) {
+    schemaFail('Apply entry identity/mutationDeclaration are only allowed on v5 apply/revise-apply contexts', { action });
   }
   return {
     ...commonV5,
@@ -1764,6 +1794,31 @@ function validateEntryWorkspaceIdentity(value: unknown): EntryWorkspaceIdentity 
   return { canonicalBase, workspaceFingerprint };
 }
 
+function validateCompactEntryWorkspaceIdentity(value: unknown): CompactEntryWorkspaceIdentity {
+  const obj = asObject(value, 'compactEntryWorkspaceIdentity');
+  assertClosedKeys(obj, 'compactEntryWorkspaceIdentity', ['canonicalBase', 'entries', 'workspaceFingerprint']);
+  const canonicalBase = requireNonEmptyString(obj, 'canonicalBase');
+  const workspaceFingerprint = requireNonEmptyString(obj, 'workspaceFingerprint');
+  if (!/^[0-9a-f]{40,64}$/.test(canonicalBase) || !/^[0-9a-f]{64}$/.test(workspaceFingerprint)) schemaFail('compactEntryWorkspaceIdentity contains invalid fingerprints');
+  if (!Array.isArray(obj['entries'])) schemaFail('compactEntryWorkspaceIdentity.entries must be an array');
+  const entries = obj['entries'].map((raw, index) => {
+    const entry = asObject(raw, `compactEntryWorkspaceIdentity.entries[${index}]`);
+    const hasContent = entry['contentFingerprint'] !== undefined;
+    assertClosedKeys(entry, `compactEntryWorkspaceIdentity.entries[${index}]`, ['path', 'state', ...(hasContent ? ['contentFingerprint'] : [])]);
+    const path = normalizedLogicalRefForBinding(entry['path'], `compactEntryWorkspaceIdentity.entries[${index}].path`);
+    const state = entry['state'];
+    if (state !== 'added' && state !== 'modified' && state !== 'deleted' && state !== 'untracked') schemaFail('compact entry state is invalid', { index, state });
+    let contentFingerprint: string | undefined;
+    if (hasContent) contentFingerprint = shaForBinding(entry['contentFingerprint'], `compactEntryWorkspaceIdentity.entries[${index}].contentFingerprint`);
+    if (state === 'deleted' && contentFingerprint !== undefined) schemaFail('deleted compact entry must not carry contentFingerprint', { index });
+    if (state !== 'deleted' && contentFingerprint === undefined) schemaFail('non-deleted compact entry requires contentFingerprint', { index });
+    return { path, state, ...(contentFingerprint !== undefined && { contentFingerprint }) } as const;
+  });
+  const sorted = [...entries].sort((a,b)=>a.path.localeCompare(b.path));
+  if (new Set(sorted.map((e)=>e.path)).size !== sorted.length || sorted.some((e,i)=>e.path !== entries[i]?.path)) schemaFail('compact entry paths must be sorted and unique');
+  return { canonicalBase, workspaceFingerprint, entries: sorted };
+}
+
 function validateV5ActionPackage(
   value: unknown,
   runId: string,
@@ -1776,6 +1831,7 @@ function validateV5ActionPackage(
   expectedEntryWorkspaceIdentity?: EntryWorkspaceIdentity,
   expectedMutationDeclaration?: MutationDeclaration,
   expectedOwnerFactRefs?: readonly OwnerFactRef[],
+  expectedCompactEntryWorkspaceIdentity?: CompactEntryWorkspaceIdentity,
 ): ActionPackageV2 {
   const obj = asObject(value, 'actionPackage');
   if (obj['schemaVersion'] !== 2) schemaFail('v5 context actionPackage must use schemaVersion 2');
@@ -1806,32 +1862,32 @@ function validateV5ActionPackage(
   validateOptionalActionPackageViews(obj, expectedOwnerFactRefs);
   const packageAction = run['action'];
   const hasEntry = obj['entryWorkspaceIdentity'] !== undefined;
+  const hasCompactEntry = obj['compactEntryWorkspaceIdentity'] !== undefined;
   const hasDeclaration = obj['mutationDeclaration'] !== undefined;
   if (packageAction === 'apply' || packageAction === 'revise-apply') {
-    if (!hasEntry || !hasDeclaration) schemaFail('v2 Apply package requires entryWorkspaceIdentity and mutationDeclaration');
-    assertClosedKeys(obj, 'actionPackage', expectedActionPackageKeys(obj, true));
-    const packageEntry = validateEntryWorkspaceIdentity(obj['entryWorkspaceIdentity']);
+    if ((hasEntry === hasCompactEntry) || !hasDeclaration) schemaFail('Apply package requires exactly one legacy or compact entry identity plus mutationDeclaration');
+    assertClosedKeys(obj, 'actionPackage', expectedActionPackageKeys(obj, true, hasCompactEntry));
     const packageDeclaration = validateMutationDeclaration(obj['mutationDeclaration'], packageAction);
-    if (
-      expectedEntryWorkspaceIdentity === undefined || expectedMutationDeclaration === undefined ||
-      packageEntry.canonicalBase !== canonicalBase ||
-      !canonicalValuesEqual(packageEntry, expectedEntryWorkspaceIdentity) ||
-      !canonicalValuesEqual(packageDeclaration, expectedMutationDeclaration)
-    ) {
-      schemaFail('v2 Apply package entry fields must exactly equal their sibling v5 context fields');
+    if (expectedMutationDeclaration === undefined || !canonicalValuesEqual(packageDeclaration, expectedMutationDeclaration)) schemaFail('Apply package mutationDeclaration must equal sibling v5 context field');
+    if (hasCompactEntry) {
+      const compact = validateCompactEntryWorkspaceIdentity(obj['compactEntryWorkspaceIdentity']);
+      if (expectedCompactEntryWorkspaceIdentity === undefined || compact.canonicalBase !== canonicalBase || !canonicalValuesEqual(compact, expectedCompactEntryWorkspaceIdentity)) schemaFail('compact Apply package entry identity must equal sibling context field');
+    } else {
+      const legacy = validateEntryWorkspaceIdentity(obj['entryWorkspaceIdentity']);
+      if (expectedEntryWorkspaceIdentity === undefined || legacy.canonicalBase !== canonicalBase || !canonicalValuesEqual(legacy, expectedEntryWorkspaceIdentity)) schemaFail('legacy Apply package entry identity must equal sibling context field');
     }
     return obj as unknown as ActionPackageV2;
   }
-  if (hasEntry || hasDeclaration) schemaFail('v2 non-Apply package must not carry Apply fields');
+  if (hasEntry || hasCompactEntry || hasDeclaration) schemaFail('non-Apply package must not carry Apply fields');
   assertClosedKeys(obj, 'actionPackage', expectedActionPackageKeys(obj, false));
   return obj as unknown as ActionPackageV2;
 }
 
-function expectedActionPackageKeys(obj: Record<string, unknown>, isApply: boolean): readonly string[] {
+function expectedActionPackageKeys(obj: Record<string, unknown>, isApply: boolean, compact = false): readonly string[] {
   const required = [
     'contractRefs', 'definition', 'handoffRefs', 'ownerAuthorizationRefs',
     'requiredResultContract', 'run', 'schemaVersion',
-    ...(isApply ? ['entryWorkspaceIdentity', 'mutationDeclaration'] : []),
+    ...(isApply ? [compact ? 'compactEntryWorkspaceIdentity' : 'entryWorkspaceIdentity', 'mutationDeclaration'] : []),
   ];
   const optional = ['ownerFactRefs', 'reviewView', 'verificationView', 'externalContextFingerprint']
     .filter((key) => obj[key] !== undefined);

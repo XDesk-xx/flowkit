@@ -1,0 +1,8 @@
+{
+  "runStatus": "failed",
+  "failureDiagnosis": "REVISE_APPLY_MUTATION_SCOPE_INSUFFICIENT: E2-RA-003 requires correcting the historical E1 integration fixture so it explicitly models the pre-E2 migration repository; tests/integration/e1-change-verification-selection.test.ts is outside the approved revise-apply flowkitMutationScope. Production code must not special-case E1 identity merely to preserve the obsolete implicit fixture assumption.",
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "2d1681f6d62452338b27f0d92302ef6b060d61c457831da2b8cbbec48b7c670f"
+  }
+}

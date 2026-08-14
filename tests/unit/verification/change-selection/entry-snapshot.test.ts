@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 
 import {
   captureEntryWorkspaceSnapshot,
+  captureCompactEntryWorkspaceIdentity,
+  validateCompactEntryWorkspaceIdentity,
   validateEntryWorkspaceSnapshotRecord,
 } from '../../../../src/verification/change-selection/entry-snapshot.js';
 
@@ -25,5 +27,14 @@ describe('E1 entry workspace snapshot', () => {
       ...snapshot,
       files: [...snapshot.files, { path: 'src/extra.ts', contentFingerprint: 'a'.repeat(64) }],
     }));
+  });
+
+  it('captures post-E2 compact identity from only the Git dirty delta', async () => {
+    const compact = await captureCompactEntryWorkspaceIdentity(process.cwd());
+    assert.match(compact.canonicalBase, /^[0-9a-f]{40,64}$/);
+    assert.match(compact.workspaceFingerprint, /^[0-9a-f]{64}$/);
+    assert.deepEqual(validateCompactEntryWorkspaceIdentity(compact), compact);
+    assert.equal(compact.entries.some((entry) => entry.path.startsWith('.flowkit/')), false);
+    assert.equal(compact.entries.length < (await captureEntryWorkspaceSnapshot(process.cwd())).files.length, true);
   });
 });

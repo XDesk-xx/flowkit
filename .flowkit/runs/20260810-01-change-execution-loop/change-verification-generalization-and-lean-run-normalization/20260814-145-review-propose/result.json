@@ -1,0 +1,25 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "144 revise-propose closes E2-RP-003 and E2-RP-004: Manifest no longer requires a versioned renderer output, and OpenSpec renames the two stale canonical Requirement identities to non-versioned current semantics while preserving bounded legacy facts. No new blocking findings."
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "1c094d57b5a881e6b607b33bb178523db12e8458a2d1311aadbece978977827b"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [],
+  "reviewFindingConvergence": [
+    {
+      "findingId": "E2-RP-003",
+      "state": "resolved"
+    },
+    {
+      "findingId": "E2-RP-004",
+      "state": "resolved"
+    }
+  ]
+}

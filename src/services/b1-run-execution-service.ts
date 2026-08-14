@@ -13,6 +13,8 @@ import type {
   ActionPackageV1,
   ActionPackageV2,
   ActionPackageV2Apply,
+  CurrentCompactApplyActionPackage,
+  ApplyActionPackageLike,
   ActionPackageV2NonApply,
   ActionPackageFindingConvergenceView,
   ActionPackageFindingView,
@@ -22,10 +24,12 @@ import type {
   OwnerAuthorizationRef,
   OwnerFactRef,
   EntryWorkspaceIdentity,
+  CompactEntryWorkspaceIdentity,
   MutationDeclaration,
   VersionedAuthorityRef,
 } from '../domain/types.js';
 import { readFormalFactSnapshot, readFormalFactSnapshotOperation, type FormalFactReadOperation } from '../facts/formal-fact-reader.js';
+import { readGitBoundarySummaries } from '../facts/git-boundary-reader.js';
 import { parseYaml } from '../facts/yaml-parser.js';
 import type {
   FormalFactSnapshot,
@@ -55,6 +59,7 @@ import {
   type RunTerminalBinding,
 } from '../persistence/serialization.js';
 import { FlowkitError } from '../shared/errors.js';
+import { runCommand } from '../shared/external-command.js';
 import { normalizeSeparators } from '../shared/paths.js';
 import { OpenSpecCliAdapter } from '../integrations/openspec/openspec-cli-adapter.js';
 import {
@@ -68,13 +73,16 @@ import { inspectOpenSpecArchiveRecovery } from '../integrations/openspec/openspe
 import { deriveMutationDeclaration } from '../verification/change-selection/mutation-declaration.js';
 import {
   captureEntryWorkspaceSnapshot,
+  captureCompactEntryWorkspaceIdentity,
+  validateCompactEntryWorkspaceIdentity,
   validateEntryWorkspaceSnapshotRecord,
 } from '../verification/change-selection/entry-snapshot.js';
-import { deriveActualChangeSetFromCanonicalBase, derivePostActionChangeObservation } from '../verification/change-selection/actual-change-set.js';
+import { deriveActualChangeSetFromCanonicalBase, derivePostActionChangeObservation, deriveCompactPostActionChangeObservation } from '../verification/change-selection/actual-change-set.js';
 import { buildVerificationSelection } from '../verification/change-selection/selection.js';
 import {
   buildVerificationSelectionPublication,
   publishVerificationSelection,
+  publishCurrentVerificationMarkdown,
   validatePendingVerificationSelection,
   validateTerminalVerificationSelectionBinding,
   type VerificationSelectionBinding,
@@ -151,16 +159,13 @@ export async function resumeRun(input: ResumeRunInput): Promise<ExactResumeOutco
       throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'v5 terminal result is missing its exact replay binding', { expectedRunId: input.expectedRunId });
     }
     if (result.runStatus === 'completed' && (context.action === 'apply' || context.action === 'revise-apply')) {
-      if (result.terminalBinding.verificationSelection === undefined) {
-        throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'completed v5 Apply terminal is missing verification-selection binding', { expectedRunId: input.expectedRunId });
+      if ('compactEntryWorkspaceIdentity' in context && context.compactEntryWorkspaceIdentity !== undefined) {
+        if (result.terminalBinding.currentVerification === undefined) throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'completed post-E2 Apply terminal is missing current verification binding', { expectedRunId: input.expectedRunId });
+        await validateCurrentVerificationTerminalBinding(input.repoRoot, context.changeId, result.terminalBinding.currentVerification);
+      } else {
+        if (result.terminalBinding.verificationSelection === undefined) throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'completed legacy v5 Apply terminal is missing verification-selection binding', { expectedRunId: input.expectedRunId });
+        await validateTerminalVerificationSelectionBinding({ runDir, binding: result.terminalBinding.verificationSelection, producingRunId: context.runId, producingSemanticInputFingerprint: context.semanticInputFingerprint ?? '', logicalDescriptorDigest: result.terminalBinding.logicalDescriptorDigest });
       }
-      await validateTerminalVerificationSelectionBinding({
-        runDir,
-        binding: result.terminalBinding.verificationSelection,
-        producingRunId: context.runId,
-        producingSemanticInputFingerprint: context.semanticInputFingerprint ?? '',
-        logicalDescriptorDigest: result.terminalBinding.logicalDescriptorDigest,
-      });
     }
     return { kind: 'already-terminal', runId: context.runId, result };
   }
@@ -179,34 +184,21 @@ export async function resumeRun(input: ResumeRunInput): Promise<ExactResumeOutco
   }
   await validateV5ExactResumeExternalSemantics(input, context, actionPackage);
   if (actionPackage.run.action === 'apply' || actionPackage.run.action === 'revise-apply') {
-    const applyPackage = actionPackage as ActionPackageV2Apply;
-    let entrySnapshot: unknown;
-    try {
-      entrySnapshot = JSON.parse(await readFile(join(runDir, 'entry-workspace.json'), 'utf8')) as unknown;
-    } catch (error) {
-      throw new FlowkitError('EXACT_RESUME_ENTRY_SNAPSHOT_MISSING', 'v5 Apply exact resume requires its immutable entry workspace record', {
-        expectedRunId: input.expectedRunId,
-        detail: error instanceof Error ? error.message : String(error),
-      });
+    const applyPackage = actionPackage as ApplyActionPackageLike;
+    if ('compactEntryWorkspaceIdentity' in applyPackage && applyPackage.compactEntryWorkspaceIdentity !== undefined) {
+      const entry = validateCompactEntryWorkspaceIdentity(applyPackage.compactEntryWorkspaceIdentity);
+      const currentWorkspace = await captureCompactEntryWorkspaceIdentity(input.repoRoot);
+      deriveCompactPostActionChangeObservation(entry, currentWorkspace, applyPackage.mutationDeclaration);
+    } else {
+      const legacy = applyPackage as ActionPackageV2Apply;
+      let entrySnapshot: unknown;
+      try { entrySnapshot = JSON.parse(await readFile(join(runDir, 'entry-workspace.json'), 'utf8')) as unknown; }
+      catch (error) { throw new FlowkitError('EXACT_RESUME_ENTRY_SNAPSHOT_MISSING', 'legacy v5 Apply exact resume requires its immutable entry workspace record', { expectedRunId: input.expectedRunId, detail: error instanceof Error ? error.message : String(error) }); }
+      const validatedEntrySnapshot = validateEntryWorkspaceSnapshotRecord(entrySnapshot);
+      if (validatedEntrySnapshot.canonicalBase !== legacy.entryWorkspaceIdentity.canonicalBase || validatedEntrySnapshot.workspaceFingerprint !== legacy.entryWorkspaceIdentity.workspaceFingerprint) throw new FlowkitError('EXACT_RESUME_ENTRY_SNAPSHOT_MISMATCH', 'legacy v5 Apply entry workspace record does not match persisted ActionPackage', { expectedRunId: input.expectedRunId });
+      const currentWorkspace = await captureEntryWorkspaceSnapshot(input.repoRoot);
+      derivePostActionChangeObservation(validatedEntrySnapshot, validatedEntrySnapshot, currentWorkspace, legacy.mutationDeclaration);
     }
-    const validatedEntrySnapshot = validateEntryWorkspaceSnapshotRecord(entrySnapshot);
-    if (
-      validatedEntrySnapshot.canonicalBase !== applyPackage.entryWorkspaceIdentity.canonicalBase ||
-      validatedEntrySnapshot.workspaceFingerprint !== applyPackage.entryWorkspaceIdentity.workspaceFingerprint
-    ) {
-      throw new FlowkitError('EXACT_RESUME_ENTRY_SNAPSHOT_MISMATCH', 'v5 Apply entry workspace record does not match its persisted ActionPackage', {
-        expectedRunId: input.expectedRunId,
-      });
-    }
-    const currentWorkspace = await captureEntryWorkspaceSnapshot(input.repoRoot);
-    // The actual base-to-post candidate set is computed at terminal admission.
-    // Resume only answers the self-drift question from immutable entry to now.
-    derivePostActionChangeObservation(
-      validatedEntrySnapshot,
-      validatedEntrySnapshot,
-      currentWorkspace,
-      applyPackage.mutationDeclaration,
-    );
   }
   return { kind: 'pending', package: actionPackage };
 }
@@ -595,31 +587,21 @@ export async function prepareNewExecution(
   const role = expectedRoleForAction(action);
   const descriptors = deriveRunDescriptors(snapshot, change.id, action);
   const baseSemantic = await deriveSemanticInputs(input.repoRoot, input.deliveryId, snapshot, change.id, action, descriptors, undefined, operation.openSpecProjection, input.openSpecAdapter);
-  const entrySnapshot = await captureEntryWorkspaceSnapshot(input.repoRoot);
-  const entryWorkspaceIdentity = toEntryWorkspaceIdentity(entrySnapshot);
+  const postE2Writer = await isPostE2ThreeFileWriterActive(input.repoRoot);
+  const entrySnapshot = postE2Writer ? undefined : await captureEntryWorkspaceSnapshot(input.repoRoot);
+  const compactEntry = postE2Writer ? await captureCompactEntryWorkspaceIdentity(input.repoRoot) : undefined;
+  const entryWorkspaceIdentity = entrySnapshot === undefined ? compactEntry! : toEntryWorkspaceIdentity(entrySnapshot);
   let mutationDeclaration: MutationDeclaration | undefined;
   let semantic = baseSemantic;
   if (action === 'apply' || action === 'revise-apply') {
     mutationDeclaration = await deriveMutationDeclaration(input.repoRoot, action, baseSemantic.contractRefs);
-    semantic = withMutationDeclaration(
-      baseSemantic,
-      input.deliveryId,
-      change.id,
-      action,
-      mutationDeclaration,
-      entryWorkspaceIdentity,
-    );
+    semantic = withMutationDeclaration(baseSemantic, input.deliveryId, change.id, action, mutationDeclaration, entryWorkspaceIdentity);
   }
   const allocated = await allocateNextRunId(join(input.repoRoot, RUNS_PREFIX, input.deliveryId), (input.now ?? (() => new Date()))().toISOString().slice(0, 10).replaceAll('-', ''), action);
-  const applyEntryWorkspaceIdentity = mutationDeclaration === undefined ? undefined : entryWorkspaceIdentity;
   const actionPackage = buildActionPackageV2(
-    input.deliveryId,
-    change.id,
-    allocated.runId,
-    action,
-    semantic,
-    mutationDeclaration,
-    applyEntryWorkspaceIdentity,
+    input.deliveryId, change.id, allocated.runId, action, semantic, mutationDeclaration,
+    mutationDeclaration === undefined ? undefined : (postE2Writer ? undefined : entryWorkspaceIdentity),
+    mutationDeclaration === undefined ? undefined : (postE2Writer ? compactEntry : undefined),
   );
   await createRun({
     runId: allocated.runId,
@@ -630,12 +612,16 @@ export async function prepareNewExecution(
     role,
     ownerAuthorization: semantic.ownerAuthorizationRefs.length > 0 ? 'explicit' : 'not-required',
     contextVersion: 5,
-    canonicalBase: entrySnapshot.canonicalBase,
+    canonicalBase: entryWorkspaceIdentity.canonicalBase,
     applicableFactRefs: sortRefs([...semantic.contractRefs, ...semantic.handoffRefs]),
     actionPackage,
-    ...(mutationDeclaration !== undefined && {
-      entryWorkspaceIdentity: applyEntryWorkspaceIdentity,
-      entryWorkspaceSnapshot: entrySnapshot,
+    ...(mutationDeclaration !== undefined && !postE2Writer && {
+      entryWorkspaceIdentity: entryWorkspaceIdentity as EntryWorkspaceIdentity,
+      entryWorkspaceSnapshot: entrySnapshot!,
+      mutationDeclaration,
+    }),
+    ...(mutationDeclaration !== undefined && postE2Writer && {
+      compactEntryWorkspaceIdentity: compactEntry!,
       mutationDeclaration,
     }),
     semanticInputFingerprint: semantic.semanticInputFingerprint,
@@ -653,6 +639,44 @@ export async function prepareNewExecution(
     ...(semantic.openSpecContext !== undefined && { openSpecContext: semantic.openSpecContext }),
   };
   });
+}
+
+const E2_MIGRATION_DELIVERY_ID = '20260810-01-change-execution-loop';
+const E2_MIGRATION_CHANGE_ID = 'change-verification-generalization-and-lean-run-normalization';
+
+async function isPostE2ThreeFileWriterActive(repoRoot: string): Promise<boolean> {
+  const gitHistory = await runCommand('git', ['log', '--all', '--format=%s'], { cwd: repoRoot });
+  if (gitHistory.kind !== 'exited' || gitHistory.exitCode !== 0) {
+    throw new FlowkitError('POST_E2_WRITER_ACTIVATION_UNRESOLVED', 'Could not inspect Git history for the bounded E2 self-migration lineage', {
+      outcomeKind: gitHistory.kind,
+      exitCode: gitHistory.exitCode,
+    });
+  }
+
+  const migrationStartSubject = `chore(flowkit): start ${E2_MIGRATION_DELIVERY_ID}`;
+  const hasMigrationLineage = gitHistory.stdout.split('\n').some((subject) => subject.trim() === migrationStartSubject);
+  if (!hasMigrationLineage) {
+    // Fresh/downstream repositories running the current implementation have no
+    // Flowkit-internal pre-E2 migration history. Current source is therefore
+    // the writer authority and prospective three-file Runs are the default.
+    return true;
+  }
+
+  const migrationBoundaries = await readGitBoundarySummaries(repoRoot, E2_MIGRATION_DELIVERY_ID);
+  const checkpoints = migrationBoundaries.filter((boundary) =>
+    boundary.kind === 'change-checkpoint' && boundary.changeId === E2_MIGRATION_CHANGE_ID,
+  );
+  for (const checkpoint of checkpoints) {
+    const ancestry = await runCommand('git', ['merge-base', '--is-ancestor', checkpoint.commitSha, 'HEAD'], { cwd: repoRoot });
+    if (ancestry.kind === 'exited' && ancestry.exitCode === 0) return true;
+    if (ancestry.kind === 'exited' && ancestry.exitCode === 1) continue;
+    throw new FlowkitError('POST_E2_WRITER_ACTIVATION_UNRESOLVED', 'Could not prove whether the E2 checkpoint belongs to current Git HEAD history', {
+      checkpoint: checkpoint.commitSha,
+      outcomeKind: ancestry.kind,
+      exitCode: ancestry.exitCode,
+    });
+  }
+  return false;
 }
 
 async function withPreparationLock<T>(repoRoot: string, deliveryId: string, operation: () => Promise<T>): Promise<T> {
@@ -1251,9 +1275,15 @@ export async function admitActionResult(input: AdmitActionResultInput): Promise<
       throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'Repeated terminal admission uses a conflicting logical descriptor', { runId: context.runId });
     }
     if (persisted.runStatus === 'completed' && (context.action === 'apply' || context.action === 'revise-apply')) {
-      const binding = persisted.terminalBinding.verificationSelection;
-      if (binding === undefined) throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'completed v5 Apply terminal is missing verification-selection binding', { runId: context.runId });
-      await validateTerminalVerificationSelectionBinding({ runDir, binding, producingRunId: context.runId, producingSemanticInputFingerprint: context.semanticInputFingerprint, logicalDescriptorDigest });
+      if ('compactEntryWorkspaceIdentity' in context && context.compactEntryWorkspaceIdentity !== undefined) {
+        const binding = persisted.terminalBinding.currentVerification;
+        if (binding === undefined) throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'completed post-E2 Apply terminal is missing current verification binding', { runId: context.runId });
+        await validateCurrentVerificationTerminalBinding(input.repoRoot, context.changeId, binding);
+      } else {
+        const binding = persisted.terminalBinding.verificationSelection;
+        if (binding === undefined) throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'completed legacy v5 Apply terminal is missing verification-selection binding', { runId: context.runId });
+        await validateTerminalVerificationSelectionBinding({ runDir, binding, producingRunId: context.runId, producingSemanticInputFingerprint: context.semanticInputFingerprint, logicalDescriptorDigest });
+      }
     }
     return;
   }
@@ -1320,31 +1350,70 @@ export async function admitActionResult(input: AdmitActionResultInput): Promise<
   }
 
   let verificationSelectionBinding: VerificationSelectionBinding | undefined;
+  let currentVerificationBinding: RunTerminalBinding['currentVerification'];
   if (context.schemaVersion === 5 && (pkg.run.action === 'apply' || pkg.run.action === 'revise-apply')
       && input.result.failureDiagnosis === undefined && input.result.cancellationReason === undefined) {
-    verificationSelectionBinding = await publishV5ApplyVerificationSelection({
-      repoRoot: input.repoRoot,
-      runDir,
-      context,
-      actionPackage: pkg as ActionPackageV2Apply,
-      openSpecAdapter,
-      logicalDescriptorDigest,
-      deliveryFullTestStatus: snapshot.deliveryFullTestStatus,
-      verificationExecutor: input.verificationExecutor ?? executeVerificationSelection,
-    });
+    if ('compactEntryWorkspaceIdentity' in context && context.compactEntryWorkspaceIdentity !== undefined) {
+      currentVerificationBinding = await publishCompactApplyVerification({
+        repoRoot: input.repoRoot, runDir, context, actionPackage: pkg as CurrentCompactApplyActionPackage, openSpecAdapter,
+        deliveryFullTestStatus: snapshot.deliveryFullTestStatus, verificationExecutor: input.verificationExecutor ?? executeVerificationSelection,
+      });
+    } else {
+      verificationSelectionBinding = await publishV5ApplyVerificationSelection({
+        repoRoot: input.repoRoot, runDir, context, actionPackage: pkg as ActionPackageV2Apply, openSpecAdapter, logicalDescriptorDigest,
+        deliveryFullTestStatus: snapshot.deliveryFullTestStatus, verificationExecutor: input.verificationExecutor ?? executeVerificationSelection,
+      });
+    }
   }
 
-  // Do not recompute the entry fingerprint from the post-execution working tree.
-  // The current Action may legitimately mutate its own output artifacts (for
-  // example Apply updates tasks/verification), so hashing those current bytes
-  // here would make a successful execution invalidate its own prepared input.
-  // Entry-time drift is guarded by prepare/resume; terminal admission instead
-  // exact-matches the persisted package fingerprint and delegates authoritative
-  // reviewed/source-review/verification binding checks to completeRun().
   const terminalBinding: RunTerminalBinding | undefined = context.schemaVersion === 5
-    ? { schemaVersion: 1, logicalDescriptorDigest, ...(verificationSelectionBinding !== undefined && { verificationSelection: verificationSelectionBinding }) }
+    ? { schemaVersion: 1, logicalDescriptorDigest, ...(verificationSelectionBinding !== undefined && { verificationSelection: verificationSelectionBinding }), ...(currentVerificationBinding !== undefined && { currentVerification: currentVerificationBinding }) }
     : undefined;
   await completeRun(runDir, logicalToCompleteRunInput(input.result, terminalBinding));
+}
+
+async function publishCompactApplyVerification(input: {
+  readonly repoRoot: string;
+  readonly runDir: string;
+  readonly context: ContextFile;
+  readonly actionPackage: CurrentCompactApplyActionPackage;
+  readonly openSpecAdapter: OpenSpecCliAdapter;
+  readonly deliveryFullTestStatus: import('../domain/types.js').FullTestStatus | undefined;
+  readonly verificationExecutor: VerificationSelectionExecutor;
+}): Promise<NonNullable<RunTerminalBinding['currentVerification']>> {
+  const entry = validateCompactEntryWorkspaceIdentity(input.actionPackage.compactEntryWorkspaceIdentity);
+  const postAction = await captureCompactEntryWorkspaceIdentity(input.repoRoot);
+  const verificationLogicalRef = `openspec/changes/${input.context.changeId}/verification.md`;
+  const observed = deriveCompactPostActionChangeObservation(entry, postAction, input.actionPackage.mutationDeclaration, new Set([verificationLogicalRef]));
+  const projection = await input.openSpecAdapter.createOperationProjection(input.context.changeId);
+  const selection = buildVerificationSelection(observed.actualChangeSet, projection.status.artifactPaths.specs.logicalPaths);
+  if (input.deliveryFullTestStatus === undefined) throw new FlowkitError('VERIFICATION_EVIDENCE_CONFLICT', 'Change Verification publication requires Delivery Full Test status projection');
+  const evidence = await input.verificationExecutor({
+    repoRoot: input.repoRoot, changeId: input.context.changeId, runDir: input.runDir, producingRunId: input.context.runId, selection,
+    fullTestStatus: input.deliveryFullTestStatus, openSpecAdapter: input.openSpecAdapter, resultRefBase: verificationLogicalRef,
+  });
+  validateVerificationEvidenceForSelection(evidence, selection, input.context.runId);
+  const binding = await publishCurrentVerificationMarkdown({
+    canonicalVerificationPath: join(projection.status.changeRoot, 'verification.md'),
+    model: { producingRunId: input.context.runId, canonicalBase: entry.canonicalBase, postActionWorkspaceFingerprint: postAction.workspaceFingerprint, actualChangeSet: observed.actualChangeSet, selection, verificationStatus: evidence.overallStatus },
+    evidence,
+  });
+  return binding;
+}
+
+async function validateCurrentVerificationTerminalBinding(
+  repoRoot: string, changeId: string, binding: NonNullable<RunTerminalBinding['currentVerification']>,
+): Promise<void> {
+  const logicalRef = `openspec/changes/${changeId}/verification.md`;
+  if (binding.logicalRef !== logicalRef) throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'current verification binding targets wrong logical path', { expected: logicalRef, actual: binding.logicalRef });
+  let bytes: string;
+  try { bytes = await readFile(join(repoRoot, logicalRef), 'utf8'); }
+  catch (error) { throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'current verification binding target is unavailable', { logicalRef, detail: error instanceof Error ? error.message : String(error) }); }
+  if (sha256(bytes) !== binding.versionFingerprint) throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'current verification binding fingerprint does not match persisted verification.md');
+  const statusMatch = /<!--\s*flowkit-change-verification-status:\s*([^\s>]+)\s*-->/.exec(bytes)?.[1];
+  if (statusMatch !== binding.status) throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'current verification status marker does not match terminal binding', { statusMatch, bindingStatus: binding.status });
+  const selectionMatch = /- selectionFingerprint: `([0-9a-f]{64})`/.exec(bytes)?.[1];
+  if (selectionMatch !== binding.selectionFingerprint) throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'current verification selection fingerprint does not match terminal binding');
 }
 
 async function publishV5ApplyVerificationSelection(input: {
@@ -1707,6 +1776,7 @@ function buildActionPackageV2(
   semantic: SemanticInputs,
   mutationDeclaration: MutationDeclaration | undefined,
   entryWorkspaceIdentity: EntryWorkspaceIdentity | undefined,
+  compactEntryWorkspaceIdentity?: CompactEntryWorkspaceIdentity,
 ): ActionPackageV2 {
   const common = <T extends ChangeAction>(resolvedAction: T) => ({
     schemaVersion: 2 as const,
@@ -1722,13 +1792,14 @@ function buildActionPackageV2(
     requiredResultContract: getActionDefinition(resolvedAction).terminalContract,
   });
   if (action === 'apply' || action === 'revise-apply') {
-    if (mutationDeclaration === undefined || entryWorkspaceIdentity === undefined) {
-      throw new FlowkitError('ACTION_PACKAGE_SCHEMA_MISMATCH', 'v2 Apply package requires entry workspace identity and mutation declaration');
+    if (mutationDeclaration === undefined || (entryWorkspaceIdentity === undefined) === (compactEntryWorkspaceIdentity === undefined)) {
+      throw new FlowkitError('ACTION_PACKAGE_SCHEMA_MISMATCH', 'Apply package requires exactly one legacy or compact entry identity and mutation declaration');
     }
-    return { ...common(action), entryWorkspaceIdentity, mutationDeclaration } as ActionPackageV2Apply;
+    if (compactEntryWorkspaceIdentity !== undefined) return { ...common(action), compactEntryWorkspaceIdentity, mutationDeclaration } as CurrentCompactApplyActionPackage;
+    return { ...common(action), entryWorkspaceIdentity: entryWorkspaceIdentity!, mutationDeclaration } as ActionPackageV2Apply;
   }
-  if (mutationDeclaration !== undefined || entryWorkspaceIdentity !== undefined) {
-    throw new FlowkitError('ACTION_PACKAGE_SCHEMA_MISMATCH', 'non-Apply v2 package must not carry Apply authority');
+  if (mutationDeclaration !== undefined || entryWorkspaceIdentity !== undefined || compactEntryWorkspaceIdentity !== undefined) {
+    throw new FlowkitError('ACTION_PACKAGE_SCHEMA_MISMATCH', 'non-Apply package must not carry Apply authority');
   }
   return common(action) as ActionPackageV2NonApply;
 }
@@ -2779,12 +2850,11 @@ function fingerprintActionPackageSemantics(pkg: ActionPackage): string {
   };
   const descriptor = pkg.schemaVersion === 2 && (pkg.run.action === 'apply' || pkg.run.action === 'revise-apply')
     ? (() => {
-      const applyPackage = pkg as ActionPackageV2Apply;
-      return buildV2ApplySemanticDescriptor({
-      ...base,
-      entryWorkspaceIdentity: applyPackage.entryWorkspaceIdentity,
-      mutationDeclaration: applyPackage.mutationDeclaration,
-      });
+      const applyPackage = pkg as ApplyActionPackageLike;
+      const entryWorkspaceIdentity = 'compactEntryWorkspaceIdentity' in applyPackage && applyPackage.compactEntryWorkspaceIdentity !== undefined
+        ? applyPackage.compactEntryWorkspaceIdentity
+        : (applyPackage as ActionPackageV2Apply).entryWorkspaceIdentity;
+      return buildV2ApplySemanticDescriptor({ ...base, entryWorkspaceIdentity, mutationDeclaration: applyPackage.mutationDeclaration });
     })()
     : buildSemanticDescriptor(base);
   return sha256(stableStringify(descriptor));

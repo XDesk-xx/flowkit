@@ -37,4 +37,21 @@ describe('verification selection', () => {
     ], []), (error: unknown) => error instanceof FlowkitError && error.code === 'VERIFICATION_MODULE_SELECTION_FAILED');
   });
 
+
+  it('selects synthetic and F1/G1-shaped current Changes without any E1 identity literal', () => {
+    const cases = [
+      { id: 'synthetic-change-a', path: 'src/domain/types.ts', capability: 'flowkit-core-model' },
+      { id: 'synthetic-change-b', path: 'src/persistence/serialization.ts', capability: 'flowkit-formal-fact-reader-and-persistence' },
+      { id: 'archive-and-checkpoint-boundary', path: 'src/services/b1-run-execution-service.ts', capability: 'flowkit-archive-and-checkpoint-boundary' },
+      { id: 'change-cli-end-to-end-and-performance', path: 'src/cli/main.ts', capability: 'flowkit-change-cli-end-to-end-and-performance' },
+    ] as const;
+    for (const candidate of cases) {
+      const selection = buildVerificationSelection([
+        { path: candidate.path, kind: 'modify', pathKindBefore: 'file', pathKindAfter: 'file', contentFingerprintAfter: 'a'.repeat(64) },
+      ], [`openspec/changes/${candidate.id}/specs/${candidate.capability}/spec.md`]);
+      assert.equal(selection.capabilityIds.includes(candidate.capability), true);
+      assert.equal(JSON.stringify(selection).includes('change-verification-selection-and-change-set'), false);
+      assert.equal(selection.verificationScopes.includes('openspec-current-change-strict'), true);
+    }
+  });
 });

@@ -1,0 +1,16 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "apply",
+    "executionStatus": "completed",
+    "summary": "Applied RA-003 current-writer boundary: Flowkit self-migration lineage remains checkpoint-gated while fresh/downstream repositories default to the current three-file writer; historical E1 fixture now explicitly models pre-E2 migration history."
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "17a97099936007301111d325abe1e8892f1aeefa294c9dba439755fd39b00891",
+    "verificationSelection": {
+      "logicalRef": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-generalization-and-lean-run-normalization/20260814-156-apply/verification-selection.json",
+      "versionFingerprint": "718ee851de6809e00f03556f05dd4bf7d9489ffc309c07598619c67ec3df6eec"
+    }
+  }
+}

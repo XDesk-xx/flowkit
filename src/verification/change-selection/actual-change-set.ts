@@ -146,3 +146,47 @@ function changeEntryForStatus(
   if (after === undefined) throw new FlowkitError('ACTUAL_CHANGE_SET_UNAVAILABLE', 'Modified Git path is absent from post-action state', { status, path });
   return { path, kind: 'modify', pathKindBefore: 'file', pathKindAfter: 'file', contentFingerprintAfter: after };
 }
+
+/** Post-E2 compact observation: compare base-relative dirty deltas without scanning clean base files. */
+export function deriveCompactPostActionChangeObservation(
+  entry: import('../../domain/types.js').CompactEntryWorkspaceIdentity,
+  postAction: import('../../domain/types.js').CompactEntryWorkspaceIdentity,
+  declaration: MutationDeclaration,
+  reservedCoreOwnedPaths: ReadonlySet<string> = new Set(),
+): { readonly actualChangeSet: readonly ActualChangeSetEntry[]; readonly observedActionMutationPaths: readonly string[] } {
+  if (entry.canonicalBase !== postAction.canonicalBase) {
+    throw new FlowkitError('POST_ACTION_BASE_DRIFT', 'Compact entry and post-action observations must share the persisted canonical base');
+  }
+  const actualChangeSet = postAction.entries
+    .filter((candidate) => !reservedCoreOwnedPaths.has(candidate.path))
+    .map(compactEntryToActualChange)
+    .sort((left, right) => left.path.localeCompare(right.path));
+  const entryByPath = new Map(entry.entries.map((candidate) => [candidate.path, candidate]));
+  const postByPath = new Map(postAction.entries.map((candidate) => [candidate.path, candidate]));
+  const paths = [...new Set([...entryByPath.keys(), ...postByPath.keys()])]
+    .filter((path) => !reservedCoreOwnedPaths.has(path))
+    .sort();
+  const observedActionMutationPaths = paths.filter((path) => {
+    const before = entryByPath.get(path);
+    const after = postByPath.get(path);
+    return JSON.stringify(before ?? null) !== JSON.stringify(after ?? null);
+  });
+  const undeclared = observedActionMutationPaths.filter((path) => !matchesDeclaration(path, declaration));
+  if (undeclared.length > 0) {
+    throw new FlowkitError('UNDECLARED_ACTION_MUTATION', 'Post-action compact observation contains paths outside the persisted mutation declaration', { paths: undeclared });
+  }
+  return { actualChangeSet, observedActionMutationPaths };
+}
+
+function compactEntryToActualChange(entry: import('../../domain/types.js').CompactEntryWorkspacePath): ActualChangeSetEntry {
+  if (entry.state === 'deleted') {
+    return { path: entry.path, kind: 'delete', pathKindBefore: 'file', pathKindAfter: 'missing' };
+  }
+  if (entry.contentFingerprint === undefined) {
+    throw new FlowkitError('ACTUAL_CHANGE_SET_UNAVAILABLE', 'Compact post-action file entry is missing content fingerprint', { path: entry.path, state: entry.state });
+  }
+  if (entry.state === 'added' || entry.state === 'untracked') {
+    return { path: entry.path, kind: 'create', pathKindBefore: 'missing', pathKindAfter: 'file', contentFingerprintAfter: entry.contentFingerprint };
+  }
+  return { path: entry.path, kind: 'modify', pathKindBefore: 'file', pathKindAfter: 'file', contentFingerprintAfter: entry.contentFingerprint };
+}

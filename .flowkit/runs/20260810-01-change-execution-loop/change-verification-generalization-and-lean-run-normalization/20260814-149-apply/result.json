@@ -1,0 +1,16 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "apply",
+    "executionStatus": "completed",
+    "summary": "E2 generic Change Verification, bounded historical E1 compatibility, post-checkpoint three-file writer, crash/recovery, and affected aggregation implemented and verified."
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "923b7e933203a984d13fd3e17473ce5a4a1968f65917ea0f1ced85467d43e5aa",
+    "verificationSelection": {
+      "logicalRef": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-generalization-and-lean-run-normalization/20260814-149-apply/verification-selection.json",
+      "versionFingerprint": "cb459c361a9d91edd38cc6946d6b131e7d7ab3305c79ae25329ba9156fea7bce"
+    }
+  }
+}

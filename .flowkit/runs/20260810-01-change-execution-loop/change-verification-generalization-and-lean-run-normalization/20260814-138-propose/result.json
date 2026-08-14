@@ -1,0 +1,44 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "propose",
+    "executionStatus": "completed",
+    "summary": "E2 Proposal freezes the proof-backed generic Verification Catalog, prospective Context v6/ActionPackage v3 three-file writer, compact entry delta, embedded terminal verification binding, historical E1 sidecar compatibility, generic renderer, affected-test aggregation, lifecycle-independent fixtures, and F1/G1 next-consumer acceptance.",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/design.md",
+        "versionFingerprint": "ec0388b4c257c9832861f80fa93cbe8f6d323f125cc45990b2e8756065ce47ce",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/proposal.md",
+        "versionFingerprint": "dd5be5c68b4a716db1e8aeb9c3930c06829a40a19c0b921f7fe824d851527322",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "237cae10e03b9ad39137fdfa91a70c78e1351e8ef05f5c3cd9e239f1f3595609",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "6fd2e772da3c0a93e43a09ba1e860844db8bccba068c86251bf38bf5047467b6",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-lean-run-and-action-package/spec.md",
+        "versionFingerprint": "69dbd141d181e62581b888dd5b7db5f391424b672ef9cdc1f65f21f4fb9085a2",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/tasks.md",
+        "versionFingerprint": "8bbbc077ae9f195b9418fbb1419adfd058a2f25bc6e34c2b4d59f6bc83257b6c",
+        "kind": "produced-artifact"
+      }
+    ]
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "497b35f8c66f3d2ab59a9455f846b1ee2b9bc24070f070ef513e6d1d17ff0d3b"
+  }
+}

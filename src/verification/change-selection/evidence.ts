@@ -6,11 +6,12 @@ import type { FullTestStatus, VerificationStatus } from '../../domain/types.js';
 import { OpenSpecCliAdapter } from '../../integrations/openspec/openspec-cli-adapter.js';
 import { FlowkitError } from '../../shared/errors.js';
 import { runCommand, type ExternalCommandOutcome } from '../../shared/external-command.js';
-import { validateVerificationSelection, type VerificationSelection } from './selection.js';
+import { validateCurrentVerificationSelection, validateVerificationSelection, type VerificationSelection } from './selection.js';
 
 export const VERIFICATION_EVIDENCE_FILE = 'verification-evidence.json';
 
 export interface VerificationCheckEvidence {
+  /** Stable logical check id for current records; historical bytes may contain the legacy physical scope string. */
   readonly scope: string;
   readonly applicability: 'applicable';
   readonly commandOrMethod: string;
@@ -43,16 +44,27 @@ export interface ExecuteVerificationSelectionInput {
   readonly selection: VerificationSelection;
   readonly fullTestStatus: FullTestStatus;
   readonly openSpecAdapter: OpenSpecCliAdapter;
+  /** Current three-file writer can point check refs at verification.md instead of a Run sidecar. */
+  readonly resultRefBase?: string;
 }
 
 export type VerificationSelectionExecutor = (
   input: ExecuteVerificationSelectionInput,
 ) => Promise<VerificationEvidenceRecord>;
 
+const NODE_TEST_CHECKS = new Set([
+  'tests-cli',
+  'tests-execution',
+  'tests-openspec-runtime',
+  'tests-persistence',
+  'tests-serialization',
+  'tests-verification',
+]);
+
 export async function executeVerificationSelection(
   input: ExecuteVerificationSelectionInput,
 ): Promise<VerificationEvidenceRecord> {
-  const selection = validateVerificationSelection(input.selection);
+  const selection = validateCurrentVerificationSelection(input.selection);
   const environment = verificationEnvironment();
   if (selection.capabilityRelation.kind === 'not-applicable') {
     return validateVerificationEvidenceRecord({
@@ -67,10 +79,43 @@ export async function executeVerificationSelection(
     });
   }
 
-  const checks: VerificationCheckEvidence[] = [];
-  for (const [index, scope] of selection.verificationScopes.entries()) {
-    checks.push(await executeScope(input, scope, index, environment));
+  const checksById = new Map<string, VerificationCheckEvidence>();
+  const nodeIds = selection.verificationScopes.filter((scope) => NODE_TEST_CHECKS.has(scope));
+  if (nodeIds.length > 0) {
+    const files = await resolveLogicalNodeTests(input.repoRoot, nodeIds);
+    const outcome = await runCommand(process.execPath, ['--import', 'tsx', '--test', ...files], {
+      cwd: input.repoRoot,
+      env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' },
+      timeout: 120_000,
+    });
+    const command = `${process.execPath} --import tsx --test ${files.join(' ')}`;
+    for (const logicalId of nodeIds) {
+      checksById.set(logicalId, evidenceFromOutcome(input, logicalId, command, outcome, environment, 'compatible Node test union/dedupe execution'));
+    }
   }
+
+  if (selection.verificationScopes.includes('typecheck')) {
+    const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+    const outcome = await runCommand(npm, ['run', 'typecheck'], {
+      cwd: input.repoRoot,
+      env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' },
+      timeout: 120_000,
+    });
+    checksById.set('typecheck', evidenceFromOutcome(input, 'typecheck', `${npm} run typecheck`, outcome, environment, 'typecheck execution'));
+  }
+
+  if (selection.verificationScopes.includes('openspec-current-change-strict')) {
+    checksById.set('openspec-current-change-strict', await executeOpenSpecCurrentChange(input, environment));
+  }
+
+  const checks = selection.verificationScopes.map((scope, index) => {
+    const evidence = checksById.get(scope);
+    if (evidence === undefined) {
+      throw new FlowkitError('VERIFICATION_SCOPE_EXECUTION_UNSUPPORTED', 'Selected logical verification check has no closed execution mapping', { scope });
+    }
+    return { ...evidence, resultRef: `${input.resultRefBase ?? logicalRefForRunEvidence(input.runDir)}#check-${index + 1}` };
+  });
+
   return validateVerificationEvidenceRecord({
     schemaVersion: 1,
     producingRunId: input.producingRunId,
@@ -119,6 +164,7 @@ export async function readVerificationEvidenceRecord(
   return { record: validateVerificationEvidenceRecord(parsed), fingerprint: sha256(raw) };
 }
 
+/** Historical/current persisted binding validation. It never compares against the future current Catalog. */
 export function validateVerificationEvidenceForSelection(
   evidence: VerificationEvidenceRecord,
   selection: VerificationSelection,
@@ -140,7 +186,7 @@ export function validateVerificationEvidenceForSelection(
   }
   const scopes = validatedEvidence.checks.map((check) => check.scope);
   if (JSON.stringify(scopes) !== JSON.stringify(validatedSelection.verificationScopes)) {
-    throw new FlowkitError('VERIFICATION_EVIDENCE_CONFLICT', 'Verification evidence checks do not exactly match selected scopes', { producingRunId, scopes });
+    throw new FlowkitError('VERIFICATION_EVIDENCE_CONFLICT', 'Verification evidence checks do not exactly match selected logical checks/scopes', { producingRunId, scopes });
   }
   const expectedOverall = validatedEvidence.checks.every((check) => check.status === 'passed') ? 'passed' : 'failed';
   if (validatedEvidence.overallStatus !== expectedOverall) {
@@ -210,63 +256,61 @@ function validateCheck(value: unknown, index: number): VerificationCheckEvidence
   };
 }
 
-async function executeScope(
+async function executeOpenSpecCurrentChange(
   input: ExecuteVerificationSelectionInput,
-  scope: string,
-  index: number,
   environment: string,
 ): Promise<VerificationCheckEvidence> {
-  const resultRef = `${logicalRefForRunEvidence(input.runDir)}#check-${index + 1}`;
-  if (scope === 'npx openspec validate change-verification-selection-and-change-set --strict') {
-    try {
-      const validation = await input.openSpecAdapter.validateChange(input.changeId, true);
-      const stable = JSON.stringify({ valid: validation.valid, issues: validation.issues, status: validation.status, exitCode: validation.exitCode });
-      const passed = validation.valid && validation.exitCode === 0;
-      return {
-        scope,
-        applicability: 'applicable',
-        commandOrMethod: 'OpenSpecCliAdapter.validateChange(strict=true)',
-        status: passed ? 'passed' : 'failed',
-        summary: passed ? 'strict OpenSpec Change validation passed' : 'strict OpenSpec Change validation returned invalid',
-        resultRef,
-        environment,
-        outcomeKind: 'openspec-validation',
-        exitCode: validation.exitCode,
-        stdoutFingerprint: sha256(stable),
-        stderrFingerprint: sha256(''),
-      };
-    } catch (error) {
-      const message = error instanceof Error ? `${error.name}:${error.message}` : String(error);
-      return {
-        scope,
-        applicability: 'applicable',
-        commandOrMethod: 'OpenSpecCliAdapter.validateChange(strict=true)',
-        status: 'failed',
-        summary: `strict OpenSpec Change validation failed closed: ${message}`,
-        resultRef,
-        environment,
-        outcomeKind: 'outcome-unknown',
-        exitCode: 1,
-        stdoutFingerprint: sha256(''),
-        stderrFingerprint: sha256(message),
-      };
-    }
+  try {
+    const validation = await input.openSpecAdapter.validateChange(input.changeId, true);
+    const stable = JSON.stringify({ valid: validation.valid, issues: validation.issues, status: validation.status, exitCode: validation.exitCode });
+    const passed = validation.valid && validation.exitCode === 0;
+    return {
+      scope: 'openspec-current-change-strict',
+      applicability: 'applicable',
+      commandOrMethod: 'OpenSpecCliAdapter.validateChange(currentChangeId, strict=true)',
+      status: passed ? 'passed' : 'failed',
+      summary: passed ? 'strict OpenSpec current Change validation passed' : 'strict OpenSpec current Change validation returned invalid',
+      resultRef: 'pending-ref',
+      environment,
+      outcomeKind: 'openspec-validation',
+      exitCode: validation.exitCode,
+      stdoutFingerprint: sha256(stable),
+      stderrFingerprint: sha256(''),
+    };
+  } catch (error) {
+    const message = error instanceof Error ? `${error.name}:${error.message}` : String(error);
+    return {
+      scope: 'openspec-current-change-strict',
+      applicability: 'applicable',
+      commandOrMethod: 'OpenSpecCliAdapter.validateChange(currentChangeId, strict=true)',
+      status: 'failed',
+      summary: `strict OpenSpec current Change validation failed closed: ${message}`,
+      resultRef: 'pending-ref',
+      environment,
+      outcomeKind: 'outcome-unknown',
+      exitCode: 1,
+      stdoutFingerprint: sha256(''),
+      stderrFingerprint: sha256(message),
+    };
   }
+}
 
-  const resolved = await resolveScopeCommand(input.repoRoot, scope);
-  const outcome = await runCommand(resolved.command, [...resolved.args], {
-    cwd: input.repoRoot,
-    env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' },
-    timeout: 120_000,
-  });
+function evidenceFromOutcome(
+  _input: ExecuteVerificationSelectionInput,
+  logicalId: string,
+  commandOrMethod: string,
+  outcome: ExternalCommandOutcome,
+  environment: string,
+  label: string,
+): VerificationCheckEvidence {
   const passed = outcome.kind === 'exited' && outcome.exitCode === 0;
   return {
-    scope,
+    scope: logicalId,
     applicability: 'applicable',
-    commandOrMethod: `${resolved.command} ${resolved.args.join(' ')}`.trim(),
+    commandOrMethod,
     status: passed ? 'passed' : 'failed',
-    summary: passed ? 'command exited successfully' : `command failed closed: ${outcome.kind}; exitCode=${outcome.exitCode}`,
-    resultRef,
+    summary: passed ? `${label} passed` : `${label} failed closed: ${outcome.kind}; exitCode=${outcome.exitCode}`,
+    resultRef: 'pending-ref',
     environment,
     outcomeKind: outcome.kind,
     exitCode: outcome.exitCode,
@@ -275,26 +319,43 @@ async function executeScope(
   };
 }
 
-async function resolveScopeCommand(repoRoot: string, scope: string): Promise<{ readonly command: string; readonly args: readonly string[] }> {
-  if (scope === 'npm run typecheck') {
-    return { command: process.platform === 'win32' ? 'npm.cmd' : 'npm', args: ['run', 'typecheck'] };
-  }
-  const nodePrefix = 'node --test --import tsx ';
-  if (scope.startsWith(nodePrefix)) {
-    const requested = scope.slice(nodePrefix.length).split(' ').filter(Boolean);
-    const files: string[] = [];
-    for (const candidate of requested) {
-      if (candidate.endsWith('/*.test.ts')) {
-        const directory = candidate.slice(0, -'/*.test.ts'.length);
-        const entries = await readdir(join(repoRoot, directory), { withFileTypes: true });
-        files.push(...entries.filter((entry) => entry.isFile() && entry.name.endsWith('.test.ts')).map((entry) => `${directory}/${entry.name}`).sort());
+async function resolveLogicalNodeTests(repoRoot: string, logicalIds: readonly string[]): Promise<readonly string[]> {
+  const selected = new Set<string>();
+  for (const logicalId of logicalIds) {
+    for (const selector of logicalNodeSelectors(logicalId)) {
+      if (selector.endsWith('/*.test.ts')) {
+        const directory = selector.slice(0, -'/*.test.ts'.length);
+        let entries: import('node:fs').Dirent[];
+        try { entries = await readdir(join(repoRoot, directory), { withFileTypes: true }); }
+        catch { entries = []; }
+        for (const entry of entries) if (entry.isFile() && entry.name.endsWith('.test.ts')) selected.add(`${directory}/${entry.name}`);
       } else {
-        files.push(candidate);
+        selected.add(selector);
       }
     }
-    return { command: process.execPath, args: ['--test', '--import', 'tsx', ...files] };
   }
-  throw new FlowkitError('VERIFICATION_SCOPE_EXECUTION_UNSUPPORTED', 'Selected verification scope has no closed execution mapping', { scope });
+  const files = [...selected].sort();
+  if (files.length === 0) throw new FlowkitError('VERIFICATION_SCOPE_EXECUTION_UNSUPPORTED', 'Logical Node test selection resolved no test files', { logicalIds });
+  return files;
+}
+
+function logicalNodeSelectors(logicalId: string): readonly string[] {
+  switch (logicalId) {
+    case 'tests-cli':
+      return ['tests/integration/diagnostic-cli-process.test.ts', 'tests/integration/diagnostic-cli.test.ts', 'tests/unit/cli/*.test.ts', 'tests/unit/diagnostics/*.test.ts'];
+    case 'tests-execution':
+      return ['tests/unit/facts/*.test.ts', 'tests/unit/policy/*.test.ts', 'tests/unit/services/*.test.ts'];
+    case 'tests-openspec-runtime':
+      return ['tests/unit/external-command.test.ts', 'tests/unit/integrations/openspec-cli-adapter.test.ts'];
+    case 'tests-persistence':
+      return ['tests/unit/persistence/legacy-recognizer.test.ts', 'tests/unit/persistence/run-persistence.test.ts'];
+    case 'tests-serialization':
+      return ['tests/unit/persistence/serialization.test.ts'];
+    case 'tests-verification':
+      return ['tests/integration/e1-change-verification-selection.test.ts', 'tests/integration/e2-change-verification-generalization.test.ts', 'tests/unit/verification/affected-scopes.test.ts', 'tests/unit/verification/change-selection/*.test.ts'];
+    default:
+      throw new FlowkitError('VERIFICATION_SCOPE_EXECUTION_UNSUPPORTED', 'Unknown logical Node test check id', { logicalId });
+  }
 }
 
 function verificationEnvironment(): string {
@@ -317,6 +378,6 @@ function validateProof(value: unknown): { readonly predicateId: 'no-candidate-ch
 function asObject(value: unknown, label: string): Record<string, unknown> { if (typeof value !== 'object' || value === null || Array.isArray(value)) fail(`${label} must be an object`); return value as Record<string, unknown>; }
 function nonEmpty(value: unknown, label: string): string { if (typeof value !== 'string' || value.trim() === '') fail(`${label} must be a non-empty string`); return value; }
 function requireSha(value: unknown, label: string): string { if (typeof value !== 'string' || !/^[0-9a-f]{64}$/.test(value)) fail(`${label} must be SHA-256`); return value; }
-function normalizedLogicalRef(value: unknown, label: string): string { const result = nonEmpty(value, label); if (result.startsWith('/') || result.includes('\\') || result.split('/').some((part) => part === '' || part === '.' || part === '..')) fail(`${label} must be a normalized logical ref`); return result; }
+function normalizedLogicalRef(value: unknown, label: string): string { const result = nonEmpty(value, label); if (result === 'pending-ref') return result; if (result.startsWith('/') || result.includes('\\') || result.split('/').some((part) => part === '' || part === '.' || part === '..')) fail(`${label} must be a normalized logical ref`); return result; }
 function fail(message: string): never { throw new FlowkitError('SCHEMA_VALIDATION_FAILED', message); }
 function sha256(value: string): string { return createHash('sha256').update(value).digest('hex'); }

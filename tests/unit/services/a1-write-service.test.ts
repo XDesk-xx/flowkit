@@ -225,7 +225,7 @@ describe('A1 owner provenance and architectureImpact', () => {
     const expectedCounts: Readonly<Record<string, number>> = {
       '20260805-01-product-baseline': 5,
       '20260806-01-deterministic-core': 8,
-      '20260810-01-change-execution-loop': 9,
+      '20260810-01-change-execution-loop': 10,
     };
     for (const [deliveryId, expectedCount] of Object.entries(expectedCounts)) {
       const s = await readFormalFactSnapshot({

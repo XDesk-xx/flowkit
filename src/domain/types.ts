@@ -258,6 +258,17 @@ export interface EntryWorkspaceIdentity {
   readonly workspaceFingerprint: string;
 }
 
+export interface CompactEntryWorkspacePath {
+  readonly path: string;
+  readonly state: 'added' | 'modified' | 'deleted' | 'untracked';
+  readonly contentFingerprint?: string;
+}
+
+/** Post-E2 current entry identity: canonical Git Base plus only the lexical dirty delta. */
+export interface CompactEntryWorkspaceIdentity extends EntryWorkspaceIdentity {
+  readonly entries: readonly CompactEntryWorkspacePath[];
+}
+
 interface ActionPackageBase {
   readonly run: {
     readonly deliveryId: string;
@@ -289,7 +300,7 @@ interface ActionPackageV2Common extends ActionPackageBase {
   readonly schemaVersion: 2;
 }
 
-/** Current Apply package: v5 entry identity and declaration are mandatory. */
+/** Pre-E2 persisted Apply package: full entry identity and declaration are mandatory. */
 export interface ActionPackageV2Apply extends ActionPackageV2Common {
   readonly run: ActionPackageBase['run'] & { readonly action: 'apply' | 'revise-apply' };
   readonly entryWorkspaceIdentity: EntryWorkspaceIdentity;
@@ -303,7 +314,16 @@ export interface ActionPackageV2NonApply extends ActionPackageV2Common {
   readonly mutationDeclaration?: never;
 }
 
-export type ActionPackageV2 = ActionPackageV2Apply | ActionPackageV2NonApply;
+/** Post-E2 current Apply package: structurally compact entry identity under the existing bounded serialization discriminator. */
+export interface CurrentCompactApplyActionPackage extends ActionPackageV2Common {
+  readonly run: ActionPackageBase['run'] & { readonly action: 'apply' | 'revise-apply' };
+  readonly compactEntryWorkspaceIdentity: CompactEntryWorkspaceIdentity;
+  readonly entryWorkspaceIdentity?: never;
+  readonly mutationDeclaration: MutationDeclaration;
+}
+
+export type ApplyActionPackageLike = ActionPackageV2Apply | CurrentCompactApplyActionPackage;
+export type ActionPackageV2 = ActionPackageV2Apply | CurrentCompactApplyActionPackage | ActionPackageV2NonApply;
 export type ActionPackage = ActionPackageV1 | ActionPackageV2;
 
 /**

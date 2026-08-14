@@ -150,6 +150,11 @@ describe('E1 disposable v5 bootstrap evidence', () => {
     await git(root, ['init']);
     await git(root, ['add', '.']);
     await git(root, ['-c', 'user.name=Flowkit Test', '-c', 'user.email=flowkit@example.invalid', 'commit', '-m', 'base']);
+    await git(root, [
+      '-c', 'user.name=Flowkit Test',
+      '-c', 'user.email=flowkit@example.invalid',
+      'commit', '--allow-empty', '-m', 'chore(flowkit): start 20260810-01-change-execution-loop',
+    ]);
 
     const prepare = async (entry: 'next' | 'review') => {
       const outcome = await prepareNewExecution({ repoRoot: root, deliveryId, entry, now });

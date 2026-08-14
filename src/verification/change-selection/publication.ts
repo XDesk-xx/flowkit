@@ -11,7 +11,7 @@ import {
   validateVerificationEvidenceForSelection,
   type VerificationEvidenceRecord,
 } from './evidence.js';
-import { validateVerificationSelection, type VerificationSelection } from './selection.js';
+import { validateCurrentVerificationSelection, validateVerificationSelection, type VerificationSelection } from './selection.js';
 
 export interface VerificationSelectionPublication {
   readonly schemaVersion: 1;
@@ -33,6 +33,24 @@ export interface VerificationSelectionPublication {
   readonly verificationMarkdownFingerprint: string;
 }
 
+
+export interface CurrentVerificationPublication {
+  readonly producingRunId: string;
+  readonly canonicalBase: string;
+  readonly postActionWorkspaceFingerprint: string;
+  readonly selection: VerificationSelection;
+  readonly verificationStatus: VerificationStatus;
+  readonly actualChangeSet: readonly ActualChangeSetEntry[];
+}
+
+interface VerificationMarkdownModel {
+  readonly producingRunId: string;
+  readonly canonicalBase: string;
+  readonly postActionWorkspaceFingerprint: string;
+  readonly selection: VerificationSelection;
+  readonly verificationStatus: VerificationStatus;
+  readonly actualChangeSet: readonly ActualChangeSetEntry[];
+}
 export interface VerificationSelectionBinding {
   readonly logicalRef: string;
   readonly versionFingerprint: string;
@@ -51,6 +69,7 @@ export function buildVerificationSelectionPublication(
   input: Omit<VerificationSelectionPublication, 'schemaVersion' | 'rendererVersion' | 'verificationMarkdownFingerprint' | 'verificationStatus'>,
   evidence: VerificationEvidenceRecord,
 ): VerificationSelectionPublication {
+  validateCurrentVerificationSelection(input.selection);
   validateVerificationEvidenceForSelection(evidence, input.selection, input.producingRunId);
   const draft = {
     ...input,
@@ -102,6 +121,36 @@ export async function publishVerificationSelection(input: PublishVerificationSel
   return { logicalRef: logicalRefForRunRecord(input.runDir), versionFingerprint: sha256(serialized) };
 }
 
+/** Post-E2 three-file publication: verification.md is the authority; no Run sidecar is written. */
+export async function publishCurrentVerificationMarkdown(input: {
+  readonly canonicalVerificationPath: string;
+  readonly model: CurrentVerificationPublication;
+  readonly evidence: VerificationEvidenceRecord;
+}): Promise<{ readonly logicalRef: string; readonly versionFingerprint: string; readonly selectionFingerprint: string; readonly status: 'passed' | 'failed' | 'not-applicable' }> {
+  const selection = validateCurrentVerificationSelection(input.model.selection);
+  validateVerificationEvidenceForSelection(input.evidence, selection, input.model.producingRunId);
+  if (input.model.verificationStatus !== input.evidence.overallStatus) throw new FlowkitError('VERIFICATION_PUBLICATION_INVALID', 'current verification status does not match execution evidence');
+  const rendered = renderVerificationMarkdown(input.model, input.evidence);
+  await mkdir(dirname(input.canonicalVerificationPath), { recursive: true });
+  const staging = `${input.canonicalVerificationPath}.${process.pid}.flowkit-staging`;
+  await writeFile(staging, rendered, 'utf8');
+  await rename(staging, input.canonicalVerificationPath);
+  return {
+    logicalRef: normalizeCurrentVerificationLogicalRef(input.canonicalVerificationPath),
+    versionFingerprint: sha256(rendered),
+    selectionFingerprint: selection.selectionFingerprint,
+    status: input.evidence.overallStatus,
+  };
+}
+
+function normalizeCurrentVerificationLogicalRef(path: string): string {
+  const normalized = path.replaceAll('\\', '/');
+  const marker = '/openspec/changes/';
+  const index = normalized.lastIndexOf(marker);
+  if (index < 0) throw new FlowkitError('VERIFICATION_PUBLICATION_INVALID', 'current verification path must be inside openspec/changes', { path });
+  return normalized.slice(index + 1);
+}
+
 /**
  * Pending recovery validates immutable evidence+selection against current canonical Markdown.
  * This is intentionally NOT used for historical terminal replay.
@@ -116,6 +165,7 @@ export async function validatePendingVerificationSelection(input: {
   const loaded = await readVerificationSelectionRecord(input.runDir, false);
   if (loaded === undefined) return undefined;
   const { record, fingerprint } = loaded;
+  validateCurrentVerificationSelection(record.selection);
   if (record.rendererVersion !== 2) {
     throw new FlowkitError('VERIFICATION_PUBLICATION_CONFLICT', 'Historical verification selection publication cannot resume as evidence-aware pending publication', { runDir: input.runDir });
   }
@@ -161,9 +211,12 @@ export async function validateTerminalVerificationSelectionBinding(input: {
   const evidence = await readVerificationEvidenceRecord(input.runDir, true);
   if (evidence === undefined) throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'terminal Apply result is missing immutable Verification evidence', { runDir: input.runDir });
   try {
+    // Historical terminal replay validates persisted immutable facts only. The
+    // point-in-time Markdown fingerprint was checked before terminal CAS; future
+    // renderer/Catalog bytes are deliberately not replay authorities.
     validateVerificationEvidenceForSelection(evidence.record, record.selection, record.producingRunId);
-    if (record.verificationStatus !== evidence.record.overallStatus || sha256(renderVerificationMarkdown(record, evidence.record)) !== record.verificationMarkdownFingerprint) {
-      throw new Error('selection/evidence/Markdown fingerprint mismatch');
+    if (record.verificationStatus !== evidence.record.overallStatus) {
+      throw new Error('selection/evidence status mismatch');
     }
   } catch (error) {
     throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'terminal Apply immutable Verification evidence does not match selection record', { runDir: input.runDir, detail: error instanceof Error ? error.message : String(error) });
@@ -229,7 +282,7 @@ export function validateVerificationSelectionRecord(value: unknown): Verificatio
 }
 
 export function renderVerificationMarkdown(
-  record: Omit<VerificationSelectionPublication, 'verificationMarkdownFingerprint'> | VerificationSelectionPublication,
+  record: VerificationMarkdownModel,
   evidence: VerificationEvidenceRecord,
 ): string {
   validateVerificationEvidenceForSelection(evidence, record.selection, record.producingRunId);
@@ -250,14 +303,14 @@ export function renderVerificationMarkdown(
   return [
     '# Change Verification',
     '',
-    '> Bootstrap verification: this E1 publication validates the v5 selection model; historical v4 Runs are not v5 dogfood.',
+    '> Flowkit Change Verification publication. Selection identity is logical and point-in-time; concrete commands belong to the verification executor.',
     `<!-- flowkit-change-verification-status: ${record.verificationStatus} -->`,
     '',
     `- Producing Run: \`${record.producingRunId}\``,
     `- canonicalBase: \`${record.canonicalBase}\``,
     `- postActionWorkspaceFingerprint: \`${record.postActionWorkspaceFingerprint}\``,
-    `- moduleMap: \`${record.selection.moduleMapLogicalRef}\``,
-    `- moduleMapFingerprint: \`${record.selection.moduleMapFingerprint}\``,
+    `- verificationCatalog: \`${record.selection.moduleMapLogicalRef}\``,
+    `- verificationCatalogFingerprint: \`${record.selection.moduleMapFingerprint}\``,
     `- selectionFingerprint: \`${record.selection.selectionFingerprint}\``,
     `- capabilityRelation: \`${record.selection.capabilityRelation.kind}\``,
     `- Verification environment: \`${evidence.environment}\``,
@@ -271,7 +324,7 @@ export function renderVerificationMarkdown(
     '',
     ...(record.selection.capabilityIds.length === 0 ? ['- none'] : record.selection.capabilityIds.map((capabilityId) => `- \`${capabilityId}\``)),
     '',
-    '## Selected verification scopes',
+    '## Selected logical checks',
     '',
     ...(record.selection.verificationScopes.length === 0 ? ['- none'] : record.selection.verificationScopes.map((scope) => `- \`${scope}\``)),
     '',

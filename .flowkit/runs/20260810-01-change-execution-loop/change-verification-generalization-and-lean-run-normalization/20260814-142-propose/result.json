@@ -1,0 +1,40 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "propose",
+    "executionStatus": "completed",
+    "summary": "Owner Contract Reset 后重新形成 E2 Proposal generation：移除 Context/ActionPackage/selection/evidence/renderer/Catalog 的独立版本生命周期，以 current implementation + content fingerprint + bounded legacy recognition 实现 generic Verification、historical E1 compatibility 与 post-checkpoint three-file Run；保留 E1→E2→F1→G1 dependency boundary。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/design.md",
+        "versionFingerprint": "d1762a5e0169cdc5e7b7252968c0a17d07fd22c0ca880aa1e7638e2ae61cba76",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/proposal.md",
+        "versionFingerprint": "1845f6dbaff1b0d0f7235facfab6a8adf6a0551b6fc5eeeef3eb89f889b15290",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "d709c4467f2b22a78e5d2dc3a9245e4c4f96c92110c19ac6292618e8d4344a22",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "dfb14502f00d58cb58e392b1c3c9faaafa0870508b1a62d9c4b646eb582bb53a",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-lean-run-and-action-package/spec.md",
+        "versionFingerprint": "e7bb3e93e4e412a5d86e8929fcea2bb30d42df979eba77f17ab6e461aa333272",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/tasks.md",
+        "versionFingerprint": "990c7f44dd32616a1a053a70e41b70d17eed62eeb753a825a77673177c9b1487",
+        "kind": "produced-artifact"
+      }
+    ]
+  }
+}

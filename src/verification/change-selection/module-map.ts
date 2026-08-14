@@ -13,23 +13,29 @@ export interface AffectedVerificationSelection {
   readonly seedModuleIds: readonly string[];
   readonly moduleIds: readonly string[];
   readonly capabilityIds: readonly string[];
+  /** Stable logical check ids. The historical field name remains for bounded persisted compatibility. */
   readonly verificationScopes: readonly string[];
   readonly notApplicableProof?: { readonly predicateId: 'no-candidate-change' };
 }
 
 export const VERIFICATION_MODULE_MAP_LOGICAL_REF = 'src/verification/change-selection/module-map.ts';
 
+/** Stable logical verification identities. Concrete commands belong to the executor. */
 export const CLOSED_VERIFICATION_SCOPES = [
-  'node --test --import tsx tests/unit/integrations/openspec-cli-adapter.test.ts tests/unit/external-command.test.ts',
-  'node --test --import tsx tests/unit/persistence/run-persistence.test.ts',
-  'node --test --import tsx tests/unit/persistence/serialization.test.ts',
-  'node --test --import tsx tests/unit/services/b1-run-execution-service.test.ts',
-  'node --test --import tsx tests/unit/verification/change-selection/*.test.ts',
-  'npm run typecheck',
-  'npx openspec validate change-verification-selection-and-change-set --strict',
+  'openspec-current-change-strict',
+  'tests-cli',
+  'tests-execution',
+  'tests-openspec-runtime',
+  'tests-persistence',
+  'tests-serialization',
+  'tests-verification',
+  'typecheck',
 ] as const;
 
 export const CLOSED_CAPABILITY_IDS = [
+  'flowkit-archive-and-checkpoint-boundary',
+  'flowkit-change-cli-end-to-end-and-performance',
+  'flowkit-change-verification-generalization-and-lean-run-normalization',
   'flowkit-change-verification-selection',
   'flowkit-core-model',
   'flowkit-formal-fact-reader-and-persistence',
@@ -43,21 +49,71 @@ const CLOSED_PREDICATES = new Set(['no-candidate-change']);
 const CLOSED_SCOPES = new Set<string>(CLOSED_VERIFICATION_SCOPES);
 const CLOSED_CAPABILITIES = new Set<string>(CLOSED_CAPABILITY_IDS);
 
-/** Closed, compile-time authority for mapping candidate paths to verification scopes. */
+const E2_CAPABILITIES = [
+  'flowkit-change-verification-selection',
+  'flowkit-formal-fact-reader-and-persistence',
+  'flowkit-lean-run-and-action-package',
+] as const;
+
+/** Closed, source-controlled authority for path ownership and logical check selection. */
 export const VERIFICATION_MODULE_MAP: readonly VerificationModule[] = [
   module(
     'change-contract',
-    ['02-change-execution-loop-delivery-implementation-reference-v3.md', 'docs/flowkit-self-hosting-bootstrap-and-migration.md', 'openspec/changes/change-verification-selection-and-change-set', 'openspec/delivery-groups'],
+    ['docs/flowkit-self-hosting-bootstrap-and-migration.md', 'openspec/changes', 'openspec/delivery-groups'],
     [],
-    ['npx openspec validate change-verification-selection-and-change-set --strict'],
-    ['flowkit-change-verification-selection', 'flowkit-core-model', 'flowkit-formal-fact-reader-and-persistence', 'flowkit-lean-run-and-action-package', 'flowkit-openspec-1-7-thin-integration', 'flowkit-policy-engine', 'flowkit-runtime-foundation'],
+    ['openspec-current-change-strict'],
+    [...CLOSED_CAPABILITY_IDS],
     'no-candidate-change',
   ),
-  module('core-model', ['src/domain'], [], ['node --test --import tsx tests/unit/persistence/serialization.test.ts', 'npm run typecheck'], ['flowkit-core-model']),
-  module('execution', ['src/facts', 'src/policy', 'src/services', 'tests/unit/facts', 'tests/unit/policy', 'tests/unit/services'], ['core-model', 'persistence'], ['node --test --import tsx tests/unit/services/b1-run-execution-service.test.ts', 'npm run typecheck'], ['flowkit-lean-run-and-action-package', 'flowkit-policy-engine']),
-  module('openspec-runtime', ['src/integrations/openspec', 'src/shared/external-command.ts', 'tests/integration', 'tests/unit/external-command.test.ts', 'tests/unit/integrations'], ['core-model'], ['node --test --import tsx tests/unit/integrations/openspec-cli-adapter.test.ts tests/unit/external-command.test.ts', 'npm run typecheck'], ['flowkit-openspec-1-7-thin-integration', 'flowkit-runtime-foundation']),
-  module('persistence', ['src/persistence', 'tests/unit/persistence'], ['core-model'], ['node --test --import tsx tests/unit/persistence/run-persistence.test.ts', 'npm run typecheck'], ['flowkit-formal-fact-reader-and-persistence', 'flowkit-lean-run-and-action-package']),
-  module('verification-selection', ['src/verification/change-selection', 'tests/fixtures/e1-change-verification-selection', 'tests/unit/verification/change-selection'], ['core-model', 'execution', 'openspec-runtime', 'persistence'], ['node --test --import tsx tests/unit/verification/change-selection/*.test.ts', 'npm run typecheck'], ['flowkit-change-verification-selection']),
+  module(
+    'cli-diagnostics',
+    ['src/cli', 'src/diagnostics', 'tests/integration/diagnostic-cli-process.test.ts', 'tests/integration/diagnostic-cli.test.ts', 'tests/unit/cli', 'tests/unit/diagnostics'],
+    ['execution'],
+    ['tests-cli', 'typecheck'],
+    ['flowkit-change-cli-end-to-end-and-performance', 'flowkit-policy-engine', 'flowkit-runtime-foundation'],
+  ),
+  module(
+    'core-model',
+    ['src/domain'],
+    [],
+    ['tests-serialization', 'typecheck'],
+    ['flowkit-core-model', 'flowkit-lean-run-and-action-package'],
+  ),
+  module(
+    'execution',
+    ['src/facts', 'src/policy', 'src/services', 'tests/unit/facts', 'tests/unit/policy', 'tests/unit/services'],
+    ['core-model', 'persistence'],
+    ['tests-execution', 'typecheck'],
+    [
+      'flowkit-archive-and-checkpoint-boundary',
+      'flowkit-change-cli-end-to-end-and-performance',
+      'flowkit-change-verification-selection',
+      'flowkit-formal-fact-reader-and-persistence',
+      'flowkit-lean-run-and-action-package',
+      'flowkit-policy-engine',
+    ],
+  ),
+  module(
+    'openspec-runtime',
+    ['src/integrations/openspec', 'src/shared/external-command.ts', 'tests/integration/openspec-1-7-real-cli.test.ts', 'tests/unit/external-command.test.ts', 'tests/unit/integrations'],
+    ['core-model', 'execution'],
+    ['tests-openspec-runtime', 'typecheck'],
+    ['flowkit-archive-and-checkpoint-boundary', 'flowkit-change-verification-selection', 'flowkit-openspec-1-7-thin-integration', 'flowkit-runtime-foundation'],
+  ),
+  module(
+    'persistence',
+    ['src/persistence', 'tests/unit/persistence'],
+    ['core-model'],
+    ['tests-persistence', 'typecheck'],
+    ['flowkit-formal-fact-reader-and-persistence', 'flowkit-lean-run-and-action-package'],
+  ),
+  module(
+    'verification-selection',
+    ['src/verification/change-selection', 'tests/fixtures/e2-change-verification-generalization', 'tests/integration/e1-change-verification-selection.test.ts', 'tests/integration/e2-change-verification-generalization.test.ts', 'tests/integration/verification-commands.test.ts', 'tests/unit/verification/affected-scopes.test.ts', 'tests/unit/verification/change-selection'],
+    ['core-model', 'execution', 'openspec-runtime', 'persistence'],
+    ['openspec-current-change-strict', 'tests-verification', 'typecheck'],
+    [...E2_CAPABILITIES],
+  ),
 ];
 
 function module(
@@ -140,9 +196,7 @@ export function validateVerificationModuleMap(map: readonly VerificationModule[]
     }
   }
   const allSelectors: { moduleId: string; selector: string }[] = [];
-  for (const candidate of map) {
-    for (const selector of candidate.ownershipSelectors) allSelectors.push({ moduleId: candidate.id, selector });
-  }
+  for (const candidate of map) for (const selector of candidate.ownershipSelectors) allSelectors.push({ moduleId: candidate.id, selector });
   for (let left = 0; left < allSelectors.length; left += 1) for (let right = left + 1; right < allSelectors.length; right += 1) {
     const a = allSelectors[left]!;
     const b = allSelectors[right]!;
@@ -164,12 +218,12 @@ export function validateVerificationModuleMap(map: readonly VerificationModule[]
   for (const id of ids) visit(id);
 }
 
+function owns(selector: string, path: string): boolean {
+  return path === selector || path.startsWith(`${selector}/`);
+}
+
 function assertLexicalUnique(values: readonly string[], label: string, allowEmpty = false): void {
   if ((!allowEmpty && values.length === 0) || new Set(values).size !== values.length || [...values].sort().some((value, index) => value !== values[index])) {
     throw new FlowkitError('VERIFICATION_MODULE_MAP_INVALID', `${label} must be${allowEmpty ? '' : ' non-empty,'} unique and lexical sorted`, { values });
   }
-}
-
-function owns(selector: string, path: string): boolean {
-  return selector === path || path.startsWith(`${selector}/`);
 }

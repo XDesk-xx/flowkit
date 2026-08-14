@@ -28,7 +28,7 @@ import { link, mkdir, open, readFile, readdir, rename, rm, stat, unlink, writeFi
 import { dirname, join } from 'node:path';
 import { assertMutable } from '../domain/terminal.js';
 import { validateRun } from '../domain/schema-validator.js';
-import type { Run, BlockingAuthority, ActionPackageV2, EntryWorkspaceIdentity, MutationDeclaration, VersionedAuthorityRef } from '../domain/types.js';
+import type { Run, BlockingAuthority, ActionPackageV2, EntryWorkspaceIdentity, CompactEntryWorkspaceIdentity, MutationDeclaration, VersionedAuthorityRef } from '../domain/types.js';
 import { BLOCKING_AUTHORITIES } from '../domain/types.js';
 import { isChangeAction, isRoleAllowedForAction } from '../domain/actions.js';
 import type { ChangeAction } from '../domain/actions.js';
@@ -113,6 +113,8 @@ export interface CreateRunInput {
   readonly actionPackage?: ActionPackageV2;
   /** Required only by v5 Apply/revise-apply contexts. */
   readonly entryWorkspaceIdentity?: EntryWorkspaceIdentity;
+  /** Post-E2 compact Apply identity embedded in context.json; mutually exclusive with entryWorkspaceIdentity. */
+  readonly compactEntryWorkspaceIdentity?: CompactEntryWorkspaceIdentity;
   /** Required only by v5 Apply/revise-apply contexts. */
   readonly mutationDeclaration?: MutationDeclaration;
   /** Required only by v5 Apply/revise-apply contexts; published with the Run. */
@@ -260,11 +262,8 @@ export async function createRun(input: CreateRunInput): Promise<string> {
     const contextJsonPath = join(stagingDir, 'context.json');
     await atomicWriteFile(actionMdPath, input.actionMd);
     await atomicWriteFile(contextJsonPath, serializeContextFile(contextFile));
-    if (input.contextVersion === 5 && (input.action === 'apply' || input.action === 'revise-apply')) {
-      await atomicWriteFile(
-        join(stagingDir, 'entry-workspace.json'),
-        `${JSON.stringify(input.entryWorkspaceSnapshot, null, 2)}\n`,
-      );
+    if (input.contextVersion === 5 && input.entryWorkspaceSnapshot !== undefined) {
+      await atomicWriteFile(join(stagingDir, 'entry-workspace.json'), `${JSON.stringify(input.entryWorkspaceSnapshot, null, 2)}\n`);
     }
 
     // 7. Atomically publish via directory rename.
@@ -1292,12 +1291,16 @@ function validateCompleteRunInput(
       throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'v5 terminal write requires Core-derived terminalBinding', { runId: contextFile.runId });
     }
     const isApply = contextFile.action === 'apply' || contextFile.action === 'revise-apply';
-    if (isApply && terminalStatus === 'completed' && input.terminalBinding.verificationSelection === undefined) {
-      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'completed v5 Apply terminal requires verification-selection binding', { runId: contextFile.runId });
+    const compactApply = isApply && 'compactEntryWorkspaceIdentity' in contextFile && contextFile.compactEntryWorkspaceIdentity !== undefined;
+    if (isApply && terminalStatus === 'completed') {
+      if (compactApply && input.terminalBinding.currentVerification === undefined) throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'completed post-E2 Apply terminal requires current verification binding', { runId: contextFile.runId });
+      if (!compactApply && input.terminalBinding.verificationSelection === undefined) throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'completed legacy v5 Apply terminal requires verification-selection binding', { runId: contextFile.runId });
     }
-    if ((!isApply || terminalStatus !== 'completed') && input.terminalBinding.verificationSelection !== undefined) {
-      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'verification-selection terminal binding is only allowed on completed v5 Apply/revise-apply', { runId: contextFile.runId });
+    if ((!isApply || terminalStatus !== 'completed') && (input.terminalBinding.verificationSelection !== undefined || input.terminalBinding.currentVerification !== undefined)) {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'verification terminal binding is only allowed on completed v5 Apply/revise-apply', { runId: contextFile.runId });
     }
+    if (compactApply && input.terminalBinding.verificationSelection !== undefined) throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'post-E2 Apply must not synthesize historical sidecar binding');
+    if (!compactApply && input.terminalBinding.currentVerification !== undefined) throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'legacy v5 Apply must not synthesize current verification binding');
   } else if (input.terminalBinding !== undefined) {
     throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'historical v2/v3/v4 terminal writes must not synthesize v5 terminalBinding', { runId: contextFile.runId });
   }
@@ -2009,39 +2012,29 @@ function buildContextFile(
       throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'v5 Run creation requires canonicalBase, applicableFactRefs, and actionPackage');
     }
     if (input.action === 'apply' || input.action === 'revise-apply') {
-      if (input.entryWorkspaceIdentity === undefined || input.mutationDeclaration === undefined || input.entryWorkspaceSnapshot === undefined) {
-        throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'v5 Apply creation requires entry workspace identity, snapshot, and mutation declaration');
+      if (input.mutationDeclaration === undefined || (input.entryWorkspaceIdentity === undefined) === (input.compactEntryWorkspaceIdentity === undefined)) {
+        throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'v5 Apply creation requires exactly one legacy or compact entry identity plus mutation declaration');
       }
-      const entrySnapshot = validateEntryWorkspaceSnapshotRecord(input.entryWorkspaceSnapshot);
-      if (
-        entrySnapshot.canonicalBase !== input.entryWorkspaceIdentity.canonicalBase ||
-        entrySnapshot.workspaceFingerprint !== input.entryWorkspaceIdentity.workspaceFingerprint ||
-        entrySnapshot.canonicalBase !== input.canonicalBase
-      ) {
-        throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'v5 Apply entry workspace snapshot must exactly match the context identity and canonical base');
+      if (input.entryWorkspaceIdentity !== undefined) {
+        if (input.entryWorkspaceSnapshot === undefined) throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'legacy v5 Apply creation requires entry-workspace sidecar snapshot');
+        const entrySnapshot = validateEntryWorkspaceSnapshotRecord(input.entryWorkspaceSnapshot);
+        if (entrySnapshot.canonicalBase !== input.entryWorkspaceIdentity.canonicalBase || entrySnapshot.workspaceFingerprint !== input.entryWorkspaceIdentity.workspaceFingerprint || entrySnapshot.canonicalBase !== input.canonicalBase) {
+          throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'legacy v5 Apply entry workspace snapshot must exactly match context identity and canonical base');
+        }
+      } else if (input.entryWorkspaceSnapshot !== undefined) {
+        throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'post-E2 compact Apply must not create entry-workspace sidecar');
       }
+      const compact = input.compactEntryWorkspaceIdentity;
+      if (compact !== undefined && compact.canonicalBase !== input.canonicalBase) throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'compact Apply canonical base must equal context canonicalBase');
       return {
-        schemaVersion: 5,
-        runId: input.runId,
-        deliveryId: input.deliveryId,
-        action: input.action,
-        role: input.role,
-        ownerAuthorization: input.ownerAuthorization,
-        semanticInputFingerprint: input.semanticInputFingerprint ?? '',
-        ...(input.ownerFactRefs !== undefined && { ownerFactRefs: input.ownerFactRefs }),
-        runPath,
-        changeKey: input.changeKey,
-        changeId: input.changeId,
-        ...(inputRef !== undefined && { inputRef }),
-        ...(input.sourceReviewRun !== undefined && { sourceReviewRun: input.sourceReviewRun }),
-        ...(input.sourceReviewVerdict !== undefined && { sourceReviewVerdict: input.sourceReviewVerdict }),
-        canonicalBase: input.canonicalBase,
-        applicableFactRefs: input.applicableFactRefs,
-        actionPackage: input.actionPackage,
-        entryWorkspaceIdentity: input.entryWorkspaceIdentity,
-        mutationDeclaration: input.mutationDeclaration,
-        ...(input.constraints !== undefined && { constraints: input.constraints }),
-      };
+        schemaVersion: 5, runId: input.runId, deliveryId: input.deliveryId, action: input.action, role: input.role, ownerAuthorization: input.ownerAuthorization,
+        semanticInputFingerprint: input.semanticInputFingerprint ?? '', ...(input.ownerFactRefs !== undefined && { ownerFactRefs: input.ownerFactRefs }), runPath, changeKey: input.changeKey, changeId: input.changeId,
+        ...(inputRef !== undefined && { inputRef }), ...(input.sourceReviewRun !== undefined && { sourceReviewRun: input.sourceReviewRun }), ...(input.sourceReviewVerdict !== undefined && { sourceReviewVerdict: input.sourceReviewVerdict }),
+        canonicalBase: input.canonicalBase, applicableFactRefs: input.applicableFactRefs, actionPackage: input.actionPackage,
+        ...(input.entryWorkspaceIdentity !== undefined && { entryWorkspaceIdentity: input.entryWorkspaceIdentity }),
+        ...(compact !== undefined && { compactEntryWorkspaceIdentity: compact }),
+        mutationDeclaration: input.mutationDeclaration, ...(input.constraints !== undefined && { constraints: input.constraints }),
+      } as ContextFile;
     }
     return {
       schemaVersion: 5,

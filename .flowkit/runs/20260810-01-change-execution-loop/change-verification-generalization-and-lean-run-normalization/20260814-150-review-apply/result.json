@@ -1,0 +1,71 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "149 Apply implements most E2 requirements and repository regression is green, but review found two author-owned correctness blockers: the prospective three-file writer activation is scoped to the current Delivery Git-boundary projection and therefore reverts after the next Delivery Start; and formal Change Verification omits the changed a1-write-service regression from its selected Node test union.",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/verification.md",
+      "versionFingerprint": "17d9d6a329ab1909f5dfdba721188c7404876ac4f3a37551b1b85c2d388c6a0b",
+      "kind": "verification-summary"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "3bd4859a076fff574c8f03d4a793fc576084de267f0230b5ac52ebf3b84a6bf0"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "E2-RA-001",
+      "severity": "blocking",
+      "blockingAuthority": "author",
+      "title": "post-E2 three-file writer activation incorrectly expires at the next Delivery Start",
+      "problem": "The prospective writer gate checks only snapshot.gitBoundaries for the current Delivery. readGitBoundarySummaries(repoRoot, deliveryId) intentionally projects boundaries owned by that Delivery, so after 02 completes and a new Delivery starts, the E2 checkpoint is no longer present in the new Delivery snapshot. The same latest code therefore falls back to the pre-E2 full-entry/sidecar writer in 03 and later Deliveries.",
+      "contractRef": "specs/flowkit-formal-fact-reader-and-persistence/spec.md Requirement current structural ContextFile; specs/flowkit-lean-run-and-action-package/spec.md post-E2 prospective Apply; design.md Decision E2 checkpoint is sole writer transition boundary",
+      "invariant": "Once the recognized E2 Change Checkpoint has occurred, the prospective three-file writer is the current product writer for F1 and all later Changes/Deliveries; a later Delivery Start must not erase or reverse that product transition.",
+      "evidence": [
+        "src/services/b1-run-execution-service.ts isPostE2ThreeFileWriterActive(snapshot) returns true only when snapshot.gitBoundaries contains the E2 change-checkpoint.",
+        "src/facts/git-boundary-reader.ts readGitBoundarySummaries(repoRoot, deliveryId) explicitly returns only boundaries owned by the requested Delivery.",
+        "A disposable Git history with 02 start → E2 checkpoint → 02 final → 03 start returns the E2 checkpoint for the 02 projection but only the 03 start boundary for the 03 projection.",
+        "03 implementation reference requires the 02 baseline to provide the prospective three-file Run writer; falling back to legacy sidecars in the next Delivery violates that handoff."
+      ],
+      "impact": "F1/G1 inside the current 02 Delivery may dogfood the new writer, but the first subsequent Delivery can silently revert to entry-workspace/verification sidecars. E2 would therefore fail its long-term normalization objective and hand 03 an unstable writer boundary.",
+      "location": "src/services/b1-run-execution-service.ts:isPostE2ThreeFileWriterActive; src/facts/git-boundary-reader.ts:readGitBoundarySummaries",
+      "requiredOutcome": "Make post-E2 writer activation a repository-global monotonic fact derived from the recognized E2 checkpoint (or an equivalent already-authorized durable Git fact), not from the current Delivery-only boundary projection. Preserve the rule that production code presence alone cannot self-activate before the E2 checkpoint.",
+      "acceptance": [
+        "Before the E2 checkpoint, E2 Apply/revise-apply still uses the pre-E2 sidecar protocol.",
+        "After the E2 checkpoint, F1/G1 use the three-file writer.",
+        "After a later Delivery Start, a new Apply/revise-apply still uses compact context identity and creates only action.md/context.json/result.json.",
+        "Add a regression spanning two Delivery Start boundaries so the writer cannot revert in 03 or later Deliveries."
+      ]
+    },
+    {
+      "id": "E2-RA-002",
+      "severity": "blocking",
+      "blockingAuthority": "author",
+      "title": "formal Change Verification does not execute a changed affected regression in the selected execution scope",
+      "problem": "149 actualChangeSet includes tests/unit/services/a1-write-service.test.ts and Catalog maps tests/unit/services to the execution module, selecting tests-execution. However the physical resolver for tests-execution only runs two facts tests plus b1-run-execution-service.test.ts; it does not run a1-write-service.test.ts. Thus the formal verification can report tests-execution passed even when the changed regression itself fails.",
+      "contractRef": "specs/flowkit-change-verification-selection/spec.md generic deterministic selection and compatible affected test aggregation; tasks.md 5.1 and 7.1; design.md Decision affected execution aggregates compatible test files",
+      "invariant": "A formal affected verification check selected because of an actual changed path must execute a test set that covers that affected path/consumer relation; union/dedupe may reduce process count but must not drop required affected tests.",
+      "evidence": [
+        "149 verification-selection.json actualChangeSet explicitly contains modify tests/unit/services/a1-write-service.test.ts and seedModuleIds includes execution.",
+        "149 verification.md/evidence selected tests-execution, but its aggregated command omits tests/unit/services/a1-write-service.test.ts.",
+        "src/verification/change-selection/evidence.ts logicalNodeSelectors(tests-execution) returns only formal-fact-reader-e1-verification.test.ts, formal-fact-reader.test.ts, and b1-run-execution-service.test.ts.",
+        "In a disposable copy, adding an unconditional failing sentinel to a1-write-service.test.ts leaves the exact 149 selected Node union green (351/351), while running a1-write-service.test.ts directly fails. This proves the formal selected evidence can miss a regression in its own actualChangeSet.",
+        "Independent repository regression currently passes 752/752, so this is a selection-authority correctness defect rather than a claim that the present a1 assertion is failing."
+      ],
+      "impact": "Change Verification can publish passed while a changed affected test is red. That breaks the generic Verification guarantee and makes the terminal verification binding insufficient for Reviewer/archive trust.",
+      "location": "src/verification/change-selection/evidence.ts:logicalNodeSelectors/resolveLogicalNodeTests; 20260814-149-apply verification-selection.json and verification.md",
+      "requiredOutcome": "Make logical affected-test resolution preserve the complete required affected test union for selected modules/paths while still deduplicating compatible Node execution. The concrete implementation may reuse the existing affected-scope resolver or another deterministic mapping, but must not omit changed/required affected regressions.",
+      "acceptance": [
+        "For an actualChangeSet containing tests/unit/services/a1-write-service.test.ts, formal Change Verification executes that test (or a formally equivalent complete affected test set that contains it).",
+        "A failing sentinel in that changed regression makes the selected tests-execution evidence fail rather than pass.",
+        "The compatible Node union remains deduplicated and does not regress to one process per logical module.",
+        "Re-run E2 Change Verification and bind the corrected passed evidence before re-review."
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}

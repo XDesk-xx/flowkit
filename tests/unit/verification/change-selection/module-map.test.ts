@@ -7,8 +7,10 @@ describe('verification module map', () => {
   it('maps each actual path once and includes reverse dependency consumers', () => {
     assert.deepEqual(selectAffectedVerificationModules(['src/domain/types.ts']), {
       seedModuleIds: ['core-model'],
-      moduleIds: ['core-model', 'execution', 'openspec-runtime', 'persistence', 'verification-selection'],
+      moduleIds: ['cli-diagnostics', 'core-model', 'execution', 'openspec-runtime', 'persistence', 'verification-selection'],
       capabilityIds: [
+        'flowkit-archive-and-checkpoint-boundary',
+        'flowkit-change-cli-end-to-end-and-performance',
         'flowkit-change-verification-selection',
         'flowkit-core-model',
         'flowkit-formal-fact-reader-and-persistence',
@@ -18,21 +20,23 @@ describe('verification module map', () => {
         'flowkit-runtime-foundation',
       ],
       verificationScopes: [
-        'node --test --import tsx tests/unit/integrations/openspec-cli-adapter.test.ts tests/unit/external-command.test.ts',
-        'node --test --import tsx tests/unit/persistence/run-persistence.test.ts',
-        'node --test --import tsx tests/unit/services/b1-run-execution-service.test.ts',
-        'node --test --import tsx tests/unit/verification/change-selection/*.test.ts',
-        'node --test --import tsx tests/unit/persistence/serialization.test.ts',
-        'npm run typecheck',
-      ].sort(),
+        'openspec-current-change-strict', 'tests-cli', 'tests-execution', 'tests-openspec-runtime',
+        'tests-persistence', 'tests-serialization', 'tests-verification', 'typecheck',
+      ],
     });
+  });
+
+  it('maps the historical E1 integration regression into verification-selection coverage', () => {
+    const selected = selectAffectedVerificationModules(['tests/integration/e1-change-verification-selection.test.ts']);
+    assert.deepEqual(selected.seedModuleIds, ['verification-selection']);
+    assert.equal(selected.verificationScopes.includes('tests-verification'), true);
   });
 
   it('rejects overlap and dependency cycles', () => {
     assert.doesNotThrow(() => validateVerificationModuleMap(VERIFICATION_MODULE_MAP));
     assert.throws(() => validateVerificationModuleMap([
-      { id: 'a', ownershipSelectors: ['src'], dependsOn: ['b'], verificationScopes: ['npm run typecheck'], capabilityIds: ['flowkit-core-model'] },
-      { id: 'b', ownershipSelectors: ['src/b'], dependsOn: ['a'], verificationScopes: ['npm run typecheck'], capabilityIds: ['flowkit-core-model'] },
+      { id: 'a', ownershipSelectors: ['src'], dependsOn: ['b'], verificationScopes: ['typecheck'], capabilityIds: ['flowkit-core-model'] },
+      { id: 'b', ownershipSelectors: ['src/b'], dependsOn: ['a'], verificationScopes: ['typecheck'], capabilityIds: ['flowkit-core-model'] },
     ]), /overlap/);
   });
 
@@ -48,8 +52,8 @@ describe('verification module map', () => {
       { ...base, capabilityIds: ['flowkit-unknown-capability'] },
     ]), /capability is outside/);
     assert.throws(() => validateVerificationModuleMap([
-      { id: 'a', ownershipSelectors: ['a'], dependsOn: ['b'], verificationScopes: ['npm run typecheck'], capabilityIds: ['flowkit-core-model'] },
-      { id: 'b', ownershipSelectors: ['b'], dependsOn: ['a'], verificationScopes: ['npm run typecheck'], capabilityIds: ['flowkit-core-model'] },
+      { id: 'a', ownershipSelectors: ['a'], dependsOn: ['b'], verificationScopes: ['typecheck'], capabilityIds: ['flowkit-core-model'] },
+      { id: 'b', ownershipSelectors: ['b'], dependsOn: ['a'], verificationScopes: ['typecheck'], capabilityIds: ['flowkit-core-model'] },
     ]), /cycle/);
   });
 

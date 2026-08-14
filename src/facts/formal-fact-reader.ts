@@ -1156,24 +1156,25 @@ async function readActiveChangeVerificationStatus(
   let result: ReturnType<typeof admitC1RunResultForReader>;
   try { result = admitC1RunResultForReader(resultRaw, context.action, { runId: context.runId, deliveryId: context.deliveryId, changeId: context.changeId }); }
   catch (error) { return { conflicts: [{ dimension: 'change-verification-selection', authority, message: `current verification producer result invalid: ${error instanceof Error ? error.message : String(error)}` }] }; }
-  const binding = result.terminalBinding?.verificationSelection;
-  if (result.runStatus !== 'completed' || binding === undefined || result.terminalBinding === undefined || context.semanticInputFingerprint === undefined) {
-    return { conflicts: [{ dimension: 'change-verification-selection', authority, message: 'current v5 verification producer lacks completed terminal/selection binding' }] };
+  if (result.runStatus !== 'completed' || result.terminalBinding === undefined || context.semanticInputFingerprint === undefined) {
+    return { conflicts: [{ dimension: 'change-verification-selection', authority, message: 'current verification producer lacks completed terminal binding' }] };
   }
   try {
-    const record = await validateTerminalVerificationSelectionBinding({
-      runDir: producerDir,
-      binding,
-      producingRunId: context.runId,
-      producingSemanticInputFingerprint: context.semanticInputFingerprint,
-      logicalDescriptorDigest: result.terminalBinding.logicalDescriptorDigest,
-    });
-    if (record.verificationMarkdownFingerprint !== createHash('sha256').update(content).digest('hex')) {
-      return { conflicts: [{ dimension: 'change-verification-selection', authority, message: 'current verification producer record does not exact-bind current canonical Markdown bytes' }] };
+    if ('compactEntryWorkspaceIdentity' in context && context.compactEntryWorkspaceIdentity !== undefined) {
+      const binding = result.terminalBinding.currentVerification;
+      if (binding === undefined) throw new Error('post-E2 current verification binding missing');
+      if (binding.logicalRef !== `openspec/changes/${activeChangeId}/verification.md`) throw new Error('post-E2 current verification logicalRef mismatch');
+      if (binding.versionFingerprint !== createHash('sha256').update(content).digest('hex')) throw new Error('post-E2 current verification fingerprint mismatch');
+      if (binding.status !== status.value) throw new Error('post-E2 current verification status mismatch');
+      const selection = /- selectionFingerprint: `([0-9a-f]{64})`/.exec(content)?.[1];
+      if (selection !== binding.selectionFingerprint) throw new Error('post-E2 current verification selection fingerprint mismatch');
+      return { status: status.value, conflicts: [] };
     }
-    if (record.verificationStatus !== status.value) {
-      return { conflicts: [{ dimension: 'change-verification-selection', authority, message: 'current verification status marker differs from immutable selection record status' }] };
-    }
+    const binding = result.terminalBinding.verificationSelection;
+    if (binding === undefined) throw new Error('legacy verification-selection binding missing');
+    const record = await validateTerminalVerificationSelectionBinding({ runDir: producerDir, binding, producingRunId: context.runId, producingSemanticInputFingerprint: context.semanticInputFingerprint, logicalDescriptorDigest: result.terminalBinding.logicalDescriptorDigest });
+    if (record.verificationMarkdownFingerprint !== createHash('sha256').update(content).digest('hex')) throw new Error('legacy record does not exact-bind verification.md');
+    if (record.verificationStatus !== status.value) throw new Error('legacy status differs from selection record');
     return { status: status.value, conflicts: [] };
   } catch (error) {
     return { conflicts: [{ dimension: 'change-verification-selection', authority, message: `current verification producer binding invalid: ${error instanceof Error ? error.message : String(error)}` }] };

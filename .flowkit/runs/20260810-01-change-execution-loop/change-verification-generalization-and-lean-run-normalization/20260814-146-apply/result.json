@@ -1,0 +1,8 @@
+{
+  "runStatus": "failed",
+  "failureDiagnosis": "APPLY_MUTATION_SCOPE_INSUFFICIENT: repository full regression proves tests/unit/services/a1-write-service.test.ts must update Delivery Change count from 9 to 10 after E2 insertion, but approved flowkitMutationScope does not authorize that path; implementation cannot satisfy all-green acceptance without exceeding approved Design.",
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "80ee2412f4abad5b030de88bf90761c2bb57a70917a8143d53435a707ef4111c"
+  }
+}

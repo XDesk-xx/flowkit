@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 
 import type { ActualChangeSetEntry } from './contracts.js';
 import {
+  CLOSED_VERIFICATION_SCOPES,
   selectAffectedVerificationModules,
   VERIFICATION_MODULE_MAP,
   VERIFICATION_MODULE_MAP_LOGICAL_REF,
@@ -14,17 +15,19 @@ export type CapabilityRelation =
 
 export interface VerificationSelection {
   readonly moduleMapLogicalRef: string;
+  /** Point-in-time content fingerprint of the source-controlled Verification Catalog. */
   readonly moduleMapFingerprint: string;
   readonly seedModuleIds: readonly string[];
   readonly moduleIds: readonly string[];
   readonly capabilityIds: readonly string[];
   readonly capabilityRefs: readonly string[];
   readonly capabilityRelation: CapabilityRelation;
+  /** Historical field name; current values are stable logical check ids, not physical commands. */
   readonly verificationScopes: readonly string[];
   readonly selectionFingerprint: string;
 }
 
-/** Build deterministic verification authority from Core-observed change paths. */
+/** Build deterministic current verification authority from Core-observed change paths. */
 export function buildVerificationSelection(
   actualChangeSet: readonly ActualChangeSetEntry[],
   capabilityRefs: readonly string[],
@@ -39,17 +42,16 @@ export function buildVerificationSelection(
     if (capabilityIds.length !== 0) {
       throw new FlowkitError('VERIFICATION_CAPABILITY_SELECTION_FAILED', 'not-applicable requires no delta capability relation to prove', { capabilityIds });
     }
-    const payload = {
-      moduleMapLogicalRef: VERIFICATION_MODULE_MAP_LOGICAL_REF,
-      moduleMapFingerprint: fingerprint(VERIFICATION_MODULE_MAP),
-      seedModuleIds: [] as readonly string[],
-      moduleIds: [] as readonly string[],
-      capabilityIds: [] as readonly string[],
-      capabilityRefs: [] as readonly string[],
+    const payload = stablePayload({
+      moduleMapFingerprint: currentVerificationCatalogFingerprint(),
+      seedModuleIds: [],
+      moduleIds: [],
+      capabilityIds: [],
+      capabilityRefs: [],
       capabilityRelation: { kind: 'not-applicable' as const, predicateId: selection.notApplicableProof.predicateId },
-      verificationScopes: [] as readonly string[],
-    };
-    return { ...payload, selectionFingerprint: fingerprint(payload) };
+      verificationScopes: [],
+    });
+    return { ...payload, selectionFingerprint: canonicalFingerprint(payload) };
   }
   for (const moduleId of selection.seedModuleIds) {
     const required = selectionForModule(moduleId);
@@ -61,19 +63,22 @@ export function buildVerificationSelection(
   if (unknownCapabilities.length > 0) {
     throw new FlowkitError('VERIFICATION_CAPABILITY_SELECTION_FAILED', 'Current OpenSpec delta contains a capability unrelated to the selected verification modules', { unknownCapabilities, selectedModuleIds: selection.moduleIds });
   }
-  const payload = {
-    moduleMapLogicalRef: VERIFICATION_MODULE_MAP_LOGICAL_REF,
-    moduleMapFingerprint: fingerprint(VERIFICATION_MODULE_MAP),
+  const payload = stablePayload({
+    moduleMapFingerprint: currentVerificationCatalogFingerprint(),
     seedModuleIds: selection.seedModuleIds,
     moduleIds: selection.moduleIds,
     capabilityIds,
     capabilityRefs: normalizedCapabilityRefs,
     capabilityRelation: { kind: 'matched' as const },
-    verificationScopes: selection.verificationScopes,
-  };
-  return { ...payload, selectionFingerprint: fingerprint(payload) };
+    verificationScopes: [...new Set([...selection.verificationScopes, 'openspec-current-change-strict'])].sort(),
+  });
+  return { ...payload, selectionFingerprint: canonicalFingerprint(payload) };
 }
 
+/**
+ * Bounded historical reader. It validates only persisted closed content and its
+ * internal fingerprint; future/current Catalog bytes are deliberately not an authority.
+ */
 export function validateVerificationSelection(value: unknown): VerificationSelection {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) fail('verification selection must be an object');
   const obj = value as Record<string, unknown>;
@@ -82,7 +87,6 @@ export function validateVerificationSelection(value: unknown): VerificationSelec
   if (keys.length !== expected.length || keys.some((key, index) => key !== expected[index])) fail('verification selection must use the closed shape');
   if (obj['moduleMapLogicalRef'] !== VERIFICATION_MODULE_MAP_LOGICAL_REF) fail('verification selection moduleMapLogicalRef is not canonical');
   const moduleMapFingerprint = requireSha(obj['moduleMapFingerprint'], 'moduleMapFingerprint');
-  if (moduleMapFingerprint !== fingerprint(VERIFICATION_MODULE_MAP)) fail('verification selection moduleMapFingerprint is stale');
   const seedModuleIds = sortedStrings(obj['seedModuleIds'], 'seedModuleIds');
   const moduleIds = sortedStrings(obj['moduleIds'], 'moduleIds');
   const capabilityIds = sortedStrings(obj['capabilityIds'], 'capabilityIds');
@@ -97,10 +101,51 @@ export function validateVerificationSelection(value: unknown): VerificationSelec
   else fail('capabilityRelation must be matched or closed not-applicable proof');
   if (capabilityRelation.kind === 'not-applicable' && (seedModuleIds.length !== 0 || moduleIds.length !== 0 || capabilityIds.length !== 0 || capabilityRefs.length !== 0 || verificationScopes.length !== 0)) fail('not-applicable selection must not carry selected authority');
   if (capabilityRelation.kind === 'matched' && (moduleIds.length === 0 || capabilityIds.length === 0 || verificationScopes.length === 0)) fail('matched selection requires module/capability/scope authority');
-  const payload = { moduleMapLogicalRef: VERIFICATION_MODULE_MAP_LOGICAL_REF, moduleMapFingerprint, seedModuleIds, moduleIds, capabilityIds, capabilityRefs, capabilityRelation, verificationScopes };
+  const payload = stablePayload({ moduleMapFingerprint, seedModuleIds, moduleIds, capabilityIds, capabilityRefs, capabilityRelation, verificationScopes });
   const selectionFingerprint = requireSha(obj['selectionFingerprint'], 'selectionFingerprint');
-  if (selectionFingerprint !== fingerprint(payload)) fail('selectionFingerprint does not bind the stable selection payload');
+  // Historical E1 used insertion-order JSON.stringify. Current writer uses canonical JSON.
+  if (selectionFingerprint !== canonicalFingerprint(payload) && selectionFingerprint !== legacyFingerprint(payload)) {
+    fail('selectionFingerprint does not bind the persisted selection payload');
+  }
   return { ...payload, selectionFingerprint };
+}
+
+/** Current producer validation additionally exact-binds the current source Catalog. */
+export function validateCurrentVerificationSelection(value: unknown): VerificationSelection {
+  const selection = validateVerificationSelection(value);
+  if (selection.moduleMapFingerprint !== currentVerificationCatalogFingerprint()) {
+    fail('verification selection moduleMapFingerprint is stale for the current Catalog');
+  }
+  const closed = new Set<string>(CLOSED_VERIFICATION_SCOPES);
+  if (selection.verificationScopes.some((scope) => !closed.has(scope))) {
+    fail('current verification selection contains a non-current logical check id');
+  }
+  return selection;
+}
+
+export function currentVerificationCatalogFingerprint(): string {
+  return canonicalFingerprint(VERIFICATION_MODULE_MAP);
+}
+
+function stablePayload(input: {
+  readonly moduleMapFingerprint: string;
+  readonly seedModuleIds: readonly string[];
+  readonly moduleIds: readonly string[];
+  readonly capabilityIds: readonly string[];
+  readonly capabilityRefs: readonly string[];
+  readonly capabilityRelation: CapabilityRelation;
+  readonly verificationScopes: readonly string[];
+}): Omit<VerificationSelection, 'selectionFingerprint'> {
+  return {
+    moduleMapLogicalRef: VERIFICATION_MODULE_MAP_LOGICAL_REF,
+    moduleMapFingerprint: input.moduleMapFingerprint,
+    seedModuleIds: input.seedModuleIds,
+    moduleIds: input.moduleIds,
+    capabilityIds: input.capabilityIds,
+    capabilityRefs: input.capabilityRefs,
+    capabilityRelation: input.capabilityRelation,
+    verificationScopes: input.verificationScopes,
+  };
 }
 
 function selectionForModule(moduleId: string): readonly string[] {
@@ -134,6 +179,19 @@ function fail(message: string): never {
   throw new FlowkitError('SCHEMA_VALIDATION_FAILED', message);
 }
 
-function fingerprint(value: unknown): string {
+function legacyFingerprint(value: unknown): string {
   return createHash('sha256').update(JSON.stringify(value)).digest('hex');
+}
+
+function canonicalFingerprint(value: unknown): string {
+  return createHash('sha256').update(canonicalStringify(value)).digest('hex');
+}
+
+function canonicalStringify(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map((item) => canonicalStringify(item)).join(',')}]`;
+  if (value !== null && typeof value === 'object') {
+    const object = value as Record<string, unknown>;
+    return `{${Object.keys(object).sort().map((key) => `${JSON.stringify(key)}:${canonicalStringify(object[key])}`).join(',')}}`;
+  }
+  return JSON.stringify(value);
 }
