@@ -1,0 +1,34 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "propose",
+    "executionStatus": "completed",
+    "summary": "Owner Contract Reset 后建立新的 G1 Proposal generation：仅将 design.md 中 flowkitMutationScope.apply / revise-apply 的既有 12 个 selectors 按 MutationDeclaration lexical order 重排；selector 集合、Explore、Proposal architecture、scope、required outcomes、implementation plan、proposal/spec/tasks 均保持不变。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/design.md",
+        "versionFingerprint": "44b4f90556b18ec8b5e4f5a7bb11d2f2959e05caff94fbf10fb788ac5006a007",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/proposal.md",
+        "versionFingerprint": "75e74945e6423f6c742f7b302fa3cbc84728dcd79e7a0c1c9f4f34a9349a729e",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+        "versionFingerprint": "b39ae82599df4dc0661f94f379a68af222b311120d059fac5f2c682659eaa873",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/tasks.md",
+        "versionFingerprint": "d5424b9560e9a07c9a621d57d53cf49553cf2408ee70ce5433c1b16cd3160c86",
+        "kind": "produced-artifact"
+      }
+    ]
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "9f9678ce17f24a69ba252a47388c790e9138e91e4ec856bb1e525c1ea4d69f7e"
+  }
+}

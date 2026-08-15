@@ -1,0 +1,16 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "Review 193 propose: Owner Contract Reset 后的新 Proposal generation 合法。相对 186 approved Design，仅在 flowkitMutationScope.apply 与 revise-apply 各增加 src/services/b1-run-execution-service.ts 与 tests/unit/services/b1-run-execution-service.test.ts；其余 Explore、Proposal architecture、scope、required outcomes、implementation plan 与原 12 selectors 保持不变。新增 mutation surface 精确对应 G1-RA-001 authority-safe 修复需要，使 pending-archive recovery discovery 可收回既有/窄扩展 B1/F1/D2 production authority，CLI 仅消费单一 recovery projection。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "608f7a5fe2f6fb32b07c923db1af4364a0602f40db9701056eafe50e42a3f311"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [],
+  "reviewFindingConvergence": []
+}

@@ -1,0 +1,205 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260815-191-review-apply",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "review-apply",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "ee6ef5c69010e1cdcb3ccc6b86f07cc2ca902811ab74b25ebf1dd6c9759ba6c3",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:398a9e6f90687b299c63b8070e069da64e6fdffae3530c362937a2a55a38dbd3",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-cli-end-to-end-and-performance",
+      "scope": "Keep G1 Explore, Proposal architecture, scope, required outcomes, and implementation plan unchanged; only lexical-sort flowkitMutationScope.apply and flowkitMutationScope.revise-apply selectors without changing membership.",
+      "requiredOutcomes": [
+        "Do not add or remove any mutation selector.",
+        "Preserve G1 Explore, Proposal architecture, scope, required outcomes, and implementation plan unchanged.",
+        "Sort flowkitMutationScope.apply and flowkitMutationScope.revise-apply selectors into existing MutationDeclaration lexical order."
+      ],
+      "sourceRef": "owner-input:2026-08-15T16:38+08:00:G1-contract-reset-mutation-scope-sort"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/change-cli-end-to-end-and-performance/20260815-191-review-apply/",
+  "changeKey": "G1",
+  "changeId": "change-cli-end-to-end-and-performance",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-cli-end-to-end-and-performance/20260815-190-revise-apply/result.json",
+    "versionFingerprint": "a601e8fe3db823ffefaf2474f18094caa8423904010ae5f95ae68087cf054ab4",
+    "kind": "run-result"
+  },
+  "verificationInputRef": {
+    "ref": "openspec/changes/change-cli-end-to-end-and-performance/verification.md",
+    "versionFingerprint": "d0a12450b910c4e80f78072653cdc773fa60e20b6d030ef9f0473054701678ac",
+    "kind": "verification-summary"
+  },
+  "reviewedRunId": "20260815-190-revise-apply",
+  "canonicalBase": "b9a126b63ad1907cf0baa0b42c858480284cc522",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-cli-end-to-end-and-performance/20260815-190-revise-apply/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "a601e8fe3db823ffefaf2474f18094caa8423904010ae5f95ae68087cf054ab4"
+    },
+    {
+      "ref": "openspec/changes/change-cli-end-to-end-and-performance/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+    },
+    {
+      "ref": "openspec/changes/change-cli-end-to-end-and-performance/design.md",
+      "versionFingerprint": "44b4f90556b18ec8b5e4f5a7bb11d2f2959e05caff94fbf10fb788ac5006a007",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-cli-end-to-end-and-performance/proposal.md",
+      "versionFingerprint": "75e74945e6423f6c742f7b302fa3cbc84728dcd79e7a0c1c9f4f34a9349a729e",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-cli-end-to-end-and-performance/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+      "versionFingerprint": "b39ae82599df4dc0661f94f379a68af222b311120d059fac5f2c682659eaa873",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-cli-end-to-end-and-performance/tasks.md",
+      "kind": "openspec-contract",
+      "versionFingerprint": "db69e98cfa1d42aa8f0791717c30dd3e70618f3332d0810df4e8c71717b89be7"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-cli-end-to-end-and-performance",
+      "runId": "20260815-191-review-apply",
+      "action": "review-apply",
+      "role": "reviewer",
+      "semanticInputFingerprint": "ee6ef5c69010e1cdcb3ccc6b86f07cc2ca902811ab74b25ebf1dd6c9759ba6c3"
+    },
+    "definition": {
+      "action": "review-apply",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-implementation-and-verification",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings-plus-verification-ref",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "core-derived",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+      },
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/design.md",
+        "versionFingerprint": "44b4f90556b18ec8b5e4f5a7bb11d2f2959e05caff94fbf10fb788ac5006a007",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/proposal.md",
+        "versionFingerprint": "75e74945e6423f6c742f7b302fa3cbc84728dcd79e7a0c1c9f4f34a9349a729e",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+        "versionFingerprint": "b39ae82599df4dc0661f94f379a68af222b311120d059fac5f2c682659eaa873",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/tasks.md",
+        "kind": "openspec-contract",
+        "versionFingerprint": "db69e98cfa1d42aa8f0791717c30dd3e70618f3332d0810df4e8c71717b89be7"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-cli-end-to-end-and-performance/20260815-190-revise-apply/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "a601e8fe3db823ffefaf2474f18094caa8423904010ae5f95ae68087cf054ab4"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260815-189-review-apply",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-cli-end-to-end-and-performance/20260815-189-review-apply/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "e53868c8612569af74b902c85d0aed519bb1711a0acfd0ee0cf63a6d6a919e8f"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "G1-RA-001",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "archive CLI MUST preserve durable pending-archive recovery before active OpenSpec preflight",
+          "problem": "runArchiveOperator first calls assertCurrentIntentBeforePreparation(), which re-reads the active Change through readFormalFactSnapshotOperation/OpenSpec status before delegating to prepareActionExecution(). For a persisted pending archive whose external OpenSpec mutation already changed the mutation surface but produced no durable terminal observation, the active OpenSpec Change may no longer be readable. The CLI therefore fails with 'OpenSpec status exited 1' before the existing pending-archive recovery classifier can return recovery-required.",
+          "contractRef": "G1 archive durable OpenSpec execution contract / G1 CLI E2E failure-recovery matrix / F1-D2 pending archive recovery semantics",
+          "invariant": "A persisted archive outcome-unknown or mutation-surface recovery state must remain the same pending archive Run and surface recovery-required without respawning or requiring the active OpenSpec Change projection to still exist.",
+          "requiredOutcome": "Revise Apply so flowkit archive preserves the existing durable pending-archive continuation/recovery authority before any active-Change OpenSpec preflight that can disappear after external mutation. The public CLI must deterministically surface recovery-required for the same pending Run and must not respawn OpenSpec or allocate a replacement Run. Add a real CLI-process regression where outcome-unknown occurs after the archive mutation surface has changed.",
+          "acceptance": [
+            "Given one persisted pending archive with an armed outcome-unknown guard and changed archive mutation surface, public 'flowkit archive' returns a deterministic recovery-required result for that same runId rather than failing on OpenSpec status/projection discovery.",
+            "The recovery-required invocation does not spawn OpenSpec again, allocate a new Run, terminalize the pending Run, or change checkpoint/Git state.",
+            "After exact mechanical restoration plus the existing explicit recovery admission, the same archive generation can continue according to the established F1/D2 contract.",
+            "G1 CLI-process E2E includes the changed-surface outcome-unknown/recovery case; existing happy archive, known terminal failure/recovery, verify projection and selected Verification regressions remain green.",
+            "The fix stays within the approved 186 apply/revise-apply mutation surface and does not introduce a second archive state machine or 03 Delivery behavior."
+          ]
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [
+      {
+        "ref": "owner:398a9e6f90687b299c63b8070e069da64e6fdffae3530c362937a2a55a38dbd3",
+        "decision": "contract-reset",
+        "deliveryId": "20260810-01-change-execution-loop",
+        "changeId": "change-cli-end-to-end-and-performance",
+        "scope": "Keep G1 Explore, Proposal architecture, scope, required outcomes, and implementation plan unchanged; only lexical-sort flowkitMutationScope.apply and flowkitMutationScope.revise-apply selectors without changing membership.",
+        "requiredOutcomes": [
+          "Do not add or remove any mutation selector.",
+          "Preserve G1 Explore, Proposal architecture, scope, required outcomes, and implementation plan unchanged.",
+          "Sort flowkitMutationScope.apply and flowkitMutationScope.revise-apply selectors into existing MutationDeclaration lexical order."
+        ],
+        "sourceRef": "owner-input:2026-08-15T16:38+08:00:G1-contract-reset-mutation-scope-sort"
+      }
+    ],
+    "verificationView": {
+      "status": "passed",
+      "resultRef": {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/verification.md",
+        "kind": "verification-summary",
+        "versionFingerprint": "d0a12450b910c4e80f78072653cdc773fa60e20b6d030ef9f0473054701678ac"
+      }
+    },
+    "externalContextFingerprint": "97903dd4d72c445567c90412ff9563c4fc694a03d153c336c946aba851d21d7b",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "core-derived",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

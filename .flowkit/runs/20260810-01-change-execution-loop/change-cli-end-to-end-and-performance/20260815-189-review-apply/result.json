@@ -1,0 +1,46 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "Review 188 apply：CLI intent composition、structured verify projection、selected Verification closure、future-Delivery exact resume 和正常 archive happy path 均成立；但 flowkit archive 在一个合法的 outcome-unknown + external mutation recovery-required 状态下，会在 durable pending-archive continuation 之前先读取 active OpenSpec projection，从而以 OpenSpec status exited 1 失败，不能按既有 F1/D2 archive recovery contract 返回 recovery-required。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/change-cli-end-to-end-and-performance/verification.md",
+      "versionFingerprint": "7911d74c9150a19800553707a4c9845f8d23c9fbe94b4e872e3d6a24a450f364",
+      "kind": "verification-summary"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "eefdf76105141563dcc981a6227a72ee8a7a67df368ba7173aee4e78cdb9c39a"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "G1-RA-001",
+      "severity": "blocking",
+      "blockingAuthority": "author",
+      "title": "archive CLI MUST preserve durable pending-archive recovery before active OpenSpec preflight",
+      "problem": "runArchiveOperator first calls assertCurrentIntentBeforePreparation(), which re-reads the active Change through readFormalFactSnapshotOperation/OpenSpec status before delegating to prepareActionExecution(). For a persisted pending archive whose external OpenSpec mutation already changed the mutation surface but produced no durable terminal observation, the active OpenSpec Change may no longer be readable. The CLI therefore fails with 'OpenSpec status exited 1' before the existing pending-archive recovery classifier can return recovery-required.",
+      "contractRef": "G1 archive durable OpenSpec execution contract / G1 CLI E2E failure-recovery matrix / F1-D2 pending archive recovery semantics",
+      "invariant": "A persisted archive outcome-unknown or mutation-surface recovery state must remain the same pending archive Run and surface recovery-required without respawning or requiring the active OpenSpec Change projection to still exist.",
+      "evidence": [
+        "188 src/cli/change-action.ts runArchiveOperator calls assertCurrentIntentBeforePreparation() before prepareActionExecution().",
+        "Existing prepareActionExecution() already contains the bounded no-active-Change/persisted-pending-archive continuation and inspectOpenSpecArchiveRecovery() recovery-required path.",
+        "Disposable counterexample: prepare a legal pending archive, invoke the existing durable archive service with an adapter that performs the archive mutation then returns outcome-unknown, and invoke the public CLI 'archive'. The durable service reports recovery-required, but the CLI exits 2 with stderr 'flowkit: OpenSpec status exited 1' and no recovery-required projection.",
+        "188 G1 E2E outcome-unknown test injects an unknown result without changing the mutation surface, so it does not exercise this partial/external-mutation recovery boundary through the public CLI process."
+      ],
+      "impact": "A real timeout/crash after OpenSpec has mutated the Change can strand the operator at a generic OpenSpec read failure instead of the deterministic recovery boundary already delivered by F1/D2. The same pending archive cannot be safely diagnosed through the new public archive command, violating the frozen archive recovery contract and G1 E2E acceptance matrix.",
+      "requiredOutcome": "Revise Apply so flowkit archive preserves the existing durable pending-archive continuation/recovery authority before any active-Change OpenSpec preflight that can disappear after external mutation. The public CLI must deterministically surface recovery-required for the same pending Run and must not respawn OpenSpec or allocate a replacement Run. Add a real CLI-process regression where outcome-unknown occurs after the archive mutation surface has changed.",
+      "acceptance": [
+        "Given one persisted pending archive with an armed outcome-unknown guard and changed archive mutation surface, public 'flowkit archive' returns a deterministic recovery-required result for that same runId rather than failing on OpenSpec status/projection discovery.",
+        "The recovery-required invocation does not spawn OpenSpec again, allocate a new Run, terminalize the pending Run, or change checkpoint/Git state.",
+        "After exact mechanical restoration plus the existing explicit recovery admission, the same archive generation can continue according to the established F1/D2 contract.",
+        "G1 CLI-process E2E includes the changed-surface outcome-unknown/recovery case; existing happy archive, known terminal failure/recovery, verify projection and selected Verification regressions remain green.",
+        "The fix stays within the approved 186 apply/revise-apply mutation surface and does not introduce a second archive state machine or 03 Delivery behavior."
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}

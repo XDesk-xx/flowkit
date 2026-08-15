@@ -293,6 +293,96 @@ export interface PreparedRunInspection {
   readonly status: 'none' | 'resumable' | 'input-drift' | 'fingerprint-missing' | 'not-resumable' | 'ambiguous' | 'recovery-required' | 'terminal-observation';
 }
 
+export interface PendingArchiveRecoveryProjection {
+  readonly runId: string;
+  readonly changeId: string;
+  readonly status: 'recovery-required';
+  readonly code: 'OPENSPEC_ARCHIVE_RECOVERY_REQUIRED';
+  readonly spawned: false;
+}
+
+async function readManifestActiveChangeIdForArchiveRecovery(
+  repoRoot: string,
+  deliveryId: string,
+): Promise<string | undefined> {
+  const manifestPath = join(repoRoot, MANIFEST_PREFIX, `${deliveryId}.yaml`);
+  let content: string;
+  try {
+    content = await readFile(manifestPath, 'utf8');
+  } catch (error) {
+    throw new FlowkitError('RUN_PREPARATION_BINDING_MISSING', 'Archive recovery projection requires the Delivery Manifest', {
+      deliveryId,
+      manifestPath: normalizeSeparators(manifestPath),
+      detail: error instanceof Error ? error.message : String(error),
+    });
+  }
+  const parsed = parseYaml(content);
+  if (!parsed.ok || typeof parsed.value !== 'object' || parsed.value === null || Array.isArray(parsed.value)) {
+    throw new FlowkitError('MANIFEST_PARSE_FAILED', parsed.ok ? 'Delivery Manifest root must be a mapping' : parsed.error);
+  }
+  const root = parsed.value as Record<string, unknown>;
+  if (root['id'] !== deliveryId) {
+    throw new FlowkitError('FORMAL_FACT_CONFLICT', 'Delivery Manifest identity does not match requested Delivery', {
+      requestedDeliveryId: deliveryId,
+      manifestDeliveryId: root['id'],
+    });
+  }
+  const changes = root['changes'];
+  if (!Array.isArray(changes)) {
+    throw new FlowkitError('MANIFEST_PARSE_FAILED', 'Delivery Manifest changes must be a sequence');
+  }
+  const activeIds = changes.flatMap((item) => {
+    if (typeof item !== 'object' || item === null || Array.isArray(item)) {
+      throw new FlowkitError('MANIFEST_PARSE_FAILED', 'Delivery Manifest change item must be a mapping');
+    }
+    const change = item as Record<string, unknown>;
+    if (change['state'] !== 'active') return [];
+    if (typeof change['id'] !== 'string' || change['id'].trim() === '') {
+      throw new FlowkitError('MANIFEST_PARSE_FAILED', 'Active Delivery Manifest change requires a non-empty id');
+    }
+    return [change['id']];
+  });
+  if (activeIds.length > 1) {
+    throw new FlowkitError('FORMAL_FACT_CONFLICT', 'Delivery Manifest has multiple active Changes', { activeChangeIds: activeIds.sort() });
+  }
+  return activeIds[0];
+}
+
+/**
+ * Read-only B1/F1/D2 recovery projection that is intentionally evaluable before
+ * the active OpenSpec Change root can be read. It owns pending-archive candidate
+ * selection and durable recovery classification; callers receive only the exact
+ * blocked generation and must not scan Manifest/Run persistence themselves.
+ */
+export async function inspectPendingArchiveRecoveryBeforeOpenSpec(
+  repoRoot: string,
+  deliveryId: string,
+): Promise<PendingArchiveRecoveryProjection | undefined> {
+  const changeId = await readManifestActiveChangeIdForArchiveRecovery(repoRoot, deliveryId);
+  if (changeId === undefined || !(await isOpenSpecThinIntegrationActive(repoRoot, changeId))) return undefined;
+
+  const candidates = (await findPersistedPendingArchiveCandidates(repoRoot, deliveryId))
+    .filter((candidate) => candidate.changeId === changeId);
+  if (candidates.length === 0) return undefined;
+  if (candidates.length > 1) {
+    throw new FlowkitError(
+      'AMBIGUOUS_PENDING_RUNS',
+      `Active Change has multiple pending archive Runs: ${candidates.map((candidate) => candidate.runId).sort().join(', ')}`,
+    );
+  }
+
+  const candidate = candidates[0]!;
+  const recovery = await inspectOpenSpecArchiveRecovery(repoRoot, join(repoRoot, candidate.runPath));
+  if (recovery !== 'recovery-required') return undefined;
+  return {
+    runId: candidate.runId,
+    changeId: candidate.changeId,
+    status: 'recovery-required',
+    code: 'OPENSPEC_ARCHIVE_RECOVERY_REQUIRED',
+    spawned: false,
+  };
+}
+
 /** Read-only diagnostic projection for one B1 prepared pending Run. */
 export async function inspectPreparedRun(
   repoRoot: string,

@@ -178,5 +178,6 @@ describe('diagnostic CLI real process boundary', () => {
     assert.equal(result.code, 2);
     assert.equal(result.stdout, '');
     assert.match(result.stderr, /^usage: flowkit /);
+    assert.match(result.stderr, /explore\|review\|revise\|propose\|apply\|verify\|archive/);
   });
 });

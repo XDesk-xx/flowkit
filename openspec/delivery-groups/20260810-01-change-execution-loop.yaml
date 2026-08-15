@@ -221,7 +221,7 @@ changes:
     required: true
     dependsOn:
       - archive-and-checkpoint-boundary
-    state: planned
+    state: completed
     outputs:
       - Change CLI surface
       - Change E2E matrix
@@ -520,6 +520,57 @@ ownerDecisions:
     deliveryId: "20260810-01-change-execution-loop"
     changeId: "archive-and-checkpoint-boundary"
     sourceRef: "owner:chat-20260815-F1-checkpoint-authorization"
+  - ref: "owner:ca35607fbca22fbc314c9d0371f833fb6b653ecf9a97e67568ca9c2e6d591e34"
+    decision: "activate-change"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "change-cli-end-to-end-and-performance"
+    sourceRef: "owner-chat:2026-08-15T13:36+08:00:G1-explore-authorization"
+  - ref: "owner:67021c4dac90cb025b6cd67d22dc70ae20dbfc0b2771ec2504ca86ddb7fa778b"
+    decision: "authorize-apply"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "change-cli-end-to-end-and-performance"
+    sourceRef: "owner-input:2026-08-15T16:33+08:00:authorize-apply:G1-after-185"
+  - ref: "owner:398a9e6f90687b299c63b8070e069da64e6fdffae3530c362937a2a55a38dbd3"
+    decision: "contract-reset"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "change-cli-end-to-end-and-performance"
+    scope: "Keep G1 Explore, Proposal architecture, scope, required outcomes, and implementation plan unchanged; only lexical-sort flowkitMutationScope.apply and flowkitMutationScope.revise-apply selectors without changing membership."
+    requiredOutcomes:
+      - "Do not add or remove any mutation selector."
+      - "Preserve G1 Explore, Proposal architecture, scope, required outcomes, and implementation plan unchanged."
+      - "Sort flowkitMutationScope.apply and flowkitMutationScope.revise-apply selectors into existing MutationDeclaration lexical order."
+    sourceRef: "owner-input:2026-08-15T16:38+08:00:G1-contract-reset-mutation-scope-sort"
+  - ref: "owner:5da7a91ef5d2b1c178daf0990c56e4aff743cb0f578fce4c30525fd9d940c2bf"
+    decision: "authorize-apply"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "change-cli-end-to-end-and-performance"
+    sourceRef: "owner-input:2026-08-15T16:46+08:00:authorize-apply:G1-after-187"
+  - ref: "owner:8dcaf960f267ddbdc5435526ee4472b8ff0da2571567dd0e09585c425f09dbb3"
+    decision: "contract-reset"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "change-cli-end-to-end-and-performance"
+    scope: "Keep G1 Explore, Proposal architecture, scope, required outcomes, implementation plan, and all 186-approved mutation selectors unchanged; solely extend apply/revise-apply mutation surface with the two B1 service selectors needed to close G1-RA-001 authority-safely."
+    requiredOutcomes:
+      - "Add exactly src/services/b1-run-execution-service.ts and tests/unit/services/b1-run-execution-service.test.ts to both flowkitMutationScope.apply and flowkitMutationScope.revise-apply."
+      - "Do not create a second archive state machine, change Formal Action or Policy contracts, enter 03 Delivery behavior, change other G1 architecture/required outcomes, or add any other mutation selector."
+      - "Preserve G1 Explore, Proposal architecture, scope, required outcomes, implementation plan, and every selector approved in 186 unchanged."
+      - "Use the extension only to move changed-surface pending archive pre-OpenSpec recovery discovery behind the existing/narrowly extended B1/F1/D2 production authority boundary, with the CLI consuming one recovery projection."
+    sourceRef: "owner-input:2026-08-15T19:14+08:00:G1-RA-001-B1-service-mutation-scope-reset"
+  - ref: "owner:6268d41ae68ec536502006758bcb78d865b12aa66fe0a035fe4c3a59510972c7"
+    decision: "authorize-apply"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "change-cli-end-to-end-and-performance"
+    sourceRef: "owner-input:2026-08-15T19:24+08:00:G1-193-approved-authorize-apply"
+  - ref: "owner:18a30b1de0e3df1c7aa5c2ad572269b125c269b1c382d2e21c49c7ecf19e71b9"
+    decision: "authorize-archive"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "change-cli-end-to-end-and-performance"
+    sourceRef: "owner-input:2026-08-15T20:33+08:00:G1-196-approved-authorize-archive"
+  - ref: "owner:a5d47e735875439042c5864a322cde67e0f323dc56d783dbe81caefe66a1dad5"
+    decision: "authorize-checkpoint"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "change-cli-end-to-end-and-performance"
+    sourceRef: "owner:chat-20260815-G1-checkpoint-authorization"
 verification:
   change:
     requireApplicableChecks: true

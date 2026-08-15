@@ -35,7 +35,65 @@ function executionOnlySelection(): VerificationSelection {
   };
 }
 
+function cliOnlySelection(): VerificationSelection {
+  const payload = {
+    moduleMapLogicalRef: 'src/verification/change-selection/module-map.ts',
+    moduleMapFingerprint: currentVerificationCatalogFingerprint(),
+    seedModuleIds: ['cli-diagnostics'],
+    moduleIds: ['cli-diagnostics'],
+    capabilityIds: ['flowkit-change-cli-end-to-end-and-performance'],
+    capabilityRefs: ['openspec/changes/g1/specs/flowkit-change-cli-end-to-end-and-performance/spec.md'],
+    capabilityRelation: { kind: 'matched' as const },
+    verificationScopes: ['tests-cli'],
+  };
+  return {
+    ...payload,
+    selectionFingerprint: createHash('sha256').update(canonicalStringify(payload)).digest('hex'),
+  };
+}
+
 describe('verification evidence affected Node union', () => {
+  it('physically executes the G1 CLI E2E target through tests-cli and fails on its sentinel', async () => {
+    const root = await createTempDir();
+    try {
+      await symlink(join(process.cwd(), 'node_modules'), join(root, 'node_modules'), 'dir');
+      await writeFile(join(root, 'package.json'), '{"type":"module"}\n', 'utf8');
+      await mkdir(join(root, 'tests', 'integration'), { recursive: true });
+      await mkdir(join(root, 'tests', 'unit', 'cli'), { recursive: true });
+      await mkdir(join(root, 'tests', 'unit', 'diagnostics'), { recursive: true });
+      await writeFile(join(root, 'tests', 'integration', 'diagnostic-cli-process.test.ts'), "import { test } from 'node:test'; test('ok', () => {});\n", 'utf8');
+      await writeFile(join(root, 'tests', 'integration', 'diagnostic-cli.test.ts'), "import { test } from 'node:test'; test('ok', () => {});\n", 'utf8');
+      await writeFile(join(root, 'tests', 'integration', 'g1-change-cli-end-to-end.test.ts'), [
+        "import assert from 'node:assert/strict';",
+        "import { test } from 'node:test';",
+        "test('g1 sentinel', () => assert.fail('g1 selected target sentinel'));",
+        '',
+      ].join('\n'), 'utf8');
+
+      const previousNodeTestContext = process.env['NODE_TEST_CONTEXT'];
+      delete process.env['NODE_TEST_CONTEXT'];
+      let evidence;
+      try {
+        evidence = await executeVerificationSelection({
+          repoRoot: root,
+          changeId: 'g1',
+          runDir: join(root, '.flowkit', 'runs', 'sentinel'),
+          producingRunId: '20990101-003-apply',
+          selection: cliOnlySelection(),
+          fullTestStatus: 'not-ready',
+          openSpecAdapter: {} as OpenSpecCliAdapter,
+        });
+      } finally {
+        if (previousNodeTestContext === undefined) delete process.env['NODE_TEST_CONTEXT'];
+        else process.env['NODE_TEST_CONTEXT'] = previousNodeTestContext;
+      }
+
+      assert.equal(evidence.overallStatus, 'failed');
+      assert.match(evidence.checks[0]?.commandOrMethod ?? '', /g1-change-cli-end-to-end\.test\.ts/);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
   it('includes changed service regressions so a failing a1-write sentinel fails tests-execution evidence', async () => {
     const root = await createTempDir();
     try {

@@ -1,0 +1,163 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260815-185-review-propose",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "review-propose",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "73db3a5a71e488addd9025eb33f01d1e872703307da000976827af778a0de7d2",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/change-cli-end-to-end-and-performance/20260815-185-review-propose/",
+  "changeKey": "G1",
+  "changeId": "change-cli-end-to-end-and-performance",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-cli-end-to-end-and-performance/20260815-184-revise-propose/result.json",
+    "versionFingerprint": "556bd33d5dc50d32a257adccba29c257a25ae74dc2e1dce9cf9e4a55b2d90af7",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260815-184-revise-propose",
+  "canonicalBase": "b9a126b63ad1907cf0baa0b42c858480284cc522",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-cli-end-to-end-and-performance/20260815-184-revise-propose/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "556bd33d5dc50d32a257adccba29c257a25ae74dc2e1dce9cf9e4a55b2d90af7"
+    },
+    {
+      "ref": "openspec/changes/change-cli-end-to-end-and-performance/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+    },
+    {
+      "ref": "openspec/changes/change-cli-end-to-end-and-performance/design.md",
+      "versionFingerprint": "fe51b01e8174ea79d4bb1689ada3352db40d4d871dfb1bd95186e554f3ad2501",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-cli-end-to-end-and-performance/proposal.md",
+      "versionFingerprint": "75e74945e6423f6c742f7b302fa3cbc84728dcd79e7a0c1c9f4f34a9349a729e",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-cli-end-to-end-and-performance/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+      "versionFingerprint": "b39ae82599df4dc0661f94f379a68af222b311120d059fac5f2c682659eaa873",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-cli-end-to-end-and-performance/tasks.md",
+      "versionFingerprint": "d5424b9560e9a07c9a621d57d53cf49553cf2408ee70ce5433c1b16cd3160c86",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-cli-end-to-end-and-performance",
+      "runId": "20260815-185-review-propose",
+      "action": "review-propose",
+      "role": "reviewer",
+      "semanticInputFingerprint": "73db3a5a71e488addd9025eb33f01d1e872703307da000976827af778a0de7d2"
+    },
+    "definition": {
+      "action": "review-propose",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-proposal",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+      },
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/design.md",
+        "versionFingerprint": "fe51b01e8174ea79d4bb1689ada3352db40d4d871dfb1bd95186e554f3ad2501",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/proposal.md",
+        "versionFingerprint": "75e74945e6423f6c742f7b302fa3cbc84728dcd79e7a0c1c9f4f34a9349a729e",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+        "versionFingerprint": "b39ae82599df4dc0661f94f379a68af222b311120d059fac5f2c682659eaa873",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/tasks.md",
+        "versionFingerprint": "d5424b9560e9a07c9a621d57d53cf49553cf2408ee70ce5433c1b16cd3160c86",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-cli-end-to-end-and-performance/20260815-184-revise-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "556bd33d5dc50d32a257adccba29c257a25ae74dc2e1dce9cf9e4a55b2d90af7"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260815-183-review-propose",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-cli-end-to-end-and-performance/20260815-183-review-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "4ec3f6d20dbd1fd9c56d875bd093637287fcbc0a2ff2fd74a306ce2793695202"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "G1-RP-001",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "verify MUST consume the existing structured Verification/OpenSpec projection instead of reconstructing the Change path",
+          "problem": "Design Decision 5 freezes flowkit verify to load openspec/changes/<changeId>/verification.md directly. Current FormalFactReader already derives the active Change verification artifact path from OpenSpec structured status/changeRootLogical and exposes the formal Change Verification status. Direct path reconstruction in the new CLI would create a second OpenSpec path rule authority and risks future path/projection drift.",
+          "contractRef": "C1 OpenSpec 1.7 thin integration / E2 current-Change OpenSpec projection / one fact one authority",
+          "invariant": "OpenSpec owns Change artifact/path semantics; Flowkit consumers must consume the existing structured/formal projection and must not independently reconstruct canonical OpenSpec paths.",
+          "requiredOutcome": "Revise the verify design/spec/tasks so the command consumes the existing formal/structured Change Verification artifact projection (or another existing authority-safe projection) for path/status discovery. It may read the authority file through that projected logical path, but MUST NOT reconstruct openspec/changes/<changeId>/verification.md as a separate rule. Keep Verification execution/publication read-only semantics unchanged.",
+          "acceptance": [
+            "No G1 design/spec requirement instructs the CLI to construct the verification.md path from openspec/changes/<changeId>.",
+            "verify discovers the current verification artifact/status from the existing FormalFact/OpenSpec structured projection and fails closed on missing/conflicting projection.",
+            "If selectionFingerprint/logical check ids are exposed, they are read from the authoritative publication without creating a second durable truth or changing Apply/revise-apply Verification authority.",
+            "No 03 Agent Adapter/Delivery behavior scope is introduced and the approved Apply mutation surface remains sufficient, or any genuinely required scope expansion is explicitly frozen before Apply."
+          ]
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "97903dd4d72c445567c90412ff9563c4fc694a03d153c336c946aba851d21d7b",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

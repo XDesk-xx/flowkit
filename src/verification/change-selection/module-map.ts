@@ -51,6 +51,7 @@ const CLOSED_CAPABILITIES = new Set<string>(CLOSED_CAPABILITY_IDS);
 
 const VERIFICATION_SELECTION_CAPABILITIES = [
   'flowkit-archive-and-checkpoint-boundary',
+  'flowkit-change-cli-end-to-end-and-performance',
   'flowkit-change-verification-selection',
   'flowkit-formal-fact-reader-and-persistence',
   'flowkit-lean-run-and-action-package',
@@ -68,7 +69,7 @@ export const VERIFICATION_MODULE_MAP: readonly VerificationModule[] = [
   ),
   module(
     'cli-diagnostics',
-    ['src/cli', 'src/diagnostics', 'tests/integration/diagnostic-cli-process.test.ts', 'tests/integration/diagnostic-cli.test.ts', 'tests/unit/cli', 'tests/unit/diagnostics'],
+    ['src/cli', 'src/diagnostics', 'tests/integration/diagnostic-cli-process.test.ts', 'tests/integration/diagnostic-cli.test.ts', 'tests/integration/g1-change-cli-end-to-end.test.ts', 'tests/unit/cli', 'tests/unit/diagnostics'],
     ['execution'],
     ['tests-cli', 'typecheck'],
     ['flowkit-change-cli-end-to-end-and-performance', 'flowkit-policy-engine', 'flowkit-runtime-foundation'],

@@ -16,6 +16,7 @@ import {
   admitActionResult,
   buildArchiveEntryOpenSpecProjection,
   fingerprintOpenSpecPreparedActionContext,
+  inspectPendingArchiveRecoveryBeforeOpenSpec,
   inspectPreparedRun,
   prepareActionExecution,
   prepareNewExecution,
@@ -942,6 +943,46 @@ describe('B1 fixed ActionDefinition catalog', () => {
 });
 
 describe('D2 archive terminal continuation regressions', () => {
+  it('projects changed-surface pending archive recovery before active OpenSpec status through the B1 service boundary', async () => {
+    const { root, deliveryId, changeId, now } = await freshActiveFixture();
+    await advanceToArchiveReady(root, deliveryId, changeId, now);
+    const prepared = await prepareActionExecution({ repoRoot: root, deliveryId, entry: 'next', now });
+    assert.equal(prepared.package.run.action, 'archive');
+
+    await mkdir(join(root, 'openspec', 'specs', 'flowkit-openspec-1-7-thin-integration'), { recursive: true });
+    await writeFile(join(root, 'openspec', 'specs', 'flowkit-openspec-1-7-thin-integration', 'spec.md'), '# active\n', 'utf8');
+    assert.equal(await inspectPendingArchiveRecoveryBeforeOpenSpec(root, deliveryId), undefined, 'ordinary archive must fall through to normal Policy/preparation');
+
+    const activeRoot = join(root, 'openspec', 'changes', changeId);
+    const archivedAs = `2099-02-01-${changeId}`;
+    const archivedRoot = join(root, 'openspec', 'changes', 'archive', archivedAs);
+    const fakeAdapter = {
+      getChangeStatus: async () => ({
+        changeId,
+        changeRoot: activeRoot,
+        changeRootLogical: `openspec/changes/${changeId}`,
+        archiveNamespaceRoot: join(root, 'openspec', 'changes', 'archive'),
+        archiveNamespaceRootLogical: 'openspec/changes/archive',
+      }),
+      archiveChange: async () => {
+        await mkdir(join(root, 'openspec', 'changes', 'archive'), { recursive: true });
+        await rename(activeRoot, archivedRoot);
+        return { spawned: true, exitCode: null, stdout: '', stderr: '', timedOut: true };
+      },
+    } as unknown as OpenSpecCliAdapter;
+
+    const outcome = await invokeOpenSpecArchive(root, prepared.package, { adapter: fakeAdapter });
+    assert.equal(outcome.status, 'recovery-required');
+    assert.deepEqual(await inspectPendingArchiveRecoveryBeforeOpenSpec(root, deliveryId), {
+      runId: prepared.package.run.runId,
+      changeId,
+      status: 'recovery-required',
+      code: 'OPENSPEC_ARCHIVE_RECOVERY_REQUIRED',
+      spawned: false,
+    });
+    await assert.rejects(readFile(join(root, '.flowkit', 'runs', deliveryId, changeId, prepared.package.run.runId, 'result.json'), 'utf8'));
+  });
+
   it('preserves non-default keyed OpenSpec artifact identity without path inference', () => {
     const changeId = 'non-default-layout';
     const view = {

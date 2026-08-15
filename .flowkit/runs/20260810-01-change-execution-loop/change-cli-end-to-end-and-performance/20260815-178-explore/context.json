@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260815-178-explore",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "explore",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "d3eb076eb89fdb1ccafe2114eb5596f62b853a1500023b8b5f97787d1cc5963d",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/change-cli-end-to-end-and-performance/20260815-178-explore/",
+  "changeKey": "G1",
+  "changeId": "change-cli-end-to-end-and-performance",
+  "canonicalBase": "b9a126b63ad1907cf0baa0b42c858480284cc522",
+  "applicableFactRefs": [
+    {
+      "ref": "openspec/changes/change-cli-end-to-end-and-performance/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-cli-end-to-end-and-performance",
+      "runId": "20260815-178-explore",
+      "action": "explore",
+      "role": "author",
+      "semanticInputFingerprint": "d3eb076eb89fdb1ccafe2114eb5596f62b853a1500023b8b5f97787d1cc5963d"
+    },
+    "definition": {
+      "action": "explore",
+      "version": 1,
+      "role": "author",
+      "goalClass": "investigate-change",
+      "mutationClass": "explore-planning-only",
+      "outputClass": "current-explore-artifact-set",
+      "terminalContract": {
+        "kind": "artifact",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+      }
+    ],
+    "handoffRefs": [],
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "521c7a0b743160d4b17fff5faa491960857753041fa00c26a0aa57e009847246",
+    "requiredResultContract": {
+      "kind": "artifact",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

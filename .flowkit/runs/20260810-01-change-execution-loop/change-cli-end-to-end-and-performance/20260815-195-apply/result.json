@@ -1,0 +1,18 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "apply",
+    "executionStatus": "completed",
+    "summary": "Closed G1-RA-001 by moving changed-surface pending archive pre-OpenSpec recovery discovery into the narrowly extended B1/F1/D2 service authority boundary; CLI now consumes one recovery projection without Manifest/Run scanning."
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "920a86cd3f2836dffe379ede805de0feaacc71c3572a364f1178c7f0c40745f3",
+    "currentVerification": {
+      "logicalRef": "openspec/changes/change-cli-end-to-end-and-performance/verification.md",
+      "versionFingerprint": "5837cd99c3f97c276f0414c1c3890d7d27eaf31fb8a82a774e0d41212189a017",
+      "selectionFingerprint": "70f58e6114e0b4da2a113e708b277bd617c53263a44f232962138e2023cacdf1",
+      "status": "passed"
+    }
+  }
+}

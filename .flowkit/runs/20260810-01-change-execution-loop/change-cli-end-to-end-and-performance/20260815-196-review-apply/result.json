@@ -1,0 +1,21 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "Review 195 apply: G1-RA-001 is closed in the new Contract Reset generation. Changed-surface pending archive pre-OpenSpec recovery discovery now lives behind the narrowly extended B1/F1/D2 production service boundary; src/cli/change-action.ts no longer parses the Delivery Manifest or scans Run persistence and only consumes one recovery projection. The public CLI recovery counterexample preserves the same pending runId without respawn or Git/checkpoint mutation, ordinary archive still falls through to normal Policy/preparation, approved mutation scope is respected, and formal Change Verification plus selected physical regressions are green.",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/change-cli-end-to-end-and-performance/verification.md",
+      "versionFingerprint": "5837cd99c3f97c276f0414c1c3890d7d27eaf31fb8a82a774e0d41212189a017",
+      "kind": "verification-summary"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "71c113e9d54cee1315f2de225558ac6306d23f22257a5bf67544f3ab1fac9d56"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [],
+  "reviewFindingConvergence": []
+}

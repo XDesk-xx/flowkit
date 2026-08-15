@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 
 import {
+  discoverActiveDelivery,
   discoverRepositoryRoot,
   loadDiagnosticContext,
 } from './context-loader.js';
@@ -10,6 +11,7 @@ import { renderResumeContext } from '../diagnostics/resume-context.js';
 import { renderStatus } from '../diagnostics/status.js';
 import { inspectPreparedRun, recoverArchiveTerminalRun, recoverContractResetPendingRun } from '../services/b1-run-execution-service.js';
 import { getVersion } from './version.js';
+import { projectChangeVerification, runArchiveOperator, runChangeOperator, type ChangeOperatorIntent } from './change-action.js';
 import {
   activateChange,
   createChange,
@@ -29,9 +31,10 @@ export interface CliResult {
 }
 
 const DIAGNOSTIC_COMMANDS = new Set(['status', 'next', 'doctor', 'resume-context']);
+const CHANGE_OPERATOR_COMMANDS = new Set<ChangeOperatorIntent>(['explore', 'review', 'revise', 'propose', 'apply']);
 
 const USAGE =
-  'usage: flowkit <status|next|doctor|resume-context|create delivery|create change|owner record|recover contract-reset-pending|recover archive-terminal|activate|--version>\n';
+  'usage: flowkit <status|next|doctor|resume-context|explore|review|revise|propose|apply|verify|archive|create delivery|create change|owner record|recover contract-reset-pending|recover archive-terminal|activate|--version> [--result <path>]\n';
 
 function optionValue(args: readonly string[], name: string): string | undefined {
   const index = args.indexOf(name);
@@ -97,6 +100,31 @@ export async function runCli(invocation: CliInvocation): Promise<CliResult> {
     }
 
     const repoRoot = await discoverRepositoryRoot(invocation.cwd);
+
+    if (args.length >= 1 && CHANGE_OPERATOR_COMMANDS.has(args[0] as ChangeOperatorIntent)) {
+      const intent = args[0] as ChangeOperatorIntent;
+      const resultPath = optionValue(args, '--result');
+      const allowedLength = resultPath === undefined ? 1 : 3;
+      if (args.length !== allowedLength || (resultPath !== undefined && (args[1] !== '--result' || args[2] !== resultPath))) {
+        return { exitCode: 2, stdout: '', stderr: USAGE };
+      }
+      const { deliveryId } = await loadDiagnosticContext(invocation.cwd);
+      const logicalResult = resultPath === undefined ? undefined : await readJsonInput(resultPath);
+      const result = await runChangeOperator(repoRoot, deliveryId, intent, logicalResult as never);
+      return { exitCode: result.exitCode, stdout: renderWriteResult(result.value), stderr: '' };
+    }
+
+    if (args.length === 1 && args[0] === 'verify') {
+      const { deliveryId } = await loadDiagnosticContext(invocation.cwd);
+      const result = await projectChangeVerification(repoRoot, deliveryId);
+      return { exitCode: result.exitCode, stdout: renderWriteResult(result.value), stderr: '' };
+    }
+
+    if (args.length === 1 && args[0] === 'archive') {
+      const deliveryId = await discoverActiveDelivery(repoRoot);
+      const result = await runArchiveOperator(repoRoot, deliveryId);
+      return { exitCode: result.exitCode, stdout: renderWriteResult(result.value), stderr: '' };
+    }
 
     if (args[0] === 'recover' && args[1] === 'contract-reset-pending') {
       const { deliveryId } = await loadDiagnosticContext(invocation.cwd);

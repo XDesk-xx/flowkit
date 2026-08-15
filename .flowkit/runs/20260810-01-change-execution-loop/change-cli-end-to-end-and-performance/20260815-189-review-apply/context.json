@@ -1,0 +1,174 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260815-189-review-apply",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "review-apply",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "6e5fc56bac926320d6038b14e9b62d7a4f1c01509ea79fc784f04c219da91e25",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:398a9e6f90687b299c63b8070e069da64e6fdffae3530c362937a2a55a38dbd3",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-cli-end-to-end-and-performance",
+      "scope": "Keep G1 Explore, Proposal architecture, scope, required outcomes, and implementation plan unchanged; only lexical-sort flowkitMutationScope.apply and flowkitMutationScope.revise-apply selectors without changing membership.",
+      "requiredOutcomes": [
+        "Do not add or remove any mutation selector.",
+        "Preserve G1 Explore, Proposal architecture, scope, required outcomes, and implementation plan unchanged.",
+        "Sort flowkitMutationScope.apply and flowkitMutationScope.revise-apply selectors into existing MutationDeclaration lexical order."
+      ],
+      "sourceRef": "owner-input:2026-08-15T16:38+08:00:G1-contract-reset-mutation-scope-sort"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/change-cli-end-to-end-and-performance/20260815-189-review-apply/",
+  "changeKey": "G1",
+  "changeId": "change-cli-end-to-end-and-performance",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-cli-end-to-end-and-performance/20260815-188-apply/result.json",
+    "versionFingerprint": "20cf12d7e16248ce663483a6917e121495667f90cccaca71e75f6a4b755d7169",
+    "kind": "run-result"
+  },
+  "verificationInputRef": {
+    "ref": "openspec/changes/change-cli-end-to-end-and-performance/verification.md",
+    "versionFingerprint": "7911d74c9150a19800553707a4c9845f8d23c9fbe94b4e872e3d6a24a450f364",
+    "kind": "verification-summary"
+  },
+  "reviewedRunId": "20260815-188-apply",
+  "canonicalBase": "b9a126b63ad1907cf0baa0b42c858480284cc522",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-cli-end-to-end-and-performance/20260815-188-apply/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "20cf12d7e16248ce663483a6917e121495667f90cccaca71e75f6a4b755d7169"
+    },
+    {
+      "ref": "openspec/changes/change-cli-end-to-end-and-performance/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+    },
+    {
+      "ref": "openspec/changes/change-cli-end-to-end-and-performance/design.md",
+      "versionFingerprint": "44b4f90556b18ec8b5e4f5a7bb11d2f2959e05caff94fbf10fb788ac5006a007",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-cli-end-to-end-and-performance/proposal.md",
+      "versionFingerprint": "75e74945e6423f6c742f7b302fa3cbc84728dcd79e7a0c1c9f4f34a9349a729e",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-cli-end-to-end-and-performance/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+      "versionFingerprint": "b39ae82599df4dc0661f94f379a68af222b311120d059fac5f2c682659eaa873",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-cli-end-to-end-and-performance/tasks.md",
+      "kind": "openspec-contract",
+      "versionFingerprint": "db69e98cfa1d42aa8f0791717c30dd3e70618f3332d0810df4e8c71717b89be7"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-cli-end-to-end-and-performance",
+      "runId": "20260815-189-review-apply",
+      "action": "review-apply",
+      "role": "reviewer",
+      "semanticInputFingerprint": "6e5fc56bac926320d6038b14e9b62d7a4f1c01509ea79fc784f04c219da91e25"
+    },
+    "definition": {
+      "action": "review-apply",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-implementation-and-verification",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings-plus-verification-ref",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "core-derived",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+      },
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/design.md",
+        "versionFingerprint": "44b4f90556b18ec8b5e4f5a7bb11d2f2959e05caff94fbf10fb788ac5006a007",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/proposal.md",
+        "versionFingerprint": "75e74945e6423f6c742f7b302fa3cbc84728dcd79e7a0c1c9f4f34a9349a729e",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+        "versionFingerprint": "b39ae82599df4dc0661f94f379a68af222b311120d059fac5f2c682659eaa873",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/tasks.md",
+        "kind": "openspec-contract",
+        "versionFingerprint": "db69e98cfa1d42aa8f0791717c30dd3e70618f3332d0810df4e8c71717b89be7"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-cli-end-to-end-and-performance/20260815-188-apply/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "20cf12d7e16248ce663483a6917e121495667f90cccaca71e75f6a4b755d7169"
+      }
+    ],
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [
+      {
+        "ref": "owner:398a9e6f90687b299c63b8070e069da64e6fdffae3530c362937a2a55a38dbd3",
+        "decision": "contract-reset",
+        "deliveryId": "20260810-01-change-execution-loop",
+        "changeId": "change-cli-end-to-end-and-performance",
+        "scope": "Keep G1 Explore, Proposal architecture, scope, required outcomes, and implementation plan unchanged; only lexical-sort flowkitMutationScope.apply and flowkitMutationScope.revise-apply selectors without changing membership.",
+        "requiredOutcomes": [
+          "Do not add or remove any mutation selector.",
+          "Preserve G1 Explore, Proposal architecture, scope, required outcomes, and implementation plan unchanged.",
+          "Sort flowkitMutationScope.apply and flowkitMutationScope.revise-apply selectors into existing MutationDeclaration lexical order."
+        ],
+        "sourceRef": "owner-input:2026-08-15T16:38+08:00:G1-contract-reset-mutation-scope-sort"
+      }
+    ],
+    "verificationView": {
+      "status": "passed",
+      "resultRef": {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/verification.md",
+        "kind": "verification-summary",
+        "versionFingerprint": "7911d74c9150a19800553707a4c9845f8d23c9fbe94b4e872e3d6a24a450f364"
+      }
+    },
+    "externalContextFingerprint": "97903dd4d72c445567c90412ff9563c4fc694a03d153c336c946aba851d21d7b",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "core-derived",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

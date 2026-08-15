@@ -1,0 +1,21 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "Review 184 revise-propose：183 的 G1-RP-001 已关闭。verify 现明确消费既有 FormalFact/OpenSpec structured projection 获取 Change Verification status 与 authority path，禁止 CLI-local Change path 重建；missing/ambiguous/conflicting projection fail closed，selection details 仅从 projected authoritative publication 读取。Approved Proposal scope 未扩张到 03 或第二 Verification truth。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "422e6ebc35cef85ecef8c789e67b61a37b76ba89c23eebc1f90f6ea42dc0123f"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [],
+  "reviewFindingConvergence": [
+    {
+      "findingId": "G1-RP-001",
+      "state": "resolved"
+    }
+  ]
+}

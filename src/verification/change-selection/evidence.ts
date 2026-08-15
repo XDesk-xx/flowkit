@@ -342,7 +342,7 @@ async function resolveLogicalNodeTests(repoRoot: string, logicalIds: readonly st
 function logicalNodeSelectors(logicalId: string): readonly string[] {
   switch (logicalId) {
     case 'tests-cli':
-      return ['tests/integration/diagnostic-cli-process.test.ts', 'tests/integration/diagnostic-cli.test.ts', 'tests/unit/cli/*.test.ts', 'tests/unit/diagnostics/*.test.ts'];
+      return ['tests/integration/diagnostic-cli-process.test.ts', 'tests/integration/diagnostic-cli.test.ts', 'tests/integration/g1-change-cli-end-to-end.test.ts', 'tests/unit/cli/*.test.ts', 'tests/unit/diagnostics/*.test.ts'];
     case 'tests-execution':
       return ['tests/integration/f1-archive-and-checkpoint-boundary.test.ts', 'tests/unit/facts/*.test.ts', 'tests/unit/policy/*.test.ts', 'tests/unit/services/*.test.ts'];
     case 'tests-openspec-runtime':

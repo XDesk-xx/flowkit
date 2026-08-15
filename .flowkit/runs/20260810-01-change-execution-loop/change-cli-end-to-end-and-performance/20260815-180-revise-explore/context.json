@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260815-180-revise-explore",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "revise-explore",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "5680ba97d095afc8cbc20f04285b09654f458da454ffd12a031efdff1ee0d446",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/change-cli-end-to-end-and-performance/20260815-180-revise-explore/",
+  "changeKey": "G1",
+  "changeId": "change-cli-end-to-end-and-performance",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-cli-end-to-end-and-performance/20260815-179-review-explore/result.json",
+    "versionFingerprint": "a691aab0a4b7f41a8bc25f3c5c89e9ebb031bff7b5a9438245807b83c164168a",
+    "kind": "run-result"
+  },
+  "sourceReviewRun": "20260815-179-review-explore",
+  "sourceReviewVerdict": "changes-requested",
+  "canonicalBase": "b9a126b63ad1907cf0baa0b42c858480284cc522",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-cli-end-to-end-and-performance/20260815-179-review-explore/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "a691aab0a4b7f41a8bc25f3c5c89e9ebb031bff7b5a9438245807b83c164168a"
+    },
+    {
+      "ref": "openspec/changes/change-cli-end-to-end-and-performance/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+    },
+    {
+      "ref": "openspec/changes/change-cli-end-to-end-and-performance/explore.md",
+      "versionFingerprint": "5817b891cbaedd379a928b5a0389b4f4fc007bb4ec7e14819a189beb6aee91ab",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-cli-end-to-end-and-performance",
+      "runId": "20260815-180-revise-explore",
+      "action": "revise-explore",
+      "role": "author",
+      "semanticInputFingerprint": "5680ba97d095afc8cbc20f04285b09654f458da454ffd12a031efdff1ee0d446"
+    },
+    "definition": {
+      "action": "revise-explore",
+      "version": 1,
+      "role": "author",
+      "goalClass": "close-explore-author-findings",
+      "mutationClass": "explore-planning-revision-only",
+      "outputClass": "current-explore-artifact-set",
+      "terminalContract": {
+        "kind": "artifact",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": true,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+      },
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/explore.md",
+        "versionFingerprint": "5817b891cbaedd379a928b5a0389b4f4fc007bb4ec7e14819a189beb6aee91ab",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-cli-end-to-end-and-performance/20260815-179-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "a691aab0a4b7f41a8bc25f3c5c89e9ebb031bff7b5a9438245807b83c164168a"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260815-179-review-explore",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-cli-end-to-end-and-performance/20260815-179-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "a691aab0a4b7f41a8bc25f3c5c89e9ebb031bff7b5a9438245807b83c164168a"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "G1-RE-001",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "Generic Change CLI 缺少跨 Delivery next-consumer feasibility proof",
+          "problem": "178 Risk Scan 明确把 G1 标为 generic reusable subsystem，但 Applicable Proofs 没有执行 Explore Skill v2 要求的 Genericity / Next-consumer Proof。现有 Evidence Boundary 只到当前 02 Delivery 的 production primitives / F1 boundary；而 G1 的 Change CLI 是 02 向 03 交接的长期 repository-level operator surface，必须证明不会依赖当前 Delivery/G1 identity，same-Delivery evidence不足以支撑该长期结论。",
+          "contractRef": "Flowkit Explore Skill v2 §4.5 Genericity / Next-consumer Proof；Change Execution Loop Delivery v4 §16 G1、§20 向 03 的稳定交接",
+          "invariant": "声明为 generic reusable subsystem 且需要跨 Delivery 长期使用时，至少证明 current/synthetic A + different Change B + future-Delivery consumer；只有 Evidence Boundary 覆盖 Acceptance Boundary 才能 PASS。",
+          "requiredOutcome": "在 Explore 内补一个最小 Genericity / Next-consumer proof：至少覆盖两个不同 Change identity，并增加 future-Delivery-shaped disposable consumer（跨新的 Delivery facts / checkout boundary），验证拟议 thin CLI intent resolution / preparation / resume 所依赖的现有 primitives 只消费 formal current facts，不依赖当前 02 Delivery、G1 identity、聊天或 provider state。无需实现最终 CLI，但 Evidence Boundary 必须到 future Delivery consumer。",
+          "acceptance": [
+            "current/synthetic Change A 与不同 Change B 均可通过同一 intended composition 解析/准备对应合法 boundary，且无 identity hardcode。",
+            "future-Delivery-shaped fixture 在新的 Delivery facts 下仍可解析 active Change、Policy boundary并 prepare/resume one Standard Change Action。",
+            "证明不依赖 20260810-01-change-execution-loop、G1/F1/E2 literal、聊天摘要或 provider session；若 bounded historical migration literal存在，说明其不会决定 future CLI lifecycle。",
+            "记录 Acceptance Boundary / Evidence Boundary / Gap；只有 evidence 到 future Delivery consumer 才可 PASS。"
+          ]
+        },
+        {
+          "id": "G1-RE-002",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "Performance Proof F 的 PASS 超过实际 Evidence Boundary",
+          "problem": "Proof F 自己把 Acceptance Boundary 写成“记录 required metrics 的可测 baseline”，但当前 evidence 没有记录 G1 v4 明列的 resume latency、selected check count、reopened finding count，却直接给出 PASS。`resume-context` diagnostic wall time 不能替代 exact resume/resumeRun latency；review convergence 的 <=2 Review Run 比例也不能替代 reopened finding count。",
+          "contractRef": "Flowkit Explore Skill v2 §5 Proof Acceptance Depth；Change Execution Loop Delivery v4 §16.3 Performance",
+          "invariant": "Proof Result=PASS 时 Evidence Boundary 必须覆盖其 Acceptance Boundary；G1 performance observation 应至少可测并区分所有 contract-required metrics，而不能用相邻指标替代。",
+          "requiredOutcome": "补齐缺失的可测 baseline（至少 exact resume/resumeRun latency、selected check count、reopened finding count）并说明测量方法；或者把当前 Proof F Result 降为 UNKNOWN/partial，并在 Feasible Proposal Boundary 明确哪些指标尚未被 Explore 证明。不得在 Evidence Boundary 未覆盖时保留整体 PASS。",
+          "acceptance": [
+            "记录 exact resume/resumeRun 的 latency，而非仅 resume-context diagnostic latency。",
+            "记录 current representative Change Verification 的 selected check count。",
+            "从正式 Review lineage 统计 reopened finding count，并与 review rounds/convergence分开。",
+            "更新 Proof F 的 Acceptance Boundary / Evidence Boundary / Gap / Result，使 PASS 只覆盖实际已测事实。"
+          ]
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "521c7a0b743160d4b17fff5faa491960857753041fa00c26a0aa57e009847246",
+    "requiredResultContract": {
+      "kind": "artifact",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": true,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "propose",
+    "executionStatus": "completed",
+    "summary": "G1 Proposal 冻结 thin single-boundary Change CLI：intent prepare/exact-resume + explicit --result admission，authority-safe verify，durable OpenSpec archive composition，future-Delivery genericity，真实 CLI E2E、formal Verification physical closure 与 observation-only performance。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/design.md",
+        "versionFingerprint": "43eec8aa3b3bad63b59fdfed6deaa9edb1363664e76d0731e380e1bc10f3a81b",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/proposal.md",
+        "versionFingerprint": "75e74945e6423f6c742f7b302fa3cbc84728dcd79e7a0c1c9f4f34a9349a729e",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+        "versionFingerprint": "dd698327ef1632782c5796fdaf91c40dc2520bfe93aee874e0c55f435232ffda",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/tasks.md",
+        "versionFingerprint": "d36c0c693db5e0f1e4fcb9dafa0512f367e9a4ea88d7484cef626c02fc1cf918",
+        "kind": "produced-artifact"
+      }
+    ]
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "aae0b844b5a70efa594126076d014525ccd4dc7457c52d6a8e913f290a85c76a"
+  }
+}
