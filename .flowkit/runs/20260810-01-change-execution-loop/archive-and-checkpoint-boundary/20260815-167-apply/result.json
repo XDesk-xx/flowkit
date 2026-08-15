@@ -1,0 +1,4 @@
+{
+  "runStatus": "failed",
+  "failureDiagnosis": "POST_E2_APPLY_PREPARATION_PROTOCOL_MISMATCH: Apply was prepared through the legacy schema-v4 continuation surface, so no compact entry-time workspace identity exists for current three-file Apply verification. Fail closed; retry through prepareNewExecution."
+}

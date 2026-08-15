@@ -1,0 +1,43 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "按 159→172 审查链复核 171 新 Proposal generation：Owner Contract Reset 与重新 propose 边界合法，171 对 original strict E2 anchor 和 B1 test mutation scope 的补充方向正确，OpenSpec strict 与 package hygiene 通过；但 writer activation 仍未冻结为与 FormalFactReader 相同的 strict-admitted E2 authority，full-trailer-but-temporally-unauthorized E2 candidate 仍可成为 activation input，因此 F1-RA-001 尚未在 Proposal 层完整收敛。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "209eebc7145bdd2f343b81cfe6aa1da03747b834bf2431ca936fe2417d2a6a42"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "F1-RP-001",
+      "severity": "blocking",
+      "title": "writer activation is still weaker than the original strict-admitted E2 cutover",
+      "problem": "171 correctly freezes the legacy window around the original strict-admitted E2 checkpoint, but it only requires B1 writer activation to stop accepting subject-only E2 commits. Under the frozen F1 architecture, Git-only formalIdentityValid checks trailer shape while checkpoint-time Owner temporal admission is completed only by FormalFactReader. Therefore an E2 commit with a syntactically valid subject/trailer set and an owner:<64hex> value that has no matching authorize-checkpoint fact at that boundary can still be exposed by readGitBoundarySummaries and consumed by isPostE2ThreeFileWriterActive. The Proposal does not yet freeze how that consumer is bound to the same strict-admitted cutover.",
+      "contractRef": "20260815-169-review-apply F1-RA-001 requiredOutcome/invariant + openspec/changes/archive-and-checkpoint-boundary/design.md Decisions 1-3 + Owner Contract Reset required outcome",
+      "invariant": "The migration cutover is one authority boundary: the original E2 checkpoint used for bounded legacy compatibility and for post-E2 writer activation must represent the same strict-admitted checkpoint fact. A merely trailer-shaped E2 candidate without checkpoint-time Owner authorization must not activate the writer.",
+      "evidence": [
+        "design.md Decision 1 keeps git-boundary-reader.ts Git-only and explicitly assigns Owner cross-authority admission to FormalFactReader; Decision 2 defines strict admission as matching authorize-checkpoint provenance that existed at the checkpoint boundary.",
+        "design.md Decision 3 now defines the legacy anchor from strict-admitted E2 candidates, but its writer clause only says subject-only E2 checkpoints must not activate the writer; it does not reject formalIdentityValid-but-temporally-unauthorized E2 candidates.",
+        "src/services/b1-run-execution-service.ts:647-679 consumes readGitBoundarySummaries() for E2 writer activation. src/facts/git-boundary-reader.ts:142-157 can expose formalIdentityValid candidates without checking the point-in-time Owner Manifest.",
+        "Disposable fixture with Delivery Start plus an E2 checkpoint containing the complete Flowkit-Delivery/Flowkit-Change/Flowkit-Boundary trailers and a syntactically valid but nonexistent Owner-Authorization ref was returned by readGitBoundarySummaries as change-checkpoint. Removing only the subject-only E2 special case does not change this counterexample.",
+        "171 mutation scope adds the B1 test fixture but does not explicitly freeze or prove the production consumer path needed to make writer activation use the same strict-admitted anchor; an implementation that only removes the subject-only special case would still violate the 169 required outcome."
+      ],
+      "impact": "F1 would retain two different meanings of the E2 cutover: FormalFactReader/legacy admission would require checkpoint-time Owner authority, while B1 writer activation could switch on a Git-only candidate that is not a formal checkpoint fact. That leaves F1-RA-001 only partially closed and permits future malformed history to change writer behavior without the Owner-authorized checkpoint boundary.",
+      "location": "openspec/changes/archive-and-checkpoint-boundary/design.md Decisions 1-3 and §8; src/facts/git-boundary-reader.ts:142-157; src/services/b1-run-execution-service.ts:647-679",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Revise the Proposal/Design so post-E2 writer activation is explicitly bound to the same original strict-admitted E2 cutover used by legacy compatibility, not merely to subject/trailer shape. Freeze a feasible implementation/mutation surface that preserves the Git-reader/Owner-authority separation or otherwise proves an equivalent one-authority design, and add the missing negative regression for a full-trailer E2 candidate whose Owner authorization did not exist at the boundary.",
+      "acceptance": [
+        "The Proposal states one shared cutover invariant for legacy admission and writer activation: only the original strict-admitted E2 checkpoint activates the migration writer state.",
+        "A migration-lineage E2 commit with exact subject and formal trailers but no matching checkpoint-time authorize-checkpoint Owner fact does not activate the post-E2 writer.",
+        "The existing subject-only activation counterexample remains rejected, later duplicate E2 checkpoints cannot move the legacy cutover, and the real e182 strict E2 checkpoint still activates the writer.",
+        "Fresh/downstream repositories without the Flowkit internal migration lineage continue to use the current three-file writer by default.",
+        "flowkitMutationScope includes every production/test consumer actually required by the chosen design; no Git reader is turned into a second Owner-fact authority merely to avoid widening the proper consumer scope."
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}

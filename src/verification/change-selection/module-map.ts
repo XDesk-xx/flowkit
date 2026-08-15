@@ -49,7 +49,8 @@ const CLOSED_PREDICATES = new Set(['no-candidate-change']);
 const CLOSED_SCOPES = new Set<string>(CLOSED_VERIFICATION_SCOPES);
 const CLOSED_CAPABILITIES = new Set<string>(CLOSED_CAPABILITY_IDS);
 
-const E2_CAPABILITIES = [
+const VERIFICATION_SELECTION_CAPABILITIES = [
+  'flowkit-archive-and-checkpoint-boundary',
   'flowkit-change-verification-selection',
   'flowkit-formal-fact-reader-and-persistence',
   'flowkit-lean-run-and-action-package',
@@ -81,7 +82,7 @@ export const VERIFICATION_MODULE_MAP: readonly VerificationModule[] = [
   ),
   module(
     'execution',
-    ['src/facts', 'src/policy', 'src/services', 'tests/unit/facts', 'tests/unit/policy', 'tests/unit/services'],
+    ['src/facts', 'src/policy', 'src/services', 'tests/integration/f1-archive-and-checkpoint-boundary.test.ts', 'tests/unit/facts', 'tests/unit/policy', 'tests/unit/services'],
     ['core-model', 'persistence'],
     ['tests-execution', 'typecheck'],
     [
@@ -112,7 +113,7 @@ export const VERIFICATION_MODULE_MAP: readonly VerificationModule[] = [
     ['src/verification/change-selection', 'tests/fixtures/e2-change-verification-generalization', 'tests/integration/e1-change-verification-selection.test.ts', 'tests/integration/e2-change-verification-generalization.test.ts', 'tests/integration/verification-commands.test.ts', 'tests/unit/verification/affected-scopes.test.ts', 'tests/unit/verification/change-selection'],
     ['core-model', 'execution', 'openspec-runtime', 'persistence'],
     ['openspec-current-change-strict', 'tests-verification', 'typecheck'],
-    [...E2_CAPABILITIES],
+    [...VERIFICATION_SELECTION_CAPABILITIES],
   ),
 ];
 

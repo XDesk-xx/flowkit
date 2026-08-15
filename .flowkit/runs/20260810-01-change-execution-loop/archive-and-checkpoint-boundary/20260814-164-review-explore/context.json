@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260814-164-review-explore",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "review-explore",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "edb8156b1be36780bb4de7cafb58cc9a0c58a848de8b9f059694373f25118933",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260814-164-review-explore/",
+  "changeKey": "F1",
+  "changeId": "archive-and-checkpoint-boundary",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260814-163-revise-explore/result.json",
+    "versionFingerprint": "eeac6293cd4692180a87aa4165fb8ebba9aee77295cca0f7716f1f57c1d2eab3",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260814-163-revise-explore",
+  "canonicalBase": "e182492181166ef00b8546923f1ce6ad168564f7",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260814-163-revise-explore/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "eeac6293cd4692180a87aa4165fb8ebba9aee77295cca0f7716f1f57c1d2eab3"
+    },
+    {
+      "ref": "openspec/changes/archive-and-checkpoint-boundary/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "cfa0dd24ffbc3529beee2a707cfd385b458247b1b5cca61fbcc99f934e83600e"
+    },
+    {
+      "ref": "openspec/changes/archive-and-checkpoint-boundary/explore.md",
+      "versionFingerprint": "a6f4a5fbd5dfe9cdaa00b2ec493e6ca43a0697c121037d5cfdb0a45dd245b054",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "archive-and-checkpoint-boundary",
+      "runId": "20260814-164-review-explore",
+      "action": "review-explore",
+      "role": "reviewer",
+      "semanticInputFingerprint": "edb8156b1be36780bb4de7cafb58cc9a0c58a848de8b9f059694373f25118933"
+    },
+    "definition": {
+      "action": "review-explore",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-explore",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/archive-and-checkpoint-boundary/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "cfa0dd24ffbc3529beee2a707cfd385b458247b1b5cca61fbcc99f934e83600e"
+      },
+      {
+        "ref": "openspec/changes/archive-and-checkpoint-boundary/explore.md",
+        "versionFingerprint": "a6f4a5fbd5dfe9cdaa00b2ec493e6ca43a0697c121037d5cfdb0a45dd245b054",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260814-163-revise-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "eeac6293cd4692180a87aa4165fb8ebba9aee77295cca0f7716f1f57c1d2eab3"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260814-162-review-explore",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260814-162-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "ca9f3f22c412aae831f7a699c45986342e847e8a566e55a865725e124c7476f1"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "F1-RE-003",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "Checkpoint authority proof 缺少 authorization-before-boundary 的时间绑定，历史 commit 可被 later Owner fact 事后追认",
+          "problem": "161 已解决 subject-only / malformed / wrong-target 的 formal identity matching，但 Proof A 明确让 strict recognition 只把 commit trailer 中的 Owner-Authorization ref 与当前 Manifest canonical Owner fact 匹配；它没有证明该 authorize-checkpoint fact 在 checkpoint Git boundary 形成时已经存在。这样一个 checkpoint commit 可以先携带一个当时尚不存在于正式事实中的 Owner-Authorization ref，随后再把同 ref 的 authorize-checkpoint record写入 Manifest；若 Reader只消费当前 Manifest，历史 checkpoint 会被 retroactively admitted。161 自己的 Acceptance Boundary 是 Owner authorize-checkpoint → formal Git checkpoint，故 temporal order 是该 authority chain 的一部分，当前 Evidence Boundary 尚未覆盖。",
+          "contractRef": "flowkit-operating-model-v8 §27.2; openspec/specs/flowkit-bootstrap-and-roadmap/spec.md Git formal boundary requirement; openspec/specs/flowkit-delivery-change-creation-and-owner-input/spec.md authorize-checkpoint authority boundary",
+          "invariant": "Owner authorization 必须先于其授权的 Change Checkpoint Git boundary 生效；formal checkpoint recognition 不得仅凭后来出现的 current Owner fact 对一个形成时未经授权的历史 commit 进行事后追认。",
+          "requiredOutcome": "补一个最小 temporal authority proof：strict checkpoint admission 必须证明匹配的 authorize-checkpoint authority 在该 Git boundary 形成时已经存在，而不是仅在当前 Manifest 中后来出现。可以验证 checkpoint commit tree/ancestor 中的正式 Owner fact，或采用语义等价的不可事后追认机制；Reviewer不预设具体 Git plumbing。加入 checkpoint-first → authorization-later 反例，并证明它不会被 retroactively admitted；同时保留 161 已证明的 strict identity matching 与 bounded legacy compatibility。",
+          "acceptance": [
+            "Explore 明确把 Owner authorization temporal existence 纳入 strict checkpoint recognition acceptance，而不仅是 current ref equality",
+            "disposable evidence覆盖 authorization-before-checkpoint = accepted，以及 checkpoint-before-authorization-later = not retroactively accepted",
+            "subject-only / wrong Delivery / wrong Change / wrong Boundary / missing或mismatched provenance仍 fail-closed，legacy compatibility继续 bounded且不回写历史 Git"
+          ]
+        }
+      ],
+      "convergence": [
+        {
+          "findingId": "F1-RE-001",
+          "state": "superseded",
+          "supersededByFindingId": "F1-RE-003"
+        },
+        {
+          "findingId": "F1-RE-002",
+          "state": "resolved"
+        },
+        {
+          "findingId": "F1-RE-003",
+          "state": "new"
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "7d783044f9a08897db7628b04400cf8856f29d6ac3e70d79070bb0accabef3fb",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

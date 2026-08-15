@@ -345,6 +345,14 @@ describe('checkpoint recovery boundary — archive closes Change', () => {
     assert.deepEqual(getCompletedUncheckpointedChanges(snap).map((c) => c.key), ['Q2']);
   });
 
+  it('treats a rejected raw checkpoint candidate as still uncheckpointed because Policy sees admitted facts only', () => {
+    const snap = buildSnapshot({
+      changes: [buildChange({ key: 'F1', id: 'f1', state: 'completed', required: true })],
+      gitBoundaries: [],
+    });
+    assert.deepEqual(getCompletedUncheckpointedChanges(snap).map((c) => c.id), ['f1']);
+  });
+
   it('keeps legacy and structured checkpoint facts together during migration', () => {
     const snap = buildSnapshot({
       changes: [

@@ -75,4 +75,42 @@ describe('verification evidence affected Node union', () => {
       await rm(root, { recursive: true, force: true });
     }
   });
+  it('physically executes the F1 lifecycle integration through tests-execution', async () => {
+    const root = await createTempDir();
+    try {
+      await symlink(join(process.cwd(), 'node_modules'), join(root, 'node_modules'), 'dir');
+      await writeFile(join(root, 'package.json'), '{"type":"module"}\n', 'utf8');
+      await mkdir(join(root, 'tests', 'integration'), { recursive: true });
+      await writeFile(join(root, 'tests', 'integration', 'f1-archive-and-checkpoint-boundary.test.ts'), [
+        "import assert from 'node:assert/strict';",
+        "import { test } from 'node:test';",
+        "test('f1 execution sentinel', () => assert.fail('f1 sentinel'));",
+        '',
+      ].join('\n'), 'utf8');
+
+      const previousNodeTestContext = process.env['NODE_TEST_CONTEXT'];
+      delete process.env['NODE_TEST_CONTEXT'];
+      let evidence;
+      try {
+        evidence = await executeVerificationSelection({
+          repoRoot: root,
+          changeId: 'f1',
+          runDir: join(root, '.flowkit', 'runs', 'sentinel'),
+          producingRunId: '20990101-002-apply',
+          selection: executionOnlySelection(),
+          fullTestStatus: 'not-ready',
+          openSpecAdapter: {} as OpenSpecCliAdapter,
+        });
+      } finally {
+        if (previousNodeTestContext === undefined) delete process.env['NODE_TEST_CONTEXT'];
+        else process.env['NODE_TEST_CONTEXT'] = previousNodeTestContext;
+      }
+
+      assert.equal(evidence.overallStatus, 'failed');
+      assert.match(evidence.checks[0]?.commandOrMethod ?? '', /tests\/integration\/f1-archive-and-checkpoint-boundary\.test\.ts/);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
 });

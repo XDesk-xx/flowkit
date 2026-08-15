@@ -1,0 +1,18 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "apply",
+    "executionStatus": "completed",
+    "summary": "实现 F1 archive/checkpoint boundary：strict Git checkpoint identity；从 checkpoint-time Manifest 验证 authorize-checkpoint Owner authority 已在 boundary 形成时存在，拒绝事后追认；保留 pre-E2 bounded legacy compatibility；新增只读 checkpoint handoff/preflight service；修复 mutation-declaration fixture lifecycle coupling；将 F1 integration 纳入 tests-execution 物理执行闭包，并补齐 F1 capability 对 verification-selection current mutations 的 Catalog relation。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "4067d5f0f372526ff44f0c251a70ee5f6dba93cebb63b7cb728b913e9f3ddec6",
+    "currentVerification": {
+      "logicalRef": "openspec/changes/archive-and-checkpoint-boundary/verification.md",
+      "versionFingerprint": "c149de18f7260a6bcbbe6801461e010fc249ccecda48755ea138aa1a135e362b",
+      "selectionFingerprint": "f166a35a79c42de022af78cb9f8b03e1287f0e140238a3e4efb74434fb5df6d6",
+      "status": "passed"
+    }
+  }
+}

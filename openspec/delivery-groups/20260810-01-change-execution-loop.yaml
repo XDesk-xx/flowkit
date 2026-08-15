@@ -204,7 +204,7 @@ changes:
     required: true
     dependsOn:
       - change-verification-generalization-and-lean-run-normalization
-    state: planned
+    state: completed
     outputs:
       - archive precondition enforcement
       - OpenSpec archive result integration
@@ -483,6 +483,43 @@ ownerDecisions:
     deliveryId: "20260810-01-change-execution-loop"
     changeId: "change-verification-generalization-and-lean-run-normalization"
     sourceRef: "owner:chat-20260815-E2-checkpoint-authorization"
+  - ref: "owner:2fddff69ffc1b74628e1e8ff63b37c7af51a78ee1e235a88b77d2da7c9a5b061"
+    decision: "activate-change"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "archive-and-checkpoint-boundary"
+    sourceRef: "owner-input:2026-08-15T07:04+08:00:authorize-explore:F1"
+  - ref: "owner:52be155506f3eb1e83cf275f6a51a9b2f64fe8038948d50e80fc19df74bed8ad"
+    decision: "authorize-apply"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "archive-and-checkpoint-boundary"
+    sourceRef: "owner-chat:2026-08-15T08:57+08:00:F1-authorize-apply"
+  - ref: "owner:a8adfe13a9d149cbcb5df514aaf8d09e937e2b47cc920b97cc8f6538260a324e"
+    decision: "contract-reset"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "archive-and-checkpoint-boundary"
+    scope: "F1 architecture and F1-RA-001 required outcome unchanged; do not reopen Explore; only correct Proposal/Design apply and revise-apply mutation scope after failed 20260815-170-revise-apply."
+    requiredOutcomes:
+      - "Add tests/unit/services/b1-run-execution-service.test.ts to flowkitMutationScope.apply."
+      - "Add tests/unit/services/b1-run-execution-service.test.ts to flowkitMutationScope.revise-apply."
+      - "Do not reopen Explore; create a new Proposal generation for Reviewer re-approval before Apply/revise-apply."
+      - "Keep F1 architecture unchanged."
+      - "Keep F1-RA-001 required outcome unchanged: remove subject-only E2 checkpoint activation and keep the legacy cutover anchored to the original strict-admitted E2 checkpoint."
+    sourceRef: "owner-chat:2026-08-15T11:07+08:00:F1-RA-001-mutation-scope-reset-after-170"
+  - ref: "owner:53b5fd897ad413cda9445b74bee9e8944022e3d1a2efe6307f244d8af9f74b93"
+    decision: "authorize-apply"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "archive-and-checkpoint-boundary"
+    sourceRef: "owner-chat:2026-08-15T11:38+08:00:F1-authorize-apply-after-174-review-propose"
+  - ref: "owner:a3066933aa4a57b93d25bfb9aabe482d43e0b21e99128fa78f2ba9cd9c28e1f4"
+    decision: "authorize-archive"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "archive-and-checkpoint-boundary"
+    sourceRef: "owner-chat:2026-08-15T12:35+08:00:F1-authorize-archive-after-176"
+  - ref: "owner:b19b03a36a9f5a08666e0cbd6794de144b81b241356e3a933dd1d3958d853c82"
+    decision: "authorize-checkpoint"
+    deliveryId: "20260810-01-change-execution-loop"
+    changeId: "archive-and-checkpoint-boundary"
+    sourceRef: "owner:chat-20260815-F1-checkpoint-authorization"
 verification:
   change:
     requireApplicableChecks: true

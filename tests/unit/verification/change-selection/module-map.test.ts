@@ -26,6 +26,18 @@ describe('verification module map', () => {
     });
   });
 
+  it('maps the F1 lifecycle integration into execution coverage', () => {
+    const selected = selectAffectedVerificationModules(['tests/integration/f1-archive-and-checkpoint-boundary.test.ts']);
+    assert.deepEqual(selected.seedModuleIds, ['execution']);
+    assert.equal(selected.verificationScopes.includes('tests-execution'), true);
+  });
+
+  it('allows F1 capability to justify verification-selection mutations in the current Change', () => {
+    const selected = selectAffectedVerificationModules(['src/verification/change-selection/module-map.ts']);
+    assert.deepEqual(selected.seedModuleIds, ['verification-selection']);
+    assert.equal(selected.capabilityIds.includes('flowkit-archive-and-checkpoint-boundary'), true);
+  });
+
   it('maps the historical E1 integration regression into verification-selection coverage', () => {
     const selected = selectAffectedVerificationModules(['tests/integration/e1-change-verification-selection.test.ts']);
     assert.deepEqual(selected.seedModuleIds, ['verification-selection']);

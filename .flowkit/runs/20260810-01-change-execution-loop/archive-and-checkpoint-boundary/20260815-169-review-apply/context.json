@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260815-169-review-apply",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "review-apply",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "68e322c67005cab090dd1d23074917e7461c8a9d1f61c4c5bf043a6e27e0a201",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260815-169-review-apply/",
+  "changeKey": "F1",
+  "changeId": "archive-and-checkpoint-boundary",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260815-168-apply/result.json",
+    "versionFingerprint": "a6ea7986de38c3642a1cff7def4bdf900999e3ff131e37d729f722e15251d3e5",
+    "kind": "run-result"
+  },
+  "verificationInputRef": {
+    "ref": "openspec/changes/archive-and-checkpoint-boundary/verification.md",
+    "versionFingerprint": "c149de18f7260a6bcbbe6801461e010fc249ccecda48755ea138aa1a135e362b",
+    "kind": "verification-summary"
+  },
+  "reviewedRunId": "20260815-168-apply",
+  "canonicalBase": "e182492181166ef00b8546923f1ce6ad168564f7",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260815-168-apply/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "a6ea7986de38c3642a1cff7def4bdf900999e3ff131e37d729f722e15251d3e5"
+    },
+    {
+      "ref": "openspec/changes/archive-and-checkpoint-boundary/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "cfa0dd24ffbc3529beee2a707cfd385b458247b1b5cca61fbcc99f934e83600e"
+    },
+    {
+      "ref": "openspec/changes/archive-and-checkpoint-boundary/design.md",
+      "versionFingerprint": "878f47a0c33162e531fd3a319d67e774dedac2e526654a3243dfbb1d778cc766",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/archive-and-checkpoint-boundary/proposal.md",
+      "versionFingerprint": "d9c2f57e06d0f3e481e39f105370876ad7e0526aa5c1e8fa2ede9376675b4be4",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/archive-and-checkpoint-boundary/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+      "versionFingerprint": "27f07a3ca3142d215177629a396dc9cfa7caed9e91a3376f6a01660ec5b36869",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/archive-and-checkpoint-boundary/tasks.md",
+      "kind": "openspec-contract",
+      "versionFingerprint": "70abad6caac07484e61f674d0b40c1a433127cdde2a81b7d5578deaacef6afea"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "archive-and-checkpoint-boundary",
+      "runId": "20260815-169-review-apply",
+      "action": "review-apply",
+      "role": "reviewer",
+      "semanticInputFingerprint": "68e322c67005cab090dd1d23074917e7461c8a9d1f61c4c5bf043a6e27e0a201"
+    },
+    "definition": {
+      "action": "review-apply",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-implementation-and-verification",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings-plus-verification-ref",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "core-derived",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/archive-and-checkpoint-boundary/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "cfa0dd24ffbc3529beee2a707cfd385b458247b1b5cca61fbcc99f934e83600e"
+      },
+      {
+        "ref": "openspec/changes/archive-and-checkpoint-boundary/design.md",
+        "versionFingerprint": "878f47a0c33162e531fd3a319d67e774dedac2e526654a3243dfbb1d778cc766",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-and-checkpoint-boundary/proposal.md",
+        "versionFingerprint": "d9c2f57e06d0f3e481e39f105370876ad7e0526aa5c1e8fa2ede9376675b4be4",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-and-checkpoint-boundary/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+        "versionFingerprint": "27f07a3ca3142d215177629a396dc9cfa7caed9e91a3376f6a01660ec5b36869",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-and-checkpoint-boundary/tasks.md",
+        "kind": "openspec-contract",
+        "versionFingerprint": "70abad6caac07484e61f674d0b40c1a433127cdde2a81b7d5578deaacef6afea"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260815-168-apply/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "a6ea7986de38c3642a1cff7def4bdf900999e3ff131e37d729f722e15251d3e5"
+      }
+    ],
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "verificationView": {
+      "status": "passed",
+      "resultRef": {
+        "ref": "openspec/changes/archive-and-checkpoint-boundary/verification.md",
+        "kind": "verification-summary",
+        "versionFingerprint": "c149de18f7260a6bcbbe6801461e010fc249ccecda48755ea138aa1a135e362b"
+      }
+    },
+    "externalContextFingerprint": "def68c25b06bc9e27f3e87559f3addbaea0db9fd57eaaae352135e64b0d77c59",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "core-derived",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

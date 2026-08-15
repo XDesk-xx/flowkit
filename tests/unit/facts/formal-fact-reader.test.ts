@@ -2172,3 +2172,158 @@ describe('readFormalFactSnapshot', () => {
   });
 
 });
+
+describe('F1 strict checkpoint temporal admission', () => {
+  async function initGitFixture(deliveryId: string, changeId: string): Promise<string> {
+    const { mkdtemp } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { execFile } = await import('node:child_process');
+    const { promisify } = await import('node:util');
+    const exec = promisify(execFile);
+    const root = await mkdtemp(join(tmpdir(), 'flowkit-f1-formal-reader-'));
+    await exec('git', ['init'], { cwd: root });
+    await exec('git', ['config', 'user.email', 'flowkit@example.test'], { cwd: root });
+    await exec('git', ['config', 'user.name', 'Flowkit Test'], { cwd: root });
+    await mkdir(join(root, 'openspec', 'delivery-groups'), { recursive: true });
+    await writeCheckpointManifest(root, deliveryId, changeId);
+    await exec('git', ['add', '.'], { cwd: root });
+    await exec('git', ['commit', '-m', `chore(flowkit): start ${deliveryId}`], { cwd: root });
+    return root;
+  }
+
+  async function writeCheckpointManifest(
+    root: string,
+    deliveryId: string,
+    changeId: string,
+    owner?: { ref: string; sourceRef: string },
+  ): Promise<void> {
+    await writeFile(join(root, 'openspec', 'delivery-groups', `${deliveryId}.yaml`), [
+      `id: ${deliveryId}`,
+      'delivery:',
+      '  state: active',
+      '  fullTestStatus: not-ready',
+      'changes:',
+      '  - key: F1',
+      `    id: ${changeId}`,
+      '    state: completed',
+      '    architectureImpact: false',
+      '    required: true',
+      '    dependsOn: []',
+      ...(owner === undefined ? [] : [
+        'ownerDecisions:',
+        `  - ref: "${owner.ref}"`,
+        '    decision: "authorize-checkpoint"',
+        `    deliveryId: "${deliveryId}"`,
+        `    changeId: "${changeId}"`,
+        `    sourceRef: "${owner.sourceRef}"`,
+      ]),
+      '',
+    ].join('\n'), 'utf8');
+  }
+
+  async function checkpointCommit(
+    root: string,
+    deliveryId: string,
+    changeId: string,
+    ownerRef: string,
+    value: string,
+  ): Promise<void> {
+    const { execFile } = await import('node:child_process');
+    const { promisify } = await import('node:util');
+    const exec = promisify(execFile);
+    await writeFile(join(root, 'boundary.txt'), `${value}\n`);
+    await exec('git', ['add', '.'], { cwd: root });
+    await exec('git', [
+      'commit', '-m', `chore(flowkit): checkpoint ${changeId}`, '-m', [
+        `Flowkit-Delivery: ${deliveryId}`,
+        `Flowkit-Change: ${changeId}`,
+        'Flowkit-Boundary: change-checkpoint',
+        `Owner-Authorization: ${ownerRef}`,
+      ].join('\n'),
+    ], { cwd: root });
+  }
+
+  async function readCheckpointFixture(root: string, deliveryId: string) {
+    return readFormalFactSnapshot({
+      repoRoot: root,
+      deliveryId,
+      runsPathPrefix: '.flowkit/runs',
+      openspecChangesPath: 'openspec/changes',
+      manifestPathPrefix: 'openspec/delivery-groups',
+    });
+  }
+
+  it('admits authorization-before-checkpoint using the checkpoint commit-tree Manifest', async () => {
+    const { ownerDecisionRefFor } = await import('../../../src/domain/owner-provenance.js');
+    const deliveryId = '20990201-01-f1';
+    const changeId = 'archive-and-checkpoint-boundary';
+    const sourceRef = 'owner:test:f1-checkpoint';
+    const ownerRef = ownerDecisionRefFor({ decision: 'authorize-checkpoint', deliveryId, changeId, sourceRef });
+    const root = await initGitFixture(deliveryId, changeId);
+    try {
+      await writeCheckpointManifest(root, deliveryId, changeId, { ref: ownerRef, sourceRef });
+      await checkpointCommit(root, deliveryId, changeId, ownerRef, 'authorized');
+      const snapshot = await readCheckpointFixture(root, deliveryId);
+      assert.equal(snapshot.gitBoundaries.some((fact) => fact.kind === 'change-checkpoint' && fact.changeId === changeId), true);
+      assert.deepEqual(snapshot.conflicts, []);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('does not retroactively admit checkpoint-first then authorization-later', async () => {
+    const { ownerDecisionRefFor } = await import('../../../src/domain/owner-provenance.js');
+    const { execFile } = await import('node:child_process');
+    const { promisify } = await import('node:util');
+    const exec = promisify(execFile);
+    const deliveryId = '20990202-01-f1';
+    const changeId = 'archive-and-checkpoint-boundary';
+    const sourceRef = 'owner:test:f1-later';
+    const ownerRef = ownerDecisionRefFor({ decision: 'authorize-checkpoint', deliveryId, changeId, sourceRef });
+    const root = await initGitFixture(deliveryId, changeId);
+    try {
+      await checkpointCommit(root, deliveryId, changeId, ownerRef, 'checkpoint-first');
+      await writeCheckpointManifest(root, deliveryId, changeId, { ref: ownerRef, sourceRef });
+      await exec('git', ['add', '.'], { cwd: root });
+      await exec('git', ['commit', '-m', 'test: add later owner authorization'], { cwd: root });
+      const snapshot = await readCheckpointFixture(root, deliveryId);
+      assert.equal(snapshot.ownerAuthorizations.some((fact) => fact.ref === ownerRef), true);
+      assert.equal(snapshot.gitBoundaries.some((fact) => fact.kind === 'change-checkpoint' && fact.changeId === changeId), false);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+
+  it('keeps post-anchor malformed checkpoints strict even after a later duplicate E2 checkpoint', async () => {
+    const { ownerDecisionRefFor } = await import('../../../src/domain/owner-provenance.js');
+    const { execFile } = await import('node:child_process');
+    const { promisify } = await import('node:util');
+    const exec = promisify(execFile);
+    const deliveryId = '20260810-01-change-execution-loop';
+    const e2ChangeId = 'change-verification-generalization-and-lean-run-normalization';
+    const laterChangeId = 'archive-and-checkpoint-boundary';
+    const firstSourceRef = 'owner:test:e2-original';
+    const firstRef = ownerDecisionRefFor({ decision: 'authorize-checkpoint', deliveryId, changeId: e2ChangeId, sourceRef: firstSourceRef });
+    const secondSourceRef = 'owner:test:e2-duplicate';
+    const secondRef = ownerDecisionRefFor({ decision: 'authorize-checkpoint', deliveryId, changeId: e2ChangeId, sourceRef: secondSourceRef });
+    const root = await initGitFixture(deliveryId, e2ChangeId);
+    try {
+      await writeCheckpointManifest(root, deliveryId, e2ChangeId, { ref: firstRef, sourceRef: firstSourceRef });
+      await checkpointCommit(root, deliveryId, e2ChangeId, firstRef, 'original-e2');
+
+      await writeFile(join(root, 'boundary.txt'), 'malformed-post-anchor\n');
+      await exec('git', ['add', '.'], { cwd: root });
+      await exec('git', ['commit', '-m', `chore(flowkit): checkpoint ${laterChangeId}`], { cwd: root });
+
+      await writeCheckpointManifest(root, deliveryId, e2ChangeId, { ref: secondRef, sourceRef: secondSourceRef });
+      await checkpointCommit(root, deliveryId, e2ChangeId, secondRef, 'duplicate-e2');
+
+      const snapshot = await readCheckpointFixture(root, deliveryId);
+      assert.equal(snapshot.gitBoundaries.some((fact) => fact.kind === 'change-checkpoint' && fact.changeId === laterChangeId), false);
+      assert.equal(snapshot.gitBoundaries.filter((fact) => fact.kind === 'change-checkpoint' && fact.changeId === e2ChangeId).length, 2);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+});

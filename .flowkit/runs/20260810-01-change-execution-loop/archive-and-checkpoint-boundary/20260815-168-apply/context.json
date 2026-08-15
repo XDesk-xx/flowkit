@@ -1,0 +1,375 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260815-168-apply",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "apply",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "semanticInputFingerprint": "0973e72e161ff7d294a88ef2cc13a1bc86b457ba1b33dd2c5e00235014bc4453",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260815-168-apply/",
+  "changeKey": "F1",
+  "changeId": "archive-and-checkpoint-boundary",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260815-166-review-propose/result.json",
+    "versionFingerprint": "e8134d84cb1532b0fc46d5cac48f8c390a99726194799fa78ad24462b3baa684",
+    "kind": "run-result"
+  },
+  "canonicalBase": "e182492181166ef00b8546923f1ce6ad168564f7",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260815-166-review-propose/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "e8134d84cb1532b0fc46d5cac48f8c390a99726194799fa78ad24462b3baa684"
+    },
+    {
+      "ref": "openspec/changes/archive-and-checkpoint-boundary/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "cfa0dd24ffbc3529beee2a707cfd385b458247b1b5cca61fbcc99f934e83600e"
+    },
+    {
+      "ref": "openspec/changes/archive-and-checkpoint-boundary/design.md",
+      "versionFingerprint": "878f47a0c33162e531fd3a319d67e774dedac2e526654a3243dfbb1d778cc766",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/archive-and-checkpoint-boundary/proposal.md",
+      "versionFingerprint": "d9c2f57e06d0f3e481e39f105370876ad7e0526aa5c1e8fa2ede9376675b4be4",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/archive-and-checkpoint-boundary/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+      "versionFingerprint": "27f07a3ca3142d215177629a396dc9cfa7caed9e91a3376f6a01660ec5b36869",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/archive-and-checkpoint-boundary/tasks.md",
+      "versionFingerprint": "662a6c68d39ecfffb0d39a0dd52ba13c18eeee612168b2342f3aec14bf1ecdfb",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "archive-and-checkpoint-boundary",
+      "runId": "20260815-168-apply",
+      "action": "apply",
+      "role": "author",
+      "semanticInputFingerprint": "0973e72e161ff7d294a88ef2cc13a1bc86b457ba1b33dd2c5e00235014bc4453"
+    },
+    "definition": {
+      "action": "apply",
+      "version": 1,
+      "role": "author",
+      "goalClass": "implement-approved-contract",
+      "mutationClass": "approved-implementation-and-verification",
+      "outputClass": "implementation-candidate-and-authority-files",
+      "terminalContract": {
+        "kind": "implementation",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/archive-and-checkpoint-boundary/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "cfa0dd24ffbc3529beee2a707cfd385b458247b1b5cca61fbcc99f934e83600e"
+      },
+      {
+        "ref": "openspec/changes/archive-and-checkpoint-boundary/design.md",
+        "versionFingerprint": "878f47a0c33162e531fd3a319d67e774dedac2e526654a3243dfbb1d778cc766",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-and-checkpoint-boundary/proposal.md",
+        "versionFingerprint": "d9c2f57e06d0f3e481e39f105370876ad7e0526aa5c1e8fa2ede9376675b4be4",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-and-checkpoint-boundary/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+        "versionFingerprint": "27f07a3ca3142d215177629a396dc9cfa7caed9e91a3376f6a01660ec5b36869",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-and-checkpoint-boundary/tasks.md",
+        "versionFingerprint": "662a6c68d39ecfffb0d39a0dd52ba13c18eeee612168b2342f3aec14bf1ecdfb",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260815-166-review-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "e8134d84cb1532b0fc46d5cac48f8c390a99726194799fa78ad24462b3baa684"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260815-166-review-propose",
+      "verdict": "approved",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260815-166-review-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "e8134d84cb1532b0fc46d5cac48f8c390a99726194799fa78ad24462b3baa684"
+      },
+      "blockingAuthorities": [],
+      "findings": []
+    },
+    "ownerAuthorizationRefs": [
+      {
+        "ref": "owner:52be155506f3eb1e83cf275f6a51a9b2f64fe8038948d50e80fc19df74bed8ad",
+        "decision": "authorize-apply",
+        "deliveryId": "20260810-01-change-execution-loop",
+        "changeId": "archive-and-checkpoint-boundary",
+        "sourceRef": "owner-chat:2026-08-15T08:57+08:00:F1-authorize-apply"
+      }
+    ],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "964202ed10428b3803cc2aca2b36b7b844fadafe79dc981363e8d77d8018f9ad",
+    "requiredResultContract": {
+      "kind": "implementation",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    },
+    "compactEntryWorkspaceIdentity": {
+      "canonicalBase": "e182492181166ef00b8546923f1ce6ad168564f7",
+      "workspaceFingerprint": "e0392c3ef33429e50e140b0d33e0a3dde5ad45dac395f3dba8701cecfee42b03",
+      "entries": [
+        {
+          "path": "openspec/changes/archive-and-checkpoint-boundary/.openspec.yaml",
+          "state": "untracked",
+          "contentFingerprint": "cfa0dd24ffbc3529beee2a707cfd385b458247b1b5cca61fbcc99f934e83600e"
+        },
+        {
+          "path": "openspec/changes/archive-and-checkpoint-boundary/design.md",
+          "state": "untracked",
+          "contentFingerprint": "878f47a0c33162e531fd3a319d67e774dedac2e526654a3243dfbb1d778cc766"
+        },
+        {
+          "path": "openspec/changes/archive-and-checkpoint-boundary/explore.md",
+          "state": "untracked",
+          "contentFingerprint": "a6f4a5fbd5dfe9cdaa00b2ec493e6ca43a0697c121037d5cfdb0a45dd245b054"
+        },
+        {
+          "path": "openspec/changes/archive-and-checkpoint-boundary/proposal.md",
+          "state": "untracked",
+          "contentFingerprint": "d9c2f57e06d0f3e481e39f105370876ad7e0526aa5c1e8fa2ede9376675b4be4"
+        },
+        {
+          "path": "openspec/changes/archive-and-checkpoint-boundary/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "27f07a3ca3142d215177629a396dc9cfa7caed9e91a3376f6a01660ec5b36869"
+        },
+        {
+          "path": "openspec/changes/archive-and-checkpoint-boundary/tasks.md",
+          "state": "untracked",
+          "contentFingerprint": "662a6c68d39ecfffb0d39a0dd52ba13c18eeee612168b2342f3aec14bf1ecdfb"
+        },
+        {
+          "path": "openspec/delivery-groups/20260810-01-change-execution-loop.yaml",
+          "state": "modified",
+          "contentFingerprint": "4bc53f65758218b52f3c9ab6926678cd606124098e50a178ffd6aeca14a1975e"
+        }
+      ]
+    },
+    "mutationDeclaration": {
+      "schemaVersion": 1,
+      "action": "apply",
+      "designRef": {
+        "ref": "openspec/changes/archive-and-checkpoint-boundary/design.md",
+        "kind": "produced-artifact",
+        "versionFingerprint": "878f47a0c33162e531fd3a319d67e774dedac2e526654a3243dfbb1d778cc766"
+      },
+      "selectors": [
+        {
+          "kind": "exact",
+          "path": "openspec/changes/archive-and-checkpoint-boundary/tasks.md"
+        },
+        {
+          "kind": "exact",
+          "path": "src/facts/formal-fact-reader.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/facts/git-boundary-reader.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/services/f1-checkpoint-boundary-service.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/verification/change-selection/evidence.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/verification/change-selection/module-map.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/integration/f1-archive-and-checkpoint-boundary.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/facts/formal-fact-reader.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/facts/git-boundary-reader.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/policy/next.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/policy/preconditions.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/services/f1-checkpoint-boundary-service.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/verification/change-selection/evidence.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/verification/change-selection/module-map.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/verification/change-selection/mutation-declaration.test.ts"
+        }
+      ]
+    }
+  },
+  "compactEntryWorkspaceIdentity": {
+    "canonicalBase": "e182492181166ef00b8546923f1ce6ad168564f7",
+    "workspaceFingerprint": "e0392c3ef33429e50e140b0d33e0a3dde5ad45dac395f3dba8701cecfee42b03",
+    "entries": [
+      {
+        "path": "openspec/changes/archive-and-checkpoint-boundary/.openspec.yaml",
+        "state": "untracked",
+        "contentFingerprint": "cfa0dd24ffbc3529beee2a707cfd385b458247b1b5cca61fbcc99f934e83600e"
+      },
+      {
+        "path": "openspec/changes/archive-and-checkpoint-boundary/design.md",
+        "state": "untracked",
+        "contentFingerprint": "878f47a0c33162e531fd3a319d67e774dedac2e526654a3243dfbb1d778cc766"
+      },
+      {
+        "path": "openspec/changes/archive-and-checkpoint-boundary/explore.md",
+        "state": "untracked",
+        "contentFingerprint": "a6f4a5fbd5dfe9cdaa00b2ec493e6ca43a0697c121037d5cfdb0a45dd245b054"
+      },
+      {
+        "path": "openspec/changes/archive-and-checkpoint-boundary/proposal.md",
+        "state": "untracked",
+        "contentFingerprint": "d9c2f57e06d0f3e481e39f105370876ad7e0526aa5c1e8fa2ede9376675b4be4"
+      },
+      {
+        "path": "openspec/changes/archive-and-checkpoint-boundary/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "27f07a3ca3142d215177629a396dc9cfa7caed9e91a3376f6a01660ec5b36869"
+      },
+      {
+        "path": "openspec/changes/archive-and-checkpoint-boundary/tasks.md",
+        "state": "untracked",
+        "contentFingerprint": "662a6c68d39ecfffb0d39a0dd52ba13c18eeee612168b2342f3aec14bf1ecdfb"
+      },
+      {
+        "path": "openspec/delivery-groups/20260810-01-change-execution-loop.yaml",
+        "state": "modified",
+        "contentFingerprint": "4bc53f65758218b52f3c9ab6926678cd606124098e50a178ffd6aeca14a1975e"
+      }
+    ]
+  },
+  "mutationDeclaration": {
+    "schemaVersion": 1,
+    "action": "apply",
+    "designRef": {
+      "ref": "openspec/changes/archive-and-checkpoint-boundary/design.md",
+      "kind": "produced-artifact",
+      "versionFingerprint": "878f47a0c33162e531fd3a319d67e774dedac2e526654a3243dfbb1d778cc766"
+    },
+    "selectors": [
+      {
+        "kind": "exact",
+        "path": "openspec/changes/archive-and-checkpoint-boundary/tasks.md"
+      },
+      {
+        "kind": "exact",
+        "path": "src/facts/formal-fact-reader.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/facts/git-boundary-reader.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/services/f1-checkpoint-boundary-service.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/verification/change-selection/evidence.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/verification/change-selection/module-map.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/integration/f1-archive-and-checkpoint-boundary.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/facts/formal-fact-reader.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/facts/git-boundary-reader.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/policy/next.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/policy/preconditions.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/services/f1-checkpoint-boundary-service.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/verification/change-selection/evidence.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/verification/change-selection/module-map.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/verification/change-selection/mutation-declaration.test.ts"
+      }
+    ]
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": true,
+    "mayWriteTestCode": true,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 4,
+  "runId": "20260815-177-archive",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "archive",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "semanticInputFingerprint": "a1c7337229774b3b2f2867400494f4e1f787d04b1401cd2bd8113f3575ce454b",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:a8adfe13a9d149cbcb5df514aaf8d09e937e2b47cc920b97cc8f6538260a324e",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "archive-and-checkpoint-boundary",
+      "scope": "F1 architecture and F1-RA-001 required outcome unchanged; do not reopen Explore; only correct Proposal/Design apply and revise-apply mutation scope after failed 20260815-170-revise-apply.",
+      "requiredOutcomes": [
+        "Add tests/unit/services/b1-run-execution-service.test.ts to flowkitMutationScope.apply.",
+        "Add tests/unit/services/b1-run-execution-service.test.ts to flowkitMutationScope.revise-apply.",
+        "Do not reopen Explore; create a new Proposal generation for Reviewer re-approval before Apply/revise-apply.",
+        "Keep F1 architecture unchanged.",
+        "Keep F1-RA-001 required outcome unchanged: remove subject-only E2 checkpoint activation and keep the legacy cutover anchored to the original strict-admitted E2 checkpoint."
+      ],
+      "sourceRef": "owner-chat:2026-08-15T11:07+08:00:F1-RA-001-mutation-scope-reset-after-170"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260815-177-archive/",
+  "changeKey": "F1",
+  "changeId": "archive-and-checkpoint-boundary",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260815-176-review-apply/result.json",
+    "versionFingerprint": "e972735ffd209232370eb79f51bee80563ad110af6d6a14ec475c74c348d6db6",
+    "kind": "run-result"
+  },
+  "archiveEntryOpenSpecProjection": {
+    "projectionVersion": 1,
+    "version": "1.7.0",
+    "changeId": "archive-and-checkpoint-boundary",
+    "changeRootLogical": "openspec/changes/archive-and-checkpoint-boundary",
+    "artifactPaths": {
+      "proposal": [
+        "openspec/changes/archive-and-checkpoint-boundary/proposal.md"
+      ],
+      "specs": [
+        "openspec/changes/archive-and-checkpoint-boundary/specs/flowkit-archive-and-checkpoint-boundary/spec.md"
+      ],
+      "design": [
+        "openspec/changes/archive-and-checkpoint-boundary/design.md"
+      ],
+      "tasks": [
+        "openspec/changes/archive-and-checkpoint-boundary/tasks.md"
+      ]
+    }
+  },
+  "archiveMutationGuard": {
+    "state": "armed",
+    "surfaceVersion": "openspec-archive-mutation-v1",
+    "changeRoot": "openspec/changes/archive-and-checkpoint-boundary",
+    "canonicalSpecsRoot": "openspec/specs",
+    "archiveNamespaceRoot": "openspec/changes/archive",
+    "preArchiveGenerationFingerprint": "3c746e768c575afdd8948a6b5d59f674776c0101121bab717aa43691f60e4e27",
+    "terminalObservation": {
+      "kind": "success",
+      "resultFingerprint": "3b3f9679961dfa60243ec9597da1ccfcdc93efaacdb87383fadcb8d8daa92279",
+      "normalized": {
+        "kind": "success",
+        "change": "archive-and-checkpoint-boundary",
+        "archivedAs": "2026-08-15-archive-and-checkpoint-boundary",
+        "path": "openspec/changes/archive/2026-08-15-archive-and-checkpoint-boundary",
+        "specsUpdated": true,
+        "totals": {
+          "added": 7,
+          "modified": 0,
+          "removed": 0,
+          "renamed": 0
+        }
+      }
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

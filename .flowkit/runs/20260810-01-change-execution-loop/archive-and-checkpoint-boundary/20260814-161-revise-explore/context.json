@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 4,
+  "runId": "20260814-161-revise-explore",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "revise-explore",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "e4837f33f78ac7d144600fda504396d09da8474ad1d9654a65bf2d06df7b6af4",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260814-161-revise-explore/",
+  "changeKey": "F1",
+  "changeId": "archive-and-checkpoint-boundary",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260814-160-review-explore/result.json",
+    "versionFingerprint": "b7b6cf14f7b5745c33e7025b2de57b88f3a709c475cb624d9aa101431e085bf2",
+    "kind": "run-result"
+  },
+  "sourceReviewRun": "20260814-160-review-explore",
+  "sourceReviewVerdict": "changes-requested",
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

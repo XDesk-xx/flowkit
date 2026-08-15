@@ -28,8 +28,7 @@ import type {
   MutationDeclaration,
   VersionedAuthorityRef,
 } from '../domain/types.js';
-import { readFormalFactSnapshot, readFormalFactSnapshotOperation, type FormalFactReadOperation } from '../facts/formal-fact-reader.js';
-import { readGitBoundarySummaries } from '../facts/git-boundary-reader.js';
+import { readFormalFactSnapshot, readFormalFactSnapshotOperation, resolveOriginalStrictE2Checkpoint, type FormalFactReadOperation } from '../facts/formal-fact-reader.js';
 import { parseYaml } from '../facts/yaml-parser.js';
 import type {
   FormalFactSnapshot,
@@ -642,7 +641,6 @@ export async function prepareNewExecution(
 }
 
 const E2_MIGRATION_DELIVERY_ID = '20260810-01-change-execution-loop';
-const E2_MIGRATION_CHANGE_ID = 'change-verification-generalization-and-lean-run-normalization';
 
 async function isPostE2ThreeFileWriterActive(repoRoot: string): Promise<boolean> {
   const gitHistory = await runCommand('git', ['log', '--all', '--format=%s'], { cwd: repoRoot });
@@ -662,21 +660,16 @@ async function isPostE2ThreeFileWriterActive(repoRoot: string): Promise<boolean>
     return true;
   }
 
-  const migrationBoundaries = await readGitBoundarySummaries(repoRoot, E2_MIGRATION_DELIVERY_ID);
-  const checkpoints = migrationBoundaries.filter((boundary) =>
-    boundary.kind === 'change-checkpoint' && boundary.changeId === E2_MIGRATION_CHANGE_ID,
-  );
-  for (const checkpoint of checkpoints) {
-    const ancestry = await runCommand('git', ['merge-base', '--is-ancestor', checkpoint.commitSha, 'HEAD'], { cwd: repoRoot });
-    if (ancestry.kind === 'exited' && ancestry.exitCode === 0) return true;
-    if (ancestry.kind === 'exited' && ancestry.exitCode === 1) continue;
-    throw new FlowkitError('POST_E2_WRITER_ACTIVATION_UNRESOLVED', 'Could not prove whether the E2 checkpoint belongs to current Git HEAD history', {
-      checkpoint: checkpoint.commitSha,
-      outcomeKind: ancestry.kind,
-      exitCode: ancestry.exitCode,
-    });
-  }
-  return false;
+  const anchor = await resolveOriginalStrictE2Checkpoint(repoRoot);
+  if (anchor === undefined) return false;
+  const ancestry = await runCommand('git', ['merge-base', '--is-ancestor', anchor, 'HEAD'], { cwd: repoRoot });
+  if (ancestry.kind === 'exited' && ancestry.exitCode === 0) return true;
+  if (ancestry.kind === 'exited' && ancestry.exitCode === 1) return false;
+  throw new FlowkitError('POST_E2_WRITER_ACTIVATION_UNRESOLVED', 'Could not prove whether the strict-admitted E2 cutover belongs to current Git HEAD history', {
+    checkpoint: anchor,
+    outcomeKind: ancestry.kind,
+    exitCode: ancestry.exitCode,
+  });
 }
 
 async function withPreparationLock<T>(repoRoot: string, deliveryId: string, operation: () => Promise<T>): Promise<T> {

@@ -16,7 +16,7 @@ import { join } from 'node:path';
 import { normalizeSeparators } from '../shared/paths.js';
 import { isFormalAction } from '../domain/actions.js';
 import { parseYaml } from './yaml-parser.js';
-import { readGitBoundarySummaries } from './git-boundary-reader.js';
+import { readGitBoundaryProjection, type GitCheckpointBoundaryCandidate } from './git-boundary-reader.js';
 import { discriminateRunForReader, normalizeBootstrapRunStatus } from '../persistence/legacy-recognizer.js';
 import type { LegacyRun } from '../persistence/legacy-recognizer.js';
 import { validateContextFile, admitC1RunResultForReader } from '../persistence/serialization.js';
@@ -35,6 +35,7 @@ import type { AuthorizationOnlyOwnerDecision, OwnerDecisionRecordKind } from '..
 import { ownerDecisionRefFor } from '../domain/owner-provenance.js';
 import { isPreA1LegacyArchitectureImpactIdentity } from './pre-a1-legacy-architecture-impact.js';
 import { FlowkitError } from '../shared/errors.js';
+import { runCommand } from '../shared/external-command.js';
 import { OpenSpecCliAdapter } from '../integrations/openspec/openspec-cli-adapter.js';
 import { computeLineage } from '../policy/lineage.js';
 import { projectCurrentContractResetLifecycle } from './generation-resolver.js';
@@ -103,9 +104,10 @@ export async function readFormalFactSnapshotOperation(
 
   let gitBoundaries: GitBoundaryFact[] = [];
   try {
-    gitBoundaries = await readGitBoundarySummaries(input.repoRoot, input.deliveryId);
+    gitBoundaries = await readAdmittedGitBoundaries(input);
   } catch {
-    // Git boundaries are best-effort at Reader level.
+    // Git boundaries are best-effort at Reader level. Invalid/unbound checkpoint
+    // candidates fail closed by absence; Policy therefore keeps the Owner gate.
   }
 
   let checkpointArchiveTerminal: ArchiveTerminalFact | undefined;
@@ -568,6 +570,143 @@ function readOwnerAuthorizations(
       return resetIndex === undefined || index > resetIndex;
     })
     .map(({ fact }) => fact);
+}
+
+const F1_MIGRATION_DELIVERY_ID = '20260810-01-change-execution-loop';
+const F1_STRICT_ANCHOR_CHANGE_ID = 'change-verification-generalization-and-lean-run-normalization';
+
+/**
+ * Resolve the one historical E2 cutover that is both strict-admitted and the
+ * ancestor of every other strict-admitted E2 checkpoint candidate. This is a
+ * narrow migration projection shared by legacy checkpoint admission and the
+ * post-E2 Run writer. Git shape alone is intentionally insufficient: every
+ * candidate is checked against the checkpoint-time Owner authorization fact.
+ */
+export async function resolveOriginalStrictE2Checkpoint(repoRoot: string): Promise<string | undefined> {
+  const projection = await readGitBoundaryProjection(repoRoot, F1_MIGRATION_DELIVERY_ID);
+  const input: ReadFormalFactSnapshotInput = {
+    repoRoot,
+    deliveryId: F1_MIGRATION_DELIVERY_ID,
+    runsPathPrefix: '.flowkit/runs',
+    openspecChangesPath: 'openspec/changes',
+    manifestPathPrefix: 'openspec/delivery-groups',
+  };
+  const strictE2: GitCheckpointBoundaryCandidate[] = [];
+  for (const candidate of projection.checkpointCandidates) {
+    if (candidate.subjectChangeId !== F1_STRICT_ANCHOR_CHANGE_ID) continue;
+    if (!candidate.formalIdentityValid || candidate.ownerAuthorizationTrailer === undefined) continue;
+    if (await checkpointAuthorizationExistedAtBoundary(input, candidate)) strictE2.push(candidate);
+  }
+  if (strictE2.length === 0) return undefined;
+
+  const originals: GitCheckpointBoundaryCandidate[] = [];
+  for (const candidate of strictE2) {
+    let ancestorOfAll = true;
+    for (const other of strictE2) {
+      if (candidate.commitSha === other.commitSha) continue;
+      if (!(await gitIsAncestor(repoRoot, candidate.commitSha, other.commitSha))) {
+        ancestorOfAll = false;
+        break;
+      }
+    }
+    if (ancestorOfAll) originals.push(candidate);
+  }
+  return originals.length === 1 ? originals[0]!.commitSha : undefined;
+}
+
+async function readAdmittedGitBoundaries(
+  input: ReadFormalFactSnapshotInput,
+): Promise<GitBoundaryFact[]> {
+  const projection = await readGitBoundaryProjection(input.repoRoot, input.deliveryId);
+  const strict = new Map<string, GitBoundaryFact>();
+
+  for (const candidate of projection.checkpointCandidates) {
+    const fact = await admitStrictCheckpointCandidate(input, candidate);
+    if (fact !== undefined) strict.set(candidate.commitSha, fact);
+  }
+
+  const facts: GitBoundaryFact[] = [...projection.boundaries, ...strict.values()];
+  if (input.deliveryId !== F1_MIGRATION_DELIVERY_ID) return facts;
+
+  const anchorSha = await resolveOriginalStrictE2Checkpoint(input.repoRoot);
+  if (anchorSha === undefined) return facts;
+  const anchorCandidate = projection.checkpointCandidates.find((candidate) => candidate.commitSha === anchorSha);
+  if (anchorCandidate === undefined || !strict.has(anchorCandidate.commitSha)) return facts;
+
+  // Historical Flowkit checkpoints before the E2 strict anchor remain readable
+  // without rewriting Git. The exemption is ancestry-bounded and cannot apply
+  // to the anchor itself or any descendant/fresh repository checkpoint.
+  for (const candidate of projection.checkpointCandidates) {
+    if (strict.has(candidate.commitSha) || candidate.commitSha === anchorCandidate.commitSha) continue;
+    if (!candidate.legacyCheckpointSubject) continue;
+    if (!(await gitIsAncestor(input.repoRoot, candidate.commitSha, anchorCandidate.commitSha))) continue;
+    facts.push({
+      kind: 'change-checkpoint',
+      commitSha: candidate.commitSha,
+      summary: candidate.summary,
+      ...(candidate.subjectChangeId !== undefined ? { changeId: candidate.subjectChangeId } : {}),
+    });
+  }
+  return facts;
+}
+
+async function admitStrictCheckpointCandidate(
+  input: ReadFormalFactSnapshotInput,
+  candidate: GitCheckpointBoundaryCandidate,
+): Promise<GitBoundaryFact | undefined> {
+  if (
+    !candidate.formalIdentityValid ||
+    candidate.subjectChangeId === undefined ||
+    candidate.ownerAuthorizationTrailer === undefined
+  ) return undefined;
+
+  const authorized = await checkpointAuthorizationExistedAtBoundary(input, candidate);
+  if (!authorized) return undefined;
+  return {
+    kind: 'change-checkpoint',
+    commitSha: candidate.commitSha,
+    summary: candidate.summary,
+    changeId: candidate.subjectChangeId,
+  };
+}
+
+async function checkpointAuthorizationExistedAtBoundary(
+  input: ReadFormalFactSnapshotInput,
+  candidate: GitCheckpointBoundaryCandidate,
+): Promise<boolean> {
+  const manifestRef = normalizeSeparators(`${input.manifestPathPrefix}/${input.deliveryId}.yaml`);
+  const shown = await runCommand('git', ['show', `${candidate.commitSha}:${manifestRef}`], { cwd: input.repoRoot });
+  if (shown.kind !== 'exited' || shown.exitCode !== 0) return false;
+
+  const parsed = parseYaml(shown.stdout);
+  if (!parsed.ok || typeof parsed.value !== 'object' || parsed.value === null || Array.isArray(parsed.value)) {
+    return false;
+  }
+  const manifest = parsed.value as Record<string, unknown>;
+  if (manifest['id'] !== input.deliveryId) return false;
+
+  const conflicts: FactConflict[] = [];
+  const pointInTimeFacts: OwnerDecisionFact[] = [];
+  const authorizations = readOwnerAuthorizations(
+    input.deliveryId,
+    manifest['ownerDecisions'],
+    manifest['changes'],
+    conflicts,
+    `${candidate.commitSha}:${manifestRef}`,
+    pointInTimeFacts,
+  );
+  if (conflicts.length > 0) return false;
+  return authorizations.some((fact) =>
+    fact.decision === 'authorize-checkpoint' &&
+    fact.deliveryId === input.deliveryId &&
+    fact.changeId === candidate.subjectChangeId &&
+    fact.ref === candidate.ownerAuthorizationTrailer
+  );
+}
+
+async function gitIsAncestor(repoRoot: string, ancestor: string, descendant: string): Promise<boolean> {
+  const result = await runCommand('git', ['merge-base', '--is-ancestor', ancestor, descendant], { cwd: repoRoot });
+  return result.kind === 'exited' && result.exitCode === 0;
 }
 
 function completedUncheckpointedChangesForReader(

@@ -167,6 +167,18 @@ describe('next — Archive closes Change, Checkpoint follows', () => {
   });
 });
 
+describe('next — admitted checkpoint facts only', () => {
+  it('keeps authorize-checkpoint when an invalid Git candidate was not admitted into formal facts', () => {
+    const r = next(buildSnapshot({
+      changes: [buildChange({ key: 'F1', id: 'f1', state: 'completed', required: true })],
+      gitBoundaries: [],
+      checkpointArchiveTerminal: { changeId: 'f1', runId: '20260815-167-archive', status: 'completed' },
+    }));
+    assert.equal(r.kind, 'owner-decision');
+    if (r.kind === 'owner-decision') assert.equal(r.decision, 'authorize-checkpoint');
+  });
+});
+
 describe('next — no active Change (task 6.4, 6.5, 10.16)', () => {
   it('planned required Change with deps met → owner-decision activate-change', () => {
     const snap = buildSnapshot({

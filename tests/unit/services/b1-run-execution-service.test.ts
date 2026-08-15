@@ -8,7 +8,7 @@ import { promisify } from 'node:util';
 
 import { ACTION_DEFINITIONS, CHANGE_ACTIONS } from '../../../src/domain/actions.js';
 import type { ActionPackage } from '../../../src/domain/types.js';
-import { readFormalFactSnapshot } from '../../../src/facts/formal-fact-reader.js';
+import { readFormalFactSnapshot, resolveOriginalStrictE2Checkpoint } from '../../../src/facts/formal-fact-reader.js';
 import { invokeOpenSpecArchive } from '../../../src/integrations/openspec/openspec-archive-service.js';
 import type { OpenSpecCliAdapter } from '../../../src/integrations/openspec/openspec-cli-adapter.js';
 import { next } from '../../../src/policy/next.js';
@@ -24,6 +24,7 @@ import {
   recoverContractResetPendingRun,
 } from '../../../src/services/b1-run-execution-service.js';
 import { recordOwnerDecision } from '../../../src/services/a1-write-service.js';
+import { ownerDecisionRefFor } from '../../../src/domain/owner-provenance.js';
 import { runCli } from '../../../src/cli/main.js';
 import { FlowkitError } from '../../../src/shared/errors.js';
 import { createTempDir } from '../../fixtures/helpers.js';
@@ -39,11 +40,101 @@ async function initializeGit(root: string): Promise<void> {
   await execFileAsync('git', ['-c', 'user.name=Flowkit Test', '-c', 'user.email=flowkit@example.invalid', 'commit', '-m', 'base'], { cwd: root });
 }
 
-async function recordPostE2WriterBoundary(root: string, deliveryId: string): Promise<void> {
-  const migrationDeliveryId = '20260810-01-change-execution-loop';
-  await execFileAsync('git', ['-c', 'user.name=Flowkit Test', '-c', 'user.email=flowkit@example.invalid', 'commit', '--allow-empty', '-m', `chore(flowkit): start ${migrationDeliveryId}`], { cwd: root });
-  await execFileAsync('git', ['-c', 'user.name=Flowkit Test', '-c', 'user.email=flowkit@example.invalid', 'commit', '--allow-empty', '-m', 'chore(flowkit): checkpoint change-verification-generalization-and-lean-run-normalization'], { cwd: root });
-  await execFileAsync('git', ['-c', 'user.name=Flowkit Test', '-c', 'user.email=flowkit@example.invalid', 'commit', '--allow-empty', '-m', `chore(flowkit): finalize ${migrationDeliveryId}`], { cwd: root });
+const E2_MIGRATION_DELIVERY_ID = '20260810-01-change-execution-loop';
+const E2_MIGRATION_CHANGE_ID = 'change-verification-generalization-and-lean-run-normalization';
+
+async function writeE2MigrationManifest(
+  root: string,
+  owners: readonly { ref: string; sourceRef: string }[] = [],
+): Promise<void> {
+  const path = join(root, 'openspec', 'delivery-groups', `${E2_MIGRATION_DELIVERY_ID}.yaml`);
+  await mkdir(join(root, 'openspec', 'delivery-groups'), { recursive: true });
+  await writeFile(path, [
+    `id: ${E2_MIGRATION_DELIVERY_ID}`,
+    'delivery:',
+    '  state: active',
+    '  fullTestStatus: not-ready',
+    'changes:',
+    '  - key: E2',
+    `    id: ${E2_MIGRATION_CHANGE_ID}`,
+    '    state: completed',
+    '    architectureImpact: false',
+    '    required: true',
+    '    dependsOn: []',
+    ...(owners.length === 0 ? [] : [
+      'ownerDecisions:',
+      ...owners.flatMap((owner) => [
+        `  - ref: "${owner.ref}"`,
+        '    decision: "authorize-checkpoint"',
+        `    deliveryId: "${E2_MIGRATION_DELIVERY_ID}"`,
+        `    changeId: "${E2_MIGRATION_CHANGE_ID}"`,
+        `    sourceRef: "${owner.sourceRef}"`,
+      ]),
+    ]),
+    '',
+  ].join('\n'), 'utf8');
+}
+
+async function completeE2MigrationManifest(root: string): Promise<void> {
+  const path = join(root, 'openspec', 'delivery-groups', `${E2_MIGRATION_DELIVERY_ID}.yaml`);
+  const current = await readFile(path, 'utf8');
+  await writeFile(path, current.replace('delivery:\n  state: active', 'delivery:\n  state: completed'), 'utf8');
+}
+
+function checkpointBody(deliveryId: string, changeId: string, ownerRef: string): string {
+  return [
+    `Flowkit-Delivery: ${deliveryId}`,
+    `Flowkit-Change: ${changeId}`,
+    'Flowkit-Boundary: change-checkpoint',
+    `Owner-Authorization: ${ownerRef}`,
+  ].join('\n');
+}
+
+async function recordPostE2WriterBoundary(
+  root: string,
+  deliveryId: string,
+  options: { duplicate?: boolean } = {},
+): Promise<{ originalCheckpoint: string }> {
+  await execFileAsync('git', ['-c', 'user.name=Flowkit Test', '-c', 'user.email=flowkit@example.invalid', 'commit', '--allow-empty', '-m', `chore(flowkit): start ${E2_MIGRATION_DELIVERY_ID}`], { cwd: root });
+  const sourceRef = 'owner:test:e2-original-checkpoint';
+  const ownerRef = ownerDecisionRefFor({ decision: 'authorize-checkpoint', deliveryId: E2_MIGRATION_DELIVERY_ID, changeId: E2_MIGRATION_CHANGE_ID, sourceRef });
+  const owners = [{ ref: ownerRef, sourceRef }];
+  await writeE2MigrationManifest(root, owners);
+  await execFileAsync('git', ['add', '.'], { cwd: root });
+  await execFileAsync('git', ['-c', 'user.name=Flowkit Test', '-c', 'user.email=flowkit@example.invalid', 'commit', '-m', `chore(flowkit): checkpoint ${E2_MIGRATION_CHANGE_ID}`, '-m', checkpointBody(E2_MIGRATION_DELIVERY_ID, E2_MIGRATION_CHANGE_ID, ownerRef)], { cwd: root });
+  const originalCheckpoint = (await execFileAsync('git', ['rev-parse', 'HEAD'], { cwd: root })).stdout.trim();
+
+  if (options.duplicate) {
+    const duplicateSourceRef = 'owner:test:e2-duplicate-checkpoint';
+    const duplicateRef = ownerDecisionRefFor({ decision: 'authorize-checkpoint', deliveryId: E2_MIGRATION_DELIVERY_ID, changeId: E2_MIGRATION_CHANGE_ID, sourceRef: duplicateSourceRef });
+    await writeE2MigrationManifest(root, [...owners, { ref: duplicateRef, sourceRef: duplicateSourceRef }]);
+    await execFileAsync('git', ['add', '.'], { cwd: root });
+    await execFileAsync('git', ['-c', 'user.name=Flowkit Test', '-c', 'user.email=flowkit@example.invalid', 'commit', '-m', `chore(flowkit): checkpoint ${E2_MIGRATION_CHANGE_ID}`, '-m', checkpointBody(E2_MIGRATION_DELIVERY_ID, E2_MIGRATION_CHANGE_ID, duplicateRef)], { cwd: root });
+  }
+
+  await completeE2MigrationManifest(root);
+  await execFileAsync('git', ['add', '.'], { cwd: root });
+  await execFileAsync('git', ['-c', 'user.name=Flowkit Test', '-c', 'user.email=flowkit@example.invalid', 'commit', '-m', `chore(flowkit): finalize ${E2_MIGRATION_DELIVERY_ID}`], { cwd: root });
+  await execFileAsync('git', ['-c', 'user.name=Flowkit Test', '-c', 'user.email=flowkit@example.invalid', 'commit', '--allow-empty', '-m', `chore(flowkit): start ${deliveryId}`], { cwd: root });
+  return { originalCheckpoint };
+}
+
+async function recordUnauthorizedE2WriterBoundary(root: string, deliveryId: string): Promise<void> {
+  await execFileAsync('git', ['-c', 'user.name=Flowkit Test', '-c', 'user.email=flowkit@example.invalid', 'commit', '--allow-empty', '-m', `chore(flowkit): start ${E2_MIGRATION_DELIVERY_ID}`], { cwd: root });
+  await writeE2MigrationManifest(root);
+  await execFileAsync('git', ['add', '.'], { cwd: root });
+  const ownerRef = `owner:${'a'.repeat(64)}`;
+  await execFileAsync('git', ['-c', 'user.name=Flowkit Test', '-c', 'user.email=flowkit@example.invalid', 'commit', '-m', `chore(flowkit): checkpoint ${E2_MIGRATION_CHANGE_ID}`, '-m', checkpointBody(E2_MIGRATION_DELIVERY_ID, E2_MIGRATION_CHANGE_ID, ownerRef)], { cwd: root });
+  await completeE2MigrationManifest(root);
+  await execFileAsync('git', ['add', '.'], { cwd: root });
+  await execFileAsync('git', ['-c', 'user.name=Flowkit Test', '-c', 'user.email=flowkit@example.invalid', 'commit', '-m', `chore(flowkit): finalize ${E2_MIGRATION_DELIVERY_ID}`], { cwd: root });
+  await execFileAsync('git', ['-c', 'user.name=Flowkit Test', '-c', 'user.email=flowkit@example.invalid', 'commit', '--allow-empty', '-m', `chore(flowkit): start ${deliveryId}`], { cwd: root });
+}
+
+async function recordSubjectOnlyE2WriterBoundary(root: string, deliveryId: string): Promise<void> {
+  await execFileAsync('git', ['-c', 'user.name=Flowkit Test', '-c', 'user.email=flowkit@example.invalid', 'commit', '--allow-empty', '-m', `chore(flowkit): start ${E2_MIGRATION_DELIVERY_ID}`], { cwd: root });
+  await execFileAsync('git', ['-c', 'user.name=Flowkit Test', '-c', 'user.email=flowkit@example.invalid', 'commit', '--allow-empty', '-m', `chore(flowkit): checkpoint ${E2_MIGRATION_CHANGE_ID}`], { cwd: root });
+  await execFileAsync('git', ['-c', 'user.name=Flowkit Test', '-c', 'user.email=flowkit@example.invalid', 'commit', '--allow-empty', '-m', `chore(flowkit): finalize ${E2_MIGRATION_DELIVERY_ID}`], { cwd: root });
   await execFileAsync('git', ['-c', 'user.name=Flowkit Test', '-c', 'user.email=flowkit@example.invalid', 'commit', '--allow-empty', '-m', `chore(flowkit): start ${deliveryId}`], { cwd: root });
 }
 
@@ -151,13 +242,24 @@ const fixtureVerificationExecutor = (status: 'passed' | 'failed'): VerificationS
   };
 };
 
-async function prepareV5ApplyReady(options: { changeId?: string; postE2Writer?: boolean; freshConsumer?: boolean } = {}) {
+async function prepareV5ApplyReady(options: {
+  changeId?: string;
+  postE2Writer?: boolean;
+  freshConsumer?: boolean;
+  unauthorizedE2?: boolean;
+  subjectOnlyE2?: boolean;
+  duplicateE2?: boolean;
+} = {}) {
   const fixture = await freshActiveFixture({ changeId: options.changeId ?? 'change-verification-selection-and-change-set' });
   const { root, deliveryId, changeId, now } = fixture;
   await mkdir(join(root, 'src', 'domain'), { recursive: true });
   await writeFile(join(root, 'src', 'domain', 'types.ts'), 'export const value = 1;\n', 'utf8');
   await initializeGit(root);
-  if (options.postE2Writer) await recordPostE2WriterBoundary(root, deliveryId);
+  let originalE2Checkpoint: string | undefined;
+  if (options.postE2Writer) {
+    originalE2Checkpoint = (await recordPostE2WriterBoundary(root, deliveryId, { duplicate: options.duplicateE2 })).originalCheckpoint;
+  } else if (options.unauthorizedE2) await recordUnauthorizedE2WriterBoundary(root, deliveryId);
+  else if (options.subjectOnlyE2) await recordSubjectOnlyE2WriterBoundary(root, deliveryId);
   else if (!options.freshConsumer) await recordPreE2WriterMigrationStart(root);
   await completeExplore(root, deliveryId, changeId, now);
   const reviewExplore = await prepareActionExecution({ repoRoot: root, deliveryId, entry: 'next', now });
@@ -190,7 +292,7 @@ async function prepareV5ApplyReady(options: { changeId?: string; postE2Writer?: 
   assert.equal(prepared.kind, 'prepared');
   if (prepared.kind !== 'prepared') assert.fail('expected v5 Apply preparation');
   assert.equal(prepared.package.run.action, 'apply');
-  return { ...fixture, changeRoot, apply: prepared.package };
+  return { ...fixture, changeRoot, apply: prepared.package, originalE2Checkpoint };
 }
 
 function historicalV1SemanticFingerprint(pkg: ActionPackage): string {
@@ -649,6 +751,25 @@ async function markFixtureChangeCompleted(root: string, deliveryId: string, chan
 }
 
 describe('E2 post-checkpoint three-file writer', () => {
+  it('does not activate from a subject-only E2 checkpoint', async () => {
+    const { apply } = await prepareV5ApplyReady({ changeId: 'archive-and-checkpoint-boundary', subjectOnlyE2: true });
+    assert.equal('compactEntryWorkspaceIdentity' in apply, false);
+    assert.equal('entryWorkspaceIdentity' in apply, true);
+  });
+
+  it('does not activate from full trailers when checkpoint-time Owner authority is absent', async () => {
+    const { apply } = await prepareV5ApplyReady({ changeId: 'archive-and-checkpoint-boundary', unauthorizedE2: true });
+    assert.equal('compactEntryWorkspaceIdentity' in apply, false);
+    assert.equal('entryWorkspaceIdentity' in apply, true);
+  });
+
+  it('keeps the original strict E2 checkpoint as the shared anchor when a later duplicate exists', async () => {
+    const { root, originalE2Checkpoint, apply } = await prepareV5ApplyReady({ changeId: 'archive-and-checkpoint-boundary', postE2Writer: true, duplicateE2: true });
+    assert.ok(originalE2Checkpoint);
+    assert.equal(await resolveOriginalStrictE2Checkpoint(root), originalE2Checkpoint);
+    assert.equal('compactEntryWorkspaceIdentity' in apply, true);
+  });
+
   it('uses the current three-file writer in a fresh repository without Flowkit migration history', async () => {
     const { root, deliveryId, changeId, changeRoot, apply } = await prepareV5ApplyReady({
       changeId: 'fresh-downstream-consumer',
