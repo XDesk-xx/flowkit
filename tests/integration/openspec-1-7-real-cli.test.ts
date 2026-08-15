@@ -1,6 +1,6 @@
 import { afterEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { chmod, cp, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { delimiter, dirname, join } from 'node:path';
 
 import { ACTION_DEFINITIONS } from '../../src/domain/actions.js';
@@ -91,19 +91,62 @@ function parseRequirementScenarios(markdown: string, section?: 'MODIFIED'): Requ
   return requirements;
 }
 
-async function currentE1ScenarioPreservingArchiveFixture() {
+async function modifiedScenarioPreservingArchiveFixture() {
   const repoRoot = await root();
-  const sourceRoot = process.cwd();
-  const changeId = 'change-verification-selection-and-change-set';
-  await mkdir(join(repoRoot, 'openspec'), { recursive: true });
-  await cp(join(sourceRoot, 'openspec', 'config.yaml'), join(repoRoot, 'openspec', 'config.yaml'));
-  await cp(join(sourceRoot, 'openspec', 'specs'), join(repoRoot, 'openspec', 'specs'), { recursive: true });
-  await cp(
-    join(sourceRoot, 'openspec', 'changes', changeId),
-    join(repoRoot, 'openspec', 'changes', changeId),
-    { recursive: true },
+  const changeId = 'real-modified-scenario-preservation';
+  const capability = 'real-modified-cap';
+  const canonicalRoot = join(repoRoot, 'openspec', 'specs', capability);
+  const changeRoot = join(repoRoot, 'openspec', 'changes', changeId);
+  await mkdir(canonicalRoot, { recursive: true });
+  await writeFile(
+    join(canonicalRoot, 'spec.md'),
+    [
+      '## Purpose',
+      '',
+      'Verify point-in-time MODIFIED archive behavior with real OpenSpec 1.7.',
+      '',
+      '## Requirements',
+      '',
+      '### Requirement: Value',
+      'The system MUST return the baseline behavior.',
+      '',
+      '#### Scenario: Stable',
+      '- **WHEN** value is requested',
+      '- **THEN** the stable identity is preserved',
+      '',
+      '#### Scenario: Secondary',
+      '- **WHEN** the secondary path is requested',
+      '- **THEN** the secondary identity is preserved',
+      '',
+    ].join('\n'),
+    'utf8',
   );
-  return { repoRoot, changeId };
+  await writeCommon(
+    changeRoot,
+    `### New Capabilities\n\n### Modified Capabilities\n- ${capability}: Update Value behavior without losing scenario identities.`,
+    'schema: spec-driven\ncreated: 2026-08-11\n',
+  );
+  await mkdir(join(changeRoot, 'specs', capability), { recursive: true });
+  await writeFile(
+    join(changeRoot, 'specs', capability, 'spec.md'),
+    [
+      '## MODIFIED Requirements',
+      '',
+      '### Requirement: Value',
+      'The system MUST return the updated behavior.',
+      '',
+      '#### Scenario: Stable',
+      '- **WHEN** value is requested',
+      '- **THEN** the stable identity is preserved',
+      '',
+      '#### Scenario: Secondary',
+      '- **WHEN** the secondary path is requested',
+      '- **THEN** the secondary identity is preserved',
+      '',
+    ].join('\n'),
+    'utf8',
+  );
+  return { repoRoot, changeId, capability };
 }
 
 async function collisionFixture() {
@@ -277,32 +320,23 @@ describe('OpenSpec 1.7 real CLI conformance', { skip: openspecBin === undefined 
   });
 
 
-  it('current E1 MODIFIED Requirements preserve canonical scenario identities through real OpenSpec 1.7 archive sync', async () => {
-    const f = await currentE1ScenarioPreservingArchiveFixture();
+  it('self-contained MODIFIED Requirements preserve point-in-time scenario identities through real OpenSpec 1.7 archive sync', async () => {
+    const f = await modifiedScenarioPreservingArchiveFixture();
     const adapter = new OpenSpecCliAdapter({ repoRoot: f.repoRoot, executable: openspecBin! });
-    const deltaSpecsRoot = join(f.repoRoot, 'openspec', 'changes', f.changeId, 'specs');
-    const modifiedCapabilities = [
-      'flowkit-formal-fact-reader-and-persistence',
-      'flowkit-policy-engine',
-    ] as const;
-    const baselines = new Map<string, RequirementScenarios>();
+    const canonicalPath = join(f.repoRoot, 'openspec', 'specs', f.capability, 'spec.md');
+    const deltaPath = join(f.repoRoot, 'openspec', 'changes', f.changeId, 'specs', f.capability, 'spec.md');
+    const canonical = parseRequirementScenarios(await readFile(canonicalPath, 'utf8'));
+    const modified = parseRequirementScenarios(await readFile(deltaPath, 'utf8'), 'MODIFIED');
+    const baseline = new Map<string, ReadonlySet<string>>();
 
-    for (const capability of modifiedCapabilities) {
-      const canonicalPath = join(f.repoRoot, 'openspec', 'specs', capability, 'spec.md');
-      const deltaPath = join(deltaSpecsRoot, capability, 'spec.md');
-      const canonical = parseRequirementScenarios(await readFile(canonicalPath, 'utf8'));
-      const modified = parseRequirementScenarios(await readFile(deltaPath, 'utf8'), 'MODIFIED');
-      const modifiedBaseline = new Map<string, ReadonlySet<string>>();
-      assert.ok(modified.size > 0, `${capability} must contain MODIFIED Requirements`);
-      for (const [requirementName, deltaScenarios] of modified) {
-        const canonicalScenarios = canonical.get(requirementName);
-        assert.ok(canonicalScenarios !== undefined, `${capability}/${requirementName} must already exist canonically`);
-        modifiedBaseline.set(requirementName, canonicalScenarios);
-        for (const scenario of canonicalScenarios) {
-          assert.ok(deltaScenarios.has(scenario), `${capability}/${requirementName} omitted canonical scenario identity: ${scenario}`);
-        }
+    assert.ok(modified.size > 0, `${f.capability} must contain MODIFIED Requirements`);
+    for (const [requirementName, deltaScenarios] of modified) {
+      const canonicalScenarios = canonical.get(requirementName);
+      assert.ok(canonicalScenarios !== undefined, `${f.capability}/${requirementName} must already exist canonically`);
+      baseline.set(requirementName, canonicalScenarios);
+      for (const scenario of canonicalScenarios) {
+        assert.ok(deltaScenarios.has(scenario), `${f.capability}/${requirementName} omitted point-in-time scenario identity: ${scenario}`);
       }
-      baselines.set(capability, modifiedBaseline);
     }
 
     const validation = await adapter.validateChange(f.changeId, true);
@@ -311,19 +345,16 @@ describe('OpenSpec 1.7 real CLI conformance', { skip: openspecBin === undefined 
     const archived = await adapter.archiveChange(f.changeId, status);
     assert.equal(archived.observation?.kind, 'success', JSON.stringify(archived.observation));
 
-    for (const capability of modifiedCapabilities) {
-      const canonicalPath = join(f.repoRoot, 'openspec', 'specs', capability, 'spec.md');
-      const merged = parseRequirementScenarios(await readFile(canonicalPath, 'utf8'));
-      const baseline = baselines.get(capability)!;
-      for (const [requirementName, canonicalScenarios] of baseline) {
-        const mergedScenarios = merged.get(requirementName);
-        assert.ok(mergedScenarios !== undefined, `${capability}/${requirementName} disappeared after archive`);
-        for (const scenario of canonicalScenarios) {
-          assert.ok(mergedScenarios.has(scenario), `${capability}/${requirementName} lost canonical scenario after archive: ${scenario}`);
-        }
+    const merged = parseRequirementScenarios(await readFile(canonicalPath, 'utf8'));
+    for (const [requirementName, canonicalScenarios] of baseline) {
+      const mergedScenarios = merged.get(requirementName);
+      assert.ok(mergedScenarios !== undefined, `${f.capability}/${requirementName} disappeared after archive`);
+      for (const scenario of canonicalScenarios) {
+        assert.ok(mergedScenarios.has(scenario), `${f.capability}/${requirementName} lost point-in-time scenario after archive: ${scenario}`);
       }
     }
   });
+
 
   it('real archive_target_exists can mutate canonical specs before failure; durable guard requires exact restore then terminal failure without retry', async () => {
     const f = await collisionFixture();

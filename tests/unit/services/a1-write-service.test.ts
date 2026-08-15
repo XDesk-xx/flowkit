@@ -225,7 +225,7 @@ describe('A1 owner provenance and architectureImpact', () => {
     const expectedCounts: Readonly<Record<string, number>> = {
       '20260805-01-product-baseline': 5,
       '20260806-01-deterministic-core': 8,
-      '20260810-01-change-execution-loop': 10,
+      '20260810-01-change-execution-loop': 11,
     };
     for (const [deliveryId, expectedCount] of Object.entries(expectedCounts)) {
       const s = await readFormalFactSnapshot({
@@ -249,6 +249,11 @@ describe('A1 owner provenance and architectureImpact', () => {
         );
         assert.equal(
           s.changes.find((change) => change.id === 'archive-terminal-continuation-correction')?.architectureImpact,
+          false,
+          deliveryId,
+        );
+        assert.equal(
+          s.changes.find((change) => change.id === 'historical-fixture-and-test-performance-correction')?.architectureImpact,
           false,
           deliveryId,
         );

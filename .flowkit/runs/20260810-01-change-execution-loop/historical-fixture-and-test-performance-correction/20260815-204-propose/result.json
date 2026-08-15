@@ -1,0 +1,39 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "propose",
+    "executionStatus": "completed",
+    "summary": "H1 Proposal freezes the 203-approved corrective boundary: archive-independent G1 point-in-time fixtures with test-local real-CLI boundary snapshot reuse, self-contained historical real OpenSpec conformance, exact current 11-Change corpus regression, and formal tests-openspec-runtime physical execution/executable propagation. Apply/revise-apply mutation surface is exactly seven selectors: H1 tasks/verification plus the five implementation/test paths proven by 202; no scripts/verification.ts, module-map, production CLI/Policy/runtime, timeout/concurrency, cache/scheduler, or 03 scope is added.",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/design.md",
+        "versionFingerprint": "5a33f533b3eccbfca153bebae9562661c62eecfaaeb300f789a25716b376355c",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/proposal.md",
+        "versionFingerprint": "89eab0aaa98dbeb72bdd388b153aaa26fce5a9047e5238d87e273c39331eed32",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+        "versionFingerprint": "3a6985a021941a807f118ce589e9b7ce3edb038360fc0cb458a3ca38700064dc",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "5916c6f4bf7dbf44b4f4f9b13149c4a9bc3cca4db14ab055730e4f4bba0edf14",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/tasks.md",
+        "versionFingerprint": "02a2aeaa432c9e48e9076e461073881bfabd5a55faf311041fce7cda145609be",
+        "kind": "produced-artifact"
+      }
+    ]
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "d8dd20e74b625b2982a6cc865644ccfce3f395e7bafe79afda488a4ffdd38167"
+  }
+}

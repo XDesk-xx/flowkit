@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260815-199-review-explore",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "review-explore",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "f46e56d985dc46682baa8109027c5272f8d234864374b5c6f86c85fc74c04d81",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/historical-fixture-and-test-performance-correction/20260815-199-review-explore/",
+  "changeKey": "H1",
+  "changeId": "historical-fixture-and-test-performance-correction",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/historical-fixture-and-test-performance-correction/20260815-198-explore/result.json",
+    "versionFingerprint": "b7b3f8bcf12af14cc58932b0cbf04ca52f3f2c28fa88b18a88e71320f710cd40",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260815-198-explore",
+  "canonicalBase": "d3d220f4051e55c55223e233eb862bc3b9a8b4cb",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/historical-fixture-and-test-performance-correction/20260815-198-explore/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "b7b3f8bcf12af14cc58932b0cbf04ca52f3f2c28fa88b18a88e71320f710cd40"
+    },
+    {
+      "ref": "openspec/changes/historical-fixture-and-test-performance-correction/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+    },
+    {
+      "ref": "openspec/changes/historical-fixture-and-test-performance-correction/explore.md",
+      "versionFingerprint": "1ff8adfd8b35fc17970f35e65a1c526d8b4da13e8b21dac82344d2703d1ac86a",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "historical-fixture-and-test-performance-correction",
+      "runId": "20260815-199-review-explore",
+      "action": "review-explore",
+      "role": "reviewer",
+      "semanticInputFingerprint": "f46e56d985dc46682baa8109027c5272f8d234864374b5c6f86c85fc74c04d81"
+    },
+    "definition": {
+      "action": "review-explore",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-explore",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+      },
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/explore.md",
+        "versionFingerprint": "1ff8adfd8b35fc17970f35e65a1c526d8b4da13e8b21dac82344d2703d1ac86a",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/historical-fixture-and-test-performance-correction/20260815-198-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "b7b3f8bcf12af14cc58932b0cbf04ca52f3f2c28fa88b18a88e71320f710cd40"
+      }
+    ],
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "389657c6db8c0eb00d3475cfb9917bbfcef66df5adbd0d07b6147f242654ef84",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

@@ -83,9 +83,13 @@ export async function executeVerificationSelection(
   const nodeIds = selection.verificationScopes.filter((scope) => NODE_TEST_CHECKS.has(scope));
   if (nodeIds.length > 0) {
     const files = await resolveLogicalNodeTests(input.repoRoot, nodeIds);
+    const nodeEnv: NodeJS.ProcessEnv = { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' };
+    if (nodeIds.includes('tests-openspec-runtime')) {
+      nodeEnv['FLOWKIT_OPENSPEC_BIN'] = input.openSpecAdapter.executable;
+    }
     const outcome = await runCommand(process.execPath, ['--import', 'tsx', '--test', ...files], {
       cwd: input.repoRoot,
-      env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' },
+      env: nodeEnv,
       timeout: 120_000,
     });
     const command = `${process.execPath} --import tsx --test ${files.join(' ')}`;
@@ -346,7 +350,7 @@ function logicalNodeSelectors(logicalId: string): readonly string[] {
     case 'tests-execution':
       return ['tests/integration/f1-archive-and-checkpoint-boundary.test.ts', 'tests/unit/facts/*.test.ts', 'tests/unit/policy/*.test.ts', 'tests/unit/services/*.test.ts'];
     case 'tests-openspec-runtime':
-      return ['tests/unit/external-command.test.ts', 'tests/unit/integrations/openspec-cli-adapter.test.ts'];
+      return ['tests/integration/openspec-1-7-real-cli.test.ts', 'tests/unit/external-command.test.ts', 'tests/unit/integrations/openspec-cli-adapter.test.ts'];
     case 'tests-persistence':
       return ['tests/unit/persistence/legacy-recognizer.test.ts', 'tests/unit/persistence/run-persistence.test.ts'];
     case 'tests-serialization':

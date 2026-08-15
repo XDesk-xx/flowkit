@@ -4,7 +4,7 @@ import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { delimiter, dirname, join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { promisify } from 'node:util';
-import { afterEach, describe, it } from 'node:test';
+import { after, afterEach, describe, it } from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { ownerDecisionRefFor } from '../../src/domain/owner-provenance.js';
@@ -21,10 +21,15 @@ const binPath = resolve(projectRoot, 'src/bin/flowkit.ts');
 const projectBin = resolve(projectRoot, 'node_modules/.bin');
 const tsxLoaderUrl = pathToFileURL(resolve(projectRoot, 'node_modules/tsx/dist/loader.mjs')).href;
 const roots: string[] = [];
+const templateRoots: string[] = [];
+const g1FixtureSource = join(projectRoot, 'openspec', 'changes', 'archive', '2026-08-15-change-cli-end-to-end-and-performance');
+let boundaryTemplatesPromise: Promise<{ explore: string; approvedProposal: string }> | undefined;
+let realCliInvocationCount = 0;
 
 interface ProcResult { readonly code: number; readonly stdout: string; readonly stderr: string }
 
 function cli(root: string, args: readonly string[], extraEnv: NodeJS.ProcessEnv = {}): Promise<ProcResult> {
+  realCliInvocationCount += 1;
   return new Promise((resolveResult, reject) => {
     const child = spawn(process.execPath, ['--import', tsxLoaderUrl, binPath, ...args], {
       cwd: root,
@@ -102,13 +107,13 @@ async function enableThinIntegration(root: string): Promise<void> {
 
 async function copyExplore(root: string, changeId: string): Promise<void> {
   await cp(
-    join(projectRoot, 'openspec', 'changes', 'change-cli-end-to-end-and-performance', 'explore.md'),
+    join(g1FixtureSource, 'explore.md'),
     join(root, 'openspec', 'changes', changeId, 'explore.md'),
   );
 }
 
 async function copyProposalSet(root: string, changeId: string, options: { invalidSpec?: boolean } = {}): Promise<void> {
-  const source = join(projectRoot, 'openspec', 'changes', 'change-cli-end-to-end-and-performance');
+  const source = g1FixtureSource;
   const target = join(root, 'openspec', 'changes', changeId);
   await cp(join(source, 'proposal.md'), join(target, 'proposal.md'));
   let design = await readFile(join(source, 'design.md'), 'utf8');
@@ -147,6 +152,58 @@ async function throughApprovedProposal(root: string, changeId: string, options: 
   await admit(root, 'review', approved('proposal approved'));
 }
 
+function retainTemplateRoot(root: string): void {
+  const index = roots.indexOf(root);
+  if (index >= 0) roots.splice(index, 1);
+  templateRoots.push(root);
+}
+
+async function boundaryTemplates(): Promise<{ explore: string; approvedProposal: string }> {
+  boundaryTemplatesPromise ??= (async () => {
+    const fixture = await baseFixture({ changeId: 'snapshot-boundary-change', deliveryId: '20990401-02-cli-e2e-template' });
+    json(await cli(fixture.root, ['explore']));
+    await copyExplore(fixture.root, fixture.changeId);
+    await admit(fixture.root, 'explore', completed('explored template'));
+
+    const explore = await createTempDir();
+    templateRoots.push(explore);
+    await cp(fixture.root, explore, { recursive: true });
+
+    json(await cli(fixture.root, ['review']));
+    await admit(fixture.root, 'review', approved('explore approved template'));
+    json(await cli(fixture.root, ['propose']));
+    await copyProposalSet(fixture.root, fixture.changeId);
+    await admit(fixture.root, 'propose', completed('proposed template'));
+    json(await cli(fixture.root, ['review']));
+    await admit(fixture.root, 'review', approved('proposal approved template'));
+    retainTemplateRoot(fixture.root);
+    return { explore, approvedProposal: fixture.root };
+  })();
+  return boundaryTemplatesPromise;
+}
+
+async function exploreCompletedTemplate(): Promise<string> {
+  return (await boundaryTemplates()).explore;
+}
+
+async function approvedProposalTemplate(): Promise<string> {
+  return (await boundaryTemplates()).approvedProposal;
+}
+
+async function copyBoundaryTemplate(templateRoot: string): Promise<{ root: string; changeId: string; deliveryId: string }> {
+  const parent = await createTempDir();
+  roots.push(parent);
+  const root = join(parent, 'repo');
+  await cp(templateRoot, root, { recursive: true });
+  const manifests = await readdir(join(root, 'openspec', 'delivery-groups'));
+  assert.equal(manifests.length, 1);
+  const deliveryId = manifests[0]!.replace(/\.yaml$/, '');
+  const manifest = await readFile(join(root, 'openspec', 'delivery-groups', manifests[0]!), 'utf8');
+  const changeId = /^\s+id:\s+(.+)$/m.exec(manifest)?.[1];
+  assert.ok(changeId);
+  return { root, changeId, deliveryId };
+}
+
 async function owner(root: string, decision: 'authorize-apply' | 'authorize-archive', changeId: string, suffix: string): Promise<void> {
   const result = await cli(root, ['owner', 'record', '--decision', decision, '--change', changeId, '--source-ref', `owner:g1-e2e:${suffix}`]);
   assert.equal(result.code, 0, result.stderr);
@@ -170,6 +227,11 @@ function blockingFinding(authority: 'author' | 'owner' | 'verification' | 'exter
 
 afterEach(async () => {
   await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
+});
+after(async () => {
+  assert.ok(realCliInvocationCount <= 79, `G1 real CLI subprocess count regressed: ${realCliInvocationCount} > 79`);
+  console.log(`# G1 real CLI subprocess count: ${realCliInvocationCount}`);
+  await Promise.all(templateRoots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 });
 
 describe('G1 Change CLI real-process end-to-end', { concurrency: false }, () => {
@@ -235,10 +297,7 @@ describe('G1 Change CLI real-process end-to-end', { concurrency: false }, () => 
 
   it('keeps non-author blockers out of revise while explicit review creates direct same-stage re-review; author blockers permit revise', async () => {
     for (const authority of ['owner', 'verification', 'external', 'author'] as const) {
-      const { root, changeId } = await baseFixture({ changeId: `authority-${authority}` });
-      json(await cli(root, ['explore']));
-      await copyExplore(root, changeId);
-      await admit(root, 'explore', completed('explored'));
+      const { root } = await copyBoundaryTemplate(await exploreCompletedTemplate());
       json(await cli(root, ['review']));
       await admit(root, 'review', {
         executionStatus: 'completed',
@@ -267,10 +326,7 @@ describe('G1 Change CLI real-process end-to-end', { concurrency: false }, () => 
     assert.notEqual(noActivation.code, 0);
     assert.deepEqual(await readdir(join(planned.root, '.flowkit', 'runs', planned.deliveryId)), []);
 
-    const active = await baseFixture({ changeId: 'stale-review-change' });
-    json(await cli(active.root, ['explore']));
-    await copyExplore(active.root, active.changeId);
-    await admit(active.root, 'explore', completed('explored'));
+    const active = await copyBoundaryTemplate(await exploreCompletedTemplate());
     json(await cli(active.root, ['review']));
     await writeFile(join(active.root, 'openspec', 'changes', active.changeId, 'explore.md'), '# drifted review target\n');
     const stale = await cli(active.root, ['review', '--result', await resultFile(approved())]);
@@ -296,8 +352,7 @@ describe('G1 Change CLI real-process end-to-end', { concurrency: false }, () => 
   });
 
   it('keeps changed-surface outcome-unknown archive pending and resumes the same generation after explicit recovery admission', async () => {
-    const { root, changeId, deliveryId } = await baseFixture({ changeId: 'archive-recovery-change' });
-    await throughApprovedProposal(root, changeId);
+    const { root, changeId, deliveryId } = await copyBoundaryTemplate(await approvedProposalTemplate());
     await owner(root, 'authorize-apply', changeId, 'apply-archive-recovery');
     json(await cli(root, ['apply']));
     const tasksPath = join(root, 'openspec', 'changes', changeId, 'tasks.md');

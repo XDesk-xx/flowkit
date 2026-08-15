@@ -1,0 +1,8 @@
+{
+  "runStatus": "failed",
+  "failureDiagnosis": "PUBLIC_FULL_TEST_TERMINAL_ACCEPTANCE_UNPROVEN: H1 implementation and targeted correctness/verification-closure acceptance are implemented within the approved 204 seven-selector mutation surface. G1 real-process E2E passes 7/7 with 69 real CLI invocations (baseline 79); real OpenSpec 1.7 conformance passes 5/5 with explicit executable identity; A1 11-Change corpus regression passes; verification physical-target/env/failing-sentinel regression passes; typecheck, lint, build, quality hard guards and strict current-Change OpenSpec validation pass. However Proposal task 3.4 requires the unchanged public `npm run test:full` command to reach terminal PASS with real OpenSpec coverage. In this execution environment repeated unchanged runs were terminated by the tool execution ceiling at 220s, 270s and 300s while still progressing through the G1 suite and with no assertion failure observed. The acceptance therefore remains unproven; do not mark tasks 3.3-3.5 complete, do not publish H1 formal verification, and do not weaken timeout/concurrency/coverage or alter scripts/verification.ts outside the approved scope. Fail closed rather than fabricating public Full Test terminal success.",
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "51826d15660addc375eeb45dcd1649420e8129badc3035a07a96ebddbb833abc"
+  }
+}

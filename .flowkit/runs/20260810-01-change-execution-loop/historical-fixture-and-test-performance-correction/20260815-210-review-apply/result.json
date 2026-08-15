@@ -1,0 +1,38 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "Review 209 Apply：实现与正式 Change Verification 满足 207/208 approved contract，G1 7/7 correctness 与 real OpenSpec physical closure 均成立；Reviewer targeted rerun 在当前环境观察到 G1 7/7、69 real CLI invocations、约 33.15s，确认低于 baseline 79。209 verification publication 与 terminal binding 精确一致，selected Node logical scopes 在 executor 中 union/dedupe 后只物理执行一次，并非 verification.md 中相同 command 的四次重复执行。首次 209 formal admission 超过 detached 外层 240s、随后 same-Run continuation 成功，未破坏 durable state，因此当前不足以构成 H1 blocking defect；但该现象显示 formal Change Verification wall time 对执行环境/资源竞争敏感，应在 canonical/local 环境、02 Delivery Full Test 前进行一次干净复测并记录总 wall time 与 Node union/typecheck/OpenSpec 分项。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/historical-fixture-and-test-performance-correction/verification.md",
+      "versionFingerprint": "0295648fea297fbbd244be1358685fb32ad128c173d5e729dc34223545ec6936",
+      "kind": "verification-summary"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "5eb516e0c93daf0a60c8fdfa4f800ea311b295a98f1e84a1bfc3b4c2e7b1685e"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "H1-RA-NB-001",
+      "severity": "non-blocking",
+      "title": "formal Change Verification wall time 对执行环境敏感，需在 canonical/local 环境继续量化",
+      "problem": "首次 209 formal admission 在 detached 外层调用窗口超过 240s，随后同一 pending Run continuation/retry 才完成。当前 executor 已确认会把 tests-cli/tests-execution/tests-openspec-runtime/tests-verification 先 union/dedupe 为一次 Node physical execution，因此这不是四次重复 subprocess；209 最终 formal Verification 也在未扩大 timeout/concurrency、未跳过 real OpenSpec 的前提下 PASS，same Run/persistence 未损坏，所以不违反 207 frozen Change acceptance。Reviewer targeted rerun 的独立 G1 单文件结果为 7/7 PASS、69 real CLI invocations、约 33.15s；但 formal union 在受限 detached host 上表现出明显资源/时延敏感性。",
+      "contractRef": "H1 Design Decision 7 / flowkit-change-cli-end-to-end-and-performance performance acceptance",
+      "invariant": "Change-level acceptance must preserve correctness and bounded process work without inventing an unapproved absolute wall-clock SLA; Delivery Full Test remains a later Owner-authorized boundary.",
+      "evidence": [
+        "209 verification.md status=passed and terminalBinding fingerprint matches exactly.",
+        "executeVerificationSelection unions/dedupes all selected Node logical scopes into one runCommand invocation before projecting the same outcome to logical checks.",
+        "Reviewer targeted G1 rerun: 7/7 PASS, 69 real CLI invocations, elapsed approximately 33.15s.",
+        "User-provided execution observation: first 209 formal admission exceeded the detached outer 240s window; same pending Run continuation/retry later completed with no replacement Run or premature publication."
+      ],
+      "impact": "Not a current H1 correctness/lifecycle blocker, but execution-context sensitivity could make later canonical/Delivery verification unexpectedly slow and should be measured before Owner-authorized Delivery Full Test.",
+      "location": "src/verification/change-selection/evidence.ts; 209 formal Change Verification execution"
+    }
+  ],
+  "reviewFindingConvergence": []
+}

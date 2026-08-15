@@ -52,6 +52,23 @@ function cliOnlySelection(): VerificationSelection {
   };
 }
 
+function openspecRuntimeSelection(): VerificationSelection {
+  const payload = {
+    moduleMapLogicalRef: 'src/verification/change-selection/module-map.ts',
+    moduleMapFingerprint: currentVerificationCatalogFingerprint(),
+    seedModuleIds: ['openspec-runtime'],
+    moduleIds: ['openspec-runtime'],
+    capabilityIds: ['flowkit-openspec-1-7-thin-integration'],
+    capabilityRefs: ['openspec/specs/flowkit-openspec-1-7-thin-integration/spec.md'],
+    capabilityRelation: { kind: 'matched' as const },
+    verificationScopes: ['tests-openspec-runtime'],
+  };
+  return {
+    ...payload,
+    selectionFingerprint: createHash('sha256').update(canonicalStringify(payload)).digest('hex'),
+  };
+}
+
 describe('verification evidence affected Node union', () => {
   it('physically executes the G1 CLI E2E target through tests-cli and fails on its sentinel', async () => {
     const root = await createTempDir();
@@ -94,6 +111,58 @@ describe('verification evidence affected Node union', () => {
       await rm(root, { recursive: true, force: true });
     }
   });
+  it('physically executes the real OpenSpec target, propagates the selected executable, and fails on its sentinel', async () => {
+    const root = await createTempDir();
+    const executable = '/fixture/openspec-1.7.0';
+    try {
+      await symlink(join(process.cwd(), 'node_modules'), join(root, 'node_modules'), 'dir');
+      await writeFile(join(root, 'package.json'), '{"type":"module"}\n', 'utf8');
+      await mkdir(join(root, 'tests', 'integration'), { recursive: true });
+      await mkdir(join(root, 'tests', 'unit', 'integrations'), { recursive: true });
+      await writeFile(join(root, 'tests', 'unit', 'external-command.test.ts'), "import { test } from 'node:test'; test('ok', () => {});\n", 'utf8');
+      await writeFile(join(root, 'tests', 'unit', 'integrations', 'openspec-cli-adapter.test.ts'), "import { test } from 'node:test'; test('ok', () => {});\n", 'utf8');
+      const realTarget = join(root, 'tests', 'integration', 'openspec-1-7-real-cli.test.ts');
+      await writeFile(realTarget, [
+        "import assert from 'node:assert/strict';",
+        "import { test } from 'node:test';",
+        `test('openspec env', () => assert.equal(process.env['FLOWKIT_OPENSPEC_BIN'], ${JSON.stringify(executable)}));`,
+        '',
+      ].join('\n'), 'utf8');
+
+      const input = {
+        repoRoot: root,
+        changeId: 'openspec-runtime',
+        runDir: join(root, '.flowkit', 'runs', 'sentinel'),
+        producingRunId: '20990101-004-apply',
+        selection: openspecRuntimeSelection(),
+        fullTestStatus: 'not-ready' as const,
+        openSpecAdapter: { executable } as OpenSpecCliAdapter,
+      };
+      const previousNodeTestContext = process.env['NODE_TEST_CONTEXT'];
+      delete process.env['NODE_TEST_CONTEXT'];
+      try {
+        const passed = await executeVerificationSelection(input);
+        assert.equal(passed.overallStatus, 'passed');
+        assert.match(passed.checks[0]?.commandOrMethod ?? '', /tests\/integration\/openspec-1-7-real-cli\.test\.ts/);
+
+        await writeFile(realTarget, [
+          "import assert from 'node:assert/strict';",
+          "import { test } from 'node:test';",
+          `test('openspec sentinel', () => { assert.equal(process.env['FLOWKIT_OPENSPEC_BIN'], ${JSON.stringify(executable)}); assert.fail('real openspec selected target sentinel'); });`,
+          '',
+        ].join('\n'), 'utf8');
+        const failed = await executeVerificationSelection(input);
+        assert.equal(failed.overallStatus, 'failed');
+        assert.match(failed.checks[0]?.commandOrMethod ?? '', /tests\/integration\/openspec-1-7-real-cli\.test\.ts/);
+      } finally {
+        if (previousNodeTestContext === undefined) delete process.env['NODE_TEST_CONTEXT'];
+        else process.env['NODE_TEST_CONTEXT'] = previousNodeTestContext;
+      }
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it('includes changed service regressions so a failing a1-write sentinel fails tests-execution evidence', async () => {
     const root = await createTempDir();
     try {

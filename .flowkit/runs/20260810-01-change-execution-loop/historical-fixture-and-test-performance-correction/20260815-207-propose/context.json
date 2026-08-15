@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260815-207-propose",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "propose",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "5251b00b2808e2205edd7d069ca565429a01a05d68e47f32ce57a9a6d4c95c56",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:faa57c65e56a77a235adc94b71acbd54bc742abd594c2b7d0b7592eed6dccd2d",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "historical-fixture-and-test-performance-correction",
+      "scope": "change-verification-boundary",
+      "requiredOutcomes": [
+        "H1 Apply 只执行并完成 Change Verification",
+        "保持 H1 correctness、performance、fixture、Verification Closure 的设计全部不变",
+        "删除 H1 Apply/Tasks 中 public test:full terminal PASS 这一 Delivery-level acceptance",
+        "正式 Delivery Full Test 仅在 H1 archive + checkpoint 后 Delivery Ready 时由 Owner 独立授权"
+      ],
+      "sourceRef": "owner-input:2026-08-16T04:23+08:00:H1-contract-reset-remove-change-level-test-full"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/historical-fixture-and-test-performance-correction/20260815-207-propose/",
+  "changeKey": "H1",
+  "changeId": "historical-fixture-and-test-performance-correction",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/historical-fixture-and-test-performance-correction/20260815-203-review-explore/result.json",
+    "versionFingerprint": "71325731cc9a0e02f1bb8202c90f6ebe61fad9d0142ad83a262b98bbe5609a31",
+    "kind": "run-result"
+  },
+  "canonicalBase": "d3d220f4051e55c55223e233eb862bc3b9a8b4cb",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/historical-fixture-and-test-performance-correction/20260815-203-review-explore/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "71325731cc9a0e02f1bb8202c90f6ebe61fad9d0142ad83a262b98bbe5609a31"
+    },
+    {
+      "ref": "openspec/changes/historical-fixture-and-test-performance-correction/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+    },
+    {
+      "ref": "openspec/changes/historical-fixture-and-test-performance-correction/explore.md",
+      "versionFingerprint": "a8e76a34937ad2a04b99205ce7b3fb947fb4744c3185883b2a64ba02d015c755",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "historical-fixture-and-test-performance-correction",
+      "runId": "20260815-207-propose",
+      "action": "propose",
+      "role": "author",
+      "semanticInputFingerprint": "5251b00b2808e2205edd7d069ca565429a01a05d68e47f32ce57a9a6d4c95c56"
+    },
+    "definition": {
+      "action": "propose",
+      "version": 1,
+      "role": "author",
+      "goalClass": "freeze-change-contract",
+      "mutationClass": "proposal-bundle-only",
+      "outputClass": "current-proposal-bundle-set",
+      "terminalContract": {
+        "kind": "artifact",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+      },
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/explore.md",
+        "versionFingerprint": "a8e76a34937ad2a04b99205ce7b3fb947fb4744c3185883b2a64ba02d015c755",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/historical-fixture-and-test-performance-correction/20260815-203-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "71325731cc9a0e02f1bb8202c90f6ebe61fad9d0142ad83a262b98bbe5609a31"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260815-203-review-explore",
+      "verdict": "approved",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/historical-fixture-and-test-performance-correction/20260815-203-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "71325731cc9a0e02f1bb8202c90f6ebe61fad9d0142ad83a262b98bbe5609a31"
+      },
+      "blockingAuthorities": [],
+      "findings": [],
+      "convergence": [
+        {
+          "findingId": "H1-RE-001",
+          "state": "resolved"
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [
+      {
+        "ref": "owner:faa57c65e56a77a235adc94b71acbd54bc742abd594c2b7d0b7592eed6dccd2d",
+        "decision": "contract-reset",
+        "deliveryId": "20260810-01-change-execution-loop",
+        "changeId": "historical-fixture-and-test-performance-correction",
+        "scope": "change-verification-boundary",
+        "requiredOutcomes": [
+          "H1 Apply 只执行并完成 Change Verification",
+          "保持 H1 correctness、performance、fixture、Verification Closure 的设计全部不变",
+          "删除 H1 Apply/Tasks 中 public test:full terminal PASS 这一 Delivery-level acceptance",
+          "正式 Delivery Full Test 仅在 H1 archive + checkpoint 后 Delivery Ready 时由 Owner 独立授权"
+        ],
+        "sourceRef": "owner-input:2026-08-16T04:23+08:00:H1-contract-reset-remove-change-level-test-full"
+      }
+    ],
+    "externalContextFingerprint": "c4b972ddb933a9aeea1fc45682aa7730eb10dc349d8bdd7593299fe883ec0c82",
+    "requiredResultContract": {
+      "kind": "artifact",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": true,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

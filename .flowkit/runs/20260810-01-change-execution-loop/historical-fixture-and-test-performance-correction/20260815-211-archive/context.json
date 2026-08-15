@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 4,
+  "runId": "20260815-211-archive",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "archive",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "semanticInputFingerprint": "85fbeef46e1082c6ffcfee529b163a189ee2c7bd8e2dfd0306142f3c97982417",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:faa57c65e56a77a235adc94b71acbd54bc742abd594c2b7d0b7592eed6dccd2d",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "historical-fixture-and-test-performance-correction",
+      "scope": "change-verification-boundary",
+      "requiredOutcomes": [
+        "H1 Apply 只执行并完成 Change Verification",
+        "保持 H1 correctness、performance、fixture、Verification Closure 的设计全部不变",
+        "删除 H1 Apply/Tasks 中 public test:full terminal PASS 这一 Delivery-level acceptance",
+        "正式 Delivery Full Test 仅在 H1 archive + checkpoint 后 Delivery Ready 时由 Owner 独立授权"
+      ],
+      "sourceRef": "owner-input:2026-08-16T04:23+08:00:H1-contract-reset-remove-change-level-test-full"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/historical-fixture-and-test-performance-correction/20260815-211-archive/",
+  "changeKey": "H1",
+  "changeId": "historical-fixture-and-test-performance-correction",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/historical-fixture-and-test-performance-correction/20260815-210-review-apply/result.json",
+    "versionFingerprint": "08069a18eff6353943f1396b8999123e5b86900e515d6e1806d003e45599ea5d",
+    "kind": "run-result"
+  },
+  "archiveEntryOpenSpecProjection": {
+    "projectionVersion": 1,
+    "version": "1.7.0",
+    "changeId": "historical-fixture-and-test-performance-correction",
+    "changeRootLogical": "openspec/changes/historical-fixture-and-test-performance-correction",
+    "artifactPaths": {
+      "proposal": [
+        "openspec/changes/historical-fixture-and-test-performance-correction/proposal.md"
+      ],
+      "specs": [
+        "openspec/changes/historical-fixture-and-test-performance-correction/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+        "openspec/changes/historical-fixture-and-test-performance-correction/specs/flowkit-change-verification-selection/spec.md"
+      ],
+      "design": [
+        "openspec/changes/historical-fixture-and-test-performance-correction/design.md"
+      ],
+      "tasks": [
+        "openspec/changes/historical-fixture-and-test-performance-correction/tasks.md"
+      ]
+    }
+  },
+  "archiveMutationGuard": {
+    "state": "armed",
+    "surfaceVersion": "openspec-archive-mutation-v1",
+    "changeRoot": "openspec/changes/historical-fixture-and-test-performance-correction",
+    "canonicalSpecsRoot": "openspec/specs",
+    "archiveNamespaceRoot": "openspec/changes/archive",
+    "preArchiveGenerationFingerprint": "b624a02e21acb444954eef830c75d76daaf47603e3a11bfdaff9c770daaba7d1",
+    "terminalObservation": {
+      "kind": "success",
+      "resultFingerprint": "97500a8f7798ceaf7356cf09d5b75ed7e207c325a351086208fcc54267444644",
+      "normalized": {
+        "kind": "success",
+        "change": "historical-fixture-and-test-performance-correction",
+        "archivedAs": "2026-08-15-historical-fixture-and-test-performance-correction",
+        "path": "openspec/changes/archive/2026-08-15-historical-fixture-and-test-performance-correction",
+        "specsUpdated": true,
+        "totals": {
+          "added": 0,
+          "modified": 3,
+          "removed": 0,
+          "renamed": 0
+        }
+      }
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

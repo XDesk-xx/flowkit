@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260815-202-revise-explore",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "revise-explore",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "63d90f97db2b650a4fb6110806a852c1ff1a2e1e6e969968afb78a80e32bfc83",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/historical-fixture-and-test-performance-correction/20260815-202-revise-explore/",
+  "changeKey": "H1",
+  "changeId": "historical-fixture-and-test-performance-correction",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/historical-fixture-and-test-performance-correction/20260815-201-review-explore/result.json",
+    "versionFingerprint": "c51531ffbcc6343706d7cc77c0496c85f824ac632ff56d7e855abd522acfdba2",
+    "kind": "run-result"
+  },
+  "sourceReviewRun": "20260815-201-review-explore",
+  "sourceReviewVerdict": "changes-requested",
+  "canonicalBase": "d3d220f4051e55c55223e233eb862bc3b9a8b4cb",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/historical-fixture-and-test-performance-correction/20260815-201-review-explore/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "c51531ffbcc6343706d7cc77c0496c85f824ac632ff56d7e855abd522acfdba2"
+    },
+    {
+      "ref": "openspec/changes/historical-fixture-and-test-performance-correction/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+    },
+    {
+      "ref": "openspec/changes/historical-fixture-and-test-performance-correction/explore.md",
+      "versionFingerprint": "599d0fc9ef79e30a3b2b1f3d531780c1d50cb910c3215763f139b89af72c5dec",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "historical-fixture-and-test-performance-correction",
+      "runId": "20260815-202-revise-explore",
+      "action": "revise-explore",
+      "role": "author",
+      "semanticInputFingerprint": "63d90f97db2b650a4fb6110806a852c1ff1a2e1e6e969968afb78a80e32bfc83"
+    },
+    "definition": {
+      "action": "revise-explore",
+      "version": 1,
+      "role": "author",
+      "goalClass": "close-explore-author-findings",
+      "mutationClass": "explore-planning-revision-only",
+      "outputClass": "current-explore-artifact-set",
+      "terminalContract": {
+        "kind": "artifact",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": true,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+      },
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/explore.md",
+        "versionFingerprint": "599d0fc9ef79e30a3b2b1f3d531780c1d50cb910c3215763f139b89af72c5dec",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/historical-fixture-and-test-performance-correction/20260815-201-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "c51531ffbcc6343706d7cc77c0496c85f824ac632ff56d7e855abd522acfdba2"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260815-201-review-explore",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/historical-fixture-and-test-performance-correction/20260815-201-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "c51531ffbcc6343706d7cc77c0496c85f824ac632ff56d7e855abd522acfdba2"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "H1-RE-001",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "Performance Proof D 的 PASS 未覆盖 H1 的 Delivery Full Test 稳定执行 required outcome",
+          "problem": "198 将 Proof D 的 Acceptance Boundary 缩窄为‘reusable formal precondition snapshot 可以减少重复 real CLI setup’，并据此给出 PASS；但 H1 formal goal 明确还要求在不降低 coverage、不提高 timeout 的前提下减少 fixture/process 成本，使 02 Delivery Full Test 可稳定执行。当前 evidence 只证明两个 copied consumers 可继续 apply，并量化约 3×5.17s 到 5.17s+0.09s 的局部 setup 节省；同一 Explore 又记录 current test:full 在 180s 内未 terminal，却没有完成 full-suite before baseline，也没有把 prototype snapshot optimization 应用后测量 G1 full-file/full-suite after。Feasible Proposal Boundary 甚至明确保留‘Apply 后若仍超过预算再判断是否需要新的 Owner scope’，说明 required outcome 的 feasibility 仍未知。",
+          "contractRef": "Flowkit Explore Skill v2 §4.8 Performance Proof、§5 Proof Acceptance Depth；H1 Delivery Manifest goal/outputs；Change Execution Loop Delivery v4 §17-19 Delivery 收口与 Full Test",
+          "invariant": "Explore 对明确的 performance required outcome 只有在 Evidence Boundary 覆盖 Acceptance Boundary 时才能宣告 PASS；不能用局部 setup micro-benchmark 代替‘Delivery Full Test 可稳定执行’的 feasibility，也不能把关键 prerequisite 是否需要扩 scope 推迟到 Apply 才发现。",
+          "requiredOutcome": "在 revise-explore 内把 performance acceptance 对齐 H1 formal goal。优先在 disposable candidate 中实现最小 snapshot/template prototype（只改测试 fixture，不冻结最终 Apply 实现），保留 7 个 G1 scenarios 与 real OpenSpec counterexamples，然后在同一环境完成可比较的 G1 file 与 full-suite before/after measurement，证明 proposed test-local optimization 足以让 Full Test 稳定 terminal且不靠 skip/timeout。若实证仍不足，则 Proof D 必须降为 UNKNOWN/FAIL，并执行 Scope/Prerequisite Proof，明确还缺什么能力以及是否超出当前 H1 authority，不能带着未知 prerequisite 进入 Proposal。",
+          "acceptance": [
+            "给出同一环境、同一 correctness coverage 下的可比较 before/after：至少 G1 subprocess count、G1 file wall time、full-suite terminal wall time；before 若只能以超时上界表达，应明确 censored baseline，并用 after terminal result证明目标已跨过该边界。",
+            "prototype after 必须保留 7 个 G1 scenarios、完整 happy lifecycle、real OpenSpec archive/recovery 与 Verification failure counterexamples，不得通过 skip、删除 case 或提高 timeout 获得更快结果。",
+            "Evidence Boundary 明确覆盖‘02 Delivery Full Test 可以稳定执行’；若不能覆盖，则 Proof D Result 改为 UNKNOWN/FAIL，并列出缺失 prerequisite/Owner scope，而不是整体 PASS。",
+            "更新 Feasible Proposal Boundary，只冻结已被 proof 证明可实现的 performance correction；不得把‘Apply 后再看够不够’作为当前 feasibility 结论。"
+          ]
+        }
+      ],
+      "convergence": [
+        {
+          "findingId": "H1-RE-001",
+          "state": "still-open"
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "389657c6db8c0eb00d3475cfb9917bbfcef66df5adbd0d07b6147f242654ef84",
+    "requiredResultContract": {
+      "kind": "artifact",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": true,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}
