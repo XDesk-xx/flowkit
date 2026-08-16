@@ -51,6 +51,7 @@ describe('verification selection', () => {
       ], [`openspec/changes/${candidate.id}/specs/${candidate.capability}/spec.md`]);
       assert.equal(selection.capabilityIds.includes(candidate.capability), true);
       assert.equal(JSON.stringify(selection).includes('change-verification-selection-and-change-set'), false);
+      assert.equal(selection.verificationScopes.includes('openspec-current-change-archive-sync'), true);
       assert.equal(selection.verificationScopes.includes('openspec-current-change-strict'), true);
     }
   });

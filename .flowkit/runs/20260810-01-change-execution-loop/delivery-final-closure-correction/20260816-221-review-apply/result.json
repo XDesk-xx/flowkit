@@ -1,0 +1,48 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "Review 220 Apply: the implementation stays within the approved 16-selector surface and the EOF-only checkpoint boundary is preserved. OpenSpec adapter/resolver, real-suite fail-closed behavior, A1 synthetic fixture, verification-plan physical closure, typecheck/lint/build/quality/strict validation all pass. However I1's central executable-authority contract is not closed for an explicit resolved executable propagated by formal/project Verification: with FLOWKIT_OPENSPEC_BIN set to a working OpenSpec 1.7 absolute executable, PATH containing no openspec, and no repo-local OpenSpec authority, the real OpenSpec suite passes 5/5 but G1 passes only 3/7; four G1 scenarios fail with `OpenSpec version could not spawn`. Adding the same executable directory to PATH makes G1 pass 7/7/69 invocations. Thus G1 still independently depends on ambient PATH instead of consuming the already-resolved authority promised by the approved Proposal/spec.",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/delivery-final-closure-correction/verification.md",
+      "versionFingerprint": "3c83ab0b118efc444896b2813cc8cb8d86442d82946972a5c4e47f63cda63864",
+      "kind": "verification-summary"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "fad38f5d3553f2c8fcec12bc86878d6d5f359da891a8fe34df9bdddbcc448ac3"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "I1-RA-001",
+      "severity": "blocking",
+      "title": "G1 real-process regression does not consume the propagated resolved OpenSpec executable authority",
+      "problem": "218/219 approved Proposal freezes one resolved OpenSpec invocation identity shared by production adapter, Change Verification, G1 real-process regression and Delivery verification. In 220, executeVerificationSelection correctly propagates the current adapter's resolved executable through FLOWKIT_OPENSPEC_BIN, and the real OpenSpec suite consumes it. But G1's real-process fixture constructs default OpenSpec adapters / spawns the product CLI without consuming that propagated explicit identity. Therefore a legal explicit-resolved environment still requires an unrelated ambient PATH discovery for G1.",
+      "contractRef": "218 approved Proposal `What Changes` first bullet; flowkit-openspec-1-7-thin-integration requirement `OpenSpec executable resolution 必须只有一个实际 invocation authority`; flowkit-change-verification-selection scenario `OpenSpec resolved executable identity is propagated from the current authority`",
+      "invariant": "Once the current operation has resolved an OpenSpec executable identity, affected Verification consumers and the G1 real-process regression must consume that same authority and must not rediscover a second executable through an ambient PATH assumption.",
+      "evidence": [
+        "Reviewer environment: FLOWKIT_OPENSPEC_BIN=/tmp/rev220/openspec/node_modules/.bin/openspec points to a working OpenSpec 1.7.0 executable; PATH intentionally does not contain openspec.",
+        "In that environment tests/integration/openspec-1-7-real-cli.test.ts passes 5/5, proving the propagated executable is valid and executable.",
+        "In the same environment tests/integration/g1-change-cli-end-to-end.test.ts passes only 3/7; four scenarios fail with `flowkit: OpenSpec version could not spawn`.",
+        "220 G1 change replaces the repo-local executable with `new OpenSpecCliAdapter({ repoRoot: root })`, which re-enters default PATH resolution rather than consuming FLOWKIT_OPENSPEC_BIN/current resolved identity.",
+        "After only prepending the exact same executable directory to PATH, G1 passes 7/7 with 69 real CLI invocations; no candidate code changes are needed to flip the result."
+      ],
+      "impact": "The formal/public verification path can still fail in a supported explicit-executable environment even though the authoritative OpenSpec executable was already resolved and propagated. This leaves the executable authority split that I1 exists to close and makes verification outcome depend on ambient PATH duplication.",
+      "location": "tests/integration/g1-change-cli-end-to-end.test.ts and the G1 real-process execution context used by formal/project verification",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Revise Apply so the G1 real-process regression consumes the same current resolved OpenSpec executable authority already supplied by Verification, without requiring a second repo-local or ambient PATH discovery. Preserve the existing production resolver/launcher authority and do not add a new executable registry or dependency.",
+      "acceptance": [
+        "With a valid explicit OpenSpec 1.7 executable supplied as the current resolved authority, no repo-local OpenSpec authority, and no independent openspec entry on ambient PATH, the selected G1 real-process regression passes all 7 scenarios.",
+        "The real OpenSpec conformance suite continues to execute all 5 required cases in the same environment.",
+        "PATH/global default, Windows ps1-only/cmd-only/both precedence, and explicit executable unit counterfactuals remain green.",
+        "The fix stays within the approved I1 apply/revise-apply mutation surface or otherwise fails closed rather than silently expanding scope.",
+        "No second executable discovery/persistence authority, project OpenSpec dependency, runner scheduler/concurrency change, or Delivery Full Test lifecycle behavior is introduced."
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}

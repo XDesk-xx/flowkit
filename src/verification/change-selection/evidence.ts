@@ -19,7 +19,7 @@ export interface VerificationCheckEvidence {
   readonly summary: string;
   readonly resultRef: string;
   readonly environment: string;
-  readonly outcomeKind: ExternalCommandOutcome['kind'] | 'openspec-validation';
+  readonly outcomeKind: ExternalCommandOutcome['kind'] | 'openspec-archive-sync' | 'openspec-validation';
   readonly exitCode: number;
   readonly stdoutFingerprint: string;
   readonly stderrFingerprint: string;
@@ -84,8 +84,11 @@ export async function executeVerificationSelection(
   if (nodeIds.length > 0) {
     const files = await resolveLogicalNodeTests(input.repoRoot, nodeIds);
     const nodeEnv: NodeJS.ProcessEnv = { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' };
-    if (nodeIds.includes('tests-openspec-runtime')) {
-      nodeEnv['FLOWKIT_OPENSPEC_BIN'] = input.openSpecAdapter.executable;
+    const requiresOpenSpecExecutable =
+      nodeIds.includes('tests-openspec-runtime') ||
+      files.includes('tests/integration/g1-change-cli-end-to-end.test.ts');
+    if (requiresOpenSpecExecutable) {
+      nodeEnv['FLOWKIT_OPENSPEC_BIN'] = await input.openSpecAdapter.resolveExecutable();
     }
     const outcome = await runCommand(process.execPath, ['--import', 'tsx', '--test', ...files], {
       cwd: input.repoRoot,
@@ -110,6 +113,9 @@ export async function executeVerificationSelection(
 
   if (selection.verificationScopes.includes('openspec-current-change-strict')) {
     checksById.set('openspec-current-change-strict', await executeOpenSpecCurrentChange(input, environment));
+  }
+  if (selection.verificationScopes.includes('openspec-current-change-archive-sync')) {
+    checksById.set('openspec-current-change-archive-sync', await executeOpenSpecArchiveSync(input, environment));
   }
 
   const checks = selection.verificationScopes.map((scope, index) => {
@@ -243,7 +249,7 @@ function validateCheck(value: unknown, index: number): VerificationCheckEvidence
   const status = object['status'];
   if (status !== 'passed' && status !== 'failed') fail(`checks[${index}].status must be passed|failed`);
   const outcomeKind = object['outcomeKind'];
-  if (outcomeKind !== 'spawn-failed' && outcomeKind !== 'exited' && outcomeKind !== 'timed-out-cancelled' && outcomeKind !== 'outcome-unknown' && outcomeKind !== 'openspec-validation') fail(`checks[${index}].outcomeKind is invalid`);
+  if (outcomeKind !== 'spawn-failed' && outcomeKind !== 'exited' && outcomeKind !== 'timed-out-cancelled' && outcomeKind !== 'outcome-unknown' && outcomeKind !== 'openspec-archive-sync' && outcomeKind !== 'openspec-validation') fail(`checks[${index}].outcomeKind is invalid`);
   if (!Number.isInteger(object['exitCode'])) fail(`checks[${index}].exitCode must be an integer`);
   return {
     scope: nonEmpty(object['scope'], `checks[${index}].scope`),
@@ -289,6 +295,44 @@ async function executeOpenSpecCurrentChange(
       commandOrMethod: 'OpenSpecCliAdapter.validateChange(currentChangeId, strict=true)',
       status: 'failed',
       summary: `strict OpenSpec current Change validation failed closed: ${message}`,
+      resultRef: 'pending-ref',
+      environment,
+      outcomeKind: 'outcome-unknown',
+      exitCode: 1,
+      stdoutFingerprint: sha256(''),
+      stderrFingerprint: sha256(message),
+    };
+  }
+}
+
+async function executeOpenSpecArchiveSync(
+  input: ExecuteVerificationSelectionInput,
+  environment: string,
+): Promise<VerificationCheckEvidence> {
+  try {
+    const observation = await input.openSpecAdapter.preflightArchiveSync(input.changeId);
+    const stable = JSON.stringify(observation);
+    return {
+      scope: 'openspec-current-change-archive-sync',
+      applicability: 'applicable',
+      commandOrMethod: 'OpenSpecCliAdapter.preflightArchiveSync(currentChangeId)',
+      status: 'passed',
+      summary: 'real disposable OpenSpec archive-sync preflight passed',
+      resultRef: 'pending-ref',
+      environment,
+      outcomeKind: 'openspec-archive-sync',
+      exitCode: 0,
+      stdoutFingerprint: sha256(stable),
+      stderrFingerprint: sha256(''),
+    };
+  } catch (error) {
+    const message = error instanceof Error ? `${error.name}:${error.message}` : String(error);
+    return {
+      scope: 'openspec-current-change-archive-sync',
+      applicability: 'applicable',
+      commandOrMethod: 'OpenSpecCliAdapter.preflightArchiveSync(currentChangeId)',
+      status: 'failed',
+      summary: `real disposable OpenSpec archive-sync preflight failed closed: ${message}`,
       resultRef: 'pending-ref',
       environment,
       outcomeKind: 'outcome-unknown',
@@ -356,7 +400,7 @@ function logicalNodeSelectors(logicalId: string): readonly string[] {
     case 'tests-serialization':
       return ['tests/unit/persistence/serialization.test.ts'];
     case 'tests-verification':
-      return ['tests/integration/e1-change-verification-selection.test.ts', 'tests/integration/e2-change-verification-generalization.test.ts', 'tests/unit/verification/affected-scopes.test.ts', 'tests/unit/verification/change-selection/*.test.ts'];
+      return ['tests/integration/e1-change-verification-selection.test.ts', 'tests/integration/e2-change-verification-generalization.test.ts', 'tests/unit/verification/affected-scopes.test.ts', 'tests/unit/verification/change-selection/*.test.ts', 'tests/unit/verification/verification-plan.test.ts'];
     default:
       throw new FlowkitError('VERIFICATION_SCOPE_EXECUTION_UNSUPPORTED', 'Unknown logical Node test check id', { logicalId });
   }

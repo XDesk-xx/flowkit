@@ -1,8 +1,10 @@
-import { access } from 'node:fs/promises';
+import { cp, mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 import { runCommand, type RunCommandResult } from '../../shared/external-command.js';
 import { FlowkitError } from '../../shared/errors.js';
+import { resolveOpenSpecExecutable } from './openspec-executable.js';
 import {
   assertAbsolutePath,
   assertPhysicalPathWithin,
@@ -164,7 +166,7 @@ export class OpenSpecCliAdapter {
   private readonly runner: CommandRunner;
   private readonly platform: NodeJS.Platform;
   private readonly explicitExecutable?: string;
-  private defaultExecutablePromise?: Promise<string>;
+  private resolvedExecutablePromise?: Promise<string>;
   private versionPromise?: Promise<string>;
 
   constructor(options: OpenSpecCliAdapterOptions) {
@@ -488,6 +490,55 @@ export class OpenSpecCliAdapter {
     return { spawned: true, timedOut: false, exitCode: result.exitCode, transportDiagnosis: 'archive output did not match supported success/failure shape' };
   }
 
+  /**
+   * Prove the exact current OpenSpec candidate can be archived without ever
+   * mutating the canonical repository. OpenSpec remains the archive/merge
+   * authority: Flowkit only copies the current `openspec/` bytes to a
+   * disposable root, invokes the real resolved executable, consumes the
+   * existing typed archive result, and removes the disposable mutation.
+   */
+  async preflightArchiveSync(changeId: string): Promise<OpenSpecArchiveSuccessObservation> {
+    const disposableRoot = await mkdtemp(join(tmpdir(), 'flowkit-openspec-archive-sync-'));
+    try {
+      await cp(resolve(this.repoRoot, 'openspec'), resolve(disposableRoot, 'openspec'), {
+        recursive: true,
+        force: false,
+        errorOnExist: true,
+        preserveTimestamps: true,
+      });
+      const executable = await this.resolveExecutable();
+      const disposableAdapter = new OpenSpecCliAdapter({
+        repoRoot: disposableRoot,
+        executable,
+        timeoutMs: this.timeoutMs,
+        env: this.env,
+        runner: this.runner,
+        platform: this.platform,
+      });
+      const invocation = await disposableAdapter.archiveChange(changeId);
+      if (!invocation.spawned) {
+        throw new FlowkitError('OPENSPEC_ARCHIVE_SYNC_PREFLIGHT_FAILED', 'OpenSpec archive-sync preflight could not spawn', {
+          changeId,
+          diagnosis: invocation.transportDiagnosis ?? 'child did not spawn',
+        });
+      }
+      if (invocation.timedOut) {
+        throw new FlowkitError('OPENSPEC_ARCHIVE_SYNC_PREFLIGHT_FAILED', 'OpenSpec archive-sync preflight timed out', { changeId });
+      }
+      if (invocation.observation?.kind !== 'success') {
+        throw new FlowkitError('OPENSPEC_ARCHIVE_SYNC_PREFLIGHT_FAILED', 'OpenSpec archive-sync preflight did not produce structured success', {
+          changeId,
+          exitCode: invocation.exitCode,
+          ...(invocation.observation !== undefined ? { observation: invocation.observation } : {}),
+          ...(invocation.transportDiagnosis !== undefined ? { diagnosis: invocation.transportDiagnosis } : {}),
+        });
+      }
+      return invocation.observation;
+    } finally {
+      await rm(disposableRoot, { recursive: true, force: true });
+    }
+  }
+
   private parseChangeStatus(parsed: unknown, changeId: string): OpenSpecChangeStatusView {
     const obj = record(parsed, 'status');
     if (string(obj['changeName'], 'changeName') !== changeId) {
@@ -640,7 +691,7 @@ export class OpenSpecCliAdapter {
   }
 
   private async invokeRaw(args: string[]): Promise<RunCommandResult> {
-    const executable = this.explicitExecutable ?? await this.resolveDefaultExecutable();
+    const executable = await this.resolveExecutable();
     return this.runner(executable, args, {
       cwd: this.repoRoot,
       env: this.env,
@@ -649,31 +700,12 @@ export class OpenSpecCliAdapter {
     });
   }
 
-  private async resolveDefaultExecutable(): Promise<string> {
-    if (this.platform !== 'win32') return 'openspec';
-    this.defaultExecutablePromise ??= this.resolveDefaultWindowsShim();
-    return this.defaultExecutablePromise;
-  }
-
-  private async resolveDefaultWindowsShim(): Promise<string> {
-    const pathValue = Object.entries(this.env).filter(([key]) => key.toLowerCase() === 'path').at(-1)?.[1] ?? '';
-    const directories = pathValue.split(';').map((entry) => entry.trim()).filter((entry) => entry.length > 0);
-    for (const shim of ['openspec.ps1', 'openspec.cmd'] as const) {
-      for (const directory of directories) {
-        const candidate = join(directory, shim);
-        try {
-          await access(candidate);
-          return candidate;
-        } catch {
-          // Continue deterministic PATH search. `.cmd` is considered only
-          // after the complete `.ps1` search has found no shim.
-        }
-      }
-    }
-    throw new FlowkitError(
-      'OPENSPEC_SPAWN_FAILED',
-      'OpenSpec Windows shim not found on PATH (expected openspec.ps1, fallback openspec.cmd)',
-      { pathEntries: directories.length },
-    );
+  async resolveExecutable(): Promise<string> {
+    this.resolvedExecutablePromise ??= resolveOpenSpecExecutable({
+      ...(this.explicitExecutable !== undefined && { executable: this.explicitExecutable }),
+      env: this.env,
+      platform: this.platform,
+    });
+    return this.resolvedExecutablePromise;
   }
 }

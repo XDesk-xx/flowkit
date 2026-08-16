@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { describe, it } from 'node:test';
 
 import type { OpenSpecCliAdapter } from '../../../../src/integrations/openspec/openspec-cli-adapter.js';
+import { FlowkitError } from '../../../../src/shared/errors.js';
 import { executeVerificationSelection } from '../../../../src/verification/change-selection/evidence.js';
 import { currentVerificationCatalogFingerprint, type VerificationSelection } from '../../../../src/verification/change-selection/selection.js';
 import { createTempDir } from '../../../fixtures/helpers.js';
@@ -69,7 +70,73 @@ function openspecRuntimeSelection(): VerificationSelection {
   };
 }
 
+function verificationOnlySelection(): VerificationSelection {
+  const payload = {
+    moduleMapLogicalRef: 'src/verification/change-selection/module-map.ts',
+    moduleMapFingerprint: currentVerificationCatalogFingerprint(),
+    seedModuleIds: ['verification-selection'],
+    moduleIds: ['verification-selection'],
+    capabilityIds: ['flowkit-core-hardening-and-release-candidate'],
+    capabilityRefs: ['openspec/changes/i1/specs/flowkit-core-hardening-and-release-candidate/spec.md'],
+    capabilityRelation: { kind: 'matched' as const },
+    verificationScopes: ['tests-verification'],
+  };
+  return {
+    ...payload,
+    selectionFingerprint: createHash('sha256').update(canonicalStringify(payload)).digest('hex'),
+  };
+}
+
+function archiveSyncOnlySelection(): VerificationSelection {
+  const payload = {
+    moduleMapLogicalRef: 'src/verification/change-selection/module-map.ts',
+    moduleMapFingerprint: currentVerificationCatalogFingerprint(),
+    seedModuleIds: ['change-contract'],
+    moduleIds: ['change-contract'],
+    capabilityIds: ['flowkit-openspec-1-7-thin-integration'],
+    capabilityRefs: ['openspec/changes/i1/specs/flowkit-openspec-1-7-thin-integration/spec.md'],
+    capabilityRelation: { kind: 'matched' as const },
+    verificationScopes: ['openspec-current-change-archive-sync'],
+  };
+  return { ...payload, selectionFingerprint: createHash('sha256').update(canonicalStringify(payload)).digest('hex') };
+}
+
 describe('verification evidence affected Node union', () => {
+  it('uses the reusable archive-sync preflight as a formal logical check and fails closed on structured failure', async () => {
+    const root = await createTempDir();
+    try {
+      const baseInput = {
+        repoRoot: root,
+        changeId: 'i1',
+        runDir: join(root, '.flowkit', 'runs', 'archive-sync'),
+        producingRunId: '20990101-006-apply',
+        selection: archiveSyncOnlySelection(),
+        fullTestStatus: 'not-ready' as const,
+      };
+      const passed = await executeVerificationSelection({
+        ...baseInput,
+        openSpecAdapter: {
+          preflightArchiveSync: async () => ({
+            kind: 'success', change: 'i1', archivedAs: '2099-01-01-i1', path: 'openspec/changes/archive/2099-01-01-i1', specsUpdated: true,
+          }),
+        } as unknown as OpenSpecCliAdapter,
+      });
+      assert.equal(passed.overallStatus, 'passed');
+      assert.equal(passed.checks[0]?.scope, 'openspec-current-change-archive-sync');
+      assert.equal(passed.checks[0]?.outcomeKind, 'openspec-archive-sync');
+
+      const failed = await executeVerificationSelection({
+        ...baseInput,
+        openSpecAdapter: {
+          preflightArchiveSync: async () => { throw new FlowkitError('OPENSPEC_ARCHIVE_SYNC_PREFLIGHT_FAILED', 'archive merge incomplete'); },
+        } as unknown as OpenSpecCliAdapter,
+      });
+      assert.equal(failed.overallStatus, 'failed');
+      assert.match(failed.checks[0]?.summary ?? '', /archive-sync.*failed closed/i);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
   it('physically executes the G1 CLI E2E target through tests-cli and fails on its sentinel', async () => {
     const root = await createTempDir();
     try {
@@ -98,7 +165,7 @@ describe('verification evidence affected Node union', () => {
           producingRunId: '20990101-003-apply',
           selection: cliOnlySelection(),
           fullTestStatus: 'not-ready',
-          openSpecAdapter: {} as OpenSpecCliAdapter,
+          openSpecAdapter: { resolveExecutable: async () => '/fixture/openspec' } as OpenSpecCliAdapter,
         });
       } finally {
         if (previousNodeTestContext === undefined) delete process.env['NODE_TEST_CONTEXT'];
@@ -111,6 +178,46 @@ describe('verification evidence affected Node union', () => {
       await rm(root, { recursive: true, force: true });
     }
   });
+  it('propagates the current resolved OpenSpec executable when tests-cli physically includes G1', async () => {
+    const root = await createTempDir();
+    const executable = '/resolved/openspec-1.7.0';
+    try {
+      await symlink(join(process.cwd(), 'node_modules'), join(root, 'node_modules'), 'dir');
+      await writeFile(join(root, 'package.json'), '{"type":"module"}\n', 'utf8');
+      await mkdir(join(root, 'tests', 'integration'), { recursive: true });
+      await mkdir(join(root, 'tests', 'unit', 'cli'), { recursive: true });
+      await mkdir(join(root, 'tests', 'unit', 'diagnostics'), { recursive: true });
+      await writeFile(join(root, 'tests', 'integration', 'diagnostic-cli-process.test.ts'), "import { test } from 'node:test'; test('ok', () => {});\n", 'utf8');
+      await writeFile(join(root, 'tests', 'integration', 'diagnostic-cli.test.ts'), "import { test } from 'node:test'; test('ok', () => {});\n", 'utf8');
+      await writeFile(join(root, 'tests', 'integration', 'g1-change-cli-end-to-end.test.ts'), [
+        "import assert from 'node:assert/strict';",
+        "import { test } from 'node:test';",
+        `test('g1 env', () => assert.equal(process.env['FLOWKIT_OPENSPEC_BIN'], ${JSON.stringify(executable)}));`,
+        '',
+      ].join('\n'), 'utf8');
+
+      const previousNodeTestContext = process.env['NODE_TEST_CONTEXT'];
+      delete process.env['NODE_TEST_CONTEXT'];
+      try {
+        const evidence = await executeVerificationSelection({
+          repoRoot: root,
+          changeId: 'g1',
+          runDir: join(root, '.flowkit', 'runs', 'g1-env'),
+          producingRunId: '20990101-003-apply',
+          selection: cliOnlySelection(),
+          fullTestStatus: 'not-ready',
+          openSpecAdapter: { resolveExecutable: async () => executable } as OpenSpecCliAdapter,
+        });
+        assert.equal(evidence.overallStatus, 'passed');
+      } finally {
+        if (previousNodeTestContext === undefined) delete process.env['NODE_TEST_CONTEXT'];
+        else process.env['NODE_TEST_CONTEXT'] = previousNodeTestContext;
+      }
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it('physically executes the real OpenSpec target, propagates the selected executable, and fails on its sentinel', async () => {
     const root = await createTempDir();
     const executable = '/fixture/openspec-1.7.0';
@@ -136,7 +243,7 @@ describe('verification evidence affected Node union', () => {
         producingRunId: '20990101-004-apply',
         selection: openspecRuntimeSelection(),
         fullTestStatus: 'not-ready' as const,
-        openSpecAdapter: { executable } as OpenSpecCliAdapter,
+        openSpecAdapter: { resolveExecutable: async () => executable } as OpenSpecCliAdapter,
       };
       const previousNodeTestContext = process.env['NODE_TEST_CONTEXT'];
       delete process.env['NODE_TEST_CONTEXT'];
@@ -154,6 +261,59 @@ describe('verification evidence affected Node union', () => {
         const failed = await executeVerificationSelection(input);
         assert.equal(failed.overallStatus, 'failed');
         assert.match(failed.checks[0]?.commandOrMethod ?? '', /tests\/integration\/openspec-1-7-real-cli\.test\.ts/);
+      } finally {
+        if (previousNodeTestContext === undefined) delete process.env['NODE_TEST_CONTEXT'];
+        else process.env['NODE_TEST_CONTEXT'] = previousNodeTestContext;
+      }
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('physically executes verification-plan through tests-verification and fails on its sentinel', async () => {
+    const root = await createTempDir();
+    try {
+      await symlink(join(process.cwd(), 'node_modules'), join(root, 'node_modules'), 'dir');
+      await writeFile(join(root, 'package.json'), '{"type":"module"}\n', 'utf8');
+      await mkdir(join(root, 'tests', 'integration'), { recursive: true });
+      await mkdir(join(root, 'tests', 'unit', 'verification', 'change-selection'), { recursive: true });
+      await mkdir(join(root, 'tests', 'unit', 'verification'), { recursive: true });
+      for (const path of [
+        join(root, 'tests', 'integration', 'e1-change-verification-selection.test.ts'),
+        join(root, 'tests', 'integration', 'e2-change-verification-generalization.test.ts'),
+        join(root, 'tests', 'unit', 'verification', 'affected-scopes.test.ts'),
+        join(root, 'tests', 'unit', 'verification', 'change-selection', 'placeholder.test.ts'),
+      ]) {
+        await writeFile(path, "import { test } from 'node:test'; test('ok', () => {});\n", 'utf8');
+      }
+      const planTarget = join(root, 'tests', 'unit', 'verification', 'verification-plan.test.ts');
+      await writeFile(planTarget, "import { test } from 'node:test'; test('plan ok', () => {});\n", 'utf8');
+
+      const input = {
+        repoRoot: root,
+        changeId: 'i1',
+        runDir: join(root, '.flowkit', 'runs', 'sentinel'),
+        producingRunId: '20990101-005-apply',
+        selection: verificationOnlySelection(),
+        fullTestStatus: 'not-ready' as const,
+        openSpecAdapter: {} as OpenSpecCliAdapter,
+      };
+      const previousNodeTestContext = process.env['NODE_TEST_CONTEXT'];
+      delete process.env['NODE_TEST_CONTEXT'];
+      try {
+        const passed = await executeVerificationSelection(input);
+        assert.equal(passed.overallStatus, 'passed');
+        assert.match(passed.checks[0]?.commandOrMethod ?? '', /tests\/unit\/verification\/verification-plan\.test\.ts/);
+
+        await writeFile(planTarget, [
+          "import assert from 'node:assert/strict';",
+          "import { test } from 'node:test';",
+          "test('I1 verification-plan sentinel', () => assert.fail('I1-RE-001 sentinel'));",
+          '',
+        ].join('\n'), 'utf8');
+        const failed = await executeVerificationSelection(input);
+        assert.equal(failed.overallStatus, 'failed');
+        assert.match(failed.checks[0]?.commandOrMethod ?? '', /tests\/unit\/verification\/verification-plan\.test\.ts/);
       } finally {
         if (previousNodeTestContext === undefined) delete process.env['NODE_TEST_CONTEXT'];
         else process.env['NODE_TEST_CONTEXT'] = previousNodeTestContext;

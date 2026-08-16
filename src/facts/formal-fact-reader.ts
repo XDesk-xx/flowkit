@@ -39,7 +39,7 @@ import { runCommand } from '../shared/external-command.js';
 import { OpenSpecCliAdapter } from '../integrations/openspec/openspec-cli-adapter.js';
 import { computeLineage } from '../policy/lineage.js';
 import { projectCurrentContractResetLifecycle } from './generation-resolver.js';
-import { validateTerminalVerificationSelectionBinding } from '../verification/change-selection/publication.js';
+import { validateCurrentReverificationChain, validateTerminalVerificationSelectionBinding } from '../verification/change-selection/publication.js';
 import { isOpenSpecThinIntegrationActive } from '../integrations/openspec/openspec-integration-state.js';
 import type { OpenSpecOperationProjection } from '../integrations/openspec/openspec-types.js';
 import type {
@@ -1303,10 +1303,20 @@ async function readActiveChangeVerificationStatus(
       const binding = result.terminalBinding.currentVerification;
       if (binding === undefined) throw new Error('post-E2 current verification binding missing');
       if (binding.logicalRef !== `openspec/changes/${activeChangeId}/verification.md`) throw new Error('post-E2 current verification logicalRef mismatch');
-      if (binding.versionFingerprint !== createHash('sha256').update(content).digest('hex')) throw new Error('post-E2 current verification fingerprint mismatch');
-      if (binding.status !== status.value) throw new Error('post-E2 current verification status mismatch');
+      const currentFingerprint = createHash('sha256').update(content).digest('hex');
       const selection = /- selectionFingerprint: `([0-9a-f]{64})`/.exec(content)?.[1];
-      if (selection !== binding.selectionFingerprint) throw new Error('post-E2 current verification selection fingerprint mismatch');
+      if (currentFingerprint === binding.versionFingerprint) {
+        if (binding.status !== status.value) throw new Error('post-E2 current verification status mismatch');
+        if (selection !== binding.selectionFingerprint) throw new Error('post-E2 current verification selection fingerprint mismatch');
+        return { status: status.value, conflicts: [] };
+      }
+      await validateCurrentReverificationChain({
+        canonicalVerificationPath: verificationPath,
+        currentMarkdown: content,
+        originRunId: context.runId,
+        originBinding: binding,
+      });
+      if (selection !== binding.selectionFingerprint) throw new Error('re-verification selection fingerprint differs from producing Apply terminal binding');
       return { status: status.value, conflicts: [] };
     }
     const binding = result.terminalBinding.verificationSelection;

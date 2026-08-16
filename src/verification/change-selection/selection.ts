@@ -70,7 +70,11 @@ export function buildVerificationSelection(
     capabilityIds,
     capabilityRefs: normalizedCapabilityRefs,
     capabilityRelation: { kind: 'matched' as const },
-    verificationScopes: [...new Set([...selection.verificationScopes, 'openspec-current-change-strict'])].sort(),
+    verificationScopes: [...new Set([
+      ...selection.verificationScopes,
+      'openspec-current-change-archive-sync',
+      'openspec-current-change-strict',
+    ])].sort(),
   });
   return { ...payload, selectionFingerprint: canonicalFingerprint(payload) };
 }

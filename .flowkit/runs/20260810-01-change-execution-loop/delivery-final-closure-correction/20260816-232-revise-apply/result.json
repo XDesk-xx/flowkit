@@ -1,0 +1,23 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-apply",
+    "executionStatus": "completed",
+    "summary": "关闭 I1-RA-002：增加由正式 tests-cli selector 选中的实际 CLI routing regression，通过 runCli(['verify','--retry']) 验证 failed exact candidate 的 re-verification write surface、predecessor history 保留、completed Apply result 不变、无 Run/NNN 分配，并通过反事实证明将 --retry 路由退回 bare verify 会使该回归失败；其余 230 implementation 保持不变。",
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-231-review-apply/result.json",
+      "versionFingerprint": "6d90d0ff675f80d264d19e2b69177ea3693b4e74413aeb8205f3385910382ae5",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "843f7213af26099eab29c4addb25f2bed674c212be18072f7a953010b4fff7de",
+    "currentVerification": {
+      "logicalRef": "openspec/changes/delivery-final-closure-correction/verification.md",
+      "versionFingerprint": "9a03a6b2aea5a14e14e2ed7be23289591df3c44fdaea3a89c27cc9f4ff159b13",
+      "selectionFingerprint": "8bb49e903f7ee4e1bd3944d6617ecc138fbd52cf467835db79003fa004257760",
+      "status": "passed"
+    }
+  }
+}

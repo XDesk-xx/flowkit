@@ -1,0 +1,16 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "Review 228 Contract Reset Proposal: approved. Reviewer verified that Owner contract-reset cffdb6e legitimately supersedes only the 225/226/227 generation to add exact-candidate re-verification after completed Apply with failed Verification, while preserving prior I1 outcomes and forbidding timeout/concurrency/scheduler, new Formal Action/Change, or no-op revise. The 29-selector apply/revise-apply scope is unique, lexically ordered, and expands the prior 20-selector scope only with CLI verify-retry, Formal Reader bounded-chain validation, compact candidate identity/publication helpers, and direct tests. Existing Catalog ownership already gives exactly-one ownership for the new implementation/test paths without a new registry/module abstraction. Reviewer independently validated OpenSpec 1.7 strict and real disposable archive-sync totals added=3/modified=5/removed=0/renamed=0 with post-archive 17/17 strict PASS. Reviewer additionally injected a fingerprint-addressed verification-history sentinel before real OpenSpec archive and confirmed OpenSpec relocates the immutable history file intact into the archived Change root, so the proposed history location preserves 227 evidence across the eventual archive boundary. Bare verify remains read-only; explicit verify --retry is Verification behavior only, exact-candidate/selection bound, preserves the failed predecessor before atomic current publication, and requires a finite acyclic same-origin chain back to the original Apply terminal binding. No Policy/Formal Action/Run schema or Delivery Full Test boundary is changed."
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "97c49c95b837187a0bfd95a404b62fb3c0ba0f952fded1cefbd3758cb69dc063"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [],
+  "reviewFindingConvergence": []
+}

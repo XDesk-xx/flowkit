@@ -3,6 +3,8 @@ import { constants } from 'node:fs';
 import { dirname, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { resolveOpenSpecExecutable } from '../src/integrations/openspec/openspec-executable.js';
+import { runCommand as runExternalCommand } from '../src/shared/external-command.js';
 import { resolveAffectedTests, resolveAllTests } from './affected-scopes.js';
 import { runPlatformCommand } from './platform-command.js';
 
@@ -84,7 +86,12 @@ async function validateFocusedFiles(inputs: readonly string[]): Promise<string[]
   return [...selected].sort((a, b) => a.localeCompare(b));
 }
 
-async function runNodeTests(files: readonly string[], concurrency: 1 | 2 | 4, label: 'focused' | 'affected' | 'full'): Promise<number> {
+async function runNodeTests(
+  files: readonly string[],
+  concurrency: 1 | 2 | 4,
+  label: 'focused' | 'affected' | 'full',
+  env: NodeJS.ProcessEnv = standaloneProjectEnv(),
+): Promise<number> {
   if (files.length === 0) throw new Error(`${label} resolved no tests`);
   console.log(environmentLine());
   console.log(`tests: layer=${label} files=${files.length} concurrency=${concurrency}`);
@@ -106,7 +113,7 @@ async function runNodeTests(files: readonly string[], concurrency: 1 | 2 | 4, la
     const result = await runPlatformCommand(
       process.execPath,
       ['--import', 'tsx', '--test', `--test-concurrency=${concurrency}`, ...batch],
-      { cwd: projectRoot, env: standaloneProjectEnv(), stdio: 'inherit' },
+      { cwd: projectRoot, env, stdio: 'inherit' },
     );
     if (result.exitCode !== 0) return result.exitCode;
   }
@@ -138,6 +145,26 @@ function standaloneProjectEnv(): NodeJS.ProcessEnv {
   return env;
 }
 
+
+async function resolvedProjectOpenSpecExecutable(): Promise<string> {
+  return resolveOpenSpecExecutable({
+    ...(process.env['FLOWKIT_OPENSPEC_BIN'] !== undefined && { executable: process.env['FLOWKIT_OPENSPEC_BIN'] }),
+    env: process.env,
+    platform: process.platform,
+  });
+}
+
+export async function fullTestEnvironment(): Promise<NodeJS.ProcessEnv> {
+  const env = standaloneProjectEnv();
+  env['FLOWKIT_OPENSPEC_BIN'] = await resolvedProjectOpenSpecExecutable();
+  return env;
+}
+
+function writeCapturedOutput(stdout: string, stderr: string): void {
+  if (stdout.length > 0) process.stdout.write(stdout);
+  if (stderr.length > 0) process.stderr.write(stderr);
+}
+
 export type PlatformCommandRunner = typeof runPlatformCommand;
 
 export async function executeProjectStep(
@@ -148,12 +175,18 @@ export async function executeProjectStep(
     const args = [...step.args];
     const index = args.indexOf('<active-change>');
     if (index !== -1) args[index] = await activeChangeId();
-    const executable = process.platform === 'win32' ? 'openspec.cmd' : 'openspec';
-    return runCommand(executable, args, {
+    const executable = await resolvedProjectOpenSpecExecutable();
+    const started = process.hrtime.bigint();
+    const outcome = await runExternalCommand(executable, args, {
       cwd: projectRoot,
       env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' },
-      stdio: 'inherit',
+      platform: process.platform,
     });
+    writeCapturedOutput(outcome.stdout, outcome.stderr);
+    return {
+      exitCode: outcome.exitCode,
+      durationMs: Number(process.hrtime.bigint() - started) / 1_000_000,
+    };
   }
 
   const nodeEnv = standaloneProjectEnv();
@@ -203,7 +236,7 @@ export async function executeProjectStep(
       const npmExecutable = process.platform === 'win32' ? 'npm.cmd' : 'npm';
       return runCommand(npmExecutable, ['run', 'test:full'], {
         cwd: projectRoot,
-        env: standaloneProjectEnv(),
+        env: await fullTestEnvironment(),
         stdio: 'inherit',
       });
     }
@@ -239,7 +272,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
     case 'test:affected':
       return runNodeTests(await resolveAffectedTests(projectRoot, args), 2, 'affected');
     case 'test:full':
-      return runNodeTests(await resolveAllTests(projectRoot), 4, 'full');
+      return runNodeTests(await resolveAllTests(projectRoot), 4, 'full', await fullTestEnvironment());
     case 'verify:change':
       return runVerificationPlan(verifyChangePlan(args));
     case 'verify:full':

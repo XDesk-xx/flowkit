@@ -1,0 +1,44 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "Review 216 Proposal：OpenSpec resolved executable authority、real OpenSpec Full Test fail-closed、A1 stable point-in-time fixture、Verification self-closure、performance/no-scheduler 与 16-selector implementation surface 均承接 214/215 approved Explore；但 checkpoint hygiene contract 超出了 approved Proof 5。214 Proof 5 只对 real OpenSpec archive 实际复现的 redundant EOF blank lines / exactly one final newline 给出 PASS，并明确没有证据支持更宽 formatting authority；216 Proposal/Design/spec/tasks 却新增了 touched text files 的 trailing spaces/tabs removal。Proposal 只能冻结 Explore 已证明的 boundary，不能把未证明的 whitespace class 扩成 Executor authority。应 revise-propose 将 checkpoint normalization 收回 EOF-only proof-backed scope；如坚持 trailing spaces/tabs，则需先通过合法 Explore generation 补相应 external-mutation/authority proof。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "6a8d207b10380261c67459131a1da604adebcd3ba3a02596994ce4129c90bcd3"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "I1-RP-001",
+      "severity": "blocking",
+      "title": "Checkpoint hygiene authority exceeds the approved EOF-only Explore proof",
+      "problem": "214/215 approved Explore Proof 5 proves only a bounded EOF normalization after real OpenSpec 1.7 archive: collapse redundant EOF blank lines and preserve exactly one final newline. The Explore in-scope boundary likewise says EOF-only terminal whitespace normalization, and its Evidence/Gap explicitly says no evidence supports broad formatting authority. 216 Proposal, Design Decision 6, flowkit-archive-and-checkpoint-boundary spec, and task 4.2 expand the same Owner checkpoint authorization to also remove trailing spaces/tabs from touched text files. That additional transformation class was not established by the approved Explore evidence.",
+      "contractRef": "Flowkit Explore Skill v2 §4.7 External Mutation Proof / §5 Proof Acceptance Depth / approved 214 Explore Proof 5",
+      "invariant": "Proposal may freeze only implementation/authority boundaries whose acceptance boundary is covered by approved Explore evidence; a proof-backed EOF-only mechanical normalization must not be silently widened into a larger Executor mutation authority.",
+      "evidence": [
+        "214 explore.md Scope Boundary: in scope is explicitly EOF-only terminal whitespace normalization — redundant EOF blank lines / exactly one final newline.",
+        "214 explore.md Proof 5 Acceptance Boundary permits only collapsing redundant EOF blank lines and preserving exactly one final newline.",
+        "214 explore.md Proof 5 Gap states: None for the bounded EOF rule. No evidence supports broad formatting authority.",
+        "216 proposal.md adds trailing spaces/tabs cleanup to checkpoint mechanics.",
+        "216 design.md Decision 6 allows remove trailing spaces/tabs for touched text files under the same authorize-checkpoint fact.",
+        "216 flowkit-archive-and-checkpoint-boundary spec and task 4.2 freeze the same unproved trailing-space/tab authority."
+      ],
+      "impact": "If approved as written, I1 would give the Executor a broader post-archive file-mutation authority than the approved Explore actually proved. That weakens the detached exact-candidate / mechanical-checkpoint boundary and turns a proof-backed EOF correction into an unproven generalized whitespace normalization rule.",
+      "location": "openspec/changes/delivery-final-closure-correction/proposal.md; design.md Decision 6; specs/flowkit-archive-and-checkpoint-boundary/spec.md; tasks.md 4.2",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Revise the Proposal generation so checkpoint normalization is limited to the approved EOF-only rule: collapse redundant EOF blank lines and ensure exactly one final newline on candidate/archive-touched text files, with semantic/internal formatting/unrelated-file changes fail-closed. Do not include trailing spaces/tabs removal unless that broader class is first supported by a new legitimate Explore proof/authority boundary.",
+      "acceptance": [
+        "Proposal/Design/spec/tasks no longer authorize generic trailing spaces/tabs removal under the existing checkpoint authorization.",
+        "Allowed checkpoint normalization matches approved Proof 5 exactly: redundant EOF blank-line collapse plus exactly one final newline, limited to candidate/archive-touched text files.",
+        "Forbidden scope continues to include Markdown reflow, internal/semantic formatting changes, unrelated files, and broad formatter execution.",
+        "git diff --check and staged git diff --cached --check remain required after normalization.",
+        "The 16-selector apply/revise-apply surface remains otherwise unchanged unless a separately justified Proposal correction requires a different already-proven path."
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}

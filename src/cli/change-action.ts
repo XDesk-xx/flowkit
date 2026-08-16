@@ -12,6 +12,7 @@ import {
   prepareActionExecution,
   prepareNewExecution,
   resumeRun,
+  retryFailedChangeVerification,
 } from '../services/b1-run-execution-service.js';
 import { next } from '../policy/next.js';
 import { resolveReview } from '../policy/unified-entry.js';
@@ -240,6 +241,14 @@ export async function projectChangeVerification(
       ...published,
     },
   };
+}
+
+export async function retryChangeVerification(
+  repoRoot: string,
+  deliveryId: string,
+): Promise<ChangeOperatorResult> {
+  const value = await retryFailedChangeVerification({ repoRoot, deliveryId });
+  return { exitCode: value.status === 'passed' || value.status === 'not-applicable' ? 0 : 1, value: { mode: 'retry', deliveryId, ...value } };
 }
 
 export async function runArchiveOperator(

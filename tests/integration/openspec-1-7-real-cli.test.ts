@@ -1,6 +1,6 @@
 import { afterEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { chmod, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { delimiter, dirname, join } from 'node:path';
 
 import { ACTION_DEFINITIONS } from '../../src/domain/actions.js';
@@ -12,9 +12,13 @@ import { readArchiveMutationGuard } from '../../src/persistence/run-persistence.
 import { next } from '../../src/policy/next.js';
 import { recordOwnerDecision } from '../../src/services/a1-write-service.js';
 import { admitActionResult, prepareActionExecution, prepareNewExecution } from '../../src/services/b1-run-execution-service.js';
+import { runCommand } from '../../src/shared/external-command.js';
 import { createTempDir } from '../fixtures/helpers.js';
 
 const openspecBin = process.env['FLOWKIT_OPENSPEC_BIN'];
+if (openspecBin === undefined || openspecBin.trim() === '') {
+  throw new Error('FLOWKIT_OPENSPEC_BIN is required for real OpenSpec 1.7 conformance');
+}
 const roots: string[] = [];
 afterEach(async () => Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true }))));
 
@@ -149,6 +153,33 @@ async function modifiedScenarioPreservingArchiveFixture() {
   return { repoRoot, changeId, capability };
 }
 
+async function modifiedScenarioMissingArchiveFixture() {
+  const repoRoot = await root();
+  const changeId = 'real-modified-scenario-missing';
+  const capability = 'real-modified-missing-cap';
+  const canonicalRoot = join(repoRoot, 'openspec', 'specs', capability);
+  const changeRoot = join(repoRoot, 'openspec', 'changes', changeId);
+  await mkdir(canonicalRoot, { recursive: true });
+  await writeFile(join(canonicalRoot, 'spec.md'), [
+    '## Purpose', '', 'Verify archive-sync completeness.', '', '## Requirements', '',
+    '### Requirement: Value', 'The system MUST preserve scenario identities.', '',
+    '#### Scenario: Stable', '- **WHEN** stable runs', '- **THEN** it stays stable', '',
+    '#### Scenario: Secondary', '- **WHEN** secondary runs', '- **THEN** it stays present', '',
+  ].join('\n'));
+  await writeCommon(
+    changeRoot,
+    `### New Capabilities\n\n### Modified Capabilities\n- ${capability}: Intentionally omit one canonical Scenario identity.`,
+    'schema: spec-driven\ncreated: 2026-08-16\n',
+  );
+  await mkdir(join(changeRoot, 'specs', capability), { recursive: true });
+  await writeFile(join(changeRoot, 'specs', capability, 'spec.md'), [
+    '## MODIFIED Requirements', '',
+    '### Requirement: Value', 'The system MUST preserve scenario identities.', '',
+    '#### Scenario: Stable', '- **WHEN** stable runs', '- **THEN** it stays stable', '',
+  ].join('\n'));
+  return { repoRoot, changeId, capability, canonicalPath: join(canonicalRoot, 'spec.md'), changeRoot };
+}
+
 async function collisionFixture() {
   const repoRoot = await root();
   const changeId = 'real-collision';
@@ -259,7 +290,7 @@ async function markFlowkitChangeCompleted(repoRoot: string, deliveryId: string, 
   await writeFile(manifest, current.replace(active, active.replace('    state: active', '    state: completed')), 'utf8');
 }
 
-describe('OpenSpec 1.7 real CLI conformance', { skip: openspecBin === undefined }, () => {
+describe('OpenSpec 1.7 real CLI conformance', () => {
   it('shares one real version/status projection across a complete Flowkit v5 preparation operation', async () => {
     const repoRoot = await root();
     const deliveryId = '20990400-01-real-projection';
@@ -279,27 +310,26 @@ describe('OpenSpec 1.7 real CLI conformance', { skip: openspecBin === undefined 
     await git(repoRoot, ['add', '.']);
     await git(repoRoot, ['-c', 'user.name=Flowkit Test', '-c', 'user.email=flowkit@example.invalid', 'commit', '-m', 'base']);
 
-    const wrapper = join(repoRoot, 'openspec-count.sh');
-    const countFile = join(repoRoot, 'openspec-invocations.log');
-    await writeFile(wrapper, '#!/bin/sh\nprintf "%s\\n" "$*" >> "$FLOWKIT_COUNT_FILE"\nexec "$FLOWKIT_REAL_OPENSPEC_BIN" "$@"\n');
-    await chmod(wrapper, 0o755);
+    const invocations: string[][] = [];
     const adapter = new OpenSpecCliAdapter({
       repoRoot,
-      executable: wrapper,
-      env: { ...process.env, FLOWKIT_COUNT_FILE: countFile, FLOWKIT_REAL_OPENSPEC_BIN: openspecBin! },
+      executable: openspecBin,
+      runner: async (command, args, options) => {
+        invocations.push([...args]);
+        return runCommand(command, args, options);
+      },
     });
     const prepared = await prepareNewExecution({
       repoRoot, deliveryId, entry: 'next', now: () => new Date('2099-04-01T00:00:00Z'), openSpecAdapter: adapter,
     });
     assert.equal(prepared.kind, 'prepared');
-    const invocations = (await readFile(countFile, 'utf8')).trim().split('\n').filter(Boolean);
-    assert.equal(invocations.filter((line) => line.includes('--version') || line === 'version').length, 1, JSON.stringify(invocations));
-    assert.equal(invocations.filter((line) => line.includes('status') && line.includes(changeId)).length, 1, JSON.stringify(invocations));
+    assert.equal(invocations.filter((args) => args.includes('--version')).length, 1, JSON.stringify(invocations));
+    assert.equal(invocations.filter((args) => args.includes('status') && args.includes(changeId)).length, 1, JSON.stringify(invocations));
   });
 
   it('consumes status/instructions/apply/strict and accepts delta + zero-delta archive shapes', async () => {
     const delta = await newCapabilityFixture();
-    const adapter = new OpenSpecCliAdapter({ repoRoot: delta.repoRoot, executable: openspecBin! });
+    const adapter = new OpenSpecCliAdapter({ repoRoot: delta.repoRoot, executable: openspecBin });
     assert.equal(await adapter.getVersion(), '1.7.0');
     const status = await adapter.getChangeStatus(delta.changeId);
     assert.equal(status.artifactPaths.specs.logicalPaths.length, 1);
@@ -311,7 +341,7 @@ describe('OpenSpec 1.7 real CLI conformance', { skip: openspecBin === undefined 
     assert.ok(deltaArchive.observation?.kind === 'success' && deltaArchive.observation.totals !== undefined);
 
     const skip = await skipFixture();
-    const skipAdapter = new OpenSpecCliAdapter({ repoRoot: skip.repoRoot, executable: openspecBin! });
+    const skipAdapter = new OpenSpecCliAdapter({ repoRoot: skip.repoRoot, executable: openspecBin });
     assert.equal((await skipAdapter.validateChange(skip.changeId, true)).valid, true);
     const skipStatus = await skipAdapter.getChangeStatus(skip.changeId);
     const skipArchive = await skipAdapter.archiveChange(skip.changeId, skipStatus);
@@ -322,7 +352,7 @@ describe('OpenSpec 1.7 real CLI conformance', { skip: openspecBin === undefined 
 
   it('self-contained MODIFIED Requirements preserve point-in-time scenario identities through real OpenSpec 1.7 archive sync', async () => {
     const f = await modifiedScenarioPreservingArchiveFixture();
-    const adapter = new OpenSpecCliAdapter({ repoRoot: f.repoRoot, executable: openspecBin! });
+    const adapter = new OpenSpecCliAdapter({ repoRoot: f.repoRoot, executable: openspecBin });
     const canonicalPath = join(f.repoRoot, 'openspec', 'specs', f.capability, 'spec.md');
     const deltaPath = join(f.repoRoot, 'openspec', 'changes', f.changeId, 'specs', f.capability, 'spec.md');
     const canonical = parseRequirementScenarios(await readFile(canonicalPath, 'utf8'));
@@ -355,10 +385,26 @@ describe('OpenSpec 1.7 real CLI conformance', { skip: openspecBin === undefined 
     }
   });
 
+  it('archive-sync preflight fails before canonical mutation when strict validation passes but a MODIFIED Requirement omits a canonical Scenario', async () => {
+    const f = await modifiedScenarioMissingArchiveFixture();
+    const adapter = new OpenSpecCliAdapter({ repoRoot: f.repoRoot, executable: openspecBin });
+    const beforeCanonical = await readFile(f.canonicalPath, 'utf8');
+    const validation = await adapter.validateChange(f.changeId, true);
+    assert.equal(validation.valid, true);
+
+    await assert.rejects(
+      adapter.preflightArchiveSync(f.changeId),
+      (error: unknown) => error instanceof Error && /archive-sync preflight/i.test(error.message),
+    );
+
+    assert.equal(await readFile(f.canonicalPath, 'utf8'), beforeCanonical);
+    assert.equal((await stat(f.changeRoot)).isDirectory(), true);
+  });
+
 
   it('real archive_target_exists can mutate canonical specs before failure; durable guard requires exact restore then terminal failure without retry', async () => {
     const f = await collisionFixture();
-    const adapter = new OpenSpecCliAdapter({ repoRoot: f.repoRoot, executable: openspecBin! });
+    const adapter = new OpenSpecCliAdapter({ repoRoot: f.repoRoot, executable: openspecBin });
     assert.equal((await adapter.validateChange(f.changeId, true)).valid, true);
     const first = await invokeOpenSpecArchive(f.repoRoot, f.pkg, { adapter });
     assert.deepEqual(first, { status: 'recovery-required', spawned: true, code: 'OPENSPEC_ARCHIVE_RECOVERY_REQUIRED' });
@@ -374,7 +420,7 @@ describe('OpenSpec 1.7 real CLI conformance', { skip: openspecBin === undefined 
   it('normal future Flowkit archive uses real OpenSpec relocation and terminalizes the same schema-v4 Run before checkpoint readiness', async () => {
     const f = await flowkitArchiveFixture();
     const priorPath = process.env['PATH'];
-    process.env['PATH'] = `${dirname(openspecBin!)}${delimiter}${priorPath ?? ''}`;
+    process.env['PATH'] = `${dirname(openspecBin)}${delimiter}${priorPath ?? ''}`;
     try {
       const explore = await prepareActionExecution({ repoRoot: f.repoRoot, deliveryId: f.deliveryId, entry: 'next', now: f.now });
       assert.equal(explore.package.run.action, 'explore');
@@ -438,7 +484,7 @@ describe('OpenSpec 1.7 real CLI conformance', { skip: openspecBin === undefined 
         result: { executionStatus: 'completed', summary: 'approved apply', reviewVerdict: 'approved', reviewFindings: [] },
       });
       await activateStructuredOpenSpecIntegration(f.repoRoot);
-      const realAdapter = new OpenSpecCliAdapter({ repoRoot: f.repoRoot, executable: openspecBin! });
+      const realAdapter = new OpenSpecCliAdapter({ repoRoot: f.repoRoot, executable: openspecBin });
       assert.equal((await realAdapter.validateChange(f.changeId, true)).valid, true);
       await recordOwnerDecision(f.repoRoot, {
         decision: 'authorize-archive',

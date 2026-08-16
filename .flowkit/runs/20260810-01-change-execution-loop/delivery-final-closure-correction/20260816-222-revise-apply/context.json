@@ -1,0 +1,615 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260816-222-revise-apply",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "revise-apply",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "0110035012bbff384366db6bca7aec057a17d138bf92d10745e55d8c3c4f4c2f",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-222-revise-apply/",
+  "changeKey": "I1",
+  "changeId": "delivery-final-closure-correction",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-221-review-apply/result.json",
+    "versionFingerprint": "a7f308e58d1b98b1ffda712becb0c47f6e852567c930c6b41d7c8831b797213f",
+    "kind": "run-result"
+  },
+  "sourceReviewRun": "20260816-221-review-apply",
+  "sourceReviewVerdict": "changes-requested",
+  "canonicalBase": "1783983440e4d1b29d6282bc5c1af55d390f392d",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-221-review-apply/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "a7f308e58d1b98b1ffda712becb0c47f6e852567c930c6b41d7c8831b797213f"
+    },
+    {
+      "ref": "openspec/changes/delivery-final-closure-correction/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+    },
+    {
+      "ref": "openspec/changes/delivery-final-closure-correction/design.md",
+      "versionFingerprint": "2a07f018642a88b2fc0d7fe73c0359370367231ded1f395f2536f967ef95ea6e",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-final-closure-correction/proposal.md",
+      "versionFingerprint": "ce26ca77162966fcf05857e35dbced43949204f88a05801dd2c15d3a32d07331",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-final-closure-correction/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+      "versionFingerprint": "21ccb9e604b8d0cc51756e414289ab42eef056e6ef57785553aafec0b9f97a86",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-final-closure-correction/specs/flowkit-change-verification-selection/spec.md",
+      "versionFingerprint": "a24f6c14c65747a7677038924af4c8062848ac2fa10b5689b63002cd4fa792aa",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-final-closure-correction/specs/flowkit-core-hardening-and-release-candidate/spec.md",
+      "versionFingerprint": "f7639dc8603a5b3deaca1ce792e1f1e1c2c818670c1b74382515701adc678cb3",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-final-closure-correction/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+      "versionFingerprint": "7b0bed437ac8f318d8facbfd63133ce03720bdac89f66be25455df3edd8cd674",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-final-closure-correction/tasks.md",
+      "versionFingerprint": "1c94d1b80032ba20197fa4f3818cf0817ec60bf59bb294be96a1badee9ccae05",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "delivery-final-closure-correction",
+      "runId": "20260816-222-revise-apply",
+      "action": "revise-apply",
+      "role": "author",
+      "semanticInputFingerprint": "0110035012bbff384366db6bca7aec057a17d138bf92d10745e55d8c3c4f4c2f"
+    },
+    "definition": {
+      "action": "revise-apply",
+      "version": 1,
+      "role": "author",
+      "goalClass": "close-apply-author-findings",
+      "mutationClass": "implementation-and-verification-revision",
+      "outputClass": "revised-implementation-candidate",
+      "terminalContract": {
+        "kind": "implementation",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": true,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+      },
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/design.md",
+        "versionFingerprint": "2a07f018642a88b2fc0d7fe73c0359370367231ded1f395f2536f967ef95ea6e",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/proposal.md",
+        "versionFingerprint": "ce26ca77162966fcf05857e35dbced43949204f88a05801dd2c15d3a32d07331",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+        "versionFingerprint": "21ccb9e604b8d0cc51756e414289ab42eef056e6ef57785553aafec0b9f97a86",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "a24f6c14c65747a7677038924af4c8062848ac2fa10b5689b63002cd4fa792aa",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/specs/flowkit-core-hardening-and-release-candidate/spec.md",
+        "versionFingerprint": "f7639dc8603a5b3deaca1ce792e1f1e1c2c818670c1b74382515701adc678cb3",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+        "versionFingerprint": "7b0bed437ac8f318d8facbfd63133ce03720bdac89f66be25455df3edd8cd674",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/tasks.md",
+        "versionFingerprint": "1c94d1b80032ba20197fa4f3818cf0817ec60bf59bb294be96a1badee9ccae05",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-221-review-apply/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "a7f308e58d1b98b1ffda712becb0c47f6e852567c930c6b41d7c8831b797213f"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260816-221-review-apply",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-221-review-apply/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "a7f308e58d1b98b1ffda712becb0c47f6e852567c930c6b41d7c8831b797213f"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "I1-RA-001",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "G1 real-process regression does not consume the propagated resolved OpenSpec executable authority",
+          "problem": "218/219 approved Proposal freezes one resolved OpenSpec invocation identity shared by production adapter, Change Verification, G1 real-process regression and Delivery verification. In 220, executeVerificationSelection correctly propagates the current adapter's resolved executable through FLOWKIT_OPENSPEC_BIN, and the real OpenSpec suite consumes it. But G1's real-process fixture constructs default OpenSpec adapters / spawns the product CLI without consuming that propagated explicit identity. Therefore a legal explicit-resolved environment still requires an unrelated ambient PATH discovery for G1.",
+          "contractRef": "218 approved Proposal `What Changes` first bullet; flowkit-openspec-1-7-thin-integration requirement `OpenSpec executable resolution 必须只有一个实际 invocation authority`; flowkit-change-verification-selection scenario `OpenSpec resolved executable identity is propagated from the current authority`",
+          "invariant": "Once the current operation has resolved an OpenSpec executable identity, affected Verification consumers and the G1 real-process regression must consume that same authority and must not rediscover a second executable through an ambient PATH assumption.",
+          "requiredOutcome": "Revise Apply so the G1 real-process regression consumes the same current resolved OpenSpec executable authority already supplied by Verification, without requiring a second repo-local or ambient PATH discovery. Preserve the existing production resolver/launcher authority and do not add a new executable registry or dependency.",
+          "acceptance": [
+            "With a valid explicit OpenSpec 1.7 executable supplied as the current resolved authority, no repo-local OpenSpec authority, and no independent openspec entry on ambient PATH, the selected G1 real-process regression passes all 7 scenarios.",
+            "The real OpenSpec conformance suite continues to execute all 5 required cases in the same environment.",
+            "PATH/global default, Windows ps1-only/cmd-only/both precedence, and explicit executable unit counterfactuals remain green.",
+            "The fix stays within the approved I1 apply/revise-apply mutation surface or otherwise fails closed rather than silently expanding scope.",
+            "No second executable discovery/persistence authority, project OpenSpec dependency, runner scheduler/concurrency change, or Delivery Full Test lifecycle behavior is introduced."
+          ]
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "verificationView": {
+      "status": "unavailable",
+      "resultRef": {
+        "ref": "openspec/changes/delivery-final-closure-correction/verification.md",
+        "versionFingerprint": "3c83ab0b118efc444896b2813cc8cb8d86442d82946972a5c4e47f63cda63864",
+        "kind": "verification-summary"
+      }
+    },
+    "externalContextFingerprint": "b6ad5528f7b4b5b25341b44f87ffaa1ea0e5a227bc555258173bdd25f133cc97",
+    "requiredResultContract": {
+      "kind": "implementation",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": true,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    },
+    "compactEntryWorkspaceIdentity": {
+      "canonicalBase": "1783983440e4d1b29d6282bc5c1af55d390f392d",
+      "workspaceFingerprint": "e06ee1a1b3df667fb1638e51f0307c86ee5d04db7ce3eb4386a46530e6e30cde",
+      "entries": [
+        {
+          "path": "openspec/changes/delivery-final-closure-correction/.openspec.yaml",
+          "state": "untracked",
+          "contentFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+        },
+        {
+          "path": "openspec/changes/delivery-final-closure-correction/design.md",
+          "state": "untracked",
+          "contentFingerprint": "2a07f018642a88b2fc0d7fe73c0359370367231ded1f395f2536f967ef95ea6e"
+        },
+        {
+          "path": "openspec/changes/delivery-final-closure-correction/explore.md",
+          "state": "untracked",
+          "contentFingerprint": "996f48a5c693428e2fb4a9e4a6fae4bb00d033a1425f13f624860ace7630d24e"
+        },
+        {
+          "path": "openspec/changes/delivery-final-closure-correction/proposal.md",
+          "state": "untracked",
+          "contentFingerprint": "ce26ca77162966fcf05857e35dbced43949204f88a05801dd2c15d3a32d07331"
+        },
+        {
+          "path": "openspec/changes/delivery-final-closure-correction/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "21ccb9e604b8d0cc51756e414289ab42eef056e6ef57785553aafec0b9f97a86"
+        },
+        {
+          "path": "openspec/changes/delivery-final-closure-correction/specs/flowkit-change-verification-selection/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "a24f6c14c65747a7677038924af4c8062848ac2fa10b5689b63002cd4fa792aa"
+        },
+        {
+          "path": "openspec/changes/delivery-final-closure-correction/specs/flowkit-core-hardening-and-release-candidate/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "f7639dc8603a5b3deaca1ce792e1f1e1c2c818670c1b74382515701adc678cb3"
+        },
+        {
+          "path": "openspec/changes/delivery-final-closure-correction/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "7b0bed437ac8f318d8facbfd63133ce03720bdac89f66be25455df3edd8cd674"
+        },
+        {
+          "path": "openspec/changes/delivery-final-closure-correction/tasks.md",
+          "state": "untracked",
+          "contentFingerprint": "e3aab7b72f52f5e30bbc94b464459ef01ce29a05e5a9cdaf32eb305f5e74f22f"
+        },
+        {
+          "path": "openspec/changes/delivery-final-closure-correction/verification.md",
+          "state": "untracked",
+          "contentFingerprint": "3c83ab0b118efc444896b2813cc8cb8d86442d82946972a5c4e47f63cda63864"
+        },
+        {
+          "path": "openspec/delivery-groups/20260810-01-change-execution-loop.yaml",
+          "state": "modified",
+          "contentFingerprint": "2e46163d18528e6acaced91fc05478d9795c17cbb1175f572fc5f85996c2dfe3"
+        },
+        {
+          "path": "scripts/verification.ts",
+          "state": "modified",
+          "contentFingerprint": "71f378b5f0d4b86f954e8e87d09bd7b595e2d5df4d37250a1b7ef7bb0ecde91a"
+        },
+        {
+          "path": "src/integrations/openspec/openspec-cli-adapter.ts",
+          "state": "modified",
+          "contentFingerprint": "fb2f3c0dbee4739d74cedc89429cfbf77e04d44795e19f01a05b50c7f806c1c8"
+        },
+        {
+          "path": "src/integrations/openspec/openspec-executable.ts",
+          "state": "untracked",
+          "contentFingerprint": "a42a45c157ac22109ebf24e0977ce6c756fa7e8df26062c3b41a3bc45edcaf8f"
+        },
+        {
+          "path": "src/services/f1-checkpoint-boundary-service.ts",
+          "state": "modified",
+          "contentFingerprint": "af989eacdddef1cf3cd2c5c753e164b63001e3ec295f2a7b7d1b90f555662a42"
+        },
+        {
+          "path": "src/verification/change-selection/evidence.ts",
+          "state": "modified",
+          "contentFingerprint": "83a32c9224c59c6daf4bc548920b3209226664f82a5a92e3a70baa3d9ba4dc80"
+        },
+        {
+          "path": "src/verification/change-selection/module-map.ts",
+          "state": "modified",
+          "contentFingerprint": "8a9de49f76c3284d5777c5e04b77857cf21a170093f46353fceea24263bf6832"
+        },
+        {
+          "path": "tests/integration/g1-change-cli-end-to-end.test.ts",
+          "state": "modified",
+          "contentFingerprint": "553b1824bdfa8e8754f3bbe3d7800b7843f0049b588c3f441d656df6f3b92bd4"
+        },
+        {
+          "path": "tests/integration/openspec-1-7-real-cli.test.ts",
+          "state": "modified",
+          "contentFingerprint": "86e155221acd2d318a5213c15bf99bbc182ec19447586db0d639bd019af55f99"
+        },
+        {
+          "path": "tests/unit/integrations/openspec-cli-adapter.test.ts",
+          "state": "modified",
+          "contentFingerprint": "fc941bff817b79e9384088c37f756ff8e1046c7bc4d0fde4d223cf051d6c0f20"
+        },
+        {
+          "path": "tests/unit/services/a1-write-service.test.ts",
+          "state": "modified",
+          "contentFingerprint": "555c306c0fda48ffb7900f2ace293301e901413f1bb1173b2cd353e784311ec0"
+        },
+        {
+          "path": "tests/unit/services/f1-checkpoint-boundary-service.test.ts",
+          "state": "modified",
+          "contentFingerprint": "c7e5cd602e870c5084a2a64f0d2a185e6a104b0e1f617365f9daf381f357e1f6"
+        },
+        {
+          "path": "tests/unit/verification/change-selection/evidence.test.ts",
+          "state": "modified",
+          "contentFingerprint": "c8a889e284bdff6d6326ad513eac56bd70e9c55795f1d9beecc7fdf07cafdec8"
+        },
+        {
+          "path": "tests/unit/verification/change-selection/module-map.test.ts",
+          "state": "modified",
+          "contentFingerprint": "da2ef4362882ba159a24becf986820a06e41e1e99244b07e1d2d4f2326331ba0"
+        },
+        {
+          "path": "tests/unit/verification/verification-plan.test.ts",
+          "state": "modified",
+          "contentFingerprint": "6c339057f3a2af2d38676daec0bdce298aaf79bf34add24351d9300b9cbbb5db"
+        }
+      ]
+    },
+    "mutationDeclaration": {
+      "schemaVersion": 1,
+      "action": "revise-apply",
+      "designRef": {
+        "ref": "openspec/changes/delivery-final-closure-correction/design.md",
+        "kind": "produced-artifact",
+        "versionFingerprint": "2a07f018642a88b2fc0d7fe73c0359370367231ded1f395f2536f967ef95ea6e"
+      },
+      "selectors": [
+        {
+          "kind": "exact",
+          "path": "openspec/changes/delivery-final-closure-correction/tasks.md"
+        },
+        {
+          "kind": "exact",
+          "path": "openspec/changes/delivery-final-closure-correction/verification.md"
+        },
+        {
+          "kind": "exact",
+          "path": "scripts/verification.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/integrations/openspec/openspec-cli-adapter.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/integrations/openspec/openspec-executable.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/services/f1-checkpoint-boundary-service.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/verification/change-selection/evidence.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/verification/change-selection/module-map.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/integration/g1-change-cli-end-to-end.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/integration/openspec-1-7-real-cli.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/integrations/openspec-cli-adapter.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/services/a1-write-service.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/services/f1-checkpoint-boundary-service.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/verification/change-selection/evidence.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/verification/change-selection/module-map.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/verification/verification-plan.test.ts"
+        }
+      ]
+    }
+  },
+  "compactEntryWorkspaceIdentity": {
+    "canonicalBase": "1783983440e4d1b29d6282bc5c1af55d390f392d",
+    "workspaceFingerprint": "e06ee1a1b3df667fb1638e51f0307c86ee5d04db7ce3eb4386a46530e6e30cde",
+    "entries": [
+      {
+        "path": "openspec/changes/delivery-final-closure-correction/.openspec.yaml",
+        "state": "untracked",
+        "contentFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+      },
+      {
+        "path": "openspec/changes/delivery-final-closure-correction/design.md",
+        "state": "untracked",
+        "contentFingerprint": "2a07f018642a88b2fc0d7fe73c0359370367231ded1f395f2536f967ef95ea6e"
+      },
+      {
+        "path": "openspec/changes/delivery-final-closure-correction/explore.md",
+        "state": "untracked",
+        "contentFingerprint": "996f48a5c693428e2fb4a9e4a6fae4bb00d033a1425f13f624860ace7630d24e"
+      },
+      {
+        "path": "openspec/changes/delivery-final-closure-correction/proposal.md",
+        "state": "untracked",
+        "contentFingerprint": "ce26ca77162966fcf05857e35dbced43949204f88a05801dd2c15d3a32d07331"
+      },
+      {
+        "path": "openspec/changes/delivery-final-closure-correction/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "21ccb9e604b8d0cc51756e414289ab42eef056e6ef57785553aafec0b9f97a86"
+      },
+      {
+        "path": "openspec/changes/delivery-final-closure-correction/specs/flowkit-change-verification-selection/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "a24f6c14c65747a7677038924af4c8062848ac2fa10b5689b63002cd4fa792aa"
+      },
+      {
+        "path": "openspec/changes/delivery-final-closure-correction/specs/flowkit-core-hardening-and-release-candidate/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "f7639dc8603a5b3deaca1ce792e1f1e1c2c818670c1b74382515701adc678cb3"
+      },
+      {
+        "path": "openspec/changes/delivery-final-closure-correction/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "7b0bed437ac8f318d8facbfd63133ce03720bdac89f66be25455df3edd8cd674"
+      },
+      {
+        "path": "openspec/changes/delivery-final-closure-correction/tasks.md",
+        "state": "untracked",
+        "contentFingerprint": "e3aab7b72f52f5e30bbc94b464459ef01ce29a05e5a9cdaf32eb305f5e74f22f"
+      },
+      {
+        "path": "openspec/changes/delivery-final-closure-correction/verification.md",
+        "state": "untracked",
+        "contentFingerprint": "3c83ab0b118efc444896b2813cc8cb8d86442d82946972a5c4e47f63cda63864"
+      },
+      {
+        "path": "openspec/delivery-groups/20260810-01-change-execution-loop.yaml",
+        "state": "modified",
+        "contentFingerprint": "2e46163d18528e6acaced91fc05478d9795c17cbb1175f572fc5f85996c2dfe3"
+      },
+      {
+        "path": "scripts/verification.ts",
+        "state": "modified",
+        "contentFingerprint": "71f378b5f0d4b86f954e8e87d09bd7b595e2d5df4d37250a1b7ef7bb0ecde91a"
+      },
+      {
+        "path": "src/integrations/openspec/openspec-cli-adapter.ts",
+        "state": "modified",
+        "contentFingerprint": "fb2f3c0dbee4739d74cedc89429cfbf77e04d44795e19f01a05b50c7f806c1c8"
+      },
+      {
+        "path": "src/integrations/openspec/openspec-executable.ts",
+        "state": "untracked",
+        "contentFingerprint": "a42a45c157ac22109ebf24e0977ce6c756fa7e8df26062c3b41a3bc45edcaf8f"
+      },
+      {
+        "path": "src/services/f1-checkpoint-boundary-service.ts",
+        "state": "modified",
+        "contentFingerprint": "af989eacdddef1cf3cd2c5c753e164b63001e3ec295f2a7b7d1b90f555662a42"
+      },
+      {
+        "path": "src/verification/change-selection/evidence.ts",
+        "state": "modified",
+        "contentFingerprint": "83a32c9224c59c6daf4bc548920b3209226664f82a5a92e3a70baa3d9ba4dc80"
+      },
+      {
+        "path": "src/verification/change-selection/module-map.ts",
+        "state": "modified",
+        "contentFingerprint": "8a9de49f76c3284d5777c5e04b77857cf21a170093f46353fceea24263bf6832"
+      },
+      {
+        "path": "tests/integration/g1-change-cli-end-to-end.test.ts",
+        "state": "modified",
+        "contentFingerprint": "553b1824bdfa8e8754f3bbe3d7800b7843f0049b588c3f441d656df6f3b92bd4"
+      },
+      {
+        "path": "tests/integration/openspec-1-7-real-cli.test.ts",
+        "state": "modified",
+        "contentFingerprint": "86e155221acd2d318a5213c15bf99bbc182ec19447586db0d639bd019af55f99"
+      },
+      {
+        "path": "tests/unit/integrations/openspec-cli-adapter.test.ts",
+        "state": "modified",
+        "contentFingerprint": "fc941bff817b79e9384088c37f756ff8e1046c7bc4d0fde4d223cf051d6c0f20"
+      },
+      {
+        "path": "tests/unit/services/a1-write-service.test.ts",
+        "state": "modified",
+        "contentFingerprint": "555c306c0fda48ffb7900f2ace293301e901413f1bb1173b2cd353e784311ec0"
+      },
+      {
+        "path": "tests/unit/services/f1-checkpoint-boundary-service.test.ts",
+        "state": "modified",
+        "contentFingerprint": "c7e5cd602e870c5084a2a64f0d2a185e6a104b0e1f617365f9daf381f357e1f6"
+      },
+      {
+        "path": "tests/unit/verification/change-selection/evidence.test.ts",
+        "state": "modified",
+        "contentFingerprint": "c8a889e284bdff6d6326ad513eac56bd70e9c55795f1d9beecc7fdf07cafdec8"
+      },
+      {
+        "path": "tests/unit/verification/change-selection/module-map.test.ts",
+        "state": "modified",
+        "contentFingerprint": "da2ef4362882ba159a24becf986820a06e41e1e99244b07e1d2d4f2326331ba0"
+      },
+      {
+        "path": "tests/unit/verification/verification-plan.test.ts",
+        "state": "modified",
+        "contentFingerprint": "6c339057f3a2af2d38676daec0bdce298aaf79bf34add24351d9300b9cbbb5db"
+      }
+    ]
+  },
+  "mutationDeclaration": {
+    "schemaVersion": 1,
+    "action": "revise-apply",
+    "designRef": {
+      "ref": "openspec/changes/delivery-final-closure-correction/design.md",
+      "kind": "produced-artifact",
+      "versionFingerprint": "2a07f018642a88b2fc0d7fe73c0359370367231ded1f395f2536f967ef95ea6e"
+    },
+    "selectors": [
+      {
+        "kind": "exact",
+        "path": "openspec/changes/delivery-final-closure-correction/tasks.md"
+      },
+      {
+        "kind": "exact",
+        "path": "openspec/changes/delivery-final-closure-correction/verification.md"
+      },
+      {
+        "kind": "exact",
+        "path": "scripts/verification.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/integrations/openspec/openspec-cli-adapter.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/integrations/openspec/openspec-executable.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/services/f1-checkpoint-boundary-service.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/verification/change-selection/evidence.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/verification/change-selection/module-map.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/integration/g1-change-cli-end-to-end.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/integration/openspec-1-7-real-cli.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/integrations/openspec-cli-adapter.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/services/a1-write-service.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/services/f1-checkpoint-boundary-service.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/verification/change-selection/evidence.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/verification/change-selection/module-map.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/verification/verification-plan.test.ts"
+      }
+    ]
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": true,
+    "mayWriteTestCode": true,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

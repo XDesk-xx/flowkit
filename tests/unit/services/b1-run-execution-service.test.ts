@@ -23,6 +23,7 @@ import {
   resumeRun,
   recoverArchiveTerminalRun,
   recoverContractResetPendingRun,
+  retryFailedChangeVerification,
 } from '../../../src/services/b1-run-execution-service.js';
 import { recordOwnerDecision } from '../../../src/services/a1-write-service.js';
 import { ownerDecisionRefFor } from '../../../src/domain/owner-provenance.js';
@@ -146,6 +147,20 @@ async function recordPreE2WriterMigrationStart(root: string): Promise<void> {
 
 afterEach(async () => {
   await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
+});
+
+describe('I1 Proposal archive-sync admission wiring', () => {
+  it('runs real archive-sync preflight after strict validation and before Proposal terminal completion', async () => {
+    const source = await readFile(join(process.cwd(), 'src/services/b1-run-execution-service.ts'), 'utf8');
+    const gate = source.indexOf("pkg.run.action === 'propose' || pkg.run.action === 'revise-propose'");
+    const strict = source.indexOf('openSpecAdapter.validateChange(pkg.run.changeId, true)', gate);
+    const preflight = source.indexOf('openSpecAdapter.preflightArchiveSync(pkg.run.changeId)', strict);
+    const completion = source.indexOf('await completeRun(runDir, logicalToCompleteRunInput', preflight);
+    assert.ok(gate >= 0, 'Proposal terminal gate must exist');
+    assert.ok(strict > gate, 'strict validation must run inside Proposal terminal gate');
+    assert.ok(preflight > strict, 'archive-sync preflight must run after strict validation');
+    assert.ok(completion > preflight, 'preflight must occur before terminal result publication');
+  });
 });
 
 async function freshActiveFixture(options: { changeId?: string } = {}) {
@@ -909,6 +924,66 @@ describe('E2 post-checkpoint three-file writer', () => {
     assert.equal(current.changeVerificationStatus, 'passed');
     assert.equal(current.runs.find((run) => run.runId === apply.run.runId)?.status, 'completed');
     assert.equal(current.runs.find((run) => run.runId === revise.package.run.runId)?.status, 'completed');
+  });
+});
+
+describe('I1 exact-candidate re-verification lifecycle', () => {
+  it('supersedes failed current Verification without changing the completed Apply Run', async () => {
+    const { root, deliveryId, changeId, changeRoot, apply } = await prepareV5ApplyReady({ changeId: 'archive-and-checkpoint-boundary', postE2Writer: true });
+    await writeFile(join(root, 'src', 'domain', 'types.ts'), 'export const value = 2;\n', 'utf8');
+    await writeFile(join(changeRoot, 'tasks.md'), '# Tasks\n\n- [x] fixture\n', 'utf8');
+    await admitActionResult({ repoRoot: root, deliveryId, actionPackage: apply, result: { executionStatus: 'completed', summary: 'applied' }, verificationExecutor: fixtureVerificationExecutor('failed'), openSpecAdapter: fixtureOpenSpecAdapter(root, changeId) });
+    const runDir = join(root, '.flowkit', 'runs', deliveryId, changeId, apply.run.runId);
+    const originResult = await readFile(join(runDir, 'result.json'), 'utf8');
+    const failedPublication = await readFile(join(changeRoot, 'verification.md'), 'utf8');
+    const failedFingerprint = createHash('sha256').update(failedPublication).digest('hex');
+    const runsBefore = (await readdir(join(root, '.flowkit', 'runs', deliveryId, changeId))).sort();
+    assert.equal((await snapshot(root, deliveryId)).changeVerificationStatus, 'failed');
+    await assert.rejects(readdir(join(changeRoot, 'verification-history')));
+    assert.equal(await readFile(join(runDir, 'result.json'), 'utf8'), originResult);
+
+    const retried = await retryFailedChangeVerification({
+      repoRoot: root,
+      deliveryId,
+      verificationExecutor: fixtureVerificationExecutor('passed'),
+      openSpecAdapter: fixtureOpenSpecAdapter(root, changeId),
+    });
+    assert.equal(retried.status, 'passed');
+    assert.equal(retried.originApplyRunId, apply.run.runId);
+    assert.equal(retried.previousVerificationFingerprint, failedFingerprint);
+    assert.equal(await readFile(join(runDir, 'result.json'), 'utf8'), originResult);
+    assert.equal(await readFile(join(changeRoot, 'verification-history', `${failedFingerprint}.md`), 'utf8'), failedPublication);
+    assert.deepEqual((await readdir(join(root, '.flowkit', 'runs', deliveryId, changeId))).sort(), runsBefore);
+    const current = await snapshot(root, deliveryId);
+    assert.equal(current.changeVerificationStatus, 'passed');
+    const projectedNext = next(current);
+    assert.equal(projectedNext.kind, 'action');
+    if (projectedNext.kind !== 'action') throw new Error('expected action next');
+    assert.equal(projectedNext.action, 'review-apply');
+  });
+
+  it('keeps repeated failed retry history and fails closed on candidate drift', async () => {
+    const first = await prepareV5ApplyReady({ changeId: 'archive-and-checkpoint-boundary', postE2Writer: true });
+    await writeFile(join(first.root, 'src', 'domain', 'types.ts'), 'export const value = 2;\n', 'utf8');
+    await writeFile(join(first.changeRoot, 'tasks.md'), '# Tasks\n\n- [x] fixture\n', 'utf8');
+    await admitActionResult({ repoRoot: first.root, deliveryId: first.deliveryId, actionPackage: first.apply, result: { executionStatus: 'completed', summary: 'applied' }, verificationExecutor: fixtureVerificationExecutor('failed'), openSpecAdapter: fixtureOpenSpecAdapter(first.root, first.changeId) });
+    const firstRetry = await retryFailedChangeVerification({ repoRoot: first.root, deliveryId: first.deliveryId, verificationExecutor: fixtureVerificationExecutor('failed'), openSpecAdapter: fixtureOpenSpecAdapter(first.root, first.changeId) });
+    assert.equal(firstRetry.status, 'failed');
+    const secondRetry = await retryFailedChangeVerification({ repoRoot: first.root, deliveryId: first.deliveryId, verificationExecutor: fixtureVerificationExecutor('passed'), openSpecAdapter: fixtureOpenSpecAdapter(first.root, first.changeId) });
+    assert.equal(secondRetry.status, 'passed');
+    assert.notEqual(secondRetry.previousVerificationFingerprint, firstRetry.previousVerificationFingerprint);
+    assert.equal((await snapshot(first.root, first.deliveryId)).conflicts.length, 0);
+
+    const drift = await prepareV5ApplyReady({ changeId: 'archive-and-checkpoint-boundary', postE2Writer: true });
+    await writeFile(join(drift.root, 'src', 'domain', 'types.ts'), 'export const value = 2;\n', 'utf8');
+    await writeFile(join(drift.changeRoot, 'tasks.md'), '# Tasks\n\n- [x] fixture\n', 'utf8');
+    await admitActionResult({ repoRoot: drift.root, deliveryId: drift.deliveryId, actionPackage: drift.apply, result: { executionStatus: 'completed', summary: 'applied' }, verificationExecutor: fixtureVerificationExecutor('failed'), openSpecAdapter: fixtureOpenSpecAdapter(drift.root, drift.changeId) });
+    await writeFile(join(drift.root, 'src', 'domain', 'types.ts'), 'export const value = 999;\n', 'utf8');
+    await assert.rejects(
+      retryFailedChangeVerification({ repoRoot: drift.root, deliveryId: drift.deliveryId, verificationExecutor: fixtureVerificationExecutor('passed'), openSpecAdapter: fixtureOpenSpecAdapter(drift.root, drift.changeId) }),
+      (error: unknown) => error instanceof FlowkitError && error.code === 'VERIFICATION_RETRY_CANDIDATE_DRIFT',
+    );
+    assert.equal((await snapshot(drift.root, drift.deliveryId)).changeVerificationStatus, 'failed');
   });
 });
 

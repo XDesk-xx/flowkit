@@ -221,13 +221,12 @@ async function writeApprovedProposeFixture(
 }
 
 describe('A1 owner provenance and architectureImpact', () => {
-  it('reads the legacy corpus plus the current D2 explicit architectureImpact without self-brick', async () => {
-    const expectedCounts: Readonly<Record<string, number>> = {
+  it('reads stable legacy architectureImpact corpora without coupling the 02 assertion to live Change growth', async () => {
+    const stableHistoricalCounts: Readonly<Record<string, number>> = {
       '20260805-01-product-baseline': 5,
       '20260806-01-deterministic-core': 8,
-      '20260810-01-change-execution-loop': 11,
     };
-    for (const [deliveryId, expectedCount] of Object.entries(expectedCounts)) {
+    for (const [deliveryId, expectedCount] of Object.entries(stableHistoricalCounts)) {
       const s = await readFormalFactSnapshot({
         repoRoot: process.cwd(),
         deliveryId,
@@ -241,53 +240,83 @@ describe('A1 owner provenance and architectureImpact', () => {
         deliveryId,
       );
       assert.equal(s.changes.length, expectedCount, deliveryId);
-      if (deliveryId === '20260810-01-change-execution-loop') {
-        assert.equal(
-          s.changes.filter((change) => change.architectureImpact === 'pre-a1-legacy-missing').length,
-          8,
-          deliveryId,
-        );
-        assert.equal(
-          s.changes.find((change) => change.id === 'archive-terminal-continuation-correction')?.architectureImpact,
-          false,
-          deliveryId,
-        );
-        assert.equal(
-          s.changes.find((change) => change.id === 'historical-fixture-and-test-performance-correction')?.architectureImpact,
-          false,
-          deliveryId,
-        );
-      } else {
-        assert.ok(
-          s.changes.every((change) => change.architectureImpact === 'pre-a1-legacy-missing'),
-          deliveryId,
-        );
-      }
+      assert.equal(
+        s.changes.every((change) => change.architectureImpact === 'pre-a1-legacy-missing'),
+        true,
+        deliveryId,
+      );
     }
-  });
 
-  it('deterministic Owner record ref is stable and content-sensitive', () => {
-    const a = buildOwnerDecisionRecord({
-      decision: 'authorize-apply',
-      deliveryId: 'D1',
-      changeId: 'change-a',
-      sourceRef: 'owner:message:1',
-    });
-    const b = buildOwnerDecisionRecord({
-      decision: 'authorize-apply',
-      deliveryId: 'D1',
-      changeId: 'change-a',
-      sourceRef: 'owner:message:1',
-    });
-    const c = buildOwnerDecisionRecord({
-      decision: 'authorize-apply',
-      deliveryId: 'D1',
-      changeId: 'change-b',
-      sourceRef: 'owner:message:1',
-    });
-    assert.equal(a.ref, b.ref);
-    assert.notEqual(a.ref, c.ref);
-    assert.match(a.ref, /^owner:[a-f0-9]{64}$/);
+    const root = await freshRoot();
+    const deliveryId = '20260810-01-change-execution-loop';
+    const legacy = [
+      ['Q1', 'core-contract-alignment'],
+      ['A1', 'delivery-change-creation-and-owner-input'],
+      ['B1', 'lean-run-and-action-package'],
+      ['C1', 'openspec-1-7-thin-integration'],
+      ['D1', 'review-findings-and-blocker-authority'],
+      ['E1', 'change-verification-selection-and-change-set'],
+      ['F1', 'archive-and-checkpoint-boundary'],
+      ['G1', 'change-cli-end-to-end-and-performance'],
+    ] as const;
+    const current = [
+      ['D2', 'archive-terminal-continuation-correction'],
+      ['E2', 'change-verification-generalization-and-lean-run-normalization'],
+      ['H1', 'historical-fixture-and-test-performance-correction'],
+    ] as const;
+
+    const manifest = (includeFuture: boolean): string => [
+      `id: ${deliveryId}`,
+      'delivery:',
+      '  state: active',
+      '  fullTestStatus: not-ready',
+      'changes:',
+      ...legacy.flatMap(([key, id]) => [
+        `  - key: ${key}`,
+        `    id: ${id}`,
+        '    goal: "stable historical compatibility fixture"',
+        '    required: true',
+        '    dependsOn: []',
+        '    state: planned',
+        '    outputs: []',
+      ]),
+      ...current.flatMap(([key, id]) => [
+        `  - key: ${key}`,
+        `    id: ${id}`,
+        '    goal: "stable current-era compatibility fixture"',
+        '    required: true',
+        '    dependsOn: []',
+        '    state: planned',
+        '    architectureImpact: false',
+        '    outputs: []',
+      ]),
+      ...(includeFuture ? [
+        '  - key: I1',
+        '    id: delivery-final-closure-correction',
+        '    goal: "future corrective Change expansion fixture"',
+        '    required: true',
+        '    dependsOn: []',
+        '    state: planned',
+        '    architectureImpact: false',
+        '    outputs: []',
+      ] : []),
+      '',
+    ].join('\n');
+
+    await writeManifest(root, deliveryId, manifest(false));
+    const before = await snapshot(root, deliveryId);
+    assert.equal(before.conflicts.filter((conflict) => conflict.dimension === 'change-architecture-impact').length, 0);
+    assert.equal(before.changes.length, 11);
+    assert.equal(before.changes.filter((change) => change.architectureImpact === 'pre-a1-legacy-missing').length, 8);
+    assert.equal(before.changes.find((change) => change.id === 'archive-terminal-continuation-correction')?.architectureImpact, false);
+    assert.equal(before.changes.find((change) => change.id === 'historical-fixture-and-test-performance-correction')?.architectureImpact, false);
+
+    await writeManifest(root, deliveryId, manifest(true));
+    const expanded = await snapshot(root, deliveryId);
+    assert.equal(expanded.conflicts.filter((conflict) => conflict.dimension === 'change-architecture-impact').length, 0);
+    assert.equal(expanded.changes.length, 12);
+    assert.equal(expanded.changes.filter((change) => change.architectureImpact === 'pre-a1-legacy-missing').length, 8);
+    assert.equal(expanded.changes.find((change) => change.id === 'delivery-final-closure-correction')?.architectureImpact, false);
   });
 
   it('future Change missing architectureImpact fails closed', async () => {

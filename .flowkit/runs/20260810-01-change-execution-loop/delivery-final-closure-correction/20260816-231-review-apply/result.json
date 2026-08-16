@@ -1,0 +1,48 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "Review 230 Apply: exact-candidate re-verification implementation and immutable 227 history preservation are coherent, but the new user-facing `flowkit verify --retry` write surface is not physically exercised by the selected tests-cli regression set. Reviewer intentionally replaced the --retry route in src/cli/main.ts with the existing read-only verify projection, then ran the exact physical tests-cli selector set; all 33/33 still passed. Formal Change Verification can therefore be green while the newly frozen CLI retry surface is broken.",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/delivery-final-closure-correction/verification.md",
+      "versionFingerprint": "1d8a2733fa1ecb38c47693b96b48b9eafb15c215503a303cf227627112f2fd4d",
+      "kind": "verification-summary"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "70053eeb595fabe3828f54277940d33ec1c6859dab424f7a969e051b22fcd1df"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "I1-RA-002",
+      "severity": "blocking",
+      "title": "Selected tests do not physically exercise the new `flowkit verify --retry` CLI write surface",
+      "problem": "228/229 approved Proposal freezes `flowkit verify --retry` as the only explicit re-verification write surface for completed Apply + failed Verification. 230 implements routing in src/cli/main.ts and src/cli/change-action.ts and thoroughly tests the underlying retry service/publication/Reader logic, but no selected CLI/G1 regression invokes `verify --retry`; only bare `flowkit verify` is exercised.",
+      "contractRef": "228 approved Proposal explicit `flowkit verify --retry`; flowkit-change-cli-end-to-end-and-performance explicit retry scenarios; tasks 7.5; Flowkit Explore Skill v2 Verification Closure",
+      "invariant": "A changed user-facing CLI behavior must be reached by a physical test selected by formal Verification; logical `tests-cli` selection is insufficient when no executed target invokes the changed route.",
+      "evidence": [
+        "230 changes src/cli/main.ts so `verify --retry` dispatches to retryChangeVerification(), and src/cli/change-action.ts adds that wrapper.",
+        "Selected tests contain G1 coverage for bare `flowkit verify` read-only behavior but no invocation of `verify --retry` or retryChangeVerification in diagnostic CLI/G1/unit CLI tests.",
+        "Reviewer changed only the --retry branch in src/cli/main.ts to call read-only projectChangeVerification().",
+        "With that broken route, the exact physical tests-cli selector set still passed 33/33, including G1.",
+        "Independent retry service/publication/Reader targeted tests passed 112/112, isolating the gap to CLI physical coverage."
+      ],
+      "impact": "Formal Change Verification can report PASS while the only operator-facing re-verification command required by the approved contract is nonfunctional or silently read-only.",
+      "location": "src/cli/main.ts / src/cli/change-action.ts and tests-cli physical regressions",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Add a regression inside the approved mutation surface that invokes the actual `flowkit verify --retry` CLI path against completed Apply + failed Verification + exact unchanged candidate, proving it publishes the superseding authority/history without allocating a Run. Breaking the route back to bare verify must make selected CLI verification fail.",
+      "acceptance": [
+        "A physical test selected by tests-cli invokes `flowkit verify --retry` through the actual CLI routing surface, not only retryFailedChangeVerification() directly.",
+        "It proves retry publishes new authority, preserves predecessor fingerprint-addressed history, and allocates no Formal Action/Run/NNN; bare verify remains read-only.",
+        "Routing --retry to bare projectChangeVerification makes the selected CLI regression fail.",
+        "Existing drift/history/repeated-retry regressions remain green.",
+        "Fix remains within the approved 29-selector apply/revise-apply surface or fails closed."
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}

@@ -8,6 +8,10 @@ import type { VerificationEvidenceRecord } from '../../../../src/verification/ch
 import {
   buildVerificationSelectionPublication,
   publishVerificationSelection,
+  publishCurrentVerificationMarkdown,
+  preserveCurrentVerificationPublication,
+  publishReverificationMarkdown,
+  validateCurrentReverificationChain,
   validatePendingVerificationSelection,
   readVerificationSelectionRecord,
   renderVerificationMarkdown,
@@ -205,6 +209,103 @@ describe('verification selection publication', () => {
       (error: unknown) => error instanceof FlowkitError && error.code === 'VERIFICATION_PUBLICATION_CONFLICT',
     );
     await assert.rejects(readFile(join(conflictDir, VERIFICATION_SELECTION_FILE), 'utf8'));
+  });
+
+  it('preserves immutable failed publication history and validates repeated re-verification lineage', async () => {
+    const root = await createTempDir();
+    roots.push(root);
+    const markdown = join(root, 'openspec', 'changes', 'e1', 'verification.md');
+    const failed = fixture('d'.repeat(64), '20260814-001-apply', 'failed');
+    const origin = await publishCurrentVerificationMarkdown({
+      canonicalVerificationPath: markdown,
+      model: {
+        producingRunId: failed.record.producingRunId,
+        canonicalBase: failed.record.canonicalBase,
+        postActionWorkspaceFingerprint: failed.record.postActionWorkspaceFingerprint,
+        actualChangeSet: failed.record.actualChangeSet,
+        selection: failed.record.selection,
+        verificationStatus: 'failed',
+      },
+      evidence: failed.evidence,
+    });
+    const originBytes = await readFile(markdown, 'utf8');
+    const preserved = await preserveCurrentVerificationPublication({ canonicalVerificationPath: markdown, expectedCurrentBytes: originBytes });
+    assert.equal(preserved.fingerprint, origin.versionFingerprint);
+    assert.equal(await readFile(join(root, 'openspec', 'changes', 'e1', 'verification-history', `${origin.versionFingerprint}.md`), 'utf8'), originBytes);
+
+    const retryFailedEvidence = evidence(failed.record.selection, failed.record.producingRunId, 'failed');
+    const firstRetry = await publishReverificationMarkdown({
+      canonicalVerificationPath: markdown,
+      model: {
+        producingRunId: failed.record.producingRunId,
+        canonicalBase: failed.record.canonicalBase,
+        postActionWorkspaceFingerprint: failed.record.postActionWorkspaceFingerprint,
+        actualChangeSet: failed.record.actualChangeSet,
+        selection: failed.record.selection,
+        verificationStatus: 'failed',
+      },
+      evidence: retryFailedEvidence,
+      lineage: {
+        reverificationOfRunId: failed.record.producingRunId,
+        originApplyVerificationFingerprint: origin.versionFingerprint,
+        previousVerificationRef: preserved.logicalRef,
+        previousVerificationFingerprint: preserved.fingerprint,
+      },
+    });
+    const firstRetryBytes = await readFile(markdown, 'utf8');
+    const firstPreserved = await preserveCurrentVerificationPublication({ canonicalVerificationPath: markdown, expectedCurrentBytes: firstRetryBytes });
+    assert.equal(firstPreserved.fingerprint, firstRetry.versionFingerprint);
+
+    const passedEvidence = evidence(failed.record.selection, failed.record.producingRunId, 'passed');
+    await publishReverificationMarkdown({
+      canonicalVerificationPath: markdown,
+      model: {
+        producingRunId: failed.record.producingRunId,
+        canonicalBase: failed.record.canonicalBase,
+        postActionWorkspaceFingerprint: failed.record.postActionWorkspaceFingerprint,
+        actualChangeSet: failed.record.actualChangeSet,
+        selection: failed.record.selection,
+        verificationStatus: 'passed',
+      },
+      evidence: passedEvidence,
+      lineage: {
+        reverificationOfRunId: failed.record.producingRunId,
+        originApplyVerificationFingerprint: origin.versionFingerprint,
+        previousVerificationRef: firstPreserved.logicalRef,
+        previousVerificationFingerprint: firstPreserved.fingerprint,
+      },
+    });
+    const currentBytes = await readFile(markdown, 'utf8');
+    const current = await validateCurrentReverificationChain({
+      canonicalVerificationPath: markdown,
+      currentMarkdown: currentBytes,
+      originRunId: failed.record.producingRunId,
+      originBinding: origin,
+    });
+    assert.equal(current.status, 'passed');
+
+    const originHistoryPath = join(root, 'openspec', 'changes', 'e1', 'verification-history', `${origin.versionFingerprint}.md`);
+    await rm(originHistoryPath);
+    await assert.rejects(
+      validateCurrentReverificationChain({ canonicalVerificationPath: markdown, currentMarkdown: currentBytes, originRunId: failed.record.producingRunId, originBinding: origin }),
+      (error: unknown) => error instanceof FlowkitError && error.code === 'VERIFICATION_RETRY_CHAIN_CONFLICT',
+    );
+    await writeFile(originHistoryPath, originBytes, 'utf8');
+
+    const selectionDrift = currentBytes.replace(
+      `- selectionFingerprint: \`${origin.selectionFingerprint}\``,
+      `- selectionFingerprint: \`${'f'.repeat(64)}\``,
+    );
+    await assert.rejects(
+      validateCurrentReverificationChain({ canonicalVerificationPath: markdown, currentMarkdown: selectionDrift, originRunId: failed.record.producingRunId, originBinding: origin }),
+      (error: unknown) => error instanceof FlowkitError && error.code === 'VERIFICATION_RETRY_CHAIN_CONFLICT',
+    );
+
+    await writeFile(originHistoryPath, 'tampered\n', 'utf8');
+    await assert.rejects(
+      validateCurrentReverificationChain({ canonicalVerificationPath: markdown, currentMarkdown: currentBytes, originRunId: failed.record.producingRunId, originBinding: origin }),
+      (error: unknown) => error instanceof FlowkitError && error.code === 'VERIFICATION_RETRY_CHAIN_CONFLICT',
+    );
   });
 
   it('uses one closed selection record validator and rejects unknown fields', () => {

@@ -11,7 +11,7 @@ import { renderResumeContext } from '../diagnostics/resume-context.js';
 import { renderStatus } from '../diagnostics/status.js';
 import { inspectPreparedRun, recoverArchiveTerminalRun, recoverContractResetPendingRun } from '../services/b1-run-execution-service.js';
 import { getVersion } from './version.js';
-import { projectChangeVerification, runArchiveOperator, runChangeOperator, type ChangeOperatorIntent } from './change-action.js';
+import { projectChangeVerification, retryChangeVerification, runArchiveOperator, runChangeOperator, type ChangeOperatorIntent } from './change-action.js';
 import {
   activateChange,
   createChange,
@@ -34,7 +34,7 @@ const DIAGNOSTIC_COMMANDS = new Set(['status', 'next', 'doctor', 'resume-context
 const CHANGE_OPERATOR_COMMANDS = new Set<ChangeOperatorIntent>(['explore', 'review', 'revise', 'propose', 'apply']);
 
 const USAGE =
-  'usage: flowkit <status|next|doctor|resume-context|explore|review|revise|propose|apply|verify|archive|create delivery|create change|owner record|recover contract-reset-pending|recover archive-terminal|activate|--version> [--result <path>]\n';
+  'usage: flowkit <status|next|doctor|resume-context|explore|review|revise|propose|apply|verify|archive|create delivery|create change|owner record|recover contract-reset-pending|recover archive-terminal|activate|--version> [--result <path>] [verify option: --retry]\n';
 
 function optionValue(args: readonly string[], name: string): string | undefined {
   const index = args.indexOf(name);
@@ -114,9 +114,11 @@ export async function runCli(invocation: CliInvocation): Promise<CliResult> {
       return { exitCode: result.exitCode, stdout: renderWriteResult(result.value), stderr: '' };
     }
 
-    if (args.length === 1 && args[0] === 'verify') {
+    if (args[0] === 'verify' && (args.length === 1 || (args.length === 2 && args[1] === '--retry'))) {
       const { deliveryId } = await loadDiagnosticContext(invocation.cwd);
-      const result = await projectChangeVerification(repoRoot, deliveryId);
+      const result = args[1] === '--retry'
+        ? await retryChangeVerification(repoRoot, deliveryId)
+        : await projectChangeVerification(repoRoot, deliveryId);
       return { exitCode: result.exitCode, stdout: renderWriteResult(result.value), stderr: '' };
     }
 

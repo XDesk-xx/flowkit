@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFile, spawn } from 'node:child_process';
 import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
-import { delimiter, dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { promisify } from 'node:util';
 import { after, afterEach, describe, it } from 'node:test';
@@ -18,11 +18,14 @@ const exec = promisify(execFile);
 const thisDir = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(thisDir, '../..');
 const binPath = resolve(projectRoot, 'src/bin/flowkit.ts');
-const projectBin = resolve(projectRoot, 'node_modules/.bin');
 const tsxLoaderUrl = pathToFileURL(resolve(projectRoot, 'node_modules/tsx/dist/loader.mjs')).href;
 const roots: string[] = [];
 const templateRoots: string[] = [];
 const g1FixtureSource = join(projectRoot, 'openspec', 'changes', 'archive', '2026-08-15-change-cli-end-to-end-and-performance');
+const resolvedOpenSpecExecutable = process.env['FLOWKIT_OPENSPEC_BIN'];
+if (resolvedOpenSpecExecutable === undefined || resolvedOpenSpecExecutable.trim() === '') {
+  throw new Error('FLOWKIT_OPENSPEC_BIN is required for G1 real-process OpenSpec coverage');
+}
 let boundaryTemplatesPromise: Promise<{ explore: string; approvedProposal: string }> | undefined;
 let realCliInvocationCount = 0;
 
@@ -33,7 +36,7 @@ function cli(root: string, args: readonly string[], extraEnv: NodeJS.ProcessEnv 
   return new Promise((resolveResult, reject) => {
     const child = spawn(process.execPath, ['--import', tsxLoaderUrl, binPath, ...args], {
       cwd: root,
-      env: { ...process.env, ...extraEnv, PATH: `${projectBin}${delimiter}${process.env.PATH ?? ''}`, NO_COLOR: '1', FORCE_COLOR: '0' },
+      env: { ...process.env, ...extraEnv, FLOWKIT_OPENSPEC_BIN: resolvedOpenSpecExecutable, NO_COLOR: '1', FORCE_COLOR: '0' },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     let stdout = '';
@@ -363,8 +366,7 @@ describe('G1 Change CLI real-process end-to-end', { concurrency: false }, () => 
     await owner(root, 'authorize-archive', changeId, 'archive-recovery');
     await enableThinIntegration(root);
 
-    const executable = join(projectBin, process.platform === 'win32' ? 'openspec.cmd' : 'openspec');
-    const realAdapter = new OpenSpecCliAdapter({ repoRoot: root, executable });
+    const realAdapter = new OpenSpecCliAdapter({ repoRoot: root, executable: resolvedOpenSpecExecutable });
     const prepared = await prepareActionExecution({ repoRoot: root, deliveryId, entry: 'next', openSpecAdapter: realAdapter });
     assert.equal(prepared.package.run.action, 'archive');
     const preArchiveOpenSpec = await createTempDir();
@@ -434,7 +436,7 @@ describe('G1 Change CLI real-process end-to-end', { concurrency: false }, () => 
   });
 
   it('records Change Verification failure through apply admission instead of fabricating success', async () => {
-    const { root, changeId } = await baseFixture({ changeId: 'verification-failure-change' });
+    const { root, changeId, deliveryId } = await baseFixture({ changeId: 'verification-failure-change' });
     await throughApprovedProposal(root, changeId, { invalidSpec: true });
     await owner(root, 'authorize-apply', changeId, 'apply-verification-failure');
     json(await cli(root, ['apply']));
@@ -443,8 +445,13 @@ describe('G1 Change CLI real-process end-to-end', { concurrency: false }, () => 
     const admitted = await admit(root, 'apply', completed('implementation complete; verification expected to fail'));
     assert.equal(admitted['mode'], 'admitted');
     await enableThinIntegration(root);
+    const verificationPath = join(root, 'openspec', 'changes', changeId, 'verification.md');
+    const verificationBefore = await readFile(verificationPath, 'utf8');
+    const runIdsBeforeVerifyProjection = await readdir(join(root, '.flowkit', 'runs', deliveryId, changeId));
     const verify = json(await cli(root, ['verify']));
     assert.equal(verify['status'], 'failed');
+    assert.equal(await readFile(verificationPath, 'utf8'), verificationBefore, 'bare verify must remain read-only');
+    assert.deepEqual(await readdir(join(root, '.flowkit', 'runs', deliveryId, changeId)), runIdsBeforeVerifyProjection, 'bare verify must not allocate a Run');
     const next = await cli(root, ['next']);
     assert.match(next.stdout, /blocked|verification/i);
   });

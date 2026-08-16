@@ -136,6 +136,31 @@ export async function captureCompactEntryWorkspaceIdentity(repoRoot: string): Pr
   return { canonicalBase, workspaceFingerprint, entries };
 }
 
+
+/** Reconstruct the producing Apply post-action compact identity while excluding only
+ * Core-owned Verification authority bytes from the current workspace. The original
+ * verification.md entry is restored from the producing Apply entry identity so the
+ * resulting fingerprint can be compared with the persisted post-action fingerprint. */
+export async function captureCompactReverificationCandidateIdentity(
+  repoRoot: string,
+  originEntryValue: unknown,
+  verificationLogicalRef: string,
+): Promise<import('../../domain/types.js').CompactEntryWorkspaceIdentity> {
+  const originEntry = validateCompactEntryWorkspaceIdentity(originEntryValue);
+  const current = await captureCompactEntryWorkspaceIdentity(repoRoot);
+  if (current.canonicalBase !== originEntry.canonicalBase) {
+    throw new FlowkitError('VERIFICATION_RETRY_CANDIDATE_DRIFT', 're-verification candidate canonical Base differs from producing Apply');
+  }
+  const historyPrefix = `${verificationLogicalRef.slice(0, verificationLogicalRef.lastIndexOf('/') + 1)}verification-history/`;
+  const entries = current.entries
+    .filter((entry) => entry.path !== verificationLogicalRef && !entry.path.startsWith(historyPrefix));
+  const originalVerificationEntry = originEntry.entries.find((entry) => entry.path === verificationLogicalRef);
+  if (originalVerificationEntry !== undefined) entries.push(originalVerificationEntry);
+  entries.sort((left, right) => left.path.localeCompare(right.path));
+  const workspaceFingerprint = sha256(canonicalJson({ canonicalBase: current.canonicalBase, entries }));
+  return { canonicalBase: current.canonicalBase, workspaceFingerprint, entries };
+}
+
 export function validateCompactEntryWorkspaceIdentity(value: unknown): import('../../domain/types.js').CompactEntryWorkspaceIdentity {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'compact entry workspace identity must be an object');

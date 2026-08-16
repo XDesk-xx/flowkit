@@ -43,6 +43,13 @@ export interface CurrentVerificationPublication {
   readonly actualChangeSet: readonly ActualChangeSetEntry[];
 }
 
+export interface ReverificationLineage {
+  readonly reverificationOfRunId: string;
+  readonly originApplyVerificationFingerprint: string;
+  readonly previousVerificationRef: string;
+  readonly previousVerificationFingerprint: string;
+}
+
 interface VerificationMarkdownModel {
   readonly producingRunId: string;
   readonly canonicalBase: string;
@@ -50,6 +57,7 @@ interface VerificationMarkdownModel {
   readonly selection: VerificationSelection;
   readonly verificationStatus: VerificationStatus;
   readonly actualChangeSet: readonly ActualChangeSetEntry[];
+  readonly reverification?: ReverificationLineage;
 }
 export interface VerificationSelectionBinding {
   readonly logicalRef: string;
@@ -141,6 +149,172 @@ export async function publishCurrentVerificationMarkdown(input: {
     selectionFingerprint: selection.selectionFingerprint,
     status: input.evidence.overallStatus,
   };
+}
+
+export async function preserveCurrentVerificationPublication(input: {
+  readonly canonicalVerificationPath: string;
+  readonly expectedCurrentBytes?: string;
+}): Promise<{ readonly logicalRef: string; readonly fingerprint: string; readonly bytes: string }> {
+  let bytes: string;
+  try { bytes = await readFile(input.canonicalVerificationPath, 'utf8'); }
+  catch (error) { throw new FlowkitError('VERIFICATION_RETRY_HISTORY_CONFLICT', 'current Verification publication is unavailable', { detail: error instanceof Error ? error.message : String(error) }); }
+  if (input.expectedCurrentBytes !== undefined && input.expectedCurrentBytes !== bytes) {
+    throw new FlowkitError('VERIFICATION_RETRY_HISTORY_CONFLICT', 'current Verification publication changed before immutable history preservation');
+  }
+  const fingerprint = sha256(bytes);
+  const authorityLogicalRef = normalizeCurrentVerificationLogicalRef(input.canonicalVerificationPath);
+  const authorityDir = authorityLogicalRef.slice(0, authorityLogicalRef.lastIndexOf('/'));
+  const historyDir = join(dirname(input.canonicalVerificationPath), 'verification-history');
+  await mkdir(historyDir, { recursive: true });
+  const historyPath = join(historyDir, `${fingerprint}.md`);
+  try {
+    await writeFile(historyPath, bytes, { encoding: 'utf8', flag: 'wx' });
+  } catch (error) {
+    let existing: string;
+    try { existing = await readFile(historyPath, 'utf8'); }
+    catch { throw new FlowkitError('VERIFICATION_RETRY_HISTORY_CONFLICT', 'cannot read existing immutable Verification history publication', { historyPath, detail: error instanceof Error ? error.message : String(error) }); }
+    if (existing !== bytes) {
+      throw new FlowkitError('VERIFICATION_RETRY_HISTORY_CONFLICT', 'fingerprint-addressed Verification history bytes differ from the publication they claim to preserve', { historyPath, fingerprint });
+    }
+  }
+  return { logicalRef: `${authorityDir}/verification-history/${fingerprint}.md`, fingerprint, bytes };
+}
+
+export async function publishReverificationMarkdown(input: {
+  readonly canonicalVerificationPath: string;
+  readonly model: CurrentVerificationPublication;
+  readonly evidence: VerificationEvidenceRecord;
+  readonly lineage: ReverificationLineage;
+}): Promise<{ readonly logicalRef: string; readonly versionFingerprint: string; readonly selectionFingerprint: string; readonly status: 'passed' | 'failed' | 'not-applicable' }> {
+  const selection = validateCurrentVerificationSelection(input.model.selection);
+  validateVerificationEvidenceForSelection(input.evidence, selection, input.model.producingRunId);
+  if (input.model.verificationStatus !== input.evidence.overallStatus) {
+    throw new FlowkitError('VERIFICATION_PUBLICATION_INVALID', 're-verification status does not match execution evidence');
+  }
+  validateReverificationLineageShape(input.lineage);
+  if (input.lineage.reverificationOfRunId !== input.model.producingRunId) {
+    throw new FlowkitError('VERIFICATION_PUBLICATION_INVALID', 're-verification lineage origin Run differs from producing Apply');
+  }
+  const rendered = renderVerificationMarkdown({ ...input.model, reverification: input.lineage }, input.evidence);
+  await mkdir(dirname(input.canonicalVerificationPath), { recursive: true });
+  const staging = `${input.canonicalVerificationPath}.${process.pid}.flowkit-staging`;
+  await writeFile(staging, rendered, 'utf8');
+  await rename(staging, input.canonicalVerificationPath);
+  return {
+    logicalRef: normalizeCurrentVerificationLogicalRef(input.canonicalVerificationPath),
+    versionFingerprint: sha256(rendered),
+    selectionFingerprint: selection.selectionFingerprint,
+    status: input.evidence.overallStatus,
+  };
+}
+
+export interface ParsedCurrentVerificationPublication {
+  readonly producingRunId: string;
+  readonly canonicalBase: string;
+  readonly postActionWorkspaceFingerprint: string;
+  readonly selectionFingerprint: string;
+  readonly status: VerificationStatus;
+  readonly reverification?: ReverificationLineage;
+}
+
+export function parseCurrentVerificationPublication(markdown: string): ParsedCurrentVerificationPublication {
+  const producingRunId = matchOne(markdown, /^- Producing Run: `([^`]+)`$/m, 'Producing Run');
+  const canonicalBase = matchOne(markdown, /^- canonicalBase: `([0-9a-f]{40,64})`$/m, 'canonicalBase');
+  const postActionWorkspaceFingerprint = matchOne(markdown, /^- postActionWorkspaceFingerprint: `([0-9a-f]{64})`$/m, 'postActionWorkspaceFingerprint');
+  const selectionFingerprint = matchOne(markdown, /^- selectionFingerprint: `([0-9a-f]{64})`$/m, 'selectionFingerprint');
+  const status = extractVerificationStatus(markdown);
+  const retryRun = /^- reverificationOfRunId: `([^`]+)`$/m.exec(markdown)?.[1];
+  const origin = /^- originApplyVerificationFingerprint: `([0-9a-f]{64})`$/m.exec(markdown)?.[1];
+  const previousRef = /^- previousVerificationRef: `([^`]+)`$/m.exec(markdown)?.[1];
+  const previousFingerprint = /^- previousVerificationFingerprint: `([0-9a-f]{64})`$/m.exec(markdown)?.[1];
+  const parts = [retryRun, origin, previousRef, previousFingerprint];
+  if (parts.some((part) => part !== undefined) && parts.some((part) => part === undefined)) {
+    throw new FlowkitError('VERIFICATION_RETRY_CHAIN_CONFLICT', 're-verification publication carries incomplete lineage metadata');
+  }
+  const reverification = retryRun === undefined ? undefined : validateReverificationLineageShape({
+    reverificationOfRunId: retryRun,
+    originApplyVerificationFingerprint: origin!,
+    previousVerificationRef: previousRef!,
+    previousVerificationFingerprint: previousFingerprint!,
+  });
+  return { producingRunId, canonicalBase, postActionWorkspaceFingerprint, selectionFingerprint, status, ...(reverification !== undefined && { reverification }) };
+}
+
+export async function validateCurrentReverificationChain(input: {
+  readonly canonicalVerificationPath: string;
+  readonly currentMarkdown: string;
+  readonly originRunId: string;
+  readonly originBinding: { readonly versionFingerprint: string; readonly selectionFingerprint: string; readonly status: VerificationStatus };
+}): Promise<ParsedCurrentVerificationPublication> {
+  const current = parseCurrentVerificationPublication(input.currentMarkdown);
+  if (current.reverification === undefined) {
+    throw new FlowkitError('VERIFICATION_RETRY_CHAIN_CONFLICT', 'current publication does not carry explicit re-verification lineage');
+  }
+  if (current.producingRunId !== input.originRunId || current.reverification.reverificationOfRunId !== input.originRunId ||
+      current.reverification.originApplyVerificationFingerprint !== input.originBinding.versionFingerprint ||
+      current.selectionFingerprint !== input.originBinding.selectionFingerprint) {
+    throw new FlowkitError('VERIFICATION_RETRY_CHAIN_CONFLICT', 'current re-verification publication does not bind the producing Apply terminal identity');
+  }
+  const authorityLogicalRef = normalizeCurrentVerificationLogicalRef(input.canonicalVerificationPath);
+  const authorityDir = authorityLogicalRef.slice(0, authorityLogicalRef.lastIndexOf('/'));
+  const historyPrefix = `${authorityDir}/verification-history/`;
+  const historyDir = join(dirname(input.canonicalVerificationPath), 'verification-history');
+  const seen = new Set<string>();
+  let node = current;
+  for (let depth = 0; depth < 32; depth += 1) {
+    const lineage = node.reverification;
+    if (lineage === undefined) {
+      throw new FlowkitError('VERIFICATION_RETRY_CHAIN_CONFLICT', 're-verification chain terminated before the original Apply publication');
+    }
+    if (lineage.reverificationOfRunId !== input.originRunId || lineage.originApplyVerificationFingerprint !== input.originBinding.versionFingerprint ||
+        node.producingRunId !== input.originRunId || node.postActionWorkspaceFingerprint !== current.postActionWorkspaceFingerprint ||
+        node.selectionFingerprint !== input.originBinding.selectionFingerprint) {
+      throw new FlowkitError('VERIFICATION_RETRY_CHAIN_CONFLICT', 're-verification chain changed origin Apply, candidate, or selection identity');
+    }
+    const fingerprint = lineage.previousVerificationFingerprint;
+    if (seen.has(fingerprint)) throw new FlowkitError('VERIFICATION_RETRY_CHAIN_CONFLICT', 're-verification history chain contains a cycle', { fingerprint });
+    seen.add(fingerprint);
+    const expectedRef = `${historyPrefix}${fingerprint}.md`;
+    if (lineage.previousVerificationRef !== expectedRef) {
+      throw new FlowkitError('VERIFICATION_RETRY_CHAIN_CONFLICT', 're-verification predecessor ref is outside the validated Verification history namespace', { expectedRef, actual: lineage.previousVerificationRef });
+    }
+    let previousBytes: string;
+    try { previousBytes = await readFile(join(historyDir, `${fingerprint}.md`), 'utf8'); }
+    catch (error) { throw new FlowkitError('VERIFICATION_RETRY_CHAIN_CONFLICT', 're-verification predecessor history publication is missing', { fingerprint, detail: error instanceof Error ? error.message : String(error) }); }
+    if (sha256(previousBytes) !== fingerprint) {
+      throw new FlowkitError('VERIFICATION_RETRY_CHAIN_CONFLICT', 're-verification predecessor history publication fingerprint mismatch', { fingerprint });
+    }
+    const previous = parseCurrentVerificationPublication(previousBytes);
+    if (previous.producingRunId !== input.originRunId || previous.postActionWorkspaceFingerprint !== current.postActionWorkspaceFingerprint || previous.selectionFingerprint !== input.originBinding.selectionFingerprint) {
+      throw new FlowkitError('VERIFICATION_RETRY_CHAIN_CONFLICT', 're-verification predecessor changed origin Apply, candidate, or selection identity');
+    }
+    if (fingerprint === input.originBinding.versionFingerprint) {
+      if (previous.reverification !== undefined || previous.status !== input.originBinding.status) {
+        throw new FlowkitError('VERIFICATION_RETRY_CHAIN_CONFLICT', 'origin Verification history publication does not exact-match the producing Apply terminal binding');
+      }
+      return current;
+    }
+    if (previous.reverification === undefined) {
+      throw new FlowkitError('VERIFICATION_RETRY_CHAIN_CONFLICT', 're-verification chain cannot terminate at a non-origin publication');
+    }
+    node = previous;
+  }
+  throw new FlowkitError('VERIFICATION_RETRY_CHAIN_CONFLICT', 're-verification history chain exceeds the bounded depth');
+}
+
+function validateReverificationLineageShape(value: ReverificationLineage): ReverificationLineage {
+  if (value.reverificationOfRunId.trim() === '' || !/^[0-9a-f]{64}$/.test(value.originApplyVerificationFingerprint) ||
+      !/^[0-9a-f]{64}$/.test(value.previousVerificationFingerprint) || value.previousVerificationRef.trim() === '' ||
+      value.previousVerificationRef.startsWith('/') || value.previousVerificationRef.includes('\\')) {
+    throw new FlowkitError('VERIFICATION_RETRY_CHAIN_CONFLICT', 're-verification lineage metadata is invalid');
+  }
+  return value;
+}
+
+function matchOne(markdown: string, pattern: RegExp, label: string): string {
+  const matches = [...markdown.matchAll(new RegExp(pattern.source, pattern.flags.includes('g') ? pattern.flags : `${pattern.flags}g`))];
+  if (matches.length !== 1 || matches[0]?.[1] === undefined) throw new FlowkitError('VERIFICATION_PUBLICATION_INVALID', `verification.md must contain exactly one ${label}`);
+  return matches[0][1];
 }
 
 function normalizeCurrentVerificationLogicalRef(path: string): string {
@@ -312,6 +486,12 @@ export function renderVerificationMarkdown(
     `- verificationCatalog: \`${record.selection.moduleMapLogicalRef}\``,
     `- verificationCatalogFingerprint: \`${record.selection.moduleMapFingerprint}\``,
     `- selectionFingerprint: \`${record.selection.selectionFingerprint}\``,
+    ...(record.reverification === undefined ? [] : [
+      `- reverificationOfRunId: \`${record.reverification.reverificationOfRunId}\``,
+      `- originApplyVerificationFingerprint: \`${record.reverification.originApplyVerificationFingerprint}\``,
+      `- previousVerificationRef: \`${record.reverification.previousVerificationRef}\``,
+      `- previousVerificationFingerprint: \`${record.reverification.previousVerificationFingerprint}\``,
+    ]),
     `- capabilityRelation: \`${record.selection.capabilityRelation.kind}\``,
     `- Verification environment: \`${evidence.environment}\``,
     `- Delivery Full Test status: \`${evidence.fullTestStatus}\``,

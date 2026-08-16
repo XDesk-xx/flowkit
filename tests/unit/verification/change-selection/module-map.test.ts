@@ -12,6 +12,7 @@ describe('verification module map', () => {
         'flowkit-archive-and-checkpoint-boundary',
         'flowkit-change-cli-end-to-end-and-performance',
         'flowkit-change-verification-selection',
+        'flowkit-core-hardening-and-release-candidate',
         'flowkit-core-model',
         'flowkit-formal-fact-reader-and-persistence',
         'flowkit-lean-run-and-action-package',
@@ -20,7 +21,7 @@ describe('verification module map', () => {
         'flowkit-runtime-foundation',
       ],
       verificationScopes: [
-        'openspec-current-change-strict', 'tests-cli', 'tests-execution', 'tests-openspec-runtime',
+        'openspec-current-change-archive-sync', 'openspec-current-change-strict', 'tests-cli', 'tests-execution', 'tests-openspec-runtime',
         'tests-persistence', 'tests-serialization', 'tests-verification', 'typecheck',
       ],
     });
@@ -31,6 +32,7 @@ describe('verification module map', () => {
     assert.deepEqual(selected.seedModuleIds, ['cli-diagnostics']);
     assert.equal(selected.verificationScopes.includes('tests-cli'), true);
     assert.equal(selected.capabilityIds.includes('flowkit-change-cli-end-to-end-and-performance'), true);
+    assert.equal(selected.capabilityIds.includes('flowkit-openspec-1-7-thin-integration'), true);
   });
 
   it('maps the F1 lifecycle integration into execution coverage', () => {
@@ -50,6 +52,18 @@ describe('verification module map', () => {
     const selected = selectAffectedVerificationModules(['tests/integration/e1-change-verification-selection.test.ts']);
     assert.deepEqual(selected.seedModuleIds, ['verification-selection']);
     assert.equal(selected.verificationScopes.includes('tests-verification'), true);
+  });
+
+  it('exact-owns the public verification executor and direct verification-plan regression', () => {
+    for (const path of [
+      'scripts/verification.ts',
+      'tests/unit/verification/verification-plan.test.ts',
+    ]) {
+      const selected = selectAffectedVerificationModules([path]);
+      assert.deepEqual(selected.seedModuleIds, ['verification-selection'], path);
+      assert.equal(selected.verificationScopes.includes('tests-verification'), true, path);
+      assert.equal(selected.capabilityIds.includes('flowkit-core-hardening-and-release-candidate'), true, path);
+    }
   });
 
   it('rejects overlap and dependency cycles', () => {

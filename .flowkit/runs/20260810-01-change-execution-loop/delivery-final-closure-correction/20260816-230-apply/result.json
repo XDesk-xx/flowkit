@@ -1,0 +1,18 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "apply",
+    "executionStatus": "completed",
+    "summary": "实现 exact-candidate re-verification lifecycle：bare verify 保持只读；verify --retry 仅在 completed Apply + failed Verification + exact candidate unchanged 时合法；失败 publication 进入 fingerprint-addressed immutable history；Reader 验证 same-origin/same-candidate/same-selection lineage；不新增 Change/Action/Run，不修改 timeout/concurrency/scheduler。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "c20d3208b9a3f423153fc216d7331e56afe4f3d4f643b65b7e01104e1d7749a6",
+    "currentVerification": {
+      "logicalRef": "openspec/changes/delivery-final-closure-correction/verification.md",
+      "versionFingerprint": "1d8a2733fa1ecb38c47693b96b48b9eafb15c215503a303cf227627112f2fd4d",
+      "selectionFingerprint": "8bb49e903f7ee4e1bd3944d6617ecc138fbd52cf467835db79003fa004257760",
+      "status": "passed"
+    }
+  }
+}

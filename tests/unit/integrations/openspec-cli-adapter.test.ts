@@ -63,12 +63,13 @@ describe('OpenSpecCliAdapter', () => {
     const adapter = new OpenSpecCliAdapter({
       repoRoot: f.root,
       platform: 'win32',
-      env: { PATH: `${first};${second}` },
+      env: { PATH: `${first};${second}`, FLOWKIT_OPENSPEC_BIN: undefined },
       runner: async (command, _args, options) => {
         calls.push({ command, ...(options.platform !== undefined && { platform: options.platform }) });
         return result('1.7.0\n');
       },
     });
+    assert.equal(await adapter.resolveExecutable(), join(second, 'openspec.ps1'));
     assert.equal(await adapter.getVersion(), '1.7.0');
     assert.equal(calls[0]?.command, join(second, 'openspec.ps1'));
     assert.equal(calls[0]?.platform, 'win32');
@@ -84,7 +85,7 @@ describe('OpenSpecCliAdapter', () => {
     const adapter = new OpenSpecCliAdapter({
       repoRoot: f.root,
       platform: 'win32',
-      env: { PATH: bin },
+      env: { PATH: bin, FLOWKIT_OPENSPEC_BIN: undefined },
       runner: async (command) => {
         calls.push(command);
         return result('', 9, { stderr: 'ps1 failed' });
@@ -103,11 +104,41 @@ describe('OpenSpecCliAdapter', () => {
     const adapter = new OpenSpecCliAdapter({
       repoRoot: f.root,
       platform: 'win32',
-      env: { PATH: bin },
+      env: { PATH: bin, FLOWKIT_OPENSPEC_BIN: undefined },
       runner: async (resolved) => { command = resolved; return result('1.7.0\n'); },
     });
+    assert.equal(await adapter.resolveExecutable(), join(bin, 'openspec.cmd'));
     assert.equal(await adapter.getVersion(), '1.7.0');
     assert.equal(command, join(bin, 'openspec.cmd'));
+  });
+
+  it('consumes a propagated resolved executable before platform PATH discovery', async () => {
+    const f = await rootFixture();
+    const propagated = 'C:/resolved/openspec.cmd';
+    let command = '';
+    const adapter = new OpenSpecCliAdapter({
+      repoRoot: f.root,
+      platform: 'win32',
+      env: { PATH: '', FLOWKIT_OPENSPEC_BIN: propagated },
+      runner: async (resolved) => { command = resolved; return result('1.7.0\n'); },
+    });
+    assert.equal(await adapter.resolveExecutable(), propagated);
+    assert.equal(await adapter.getVersion(), '1.7.0');
+    assert.equal(command, propagated);
+  });
+
+  it('keeps an explicit executable authoritative over propagated execution context', async () => {
+    const f = await rootFixture();
+    const explicit = 'C:/explicit/openspec.ps1';
+    const propagated = 'C:/resolved/openspec.cmd';
+    const adapter = new OpenSpecCliAdapter({
+      repoRoot: f.root,
+      executable: explicit,
+      platform: 'win32',
+      env: { PATH: '', FLOWKIT_OPENSPEC_BIN: propagated },
+      runner: async () => result('1.7.0\n'),
+    });
+    assert.equal(await adapter.resolveExecutable(), explicit);
   });
 
   it('preserves explicit executable authority without Windows shim discovery', async () => {
@@ -121,6 +152,7 @@ describe('OpenSpecCliAdapter', () => {
       env: { PATH: '' },
       runner: async (resolved) => { command = resolved; return result('1.7.0\n'); },
     });
+    assert.equal(await adapter.resolveExecutable(), explicit);
     assert.equal(await adapter.getVersion(), '1.7.0');
     assert.equal(command, explicit);
   });
@@ -133,9 +165,10 @@ describe('OpenSpecCliAdapter', () => {
     const adapter = new OpenSpecCliAdapter({
       repoRoot: f.root,
       platform: 'win32',
-      env: { PATH: empty },
+      env: { PATH: empty, FLOWKIT_OPENSPEC_BIN: undefined },
       runner: async () => { called = true; return result('1.7.0\n'); },
     });
+    await assert.rejects(adapter.resolveExecutable(), /shim not found/i);
     await assert.rejects(adapter.getVersion(), /shim not found/i);
     assert.equal(called, false);
   });

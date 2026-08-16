@@ -10,6 +10,19 @@ export interface CheckpointBoundaryHandoff {
   readonly ownerAuthorizationRef: string;
   readonly subject: string;
   readonly trailers: readonly string[];
+  readonly normalization: {
+    readonly authority: 'same-owner-checkpoint-authorization';
+    readonly scope: 'candidate-or-archive-touched-text-files';
+    readonly allowed: readonly ['collapse-redundant-eof-blank-lines', 'ensure-exactly-one-final-newline'];
+    readonly forbidden: readonly [
+      'trailing-spaces-or-tabs-cleanup',
+      'markdown-reflow',
+      'internal-whitespace-rewrite',
+      'semantic-text-change',
+      'unrelated-file-mutation',
+      'broad-formatter-execution',
+    ];
+  };
   readonly preflight: readonly ['git diff --check', 'git diff --cached --check'];
 }
 
@@ -74,6 +87,19 @@ export async function prepareCheckpointBoundaryHandoff(
       'Flowkit-Boundary: change-checkpoint',
       `Owner-Authorization: ${owner.ref}`,
     ],
+    normalization: {
+      authority: 'same-owner-checkpoint-authorization',
+      scope: 'candidate-or-archive-touched-text-files',
+      allowed: ['collapse-redundant-eof-blank-lines', 'ensure-exactly-one-final-newline'],
+      forbidden: [
+        'trailing-spaces-or-tabs-cleanup',
+        'markdown-reflow',
+        'internal-whitespace-rewrite',
+        'semantic-text-change',
+        'unrelated-file-mutation',
+        'broad-formatter-execution',
+      ],
+    },
     preflight: ['git diff --check', 'git diff --cached --check'],
   };
 }

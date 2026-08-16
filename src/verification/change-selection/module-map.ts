@@ -22,6 +22,7 @@ export const VERIFICATION_MODULE_MAP_LOGICAL_REF = 'src/verification/change-sele
 
 /** Stable logical verification identities. Concrete commands belong to the executor. */
 export const CLOSED_VERIFICATION_SCOPES = [
+  'openspec-current-change-archive-sync',
   'openspec-current-change-strict',
   'tests-cli',
   'tests-execution',
@@ -37,6 +38,7 @@ export const CLOSED_CAPABILITY_IDS = [
   'flowkit-change-cli-end-to-end-and-performance',
   'flowkit-change-verification-generalization-and-lean-run-normalization',
   'flowkit-change-verification-selection',
+  'flowkit-core-hardening-and-release-candidate',
   'flowkit-core-model',
   'flowkit-formal-fact-reader-and-persistence',
   'flowkit-lean-run-and-action-package',
@@ -53,6 +55,7 @@ const VERIFICATION_SELECTION_CAPABILITIES = [
   'flowkit-archive-and-checkpoint-boundary',
   'flowkit-change-cli-end-to-end-and-performance',
   'flowkit-change-verification-selection',
+  'flowkit-core-hardening-and-release-candidate',
   'flowkit-formal-fact-reader-and-persistence',
   'flowkit-lean-run-and-action-package',
 ] as const;
@@ -63,7 +66,7 @@ export const VERIFICATION_MODULE_MAP: readonly VerificationModule[] = [
     'change-contract',
     ['docs/flowkit-self-hosting-bootstrap-and-migration.md', 'openspec/changes', 'openspec/delivery-groups'],
     [],
-    ['openspec-current-change-strict'],
+    ['openspec-current-change-archive-sync', 'openspec-current-change-strict'],
     [...CLOSED_CAPABILITY_IDS],
     'no-candidate-change',
   ),
@@ -72,7 +75,7 @@ export const VERIFICATION_MODULE_MAP: readonly VerificationModule[] = [
     ['src/cli', 'src/diagnostics', 'tests/integration/diagnostic-cli-process.test.ts', 'tests/integration/diagnostic-cli.test.ts', 'tests/integration/g1-change-cli-end-to-end.test.ts', 'tests/unit/cli', 'tests/unit/diagnostics'],
     ['execution'],
     ['tests-cli', 'typecheck'],
-    ['flowkit-change-cli-end-to-end-and-performance', 'flowkit-policy-engine', 'flowkit-runtime-foundation'],
+    ['flowkit-change-cli-end-to-end-and-performance', 'flowkit-openspec-1-7-thin-integration', 'flowkit-policy-engine', 'flowkit-runtime-foundation'],
   ),
   module(
     'core-model',
@@ -111,9 +114,9 @@ export const VERIFICATION_MODULE_MAP: readonly VerificationModule[] = [
   ),
   module(
     'verification-selection',
-    ['src/verification/change-selection', 'tests/fixtures/e2-change-verification-generalization', 'tests/integration/e1-change-verification-selection.test.ts', 'tests/integration/e2-change-verification-generalization.test.ts', 'tests/integration/verification-commands.test.ts', 'tests/unit/verification/affected-scopes.test.ts', 'tests/unit/verification/change-selection'],
+    ['scripts/verification.ts', 'src/verification/change-selection', 'tests/fixtures/e2-change-verification-generalization', 'tests/integration/e1-change-verification-selection.test.ts', 'tests/integration/e2-change-verification-generalization.test.ts', 'tests/integration/verification-commands.test.ts', 'tests/unit/verification/affected-scopes.test.ts', 'tests/unit/verification/change-selection', 'tests/unit/verification/verification-plan.test.ts'],
     ['core-model', 'execution', 'openspec-runtime', 'persistence'],
-    ['openspec-current-change-strict', 'tests-verification', 'typecheck'],
+    ['openspec-current-change-archive-sync', 'openspec-current-change-strict', 'tests-verification', 'typecheck'],
     [...VERIFICATION_SELECTION_CAPABILITIES],
   ),
 ];

@@ -73,6 +73,7 @@ import { deriveMutationDeclaration } from '../verification/change-selection/muta
 import {
   captureEntryWorkspaceSnapshot,
   captureCompactEntryWorkspaceIdentity,
+  captureCompactReverificationCandidateIdentity,
   validateCompactEntryWorkspaceIdentity,
   validateEntryWorkspaceSnapshotRecord,
 } from '../verification/change-selection/entry-snapshot.js';
@@ -82,6 +83,9 @@ import {
   buildVerificationSelectionPublication,
   publishVerificationSelection,
   publishCurrentVerificationMarkdown,
+  parseCurrentVerificationPublication,
+  preserveCurrentVerificationPublication,
+  publishReverificationMarkdown,
   validatePendingVerificationSelection,
   validateTerminalVerificationSelectionBinding,
   type VerificationSelectionBinding,
@@ -1401,6 +1405,7 @@ export async function admitActionResult(input: AdmitActionResultInput): Promise<
         changeId: pkg.run.changeId, issues: validation.issues, status: validation.status,
       });
     }
+    await openSpecAdapter.preflightArchiveSync(pkg.run.changeId);
   }
 
   if (pkg.run.action === 'archive') {
@@ -1476,8 +1481,10 @@ async function publishCompactApplyVerification(input: {
     fullTestStatus: input.deliveryFullTestStatus, openSpecAdapter: input.openSpecAdapter, resultRefBase: verificationLogicalRef,
   });
   validateVerificationEvidenceForSelection(evidence, selection, input.context.runId);
+  const canonicalVerificationPath = join(projection.status.changeRoot, 'verification.md');
+  await preserveSupersededFailedVerificationBeforeApplyPublication(canonicalVerificationPath, input.context.runId);
   const binding = await publishCurrentVerificationMarkdown({
-    canonicalVerificationPath: join(projection.status.changeRoot, 'verification.md'),
+    canonicalVerificationPath,
     model: { producingRunId: input.context.runId, canonicalBase: entry.canonicalBase, postActionWorkspaceFingerprint: postAction.workspaceFingerprint, actualChangeSet: observed.actualChangeSet, selection, verificationStatus: evidence.overallStatus },
     evidence,
   });
@@ -1584,12 +1591,165 @@ async function publishV5ApplyVerificationSelection(input: {
     selection,
     verificationMarkdownLogicalRef: verificationLogicalRef,
   }, evidence);
+  const canonicalVerificationPath = join(projection.status.changeRoot, 'verification.md');
+  await preserveSupersededFailedVerificationBeforeApplyPublication(canonicalVerificationPath, input.context.runId);
   return publishVerificationSelection({
     runDir: input.runDir,
-    canonicalVerificationPath: join(projection.status.changeRoot, 'verification.md'),
+    canonicalVerificationPath,
     record,
     evidence,
   });
+}
+
+async function preserveSupersededFailedVerificationBeforeApplyPublication(
+  canonicalVerificationPath: string,
+  producingRunId: string,
+): Promise<void> {
+  let existing: string;
+  try { existing = await readFile(canonicalVerificationPath, 'utf8'); }
+  catch { return; }
+  let parsed: ReturnType<typeof parseCurrentVerificationPublication>;
+  try {
+    parsed = parseCurrentVerificationPublication(existing);
+  } catch {
+    // Pending/crash-window publications and arbitrary prewritten markers are not
+    // prior formal Verification authority. Preserve only a valid failed
+    // publication from another completed producer.
+    return;
+  }
+  if (parsed.status !== 'failed' || parsed.producingRunId === producingRunId) return;
+  await preserveCurrentVerificationPublication({ canonicalVerificationPath, expectedCurrentBytes: existing });
+}
+
+export async function retryFailedChangeVerification(input: {
+  readonly repoRoot: string;
+  readonly deliveryId: string;
+  readonly openSpecAdapter?: OpenSpecCliAdapter;
+  readonly verificationExecutor?: VerificationSelectionExecutor;
+}): Promise<{
+  readonly changeId: string;
+  readonly originApplyRunId: string;
+  readonly previousVerificationFingerprint: string;
+  readonly currentVerificationFingerprint: string;
+  readonly status: 'passed' | 'failed' | 'not-applicable';
+  readonly selectionFingerprint: string;
+}> {
+  const operation = await readFormalFactSnapshotOperation({
+    repoRoot: input.repoRoot,
+    deliveryId: input.deliveryId,
+    runsPathPrefix: '.flowkit/runs',
+    openspecChangesPath: 'openspec/changes',
+    manifestPathPrefix: 'openspec/delivery-groups',
+    ...(input.openSpecAdapter !== undefined && { openSpecAdapter: input.openSpecAdapter }),
+  });
+  const { snapshot } = operation;
+  if (snapshot.conflicts.length > 0) {
+    throw new FlowkitError('FORMAL_FACT_CONFLICT', 're-verification requires a conflict-free formal snapshot', { conflicts: snapshot.conflicts });
+  }
+  const change = getActiveChange(snapshot);
+  if (change === null) throw new FlowkitError('VERIFICATION_RETRY_NOT_ALLOWED', 're-verification requires exactly one active Change');
+  if (snapshot.changeVerificationStatus !== 'failed') {
+    throw new FlowkitError('VERIFICATION_RETRY_NOT_ALLOWED', 're-verification is admitted only when current formal Change Verification is failed', { status: snapshot.changeVerificationStatus ?? 'unavailable' });
+  }
+  if (snapshot.runs.some((run) => run.changeId === change.id && run.status === 'pending')) {
+    throw new FlowkitError('VERIFICATION_RETRY_NOT_ALLOWED', 're-verification is not admitted while the current Change has a pending Run');
+  }
+  const currentApply = computeResetAwareLineage(snapshot, change.id, 'apply').artifact;
+  if (currentApply === null || currentApply.status !== 'completed' || (currentApply.action !== 'apply' && currentApply.action !== 'revise-apply')) {
+    throw new FlowkitError('VERIFICATION_RETRY_NOT_ALLOWED', 're-verification requires one current completed Apply/revise-apply producer');
+  }
+  const runDir = join(input.repoRoot, '.flowkit', 'runs', input.deliveryId, change.id, currentApply.runId);
+  let context: ContextFile;
+  let result: RunResultFile;
+  try {
+    context = validateContextFile(JSON.parse(await readFile(join(runDir, 'context.json'), 'utf8')) as unknown);
+    result = admitC1RunResultForReader(await readFile(join(runDir, 'result.json'), 'utf8'), context.action, { runId: context.runId, deliveryId: context.deliveryId, changeId: context.changeId });
+  } catch (error) {
+    throw new FlowkitError('VERIFICATION_RETRY_NOT_ALLOWED', 'current Apply producer is not readable as a completed terminal Run', { detail: error instanceof Error ? error.message : String(error) });
+  }
+  if (context.schemaVersion !== 5 || !('compactEntryWorkspaceIdentity' in context) || context.compactEntryWorkspaceIdentity === undefined ||
+      result.runStatus !== 'completed' || result.terminalBinding?.currentVerification === undefined) {
+    throw new FlowkitError('VERIFICATION_RETRY_NOT_ALLOWED', 're-verification requires the post-E2 compact completed Apply terminal binding');
+  }
+  const binding = result.terminalBinding.currentVerification;
+  if (binding.status !== 'failed') {
+    throw new FlowkitError('VERIFICATION_RETRY_NOT_ALLOWED', 'origin Apply terminal Verification must be failed');
+  }
+  const actionPackage = context.actionPackage;
+  if (!('mutationDeclaration' in actionPackage) || actionPackage.mutationDeclaration === undefined) {
+    throw new FlowkitError('VERIFICATION_RETRY_NOT_ALLOWED', 'origin Apply is missing its persisted mutation declaration');
+  }
+  const adapter = input.openSpecAdapter ?? new OpenSpecCliAdapter({ repoRoot: input.repoRoot });
+  const projection = operation.openSpecProjection ?? await adapter.createOperationProjection(change.id);
+  if (projection.changeId !== change.id) throw new FlowkitError('VERIFICATION_RETRY_NOT_ALLOWED', 're-verification OpenSpec projection does not bind the active Change');
+  const canonicalVerificationPath = join(projection.status.changeRoot, 'verification.md');
+  const verificationLogicalRef = projection.status.changeRootLogical.replace(/\/+$/, '') + '/verification.md';
+  if (binding.logicalRef !== verificationLogicalRef) {
+    throw new FlowkitError('VERIFICATION_RETRY_NOT_ALLOWED', 'origin Apply Verification binding differs from the validated projected authority path', { expected: verificationLogicalRef, actual: binding.logicalRef });
+  }
+  const currentBytes = await readFile(canonicalVerificationPath, 'utf8');
+  const currentPublication = parseCurrentVerificationPublication(currentBytes);
+  if (currentPublication.status !== 'failed' || currentPublication.producingRunId !== currentApply.runId ||
+      currentPublication.postActionWorkspaceFingerprint.trim() === '' || currentPublication.selectionFingerprint !== binding.selectionFingerprint) {
+    throw new FlowkitError('VERIFICATION_RETRY_NOT_ALLOWED', 'current failed Verification publication does not bind the origin Apply identity');
+  }
+  const entry = validateCompactEntryWorkspaceIdentity(context.compactEntryWorkspaceIdentity);
+  const candidate = await captureCompactReverificationCandidateIdentity(input.repoRoot, entry, verificationLogicalRef);
+  if (candidate.workspaceFingerprint !== currentPublication.postActionWorkspaceFingerprint) {
+    throw new FlowkitError('VERIFICATION_RETRY_CANDIDATE_DRIFT', 'current candidate differs from the origin Apply post-action identity after excluding only Verification-owned bytes', {
+      expected: currentPublication.postActionWorkspaceFingerprint,
+      actual: candidate.workspaceFingerprint,
+    });
+  }
+  const observed = deriveCompactPostActionChangeObservation(entry, candidate, actionPackage.mutationDeclaration, new Set([verificationLogicalRef]));
+  const selection = buildVerificationSelection(observed.actualChangeSet, projection.status.artifactPaths.specs.logicalPaths);
+  if (selection.selectionFingerprint !== binding.selectionFingerprint || selection.selectionFingerprint !== currentPublication.selectionFingerprint) {
+    throw new FlowkitError('VERIFICATION_RETRY_SELECTION_DRIFT', 're-verification deterministic selection differs from the origin Apply selection', {
+      origin: binding.selectionFingerprint,
+      current: selection.selectionFingerprint,
+    });
+  }
+  if (snapshot.deliveryFullTestStatus === undefined) {
+    throw new FlowkitError('VERIFICATION_RETRY_NOT_ALLOWED', 're-verification requires Delivery Full Test status projection');
+  }
+  const evidence = await (input.verificationExecutor ?? executeVerificationSelection)({
+    repoRoot: input.repoRoot,
+    changeId: change.id,
+    runDir,
+    producingRunId: currentApply.runId,
+    selection,
+    fullTestStatus: snapshot.deliveryFullTestStatus,
+    openSpecAdapter: adapter,
+    resultRefBase: verificationLogicalRef,
+  });
+  validateVerificationEvidenceForSelection(evidence, selection, currentApply.runId);
+  const previous = await preserveCurrentVerificationPublication({ canonicalVerificationPath, expectedCurrentBytes: currentBytes });
+  const current = await publishReverificationMarkdown({
+    canonicalVerificationPath,
+    model: {
+      producingRunId: currentApply.runId,
+      canonicalBase: entry.canonicalBase,
+      postActionWorkspaceFingerprint: candidate.workspaceFingerprint,
+      actualChangeSet: observed.actualChangeSet,
+      selection,
+      verificationStatus: evidence.overallStatus,
+    },
+    evidence,
+    lineage: {
+      reverificationOfRunId: currentApply.runId,
+      originApplyVerificationFingerprint: binding.versionFingerprint,
+      previousVerificationRef: previous.logicalRef,
+      previousVerificationFingerprint: previous.fingerprint,
+    },
+  });
+  return {
+    changeId: change.id,
+    originApplyRunId: currentApply.runId,
+    previousVerificationFingerprint: previous.fingerprint,
+    currentVerificationFingerprint: current.versionFingerprint,
+    status: current.status,
+    selectionFingerprint: current.selectionFingerprint,
+  };
 }
 
 function descriptorsFromContext(context: ContextFile): RunDescriptors {

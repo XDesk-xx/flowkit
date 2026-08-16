@@ -73,6 +73,19 @@ describe('F1 checkpoint boundary handoff service', () => {
         'Flowkit-Boundary: change-checkpoint',
         `Owner-Authorization: ${f.ownerRef}`,
       ]);
+      assert.deepEqual(handoff.normalization, {
+        authority: 'same-owner-checkpoint-authorization',
+        scope: 'candidate-or-archive-touched-text-files',
+        allowed: ['collapse-redundant-eof-blank-lines', 'ensure-exactly-one-final-newline'],
+        forbidden: [
+          'trailing-spaces-or-tabs-cleanup',
+          'markdown-reflow',
+          'internal-whitespace-rewrite',
+          'semantic-text-change',
+          'unrelated-file-mutation',
+          'broad-formatter-execution',
+        ],
+      });
       assert.deepEqual(handoff.preflight, ['git diff --check', 'git diff --cached --check']);
     } finally {
       await rm(f.root, { recursive: true, force: true });
@@ -90,4 +103,23 @@ describe('F1 checkpoint boundary handoff service', () => {
       await rm(f.root, { recursive: true, force: true });
     }
   });
+  it('keeps checkpoint hygiene authority EOF-only and fail-closed for broader formatting', async () => {
+    const f = await fixture(true);
+    try {
+      const handoff = await prepareCheckpointBoundaryHandoff(f.root, f.deliveryId);
+      assert.deepEqual(handoff.normalization.allowed, [
+        'collapse-redundant-eof-blank-lines',
+        'ensure-exactly-one-final-newline',
+      ]);
+      assert.equal(handoff.normalization.forbidden.includes('trailing-spaces-or-tabs-cleanup'), true);
+      assert.equal(handoff.normalization.forbidden.includes('internal-whitespace-rewrite'), true);
+      assert.equal(handoff.normalization.forbidden.includes('semantic-text-change'), true);
+      assert.equal(handoff.normalization.forbidden.includes('unrelated-file-mutation'), true);
+      assert.equal(handoff.normalization.forbidden.includes('broad-formatter-execution'), true);
+      assert.deepEqual(handoff.preflight, ['git diff --check', 'git diff --cached --check']);
+    } finally {
+      await rm(f.root, { recursive: true, force: true });
+    }
+  });
+
 });
