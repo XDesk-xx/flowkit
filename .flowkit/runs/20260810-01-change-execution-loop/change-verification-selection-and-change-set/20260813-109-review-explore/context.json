@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 4,
+  "runId": "20260813-109-review-explore",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "review-explore",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "2b36f9cfd9599698224f5c7cf8751fc1e1753cacb230bbc09d73a2861813a8f5",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:52c2f519e846da1aab0ba16b4f2e2355ae362d0fb846f2a21302a2b5bdf17b6d",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-verification-selection-and-change-set",
+      "scope": "e1-two-time-boundaries-and-execution-reliability-primitives",
+      "requiredOutcomes": [
+        "E1 must preserve the immutable entry versus Core-owned post-action fact model, context v5 and ActionPackage v2 migration, actualChangeSet, deterministic module/dependency/capability verificationScope selection, and bootstrap verification.",
+        "E1 scope is expanded to implement bounded operation-scoped OpenSpec projection deduplication and Windows process-tree cancellation with fail-closed outcome-unknown fallback.",
+        "E1 scope is expanded to implement exact target Run resume, timeout outcome-unknown, idempotent terminal replay, and late-completion generation safety.",
+        "G1 retains ownership of Change CLI surface, full Change E2E, checkout/resume recovery validation, Run/package size observation, focused/affected timing observation, and review convergence observation; G1 consumes E1 primitives and does not duplicate their implementation.",
+        "Historical Run contexts and results remain immutable; the new Owner fact must be projected through the official write-side and Policy must determine the next legal boundary."
+      ],
+      "sourceRef": "owner-input:2026-08-13:authorize-E1-expanded-scope-before-108-revision"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260813-109-review-explore/",
+  "changeKey": "E1",
+  "changeId": "change-verification-selection-and-change-set",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260813-107-revise-explore/result.json",
+    "versionFingerprint": "168dcf2cb0e6476a40dfa2c3bc25f26b220439891228dcb9ffe5bbb058417c84",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260813-107-revise-explore",
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

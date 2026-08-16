@@ -1,0 +1,44 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "propose",
+    "executionStatus": "completed",
+    "summary": "Owner Contract Reset 后重新冻结 E2 Proposal generation：architecture 与既有 E2 semantics 保持不变，仅扩充 apply/revise-apply mutation scope 以允许 tests/unit/services/a1-write-service.test.ts，并在 Proposal impact 中显式记录该 regression path。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/design.md",
+        "versionFingerprint": "f54eb08ff4cbdd7c5ffaf389ad59dbdcda34fb79addeed880f600f196c491a11",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/proposal.md",
+        "versionFingerprint": "e2cc5a5395acef0a522ae729539958e7237f63aa41ca5704b6774ad4ab5227f0",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "60a177f06375366b08d44a83d2cb92f07e32504cf8742e4afb52e4492168971b",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "dfb14502f00d58cb58e392b1c3c9faaafa0870508b1a62d9c4b646eb582bb53a",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-lean-run-and-action-package/spec.md",
+        "versionFingerprint": "433923c809c1997cb832dd486b6fad8834984ba5d017da27dd74997b3459c69d",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/tasks.md",
+        "versionFingerprint": "82c262866f5b7ccb11856ad5401b00e9caa592739424030451cf86ffb82676e4",
+        "kind": "produced-artifact"
+      }
+    ]
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "b719f57eabbfa59d774150a424411a143e1b287326c1b9799353cba8f72e8dc6"
+  }
+}

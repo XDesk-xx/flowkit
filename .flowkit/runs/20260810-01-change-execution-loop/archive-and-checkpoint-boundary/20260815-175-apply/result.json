@@ -1,0 +1,18 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "apply",
+    "executionStatus": "completed",
+    "summary": "实现 shared original strict-admitted E2 checkpoint authority：legacy cutover 与 B1 writer activation 共同消费 checkpoint-time Owner-bound anchor；subject-only/full-trailer-but-unauthorized E2 均拒绝，later duplicate 不移动 cutover，fresh/downstream 保持 current three-file writer。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "a1e906ddfbc4dc9ffb427cd0a303be5c6c99ba71a12d9923b1e862c7d1714f87",
+    "currentVerification": {
+      "logicalRef": "openspec/changes/archive-and-checkpoint-boundary/verification.md",
+      "versionFingerprint": "47fa9e9a37b1d9d94b028c496efd2b8bcd838f3b29701abd329ce3f515c7fbec",
+      "selectionFingerprint": "f166a35a79c42de022af78cb9f8b03e1287f0e140238a3e4efb74434fb5df6d6",
+      "status": "passed"
+    }
+  }
+}

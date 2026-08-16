@@ -1,0 +1,26 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "054已关闭053的C1-RP-001/002/003/004主体问题：全部MODIFIED delta真实OpenSpec 1.7 archive preflight成功，totals按真实shape改为optional，zero-delta specDeltaMode移到activation seam，archive timeout不再误判普通failure。但新发现outcome-unknown recovery没有durable formal gate：B1 pending archive仅持久化immutable context且在relocation/completed后仍故意投影resumable，054又没有持久化archive attempt/outcome-unknown/recovery-completed事实，也没有能覆盖OpenSpec canonical spec mutation的exact pre-archive generation proof，因此跨session后可把已经发生过未知结果的archive当普通pending直接重试，违反054自己的MUST NOT retry。另有D11 required|skip示例误写false/true的non-blocking文案漂移。"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindings": [
+    {
+      "id": "C1-RP-005",
+      "severity": "blocking",
+      "title": "archive outcome-unknown 缺少 durable recovery gate，跨 session 会退化成可直接重试的普通 pending archive",
+      "problem": "054要求spawn后的archive在terminal result丢失时保持同一pending Run、禁止自动retry，并且只有机械恢复exact pre-archive candidate generation后才能重新执行。但当前B1 pending Run只有immutable context.json且pending时没有result.json；context schema没有archive-attempt/outcome-unknown/recovery-completed事实。B1又明确允许archive-owned relocation/completed后通过active-or-archived refs恢复同一Run并投影resumable，因此一次archive已发生但result丢失后，新session只看到普通resumable pending archive，无法知道必须先恢复。与此同时B1 semantic fingerprint只绑定package semantic authorities，并不证明OpenSpec archive可能已经修改的完整canonical specs/working-tree已恢复为exact pre-archive generation，所以054所写“re-validates semantic identity”不足以充当byte-identical recovery proof。",
+      "location": "design.md D10；flowkit-openspec-1-7-thin-integration spec 的 archive outcome-unknown/recovery scenarios；tasks 5.3/5.4；现有 B1 ContextFile/pending archive recovery contract",
+      "blockingAuthority": "author",
+      "requiredChange": "revise-propose必须冻结一个跨process/session可恢复、且与Lean Run/one-fact-one-authority兼容的durable recovery admission contract。系统必须能形式化区分“fresh pending archive”“archive attempt outcome-unknown”“exact pre-archive generation已机械恢复并允许retry”，不得依赖聊天/当前进程内异常。恢复proof必须覆盖OpenSpec archive可能修改的Change relocation与canonical spec bytes，而不能只复用当前B1 semantic fingerprint；任何新prepare/invoke在unknown未被machine-proven recovery关闭前都必须阻止第二次archive。可以选择最小持久fact、与现有terminal failure/retry语义兼容的其它模型或其它确定性方案，但不得静默建立第二archive authority。补跨session regression：mutation后result丢失→新session/prepare不可直接retry；exact recovery前阻塞；machine-proven exact recovery后才允许执行；fresh archive不受影响。"
+    },
+    {
+      "id": "C1-RP-NB-001",
+      "severity": "non-blocking",
+      "title": "Design D11 的 specDeltaMode 枚举示例仍写成 false/true",
+      "problem": "D11先冻结 specDeltaMode: required | skip，但紧接的语义示例使用 false/true。Proposal、A1 delta spec、Tasks均已使用required/skip，因此当前属于局部文案漂移而非实现方向冲突；建议下轮同步修正以避免Apply误读。"
+    }
+  ]
+}

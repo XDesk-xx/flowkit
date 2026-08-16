@@ -1,0 +1,42 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-explore",
+    "executionStatus": "completed",
+    "summary": "Review 198 Explore：G1 post-archive fixture ENOENT、historical E1 temporal-authority defect、real OpenSpec physical Verification closure gap均有可复现证据，且 mutation surface 方向基本收敛；但 Performance Proof D 将局部 reusable precondition snapshot 的可行性写成整体 PASS，而 H1 formal goal 包含使 02 Delivery Full Test 稳定执行。现有 evidence 只量化约 10 秒级重复 setup 节省，full test baseline 在 180s 内未 terminal，也没有 prototype-after full-suite measurement，因此 Evidence Boundary 尚未覆盖该 required outcome。verdict=changes-requested，需在 Explore 内补齐 performance feasibility 或把未证明部分明确降为 UNKNOWN 并暴露 prerequisite/Owner boundary。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "e8e76ee6514f40836b074382b0479c9a0e79ba6eafc4ba16ed0d426cf7218ef3"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "H1-RE-001",
+      "severity": "blocking",
+      "title": "Performance Proof D 的 PASS 未覆盖 H1 的 Delivery Full Test 稳定执行 required outcome",
+      "problem": "198 将 Proof D 的 Acceptance Boundary 缩窄为‘reusable formal precondition snapshot 可以减少重复 real CLI setup’，并据此给出 PASS；但 H1 formal goal 明确还要求在不降低 coverage、不提高 timeout 的前提下减少 fixture/process 成本，使 02 Delivery Full Test 可稳定执行。当前 evidence 只证明两个 copied consumers 可继续 apply，并量化约 3×5.17s 到 5.17s+0.09s 的局部 setup 节省；同一 Explore 又记录 current test:full 在 180s 内未 terminal，却没有完成 full-suite before baseline，也没有把 prototype snapshot optimization 应用后测量 G1 full-file/full-suite after。Feasible Proposal Boundary 甚至明确保留‘Apply 后若仍超过预算再判断是否需要新的 Owner scope’，说明 required outcome 的 feasibility 仍未知。",
+      "contractRef": "Flowkit Explore Skill v2 §4.8 Performance Proof、§5 Proof Acceptance Depth；H1 Delivery Manifest goal/outputs；Change Execution Loop Delivery v4 §17-19 Delivery 收口与 Full Test",
+      "invariant": "Explore 对明确的 performance required outcome 只有在 Evidence Boundary 覆盖 Acceptance Boundary 时才能宣告 PASS；不能用局部 setup micro-benchmark 代替‘Delivery Full Test 可稳定执行’的 feasibility，也不能把关键 prerequisite 是否需要扩 scope 推迟到 Apply 才发现。",
+      "evidence": [
+        "198 explore.md §1/Current Facts：H1 的 corrective goal 包含减少重复 fixture/CLI/OpenSpec subprocess，使 02 Delivery Full Test 可稳定执行。",
+        "198 Proof D 只实测一次 approved-proposal template≈5169.1ms、两次 exact-copy≈41.4/52.0ms，并推导两个重复 replay 可节省约10秒级 setup。",
+        "198 Proof D 同时记录 current test:full 68 files 在 180s 工具窗口内未 terminal，没有可比较的 completed full-suite baseline。",
+        "198 Proof D Gap 明确把完整 G1 subprocess before/after、G1 wall time、full-suite wall time全部后置到 Apply。",
+        "198 Feasible Proposal Boundary §4 明确写‘若 Apply 仍超过当前预算，必须以 evidence 说明是否需要新的 Owner scope’，即当前 Explore 尚未证明现有 scope 足以关闭 formal performance outcome。"
+      ],
+      "impact": "如果现在进入 Proposal，可能冻结一个只能证明局部 setup 减少、却不足以让 02 Full Test terminal/稳定的实现；真正性能瓶颈或额外 prerequisite 会再次到 Apply/Delivery 收口阶段才暴露，正是 Explore Skill 要前移避免的昂贵返工。",
+      "location": "openspec/changes/historical-fixture-and-test-performance-correction/explore.md §1 Problem；§5 Proof D；§7 Feasible Proposal Boundary；openspec/delivery-groups/20260810-01-change-execution-loop.yaml H1 goal/outputs",
+      "blockingAuthority": "author",
+      "requiredOutcome": "在 revise-explore 内把 performance acceptance 对齐 H1 formal goal。优先在 disposable candidate 中实现最小 snapshot/template prototype（只改测试 fixture，不冻结最终 Apply 实现），保留 7 个 G1 scenarios 与 real OpenSpec counterexamples，然后在同一环境完成可比较的 G1 file 与 full-suite before/after measurement，证明 proposed test-local optimization 足以让 Full Test 稳定 terminal且不靠 skip/timeout。若实证仍不足，则 Proof D 必须降为 UNKNOWN/FAIL，并执行 Scope/Prerequisite Proof，明确还缺什么能力以及是否超出当前 H1 authority，不能带着未知 prerequisite 进入 Proposal。",
+      "acceptance": [
+        "给出同一环境、同一 correctness coverage 下的可比较 before/after：至少 G1 subprocess count、G1 file wall time、full-suite terminal wall time；before 若只能以超时上界表达，应明确 censored baseline，并用 after terminal result证明目标已跨过该边界。",
+        "prototype after 必须保留 7 个 G1 scenarios、完整 happy lifecycle、real OpenSpec archive/recovery 与 Verification failure counterexamples，不得通过 skip、删除 case 或提高 timeout 获得更快结果。",
+        "Evidence Boundary 明确覆盖‘02 Delivery Full Test 可以稳定执行’；若不能覆盖，则 Proof D Result 改为 UNKNOWN/FAIL，并列出缺失 prerequisite/Owner scope，而不是整体 PASS。",
+        "更新 Feasible Proposal Boundary，只冻结已被 proof 证明可实现的 performance correction；不得把‘Apply 后再看够不够’作为当前 feasibility 结论。"
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}

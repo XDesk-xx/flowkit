@@ -1,0 +1,50 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-propose",
+    "executionStatus": "completed",
+    "summary": "根据 089 的 D2-RP-001 修订 Proposal：future archive entry 新增 bounded keyed OpenSpec projection；legacy D1/085 仅通过 disposable OpenSpec structured status 由 OpenSpec authority重建 artifactId→logicalPaths，不修改085历史 context；G02/G03与 bounded recovery边界保持不变。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/archive-terminal-continuation-correction/design.md",
+        "versionFingerprint": "d47bb0b43fd1534cd382232c805fab2db5596be47b7185e18a545d1942c4114c",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-terminal-continuation-correction/proposal.md",
+        "versionFingerprint": "5fbe81dd7b1036779d897e5a5500195e2448647bceb1eaabe2a46a92f5d9e670",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-terminal-continuation-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "d4a24d09435c4de8b9e4934ca9104a213ada28b613a0603289ce27011dccb38f",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-terminal-continuation-correction/specs/flowkit-lean-run-and-action-package/spec.md",
+        "versionFingerprint": "0248422b46f5aec198d9b81b1f4d56836bd7c9aaa65a253a416c0f2b24b47b65",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-terminal-continuation-correction/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+        "versionFingerprint": "d11fcd8ad87b7e88acdc1068ba4fe4c1b3c56622c21c6a9be5f5dbeb42114790",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-terminal-continuation-correction/specs/flowkit-policy-engine/spec.md",
+        "versionFingerprint": "3153b8b6e6546ede9f2c6d2ee740c974ccfc304dec9780d436a7195c4b21786c",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-terminal-continuation-correction/tasks.md",
+        "versionFingerprint": "7d30c57f8e110afdcd6fcf2edc1d575c6a7c89ace74b06885600d18b0f8c0e48",
+        "kind": "produced-artifact"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/archive-terminal-continuation-correction/20260812-089-review-propose/result.json",
+      "versionFingerprint": "26edbe327a838e6d0da1f9f494028bce5e1acf7f6bbdc6c8f563dd348e7e3a51",
+      "kind": "run-result"
+    }
+  }
+}

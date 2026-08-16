@@ -7,7 +7,8 @@
  * schema-validator), not on the objects themselves.
  */
 
-import type { ChangeAction, DeliveryAction } from './actions.js';
+import type { FormalAction } from './actions.js';
+import type { ArchitectureImpactFact } from './a1-types.js';
 
 // ---------------------------------------------------------------------------
 // Frozen state union types
@@ -78,6 +79,9 @@ export type ReviewVerdictValue = 'approved' | 'changes-requested';
  */
 export type FindingSeverity = 'blocking' | 'non-blocking';
 
+export const BLOCKING_AUTHORITIES = ['author', 'owner', 'verification', 'external'] as const;
+export type BlockingAuthority = (typeof BLOCKING_AUTHORITIES)[number];
+
 // ---------------------------------------------------------------------------
 // Supporting types
 // ---------------------------------------------------------------------------
@@ -102,6 +106,7 @@ export interface ChangeSummary {
   readonly dependsOn: readonly string[];
   readonly state: ChangeState;
   readonly required: boolean;
+  readonly architectureImpact: ArchitectureImpactFact;
   readonly outputs?: readonly string[];
 }
 
@@ -140,6 +145,7 @@ export interface Change {
   readonly required: boolean;
   readonly dependsOn: readonly string[];
   readonly state: ChangeState;
+  readonly architectureImpact: ArchitectureImpactFact;
   /** Conceptual product-artifact range. Not a file whitelist. */
   readonly outputs?: readonly string[];
 }
@@ -152,11 +158,12 @@ export interface Change {
 export interface Run {
   readonly runId: string;
   readonly deliveryId: string;
-  /** Present when the Run is bound to a Change; absent for Delivery-level Runs. */
-  readonly changeId?: string;
-  readonly action: ChangeAction | DeliveryAction;
+  /** Every current Standard Run is bound to a Change. */
+  readonly changeId: string;
+  readonly action: FormalAction;
   readonly role: Role;
   readonly status: RunStatus;
+  readonly semanticInputFingerprint?: string;
   readonly inputRef?: ResultRef;
 }
 
@@ -165,19 +172,172 @@ export interface Run {
 // ---------------------------------------------------------------------------
 
 /**
- * Immutable definition of a formal Action.
+ * Immutable definition of one Standard Change Action.
  *
- * B1 owns the complete type. The catalog is fixed and immutable — no
- * transport/persistence needs.
- * Field contract aligned with integration-boundaries.md Section 3.1.
+ * B1 owns the complete static catalog. The five fields below are the normative
+ * execution boundary reviewed in B1 Proposal: role, goal class, mutation
+ * class, output class and terminal contract. The catalog is compile-time
+ * constant data — no Registry/Router/dynamic discovery.
  */
+export interface ActionTerminalContract {
+  readonly kind: 'artifact' | 'review' | 'implementation' | 'archive';
+  readonly verdictRequired: boolean;
+  readonly bindsReviewedRun: boolean;
+  readonly bindsSourceReview: boolean;
+  readonly verificationSummaryRef: 'none' | 'core-derived';
+  readonly gitCheckpointOutputAllowed: false;
+}
+
 export interface ActionDefinition {
-  readonly action: ChangeAction | DeliveryAction;
-  readonly role: Role;
-  readonly goal: string;
-  readonly preconditions: readonly string[];
-  readonly allowedOutputs: readonly string[];
-  readonly completionConditions: readonly string[];
+  readonly action: FormalAction;
+  readonly version: 1;
+  readonly role: Exclude<Role, 'owner'>;
+  readonly goalClass: string;
+  readonly mutationClass: string;
+  readonly outputClass: string;
+  readonly terminalContract: ActionTerminalContract;
+}
+
+/** Exact versioned authority reference used by a logical Action Package. */
+export interface VersionedAuthorityRef {
+  readonly ref: string;
+  readonly kind: string;
+  readonly versionFingerprint: string;
+}
+
+export interface ActionPackageFindingView {
+  readonly id: string;
+  readonly severity: FindingSeverity;
+  readonly blockingAuthority?: BlockingAuthority;
+  readonly title?: string;
+  readonly problem?: string;
+  readonly contractRef?: string;
+  readonly invariant?: string;
+  readonly requiredOutcome?: string;
+  readonly acceptance?: readonly string[];
+}
+
+export interface ActionPackageFindingConvergenceView {
+  readonly findingId: string;
+  readonly state: 'new' | 'still-open' | 'resolved' | 'superseded';
+  readonly supersededByFindingId?: string;
+}
+
+export interface ActionPackageReviewView {
+  readonly reviewRunId: string;
+  readonly verdict: ReviewVerdictValue;
+  readonly resultRef: VersionedAuthorityRef;
+  readonly blockingAuthorities: readonly BlockingAuthority[];
+  readonly findings: readonly ActionPackageFindingView[];
+  readonly convergence?: readonly ActionPackageFindingConvergenceView[];
+}
+
+export interface ActionPackageVerificationView {
+  readonly status: VerificationStatus | 'unavailable';
+  readonly resultRef?: VersionedAuthorityRef;
+}
+
+export interface MutationSelector {
+  readonly kind: 'exact' | 'prefix';
+  readonly path: string;
+}
+
+/**
+ * Core-derived, Design-bound allowed mutation boundary for an Apply Action.
+ * It constrains observed writes; it is deliberately not a candidate manifest.
+ */
+export interface MutationDeclaration {
+  readonly schemaVersion: 1;
+  readonly action: 'apply' | 'revise-apply';
+  readonly designRef: VersionedAuthorityRef;
+  readonly selectors: readonly MutationSelector[];
+}
+
+export interface EntryWorkspaceIdentity {
+  readonly canonicalBase: string;
+  readonly workspaceFingerprint: string;
+}
+
+export interface CompactEntryWorkspacePath {
+  readonly path: string;
+  readonly state: 'added' | 'modified' | 'deleted' | 'untracked';
+  readonly contentFingerprint?: string;
+}
+
+/** Post-E2 current entry identity: canonical Git Base plus only the lexical dirty delta. */
+export interface CompactEntryWorkspaceIdentity extends EntryWorkspaceIdentity {
+  readonly entries: readonly CompactEntryWorkspacePath[];
+}
+
+interface ActionPackageBase {
+  readonly run: {
+    readonly deliveryId: string;
+    readonly changeId: string;
+    readonly runId: string;
+    readonly action: FormalAction;
+    readonly role: Exclude<Role, 'owner'>;
+    readonly semanticInputFingerprint: string;
+  };
+  readonly definition: ActionDefinition;
+  readonly contractRefs: readonly VersionedAuthorityRef[];
+  readonly handoffRefs: readonly VersionedAuthorityRef[];
+  readonly reviewView?: ActionPackageReviewView;
+  readonly ownerAuthorizationRefs: readonly OwnerAuthorizationRef[];
+  /** Bootstrap/D1 bounded applicable Owner facts; authority remains Manifest.ownerDecisions. */
+  readonly ownerFactRefs?: readonly OwnerFactRef[];
+  readonly verificationView?: ActionPackageVerificationView;
+  /** Bounded digest of external structured execution context participating in same-Run drift protection. */
+  readonly externalContextFingerprint?: string;
+  readonly requiredResultContract: ActionTerminalContract;
+}
+
+/** Historical ActionPackage contract. Immutable contexts v2/v3/v4 reconstruct only this form. */
+export interface ActionPackageV1 extends ActionPackageBase {
+  readonly schemaVersion: 1;
+}
+
+interface ActionPackageV2Common extends ActionPackageBase {
+  readonly schemaVersion: 2;
+}
+
+/** Pre-E2 persisted Apply package: full entry identity and declaration are mandatory. */
+export interface ActionPackageV2Apply extends ActionPackageV2Common {
+  readonly run: ActionPackageBase['run'] & { readonly action: 'apply' | 'revise-apply' };
+  readonly entryWorkspaceIdentity: EntryWorkspaceIdentity;
+  readonly mutationDeclaration: MutationDeclaration;
+}
+
+/** Other current Actions must not synthesize Apply-only authority. */
+export interface ActionPackageV2NonApply extends ActionPackageV2Common {
+  readonly run: ActionPackageBase['run'] & { readonly action: Exclude<FormalAction, 'apply' | 'revise-apply'> };
+  readonly entryWorkspaceIdentity?: never;
+  readonly mutationDeclaration?: never;
+}
+
+/** Post-E2 current Apply package: structurally compact entry identity under the existing bounded serialization discriminator. */
+export interface CurrentCompactApplyActionPackage extends ActionPackageV2Common {
+  readonly run: ActionPackageBase['run'] & { readonly action: 'apply' | 'revise-apply' };
+  readonly compactEntryWorkspaceIdentity: CompactEntryWorkspaceIdentity;
+  readonly entryWorkspaceIdentity?: never;
+  readonly mutationDeclaration: MutationDeclaration;
+}
+
+export type ApplyActionPackageLike = ActionPackageV2Apply | CurrentCompactApplyActionPackage;
+export type ActionPackageV2 = ActionPackageV2Apply | CurrentCompactApplyActionPackage | ActionPackageV2NonApply;
+export type ActionPackage = ActionPackageV1 | ActionPackageV2;
+
+/**
+ * Provider/executor-owned logical terminal descriptor. Core derives physical
+ * ResultRefs, reviewed/source-review bindings and verification refs.
+ */
+export interface LogicalActionResultInput {
+  readonly executionStatus?: ExecutionStatus;
+  readonly summary?: string;
+  readonly reviewVerdict?: ReviewVerdictValue;
+  readonly reviewFindings?: readonly unknown[];
+  readonly reviewFindingConvergence?: readonly unknown[];
+  readonly failureDiagnosis?: string;
+  readonly cancellationReason?: string;
 }
 
 /**
@@ -188,7 +348,7 @@ export interface ActionDefinition {
  */
 export interface ActionResult {
   readonly runRef: ResultRef;
-  readonly action: ChangeAction | DeliveryAction;
+  readonly action: FormalAction;
   readonly executionStatus: ExecutionStatus;
   readonly summary: string;
   readonly producedResultRefs?: readonly ResultRef[];
@@ -274,8 +434,21 @@ export interface VerificationSummary {
  */
 export interface OwnerAuthorizationRef {
   readonly ref: string;
+  readonly decision: string;
+  readonly deliveryId: string;
+  readonly changeId?: string;
+  readonly sourceRef: string;
+}
+
+/** Bounded, non-authoritative projection of an Owner decision for role handoff. */
+export interface OwnerFactRef {
+  readonly ref: string;
+  readonly decision: 'contract-reset';
+  readonly deliveryId: string;
+  readonly changeId: string;
   readonly scope: string;
-  readonly authorizedAt?: string;
+  readonly requiredOutcomes: readonly string[];
+  readonly sourceRef: string;
 }
 
 /**
@@ -288,13 +461,13 @@ export interface OwnerAuthorizationRef {
 export interface ContinuationContext {
   readonly deliveryId: string;
   readonly changeId?: string;
-  readonly lastCompletedAction?: ChangeAction | DeliveryAction;
+  readonly lastCompletedAction?: FormalAction;
   readonly lastActionResultRef?: ResultRef;
   readonly activeVerdict?: ReviewVerdictValue;
   readonly pendingNonBlockingFindings: readonly FindingSummary[];
   readonly validOwnerAuthorizations: readonly OwnerAuthorizationRef[];
   readonly currentConstraints: Readonly<Record<string, unknown>>;
   /** Computed by Policy (D1), not by ContinuationContext itself. */
-  readonly nextAllowedAction: ChangeAction | DeliveryAction;
+  readonly nextAllowedAction: FormalAction;
   readonly nextActionInputRefs: readonly ResultRef[];
 }

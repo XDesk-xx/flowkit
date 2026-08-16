@@ -1,0 +1,54 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-propose",
+    "executionStatus": "completed",
+    "summary": "关闭 217 的 I1-RP-001：将 checkpoint hygiene authority 收回 approved 214/215 Explore Proof 5 已证明的 EOF-only boundary。Proposal/Design/flowkit-archive-and-checkpoint-boundary delta spec/Tasks 现在只允许 candidate/archive-touched text files 的 redundant EOF blank-line collapse 与 exactly one final newline；trailing spaces/tabs cleanup、internal formatting、Markdown reflow、semantic/unrelated mutation 与 broad formatter 全部明确 fail closed。git diff --check 与 staged git diff --cached --check 继续必需。其余 executable authority、Full Test physical closure、temporal fixture、Verification self-closure、performance/no-scheduler 决策及 16-selector apply/revise-apply surface 均保持 216 不变。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/design.md",
+        "versionFingerprint": "2a07f018642a88b2fc0d7fe73c0359370367231ded1f395f2536f967ef95ea6e",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/proposal.md",
+        "versionFingerprint": "ce26ca77162966fcf05857e35dbced43949204f88a05801dd2c15d3a32d07331",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+        "versionFingerprint": "21ccb9e604b8d0cc51756e414289ab42eef056e6ef57785553aafec0b9f97a86",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "a24f6c14c65747a7677038924af4c8062848ac2fa10b5689b63002cd4fa792aa",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/specs/flowkit-core-hardening-and-release-candidate/spec.md",
+        "versionFingerprint": "f7639dc8603a5b3deaca1ce792e1f1e1c2c818670c1b74382515701adc678cb3",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+        "versionFingerprint": "7b0bed437ac8f318d8facbfd63133ce03720bdac89f66be25455df3edd8cd674",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/tasks.md",
+        "versionFingerprint": "1c94d1b80032ba20197fa4f3818cf0817ec60bf59bb294be96a1badee9ccae05",
+        "kind": "produced-artifact"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-217-review-propose/result.json",
+      "versionFingerprint": "55d915fcd3754e45afe0753360700bcd9c7741e3448fd99d14d300395c0fd3dd",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "97eeb9386d60fd728988473e3d8a7cfc705ee9e205937adab9901f26095f3434"
+  }
+}

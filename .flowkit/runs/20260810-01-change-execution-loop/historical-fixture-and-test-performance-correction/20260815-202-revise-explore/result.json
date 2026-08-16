@@ -1,0 +1,24 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-explore",
+    "executionStatus": "completed",
+    "summary": "Revise Explore 响应 201 H1-RE-001：在干净、同环境 disposable candidates 中完成完整 performance before/after。correctness-only G1 7/7 PASS、79 real CLI、79.786s；snapshot prototype 7/7 PASS、63 real CLI、72.76s。同步发现并纳入 H1 Manifest growth 导致 a1-write-service current corpus 10→11 的直接 fixture consumer；修正该 correctness prerequisite 后，public test:full before 792/792 PASS / 134.82s，snapshot after 792/792 PASS / 131.91s，未改变 timeout、concurrency、runner 或 coverage。由此 Proof performance、scope/prerequisite 与 mutation-surface closure 均闭合；Proposal readiness=YES，不需要 Owner Contract Reset。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/explore.md",
+        "versionFingerprint": "a8e76a34937ad2a04b99205ce7b3fb947fb4744c3185883b2a64ba02d015c755",
+        "kind": "produced-artifact"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/historical-fixture-and-test-performance-correction/20260815-201-review-explore/result.json",
+      "versionFingerprint": "c51531ffbcc6343706d7cc77c0496c85f824ac632ff56d7e855abd522acfdba2",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "fdc54f6f5d28e538046a250e69bd7d3517061c11247c35a62bf532b332863e8f"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 4,
+  "runId": "20260815-167-apply",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "apply",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "semanticInputFingerprint": "13840e54a8d7a24a61ff8de7d0855dff7258f8024e6826b23575301fc5545595",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260815-167-apply/",
+  "changeKey": "F1",
+  "changeId": "archive-and-checkpoint-boundary",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260815-166-review-propose/result.json",
+    "versionFingerprint": "e8134d84cb1532b0fc46d5cac48f8c390a99726194799fa78ad24462b3baa684",
+    "kind": "run-result"
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": true,
+    "mayWriteTestCode": true,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

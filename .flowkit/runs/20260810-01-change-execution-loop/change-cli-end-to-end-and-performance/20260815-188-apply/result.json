@@ -1,0 +1,18 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "apply",
+    "executionStatus": "completed",
+    "summary": "G1 implementation completed within the frozen 186 mutation surface. Bounded observations: ActionPackage compact JSON=6497 B; pre-terminal G1 Run average=9753.9 B across 11 Runs; Explore prepareNewExecution baseline=761.6 ms; current real-OpenSpec exact resumeRun median=2334.63 ms (12 samples, 2223.37-2486.85 ms), distinct from resume-context process wall=5648 ms; focused=4.110 s internal; affected(cli+verification)=44.454 s internal, 164/164 passed; prospective current G1 logical checks=4; Explore OpenSpec process baseline: status=6, prepareNewExecution=2; formal G1 Review Runs through 187=5; reopened findings=0; real-process G1 E2E=7/7 in 93.36 s. No cache platform, parallel scheduler, Provider/Agent Registry, auto-review loop, Delivery Full Test/Finalize implementation, or automatic Git mutation introduced."
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "30698f9759b3033cb8753a019a26842893b330092d9b9ff93c893bab663ec03e",
+    "currentVerification": {
+      "logicalRef": "openspec/changes/change-cli-end-to-end-and-performance/verification.md",
+      "versionFingerprint": "7911d74c9150a19800553707a4c9845f8d23c9fbe94b4e872e3d6a24a450f364",
+      "selectionFingerprint": "c015c7e4f976af64e569452e60e53ae17fb3b9e94cf203567f212acaa51b87fa",
+      "status": "passed"
+    }
+  }
+}

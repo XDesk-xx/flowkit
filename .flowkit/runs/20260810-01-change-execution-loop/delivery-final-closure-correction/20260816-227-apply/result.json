@@ -1,0 +1,18 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "apply",
+    "executionStatus": "completed",
+    "summary": "完成 I1 Contract Reset 的 archive-sync completeness 修复：保留 canonical Scenario identity，并将真实 OpenSpec 1.7 exact-current-candidate archive-sync preflight 复用到 Proposal terminal admission 与 formal Change Verification；当前 exact I1 candidate 已通过真实 disposable archive-sync proof。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "48aa19f7c96b19d26a8c96b4c4f2669855201873f033242b6f7130c29895c839",
+    "currentVerification": {
+      "logicalRef": "openspec/changes/delivery-final-closure-correction/verification.md",
+      "versionFingerprint": "12a14b4f470cd3d8734ffebea59ce408794d7af600306f22eec5fed67e6db1df",
+      "selectionFingerprint": "9fc93cca4f9bceb87b8b76f088d05a0972dcce389a8cf5eaab3c56213b78c1b4",
+      "status": "failed"
+    }
+  }
+}

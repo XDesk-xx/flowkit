@@ -1,0 +1,39 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "Review 182 propose：G1 总体 thin single-boundary CLI 设计、跨 Delivery genericity、real archive/E2E 与 performance observation 边界成立；但 verify 读取正式 Verification 时冻结了硬编码 openspec/changes/<changeId>/verification.md 路径，绕过已存在的 OpenSpec/FormalFact structured path projection，形成第二套 OpenSpec path rule authority。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "536645e7e95d569d6ca57a8428cbca200967cddb81ebda931bf74e18e2641a4c"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "G1-RP-001",
+      "severity": "blocking",
+      "blockingAuthority": "author",
+      "title": "verify MUST consume the existing structured Verification/OpenSpec projection instead of reconstructing the Change path",
+      "problem": "Design Decision 5 freezes flowkit verify to load openspec/changes/<changeId>/verification.md directly. Current FormalFactReader already derives the active Change verification artifact path from OpenSpec structured status/changeRootLogical and exposes the formal Change Verification status. Direct path reconstruction in the new CLI would create a second OpenSpec path rule authority and risks future path/projection drift.",
+      "contractRef": "C1 OpenSpec 1.7 thin integration / E2 current-Change OpenSpec projection / one fact one authority",
+      "invariant": "OpenSpec owns Change artifact/path semantics; Flowkit consumers must consume the existing structured/formal projection and must not independently reconstruct canonical OpenSpec paths.",
+      "evidence": [
+        "182 design.md Decision 5 states the CLI identifies the active Change and reads canonical openspec/changes/<changeId>/verification.md directly.",
+        "Current src/facts/formal-fact-reader.ts readOpenSpecArtifacts derives change-verification from OpenSpec status.changeRootLogical and projects that artifact path/status into FormalFactSnapshot.",
+        "02 v4 C1 requires structured outputs/path context to remain OpenSpec authority and E2 requires current Change OpenSpec projection to derive from formal changeId/OpenSpec structured projection rather than hardcoded paths."
+      ],
+      "impact": "Apply would freeze a CLI-specific path reconstruction/parser boundary that can diverge from the existing OpenSpec/FormalFact projection; correcting it later may require Proposal/scope reset instead of a local implementation fix.",
+      "requiredOutcome": "Revise the verify design/spec/tasks so the command consumes the existing formal/structured Change Verification artifact projection (or another existing authority-safe projection) for path/status discovery. It may read the authority file through that projected logical path, but MUST NOT reconstruct openspec/changes/<changeId>/verification.md as a separate rule. Keep Verification execution/publication read-only semantics unchanged.",
+      "acceptance": [
+        "No G1 design/spec requirement instructs the CLI to construct the verification.md path from openspec/changes/<changeId>.",
+        "verify discovers the current verification artifact/status from the existing FormalFact/OpenSpec structured projection and fails closed on missing/conflicting projection.",
+        "If selectionFingerprint/logical check ids are exposed, they are read from the authoritative publication without creating a second durable truth or changing Apply/revise-apply Verification authority.",
+        "No 03 Agent Adapter/Delivery behavior scope is introduced and the approved Apply mutation surface remains sufficient, or any genuinely required scope expansion is explicitly frozen before Apply."
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}

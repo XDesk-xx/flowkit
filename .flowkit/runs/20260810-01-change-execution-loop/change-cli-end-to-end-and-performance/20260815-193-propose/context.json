@@ -1,0 +1,179 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260815-193-propose",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "propose",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "e200d3817464bcb4d3930bb3d542129174b0460840bb384bf64e8764076dba6b",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:398a9e6f90687b299c63b8070e069da64e6fdffae3530c362937a2a55a38dbd3",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-cli-end-to-end-and-performance",
+      "scope": "Keep G1 Explore, Proposal architecture, scope, required outcomes, and implementation plan unchanged; only lexical-sort flowkitMutationScope.apply and flowkitMutationScope.revise-apply selectors without changing membership.",
+      "requiredOutcomes": [
+        "Do not add or remove any mutation selector.",
+        "Preserve G1 Explore, Proposal architecture, scope, required outcomes, and implementation plan unchanged.",
+        "Sort flowkitMutationScope.apply and flowkitMutationScope.revise-apply selectors into existing MutationDeclaration lexical order."
+      ],
+      "sourceRef": "owner-input:2026-08-15T16:38+08:00:G1-contract-reset-mutation-scope-sort"
+    },
+    {
+      "ref": "owner:8dcaf960f267ddbdc5435526ee4472b8ff0da2571567dd0e09585c425f09dbb3",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-cli-end-to-end-and-performance",
+      "scope": "Keep G1 Explore, Proposal architecture, scope, required outcomes, implementation plan, and all 186-approved mutation selectors unchanged; solely extend apply/revise-apply mutation surface with the two B1 service selectors needed to close G1-RA-001 authority-safely.",
+      "requiredOutcomes": [
+        "Add exactly src/services/b1-run-execution-service.ts and tests/unit/services/b1-run-execution-service.test.ts to both flowkitMutationScope.apply and flowkitMutationScope.revise-apply.",
+        "Do not create a second archive state machine, change Formal Action or Policy contracts, enter 03 Delivery behavior, change other G1 architecture/required outcomes, or add any other mutation selector.",
+        "Preserve G1 Explore, Proposal architecture, scope, required outcomes, implementation plan, and every selector approved in 186 unchanged.",
+        "Use the extension only to move changed-surface pending archive pre-OpenSpec recovery discovery behind the existing/narrowly extended B1/F1/D2 production authority boundary, with the CLI consuming one recovery projection."
+      ],
+      "sourceRef": "owner-input:2026-08-15T19:14+08:00:G1-RA-001-B1-service-mutation-scope-reset"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/change-cli-end-to-end-and-performance/20260815-193-propose/",
+  "changeKey": "G1",
+  "changeId": "change-cli-end-to-end-and-performance",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-cli-end-to-end-and-performance/20260815-181-review-explore/result.json",
+    "versionFingerprint": "dbdaee44cde12c832d35f914114c58a6f46144f2e524f7d41d14ff6b98d43085",
+    "kind": "run-result"
+  },
+  "canonicalBase": "b9a126b63ad1907cf0baa0b42c858480284cc522",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-cli-end-to-end-and-performance/20260815-181-review-explore/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "dbdaee44cde12c832d35f914114c58a6f46144f2e524f7d41d14ff6b98d43085"
+    },
+    {
+      "ref": "openspec/changes/change-cli-end-to-end-and-performance/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+    },
+    {
+      "ref": "openspec/changes/change-cli-end-to-end-and-performance/explore.md",
+      "versionFingerprint": "9b06de1f9ba38380670fc784aef405c7b1b88089e9ef8bd896d68122a07915ec",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-cli-end-to-end-and-performance",
+      "runId": "20260815-193-propose",
+      "action": "propose",
+      "role": "author",
+      "semanticInputFingerprint": "e200d3817464bcb4d3930bb3d542129174b0460840bb384bf64e8764076dba6b"
+    },
+    "definition": {
+      "action": "propose",
+      "version": 1,
+      "role": "author",
+      "goalClass": "freeze-change-contract",
+      "mutationClass": "proposal-bundle-only",
+      "outputClass": "current-proposal-bundle-set",
+      "terminalContract": {
+        "kind": "artifact",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+      },
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/explore.md",
+        "versionFingerprint": "9b06de1f9ba38380670fc784aef405c7b1b88089e9ef8bd896d68122a07915ec",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-cli-end-to-end-and-performance/20260815-181-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "dbdaee44cde12c832d35f914114c58a6f46144f2e524f7d41d14ff6b98d43085"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260815-181-review-explore",
+      "verdict": "approved",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-cli-end-to-end-and-performance/20260815-181-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "dbdaee44cde12c832d35f914114c58a6f46144f2e524f7d41d14ff6b98d43085"
+      },
+      "blockingAuthorities": [],
+      "findings": [],
+      "convergence": [
+        {
+          "findingId": "G1-RE-001",
+          "state": "resolved"
+        },
+        {
+          "findingId": "G1-RE-002",
+          "state": "resolved"
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [
+      {
+        "ref": "owner:398a9e6f90687b299c63b8070e069da64e6fdffae3530c362937a2a55a38dbd3",
+        "decision": "contract-reset",
+        "deliveryId": "20260810-01-change-execution-loop",
+        "changeId": "change-cli-end-to-end-and-performance",
+        "scope": "Keep G1 Explore, Proposal architecture, scope, required outcomes, and implementation plan unchanged; only lexical-sort flowkitMutationScope.apply and flowkitMutationScope.revise-apply selectors without changing membership.",
+        "requiredOutcomes": [
+          "Do not add or remove any mutation selector.",
+          "Preserve G1 Explore, Proposal architecture, scope, required outcomes, and implementation plan unchanged.",
+          "Sort flowkitMutationScope.apply and flowkitMutationScope.revise-apply selectors into existing MutationDeclaration lexical order."
+        ],
+        "sourceRef": "owner-input:2026-08-15T16:38+08:00:G1-contract-reset-mutation-scope-sort"
+      },
+      {
+        "ref": "owner:8dcaf960f267ddbdc5435526ee4472b8ff0da2571567dd0e09585c425f09dbb3",
+        "decision": "contract-reset",
+        "deliveryId": "20260810-01-change-execution-loop",
+        "changeId": "change-cli-end-to-end-and-performance",
+        "scope": "Keep G1 Explore, Proposal architecture, scope, required outcomes, implementation plan, and all 186-approved mutation selectors unchanged; solely extend apply/revise-apply mutation surface with the two B1 service selectors needed to close G1-RA-001 authority-safely.",
+        "requiredOutcomes": [
+          "Add exactly src/services/b1-run-execution-service.ts and tests/unit/services/b1-run-execution-service.test.ts to both flowkitMutationScope.apply and flowkitMutationScope.revise-apply.",
+          "Do not create a second archive state machine, change Formal Action or Policy contracts, enter 03 Delivery behavior, change other G1 architecture/required outcomes, or add any other mutation selector.",
+          "Preserve G1 Explore, Proposal architecture, scope, required outcomes, implementation plan, and every selector approved in 186 unchanged.",
+          "Use the extension only to move changed-surface pending archive pre-OpenSpec recovery discovery behind the existing/narrowly extended B1/F1/D2 production authority boundary, with the CLI consuming one recovery projection."
+        ],
+        "sourceRef": "owner-input:2026-08-15T19:14+08:00:G1-RA-001-B1-service-mutation-scope-reset"
+      }
+    ],
+    "externalContextFingerprint": "2c6ababaeebb3a627ddc86890ca97da666989d455623dff13fbbe45b5be1980d",
+    "requiredResultContract": {
+      "kind": "artifact",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": true,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

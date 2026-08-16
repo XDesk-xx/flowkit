@@ -1,0 +1,20 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "从 001 开始回溯完整审查链后，007 已完整关闭 Q1-RP-002，并正确修正 Q1-RP-001 的 mixed direct re-review 方向；但 Q1-RP-001 仍有一个收窄后的 deterministic contract gap：Design 明确不提供统一 authority-fact arrival machine signal，Policy delta 却把该不可统一判定事实放入 `canRun(review-S)` 前提并使用 `MAY allowed`，导致 explicit re-review admission 仍非唯一机器规则，无法保证 mixed dead-end 被 contract 必然消除。因此本轮 changes-requested，唯一 blocker 为 Author Proposal 修订。OpenSpec strict、transport/hash/lineage、diagnostic-cli delta 与 scope hygiene 均通过。",
+    "nextActionRecommendation": "revise-propose"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindings": [
+    {
+      "id": "Q1-RP-001",
+      "severity": "blocking",
+      "title": "direct re-review 的 machine admission 仍未冻结为 deterministic rule",
+      "problem": "007 已修正 pure/mixed non-author Review 的恢复方向，但 Proposal/Design/Policy delta 对实际 admission 仍不一致。Proposal/Result 表达为相关 non-author fact 到位后允许 explicit direct re-review；Design 同时明确 Q1 不建立统一 authority-event/provenance contract，Policy admission 不推断 fact arrival。然而 flowkit-policy-engine delta 又把“相关 non-author authority fact 已实际到位”写成 `canRun(review-S)` scenario 的前提，并规定 `canRun(review-S)` `MAY` 返回 allowed。由于现有 `canRun(snapshot, action)` 没有统一、finding-specific 的 authority-resolution input，同一个 formal snapshot/action 无法依据该前提唯一求值；而 `MAY` 也允许实现始终拒绝 direct re-review，从而保留 006 所指出的 mixed dead-end。Q1 的 deterministic Policy contract 因此仍未完全冻结。",
+      "location": "openspec/changes/core-contract-alignment/proposal.md:8-12; openspec/changes/core-contract-alignment/design.md Decision 7 / Risks; openspec/changes/core-contract-alignment/specs/flowkit-policy-engine/spec.md `Change-level Action 前置条件矩阵`、`pure 或 mixed non-author boundary 的 explicit direct re-review`、`统一 review/revise 入口解析`",
+      "requiredChange": "在 Proposal/Design/Policy delta 中冻结一个唯一且可由现有机器输入实现的 explicit direct re-review admission contract。必须继续满足：matching Review 含任一 non-author authority 时 Author revise=false；`next()` 保持 blocked 且不自动 review；unchanged target 可通过显式新 Reviewer generation 恢复 mixed dead-end。若 Q1 继续不引入 authority-resolution event/ref，则不得把机器无法统一证明的“fact 已到位”作为 `canRun` 的判定前提，并应把 `canRun(review-S)` 的允许/拒绝从 `MAY` 收敛为 deterministic normative behavior。Reviewer 不指定具体 API 或 provenance 机制。"
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-explore",
+    "executionStatus": "completed",
+    "summary": "159 Explore 对 post-E2 three-file dogfood、archive relocation fixture coupling、F1-shaped Verification 与 external authority separation的方向基本正确；但完整 review 发现两个必须在 Proposal 前关闭的 Explore gap：当前 checkpoint Reader仍可把无 Owner authorization 的 subject-only commit当成 formal checkpoint，159 对 authority chain 的 PASS 超出证据边界；同时 mutation-surface risk 已命中却仍把完整 consumer closure推迟到 Proposal。两项均为 Author-actionable，本轮 changes-requested。"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "F1-RE-001",
+      "severity": "blocking",
+      "title": "Checkpoint recognition 尚未证明 formal boundary / Owner authorization 绑定，Proof A/E 的 PASS 超出证据边界",
+      "problem": "159 把 `Owner authorize-checkpoint → Delivery-scoped structured Git checkpoint → next Change` 定义为已通过的 acceptance boundary，并把当前 Git boundary reader 作为已有 primitive；但 exact Base 的 `readGitBoundarySummaries()` 只读取 `%H/%P/%s`，仅凭 `chore(flowkit): checkpoint <change-id>` subject 与 Delivery Start 拓扑就产生 checkpoint fact，不读取/校验正式 `Flowkit-Delivery / Flowkit-Change / Flowkit-Boundary` trailers，也不把该 boundary 与合法 `authorize-checkpoint` Owner fact 绑定。独立 disposable proof 表明：Manifest 中没有任何 Owner authorization，只提交 subject-only checkpoint，Reader 仍认定 Change 已 checkpoint，Policy 随即允许下一 Change activation。159 虽提到 handoff 要生成/验证 trailers，却没有把“recognition 也必须 fail-closed 验证 formal boundary / authorization binding”识别成当前 gap，因此 Proof A/E 的 PASS 证据边界不足。",
+      "contractRef": "flowkit-operating-model-v8 §27.2; openspec/specs/flowkit-bootstrap-and-roadmap/spec.md Git formal boundary requirement; openspec/specs/flowkit-delivery-change-creation-and-owner-input/spec.md authorize-checkpoint authority boundary",
+      "invariant": "Checkpoint 是 Owner-authorized 的正式 Git boundary；一个缺失/错误 formal boundary identity 或未能机械关联合法 checkpoint authorization 的普通 Git commit，不得被 Reader 接纳为足以推进 Policy 的 Change Checkpoint。",
+      "evidence": [
+        "src/facts/git-boundary-reader.ts uses `git log --format=%H%x09%P%x09%s` and classifies checkpoint from subject/topology only",
+        "tests/unit/facts/git-boundary-reader.test.ts accepts subject-only `chore(flowkit): checkpoint q2-change` commits as structured checkpoints",
+        "disposable proof: ownerAuthorizations=[] + subject-only checkpoint => Reader returns change-checkpoint and next(snapshot) returns activate-change for successor",
+        "explore.md:129-176 and 310-346 mark the full authority chain / external boundary proof PASS while only noting a future handoff/preflight gap"
+      ],
+      "impact": "如果 Proposal 沿当前 Explore 收口，可能只实现 commit message handoff/preflight，而保留 subject-only recognition；这样手工/畸形 checkpoint commit 可以绕过 Owner checkpoint boundary并让 Policy错误推进，F1 的核心 authority closure仍不成立。",
+      "location": "openspec/changes/archive-and-checkpoint-boundary/explore.md:129-176,310-346,399-414; src/facts/git-boundary-reader.ts:20-190",
+      "blockingAuthority": "author",
+      "requiredOutcome": "修订 Explore，把 formal checkpoint recognition 的 fail-closed identity/authorization binding列为 F1 明确 gap / required outcome，并做最小 disposable proof：合法 formal checkpoint被接受；缺失/错误 Delivery/Change/Boundary identity、错误 target、以及没有可接受 checkpoint authorization provenance 的伪 checkpoint不能使 Policy跳过 authorize-checkpoint。Reviewer不预设必须通过某个特定 trailer存 Owner ref，但 Proposal前必须冻结 authority closure，而不仅是生成 handoff 文案。",
+      "acceptance": [
+        "Explore 明确区分 checkpoint handoff generation 与 checkpoint recognition/admission，两者都不能让普通 subject-only commit成为 formal checkpoint",
+        "提供 disposable evidence 证明 malformed/unbound checkpoint fail-closed，Evidence Boundary 覆盖 Owner authorization → recognized checkpoint → next Change",
+        "保留 legacy checkpoint bounded compatibility，且不要求改写历史 Git"
+      ]
+    },
+    {
+      "id": "F1-RE-002",
+      "severity": "blocking",
+      "title": "Risk Scan 已命中 mutation-surface closure，但 Explore 仍把 closure 推迟到 Proposal",
+      "problem": "159 Risk Scan 明确将 candidate/formal-fact consumer impact 标为 yes；新版 Explore discipline 要求在进入 Proposal 前证明 required mutation surface closure。159 只给出“初步 mutation-surface candidates”，并明确写 `Proposal 必须通过静态引用/affected regression继续收敛`。这仍然把 146 已经证明会造成 Apply fail-closed 的 scope-completeness 风险留给 Proposal临时发现。静态引用扫描显示 checkpoint contract 还直接涉及 `src/policy/types.ts`、`src/domain/a1-types.ts`、`src/facts/formal-fact-snapshot.ts` 等 current consumers，而这些并未进入初步 source candidate list；是否最终要修改可以由 Proposal决定，但 Explore 目前没有证明完整 consumer set已被检查。",
+      "contractRef": "flowkit-explore-skill-v2 §4.6 Mutation Surface + Verification Closure Proof and §11 Short Rule",
+      "invariant": "当 mutation-surface risk=yes 且下一步 Proposal 将冻结 Apply scope时，Explore 应先完成 static consumer/affected-regression closure，使 Proposal是在已证明的 required surface内选择最小 selectors，而不是继续发现遗漏 prerequisite。",
+      "evidence": [
+        "explore.md:122 marks candidate/formal-fact mutation consumer risk=yes",
+        "explore.md:430-454 labels the list as initial candidates and defers static-reference/affected-regression closure to Proposal",
+        "targeted repo scan for `authorize-checkpoint|change-checkpoint|GitBoundaryFact` also reaches src/policy/types.ts, src/domain/a1-types.ts, src/facts/formal-fact-snapshot.ts and their tests, which the initial source list does not enumerate",
+        "flowkit-explore-skill-v2 requires before Proposal: close mutation surface and only PASS when Evidence Boundary covers Acceptance Boundary"
+      ],
+      "impact": "Proposal可能再次冻结不完整 flowkitMutationScope，随后在 Apply/Revise-Apply 才发现必改 consumer/test未授权，重复 E2 146/153 的无效循环。",
+      "location": "openspec/changes/archive-and-checkpoint-boundary/explore.md:111-125,430-454; flowkit-explore-skill-v2 §4.6, §5, §11",
+      "blockingAuthority": "author",
+      "requiredOutcome": "在 revise-explore 中完成一次 F1 mutation-surface closure scan：枚举 checkpoint/archive handoff、GitBoundaryFact、Owner checkpoint authority、Policy consumers及相关 regressions；把 required/conditional surfaces分类，并证明所有已知 prerequisite已被纳入 Feasible Proposal Boundary。无需在 Explore 决定最终 implementation file set，但不得把“还没检查完整 consumer”留给 Proposal。",
+      "acceptance": [
+        "记录 static direct-reference / consumer scan 结果并覆盖 checkpoint authority chain的 current source/test consumers",
+        "区分 required surface 与 implementation-choice conditional surface，避免把所有候选都强制修改",
+        "不存在已知 required consumer/test 落在 Feasible Proposal Boundary之外；Proposal只需在已闭合 surface内冻结最小 selectors"
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}

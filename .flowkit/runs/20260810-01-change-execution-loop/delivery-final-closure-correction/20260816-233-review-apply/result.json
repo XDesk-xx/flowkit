@@ -1,0 +1,26 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "Review 232 revise-apply: I1-RA-002 is resolved. The new tests/unit/cli/change-action.test.ts regression invokes runCli({argv:['verify','--retry']}) through src/cli/main.ts, proves superseding Verification publication/history, immutable origin Apply result, and no Run/NNN allocation, and is physically selected by tests-cli via tests/unit/cli/*.test.ts. Reviewer independently replaced the --retry route with bare projectChangeVerification and the same regression failed; restoring the route passed. 232 current verification publication exactly matches its terminal binding and the preserved 227 failed history remains fingerprint-addressed exact bytes. No new candidate semantic blocker was found. The uploaded 232 transport manifest had malformed YAML indentation for operations.delete; this is transport-only and is mechanically normalized in the Reviewer cumulative package without changing candidate bytes or lifecycle semantics.",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/delivery-final-closure-correction/verification.md",
+      "versionFingerprint": "9a03a6b2aea5a14e14e2ed7be23289591df3c44fdaea3a89c27cc9f4ff159b13",
+      "kind": "verification-summary"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "f9f52741c6b6f6308d006e38fe4b70f1e5a33a8f96c1481311bc462b027fcec4"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [],
+  "reviewFindingConvergence": [
+    {
+      "findingId": "I1-RA-002",
+      "state": "resolved"
+    }
+  ]
+}

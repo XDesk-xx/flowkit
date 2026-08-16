@@ -1,0 +1,39 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "从 031 开始回溯 B1 链后，035 Proposal 的主体方向成立，034 的 Action Package/Full Test/C1 ownership finding保持关闭，CRLF、Run-ID、Lean ResultRef 与 scope guards均正确；但仍有三个 author-blocking contract gap：一是 unique Run preparation 没有冻结 Q1 explicit direct re-review 在 next() blocked 时的合法 entry；二是 fixed ActionDefinition 只给了 Role mapping，没有逐 Action 冻结 goal/mutation/result contract；三是 same-pending semantic fingerprint 漏掉 ActionPackage contractRefs，可能在 contract input 已变时错误 resume。OpenSpec strict、612/612 tests、typecheck/lint/build/quality、lineage/hash和 Git hygiene均通过。",
+    "nextActionRecommendation": "revise-propose"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindings": [
+    {
+      "id": "B1-RP-001",
+      "severity": "blocking",
+      "blockingAuthority": "author",
+      "title": "RunExecutionService 未冻结 Q1 explicit direct re-review 的合法 entry semantics",
+      "problem": "Q1 明确要求 matching changes-requested 含任一 non-author blocker 时 next() 继续 blocked、canRun(review-S)/explicit same-stage review 仍合法并创建新 Reviewer generation。035 却把 preparation 设计为由 next/canRun 确定唯一 current Action、caller 不得选择 Action，却没有说明 next() 故意 blocked 时 explicit review-S 如何进入 service。按字面实现会封死 Q1 direct re-review，或迫使 B1 自己复制 Policy/允许 caller 任意选 Action。",
+      "location": "openspec/changes/lean-run-and-action-package/design.md Decisions 2/4; proposal.md Run execution preparation/new Reviewer generation; specs/flowkit-lean-run-and-action-package/spec.md `B1 必须提供唯一高层 Run preparation surface`; canonical openspec/specs/flowkit-policy-engine/spec.md explicit same-stage re-review",
+      "requiredChange": "revise-propose：冻结 normal next()-driven progression 与 Q1 explicit direct re-review 的 bounded dual-entry semantics。explicit re-review 必须复用 shared Policy legality（resolveReview/canRun 或等价），next() 仍 blocked、不自动 review、caller 不得任意选择其它 Action；合法 re-review 创建新 Reviewer generation/NNN，matching pending review仍可resume。"
+    },
+    {
+      "id": "B1-RP-002",
+      "severity": "blocking",
+      "blockingAuthority": "author",
+      "title": "ActionDefinition 未冻结十个 Action 的完整 normative mapping",
+      "problem": "034 approved Explore P3 要求 Proposal 对每个 Standard Action 冻结 role、goal class、allowed mutation/output class、completion/result expectation。035 只给出了 Action→Role 映射，其余 goalClass/mutationBoundary/terminalContract 只有字段名，没有逐 Action normative values；但这些字段又直接决定 Action Package 和 result admission。Apply 仍需自行发明安全边界。",
+      "location": "openspec/changes/lean-run-and-action-package/explore.md P3; design.md Decision 1 and ActionPackage shape; tasks.md 1.1; specs/flowkit-lean-run-and-action-package/spec.md ActionDefinition requirement",
+      "requiredChange": "revise-propose：在 Proposal/Design/spec 中冻结十个 Standard Action 的完整、可测试 ActionDefinition mapping：role、goalClass、mutation/output boundary、terminal/result expectation。具体静态数据结构由 Author选择，但不得留给 Apply 临时决定，也不得建立 runtime Registry。"
+    },
+    {
+      "id": "B1-RP-003",
+      "severity": "blocking",
+      "blockingAuthority": "author",
+      "title": "semanticInputFingerprint 未覆盖 contractRefs，无法保证 same-pending input 未变化",
+      "problem": "035 ActionPackage 明确包含 contractRefs[]，但 semanticInputFingerprint descriptor 只列 delivery/change/action definition、handoff、Review/Verification、Owner refs。若 contract ref/version 变化而其它 refs 不变，fingerprint 仍可相同，service 会 resume 同一 pending Run，但重新生成的 logical Action Package 已是不同 contract input generation。",
+      "location": "openspec/changes/lean-run-and-action-package/design.md Decisions 3/5; specs/flowkit-lean-run-and-action-package/spec.md same pending / Action Package requirements; tasks.md 1.3 / 2.4 / 3.1",
+      "requiredChange": "revise-propose：冻结 semantic identity 的 inclusion rule，使所有会改变当前执行语义的 logical package input authority identity 都进入 canonical descriptor；至少显式纳入 contractRefs 的 identity/version fingerprint，或证明特定字段为何安全排除。仍不得复制/hash整个 package正文、OpenSpec正文、Git history或 provider transcript。"
+    }
+  ]
+}

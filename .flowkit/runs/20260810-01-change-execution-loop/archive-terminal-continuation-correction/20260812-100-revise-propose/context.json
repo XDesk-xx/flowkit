@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 4,
+  "runId": "20260812-100-revise-propose",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "revise-propose",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "579a4536de9275af2d3dc311c26a40ce8f618544f3a1ab78a1ed3fa17d583973",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:de0e7445c4615313a4a50ecde9d03379f44dc420cffbbfc757ab3a6dea175806",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "archive-terminal-continuation-correction",
+      "scope": "archive-sync-scenario-identity",
+      "requiredOutcomes": [
+        "保留 archive Run terminal completed 后才允许 checkpoint 的新语义",
+        "保留 canonical checkpoint scenario identity"
+      ],
+      "sourceRef": "owner-input:2026-08-13T02:03+08:00"
+    },
+    {
+      "ref": "owner:ea5bf797f441ad3abb1f62afc08026fc5cb1059ef2a253521f94ca7e6c3799e0",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "archive-terminal-continuation-correction",
+      "scope": "archive-sync-scenario-identity-and-reset-currentness-routing",
+      "requiredOutcomes": [
+        "Abandon the current 097 apply generation; the new contract generation must follow normal propose producer -> review-propose -> apply -> review-apply -> archive currentness.",
+        "Close the reset-currentness routing inconsistency so stage, lineage, next, and formal preparation agree on the same current Contract Reset generation without introducing a generic generation-management framework.",
+        "Preserve canonical checkpoint scenario identity while retaining the semantic requirement that the matching archive Run must be terminal completed before checkpoint readiness."
+      ],
+      "sourceRef": "owner-input:2026-08-13T02:32+08:00"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/archive-terminal-continuation-correction/20260812-100-revise-propose/",
+  "changeKey": "D2",
+  "changeId": "archive-terminal-continuation-correction",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/archive-terminal-continuation-correction/20260812-099-review-propose/result.json",
+    "versionFingerprint": "b58632f0f45294c458a6f64d9e594bc12fc670d9b03674a252e43c9d8f35eb7a",
+    "kind": "run-result"
+  },
+  "sourceReviewRun": "20260812-099-review-propose",
+  "sourceReviewVerdict": "changes-requested",
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": true,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

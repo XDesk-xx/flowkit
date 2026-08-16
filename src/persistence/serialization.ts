@@ -19,14 +19,15 @@
  *     gate (executionStatus single-source-of-truth).
  */
 
+import { createHash } from 'node:crypto';
 import {
   isFormalAction,
   isChangeAction,
-  isDeliveryAction,
+  isRoleAllowedForAction,
   CHANGE_ACTIONS,
-  DELIVERY_ACTIONS,
+  getActionDefinition,
 } from '../domain/actions.js';
-import type { ChangeAction, DeliveryAction } from '../domain/actions.js';
+import type { ChangeAction } from '../domain/actions.js';
 import { isExecutionStatus } from '../domain/schema-validator.js';
 import { FlowkitError } from '../shared/errors.js';
 import { normalizeSeparators } from '../shared/paths.js';
@@ -36,14 +37,30 @@ import {
   PRODUCED_ARTIFACT_KIND,
   VERIFICATION_SUMMARY_KIND,
   RESULT_REF_KINDS,
-  resolveVerificationSummaryRef,
+  normalizeArtifactLogicalRef,
 } from './result-ref-adapter.js';
 import type {
   ActionResult,
   ResultRef,
   ReviewVerdictValue,
   Role,
+  BlockingAuthority,
+  OwnerFactRef,
+  EntryWorkspaceIdentity,
+  CompactEntryWorkspaceIdentity,
+  MutationDeclaration,
+  VersionedAuthorityRef,
+  ActionPackageV2,
 } from '../domain/types.js';
+import { BLOCKING_AUTHORITIES } from '../domain/types.js';
+import {
+  OPENSPEC_ARCHIVE_SURFACE_VERSION,
+  type ArchiveMutationGuard,
+  type OpenSpecArchiveSuccessObservation,
+  type OpenSpecArchiveFailureObservation,
+  type ArchiveEntryOpenSpecProjection,
+  OPENSPEC_SUPPORTED_ARTIFACT_IDS,
+} from '../integrations/openspec/openspec-types.js';
 
 // ---------------------------------------------------------------------------
 // TerminalRunStatus + ActionResultWithoutRunRef
@@ -72,9 +89,8 @@ export type ActionResultWithoutRunRef = Omit<ActionResult, 'runRef'>;
  * free-text findings arrays (`blockingFindings`, `nonBlockingFindings`) are
  * rejected by the closed schema.
  *
- * Q1 design Q1-2: each finding has a minimal structure. `severity=blocking`
- * findings MUST have a non-empty `requiredChange` when the verdict is
- * `changes-requested`.
+ * Q1: blocking findings declare exactly one `blockingAuthority`. Author-owned
+ * blockers also declare `requiredChange`; non-author blockers MUST NOT.
  */
 export interface ReviewFinding {
   /** Non-empty stable finding ID (e.g. "Q1-RP-001"). */
@@ -87,8 +103,31 @@ export interface ReviewFinding {
   readonly problem: string;
   /** Optional location reference (file path, line range, or section). */
   readonly location?: string;
-  /** Required for `blocking` severity: what the author must change. */
+  /** Required for blocking severity; absent for non-blocking findings. */
+  readonly blockingAuthority?: BlockingAuthority;
+  /** Required only when blockingAuthority=author. */
   readonly requiredChange?: string;
+}
+
+export interface ReviewFindingV2 {
+  readonly id: string;
+  readonly severity: 'blocking' | 'non-blocking';
+  readonly title: string;
+  readonly problem: string;
+  readonly contractRef: string;
+  readonly invariant: string;
+  readonly evidence: readonly string[];
+  readonly impact: string;
+  readonly location?: string;
+  readonly blockingAuthority?: BlockingAuthority;
+  readonly requiredOutcome?: string;
+  readonly acceptance?: readonly string[];
+}
+
+export interface FindingConvergence {
+  readonly findingId: string;
+  readonly state: 'new' | 'still-open' | 'resolved' | 'superseded';
+  readonly supersededByFindingId?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -116,6 +155,25 @@ export interface ReviewFinding {
  * `archiveResults`, `manifestUpdate`, `policyRoute`, `commitPolicy`,
  * `consistencyScan`).
  */
+
+export interface RunTerminalBinding {
+  readonly schemaVersion: 1;
+  /** Canonical digest of the provider/executor logical terminal descriptor. */
+  readonly logicalDescriptorDigest: string;
+  /** Historical E1/E2-migration sidecar binding. */
+  readonly verificationSelection?: {
+    readonly logicalRef: string;
+    readonly versionFingerprint: string;
+  };
+  /** Post-E2 three-file binding directly to the formal verification.md authority. */
+  readonly currentVerification?: {
+    readonly logicalRef: string;
+    readonly versionFingerprint: string;
+    readonly selectionFingerprint: string;
+    readonly status: 'passed' | 'failed' | 'not-applicable';
+  };
+}
+
 export interface RunResultFile {
   readonly runStatus: TerminalRunStatus;
   /** Required when `runStatus === 'completed'`. */
@@ -126,8 +184,14 @@ export interface RunResultFile {
   readonly cancellationReason?: string;
   /** Present for completed `review-*` Runs (C1-AP-004 canonical verdict payload). */
   readonly reviewVerdict?: ReviewVerdictValue;
-  /** Q1: typed Reviewer findings for completed `review-*` Runs. */
-  readonly reviewFindings?: readonly ReviewFinding[];
+  /** D1 writer marker; absent means historical Q1 transitional finding shape. */
+  readonly reviewFindingSchemaVersion?: 2;
+  /** Reviewer-owned findings. */
+  readonly reviewFindings?: readonly (ReviewFinding | ReviewFindingV2)[];
+  /** D1 pairwise previous→current finding closure. */
+  readonly reviewFindingConvergence?: readonly FindingConvergence[];
+  /** E1 v5 exact replay binding; absent on immutable historical terminal results. */
+  readonly terminalBinding?: RunTerminalBinding;
 }
 
 // ---------------------------------------------------------------------------
@@ -163,18 +227,23 @@ export interface ContextFileConstraints {
  * `sourceReviewRun`, which is the prior review being addressed by a
  * `revise-*` Run.
  */
-export interface ContextFile {
-  /** C1 format marker — fixed to `2`. */
-  readonly schemaVersion: 2;
+interface ContextFileBase {
   readonly runId: string;
   readonly deliveryId: string;
-  /** C1-specific; required for Change-level Runs, MUST be absent for Delivery-level. */
-  readonly changeKey?: string;
-  /** Maps to B1 `Run.changeId`; required for Change-level Runs, MUST be absent for Delivery-level. */
-  readonly changeId?: string;
-  readonly action: ChangeAction | DeliveryAction;
+  /** Every current schemaVersion 2 Run is Change-scoped. */
+  readonly changeKey: string;
+  readonly changeId: string;
+  readonly action: ChangeAction;
   readonly role: Role;
   readonly ownerAuthorization: string;
+  /**
+   * B1 compact semantic authority identity for pending-run continuation.
+   * Historical pre-B1 Runs may omit it; every Run prepared through the B1
+   * high-level surface persists it.
+   */
+  readonly semanticInputFingerprint?: string;
+  /** D1 bounded structured Owner fact refs; current writers use v3. Transitional v2 bytes are read-only and ignored. */
+  readonly ownerFactRefs?: readonly OwnerFactRef[];
   /** Optional ResultRef projecting directly to `Run.inputRef`. */
   readonly inputRef?: ResultRef;
   /**
@@ -190,10 +259,53 @@ export interface ContextFile {
   readonly sourceReviewVerdict?: ReviewVerdictValue;
   /** Run being reviewed by a `review-*` Run (C1-AP-004 canonical linkage). */
   readonly reviewedRunId?: string;
+  /** D2 future archive entry semantic projection; v4 archive-only. */
+  readonly archiveEntryOpenSpecProjection?: ArchiveEntryOpenSpecProjection;
+  /** C1 OpenSpec archive-only machine operational recovery field. */
+  readonly archiveMutationGuard?: ArchiveMutationGuard;
   readonly constraints?: ContextFileConstraints;
   /** MUST be consistent with the actual filesystem Run directory path. */
   readonly runPath: string;
 }
+
+/** Immutable historical context contracts. They never acquire v5 fields. */
+export interface HistoricalContextFile extends ContextFileBase {
+  readonly schemaVersion: 2 | 3 | 4;
+}
+
+interface ContextFileV5Common extends ContextFileBase {
+  readonly schemaVersion: 5;
+  /** Git identity used by Core to derive the final actualChangeSet. */
+  readonly canonicalBase: string;
+  /** Frozen applicable contract / Owner fact identities at Action entry. */
+  readonly applicableFactRefs: readonly VersionedAuthorityRef[];
+  /** Immutable minimal package view used by exact resume; never recomputed through Policy. */
+  readonly actionPackage: ActionPackageV2;
+}
+
+export interface ContextFileV5Apply extends ContextFileV5Common {
+  readonly action: 'apply' | 'revise-apply';
+  readonly entryWorkspaceIdentity: EntryWorkspaceIdentity;
+  readonly compactEntryWorkspaceIdentity?: never;
+  readonly mutationDeclaration: MutationDeclaration;
+}
+
+/** Post-E2 current Apply context: compact entry identity is embedded in context.json; no sidecar. */
+export interface CurrentCompactApplyContextFile extends ContextFileV5Common {
+  readonly action: 'apply' | 'revise-apply';
+  readonly compactEntryWorkspaceIdentity: CompactEntryWorkspaceIdentity;
+  readonly entryWorkspaceIdentity?: never;
+  readonly mutationDeclaration: MutationDeclaration;
+}
+
+export interface ContextFileV5NonApply extends ContextFileV5Common {
+  readonly action: Exclude<ChangeAction, 'apply' | 'revise-apply'>;
+  readonly entryWorkspaceIdentity?: never;
+  readonly mutationDeclaration?: never;
+}
+
+/** Closed physical context schema. Current compact-vs-legacy Apply shape is structurally discriminated; no new component generation is introduced. */
+export type ContextFile = HistoricalContextFile | ContextFileV5Apply | CurrentCompactApplyContextFile | ContextFileV5NonApply;
 
 // ---------------------------------------------------------------------------
 // Validation helpers
@@ -402,7 +514,7 @@ export function validateActionResultWithoutRunRef(
   const nextActionRecommendation = validateOptionalString(obj, 'nextActionRecommendation');
 
   const result: ActionResultWithoutRunRef = {
-    action: action as ChangeAction | DeliveryAction,
+    action: action as ChangeAction,
     executionStatus,
     summary,
     ...(producedResultRefs !== undefined && { producedResultRefs }),
@@ -494,6 +606,57 @@ function validateOptionalString(
   return v;
 }
 
+
+function validateRunTerminalBinding(value: unknown): RunTerminalBinding {
+  const obj = asObject(value, 'terminalBinding');
+  const keys = Object.keys(obj).sort();
+  const hasLegacy = obj['verificationSelection'] !== undefined;
+  const hasCurrent = obj['currentVerification'] !== undefined;
+  if (hasLegacy && hasCurrent) schemaFail('terminalBinding must not mix historical sidecar and current verification bindings');
+  const allowed = [
+    'logicalDescriptorDigest',
+    'schemaVersion',
+    ...(hasLegacy ? ['verificationSelection'] : []),
+    ...(hasCurrent ? ['currentVerification'] : []),
+  ].sort();
+  if (obj['schemaVersion'] !== 1 || keys.length !== allowed.length || keys.some((key, index) => key !== allowed[index])) {
+    schemaFail('terminalBinding must use the closed schemaVersion 1 structural shape');
+  }
+  const digest = obj['logicalDescriptorDigest'];
+  if (typeof digest !== 'string' || !/^[0-9a-f]{64}$/.test(digest)) schemaFail('terminalBinding.logicalDescriptorDigest must be SHA-256');
+
+  let verificationSelection: RunTerminalBinding['verificationSelection'];
+  if (hasLegacy) {
+    const verification = asObject(obj['verificationSelection'], 'terminalBinding.verificationSelection');
+    assertClosedKeys(verification, 'terminalBinding.verificationSelection', ['logicalRef', 'versionFingerprint']);
+    const logicalRef = normalizedLogicalRefForBinding(verification['logicalRef'], 'terminalBinding.verificationSelection.logicalRef');
+    const versionFingerprint = shaForBinding(verification['versionFingerprint'], 'terminalBinding.verificationSelection.versionFingerprint');
+    verificationSelection = { logicalRef, versionFingerprint };
+  }
+
+  let currentVerification: RunTerminalBinding['currentVerification'];
+  if (hasCurrent) {
+    const verification = asObject(obj['currentVerification'], 'terminalBinding.currentVerification');
+    assertClosedKeys(verification, 'terminalBinding.currentVerification', ['logicalRef', 'selectionFingerprint', 'status', 'versionFingerprint']);
+    const logicalRef = normalizedLogicalRefForBinding(verification['logicalRef'], 'terminalBinding.currentVerification.logicalRef');
+    const versionFingerprint = shaForBinding(verification['versionFingerprint'], 'terminalBinding.currentVerification.versionFingerprint');
+    const selectionFingerprint = shaForBinding(verification['selectionFingerprint'], 'terminalBinding.currentVerification.selectionFingerprint');
+    const status = verification['status'];
+    if (status !== 'passed' && status !== 'failed' && status !== 'not-applicable') schemaFail('terminalBinding.currentVerification.status is invalid');
+    currentVerification = { logicalRef, versionFingerprint, selectionFingerprint, status };
+  }
+  return { schemaVersion: 1, logicalDescriptorDigest: digest, ...(verificationSelection !== undefined && { verificationSelection }), ...(currentVerification !== undefined && { currentVerification }) };
+}
+
+function normalizedLogicalRefForBinding(value: unknown, label: string): string {
+  if (typeof value !== 'string' || value === '' || value.startsWith('/') || value.includes('\\') || value.split('/').some((part) => part === '' || part === '.' || part === '..')) schemaFail(`${label} must be a normalized repository-relative path`);
+  return value;
+}
+function shaForBinding(value: unknown, label: string): string {
+  if (typeof value !== 'string' || !/^[0-9a-f]{64}$/.test(value)) schemaFail(`${label} must be SHA-256`);
+  return value;
+}
+
 // ---------------------------------------------------------------------------
 // validateRunResultFileCombination
 // ---------------------------------------------------------------------------
@@ -507,7 +670,10 @@ const RUN_RESULT_FILE_KNOWN_FIELDS = new Set([
   'failureDiagnosis',
   'cancellationReason',
   'reviewVerdict',
+  'reviewFindingSchemaVersion',
   'reviewFindings',
+  'reviewFindingConvergence',
+  'terminalBinding',
 ]);
 
 /**
@@ -572,7 +738,12 @@ export function validateRunResultFileCombination(value: RunResultFile): void {
     }
   }
 
-  // Q1: reviewFindings — when present, MUST be a valid typed array.
+  const findingSchemaVersion = obj['reviewFindingSchemaVersion'];
+  if (findingSchemaVersion !== undefined && findingSchemaVersion !== 2) {
+    schemaFail('RunResultFile.reviewFindingSchemaVersion must equal 2 when present');
+  }
+
+  // reviewFindings — v2 when versioned, historical transitional otherwise.
   const reviewFindingsRaw = obj['reviewFindings'];
   if (reviewFindingsRaw !== undefined) {
     if (!Array.isArray(reviewFindingsRaw)) {
@@ -581,9 +752,45 @@ export function validateRunResultFileCombination(value: RunResultFile): void {
       });
     }
     for (let i = 0; i < reviewFindingsRaw.length; i++) {
-      validateReviewFinding(reviewFindingsRaw[i], i);
+      if (findingSchemaVersion === 2) validateReviewFindingV2(reviewFindingsRaw[i], i);
+      else validateReviewFinding(reviewFindingsRaw[i], i);
     }
+    const ids = reviewFindingsRaw.map((finding) => asObject(finding, 'reviewFinding')['id']);
+    if (new Set(ids).size !== ids.length) schemaFail('reviewFindings contains duplicate finding IDs');
   }
+  const convergenceRaw = obj['reviewFindingConvergence'];
+  if (findingSchemaVersion === 2) {
+    if (!Array.isArray(convergenceRaw)) schemaFail('v2 review result requires reviewFindingConvergence array');
+    for (let i = 0; i < convergenceRaw.length; i += 1) validateFindingConvergence(convergenceRaw[i], i);
+    const currentIds = new Set((reviewFindingsRaw ?? []).map((finding) => asObject(finding, 'reviewFinding')['id'] as string));
+    const convergence = convergenceRaw as unknown[];
+    const convergenceIds = convergence.map((entry) => requireNonEmptyString(asObject(entry, 'reviewFindingConvergence'), 'findingId'));
+    if (new Set(convergenceIds).size !== convergenceIds.length) schemaFail('reviewFindingConvergence contains duplicate findingId entries');
+    const newIds = new Set<string>();
+    for (const entry of convergence) {
+      const record = asObject(entry, 'reviewFindingConvergence');
+      const findingId = record['findingId'] as string;
+      const state = record['state'];
+      if ((state === 'new' || state === 'still-open') && !currentIds.has(findingId)) {
+        schemaFail(`${state} convergence findingId must exist in current reviewFindings`, { findingId });
+      }
+      if ((state === 'resolved' || state === 'superseded') && currentIds.has(findingId)) {
+        schemaFail(`${state} convergence findingId must be absent from current reviewFindings`, { findingId });
+      }
+      if (state === 'new') newIds.add(findingId);
+    }
+    for (const entry of convergence) {
+      const record = asObject(entry, 'reviewFindingConvergence');
+      if (record['state'] === 'superseded' && !newIds.has(record['supersededByFindingId'] as string)) {
+        schemaFail('supersededByFindingId must reference a current new finding');
+      }
+    }
+  } else if (convergenceRaw !== undefined) {
+    schemaFail('transitional review result must not carry reviewFindingConvergence');
+  }
+
+  const terminalBindingRaw = obj['terminalBinding'];
+  if (terminalBindingRaw !== undefined) validateRunTerminalBinding(terminalBindingRaw);
 
   const hasActionResult = obj['actionResult'] !== undefined;
 
@@ -786,6 +993,96 @@ export function admitC1RunResult(raw: string, action: string): RunResultFile {
   return result;
 }
 
+export interface ReaderRunResultProvenance {
+  readonly runId: string;
+  readonly deliveryId: string;
+  readonly changeId: string;
+}
+
+interface PreQ1ReviewResultCompatibility extends ReaderRunResultProvenance {
+  readonly action: 'review-explore' | 'review-propose';
+  readonly sha256: string;
+}
+
+/** Exact immutable Q1 bootstrap Reviews that predate blockingAuthority. */
+const PRE_Q1_REVIEW_RESULT_COMPATIBILITY: readonly PreQ1ReviewResultCompatibility[] = [
+  {
+    runId: '20260810-002-review-explore',
+    deliveryId: '20260810-01-change-execution-loop',
+    changeId: 'core-contract-alignment',
+    action: 'review-explore',
+    sha256: '09a0da2b699269f8915f88632d6a21cfa494988dd7e4beed4a969b761e8b1a05',
+  },
+  {
+    runId: '20260810-006-review-propose',
+    deliveryId: '20260810-01-change-execution-loop',
+    changeId: 'core-contract-alignment',
+    action: 'review-propose',
+    sha256: 'ecb18b20011d56e99a293c4aa804345bf32fff9dd11fa921467360e6f4835972',
+  },
+  {
+    runId: '20260810-008-review-propose',
+    deliveryId: '20260810-01-change-execution-loop',
+    changeId: 'core-contract-alignment',
+    action: 'review-propose',
+    sha256: '95e71ff2dab4b5abc2fa594323c363cfd4d8cd3ba9f227e6b1267bf0273a0795',
+  },
+] as const;
+
+function rawSha256(raw: string): string {
+  return createHash('sha256').update(raw, 'utf8').digest('hex');
+}
+
+/**
+ * Reader-only compatibility for immutable pre-Q1 typed Review findings.
+ *
+ * Strict admission always runs first. Compatibility is possible only when the
+ * caller supplies persisted Run provenance AND the exact raw-byte SHA-256
+ * matches one of the known immutable Q1 bootstrap Review results. Shape alone
+ * is never sufficient. New/current schemaVersion 2 Reviews therefore remain
+ * strict and fail closed when blockingAuthority is missing. No bytes are
+ * rewritten.
+ */
+export function admitC1RunResultForReader(
+  raw: string,
+  action: string,
+  provenance?: ReaderRunResultProvenance,
+): RunResultFile {
+  try {
+    return admitC1RunResult(raw, action);
+  } catch (strictError) {
+    if (provenance === undefined) throw strictError;
+    const fingerprint = rawSha256(raw);
+    const compatible = PRE_Q1_REVIEW_RESULT_COMPATIBILITY.some((entry) =>
+      entry.sha256 === fingerprint &&
+      entry.action === action &&
+      entry.runId === provenance.runId &&
+      entry.deliveryId === provenance.deliveryId &&
+      entry.changeId === provenance.changeId
+    );
+    if (!compatible) throw strictError;
+
+    let parsed: unknown;
+    try { parsed = JSON.parse(raw); } catch { throw strictError; }
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) throw strictError;
+    const obj = parsed as Record<string, unknown>;
+    if (obj['runStatus'] !== 'completed' || obj['reviewVerdict'] !== 'changes-requested' || !Array.isArray(obj['reviewFindings'])) throw strictError;
+
+    let normalized = false;
+    const reviewFindings = obj['reviewFindings'].map((value) => {
+      if (typeof value !== 'object' || value === null || Array.isArray(value)) return value;
+      const finding = value as Record<string, unknown>;
+      if (finding['severity'] === 'blocking' && finding['blockingAuthority'] === undefined && typeof finding['requiredChange'] === 'string' && finding['requiredChange'].trim() !== '') {
+        normalized = true;
+        return { ...finding, blockingAuthority: 'author' };
+      }
+      return finding;
+    });
+    if (!normalized) throw strictError;
+    return admitC1RunResult(JSON.stringify({ ...obj, reviewFindings }), action);
+  }
+}
+
 /**
  * Validate a single ReviewFinding entry (Q1 typed payload).
  *
@@ -801,7 +1098,7 @@ function validateReviewFinding(value: unknown, index: number): void {
   const obj = asObject(value, `reviewFindings[${index}]`);
 
   // Closed schema for ReviewFinding.
-  const knownFields = new Set(['id', 'severity', 'title', 'problem', 'location', 'requiredChange']);
+  const knownFields = new Set(['id', 'severity', 'title', 'problem', 'location', 'blockingAuthority', 'requiredChange']);
   for (const key of Object.keys(obj)) {
     if (!knownFields.has(key)) {
       schemaFail(`reviewFindings[${index}] contains unknown field: ${key}`, {
@@ -837,16 +1134,85 @@ function validateReviewFinding(value: unknown, index: number): void {
     }
   }
 
-  // Optional requiredChange — required for blocking severity.
+  const authorityRaw = obj['blockingAuthority'];
   const requiredChangeRaw = obj['requiredChange'];
-  if (requiredChangeRaw !== undefined) {
-    if (typeof requiredChangeRaw !== 'string' || requiredChangeRaw.trim() === '') {
-      schemaFail(`reviewFindings[${index}].requiredChange must be a non-empty string`, {
-        requiredChange: requiredChangeRaw,
+  if (severityRaw === 'blocking') {
+    if (typeof authorityRaw !== 'string' || !(BLOCKING_AUTHORITIES as readonly string[]).includes(authorityRaw)) {
+      schemaFail(`reviewFindings[${index}].blockingAuthority must be author|owner|verification|external`, {
+        blockingAuthority: authorityRaw,
         index,
       });
     }
+    if (authorityRaw === 'author') {
+      if (typeof requiredChangeRaw !== 'string' || requiredChangeRaw.trim() === '') {
+        schemaFail(`author blocking reviewFindings[${index}] must have non-empty requiredChange`, { index });
+      }
+    } else if (requiredChangeRaw !== undefined) {
+      schemaFail(`non-author blocking reviewFindings[${index}] MUST NOT carry requiredChange`, {
+        blockingAuthority: authorityRaw,
+        index,
+      });
+    }
+  } else {
+    if (authorityRaw !== undefined) {
+      schemaFail(`non-blocking reviewFindings[${index}] MUST NOT carry blockingAuthority`, { index });
+    }
+    if (requiredChangeRaw !== undefined) {
+      schemaFail(`non-blocking reviewFindings[${index}] MUST NOT carry requiredChange`, { index });
+    }
   }
+}
+
+function nonEmptyStringArray(value: unknown, field: string): readonly string[] {
+  if (!Array.isArray(value) || value.length === 0 || value.some((item) => typeof item !== 'string' || item.trim() === '')) {
+    schemaFail(`${field} must be a non-empty string array`);
+  }
+  return value as string[];
+}
+
+function validateReviewFindingV2(value: unknown, index: number): void {
+  const obj = asObject(value, `reviewFindings[${index}]`);
+  const knownFields = new Set([
+    'id', 'severity', 'title', 'problem', 'contractRef', 'invariant', 'evidence', 'impact',
+    'location', 'blockingAuthority', 'requiredOutcome', 'acceptance',
+  ]);
+  for (const key of Object.keys(obj)) {
+    if (!knownFields.has(key)) schemaFail(`reviewFindings[${index}] contains unknown field: ${key}`);
+  }
+  requireNonEmptyString(obj, 'id');
+  const severity = obj['severity'];
+  if (severity !== 'blocking' && severity !== 'non-blocking') schemaFail(`reviewFindings[${index}].severity must be blocking|non-blocking`);
+  requireNonEmptyString(obj, 'title');
+  requireNonEmptyString(obj, 'problem');
+  requireNonEmptyString(obj, 'contractRef');
+  requireNonEmptyString(obj, 'invariant');
+  nonEmptyStringArray(obj['evidence'], `reviewFindings[${index}].evidence`);
+  requireNonEmptyString(obj, 'impact');
+  if (obj['location'] !== undefined) requireNonEmptyString(obj, 'location');
+  if (severity === 'blocking') {
+    if (typeof obj['blockingAuthority'] !== 'string' || !(BLOCKING_AUTHORITIES as readonly string[]).includes(obj['blockingAuthority'])) {
+      schemaFail(`reviewFindings[${index}].blockingAuthority must be author|owner|verification|external`);
+    }
+    requireNonEmptyString(obj, 'requiredOutcome');
+    nonEmptyStringArray(obj['acceptance'], `reviewFindings[${index}].acceptance`);
+  } else {
+    for (const field of ['blockingAuthority', 'requiredOutcome', 'acceptance']) {
+      if (obj[field] !== undefined) schemaFail(`non-blocking reviewFindings[${index}] MUST NOT carry ${field}`);
+    }
+  }
+}
+
+function validateFindingConvergence(value: unknown, index: number): void {
+  const obj = asObject(value, `reviewFindingConvergence[${index}]`);
+  const known = new Set(['findingId', 'state', 'supersededByFindingId']);
+  for (const key of Object.keys(obj)) if (!known.has(key)) schemaFail(`reviewFindingConvergence[${index}] contains unknown field: ${key}`);
+  requireNonEmptyString(obj, 'findingId');
+  const state = obj['state'];
+  if (state !== 'new' && state !== 'still-open' && state !== 'resolved' && state !== 'superseded') {
+    schemaFail(`reviewFindingConvergence[${index}].state is invalid`);
+  }
+  if (state === 'superseded') requireNonEmptyString(obj, 'supersededByFindingId');
+  else if (obj['supersededByFindingId'] !== undefined) schemaFail(`reviewFindingConvergence[${index}].supersededByFindingId only allowed for superseded`);
 }
 
 // ---------------------------------------------------------------------------
@@ -886,6 +1252,8 @@ export function validateReviewVerdictIntegrity(
   const isReviewAction = action.startsWith('review-');
   const hasReviewVerdict = result.reviewVerdict !== undefined;
   const hasReviewFindings = result.reviewFindings !== undefined;
+  const hasReviewFindingVersion = result.reviewFindingSchemaVersion !== undefined;
+  const hasReviewConvergence = result.reviewFindingConvergence !== undefined;
   const findings = result.reviewFindings ?? [];
 
   // Non-review Runs: MUST NOT carry reviewVerdict or reviewFindings.
@@ -903,6 +1271,9 @@ export function validateReviewVerdictIntegrity(
         `Non-review Run result MUST NOT contain reviewFindings (action=${action})`,
         { action, runStatus: result.runStatus },
       );
+    }
+    if (hasReviewFindingVersion || hasReviewConvergence) {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `Non-review Run result MUST NOT contain review finding version/convergence (action=${action})`);
     }
     return;
   }
@@ -924,6 +1295,9 @@ export function validateReviewVerdictIntegrity(
         `Non-completed review-* Run MUST NOT contain reviewFindings (action=${action}, runStatus=${result.runStatus})`,
         { action, runStatus: result.runStatus },
       );
+    }
+    if (hasReviewFindingVersion || hasReviewConvergence) {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `Non-completed review-* Run MUST NOT contain review finding version/convergence (action=${action})`);
     }
     return;
   }
@@ -949,19 +1323,6 @@ export function validateReviewVerdictIntegrity(
         { action, runStatus: result.runStatus, reviewVerdict: result.reviewVerdict },
       );
     }
-    // Each blocking finding MUST have non-empty requiredChange.
-    for (let i = 0; i < findings.length; i++) {
-      const f = findings[i];
-      if (f.severity === 'blocking') {
-        if (f.requiredChange === undefined || f.requiredChange.trim() === '') {
-          throw new FlowkitError(
-            'SCHEMA_VALIDATION_FAILED',
-            `blocking reviewFindings[${i}] MUST have non-empty requiredChange (action=${action})`,
-            { action, index: i, findingId: f.id },
-          );
-        }
-      }
-    }
   } else if (result.reviewVerdict === 'approved') {
     // approved MUST NOT have any blocking finding.
     if (blockingFindings.length > 0) {
@@ -985,8 +1346,7 @@ export function validateReviewVerdictIntegrity(
  *   - `schemaVersion === 2`
  *   - required fields: `runId`, `deliveryId`, `action`, `role`, `ownerAuthorization`, `runPath`
  *   - `action` in B1 Action Catalog; `role` ∈ {owner, author, reviewer}
- *   - Action-scope rules: `action ∈ DELIVERY_ACTIONS` ⇒ `changeKey`/`changeId`
- *     absent; `action ∈ CHANGE_ACTIONS` ⇒ `changeKey`/`changeId` present.
+ *   - current Action MUST be in the Change-only catalog and `changeKey`/`changeId` are required.
  *   - `inputRef` (optional): MUST be a ResultRef object (not string), validated
  *     via {@link validateResultRefProjection}.
  *   - `constraints` (optional): must be an object with valid field types.
@@ -997,10 +1357,11 @@ export function validateReviewVerdictIntegrity(
 export function validateContextFile(value: unknown): ContextFile {
   const obj = asObject(value, 'ContextFile');
 
-  // schemaVersion MUST be exactly 2 (C1 format marker).
-  if (obj['schemaVersion'] !== 2) {
-    schemaFail('ContextFile.schemaVersion must equal 2', { schemaVersion: obj['schemaVersion'] });
+  // Historical C1/D1/D2 v2/v3/v4 remain readable. New Standard Runs use v5.
+  if (obj['schemaVersion'] !== 2 && obj['schemaVersion'] !== 3 && obj['schemaVersion'] !== 4 && obj['schemaVersion'] !== 5) {
+    schemaFail('ContextFile.schemaVersion must equal 2, 3, 4, or 5', { schemaVersion: obj['schemaVersion'] });
   }
+  const schemaVersion = obj['schemaVersion'];
 
   const runId = requireNonEmptyString(obj, 'runId');
   const deliveryId = requireNonEmptyString(obj, 'deliveryId');
@@ -1012,28 +1373,118 @@ export function validateContextFile(value: unknown): ContextFile {
   if (role !== 'owner' && role !== 'author' && role !== 'reviewer') {
     schemaFail('Field role must be owner|author|reviewer', { role });
   }
+  if (isChangeAction(action) && !isRoleAllowedForAction(action, role as Role)) {
+    schemaFail(`Action ${action} requires role ${action.startsWith('review-') ? 'reviewer' : 'author'}, got ${role}`, {
+      action,
+      role,
+    });
+  }
   const ownerAuthorization = requireString(obj, 'ownerAuthorization');
   const runPath = requireNonEmptyString(obj, 'runPath');
+  const semanticInputFingerprintRaw = obj['semanticInputFingerprint'];
+  let semanticInputFingerprint: string | undefined;
+  if (semanticInputFingerprintRaw !== undefined) {
+    if (
+      typeof semanticInputFingerprintRaw !== 'string' ||
+      !/^[0-9a-f]{64}$/.test(semanticInputFingerprintRaw)
+    ) {
+      schemaFail('semanticInputFingerprint must be a lowercase SHA-256 hex string', {
+        semanticInputFingerprint: semanticInputFingerprintRaw,
+      });
+    }
+    semanticInputFingerprint = semanticInputFingerprintRaw;
+  }
 
-  // Action-scope rules (C1-PR-008).
-  const hasChangeKey = obj['changeKey'] !== undefined;
-  const hasChangeId = obj['changeId'] !== undefined;
-  if (isDeliveryAction(action)) {
-    if (hasChangeKey || hasChangeId) {
-      schemaFail('Delivery-level Run must not carry changeKey/changeId', {
-        action,
-        changeKey: obj['changeKey'],
-        changeId: obj['changeId'],
-      });
+  const canonicalBase = obj['canonicalBase'];
+  const applicableFactRefs = obj['applicableFactRefs'];
+  const actionPackageRaw = obj['actionPackage'];
+  const entryWorkspaceIdentity = obj['entryWorkspaceIdentity'];
+  const compactEntryWorkspaceIdentity = obj['compactEntryWorkspaceIdentity'];
+  const mutationDeclaration = obj['mutationDeclaration'];
+  if (schemaVersion === 5) {
+    if (typeof canonicalBase !== 'string' || !/^[0-9a-f]{40,64}$/.test(canonicalBase)) {
+      schemaFail('schemaVersion 5 canonicalBase must be a lowercase Git object id', { canonicalBase });
     }
-  } else if (isChangeAction(action)) {
-    if (!hasChangeKey || !hasChangeId) {
-      schemaFail('Change-level Run must carry changeKey and changeId', {
-        action,
-        changeKey: obj['changeKey'],
-        changeId: obj['changeId'],
-      });
+    if (semanticInputFingerprint === undefined) {
+      schemaFail('schemaVersion 5 requires semanticInputFingerprint');
     }
+    validateVersionedAuthorityRefs(applicableFactRefs, 'applicableFactRefs', { allowEmpty: true });
+    if (actionPackageRaw === undefined) schemaFail('schemaVersion 5 requires actionPackage');
+  } else if (
+    canonicalBase !== undefined || applicableFactRefs !== undefined || actionPackageRaw !== undefined || entryWorkspaceIdentity !== undefined || compactEntryWorkspaceIdentity !== undefined || mutationDeclaration !== undefined
+  ) {
+    schemaFail('v5-only ContextFile fields are forbidden in historical v2/v3/v4 contexts', { schemaVersion });
+  }
+
+  const ownerFactRefsRaw = obj['ownerFactRefs'];
+  // A bounded bootstrap generation created schemaVersion 2 contexts carrying
+  // provisional ownerFactRefs before D1 froze schemaVersion 3. Historical v2
+  // bytes remain immutable/read-only compatible, but those projections MUST
+  // NOT participate in current Owner authority or reset identity. Validate the
+  // shape so malformed bytes still fail closed, then omit them from the typed
+  // v2 projection below. New writers only emit ownerFactRefs with v3.
+  let ownerFactRefs: OwnerFactRef[] | undefined;
+  if (ownerFactRefsRaw !== undefined) {
+    if (!Array.isArray(ownerFactRefsRaw)) schemaFail('ownerFactRefs must be an array');
+    const knownOwnerFactFields = new Set([
+      'ref', 'decision', 'deliveryId', 'changeId', 'scope', 'requiredOutcomes', 'sourceRef',
+    ]);
+    ownerFactRefs = ownerFactRefsRaw.map((entry, index) => {
+      const fact = asObject(entry, `ownerFactRefs[${index}]`);
+      for (const key of Object.keys(fact)) {
+        if (!knownOwnerFactFields.has(key)) schemaFail(`ownerFactRefs[${index}] contains unknown field: ${key}`);
+      }
+      const ref = requireNonEmptyString(fact, 'ref');
+      if (!/^owner:[0-9a-f]{64}$/.test(ref)) {
+        schemaFail('ownerFactRefs.ref must be a stable owner:<sha256> identity', { index, ref });
+      }
+      if (fact['decision'] !== 'contract-reset') {
+        schemaFail('ownerFactRefs.decision must be contract-reset', { index, decision: fact['decision'] });
+      }
+      const factDeliveryId = requireNonEmptyString(fact, 'deliveryId');
+      const factChangeId = requireNonEmptyString(fact, 'changeId');
+      const scope = requireNonEmptyString(fact, 'scope');
+      const sourceRef = requireNonEmptyString(fact, 'sourceRef');
+      const outcomesRaw = fact['requiredOutcomes'];
+      if (
+        !Array.isArray(outcomesRaw)
+        || outcomesRaw.length === 0
+        || outcomesRaw.some((value) => typeof value !== 'string' || value.trim() === '')
+      ) {
+        schemaFail('ownerFactRefs.requiredOutcomes must be a non-empty string array', { index });
+      }
+      const requiredOutcomes = outcomesRaw as string[];
+      const normalizedOutcomes = [...new Set(requiredOutcomes.map((value) => value.trim()))].sort();
+      if (
+        normalizedOutcomes.length !== requiredOutcomes.length
+        || normalizedOutcomes.some((value, outcomeIndex) => value !== requiredOutcomes[outcomeIndex])
+      ) {
+        schemaFail('ownerFactRefs.requiredOutcomes must be normalized sorted unique strings', { index });
+      }
+      return {
+        ref,
+        decision: 'contract-reset' as const,
+        deliveryId: factDeliveryId,
+        changeId: factChangeId,
+        scope,
+        requiredOutcomes: normalizedOutcomes,
+        sourceRef,
+      };
+    });
+    const refs = ownerFactRefs.map((fact) => fact.ref);
+    if (new Set(refs).size !== refs.length) schemaFail('ownerFactRefs must not contain duplicate refs');
+  }
+
+  // Current schemaVersion 2/3/4 Standard Runs are Change-only.
+  if (!isChangeAction(action)) {
+    throw new FlowkitError('UNKNOWN_ACTION', `Unknown Change action: ${action}`, { action });
+  }
+  if (obj['changeKey'] === undefined || obj['changeId'] === undefined) {
+    schemaFail('Current Run must carry changeKey and changeId', {
+      action,
+      changeKey: obj['changeKey'],
+      changeId: obj['changeId'],
+    });
   }
 
   // Review-scope rules (C1-AP-004): review-* actions MUST carry reviewedRunId
@@ -1054,10 +1505,21 @@ export function validateContextFile(value: unknown): ContextFile {
     });
   }
 
-  const changeKey =
-    obj['changeKey'] === undefined ? undefined : requireString(obj, 'changeKey');
-  const changeId =
-    obj['changeId'] === undefined ? undefined : requireString(obj, 'changeId');
+  const changeKey = requireNonEmptyString(obj, 'changeKey');
+  const changeId = requireNonEmptyString(obj, 'changeId');
+  if (ownerFactRefs !== undefined) {
+    for (const fact of ownerFactRefs) {
+      if (fact.deliveryId !== deliveryId || fact.changeId !== changeId) {
+        schemaFail('ownerFactRefs target must match the Run Delivery/Change identity', {
+          runDeliveryId: deliveryId,
+          runChangeId: changeId,
+          factDeliveryId: fact.deliveryId,
+          factChangeId: fact.changeId,
+          ref: fact.ref,
+        });
+      }
+    }
+  }
 
   // inputRef: optional ResultRef object (MUST NOT be string).
   const inputRefRaw = obj['inputRef'];
@@ -1109,12 +1571,12 @@ export function validateContextFile(value: unknown): ContextFile {
         kind: verificationInputRef.kind,
       });
     }
-    if (changeId !== undefined && normalizeSeparators(verificationInputRef.ref) !== resolveVerificationSummaryRef(changeId)) {
-      schemaFail('review-apply verificationInputRef.ref must equal the canonical verification.md path', {
+    const verificationLogicalRef = normalizeArtifactLogicalRef(verificationInputRef.ref);
+    if (!verificationLogicalRef.endsWith('/verification.md')) {
+      schemaFail('review-apply verificationInputRef.ref must identify verification.md inside the validated Change root', {
         action,
         changeId,
         ref: verificationInputRef.ref,
-        expected: resolveVerificationSummaryRef(changeId),
       });
     }
   } else if (verificationInputRef !== undefined) {
@@ -1202,27 +1664,540 @@ export function validateContextFile(value: unknown): ContextFile {
     reviewedRunId = s;
   }
 
+  const archiveEntryOpenSpecProjection = validateArchiveEntryOpenSpecProjection(
+    obj['archiveEntryOpenSpecProjection'],
+    schemaVersion,
+    action as ChangeAction,
+    changeId,
+  );
+  const archiveMutationGuard = validateArchiveMutationGuard(obj['archiveMutationGuard'], action as ChangeAction);
+
   // constraints (optional object).
   const constraints = validateOptionalConstraints(obj['constraints']);
 
-  const result: ContextFile = {
-    schemaVersion: 2,
+  const baseResult = {
+    schemaVersion,
     runId,
     deliveryId,
-    action: action as ChangeAction | DeliveryAction,
+    action: action as ChangeAction,
     role: role as Role,
     ownerAuthorization,
+    ...(semanticInputFingerprint !== undefined && { semanticInputFingerprint }),
+    ...((schemaVersion === 3 || schemaVersion === 4 || schemaVersion === 5) && ownerFactRefs !== undefined && { ownerFactRefs }),
     runPath,
-    ...(changeKey !== undefined && { changeKey }),
-    ...(changeId !== undefined && { changeId }),
+    changeKey,
+    changeId,
     ...(inputRef !== undefined && { inputRef }),
     ...(verificationInputRef !== undefined && { verificationInputRef }),
     ...(sourceReviewRun !== undefined && { sourceReviewRun }),
     ...(sourceReviewVerdict !== undefined && { sourceReviewVerdict }),
     ...(reviewedRunId !== undefined && { reviewedRunId }),
+    ...(archiveEntryOpenSpecProjection !== undefined && { archiveEntryOpenSpecProjection }),
+    ...(archiveMutationGuard !== undefined && { archiveMutationGuard }),
     ...(constraints !== undefined && { constraints }),
   };
-  return result;
+  if (schemaVersion !== 5) return baseResult as HistoricalContextFile;
+
+  const commonV5 = {
+    ...baseResult,
+    schemaVersion: 5 as const,
+    canonicalBase: canonicalBase as string,
+    applicableFactRefs: applicableFactRefs as readonly VersionedAuthorityRef[],
+  };
+  if (action === 'apply' || action === 'revise-apply') {
+    if ((entryWorkspaceIdentity === undefined) === (compactEntryWorkspaceIdentity === undefined)) {
+      schemaFail('v5 Apply context must carry exactly one legacy or compact entry workspace identity');
+    }
+    const validatedMutationDeclaration = validateMutationDeclaration(mutationDeclaration, action);
+    if (compactEntryWorkspaceIdentity !== undefined) {
+      const compact = validateCompactEntryWorkspaceIdentity(compactEntryWorkspaceIdentity);
+      const actionPackage = validateV5ActionPackage(
+        actionPackageRaw, runId, deliveryId, changeId, action, semanticInputFingerprint!, canonicalBase as string,
+        applicableFactRefs as readonly VersionedAuthorityRef[], undefined, validatedMutationDeclaration, ownerFactRefs, compact,
+      );
+      return { ...commonV5, action, actionPackage, compactEntryWorkspaceIdentity: compact, mutationDeclaration: validatedMutationDeclaration };
+    }
+    const legacy = validateEntryWorkspaceIdentity(entryWorkspaceIdentity);
+    const actionPackage = validateV5ActionPackage(
+      actionPackageRaw, runId, deliveryId, changeId, action, semanticInputFingerprint!, canonicalBase as string,
+      applicableFactRefs as readonly VersionedAuthorityRef[], legacy, validatedMutationDeclaration, ownerFactRefs, undefined,
+    );
+    return { ...commonV5, action, actionPackage, entryWorkspaceIdentity: legacy, mutationDeclaration: validatedMutationDeclaration };
+  }
+  if (entryWorkspaceIdentity !== undefined || compactEntryWorkspaceIdentity !== undefined || mutationDeclaration !== undefined) {
+    schemaFail('Apply entry identity/mutationDeclaration are only allowed on v5 apply/revise-apply contexts', { action });
+  }
+  return {
+    ...commonV5,
+    action: action as Exclude<ChangeAction, 'apply' | 'revise-apply'>,
+    actionPackage: validateV5ActionPackage(
+      actionPackageRaw,
+      runId,
+      deliveryId,
+      changeId,
+      action as Exclude<ChangeAction, 'apply' | 'revise-apply'>,
+      semanticInputFingerprint!,
+      canonicalBase as string,
+      applicableFactRefs as readonly VersionedAuthorityRef[],
+      undefined,
+      undefined,
+      ownerFactRefs,
+    ),
+  };
+}
+
+function validateVersionedAuthorityRefs(
+  value: unknown,
+  label: string,
+  options: { readonly allowEmpty?: boolean } = {},
+): readonly VersionedAuthorityRef[] {
+  if (!Array.isArray(value) || (!options.allowEmpty && value.length === 0)) {
+    schemaFail(`${label} must be ${options.allowEmpty ? 'an array' : 'a non-empty array'}`);
+  }
+  const refs = value.map((raw, index) => {
+    const obj = asObject(raw, `${label}[${index}]`);
+    const keys = Object.keys(obj).sort();
+    const expected = ['kind', 'ref', 'versionFingerprint'];
+    if (keys.length !== expected.length || keys.some((key, keyIndex) => key !== expected[keyIndex])) {
+      schemaFail(`${label}[${index}] must use the closed VersionedAuthorityRef shape`);
+    }
+    const ref = requireNonEmptyString(obj, 'ref');
+    const kind = requireNonEmptyString(obj, 'kind');
+    const versionFingerprint = requireNonEmptyString(obj, 'versionFingerprint');
+    if (!/^[0-9a-f]{64}$/.test(versionFingerprint)) {
+      schemaFail(`${label}[${index}].versionFingerprint must be a lowercase SHA-256 hex string`);
+    }
+    return { ref, kind, versionFingerprint };
+  });
+  const ordered = [...refs].sort((a, b) => a.ref.localeCompare(b.ref) || a.kind.localeCompare(b.kind));
+  if (ordered.some((ref, index) => ref.ref !== refs[index]!.ref || ref.kind !== refs[index]!.kind)) {
+    schemaFail(`${label} must be lexical sorted`);
+  }
+  if (new Set(refs.map((ref) => `${ref.kind}:${ref.ref}`)).size !== refs.length) {
+    schemaFail(`${label} must not contain duplicate identities`);
+  }
+  return refs;
+}
+
+function validateEntryWorkspaceIdentity(value: unknown): EntryWorkspaceIdentity {
+  const obj = asObject(value, 'entryWorkspaceIdentity');
+  const keys = Object.keys(obj).sort();
+  const expected = ['canonicalBase', 'workspaceFingerprint'];
+  if (keys.length !== expected.length || keys.some((key, index) => key !== expected[index])) {
+    schemaFail('entryWorkspaceIdentity must use the closed schema');
+  }
+  const canonicalBase = requireNonEmptyString(obj, 'canonicalBase');
+  const workspaceFingerprint = requireNonEmptyString(obj, 'workspaceFingerprint');
+  if (!/^[0-9a-f]{40,64}$/.test(canonicalBase) || !/^[0-9a-f]{64}$/.test(workspaceFingerprint)) {
+    schemaFail('entryWorkspaceIdentity contains an invalid fingerprint');
+  }
+  return { canonicalBase, workspaceFingerprint };
+}
+
+function validateCompactEntryWorkspaceIdentity(value: unknown): CompactEntryWorkspaceIdentity {
+  const obj = asObject(value, 'compactEntryWorkspaceIdentity');
+  assertClosedKeys(obj, 'compactEntryWorkspaceIdentity', ['canonicalBase', 'entries', 'workspaceFingerprint']);
+  const canonicalBase = requireNonEmptyString(obj, 'canonicalBase');
+  const workspaceFingerprint = requireNonEmptyString(obj, 'workspaceFingerprint');
+  if (!/^[0-9a-f]{40,64}$/.test(canonicalBase) || !/^[0-9a-f]{64}$/.test(workspaceFingerprint)) schemaFail('compactEntryWorkspaceIdentity contains invalid fingerprints');
+  if (!Array.isArray(obj['entries'])) schemaFail('compactEntryWorkspaceIdentity.entries must be an array');
+  const entries = obj['entries'].map((raw, index) => {
+    const entry = asObject(raw, `compactEntryWorkspaceIdentity.entries[${index}]`);
+    const hasContent = entry['contentFingerprint'] !== undefined;
+    assertClosedKeys(entry, `compactEntryWorkspaceIdentity.entries[${index}]`, ['path', 'state', ...(hasContent ? ['contentFingerprint'] : [])]);
+    const path = normalizedLogicalRefForBinding(entry['path'], `compactEntryWorkspaceIdentity.entries[${index}].path`);
+    const state = entry['state'];
+    if (state !== 'added' && state !== 'modified' && state !== 'deleted' && state !== 'untracked') schemaFail('compact entry state is invalid', { index, state });
+    let contentFingerprint: string | undefined;
+    if (hasContent) contentFingerprint = shaForBinding(entry['contentFingerprint'], `compactEntryWorkspaceIdentity.entries[${index}].contentFingerprint`);
+    if (state === 'deleted' && contentFingerprint !== undefined) schemaFail('deleted compact entry must not carry contentFingerprint', { index });
+    if (state !== 'deleted' && contentFingerprint === undefined) schemaFail('non-deleted compact entry requires contentFingerprint', { index });
+    return { path, state, ...(contentFingerprint !== undefined && { contentFingerprint }) } as const;
+  });
+  const sorted = [...entries].sort((a,b)=>a.path.localeCompare(b.path));
+  if (new Set(sorted.map((e)=>e.path)).size !== sorted.length || sorted.some((e,i)=>e.path !== entries[i]?.path)) schemaFail('compact entry paths must be sorted and unique');
+  return { canonicalBase, workspaceFingerprint, entries: sorted };
+}
+
+function validateV5ActionPackage(
+  value: unknown,
+  runId: string,
+  deliveryId: string,
+  changeId: string,
+  action: ChangeAction,
+  semanticInputFingerprint: string,
+  canonicalBase: string,
+  applicableFactRefs: readonly VersionedAuthorityRef[],
+  expectedEntryWorkspaceIdentity?: EntryWorkspaceIdentity,
+  expectedMutationDeclaration?: MutationDeclaration,
+  expectedOwnerFactRefs?: readonly OwnerFactRef[],
+  expectedCompactEntryWorkspaceIdentity?: CompactEntryWorkspaceIdentity,
+): ActionPackageV2 {
+  const obj = asObject(value, 'actionPackage');
+  if (obj['schemaVersion'] !== 2) schemaFail('v5 context actionPackage must use schemaVersion 2');
+  const run = asObject(obj['run'], 'actionPackage.run');
+  assertClosedKeys(run, 'actionPackage.run', [
+    'action', 'changeId', 'deliveryId', 'role', 'runId', 'semanticInputFingerprint',
+  ]);
+  if (
+    run['runId'] !== runId || run['deliveryId'] !== deliveryId || run['changeId'] !== changeId ||
+    run['action'] !== action || run['role'] !== getActionDefinition(action).role
+  ) {
+    schemaFail('v5 context actionPackage.run must exactly match context identity');
+  }
+  const fingerprint = run['semanticInputFingerprint'];
+  if (fingerprint !== semanticInputFingerprint) {
+    schemaFail('v5 context actionPackage.run semanticInputFingerprint must equal the context fingerprint');
+  }
+  assertCanonicalValue(obj['definition'], getActionDefinition(action), 'actionPackage.definition must equal the canonical Action definition');
+  assertCanonicalValue(obj['requiredResultContract'], getActionDefinition(action).terminalContract, 'actionPackage.requiredResultContract must equal the canonical terminal contract');
+  const contractRefs = validateVersionedAuthorityRefs(obj['contractRefs'], 'actionPackage.contractRefs', { allowEmpty: true });
+  const handoffRefs = validateVersionedAuthorityRefs(obj['handoffRefs'], 'actionPackage.handoffRefs', { allowEmpty: true });
+  const packageApplicableFactRefs = [...contractRefs, ...handoffRefs]
+    .sort((left, right) => `${left.ref}\u0000${left.kind}\u0000${left.versionFingerprint}`.localeCompare(`${right.ref}\u0000${right.kind}\u0000${right.versionFingerprint}`));
+  if (!canonicalValuesEqual(packageApplicableFactRefs, applicableFactRefs)) {
+    schemaFail('v5 context applicableFactRefs must equal the ActionPackage contract/handoff union');
+  }
+  validateOwnerAuthorizationRefs(obj['ownerAuthorizationRefs']);
+  validateOptionalActionPackageViews(obj, expectedOwnerFactRefs);
+  const packageAction = run['action'];
+  const hasEntry = obj['entryWorkspaceIdentity'] !== undefined;
+  const hasCompactEntry = obj['compactEntryWorkspaceIdentity'] !== undefined;
+  const hasDeclaration = obj['mutationDeclaration'] !== undefined;
+  if (packageAction === 'apply' || packageAction === 'revise-apply') {
+    if ((hasEntry === hasCompactEntry) || !hasDeclaration) schemaFail('Apply package requires exactly one legacy or compact entry identity plus mutationDeclaration');
+    assertClosedKeys(obj, 'actionPackage', expectedActionPackageKeys(obj, true, hasCompactEntry));
+    const packageDeclaration = validateMutationDeclaration(obj['mutationDeclaration'], packageAction);
+    if (expectedMutationDeclaration === undefined || !canonicalValuesEqual(packageDeclaration, expectedMutationDeclaration)) schemaFail('Apply package mutationDeclaration must equal sibling v5 context field');
+    if (hasCompactEntry) {
+      const compact = validateCompactEntryWorkspaceIdentity(obj['compactEntryWorkspaceIdentity']);
+      if (expectedCompactEntryWorkspaceIdentity === undefined || compact.canonicalBase !== canonicalBase || !canonicalValuesEqual(compact, expectedCompactEntryWorkspaceIdentity)) schemaFail('compact Apply package entry identity must equal sibling context field');
+    } else {
+      const legacy = validateEntryWorkspaceIdentity(obj['entryWorkspaceIdentity']);
+      if (expectedEntryWorkspaceIdentity === undefined || legacy.canonicalBase !== canonicalBase || !canonicalValuesEqual(legacy, expectedEntryWorkspaceIdentity)) schemaFail('legacy Apply package entry identity must equal sibling context field');
+    }
+    return obj as unknown as ActionPackageV2;
+  }
+  if (hasEntry || hasCompactEntry || hasDeclaration) schemaFail('non-Apply package must not carry Apply fields');
+  assertClosedKeys(obj, 'actionPackage', expectedActionPackageKeys(obj, false));
+  return obj as unknown as ActionPackageV2;
+}
+
+function expectedActionPackageKeys(obj: Record<string, unknown>, isApply: boolean, compact = false): readonly string[] {
+  const required = [
+    'contractRefs', 'definition', 'handoffRefs', 'ownerAuthorizationRefs',
+    'requiredResultContract', 'run', 'schemaVersion',
+    ...(isApply ? [compact ? 'compactEntryWorkspaceIdentity' : 'entryWorkspaceIdentity', 'mutationDeclaration'] : []),
+  ];
+  const optional = ['ownerFactRefs', 'reviewView', 'verificationView', 'externalContextFingerprint']
+    .filter((key) => obj[key] !== undefined);
+  return [...required, ...optional];
+}
+
+function assertClosedKeys(obj: Record<string, unknown>, label: string, expected: readonly string[]): void {
+  const actual = Object.keys(obj).sort();
+  const normalizedExpected = [...expected].sort();
+  if (actual.length !== normalizedExpected.length || actual.some((key, index) => key !== normalizedExpected[index])) {
+    schemaFail(`${label} must use a closed schema`, { actual, expected: normalizedExpected });
+  }
+}
+
+function canonicalValuesEqual(left: unknown, right: unknown): boolean {
+  return canonicalValue(left) === canonicalValue(right);
+}
+
+function assertCanonicalValue(actual: unknown, expected: unknown, message: string): void {
+  if (!canonicalValuesEqual(actual, expected)) schemaFail(message);
+}
+
+function canonicalValue(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalValue).join(',')}]`;
+  if (value !== null && typeof value === 'object') {
+    const obj = value as Record<string, unknown>;
+    return `{${Object.keys(obj).sort().map((key) => `${JSON.stringify(key)}:${canonicalValue(obj[key])}`).join(',')}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function validateOwnerAuthorizationRefs(value: unknown): void {
+  if (!Array.isArray(value)) schemaFail('actionPackage.ownerAuthorizationRefs must be an array');
+  const refs = value.map((raw, index) => {
+    const obj = asObject(raw, `actionPackage.ownerAuthorizationRefs[${index}]`);
+    assertClosedKeys(obj, `actionPackage.ownerAuthorizationRefs[${index}]`, [
+      'decision', 'deliveryId', 'ref', 'sourceRef',
+      ...(obj['changeId'] === undefined ? [] : ['changeId']),
+    ]);
+    const ref = requireNonEmptyString(obj, 'ref');
+    requireNonEmptyString(obj, 'decision');
+    requireNonEmptyString(obj, 'deliveryId');
+    requireNonEmptyString(obj, 'sourceRef');
+    if (obj['changeId'] !== undefined) requireNonEmptyString(obj, 'changeId');
+    return ref;
+  });
+  if ([...refs].sort().some((ref, index) => ref !== refs[index]) || new Set(refs).size !== refs.length) {
+    schemaFail('actionPackage.ownerAuthorizationRefs must be lexical sorted without duplicate refs');
+  }
+}
+
+function validateOptionalActionPackageViews(
+  obj: Record<string, unknown>,
+  expectedOwnerFactRefs: readonly OwnerFactRef[] | undefined,
+): void {
+  if (obj['externalContextFingerprint'] !== undefined &&
+    (typeof obj['externalContextFingerprint'] !== 'string' || !/^[0-9a-f]{64}$/.test(obj['externalContextFingerprint']))) {
+    schemaFail('actionPackage.externalContextFingerprint must be a lowercase SHA-256 hex string');
+  }
+  if (obj['reviewView'] !== undefined) validateReviewView(obj['reviewView']);
+  if (obj['verificationView'] !== undefined) validateVerificationView(obj['verificationView']);
+  if (obj['ownerFactRefs'] !== undefined) {
+    if (expectedOwnerFactRefs === undefined || !canonicalValuesEqual(obj['ownerFactRefs'], expectedOwnerFactRefs)) {
+      schemaFail('actionPackage.ownerFactRefs must exactly equal the sibling v5 context ownerFactRefs');
+    }
+  }
+}
+
+function validateReviewView(value: unknown): void {
+  const obj = asObject(value, 'actionPackage.reviewView');
+  const required = ['blockingAuthorities', 'findings', 'resultRef', 'reviewRunId', 'verdict'];
+  const expected = obj['convergence'] === undefined ? required : [...required, 'convergence'];
+  assertClosedKeys(obj, 'actionPackage.reviewView', expected);
+  requireNonEmptyString(obj, 'reviewRunId');
+  if (obj['verdict'] !== 'approved' && obj['verdict'] !== 'changes-requested') schemaFail('actionPackage.reviewView.verdict is invalid');
+  validateVersionedAuthorityRefs([obj['resultRef']], 'actionPackage.reviewView.resultRef');
+  if (!Array.isArray(obj['blockingAuthorities']) || obj['blockingAuthorities'].some((authority) =>
+    typeof authority !== 'string' || !(BLOCKING_AUTHORITIES as readonly string[]).includes(authority))) {
+    schemaFail('actionPackage.reviewView.blockingAuthorities is invalid');
+  }
+  if (!Array.isArray(obj['findings']) || !Array.isArray(obj['convergence'] ?? [])) {
+    schemaFail('actionPackage.reviewView findings/convergence must be arrays');
+  }
+}
+
+function validateVerificationView(value: unknown): void {
+  const obj = asObject(value, 'actionPackage.verificationView');
+  assertClosedKeys(obj, 'actionPackage.verificationView', obj['resultRef'] === undefined ? ['status'] : ['resultRef', 'status']);
+  if (!['not-run', 'passed', 'failed', 'not-applicable', 'unavailable'].includes(obj['status'] as string)) {
+    schemaFail('actionPackage.verificationView.status is invalid');
+  }
+  if (obj['resultRef'] !== undefined) validateVersionedAuthorityRefs([obj['resultRef']], 'actionPackage.verificationView.resultRef');
+}
+
+export function validateMutationDeclaration(value: unknown, action: 'apply' | 'revise-apply'): MutationDeclaration {
+  const obj = asObject(value, 'mutationDeclaration');
+  const keys = Object.keys(obj).sort();
+  const expected = ['action', 'designRef', 'schemaVersion', 'selectors'];
+  if (keys.length !== expected.length || keys.some((key, index) => key !== expected[index])) {
+    schemaFail('mutationDeclaration must use the closed schema');
+  }
+  if (obj['schemaVersion'] !== 1 || obj['action'] !== action) {
+    schemaFail('mutationDeclaration schemaVersion/action must match the v5 Apply context', { action });
+  }
+  const [designRef] = validateVersionedAuthorityRefs([obj['designRef']], 'mutationDeclaration.designRef');
+  if (!Array.isArray(obj['selectors']) || obj['selectors'].length === 0) {
+    schemaFail('mutationDeclaration.selectors must be a non-empty array');
+  }
+  const selectors = obj['selectors'].map((raw, index) => {
+    const selector = asObject(raw, `mutationDeclaration.selectors[${index}]`);
+    const selectorKeys = Object.keys(selector).sort();
+    if (selectorKeys.length !== 2 || selectorKeys[0] !== 'kind' || selectorKeys[1] !== 'path') {
+      schemaFail(`mutationDeclaration.selectors[${index}] must use the closed selector shape`);
+    }
+    const kind = selector['kind'];
+    const path = requireNonEmptyString(selector, 'path');
+    if ((kind !== 'exact' && kind !== 'prefix') || !isCanonicalMutationPath(path)) {
+      schemaFail(`mutationDeclaration.selectors[${index}] is not a canonical selector`, { kind, path });
+    }
+    return { kind, path } as const;
+  });
+  const ordered = [...selectors].sort((a, b) => a.path.localeCompare(b.path) || a.kind.localeCompare(b.kind));
+  if (ordered.some((selector, index) => selector.path !== selectors[index]!.path || selector.kind !== selectors[index]!.kind)) {
+    schemaFail('mutationDeclaration.selectors must be lexical sorted');
+  }
+  for (let index = 0; index < selectors.length; index += 1) {
+    for (let other = index + 1; other < selectors.length; other += 1) {
+      if (selectorsOverlap(selectors[index]!, selectors[other]!)) {
+        schemaFail('mutationDeclaration.selectors must not overlap', { first: selectors[index], second: selectors[other] });
+      }
+    }
+  }
+  return { schemaVersion: 1, action, designRef, selectors };
+}
+
+function isCanonicalMutationPath(path: string): boolean {
+  return !path.startsWith('.') && !path.startsWith('/') && !path.includes('\\') &&
+    !path.includes('*') && !path.includes('?') && !path.split('/').some((part) => part === '' || part === '.' || part === '..') &&
+    !path.startsWith('.flowkit/');
+}
+
+function selectorsOverlap(first: { readonly kind: 'exact' | 'prefix'; readonly path: string }, second: { readonly kind: 'exact' | 'prefix'; readonly path: string }): boolean {
+  if (first.path === second.path) return true;
+  return (first.kind === 'prefix' && second.path.startsWith(`${first.path}/`)) ||
+    (second.kind === 'prefix' && first.path.startsWith(`${second.path}/`));
+}
+
+function validateArchiveEntryOpenSpecProjection(
+  value: unknown,
+  schemaVersion: 2 | 3 | 4 | 5,
+  action: ChangeAction,
+  changeId: string,
+): ArchiveEntryOpenSpecProjection | undefined {
+  if (value === undefined) {
+    // C1 pre-thin-integration archive fixtures/historical bootstrap paths have
+    // no structured OpenSpec entry view to persist. The high-level B1
+    // preparation path MUST supply this projection whenever structured
+    // OpenSpec integration is active; the serializer only enforces that a
+    // supplied projection is archive-only/current-schema and structurally
+    // exact.
+    return undefined;
+  }
+  if (schemaVersion !== 4) {
+    schemaFail('archiveEntryOpenSpecProjection is only allowed on schemaVersion 4 Runs', { schemaVersion, action });
+  }
+  if (action !== 'archive') {
+    schemaFail('archiveEntryOpenSpecProjection is only allowed on archive Runs', { action });
+  }
+  const obj = asObject(value, 'archiveEntryOpenSpecProjection');
+  const known = new Set(['projectionVersion', 'version', 'changeId', 'changeRootLogical', 'artifactPaths']);
+  for (const key of Object.keys(obj)) {
+    if (!known.has(key)) schemaFail(`archiveEntryOpenSpecProjection contains unknown field: ${key}`);
+  }
+  if (obj['projectionVersion'] !== 1) {
+    schemaFail('archiveEntryOpenSpecProjection.projectionVersion must equal 1');
+  }
+  const version = requireNonEmptyString(obj, 'version');
+  const projectedChangeId = requireNonEmptyString(obj, 'changeId');
+  if (projectedChangeId !== changeId) {
+    schemaFail('archiveEntryOpenSpecProjection.changeId must match ContextFile.changeId', {
+      projectedChangeId, changeId,
+    });
+  }
+  const changeRootLogical = requireNonEmptyString(obj, 'changeRootLogical');
+  if (
+    changeRootLogical.startsWith('/')
+    || changeRootLogical.includes('\\')
+    || changeRootLogical.split('/').some((part) => part === '' || part === '..' || part === '.')
+  ) {
+    schemaFail('archiveEntryOpenSpecProjection.changeRootLogical must be a normalized repo-relative POSIX path', {
+      changeRootLogical,
+    });
+  }
+  const artifactPathsObj = asObject(obj['artifactPaths'], 'archiveEntryOpenSpecProjection.artifactPaths');
+  const expectedKeys = [...OPENSPEC_SUPPORTED_ARTIFACT_IDS];
+  const actualKeys = Object.keys(artifactPathsObj).sort();
+  const sortedExpected = [...expectedKeys].sort();
+  if (actualKeys.length !== sortedExpected.length || actualKeys.some((key, index) => key !== sortedExpected[index])) {
+    schemaFail('archiveEntryOpenSpecProjection.artifactPaths must use the closed OpenSpec artifact-id shape', {
+      expected: sortedExpected,
+      actual: actualKeys,
+    });
+  }
+  const artifactPaths = Object.fromEntries(OPENSPEC_SUPPORTED_ARTIFACT_IDS.map((artifactId) => {
+    const raw = artifactPathsObj[artifactId];
+    if (!Array.isArray(raw) || raw.some((path) => typeof path !== 'string' || path.trim() === '')) {
+      schemaFail(`archiveEntryOpenSpecProjection.artifactPaths.${artifactId} must be a string array`);
+    }
+    const paths = (raw as string[]).map((path) => normalizeSeparators(path));
+    for (const path of paths) {
+      if (
+        path.startsWith('/')
+        || path.includes('\\')
+        || path.split('/').some((part) => part === '' || part === '..' || part === '.')
+        || !path.startsWith(`${changeRootLogical}/`)
+      ) {
+        schemaFail(`archiveEntryOpenSpecProjection.artifactPaths.${artifactId} must contain normalized paths under changeRootLogical`, {
+          path, changeRootLogical,
+        });
+      }
+    }
+    const normalized = [...new Set(paths)].sort();
+    if (normalized.length !== paths.length || normalized.some((path, index) => path !== paths[index])) {
+      schemaFail(`archiveEntryOpenSpecProjection.artifactPaths.${artifactId} must be normalized sorted unique paths`);
+    }
+    return [artifactId, normalized] as const;
+  })) as unknown as Readonly<Record<(typeof OPENSPEC_SUPPORTED_ARTIFACT_IDS)[number], readonly string[]>>;
+  return {
+    projectionVersion: 1,
+    version,
+    changeId,
+    changeRootLogical,
+    artifactPaths,
+  };
+}
+
+function validateArchiveMutationGuard(value: unknown, action: ChangeAction): ArchiveMutationGuard | undefined {
+  if (value === undefined) return undefined;
+  if (action !== 'archive') {
+    schemaFail('archiveMutationGuard is only allowed on archive Runs', { action });
+  }
+  const obj = asObject(value, 'archiveMutationGuard');
+  const state = requireString(obj, 'state');
+  if (state !== 'armed' && state !== 'recovery-admitted') {
+    schemaFail('archiveMutationGuard.state must be armed|recovery-admitted', { state });
+  }
+  if (obj['surfaceVersion'] !== OPENSPEC_ARCHIVE_SURFACE_VERSION) {
+    schemaFail(`archiveMutationGuard.surfaceVersion must equal ${OPENSPEC_ARCHIVE_SURFACE_VERSION}`);
+  }
+  const changeRoot = requireNonEmptyString(obj, 'changeRoot');
+  const canonicalSpecsRoot = requireNonEmptyString(obj, 'canonicalSpecsRoot');
+  const archiveNamespaceRoot = requireNonEmptyString(obj, 'archiveNamespaceRoot');
+  if (canonicalSpecsRoot !== 'openspec/specs') {
+    schemaFail('archiveMutationGuard.canonicalSpecsRoot must equal openspec/specs');
+  }
+  for (const [field, path] of [['changeRoot', changeRoot], ['archiveNamespaceRoot', archiveNamespaceRoot]] as const) {
+    if (path.startsWith('/') || path.includes('\\') || path.split('/').some((part) => part === '..' || part === '')) {
+      schemaFail(`archiveMutationGuard.${field} must be a normalized repo-relative POSIX path`, { path });
+    }
+  }
+  const fingerprint = requireNonEmptyString(obj, 'preArchiveGenerationFingerprint');
+  if (!/^[0-9a-f]{64}$/.test(fingerprint)) {
+    schemaFail('archiveMutationGuard.preArchiveGenerationFingerprint must be lowercase SHA-256');
+  }
+
+  let terminalObservation: ArchiveMutationGuard['terminalObservation'];
+  if (obj['terminalObservation'] !== undefined) {
+    const terminal = asObject(obj['terminalObservation'], 'archiveMutationGuard.terminalObservation');
+    const kind = requireString(terminal, 'kind');
+    if (kind !== 'success' && kind !== 'failure') schemaFail('terminalObservation.kind must be success|failure');
+    const resultFingerprint = requireNonEmptyString(terminal, 'resultFingerprint');
+    if (!/^[0-9a-f]{64}$/.test(resultFingerprint)) schemaFail('terminalObservation.resultFingerprint must be lowercase SHA-256');
+    const normalized = asObject(terminal['normalized'], 'terminalObservation.normalized');
+    if (normalized['kind'] !== kind) schemaFail('terminalObservation normalized.kind must match terminalObservation.kind');
+    if (kind === 'success') {
+      requireNonEmptyString(normalized, 'change');
+      requireNonEmptyString(normalized, 'archivedAs');
+      requireNonEmptyString(normalized, 'path');
+      if (typeof normalized['specsUpdated'] !== 'boolean') schemaFail('success terminalObservation.specsUpdated must be boolean');
+      if (normalized['totals'] !== undefined) {
+        const totals = asObject(normalized['totals'], 'terminalObservation.normalized.totals');
+        for (const field of ['added', 'modified', 'removed', 'renamed']) {
+          const n = totals[field];
+          if (typeof n !== 'number' || !Number.isInteger(n) || n < 0) schemaFail(`terminalObservation totals.${field} must be a non-negative integer`);
+        }
+      }
+      terminalObservation = { kind, resultFingerprint, normalized: normalized as unknown as OpenSpecArchiveSuccessObservation };
+    } else {
+      const exitCode = normalized['exitCode'];
+      if (typeof exitCode !== 'number' || !Number.isInteger(exitCode)) schemaFail('failure terminalObservation.exitCode must be integer');
+      const status = normalized['status'];
+      if (!Array.isArray(status) || status.length === 0) schemaFail('failure terminalObservation.status must be a non-empty array');
+      for (const item of status) {
+        const st = asObject(item, 'terminalObservation.normalized.status[]');
+        requireNonEmptyString(st, 'severity');
+        if (st['code'] !== undefined && typeof st['code'] !== 'string') schemaFail('terminalObservation status.code must be string when present');
+      }
+      terminalObservation = { kind, resultFingerprint, normalized: normalized as unknown as OpenSpecArchiveFailureObservation };
+    }
+  }
+
+  return {
+    state,
+    surfaceVersion: OPENSPEC_ARCHIVE_SURFACE_VERSION,
+    changeRoot,
+    canonicalSpecsRoot: 'openspec/specs',
+    archiveNamespaceRoot,
+    preArchiveGenerationFingerprint: fingerprint,
+    ...(terminalObservation !== undefined && { terminalObservation }),
+  };
 }
 
 function validateOptionalConstraints(
@@ -1274,8 +2249,7 @@ function validateOptionalConstraints(
  * Checks:
  *   - `contextFile.runId` matches the Run directory basename.
  *   - `contextFile.deliveryId` appears as a path segment.
- *   - Change-level Run: `contextFile.changeId` appears as a path segment.
- *   - Delivery-level Run: skip changeId segment check.
+ *   - `contextFile.changeId` appears as a path segment.
  *   - `contextFile.runPath` is consistent with `expectedRunDir` (normalized).
  *
  * @throws {FlowkitError} `SCHEMA_VALIDATION_FAILED` on any identity mismatch.
@@ -1302,15 +2276,11 @@ export function validateContextFileIdentity(
     });
   }
 
-  // Change-level Run: changeId MUST appear as a path segment.
-  // Delivery-level Run: changeId absent ⇒ skip.
-  if (contextFile.changeId !== undefined) {
-    if (!segments.includes(contextFile.changeId)) {
-      schemaFail('ContextFile.changeId must match a Change-level path segment', {
-        changeId: contextFile.changeId,
-        segments,
-      });
-    }
+  if (!segments.includes(contextFile.changeId)) {
+    schemaFail('ContextFile.changeId must match a Change-level path segment', {
+      changeId: contextFile.changeId,
+      segments,
+    });
   }
 
   // runPath consistency: the normalized runPath must be a suffix of (or equal
@@ -1334,4 +2304,4 @@ export function validateContextFileIdentity(
 // Re-exports for downstream convenience
 // ---------------------------------------------------------------------------
 
-export { CHANGE_ACTIONS, DELIVERY_ACTIONS };
+export { CHANGE_ACTIONS };

@@ -1,0 +1,1503 @@
+{
+  "schemaVersion": 1,
+  "canonicalBase": "57e5453c3fde64d5f8d00befff29bce3e81aec8c",
+  "workspaceFingerprint": "096f5f4ca1357b4d18a3cdd5a0b1c0d157a53e564d162b202214c9801e16fa1e",
+  "files": [
+    {
+      "path": ".codex/skills/flowkit-git-workflow/SKILL.md",
+      "contentFingerprint": "3a8c027cd4c444568592c86c088492f4b3be9da3ab05317413e10189520b25d8"
+    },
+    {
+      "path": ".codex/skills/openspec-apply-change/SKILL.md",
+      "contentFingerprint": "ad613d2e091add16987991ca33b6c66eb648dc5f1be5fde66230b8c8b39dffc8"
+    },
+    {
+      "path": ".codex/skills/openspec-archive-change/SKILL.md",
+      "contentFingerprint": "655ce675120860bd161b495fddc2eeba64b0d595ab1a798198dd4a4eb3d1f318"
+    },
+    {
+      "path": ".codex/skills/openspec-explore/SKILL.md",
+      "contentFingerprint": "e7b53309e97e9616e323de58e59711a97001604ea457c64b6bed6ccea6b5e48c"
+    },
+    {
+      "path": ".codex/skills/openspec-propose/SKILL.md",
+      "contentFingerprint": "f336c80a63b4e62da1c1ef7928eb75552034dcef652dc312d09263fe67a26264"
+    },
+    {
+      "path": ".codex/skills/openspec-sync-specs/SKILL.md",
+      "contentFingerprint": "f5031fa145f0d39db89b9f40ca0d3c9b110c4cc76a28f545c9d460468bb8134a"
+    },
+    {
+      "path": ".codex/skills/openspec-update-change/SKILL.md",
+      "contentFingerprint": "3b0fcc50b163e2a9eb1a0635438bda67b75e5975fa9dd77683ee119d85e4c410"
+    },
+    {
+      "path": ".gitignore",
+      "contentFingerprint": "a5accbcfa7a09acb10c00cb8ed3d538016e7336f2bc7bace53c1a3c889ca13c2"
+    },
+    {
+      "path": ".prettierrc.json",
+      "contentFingerprint": "1f7bb28b97481a3b4a4560d7a798ae3e58e37b4c5755502c0a5d95b2bea6ef6a"
+    },
+    {
+      "path": "02-change-execution-loop-delivery-implementation-reference-v3.md",
+      "contentFingerprint": "21fe7c618ecf6ca0b49bcfba2cf22930f2f682ff57c0f777e5f1f67e09df51f3"
+    },
+    {
+      "path": "AGENTS.md",
+      "contentFingerprint": "4796bd004a3e13542be513c1c1dcffb2538474371ef021a1e0ef965ea5cc2478"
+    },
+    {
+      "path": "README.md",
+      "contentFingerprint": "847e745fbc4ed2b4c6ca1bf4fdc5ef8c8d5da6680aa3e1b4c842cd8f482f69e1"
+    },
+    {
+      "path": "docs/bootstrap-reference.md",
+      "contentFingerprint": "7a61bb6f5d39856bc7d0f5c706cf71a1e10ed6bfe8f1989c589c8ca31fa519aa"
+    },
+    {
+      "path": "docs/core-model.md",
+      "contentFingerprint": "d062fdaadcff2b33a1857ec766ff78e8b1151a0a4aa336eb3d47ec54e61b048a"
+    },
+    {
+      "path": "docs/core-release-candidate.md",
+      "contentFingerprint": "ab3a4adc2662199efea1a4d39fbc9514ec449b56cd7e271f28a53c621ebe402a"
+    },
+    {
+      "path": "docs/delivery-lifecycle.md",
+      "contentFingerprint": "8b3a262d20dd18d391c4d767a059a4a3501ab07f290fc7ca24ded9ddae223dfe"
+    },
+    {
+      "path": "docs/development-roadmap.md",
+      "contentFingerprint": "ed9f2eb7a0e51bb48a162143b388a820c8ecef7a8215e5b24a8e6b834338d51a"
+    },
+    {
+      "path": "docs/flowkit-self-hosting-bootstrap-and-migration.md",
+      "contentFingerprint": "194d7be58aa9919cc721752d8652c815e08fb471863b9d658c5cfd490943d8f0"
+    },
+    {
+      "path": "docs/integration-boundaries.md",
+      "contentFingerprint": "7f3784452f323c3799230b2093a3e08354f64d2c7e4d973af8a6ab527cbeb614"
+    },
+    {
+      "path": "docs/product-positioning.md",
+      "contentFingerprint": "eec53777cdbe0867ecfec2e7b72e1b4121363d5577b2936c550398908f5cc119"
+    },
+    {
+      "path": "docs/verification-model.md",
+      "contentFingerprint": "2284b3034e63ddad5f428a765b592130aa5a467df4472f0c7eb22f3c3c131864"
+    },
+    {
+      "path": "eslint.config.mjs",
+      "contentFingerprint": "2fd5a029bc0449c19fb52a9677d0687278ae3d6c26a6182084e14485f08232d4"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-05-bootstrap-and-roadmap/.openspec.yaml",
+      "contentFingerprint": "1613d2c15ac2e1743059176022d807603786da900e8e52409def96654c26b412"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-05-bootstrap-and-roadmap/design.md",
+      "contentFingerprint": "36993a1f31306cc50a9e6af206d53150b8b62b0f7bb82e189b46d0fc8e6c4471"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-05-bootstrap-and-roadmap/explore.md",
+      "contentFingerprint": "2a6c93e7a4de1eea41683b48820d3c990910096a3e1db4b17b13362a4722d675"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-05-bootstrap-and-roadmap/proposal.md",
+      "contentFingerprint": "270c3cd4a972a6964ee3a7d087b7d555bdd66d32424cb18ab824c87809e99a08"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-05-bootstrap-and-roadmap/specs/flowkit-bootstrap-and-roadmap/spec.md",
+      "contentFingerprint": "546714e1315882c4293b799d0748276fa9acf238d14ff5efc1c9a8746fccc898"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-05-bootstrap-and-roadmap/tasks.md",
+      "contentFingerprint": "635ddc2c81fbb247334ed58bd9a4f372e125219c092ce718eaa23cdb18d14e19"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-05-bootstrap-and-roadmap/verification.md",
+      "contentFingerprint": "e3bf12697d31bdbca789704087b66246b4a0f8f51022110e81b48c7229e64d3c"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-05-core-model/.openspec.yaml",
+      "contentFingerprint": "1613d2c15ac2e1743059176022d807603786da900e8e52409def96654c26b412"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-05-core-model/design.md",
+      "contentFingerprint": "252f3066ea5da8d58bba49fc106544ca9d648c99ee1062c70fb84abb5ef1f1eb"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-05-core-model/explore.md",
+      "contentFingerprint": "b43ad86a47b220b67215fb32d9a5212780d48dab85d68d72e4c37ab2c628a56b"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-05-core-model/proposal.md",
+      "contentFingerprint": "efb515bf0c5a82e8b3c92509cda6d3b6d574ce74fc1190f0406c3a703d5649b8"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-05-core-model/specs/flowkit-core-model/spec.md",
+      "contentFingerprint": "d5734067b0701ad290f5887d7fee2712dab74ea9fda6084f2be9b5f50160210e"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-05-core-model/tasks.md",
+      "contentFingerprint": "2b6250a8f34ca864706479b5ddfd1d7b951b6311196e2a8ba80cb15581a659d6"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-05-core-model/verification.md",
+      "contentFingerprint": "72cae4490f903be9fa501ab0d4143f5675d4f7e72fb54554bd1f0830294dcace"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-05-integration-boundaries/.openspec.yaml",
+      "contentFingerprint": "1613d2c15ac2e1743059176022d807603786da900e8e52409def96654c26b412"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-05-integration-boundaries/design.md",
+      "contentFingerprint": "7ad352a04767b1904358174cb710a14ce55c0a1b9d6704125b81503900921b48"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-05-integration-boundaries/explore.md",
+      "contentFingerprint": "0f8915c4ee8f56f5838fcae087d2d56678ce30386c3f7726117308b09a223930"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-05-integration-boundaries/proposal.md",
+      "contentFingerprint": "7dfd8782e18cf9edf6b0de8df9fab3084b8b5ecfa18513e8b5c8fe3f6907c2a3"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-05-integration-boundaries/specs/flowkit-integration-boundaries/spec.md",
+      "contentFingerprint": "b349aaa1a51b7824b96b91497931b38a78072753453a6d9f7fc75c73ac1b7ac7"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-05-integration-boundaries/tasks.md",
+      "contentFingerprint": "6ca5950d57b6a250cdfda0b55e2b6b3aba20b3e7d636b4bb6525288a25d1d415"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-05-integration-boundaries/verification.md",
+      "contentFingerprint": "cde48ee50cb77f7f52e64caac2a9f49c10f3c880232716cbaf4b016cdba47280"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-05-product-positioning/.openspec.yaml",
+      "contentFingerprint": "1613d2c15ac2e1743059176022d807603786da900e8e52409def96654c26b412"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-05-product-positioning/design.md",
+      "contentFingerprint": "63c09d31a39561cb5022021f785c711dac27c7298f2c173604d477700b490f55"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-05-product-positioning/explore.md",
+      "contentFingerprint": "a1afd70dcf24f62a5f39eabf382f5b2e9816aec76dd07c0a3dadbab859732d27"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-05-product-positioning/proposal.md",
+      "contentFingerprint": "0814f29cd0acba7d9a89b8f5dfdf4a775cd0006e6175e3017c4489f104cea3ca"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-05-product-positioning/specs/flowkit-product-positioning/spec.md",
+      "contentFingerprint": "ab372295f0d230ce9d0bad0537aee487a20570db3c381d2a1d14d20bec418ca5"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-05-product-positioning/tasks.md",
+      "contentFingerprint": "91c5bf92976aa664500d3b4e3f6d607ede9bbc0bb3752d576191cadbe7d2ed76"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-05-product-positioning/verification.md",
+      "contentFingerprint": "58ecc56fac44105142014a79d9fcd9d9ae3d2a8057909d3b84fe1635461ac141"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-06-baseline-finalization-corrections/.openspec.yaml",
+      "contentFingerprint": "361efea7c27434eb04dbebd40b62d501f8cb892fc493499fbe9540f118870697"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-06-baseline-finalization-corrections/design.md",
+      "contentFingerprint": "83ec2fe2ee94caac34283236584199cdabccaa58ca46294ae063eb7116b25f7d"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-06-baseline-finalization-corrections/explore.md",
+      "contentFingerprint": "12808595a29c726208e929c6cce434090d430d75d007a4a23698b5301f5b2abe"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-06-baseline-finalization-corrections/proposal.md",
+      "contentFingerprint": "a1d7d4399b826f952beb62243a7e19de58293f52bc52533f60071aaaa2842a10"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-06-baseline-finalization-corrections/specs/flowkit-bootstrap-and-roadmap/spec.md",
+      "contentFingerprint": "1bb22481a6e546086b6fae5d4d1b18a3555888de6b929a19c68bb38026a30618"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-06-baseline-finalization-corrections/tasks.md",
+      "contentFingerprint": "afd886b1528712300d115056d0107d011d85cb15a2f6946dd58b4bcd12d5a798"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-06-baseline-finalization-corrections/verification.md",
+      "contentFingerprint": "bee31c260d1203d5bdfe865707d3d6b05881634e75b85ea9c8022828ded18a48"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-06-domain-and-state-schema/.openspec.yaml",
+      "contentFingerprint": "361efea7c27434eb04dbebd40b62d501f8cb892fc493499fbe9540f118870697"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-06-domain-and-state-schema/design.md",
+      "contentFingerprint": "33063a77efcccbf6c317f38c521d50815a13dbe3780effe07d3776f8d8eeca79"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-06-domain-and-state-schema/explore.md",
+      "contentFingerprint": "1373670bc7d14315f26f2dda1433655c70f2d15d78d063d2e89e613ce08b844c"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-06-domain-and-state-schema/proposal.md",
+      "contentFingerprint": "07c1a2304a6a185c54f18023342864d0cc327c5242ce055faddbd9debdcd9f32"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-06-domain-and-state-schema/specs/flowkit-domain-and-state-schema/spec.md",
+      "contentFingerprint": "0fa6307501973e1ab472250e0f9575af5850ddb74f54a7a07dcf920e7d1a3751"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-06-domain-and-state-schema/tasks.md",
+      "contentFingerprint": "9573ec1762a012ba4426dc96074ca23da22d5ee1d45fbb67865d772cfa224528"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-06-domain-and-state-schema/verification.md",
+      "contentFingerprint": "257cfdfe72480425f0da34e3bfcae9fb53ef94b5ca19f0ea27e71035519c002d"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-06-formal-fact-reader-and-persistence/.openspec.yaml",
+      "contentFingerprint": "361efea7c27434eb04dbebd40b62d501f8cb892fc493499fbe9540f118870697"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-06-formal-fact-reader-and-persistence/design.md",
+      "contentFingerprint": "7b247c94370c0b8ebcf8be864f71cff4cef8945296445d395f48f891ef2f466c"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-06-formal-fact-reader-and-persistence/explore.md",
+      "contentFingerprint": "3497f11b57a73731b2f06b37bb446ff6b61687b32829932c96e0fc1eeb3d17ae"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-06-formal-fact-reader-and-persistence/proposal.md",
+      "contentFingerprint": "3c2895c5223f43a04424be4f4402297a4e3cc660f8ca3790e876d08ad69d4b41"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-06-formal-fact-reader-and-persistence/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "contentFingerprint": "ff4a6b61d46df7b90233c0a031c7bc45c662db370a0fe2faaa3ac12f31da8153"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-06-formal-fact-reader-and-persistence/tasks.md",
+      "contentFingerprint": "6f2377b29cde263461da673d376516d1185cd6b7d04685397ddc3543ed070ff4"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-06-formal-fact-reader-and-persistence/verification.md",
+      "contentFingerprint": "cd2b1a93e193cef4ff89c0e17ebad77105f380571d378ef6f302494906c59bac"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-06-runtime-foundation/.openspec.yaml",
+      "contentFingerprint": "361efea7c27434eb04dbebd40b62d501f8cb892fc493499fbe9540f118870697"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-06-runtime-foundation/design.md",
+      "contentFingerprint": "52c807d9063b47647f9ac5eeff02644a0ab7ec2627eb7df566c7e9292e9ae2fc"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-06-runtime-foundation/explore.md",
+      "contentFingerprint": "ea1dc35a3a9e761235932051239ea4770120fd555966ccaec153f2ba20b4ea1e"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-06-runtime-foundation/proposal.md",
+      "contentFingerprint": "c72f9db4970d818625725df287a8b2f2202833fa793865509442b9bdabe37e60"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-06-runtime-foundation/specs/flowkit-runtime-foundation/spec.md",
+      "contentFingerprint": "6feca45cd593dfa7d02dc527ab12ffb0842a776b9d89f2070a4454af27a99554"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-06-runtime-foundation/tasks.md",
+      "contentFingerprint": "1cab2628795327905685abbfdd0575ba1faa5472c0b7d8c660af5ad46feae047"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-06-runtime-foundation/verification.md",
+      "contentFingerprint": "2fa5dc1f48aa808b985a6c248adc03ee5044aca7d9d70c7bb47d5faf84c73e59"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-07-policy-engine/.openspec.yaml",
+      "contentFingerprint": "d5c2e5f3f8853f89a6285f971e1ea69595917542327708723f4ccd3e88fd9330"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-07-policy-engine/design.md",
+      "contentFingerprint": "b4525439335b543f8d266656199c9d78d93b69337bed0da88f01f9d0eed91b0f"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-07-policy-engine/explore.md",
+      "contentFingerprint": "5c95d7015c8162c7e959f9efb5438599438a4eb0dfe05ed7610d4029b947d646"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-07-policy-engine/proposal.md",
+      "contentFingerprint": "6d86964a196f76c76652b2978274ee88f2b0c4556d93830a3ebd1caef1c77cec"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-07-policy-engine/specs/flowkit-policy-engine/spec.md",
+      "contentFingerprint": "63ad97b9021a3cfb91fd6e773e64f47e4eed662c0f0454825e25ca15dd8f5bac"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-07-policy-engine/tasks.md",
+      "contentFingerprint": "912f3e6b3e237fd2bd639fbf6f24bc109fbc2a6089cd79cde47d2c01ad129205"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-07-policy-engine/verification.md",
+      "contentFingerprint": "2a9d69b8611cbc0c112680f6c30f94c306dd12a290498d9bff96addb106e0ecf"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-08-execution-model-correction/.openspec.yaml",
+      "contentFingerprint": "d5c2e5f3f8853f89a6285f971e1ea69595917542327708723f4ccd3e88fd9330"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-08-execution-model-correction/design.md",
+      "contentFingerprint": "c8312f662c43c54f41ee51b6057bf687cfb4ffae015e60e038be52e8de7265c5"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-08-execution-model-correction/explore.md",
+      "contentFingerprint": "a58e515f88c2f6fe34cb527c31149c6123cc94659658bd6939769dd9e14e0703"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-08-execution-model-correction/proposal.md",
+      "contentFingerprint": "c449d5b4510f5695233f5dec26ce969a53d14b63d6f45f826583086cba715f72"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-08-execution-model-correction/specs/flowkit-bootstrap-and-roadmap/spec.md",
+      "contentFingerprint": "80124fe5dc4b807b9db93d1dcf8c949aece8598359246501102e13182ca9274e"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-08-execution-model-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "contentFingerprint": "8986196d8cb67f13711f50fd9f5a943cb73588b6aad30146ca5a0434d0572b6d"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-08-execution-model-correction/tasks.md",
+      "contentFingerprint": "a09bea736887f722723094f76d4d68138435972c8fe2af1c941a646f1b1bd275"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-08-execution-model-correction/verification.md",
+      "contentFingerprint": "b02a0a09bdc167a2b12a214aaa3fd422dd6209ac8c4ce8e4832a52eab3dfbdab"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-09-orchestration-authority-boundary-correction/.openspec.yaml",
+      "contentFingerprint": "165c19261c3cb160f2c3b746659293a5fa5b588016a558238012d1fa32a42c20"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-09-orchestration-authority-boundary-correction/design.md",
+      "contentFingerprint": "ae3009beb028e4fda222283f13bce70675939a7f7f2e79bdcd8903dee72739b8"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-09-orchestration-authority-boundary-correction/explore.md",
+      "contentFingerprint": "c0f48ce99f55ff28f699295e9ae2d9b68d4092735d4f4d54d8b9bf53b66aa8d9"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-09-orchestration-authority-boundary-correction/proposal.md",
+      "contentFingerprint": "4f0206087d655a2dbe6acb0539904f788d5092cb8fc71ed79764a3d20b4d2abf"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-09-orchestration-authority-boundary-correction/specs/flowkit-bootstrap-and-roadmap/spec.md",
+      "contentFingerprint": "3a6cce78556bf24e1d158c11ce480544b3fcd9381174b2277241bc5c809fc1f8"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-09-orchestration-authority-boundary-correction/specs/flowkit-core-model/spec.md",
+      "contentFingerprint": "bad1cae8aaac1ff948bb3a0248ff38c6b707e65ab191f507ce497aab1c23ae05"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-09-orchestration-authority-boundary-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "contentFingerprint": "fa70c26f5e6d2174417e8f919b30efa24bcbc71f226c91f505a6d35c2616f332"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-09-orchestration-authority-boundary-correction/specs/flowkit-integration-boundaries/spec.md",
+      "contentFingerprint": "2ded5a9458a0c778336db6a21496dcd06d54910fa7dae6cfc123f7c1dd537ed2"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-09-orchestration-authority-boundary-correction/specs/flowkit-policy-engine/spec.md",
+      "contentFingerprint": "66aaa95cc9b05af46dee374fbbd79b5242639001eabc2e0e7bc5667b081b5ea5"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-09-orchestration-authority-boundary-correction/tasks.md",
+      "contentFingerprint": "e18024be8cc1c7bc7c72422023a7d2a340291cc65afa382ee6f0b5b3e01b26f8"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-09-orchestration-authority-boundary-correction/verification.md",
+      "contentFingerprint": "1553af0c9732a287520e862b73f7cefc3fbef79135a4fec65b407b95578362d4"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-core-contract-alignment/.openspec.yaml",
+      "contentFingerprint": "f41f2bc28ec1d7aab73d26bb7222e7e03ea9138b5ac97f86aa97812e52abbef3"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-core-contract-alignment/design.md",
+      "contentFingerprint": "0d7ffe40b839841442a89120d4565dc302dd6de86049fbc8bd082d98cbcf4e9e"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-core-contract-alignment/explore.md",
+      "contentFingerprint": "42128a97ddc8fdd589a11925f700d7ff3d40cd2f96ef79b1272d1ba9926ccc6a"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-core-contract-alignment/proposal.md",
+      "contentFingerprint": "de0afb6019a45cd8363bea8082e95bb8b3ffc7b7b41484a146cf39f39f469b70"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-core-contract-alignment/specs/flowkit-bootstrap-and-roadmap/spec.md",
+      "contentFingerprint": "0ede63bb713d1c5c8c53c228f2d6022de5a736fe7d0952c3dd3d335bf41ad357"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-core-contract-alignment/specs/flowkit-core-hardening-and-release-candidate/spec.md",
+      "contentFingerprint": "734d35bde52c5edebf7c4fb943bf8ec2940f931c0c9f82172ab7748d7f6f290b"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-core-contract-alignment/specs/flowkit-core-model/spec.md",
+      "contentFingerprint": "db1a40eb4def4624825c6d34f5978ce786587cd40eb0faf3b79aaaf152ff8ff2"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-core-contract-alignment/specs/flowkit-diagnostic-cli/spec.md",
+      "contentFingerprint": "1bbbe157892f60e51b6274acd43c543bd151f3477d0c55d5bf278b9b28b9ed77"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-core-contract-alignment/specs/flowkit-domain-and-state-schema/spec.md",
+      "contentFingerprint": "f0ef855292dd7e4ed6f93f9889593887cf81e6e8916574b2851a6ccd8c099cd5"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-core-contract-alignment/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "contentFingerprint": "7326a706019fb23fedbada35638678a179038b24666fca0de7febc2e00d0eda6"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-core-contract-alignment/specs/flowkit-policy-engine/spec.md",
+      "contentFingerprint": "b66ce190ac15398dfb699e0c81dec6bc015bfd946c9676e57a635bd95d787fd3"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-core-contract-alignment/tasks.md",
+      "contentFingerprint": "3be38f3d549314e5d92478fd1efa21eb370e8bf83c14bd27310d160a541e383b"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-core-contract-alignment/verification.md",
+      "contentFingerprint": "5b92d14f0ffd89702969e7a0007987abb6b2e74482424b6573851ba58a39a6f2"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-core-hardening-and-release-candidate/.openspec.yaml",
+      "contentFingerprint": "f41f2bc28ec1d7aab73d26bb7222e7e03ea9138b5ac97f86aa97812e52abbef3"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-core-hardening-and-release-candidate/design.md",
+      "contentFingerprint": "f0719b86a9397f7cdeff3ae2b68e5e820b48522f3b38187e307011feb7d587ca"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-core-hardening-and-release-candidate/explore.md",
+      "contentFingerprint": "571ef99c626456d1fe07dae00b5e1185f579be4e37e57bca2cf72ea4757b4fcc"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-core-hardening-and-release-candidate/proposal.md",
+      "contentFingerprint": "be3b3209a907e3a8ec8127564447417693c41a30b1eff3711034cdc32a501bb6"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-core-hardening-and-release-candidate/specs/flowkit-core-hardening-and-release-candidate/spec.md",
+      "contentFingerprint": "b254b3ff45b219330882a0ef7a3a9684ff9c68fe3eb08edff2b6d12c032ef39f"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-core-hardening-and-release-candidate/tasks.md",
+      "contentFingerprint": "ee23abd689de128266ec117bce5de8d315eb874dcdeaeacc86e4902576439452"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-core-hardening-and-release-candidate/verification.md",
+      "contentFingerprint": "2b2a27385cf3b4ddf4ae8022ad291611edc8d03dcef6a47452d65f35e7f6be96"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-delivery-change-creation-and-owner-input/.openspec.yaml",
+      "contentFingerprint": "f41f2bc28ec1d7aab73d26bb7222e7e03ea9138b5ac97f86aa97812e52abbef3"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-delivery-change-creation-and-owner-input/design.md",
+      "contentFingerprint": "7638fef59e3508f792ce9e5035a41e2f218a7d6f466001eeab03322a2dd79689"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-delivery-change-creation-and-owner-input/explore.md",
+      "contentFingerprint": "0d3bf2da335544525bf64b4817080d5b8b44419af307297ff3128c0e4aa1f4a9"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-delivery-change-creation-and-owner-input/proposal.md",
+      "contentFingerprint": "c7d92850aada4a89cf1c3f6f7f64e52704571f36046c1d7cec06d0792645c97a"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-delivery-change-creation-and-owner-input/specs/flowkit-bootstrap-and-roadmap/spec.md",
+      "contentFingerprint": "5d01632d0eb27766547e44651030ce22cfdb1f92a95e8851ca2ebad09530d7e7"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-delivery-change-creation-and-owner-input/specs/flowkit-core-model/spec.md",
+      "contentFingerprint": "90a02929c4760e9dc3612767f38a622fee84f330a2ebaed0589896f51b9bde25"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-delivery-change-creation-and-owner-input/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+      "contentFingerprint": "3ab26aa21da6724dd52d27f08dbbe5bca984bab95d863b680aaad836428823fe"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-delivery-change-creation-and-owner-input/specs/flowkit-diagnostic-cli/spec.md",
+      "contentFingerprint": "4cea39b4241c3c7e73ffb3c34b63f6ea7d0546370e07ad580062fc99712b02f8"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-delivery-change-creation-and-owner-input/specs/flowkit-domain-and-state-schema/spec.md",
+      "contentFingerprint": "2a7abe09704921ccba123df1a7cee29a12041db8e6f6f8f3db0ce7a4ab52f2d4"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-delivery-change-creation-and-owner-input/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "contentFingerprint": "8d4176d449f3e399d8db2147b90d7f6198d5df695c4a3429ef381cb769afb838"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-delivery-change-creation-and-owner-input/specs/flowkit-integration-boundaries/spec.md",
+      "contentFingerprint": "aa1f47e842c0457407308bbe4f8baec0c80965c2775b9e0e25a5445cc1fc1662"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-delivery-change-creation-and-owner-input/specs/flowkit-policy-engine/spec.md",
+      "contentFingerprint": "32b19c9e77a7671154b4ba4949bcab0d5a02d7f6674a9e9350f1469b4af95fb1"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-delivery-change-creation-and-owner-input/tasks.md",
+      "contentFingerprint": "c328cbc8926d9ba56633c7cc4853ab2b0b10fbea3c13d1c44982d6607e17a972"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-delivery-change-creation-and-owner-input/verification.md",
+      "contentFingerprint": "46f926c30a16bdd0fe1127723cb43bfde6eaad697c15f1f06a513a91e5c43ed6"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-diagnostic-cli/.openspec.yaml",
+      "contentFingerprint": "165c19261c3cb160f2c3b746659293a5fa5b588016a558238012d1fa32a42c20"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-diagnostic-cli/design.md",
+      "contentFingerprint": "1cceec672e2b993a27a8d1a1b5948fcb349c25a38de7c1c8d3b1deaac7cc6dff"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-diagnostic-cli/explore.md",
+      "contentFingerprint": "25ef005aebbc70a75ef69f9deedd3749ed5b952759e97017008ef45eb6f2a4ae"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-diagnostic-cli/proposal.md",
+      "contentFingerprint": "573c00c9d43bd1da8b83489f0760968e289c496a69f4ea17edeb29d81682ff76"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-diagnostic-cli/specs/flowkit-diagnostic-cli/spec.md",
+      "contentFingerprint": "3cb8331a460517934d225849ceecd59bbda311183154b8eac2316e53f5890b36"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-diagnostic-cli/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "contentFingerprint": "03d7495e91f8a17e6f1a5ecbc7facc3bbb04780a01c7fb5d85947162185ba9a8"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-diagnostic-cli/specs/flowkit-policy-engine/spec.md",
+      "contentFingerprint": "43c13a461393b5d23ab88ee43bbe80148ab82b196c65c847cfce474a5c54b815"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-diagnostic-cli/tasks.md",
+      "contentFingerprint": "63ad226fb26d426db90131d864b827d125a45cc41e689386b955955fa452a5f9"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-10-diagnostic-cli/verification.md",
+      "contentFingerprint": "f8702fe7b13115e50d702ec08a831db1795450048a5e17777ea54d77ef81356d"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-11-lean-run-and-action-package/.openspec.yaml",
+      "contentFingerprint": "f41f2bc28ec1d7aab73d26bb7222e7e03ea9138b5ac97f86aa97812e52abbef3"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-11-lean-run-and-action-package/design.md",
+      "contentFingerprint": "6fe45d3e671371a7a9b354a95d31b0265b823738429b766e6fb48810771786fc"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-11-lean-run-and-action-package/explore.md",
+      "contentFingerprint": "630a603a188b6057bac4d050112f1b2769eb023bdcfb3d3e15951d7b2c7b2df9"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-11-lean-run-and-action-package/proposal.md",
+      "contentFingerprint": "aa8c9ea7abf8beb25decc849c0702611abac4a17db3264846e739a5be0ae8f9a"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-11-lean-run-and-action-package/specs/flowkit-bootstrap-and-roadmap/spec.md",
+      "contentFingerprint": "5c3e15201c041ff24e7354406a39ec69160d8e682afe1e8208002b6cbcfbb3c7"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-11-lean-run-and-action-package/specs/flowkit-core-model/spec.md",
+      "contentFingerprint": "49517266911604344ed1c7abfba2e41d360d5a507ccf6a25005de178efc15714"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-11-lean-run-and-action-package/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+      "contentFingerprint": "964e1df1039d9223b630b5a85651515c4bf7ba9a921ddfcd9e7b60e1ed054c69"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-11-lean-run-and-action-package/specs/flowkit-diagnostic-cli/spec.md",
+      "contentFingerprint": "83f0d6f1066fafd7f289cfd880ab1781344fe655636f8e74a14c5257803220dd"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-11-lean-run-and-action-package/specs/flowkit-domain-and-state-schema/spec.md",
+      "contentFingerprint": "84f997aa33c891e5fcc34343d75ef07b6e8544d0f3d259cba011260f6320b3ca"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-11-lean-run-and-action-package/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "contentFingerprint": "f147f72da3853f953a49152c7efc11a80a2ad80d906cd6458c5f366d7cdb0c06"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-11-lean-run-and-action-package/specs/flowkit-integration-boundaries/spec.md",
+      "contentFingerprint": "ca7d059993cd4eed4967b1a914ec4dc3de9b8e9335ecfe9029589aa9b3440c96"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-11-lean-run-and-action-package/specs/flowkit-lean-run-and-action-package/spec.md",
+      "contentFingerprint": "8b1d12d881a9d1b28b2738027913be4b3514e3914e10f0e83fbb7398375e13e5"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-11-lean-run-and-action-package/specs/flowkit-policy-engine/spec.md",
+      "contentFingerprint": "43c76643e1e2a873a9ca91f1b743b36278a8468b385628183d9989823db6841a"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-11-lean-run-and-action-package/tasks.md",
+      "contentFingerprint": "882c4aac40fecbe8910d6a05e010f4131ad6e1ff8dad5c0b507a5c89abf9f31a"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-11-lean-run-and-action-package/verification.md",
+      "contentFingerprint": "969d50a925fab180fa39316989ae1e6e1a36d042141a358c0e0bfc54c0081cf1"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-11-openspec-1-7-thin-integration/.openspec.yaml",
+      "contentFingerprint": "1e29e84341de33c4849e79cac1189edb575e45fb593636616d4ffb1103293bc8"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-11-openspec-1-7-thin-integration/design.md",
+      "contentFingerprint": "464e66a4d185ddb19f0e234051d7e1220607f8f24ae6c2121c56b7feda5cbd4a"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-11-openspec-1-7-thin-integration/explore.md",
+      "contentFingerprint": "9c4af2357e402d62b5b9708b93cedff48b0cf4f5979a3567e43db049621c7be3"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-11-openspec-1-7-thin-integration/proposal.md",
+      "contentFingerprint": "2ba2bac5cff434b06a4b136185d93edb3d378cda91c5015d53f4b4698d5d52d5"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-11-openspec-1-7-thin-integration/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+      "contentFingerprint": "124f327d56b2f8a813b0285f868fad3195ca0185e520cbeb90ebdabd757d567a"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-11-openspec-1-7-thin-integration/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "contentFingerprint": "6755f022003fece7dd523f7a3194abbcaa2a12fdbba9af051039cd72c55fedb0"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-11-openspec-1-7-thin-integration/specs/flowkit-integration-boundaries/spec.md",
+      "contentFingerprint": "e2f4c894c57468d4e75fcf905a2f92cd4d2e10ce7628e319bff08ac20db7b11a"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-11-openspec-1-7-thin-integration/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+      "contentFingerprint": "7bcc1f41a694eca583ca1ff78bc13045b76ed964cff3778341bb466629f0304c"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-11-openspec-1-7-thin-integration/specs/flowkit-runtime-foundation/spec.md",
+      "contentFingerprint": "9714d41340c48f6b6c06a3df787c995f0c87b7f80ab4ca5aa144d0f0b4553c70"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-11-openspec-1-7-thin-integration/tasks.md",
+      "contentFingerprint": "8dc4ca7e50e4374f8edd0135740cc764d7ff7416124363d746095d596d7a8351"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-11-openspec-1-7-thin-integration/verification.md",
+      "contentFingerprint": "f2621ebd1713b88a40e533c8ab2c856e0e3e1a43cf0bdecb285e7d3b9bf85b4b"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-12-archive-terminal-continuation-correction/.openspec.yaml",
+      "contentFingerprint": "ce09aa8a7e84963f39e89c29067fa37eebde711c5ce3426da3c8f0976ee178cf"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-12-archive-terminal-continuation-correction/design.md",
+      "contentFingerprint": "6ad13f280620b613fbc9d72fbef27bac2a3be4b774e73eedc5ba2f17e7f0362c"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-12-archive-terminal-continuation-correction/explore.md",
+      "contentFingerprint": "c1ad7994bbfd81fc8f3a9063e8d07a1cf781b904ce507d73394e612e568d5629"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-12-archive-terminal-continuation-correction/proposal.md",
+      "contentFingerprint": "3fa21f2aac22f81e8392914dd898ad555579acedf75fc71bb84f4fd74fdec717"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-12-archive-terminal-continuation-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "contentFingerprint": "69e62b7a0169e2dd1a6cbd92ff6d652f954a8a2109541aa704cfa2cae12a2010"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-12-archive-terminal-continuation-correction/specs/flowkit-lean-run-and-action-package/spec.md",
+      "contentFingerprint": "44f0189b588576dd2c7c77940b30b00b8b6d9f90e27da470bfada11e5a768ca0"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-12-archive-terminal-continuation-correction/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+      "contentFingerprint": "d11fcd8ad87b7e88acdc1068ba4fe4c1b3c56622c21c6a9be5f5dbeb42114790"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-12-archive-terminal-continuation-correction/specs/flowkit-policy-engine/spec.md",
+      "contentFingerprint": "6f4cf9e14d2c1f66a119d12294701668d98d789ea1161adefbb7a18a223d66cc"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-12-archive-terminal-continuation-correction/tasks.md",
+      "contentFingerprint": "2cef1a27f9b4a0c8331b491fe7299d48a6d57108f024d6aa799ebd6f19803d99"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-12-archive-terminal-continuation-correction/verification.md",
+      "contentFingerprint": "b5b9101f4ab94ec26763645e6fd5604c03df4c8e7f03a9ec21610b881252de0a"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-12-review-findings-and-blocker-authority/.openspec.yaml",
+      "contentFingerprint": "ce09aa8a7e84963f39e89c29067fa37eebde711c5ce3426da3c8f0976ee178cf"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-12-review-findings-and-blocker-authority/design.md",
+      "contentFingerprint": "120d5316737ec92c0b808f6973566f99f2d0af8e7d4437bdabf165a2e7307d19"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-12-review-findings-and-blocker-authority/explore.md",
+      "contentFingerprint": "85bf110b6b4a6d4984ddfa2199b90e6899077c0f59553f4c353bba22bce4d996"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-12-review-findings-and-blocker-authority/proposal.md",
+      "contentFingerprint": "e0d6a56584e6c27f22c2f283bdefcdeb069f02fa54c9e3db230949433708d714"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-12-review-findings-and-blocker-authority/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+      "contentFingerprint": "bd6fd2e99073ce08ea84e04ef086750d24c100f03dd495c54f108a2dfd803125"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-12-review-findings-and-blocker-authority/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "contentFingerprint": "b27f79998b102f7421908bc7e9cabe5644a78bc5bd9d7ad5676cd72ca541ced4"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-12-review-findings-and-blocker-authority/specs/flowkit-lean-run-and-action-package/spec.md",
+      "contentFingerprint": "dea19027382f3fb18699e4fa0f84bfd5ed8e72e2a06b605fcf68278186cb6abb"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-12-review-findings-and-blocker-authority/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+      "contentFingerprint": "dda80889091b59528a5d9061d677546ecf34d91981e9ecd85f4272d8af124c2d"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-12-review-findings-and-blocker-authority/specs/flowkit-review-findings-and-blocker-authority/spec.md",
+      "contentFingerprint": "2d83489d35b57e8e6b0755c9c24f172bdab32fa56fc1e6c69a8be1ace83d28f8"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-12-review-findings-and-blocker-authority/specs/flowkit-runtime-foundation/spec.md",
+      "contentFingerprint": "d4d1761c654ef1865188839dc46498dc3f7bec02f0e3f850436d8cb15a956c31"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-12-review-findings-and-blocker-authority/tasks.md",
+      "contentFingerprint": "4c34d54ab0b4e20c24870b621090e789aaea770afff57492ea983d01d417a87a"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-12-review-findings-and-blocker-authority/verification.md",
+      "contentFingerprint": "3c956da17e60bada3dd9be90aefac13fb1bdd60f589f6ea5e01a9aca1371139a"
+    },
+    {
+      "path": "openspec/changes/change-verification-selection-and-change-set/.openspec.yaml",
+      "contentFingerprint": "f740855436b3c2a28e0536ca9061ceca2f40e0f98cc324b643527bc63b0d9ae2"
+    },
+    {
+      "path": "openspec/changes/change-verification-selection-and-change-set/design.md",
+      "contentFingerprint": "4d1cb1da1b3fb0683e8cb45aa6bbfdc928d657e06dc859c9073723c9de1d9784"
+    },
+    {
+      "path": "openspec/changes/change-verification-selection-and-change-set/explore.md",
+      "contentFingerprint": "9dc75d57727930f2aa15efb2ae7ebc3f22323f6a6ba0ad082d34732ee7298c49"
+    },
+    {
+      "path": "openspec/changes/change-verification-selection-and-change-set/proposal.md",
+      "contentFingerprint": "442d1d6b468c03a51cc33cf71359ca725df0c141d188541126693785a10b08ca"
+    },
+    {
+      "path": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-change-verification-selection/spec.md",
+      "contentFingerprint": "30d7230649aa5aa239c94d5f64c61ae2efe196675768e4dc035fd82f09f252ac"
+    },
+    {
+      "path": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-core-model/spec.md",
+      "contentFingerprint": "edec8d0d0f1296111b29c2f6523541a7922ea92c8de077a000a6460f6fec7a62"
+    },
+    {
+      "path": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "contentFingerprint": "e7d3dfb7c3f39e3fa1ed01afde63d88ef3403290dd566c19157852b37d4a66b0"
+    },
+    {
+      "path": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-lean-run-and-action-package/spec.md",
+      "contentFingerprint": "83b2f607dc408a1d22ee34a10b191f042b0370c16c6292fba5838b500ec8dd86"
+    },
+    {
+      "path": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+      "contentFingerprint": "ae23ff4ec84d48adfbb98e15b765dd77b304bd062404a72ff7b7c65e8cf39926"
+    },
+    {
+      "path": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-policy-engine/spec.md",
+      "contentFingerprint": "3abd2493a14d2681b21fb43d024d8ca2b08fdac28e55b331755bf443ee378174"
+    },
+    {
+      "path": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-runtime-foundation/spec.md",
+      "contentFingerprint": "e85b627d4a1c6ed3f3a647db6fac0f756d2e059a30eed8f2671eafa8250fd01d"
+    },
+    {
+      "path": "openspec/changes/change-verification-selection-and-change-set/tasks.md",
+      "contentFingerprint": "525ed72ca31dfbe97b775a2c55eeda324b636abac51ad5d46eb8dd1f601f27bd"
+    },
+    {
+      "path": "openspec/changes/change-verification-selection-and-change-set/verification.md",
+      "contentFingerprint": "8c17c810377ed5a615d89447997b251620fa3eac07010e7e0584945b8de44fe6"
+    },
+    {
+      "path": "openspec/config.yaml",
+      "contentFingerprint": "2a791b0ccc50e2c2ebbb3ba28692a4ad0e4b6ab94ed2151375ac404d7056e89a"
+    },
+    {
+      "path": "openspec/delivery-groups/20260805-01-product-baseline.yaml",
+      "contentFingerprint": "d82be030d0087850bc7ef69118571c7419917838133efc2dc6356e22afef294d"
+    },
+    {
+      "path": "openspec/delivery-groups/20260806-01-deterministic-core.yaml",
+      "contentFingerprint": "e782cbd7ff1b418342cab8c9cd67cc97d0e1d6996e07600183482d60c6f049b4"
+    },
+    {
+      "path": "openspec/delivery-groups/20260810-01-change-execution-loop.yaml",
+      "contentFingerprint": "310e098ecbb8b1ab4d77ea6164fb3f738700e2375cc3206d2ac5c2e97088d021"
+    },
+    {
+      "path": "openspec/specs/flowkit-bootstrap-and-roadmap/spec.md",
+      "contentFingerprint": "51b4fd1f127c4eecac2c3d428af9150d2c05ea1b88eb05f5f48d5fb1682fe4f8"
+    },
+    {
+      "path": "openspec/specs/flowkit-core-hardening-and-release-candidate/spec.md",
+      "contentFingerprint": "7099a23f8b93e133d3f17c46a6d6cb3707e8441f9c021fc4138fde613dce066d"
+    },
+    {
+      "path": "openspec/specs/flowkit-core-model/spec.md",
+      "contentFingerprint": "0aa8c29af45bbe0908ba642f0d3ec93b51ddd7389bed15f487d4d8e094e13465"
+    },
+    {
+      "path": "openspec/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+      "contentFingerprint": "9e378b56c5c95e86a59c2c49bcdd3bd3de751a20aac0ce52efb9c0778bb4ef06"
+    },
+    {
+      "path": "openspec/specs/flowkit-diagnostic-cli/spec.md",
+      "contentFingerprint": "7602ecaa134047a4bae48e56128d07017ae9741f8315791219f7d63e3e2baa3f"
+    },
+    {
+      "path": "openspec/specs/flowkit-domain-and-state-schema/spec.md",
+      "contentFingerprint": "38676f554f40a6dfc94e03c1317b69d547c9f41058ccf8797eeaaf5fcdc4ddc6"
+    },
+    {
+      "path": "openspec/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "contentFingerprint": "4d0ae1394e322e9bc52b7bff0843ded5781fc314553d63cc7053ea2fc93937ea"
+    },
+    {
+      "path": "openspec/specs/flowkit-integration-boundaries/spec.md",
+      "contentFingerprint": "24f02ffe5da1ad5e224007ea1fa6819bee746c4d9c6845f854fa4012ef84b521"
+    },
+    {
+      "path": "openspec/specs/flowkit-lean-run-and-action-package/spec.md",
+      "contentFingerprint": "b26cb2332da207f34fdf51f3b05681b93d8200681aac1bf4fee5d61b19a0a34a"
+    },
+    {
+      "path": "openspec/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+      "contentFingerprint": "812504221a86a167f777d9aea3d48fa382ade556f8287b19074cbbe70b1a7a8a"
+    },
+    {
+      "path": "openspec/specs/flowkit-policy-engine/spec.md",
+      "contentFingerprint": "60533c6ccc87cb03b65f3dfea71fbbe550a977f2de0634df6b2a989af20d967c"
+    },
+    {
+      "path": "openspec/specs/flowkit-product-positioning/spec.md",
+      "contentFingerprint": "f90a024c2d982dafc733d1e8710f8e2146562ac5d84d6c8bfe7be371643c1aac"
+    },
+    {
+      "path": "openspec/specs/flowkit-review-findings-and-blocker-authority/spec.md",
+      "contentFingerprint": "75313e645c06451af297ad6935a997ebba1dfd2c64394b0987b6f5bce39d8872"
+    },
+    {
+      "path": "openspec/specs/flowkit-runtime-foundation/spec.md",
+      "contentFingerprint": "bae0b9a76361d18d5b897448bab14b3bec28d8c380d77c4a3581a1f7d4bb4f46"
+    },
+    {
+      "path": "package-lock.json",
+      "contentFingerprint": "73def10db624cda7f605f1d11665aab2ecff9fc264e17d1fdf38dfa1e9d35b54"
+    },
+    {
+      "path": "package.json",
+      "contentFingerprint": "b1dc4a66ee5492daf234213977ff2b876aa96345911144c1ac897a07a3478c87"
+    },
+    {
+      "path": "scripts/affected-scopes.ts",
+      "contentFingerprint": "0930c0ae7fd055cb17bcd79e0d76346e4aeeb20caf58bff7b6bfa2315576b417"
+    },
+    {
+      "path": "scripts/platform-command.ts",
+      "contentFingerprint": "749a4d6534f00803df27f6369c9bac52c99614c502b0a2e469e24236e384e6eb"
+    },
+    {
+      "path": "scripts/quality.ts",
+      "contentFingerprint": "f71163bd77a0a077c25e2b077030fc185a5081413e76a962ba22f3296554965d"
+    },
+    {
+      "path": "scripts/verification.ts",
+      "contentFingerprint": "bdeffbbb6a0b6e632764d1b9f92b99c94ee1bad6796e5de7243e6749eead2978"
+    },
+    {
+      "path": "src/bin/flowkit.ts",
+      "contentFingerprint": "6b31b83e2ee115c5a2cc435a0845cccd04af2c10307369059bb444228c608567"
+    },
+    {
+      "path": "src/cli/context-loader.ts",
+      "contentFingerprint": "95d3c4784a4c2ff2c6b0530d0c6626a9fa4e9173cd56b0e9c4e7db521e7543d7"
+    },
+    {
+      "path": "src/cli/main.ts",
+      "contentFingerprint": "c0e0ddd34914d9e2f57337224283ea57e7712bf2199a75228c1b69324eb8e835"
+    },
+    {
+      "path": "src/cli/version.ts",
+      "contentFingerprint": "0be8edf0ac8296690051a34c690ab2ddc729e58d01c2c5ff807453d8a5cad143"
+    },
+    {
+      "path": "src/diagnostics/.gitkeep",
+      "contentFingerprint": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "src/diagnostics/README.md",
+      "contentFingerprint": "dee1cfc2b2fee9ac7c49c442e2f27a6ded303e4945d5457b271b50730bb63d43"
+    },
+    {
+      "path": "src/diagnostics/doctor.ts",
+      "contentFingerprint": "ee112f2dbe303a67e7732e5973f0481fc3edf2bd11edf083af15b16335459d51"
+    },
+    {
+      "path": "src/diagnostics/next.ts",
+      "contentFingerprint": "dd40dd958b27871174cb98f437687d3f4819c611b85a1dd965df892fb55930a2"
+    },
+    {
+      "path": "src/diagnostics/resume-context.ts",
+      "contentFingerprint": "cc89bf4d311cd9f572fd7e9ade39952daaa9a1da3b2ee4d9a2cf29565afc48b0"
+    },
+    {
+      "path": "src/diagnostics/shared.ts",
+      "contentFingerprint": "0b0b1e3644227337cdb7bd3e9a81b8e3595af408f2130675eb2dfc7885980139"
+    },
+    {
+      "path": "src/diagnostics/status.ts",
+      "contentFingerprint": "e5b7ba6b1ba8f38e99230567b19e2f9aac1a4751f729f8c2eaee6ea057c3ff9a"
+    },
+    {
+      "path": "src/domain/.gitkeep",
+      "contentFingerprint": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "src/domain/README.md",
+      "contentFingerprint": "c1896eca54c0d1854177098b197cfed372f69b6b93f6b064af5113ad4607ac7d"
+    },
+    {
+      "path": "src/domain/a1-types.ts",
+      "contentFingerprint": "c5a6f4869252816d2fa4c8fa679d7e1051b9b01fb61f92e34f14f83306910f86"
+    },
+    {
+      "path": "src/domain/actions.ts",
+      "contentFingerprint": "25202a9d8195ee779eb8069083ea0bb671b31a5d199572076cafa841b6f5c39e"
+    },
+    {
+      "path": "src/domain/owner-provenance.ts",
+      "contentFingerprint": "d998bc5edd84eada55feb369a25f36906ddcecf6ebd72795cfe466ecd6b8c080"
+    },
+    {
+      "path": "src/domain/run-id.ts",
+      "contentFingerprint": "cbd379ff17d865e865e5e647b1465c6b5cd2bf892d90066467a76fc2cbb40c6f"
+    },
+    {
+      "path": "src/domain/schema-validator.ts",
+      "contentFingerprint": "69b4c663e41fb367c77a09ef37ec2cd4db6363f9e25d48d74d8a213d10886776"
+    },
+    {
+      "path": "src/domain/states.ts",
+      "contentFingerprint": "3e900ad3c6af14c0cda8761a31a6add3aef369e74ed58687cd446907f9ff3c50"
+    },
+    {
+      "path": "src/domain/terminal.ts",
+      "contentFingerprint": "cbb0b57a71d07801755e1b79b5daa6e8b21b31a866d96ee37aad9c2febca179f"
+    },
+    {
+      "path": "src/domain/types.ts",
+      "contentFingerprint": "01518fe974dd8999756b1fac2ab774634611c23d7cbabaebc0ec80d17e3e3f15"
+    },
+    {
+      "path": "src/facts/.gitkeep",
+      "contentFingerprint": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "src/facts/README.md",
+      "contentFingerprint": "4bae3dddd592aa93985aeec729d154ead2e9cd59ff2007572972333e772f0421"
+    },
+    {
+      "path": "src/facts/formal-fact-reader.ts",
+      "contentFingerprint": "455718d7ba20eded4d5d524d07cda164f3264736b985b3948a665bb3f7aa054c"
+    },
+    {
+      "path": "src/facts/formal-fact-snapshot.ts",
+      "contentFingerprint": "fcbc8d95d1ef74ac0dfe6cab5abf0cb37c32123bafe28c5f234efe0f12f52237"
+    },
+    {
+      "path": "src/facts/generation-resolver.ts",
+      "contentFingerprint": "d80db324b5859c61978dc4c9434b8348e245b5e22e4e62d19434685163c853d9"
+    },
+    {
+      "path": "src/facts/git-boundary-reader.ts",
+      "contentFingerprint": "382023805eae571338a480bf32b4685a4eca39beac5800f36b022174ac8c0435"
+    },
+    {
+      "path": "src/facts/pre-a1-legacy-architecture-impact.ts",
+      "contentFingerprint": "8e8d49901c47194010af6196d75ef1aa5296a3ab6db9bbd17dbc0847e23b84d8"
+    },
+    {
+      "path": "src/facts/yaml-parser.ts",
+      "contentFingerprint": "288bab802f8e153729d2ef77bfa74c41b8d3d8243d86dcf51f853c4339f9e559"
+    },
+    {
+      "path": "src/integrations/openspec/openspec-archive-service.ts",
+      "contentFingerprint": "b1ba65c7abfd6b2272e90f29c7252689745c550dce8d797f2ab79c95abe8f98c"
+    },
+    {
+      "path": "src/integrations/openspec/openspec-cli-adapter.ts",
+      "contentFingerprint": "d280c3139788211be16c7b428b02a546c0ac9fa309d0d925347483cdbb48b64f"
+    },
+    {
+      "path": "src/integrations/openspec/openspec-integration-state.ts",
+      "contentFingerprint": "56eb8966802e8845ef9c777cfa55a253166704a7426a51de065b39c97e709d4b"
+    },
+    {
+      "path": "src/integrations/openspec/openspec-paths.ts",
+      "contentFingerprint": "c648666baf5f6c585e4e71c3c5a87bab7622c33f1ce69b7d77105d1bc927790b"
+    },
+    {
+      "path": "src/integrations/openspec/openspec-types.ts",
+      "contentFingerprint": "33a38426ecd24e0f735c2f24ad91197555a464af4795f62f90e241d5c2e97d4a"
+    },
+    {
+      "path": "src/persistence/.gitkeep",
+      "contentFingerprint": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "src/persistence/README.md",
+      "contentFingerprint": "0feef04192fc1ae197f87e87326338a6b5bee682c01f8271b86e9dc331325bcf"
+    },
+    {
+      "path": "src/persistence/delivery-manifest-document.ts",
+      "contentFingerprint": "c5efc89566860c92e53bb0bea31d7231995610d38929da3a5c42f53ef1e636cf"
+    },
+    {
+      "path": "src/persistence/legacy-recognizer.ts",
+      "contentFingerprint": "4d53cb6c9264dcbd3666e94b8f64b994e664edf7e94aea21d1fede106e3cf464"
+    },
+    {
+      "path": "src/persistence/result-ref-adapter.ts",
+      "contentFingerprint": "e82807e827b6ed3e66fdbad08c0ca7b1077ba512511962948e207686461cd073"
+    },
+    {
+      "path": "src/persistence/run-id-fs.ts",
+      "contentFingerprint": "a6a2086a43595d337a7eff4fd6770bb6685336ae8846c94cf08507d6e9ea459d"
+    },
+    {
+      "path": "src/persistence/run-persistence.ts",
+      "contentFingerprint": "3125ce5b97a831aa82105e0662f45ea5fb0545f0863190172440b76ca9449205"
+    },
+    {
+      "path": "src/persistence/serialization.ts",
+      "contentFingerprint": "bf830fe04e3a41a9d3f82583a2a9e3819544e47f035e0f18562e3d76a73e9992"
+    },
+    {
+      "path": "src/policy/.gitkeep",
+      "contentFingerprint": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "src/policy/README.md",
+      "contentFingerprint": "6b9da472b5d4674871535ad7dca5734140470ca546bf99f9547ec470215db495"
+    },
+    {
+      "path": "src/policy/blocked-diagnosis.ts",
+      "contentFingerprint": "feb30e38285c8dce85afe1d7d3254b153c0a224debbf4f049ac7dd158a246bc8"
+    },
+    {
+      "path": "src/policy/can-run.ts",
+      "contentFingerprint": "fddb3bdcacc6caed55a06ed7134d47941b46491e1ea6c6fdb53c0708bf245bd1"
+    },
+    {
+      "path": "src/policy/diagnose.ts",
+      "contentFingerprint": "8dd963e7acc24e4b4ec24b9652f16109d28fdf08ef9b296cb583d162a05fef6c"
+    },
+    {
+      "path": "src/policy/index.ts",
+      "contentFingerprint": "c0f6b3d61ab027a796ef557371fc6a7112d324d4356a9944e16e5dce96966ea0"
+    },
+    {
+      "path": "src/policy/lineage.ts",
+      "contentFingerprint": "38a00c8d48cc766ac78a5214951dcd045a05dbcd6c621488f365bd6f1650c7a7"
+    },
+    {
+      "path": "src/policy/next.ts",
+      "contentFingerprint": "53d7d1e5c59d6a64feac8baa1b21a39deff9075b8d08c71a60e09ed27251bedc"
+    },
+    {
+      "path": "src/policy/owner-decision.ts",
+      "contentFingerprint": "fa06d45bbfe9d0086559f0bd21ac73106edc3226eb4c2e64fb5affa7978ef422"
+    },
+    {
+      "path": "src/policy/preconditions.ts",
+      "contentFingerprint": "cf351ba41e760832ddee360a9ee09ae5c3983f359fb0d96d2160c86654d9ed1f"
+    },
+    {
+      "path": "src/policy/stage-detector.ts",
+      "contentFingerprint": "44abe63e663d8dca9737bb8a2bfc406cb7c6e633592ddb0b21a70c5c73c5220a"
+    },
+    {
+      "path": "src/policy/types.ts",
+      "contentFingerprint": "3532b6b3c2ac855d00e1be22e4fea85ec07941f6d73829666a77542d9c56b82b"
+    },
+    {
+      "path": "src/policy/unified-entry.ts",
+      "contentFingerprint": "48f9cb78536778fd8981efd5b6218579905ad9ed9499e87c8ed922b77dc2cece"
+    },
+    {
+      "path": "src/policy/verification-gate.ts",
+      "contentFingerprint": "2f6429f8f3cade80600f6ff96b4b8e019d6bba5efdf032610eab6e702e9b75b0"
+    },
+    {
+      "path": "src/services/a1-write-service.ts",
+      "contentFingerprint": "0f25598fd5aa91be4e42e6306feda30b6f07f077a30861539630ec59e5cd42ed"
+    },
+    {
+      "path": "src/services/b1-run-execution-service.ts",
+      "contentFingerprint": "9ed19f20e0baf3a29f070dae047ed3450c799d343178e17e18c731614bb96639"
+    },
+    {
+      "path": "src/shared/atomic-write.ts",
+      "contentFingerprint": "51d702db383b235253f08d50121a7c0bfb12bc68032f734a25df62d81193b6d6"
+    },
+    {
+      "path": "src/shared/errors.ts",
+      "contentFingerprint": "01d65cf1a694d93a315a00dec75040a9df0fcad1389a0993e94cedc61fe98c09"
+    },
+    {
+      "path": "src/shared/external-command.ts",
+      "contentFingerprint": "553caa1356ccb37827e32d8b6a8d758d8758ed6e2e31252249ceefca9d022ee4"
+    },
+    {
+      "path": "src/shared/paths.ts",
+      "contentFingerprint": "d12e9e8a9d329224fa408e844074519f3272e1112ece01416ad34ec99b2907fe"
+    },
+    {
+      "path": "src/verification/change-selection/actual-change-set.ts",
+      "contentFingerprint": "31c261148a0d84bb227e94743a8cb3d900c35a4d40e5987f8458ddb4e57318fe"
+    },
+    {
+      "path": "src/verification/change-selection/contracts.ts",
+      "contentFingerprint": "4ac820bcfc7143cdd26042d680779eb4a1c41474ac1f40b0e3fb3e9e364c5eb6"
+    },
+    {
+      "path": "src/verification/change-selection/entry-snapshot.ts",
+      "contentFingerprint": "6b973c41415e5ce4d8ae92fb71a3254f789e21ca8df10f9c8d5c7acc6e456c7f"
+    },
+    {
+      "path": "src/verification/change-selection/evidence.ts",
+      "contentFingerprint": "eac9cf506007d805800a89613c7db9515b64fa4a337e7829a188ded85294f50e"
+    },
+    {
+      "path": "src/verification/change-selection/module-map.ts",
+      "contentFingerprint": "cc45588eb14da09f19d3b34bd66f483a782ea6274979c9dfb8437dd56a893230"
+    },
+    {
+      "path": "src/verification/change-selection/mutation-declaration.ts",
+      "contentFingerprint": "052c4daed75bb1d2f8d03ce5bc8cdf90a324612e56ef070854e1fced26104410"
+    },
+    {
+      "path": "src/verification/change-selection/publication.ts",
+      "contentFingerprint": "d9f64e7943cfd0756453f68b51c68b8293dfe4cc9fa81d2255d2e26360ec68e5"
+    },
+    {
+      "path": "src/verification/change-selection/selection.ts",
+      "contentFingerprint": "d366e32428eff5f282bb546cd4c4ac36231616b0b336c3aa62d4005e3338535f"
+    },
+    {
+      "path": "tests/fixtures/e1-change-verification-selection/README.md",
+      "contentFingerprint": "420b518fc5087fa37cab46ecf702b8d6d648ff8932c32905a31551bedc8436f1"
+    },
+    {
+      "path": "tests/fixtures/e1-change-verification-selection/context-v2.json",
+      "contentFingerprint": "a64f295f6bef90cc0c2deddff8e42e2da7d3b785119d8ac4f0e2090019987cb9"
+    },
+    {
+      "path": "tests/fixtures/e1-change-verification-selection/context-v3.json",
+      "contentFingerprint": "8311637a994268b2c87633465151317c6fabdbc2840f6d9970dab652f6c2fe49"
+    },
+    {
+      "path": "tests/fixtures/e1-change-verification-selection/context-v4.json",
+      "contentFingerprint": "c163aab49d6953c18a03cbae9f5be26ba9fa21a8e5f9b1c1653dbd16069a7b56"
+    },
+    {
+      "path": "tests/fixtures/e1-change-verification-selection/context-v5.json",
+      "contentFingerprint": "21f6a783d986869be9ad556eadb5aea6a2c9db0eb21beee99b0391436b4fe360"
+    },
+    {
+      "path": "tests/fixtures/helpers.ts",
+      "contentFingerprint": "e98c75ad534a05e74c6527341ea0a7e91098d77350ffc5e1193203842e3e770e"
+    },
+    {
+      "path": "tests/fixtures/quality/metric-sample.ts",
+      "contentFingerprint": "c4fd5557201675b6b5755cfc0413e6957db6b4e58cfedf1526b64b8a5dfa615a"
+    },
+    {
+      "path": "tests/integration/diagnostic-cli-process.test.ts",
+      "contentFingerprint": "e9050dd2c193c60e6705a7793f3787ee6166b60662b641665f52d82fc181fc06"
+    },
+    {
+      "path": "tests/integration/diagnostic-cli.test.ts",
+      "contentFingerprint": "d65ad4de5bd6cb28155a89030b26b66fef1a0099b9c307b210662c23df44e943"
+    },
+    {
+      "path": "tests/integration/e1-change-verification-selection.test.ts",
+      "contentFingerprint": "5b904b1fa6fed99a767fa29c5a324a62956f6282fda8c9e5fb719641a0b7cc24"
+    },
+    {
+      "path": "tests/integration/execution-model-lifecycle.test.ts",
+      "contentFingerprint": "a9aca96f97d371d224c920735f79ad9766ad05d2171b093b04cc21eb7fa6fa24"
+    },
+    {
+      "path": "tests/integration/openspec-1-7-real-cli.test.ts",
+      "contentFingerprint": "e3f2372cb335ec68c355ca2ecc9cd1d5afebcf06c2d6089c9f80daaf6fdd220e"
+    },
+    {
+      "path": "tests/integration/verification-commands.test.ts",
+      "contentFingerprint": "462db66c6f4e5e689319a1053e99d3666061a56bb534d645287c1a79830ebdab"
+    },
+    {
+      "path": "tests/unit/atomic-write.test.ts",
+      "contentFingerprint": "24349b05ae8a0ba8494edac40dda9f80e4f30d47b41804f807e3209a63333477"
+    },
+    {
+      "path": "tests/unit/cli/context-loader.test.ts",
+      "contentFingerprint": "9612dba589539ae650f68faf741ee51b3e26bbfd9b9dff079c49bd6462de14c1"
+    },
+    {
+      "path": "tests/unit/diagnostics/views.test.ts",
+      "contentFingerprint": "12ce5ab4d527da8107874d94cd5c3670bac7075e10545d3349f4459a3d0833b6"
+    },
+    {
+      "path": "tests/unit/domain/actions.test.ts",
+      "contentFingerprint": "34fc6312c5e6fdb5a9713225246f10ebc816a9f12a81fb617641e5b07b9731d4"
+    },
+    {
+      "path": "tests/unit/domain/run-id.test.ts",
+      "contentFingerprint": "d129ba1d9c8214c722309490dc5bf9d66dfed60e42255706e45dd8d4a3e6fa79"
+    },
+    {
+      "path": "tests/unit/domain/schema-validator.test.ts",
+      "contentFingerprint": "878e1d508d9de61856eb586d70598c2140a8343772e31e4f3ed9b4d977db9737"
+    },
+    {
+      "path": "tests/unit/domain/states.test.ts",
+      "contentFingerprint": "ec8da6f24b9d81b45aeb16f21c5cdd13096e4b32f85ccaf2ab623af95ed0e2b0"
+    },
+    {
+      "path": "tests/unit/domain/terminal.test.ts",
+      "contentFingerprint": "2e98304ad107d949cea515573b05e48c0037ea3efdcf6c7e3c51f0d1b2428b36"
+    },
+    {
+      "path": "tests/unit/domain/types.test.ts",
+      "contentFingerprint": "a09e5d8f35b075ce2561b565c261b2ee5d4f0acd40dccfa7b18b604d1c95e55b"
+    },
+    {
+      "path": "tests/unit/errors.test.ts",
+      "contentFingerprint": "122e2ff8d630027e422c7702191de314425f2805c2c425ad347953bca651fd4a"
+    },
+    {
+      "path": "tests/unit/external-command.test.ts",
+      "contentFingerprint": "c512d710a1a57691a4d0dec44d7cfaf11e06dddcbd3c910ad2a1d26928ce8e5d"
+    },
+    {
+      "path": "tests/unit/facts/formal-fact-reader-e1-tasks.test.ts",
+      "contentFingerprint": "60e47333d6e87378196dc479d4bc99477b0d26e8ebbbe0aba23944a475648e45"
+    },
+    {
+      "path": "tests/unit/facts/formal-fact-reader-e1-verification.test.ts",
+      "contentFingerprint": "27790f880910de8db0fcf7d89b76f3e1b26c9c48660a92f9d28b72d090ec4592"
+    },
+    {
+      "path": "tests/unit/facts/formal-fact-reader-ra007-admission.test.ts",
+      "contentFingerprint": "8800669e4bd1556dd1aa9c917181646d15e53b3bc9b0f8265b583475e403117b"
+    },
+    {
+      "path": "tests/unit/facts/formal-fact-reader-ra011-legacy-provenance.test.ts",
+      "contentFingerprint": "e1bbe9246a57a54450894e8e892cf06fedf271ec468c2c9ef6b81062decb68db"
+    },
+    {
+      "path": "tests/unit/facts/formal-fact-reader.test.ts",
+      "contentFingerprint": "0d6e9f758d3be38d2d3f8a63f18f9316871cbc5613ac65ae72a9963a8bf4dfee"
+    },
+    {
+      "path": "tests/unit/facts/formal-fact-snapshot.test.ts",
+      "contentFingerprint": "640b908b8fff905b50a26b1a61ea3a57af22f295993426452af939f7b316bd2c"
+    },
+    {
+      "path": "tests/unit/facts/git-boundary-reader.test.ts",
+      "contentFingerprint": "d5628a3ad99a8b7ea3ffb4903144a160314e5e432fa63fd831e93fc68e8b095d"
+    },
+    {
+      "path": "tests/unit/facts/yaml-parser.test.ts",
+      "contentFingerprint": "b42d0eb82e57c717b021f30f93034af15792fd8db2a830636d8d197c5f04e0a9"
+    },
+    {
+      "path": "tests/unit/integrations/openspec-archive-service.test.ts",
+      "contentFingerprint": "911472709cf5554a64089e22369628e84d74b9c4b264d4d99c65998411b2b3f7"
+    },
+    {
+      "path": "tests/unit/integrations/openspec-cli-adapter.test.ts",
+      "contentFingerprint": "b3286489f059a5b71198fde090414c64c822582be5cc321d0a40c91f1efcb507"
+    },
+    {
+      "path": "tests/unit/integrations/openspec-paths.test.ts",
+      "contentFingerprint": "4b7fc5297e6203a7865d9db140ba140c9cf4ad4f144a65ce9e9506838aa954a5"
+    },
+    {
+      "path": "tests/unit/paths.test.ts",
+      "contentFingerprint": "6f11a76a9afdbdcb2f9018323c76c9d3fd97e970d1adf7372741b30a419fcf64"
+    },
+    {
+      "path": "tests/unit/persistence/delivery-manifest-document.test.ts",
+      "contentFingerprint": "ac7e000dbf6629390cf8be34aa97558c7c034e55fa7be968600f59d221153b27"
+    },
+    {
+      "path": "tests/unit/persistence/legacy-recognizer.test.ts",
+      "contentFingerprint": "d81b19233a13040738a1ae32556d86dd3987e9c3070f08ae3ee03a6625da7cc5"
+    },
+    {
+      "path": "tests/unit/persistence/result-ref-adapter.test.ts",
+      "contentFingerprint": "8ed0852bb37c3071c05afb53269f48b697928c9bc262ba91eb7482769dd45257"
+    },
+    {
+      "path": "tests/unit/persistence/run-id-fs.test.ts",
+      "contentFingerprint": "1b5d949c4e171bc8e56e8f3e298c88caa36bc814fd54914b63c4b68d076e739e"
+    },
+    {
+      "path": "tests/unit/persistence/run-persistence.test.ts",
+      "contentFingerprint": "e3c4ce58b4371b2c66a70c953f2b226df664ad515deca81a15ba845440151e5d"
+    },
+    {
+      "path": "tests/unit/persistence/serialization.test.ts",
+      "contentFingerprint": "5f59a5ef730fce06030f73bdfd391d2cb582d8d12443e2cf04325c908120c2a6"
+    },
+    {
+      "path": "tests/unit/policy/can-run.test.ts",
+      "contentFingerprint": "1108566c19022f3b65729f3867b50fcad464ecc7c3cb05e8a9100cb04f7347ed"
+    },
+    {
+      "path": "tests/unit/policy/contract-reset-currentness.test.ts",
+      "contentFingerprint": "ad51c7bc3e077de688038c02a25dd4e0ebd31bf53c23ccacedd8e7f5de3b4c0d"
+    },
+    {
+      "path": "tests/unit/policy/diagnose.test.ts",
+      "contentFingerprint": "48f10d5b08ae7f11c521c26ec8920208d6c35009a0699d7db13037374498e8b5"
+    },
+    {
+      "path": "tests/unit/policy/fixtures.ts",
+      "contentFingerprint": "33b24f9f238747c9f4ba9dae62764210a0a2f38c915981962da7683ce558cbf8"
+    },
+    {
+      "path": "tests/unit/policy/lineage.test.ts",
+      "contentFingerprint": "168c65973ef6e566e4efe737257f048eb767ccd4638734b23e28cec4504feb50"
+    },
+    {
+      "path": "tests/unit/policy/next.test.ts",
+      "contentFingerprint": "1a60bac8a6a9c237ae3dcb520d9b778ceb7d2ba0aed76c148d3031b74bbe03f7"
+    },
+    {
+      "path": "tests/unit/policy/owner-decision.test.ts",
+      "contentFingerprint": "627a16da5f4348c93584ab3d9faa0558ff687211634c0b0bc7072ebb7267534a"
+    },
+    {
+      "path": "tests/unit/policy/preconditions.test.ts",
+      "contentFingerprint": "fbb38da8886d14b32d00afd26f504ed7a5eb152d3bebeb3ec90eb98307880cfc"
+    },
+    {
+      "path": "tests/unit/policy/stage-detector.test.ts",
+      "contentFingerprint": "b8fffb346aebe5644b8df6cbecf5f37ca5b8b2461dbbefdebad625621d0a47ba"
+    },
+    {
+      "path": "tests/unit/policy/types.test.ts",
+      "contentFingerprint": "28a26b466c1fe0c89cc1a9ef09bd3f58da43587f7c433868becc8c0404899adb"
+    },
+    {
+      "path": "tests/unit/policy/unified-entry.test.ts",
+      "contentFingerprint": "5ee629fb32688d011821b47298c8077f2b6f3d544e725b6c94a657082c355fb8"
+    },
+    {
+      "path": "tests/unit/policy/verification-gate.test.ts",
+      "contentFingerprint": "fbd02fd04fa8fc61ecd29f6e207afabcf33c5cf7ae077d0345222abaf3d1e57e"
+    },
+    {
+      "path": "tests/unit/services/a1-write-service.test.ts",
+      "contentFingerprint": "f3754edb05a4a7a10b60b0f8ee6100e1acc3318265b5e74c802d7b431c4befac"
+    },
+    {
+      "path": "tests/unit/services/b1-openspec-action-context.test.ts",
+      "contentFingerprint": "d11956863540f59800d8aea02e0f4e60f708933d9f22130a6ad5a8e5724bab4c"
+    },
+    {
+      "path": "tests/unit/services/b1-run-execution-service.test.ts",
+      "contentFingerprint": "cd5008a394bfb5e6f2f92c71735ddb48bacf463e54ed2592fd8cfcb55205da86"
+    },
+    {
+      "path": "tests/unit/verification/affected-scopes.test.ts",
+      "contentFingerprint": "422adbb4bb8068e65905c7eb17b93a6fbbbb8222f2e2aa5fa530a6bc01dd24d7"
+    },
+    {
+      "path": "tests/unit/verification/change-selection/actual-change-set.test.ts",
+      "contentFingerprint": "d2d16b934da9196939f9682e99a194844e37cade27477157b44edd90908c56cd"
+    },
+    {
+      "path": "tests/unit/verification/change-selection/contracts.test.ts",
+      "contentFingerprint": "7afde57007bec618b985685ded410a691bb30b8b82511478b8084b22749261dd"
+    },
+    {
+      "path": "tests/unit/verification/change-selection/entry-snapshot.test.ts",
+      "contentFingerprint": "9007d4ddb8b977c6750c7a10796db676621ef9e194ef44040124257d51d864f6"
+    },
+    {
+      "path": "tests/unit/verification/change-selection/module-map.test.ts",
+      "contentFingerprint": "209bced0ff0a8af6a084181d197709507708764e153c0b1d42d79a29db203fca"
+    },
+    {
+      "path": "tests/unit/verification/change-selection/mutation-declaration.test.ts",
+      "contentFingerprint": "9ef0a883fb100a243a31ecd3aa055e4854fd49cb7e2e268138a96dd40b13839b"
+    },
+    {
+      "path": "tests/unit/verification/change-selection/publication.test.ts",
+      "contentFingerprint": "57433e859cb29a1294c0a470b7d3f969c3ab1b1cc926ebdfda8a4e028fc5d9d7"
+    },
+    {
+      "path": "tests/unit/verification/change-selection/selection.test.ts",
+      "contentFingerprint": "c754d31a23f716e4bb9dcf62ee98653a14544d728476240e0f14158443978dd0"
+    },
+    {
+      "path": "tests/unit/verification/package-scripts.test.ts",
+      "contentFingerprint": "d4e82e912a7d843c959caff90dc7ec15a54d490aef6030d46fffb72fcec0c6ef"
+    },
+    {
+      "path": "tests/unit/verification/platform-command.test.ts",
+      "contentFingerprint": "d6fdc40ddaa33c740c621a2488048f1228e9af77827eb20798a1fad6ed2e3452"
+    },
+    {
+      "path": "tests/unit/verification/quality.test.ts",
+      "contentFingerprint": "d11700c8f608585eefed3931370fc97296f5ef3322735efc3ee427b08994a51f"
+    },
+    {
+      "path": "tests/unit/verification/verification-plan.test.ts",
+      "contentFingerprint": "39d1536e1bd0ed854435feecb2425ccec653c1271ba0bd692e613f1c141b34e0"
+    },
+    {
+      "path": "tests/unit/version.test.ts",
+      "contentFingerprint": "af9be03ce911c222ac4615ee3824ec09bb7f2c4336bb42c10847424490a63cd0"
+    },
+    {
+      "path": "tsconfig.json",
+      "contentFingerprint": "41a69da5b67140beed5ae44f90c4c43044239796654f52fdda2093142f390664"
+    },
+    {
+      "path": "tsconfig.test.json",
+      "contentFingerprint": "2714bd17a268582e9446706375a22f3151082b365d4e6b635d0ad95ed94a641f"
+    }
+  ]
+}

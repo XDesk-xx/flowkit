@@ -1,0 +1,30 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "020 Proposal 的总体方向成立，dependsOn=Change.id、Owner typed applicability、activation two-step publish、bounded Manifest writer、write CLI/read-only diagnostics 与 OpenSpec seam 均未发现方向性 blocker；OpenSpec strict、transport/hash/lineage 也通过。但仍有两个 Author contract gaps：authorization-only owner record 的 current Policy gate timing 只存在于 Design SHOULD/Task、未进入 normative spec；Change architectureImpact 只要求 create input，未冻结 persisted/read Change fact。故本轮 changes-requested。",
+    "nextActionRecommendation": "revise-propose"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindings": [
+    {
+      "id": "A1-RP-001",
+      "severity": "blocking",
+      "blockingAuthority": "author",
+      "title": "authorization-only Owner record 的当前 Policy gate admission 未规范化",
+      "problem": "Design/Tasks 已要求防止 stale/early Owner authorization，但正式 delta specs 只约束 typed target/applicability，没有要求 standalone authorization record 必须在 current Policy 正在请求同一 owner-decision/target 时才能写入。实现因此可提前持久化 authorize-apply/archive 等 record，未来 gate 到达时直接被消费，仍符合现有 spec text，削弱 Owner authorization 的当前 lifecycle authority boundary。",
+      "location": "openspec/changes/delivery-change-creation-and-owner-input/design.md Decision 9 / Risks; tasks.md 3.3; specs/flowkit-delivery-change-creation-and-owner-input/spec.md `Owner decision provenance` / `A1 write CLI`; specs/flowkit-policy-engine/spec.md `Owner authorization gate`",
+      "requiredChange": "revise-propose：把 authorization-only record 的 timing/admission 写成 normative MUST。持久化 authorize-apply/archive/checkpoint/full-test/delivery-finalize 前必须重新读取 current formal facts/Policy，且 current Policy 正在请求相同 decision 与 canonical target；否则 fail closed、Manifest 不变。同步 Proposal/Design/spec/tasks，避免仅由 Task 隐式约束。"
+    },
+    {
+      "id": "A1-RP-002",
+      "severity": "blocking",
+      "blockingAuthority": "author",
+      "title": "Change architectureImpact 未冻结为可恢复的 persisted Change fact",
+      "problem": "020 要求 Change create input 包含 architectureImpact，但没有规定该值必须写入 Delivery Manifest 或进入 Change/ChangeSummary/ChangeFact 等等价正式投影。当前 canonical Change types 也没有该字段。照现有正式 spec，实现可以接收后丢弃 architectureImpact 而仍满足 create input requirement，未完成 019 Explore P5 与 02 A1 reference 的 Change creation contract。",
+      "location": "openspec/changes/delivery-change-creation-and-owner-input/explore.md P5; proposal.md Modified Capabilities; design.md Decision 6; tasks.md 1.2/3.2; specs/flowkit-delivery-change-creation-and-owner-input/spec.md `Change creation`; specs/flowkit-domain-and-state-schema/spec.md; src/domain/types.ts Change/ChangeSummary; src/facts/formal-fact-snapshot.ts ChangeFact",
+      "requiredChange": "revise-propose：冻结 Change-level architectureImpact 的 canonical persistence/read/type contract，确保 createDelivery initial planned Changes 与后续 createChange 都保存同一事实；同步 new capability/domain/persistence/tasks/tests。若决定该字段不应持久化，则需显式重置 Explore/02 required outcome，而不是只保留输入字段。"
+    }
+  ]
+}

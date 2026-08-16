@@ -1,0 +1,53 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "Review 190 revise-apply：changed-surface outcome-unknown 的 public CLI 行为已修复并有真实回归，但 G1-RA-001 仍未完全关闭。190 在 CLI 层新增 Manifest 解析、Run 扫描和 archive recovery candidate/classification，违反 186 approved thin-CLI architecture 以及 189 'no second archive state machine' acceptance。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/change-cli-end-to-end-and-performance/verification.md",
+      "versionFingerprint": "d0a12450b910c4e80f78072653cdc773fa60e20b6d030ef9f0473054701678ac",
+      "kind": "verification-summary"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "5c83a918b33a12b66edbbb97e5b168c5822a3c80e45708dab5d1005edc9a568a"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "G1-RA-001",
+      "severity": "blocking",
+      "blockingAuthority": "author",
+      "title": "archive CLI MUST preserve durable pending-archive recovery before active OpenSpec preflight",
+      "problem": "190 fixes the changed-surface outcome-unknown behavior, but does so by adding CLI-local archive recovery discovery in src/cli/change-action.ts: currentManifestActiveChangeId() parses the Delivery Manifest directly, pendingArchiveRecoveryProjection() scans .flowkit/runs, selects a pending archive, and invokes inspectOpenSpecArchiveRecovery() before Policy/FormalFact preparation. This duplicates lifecycle/persistence selection that the approved G1 Design says must remain in existing production services and creates a second archive recovery state machine in the CLI.",
+      "contractRef": "G1 archive durable OpenSpec execution contract / G1 CLI E2E failure-recovery matrix / F1-D2 pending archive recovery semantics",
+      "invariant": "A persisted archive outcome-unknown or mutation-surface recovery state must remain the same pending archive Run and surface recovery-required without respawning or requiring the active OpenSpec Change projection to still exist.",
+      "evidence": [
+        "190 src/cli/change-action.ts imports parseYaml, validateContextFile, readdir and inspectOpenSpecArchiveRecovery solely to implement currentManifestActiveChangeId() + pendingArchiveRecoveryProjection().",
+        "pendingArchiveRecoveryProjection() independently parses openspec/delivery-groups/<deliveryId>.yaml, scans the active Change Run directory, decides which pending archive is selected, and classifies its recovery state before assertCurrentIntentBeforePreparation()/prepareActionExecution().",
+        "186 approved design Decision 1 freezes src/cli/change-action.ts as a thin helper that calls existing production services and MUST NOT reimplement Policy or persistence; Decision 6 says archive resolves next=archive, prepares/resumes the exact archive Run, then delegates to the existing durable archive service.",
+        "189 acceptance explicitly required the fix to stay within the approved architecture and not introduce a second archive state machine.",
+        "The new G1 CLI-process regression passes the original counterexample, so the behavioral portion of G1-RA-001 is fixed; the remaining blocker is authority/architecture duplication."
+      ],
+      "impact": "The public CLI now has its own definition of active Change/pending archive/recovery precedence that can diverge from FormalFactReader/B1/F1/D2 rules, mask formal conflicts or stale generations before Policy is consulted, and require future archive recovery fixes to be maintained in two places. That violates the frozen thin-CLI architecture and one-fact/one-authority boundary.",
+      "requiredOutcome": "Keep the changed-surface outcome-unknown CLI behavior, but move/reuse the pre-OpenSpec pending-archive recovery discovery behind an existing or narrowly extended production service/authority boundary so the CLI only consumes one recovery projection. The CLI must not parse the Delivery Manifest, scan Run persistence, or independently select/classify archive recovery candidates.",
+      "acceptance": [
+        "The changed-surface outcome-unknown public CLI regression still returns recovery-required for the same runId, without respawn, replacement Run, terminalization, checkpoint or Git mutation.",
+        "src/cli/change-action.ts no longer directly parses the Delivery Manifest or scans .flowkit/runs to select a pending archive recovery candidate.",
+        "Pending archive candidate selection and inspectOpenSpecArchiveRecovery classification are owned by one existing/narrowly extended B1/F1/D2 production service boundary and are reused by the CLI.",
+        "Normal Policy gating remains authoritative for ordinary archive invocation, and formal conflicts/stale lifecycle facts are not bypassed by a CLI-local preflight.",
+        "After exact mechanical restoration plus existing explicit recovery admission, the same archive generation still resumes; happy archive, verify projection, selected Verification and G1 E2E regressions remain green.",
+        "The fix remains inside the approved 186 apply/revise-apply mutation surface and does not introduce 03 Delivery behavior."
+      ]
+    }
+  ],
+  "reviewFindingConvergence": [
+    {
+      "findingId": "G1-RA-001",
+      "state": "still-open"
+    }
+  ]
+}

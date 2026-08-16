@@ -1,0 +1,13 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-apply",
+    "executionStatus": "completed",
+    "summary": "关闭 D1-RA-001：新增仅限 Contract Reset-only semantic drift 的 stale pending recovery boundary；旧 pending 可正式 cancelled 后启动新 generation，其他 drift 继续 fail closed。",
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/review-findings-and-blocker-authority/20260812-082-review-apply/result.json",
+      "versionFingerprint": "6f5a5990abea2da1d66ec294fa03078cf37a1c8eba36554fedaba310b4380cf8",
+      "kind": "run-result"
+    }
+  }
+}

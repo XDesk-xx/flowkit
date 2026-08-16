@@ -35,7 +35,7 @@ Provider Registry
 
 ```text
 Delivery / Change / Run 状态模型
-固定 Action Catalog
+固定 Change-only Action Catalog
 Policy / canRun / next
 正式事实读取
 状态持久化
@@ -65,9 +65,10 @@ Provider Registry
 
 ```text
 Delivery / Change 创建
-Run 创建和生命周期
-Action Package 生成
-Action Result 接纳
+固定十 ActionDefinition catalog
+Delivery-wide Run preparation / same-pending semantic continuation
+provider-neutral logical Action Package
+logical Action Result → Core admission
 OpenSpec 薄集成
 Review / Findings 最小闭环
 Change Verification
@@ -104,7 +105,7 @@ thin Agent Adapter
 稳定 Runner 发布
 ```
 
-本阶段交付完整 Delivery 生命周期：从 Ready 到 Finalize。Full Test 由 owner 明确授权，不由流程自动触发。Agent Adapter 是薄 I/O 转换层，不成为第二编排器。
+本阶段交付完整 Delivery 生命周期：从 Ready 到 Finalize。Full Test / Finalize 是 Delivery behavior，不是 Standard Formal Action/Run；Full Test 由 owner 明确授权，不由流程自动触发。Agent Adapter 是薄 I/O 转换层，不成为第二编排器。
 
 ---
 

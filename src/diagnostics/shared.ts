@@ -1,8 +1,17 @@
 import type { ChangeFact, FormalFactSnapshot, OpenSpecArtifactFact, RunFact } from '../facts/formal-fact-snapshot.js';
+import { projectCurrentContractResetLifecycle } from '../facts/generation-resolver.js';
 import { computeLineage, currentArtifactRun } from '../policy/lineage.js';
-import { detectStage, stageActions } from '../policy/stage-detector.js';
+import { detectCurrentStage, stageActions } from '../policy/stage-detector.js';
 import type { Stage } from '../policy/stage-detector.js';
 import type { PolicyResult } from '../policy/types.js';
+
+
+export interface PendingRunInspection {
+  readonly runId?: string;
+  readonly action?: string;
+  readonly role?: string;
+  readonly status: 'none' | 'resumable' | 'input-drift' | 'fingerprint-missing' | 'not-resumable' | 'ambiguous' | 'recovery-required' | 'terminal-observation';
+}
 
 export function escapeScalar(value: string): string {
   return value.replace(/\r/g, '\\r').replace(/\n/g, '\\n');
@@ -22,11 +31,12 @@ export function newestRun(runs: readonly RunFact[], changeId?: string): RunFact 
 }
 
 export function currentStage(snapshot: FormalFactSnapshot, change: ChangeFact): Stage {
-  return detectStage(snapshot.runs, change.id);
+  return detectCurrentStage(snapshot, change.id);
 }
 
 export function latestReviewValue(snapshot: FormalFactSnapshot, change: ChangeFact, stage: Stage): string {
-  const lineage = computeLineage(snapshot.runs, snapshot.reviewVerdicts, change.id, stage);
+  const current = projectCurrentContractResetLifecycle(snapshot, change.id);
+  const lineage = computeLineage(current.runs, current.reviewVerdicts, change.id, stage);
   return lineage.review?.verdict ?? 'none';
 }
 
@@ -73,7 +83,8 @@ export function hasCompletedCurrentArtifactRun(
   change: ChangeFact,
   stage: Stage,
 ): boolean {
-  return currentArtifactRun(snapshot.runs, change.id, stage) !== null;
+  const current = projectCurrentContractResetLifecycle(snapshot, change.id);
+  return currentArtifactRun(current.runs, change.id, stage) !== null;
 }
 
 export function isPendingRunResumable(
@@ -90,8 +101,6 @@ export function isPendingRunResumable(
     const actionByDecision: Partial<Record<typeof policy.decision, string>> = {
       'authorize-apply': 'apply',
       'authorize-archive': 'archive',
-      'authorize-full-test': 'full-test',
-      'authorize-delivery-finalize': 'delivery-finalize',
     };
     return actionByDecision[policy.decision] === run.action;
   }

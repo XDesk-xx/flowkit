@@ -1,0 +1,20 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-explore",
+    "executionStatus": "completed",
+    "summary": "已关闭 C1-RE-001：补充当前 C1 schema migration/compatibility seam，明确当前已激活且被 B1 semantic binding 的 C1 在本 lifecycle 中保持 schema: spec-driven，不允许 review-explore approved→propose 间 out-of-band metadata rewrite，也不允许 proposal-bundle-only Propose 暗中承担 schema migration；Proposal 必须分别冻结 current-C1 compatibility 与 C1 实现后 future Changes 的 metadata/schema contract。若长期方案采用 custom schema，只能作为后续 Apply 交付的 future-Change capability；任何要求迁移当前 C1 metadata 的候选都必须先证明合法 Action/Owner/candidate-reset boundary 与新 semantic generation。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/openspec-1-7-thin-integration/explore.md",
+        "versionFingerprint": "9c4af2357e402d62b5b9708b93cedff48b0cf4f5979a3567e43db049621c7be3",
+        "kind": "produced-artifact"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/openspec-1-7-thin-integration/20260811-049-review-explore/result.json",
+      "versionFingerprint": "59a502e47223332cf0d349f7f982d3286b5b97da3d2871d63beb6cc5a2cc3073",
+      "kind": "run-result"
+    }
+  }
+}

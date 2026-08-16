@@ -1,0 +1,181 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260814-147-propose",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "propose",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "1a35c8641665c1046eecc9923e36e2bfa209d4bf144541180482b01cf64cc5b8",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:1f4b0ee08f7de45ac707d0dea97d84fe95dd6940254b61106bc3d0be70c805fe",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-verification-generalization-and-lean-run-normalization",
+      "scope": "E2 Proposal internal version design: supersede the 140/141 Proposal generation version-family architecture while preserving the approved 136 Explore feasibility facts and E2 required outcomes.",
+      "requiredOutcomes": [
+        "Do not establish independent long-lived version lifecycles for Context, ActionPackage, verification selection/evidence schema, renderer, or Verification Catalog.",
+        "E2 itself continues on the pre-E2/current runner and may implement generic Verification; post-E2 prospective three-file writer activates only after the E2 checkpoint, with F1 as first formal dogfood consumer.",
+        "Flowkit product version remains the product-level version; current Git/source defines current internal implementation.",
+        "Historical E1 persisted shapes remain immutable and readable through small bounded legacy compatibility; do not migrate historical E1 Runs or build a generic migration/version framework.",
+        "Historical verification publication should validate persisted bytes/fingerprint/binding rather than require renderer-version replay; keep only the minimum bounded compatibility mechanism actually required.",
+        "Preserve generic Change Verification, current-Change decoupling, prospective three-file Run, historical E1 readability, crash/recovery correctness, next-consumer regressions, and E1→E2→F1→G1 dependency boundary without expanding into F1/G1/03 scope.",
+        "Use a minimal formatVersion only when a persisted breaking format cannot be reliably discriminated structurally by the latest reader; formatVersion is only a serialization discriminator.",
+        "Verification Catalog has no generation lifecycle; current source is authority and point-in-time identity uses content fingerprint when needed."
+      ],
+      "sourceRef": "owner-explicit-contract-reset-20260814-e2-internal-version-design"
+    },
+    {
+      "ref": "owner:f555b953e24a23edf219588c44d37a5e89a737c1721cc23c006d44f368b2f3cd",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-verification-generalization-and-lean-run-normalization",
+      "scope": "E2 Proposal mutation scope correction after failed 20260814-146-apply; architecture and all approved E2 semantics remain unchanged.",
+      "requiredOutcomes": [
+        "Add tests/unit/services/a1-write-service.test.ts as an exact allowed selector under both apply and revise-apply flowkitMutationScope, because E2 insertion changes the canonical Delivery Change count from 9 to 10 and repository all-green acceptance requires updating that regression.",
+        "After the minimal Proposal/Design scope correction, create a new Proposal generation for Reviewer re-approval before any Apply retry.",
+        "Do not add any other mutation selector or implementation scope unless independently required by a new formal fact.",
+        "Preserve the approved E2 architecture and all Proposal/Design/OpenSpec semantics from the 142/144 generation; do not reopen 136 Explore or redesign generic Verification, historical E1 compatibility, three-file prospective Run, crash/recovery, or next-consumer boundaries.",
+        "Supersede the Proposal/apply generation that culminated in failed 20260814-146-apply only as needed to correct the approved mutation declaration."
+      ],
+      "sourceRef": "owner-chat:2026-08-15T03:49+08:00:E2-mutation-scope-reset-after-146"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-generalization-and-lean-run-normalization/20260814-147-propose/",
+  "changeKey": "E2",
+  "changeId": "change-verification-generalization-and-lean-run-normalization",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-generalization-and-lean-run-normalization/20260814-137-review-explore/result.json",
+    "versionFingerprint": "6ed76f0c11f7df19b4eae44918bdd9ce0ee5a2e42cf46a48b90371ab5779922b",
+    "kind": "run-result"
+  },
+  "canonicalBase": "e15d0a3c5bf7b46d3a1134eb3a5e208f11f7e564",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-generalization-and-lean-run-normalization/20260814-137-review-explore/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "6ed76f0c11f7df19b4eae44918bdd9ce0ee5a2e42cf46a48b90371ab5779922b"
+    },
+    {
+      "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "cfa0dd24ffbc3529beee2a707cfd385b458247b1b5cca61fbcc99f934e83600e"
+    },
+    {
+      "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/explore.md",
+      "versionFingerprint": "eddf3135db029a3736fdabd1eeb8b8321a403ef94890b416e89d8ec54bf05570",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-verification-generalization-and-lean-run-normalization",
+      "runId": "20260814-147-propose",
+      "action": "propose",
+      "role": "author",
+      "semanticInputFingerprint": "1a35c8641665c1046eecc9923e36e2bfa209d4bf144541180482b01cf64cc5b8"
+    },
+    "definition": {
+      "action": "propose",
+      "version": 1,
+      "role": "author",
+      "goalClass": "freeze-change-contract",
+      "mutationClass": "proposal-bundle-only",
+      "outputClass": "current-proposal-bundle-set",
+      "terminalContract": {
+        "kind": "artifact",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "cfa0dd24ffbc3529beee2a707cfd385b458247b1b5cca61fbcc99f934e83600e"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/explore.md",
+        "versionFingerprint": "eddf3135db029a3736fdabd1eeb8b8321a403ef94890b416e89d8ec54bf05570",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-generalization-and-lean-run-normalization/20260814-137-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "6ed76f0c11f7df19b4eae44918bdd9ce0ee5a2e42cf46a48b90371ab5779922b"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260814-137-review-explore",
+      "verdict": "approved",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-generalization-and-lean-run-normalization/20260814-137-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "6ed76f0c11f7df19b4eae44918bdd9ce0ee5a2e42cf46a48b90371ab5779922b"
+      },
+      "blockingAuthorities": [],
+      "findings": []
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [
+      {
+        "ref": "owner:1f4b0ee08f7de45ac707d0dea97d84fe95dd6940254b61106bc3d0be70c805fe",
+        "decision": "contract-reset",
+        "deliveryId": "20260810-01-change-execution-loop",
+        "changeId": "change-verification-generalization-and-lean-run-normalization",
+        "scope": "E2 Proposal internal version design: supersede the 140/141 Proposal generation version-family architecture while preserving the approved 136 Explore feasibility facts and E2 required outcomes.",
+        "requiredOutcomes": [
+          "Do not establish independent long-lived version lifecycles for Context, ActionPackage, verification selection/evidence schema, renderer, or Verification Catalog.",
+          "E2 itself continues on the pre-E2/current runner and may implement generic Verification; post-E2 prospective three-file writer activates only after the E2 checkpoint, with F1 as first formal dogfood consumer.",
+          "Flowkit product version remains the product-level version; current Git/source defines current internal implementation.",
+          "Historical E1 persisted shapes remain immutable and readable through small bounded legacy compatibility; do not migrate historical E1 Runs or build a generic migration/version framework.",
+          "Historical verification publication should validate persisted bytes/fingerprint/binding rather than require renderer-version replay; keep only the minimum bounded compatibility mechanism actually required.",
+          "Preserve generic Change Verification, current-Change decoupling, prospective three-file Run, historical E1 readability, crash/recovery correctness, next-consumer regressions, and E1→E2→F1→G1 dependency boundary without expanding into F1/G1/03 scope.",
+          "Use a minimal formatVersion only when a persisted breaking format cannot be reliably discriminated structurally by the latest reader; formatVersion is only a serialization discriminator.",
+          "Verification Catalog has no generation lifecycle; current source is authority and point-in-time identity uses content fingerprint when needed."
+        ],
+        "sourceRef": "owner-explicit-contract-reset-20260814-e2-internal-version-design"
+      },
+      {
+        "ref": "owner:f555b953e24a23edf219588c44d37a5e89a737c1721cc23c006d44f368b2f3cd",
+        "decision": "contract-reset",
+        "deliveryId": "20260810-01-change-execution-loop",
+        "changeId": "change-verification-generalization-and-lean-run-normalization",
+        "scope": "E2 Proposal mutation scope correction after failed 20260814-146-apply; architecture and all approved E2 semantics remain unchanged.",
+        "requiredOutcomes": [
+          "Add tests/unit/services/a1-write-service.test.ts as an exact allowed selector under both apply and revise-apply flowkitMutationScope, because E2 insertion changes the canonical Delivery Change count from 9 to 10 and repository all-green acceptance requires updating that regression.",
+          "After the minimal Proposal/Design scope correction, create a new Proposal generation for Reviewer re-approval before any Apply retry.",
+          "Do not add any other mutation selector or implementation scope unless independently required by a new formal fact.",
+          "Preserve the approved E2 architecture and all Proposal/Design/OpenSpec semantics from the 142/144 generation; do not reopen 136 Explore or redesign generic Verification, historical E1 compatibility, three-file prospective Run, crash/recovery, or next-consumer boundaries.",
+          "Supersede the Proposal/apply generation that culminated in failed 20260814-146-apply only as needed to correct the approved mutation declaration."
+        ],
+        "sourceRef": "owner-chat:2026-08-15T03:49+08:00:E2-mutation-scope-reset-after-146"
+      }
+    ],
+    "externalContextFingerprint": "714753e9b339ec197aaed5d3bc28ca1f972bb81e7ce33fc4ab7a309d91ab0423",
+    "requiredResultContract": {
+      "kind": "artifact",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": true,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

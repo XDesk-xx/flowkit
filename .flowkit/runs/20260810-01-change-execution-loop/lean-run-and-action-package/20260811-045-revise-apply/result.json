@@ -1,0 +1,13 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-apply",
+    "executionStatus": "completed",
+    "summary": "关闭 B1-RA-005 与 B1-RA-006：persisted pending archive 的 prepare/resume、inspect/diagnostics 与 terminal admission 现共享同一 recovery identity；OpenSpec relocation + Change completed 后可恢复同一 runId并由 completeRun 发布唯一 terminal result，fabricated completed archive 与 non-archive completed admission继续 fail-closed；completed seam 下 status/doctor/resume-context 只读显示同一 pending runId/action/role/resume 状态，无 pending identity 时保持 none。",
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/lean-run-and-action-package/20260811-044-review-apply/result.json",
+      "versionFingerprint": "895da77219d5f3399583022606e1253b539fa8b341d26f785aa9d186e272c6ee",
+      "kind": "run-result"
+    }
+  }
+}

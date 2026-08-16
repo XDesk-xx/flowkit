@@ -1,0 +1,8 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "apply",
+    "executionStatus": "completed",
+    "summary": "已完成 B1 Apply：实现 fixed ActionDefinition catalog、bounded next/review Run preparation、Delivery-wide NNN/Action→Role defense、semantic input fingerprint 与 pending resume/drift、Change-only logical Action Package、logical result admission/Core-derived ResultRefs、Q1 direct re-review、read-only pending diagnostics，以及 Windows CRLF Manifest bounded compatibility；同步 canonical specs/docs/AGENTS，25/25 tasks completed，Change Verification passed（focused 77/77，affected 599/599，typecheck/lint/build/quality/OpenSpec strict passed），未运行 Delivery Full Test。"
+  }
+}

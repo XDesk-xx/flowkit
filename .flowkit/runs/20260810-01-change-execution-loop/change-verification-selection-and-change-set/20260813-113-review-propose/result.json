@@ -1,0 +1,87 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "Complete review of 112-propose: the bundle is structurally valid and exact-bound, but it has three author-owned contract blockers: unified review preparation is not preserved beside exact resume, context v5 migration omits the complete v2/v3/v4 reader compatibility contract, and terminal CAS ordering contradicts the post-action commit-marker design."
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "E1-RP-001",
+      "severity": "blocking",
+      "title": "exact resume 设计没有保留现有 unified review preparation boundary",
+      "problem": "112 将 service boundary 写成 prepareNext / resumeRun / admitRunResult，tasks 也只实现 prepareNext；delta spec 只说 new preparation 与 exact resume 分离，却没有冻结现有 Policy-owned next | review 双 intent。canonical B1/Core/Policy contract 明确要求 unified review 在 non-author blocker 后可解析 same-stage review-S，且该能力正是 109 re-review 的合法入口。exact target resume 必须从 pending continuation 中拆出，但不能顺带删除或模糊 explicit review preparation。",
+      "contractRef": "openspec/specs/flowkit-lean-run-and-action-package/spec.md Requirement: B1 必须提供 bounded dual-entry 的唯一高层 Run preparation surface; openspec/specs/flowkit-policy-engine/spec.md Requirement: 统一 review/revise 入口解析; openspec/changes/change-verification-selection-and-change-set/design.md Decision 3",
+      "invariant": "E1 分离 new preparation 与 target-pinned resume 时，必须继续保留由 shared Policy 解析的 next 与 explicit review 两个新 execution intent；review intent 不得被 concrete Action bypass、next fallback 或 exact-resume API 取代。",
+      "evidence": [
+        "Design Decision 3 的 public service sketch 只有 prepareNext(deliveryId)、resumeRun(expectedRunId) 与 admitRunResult，没有 unified review preparation",
+        "tasks 2.1 只要求实现 prepareNext，2.2 只要求 resumeRun，未覆盖 resolveReview/direct same-stage re-review",
+        "current canonical B1 spec 要求 next 与 review 两个 Policy-owned intent，并明确 non-author blocker 下 explicit direct re-review 创建新 Reviewer generation",
+        "current Policy spec 要求 explicit review 在 owner/verification/external blocker 下确定性解析同阶段 review-S；109-review-explore 已实际依赖该正式边界",
+        "delta flowkit-lean-run-and-action-package 仅以 ADDED requirement 增加 exact resume，没有 MODIFIED 现有 dual-entry continuation requirement，合并后语义不唯一"
+      ],
+      "impact": "若按 112 实施，non-author fact 到位后的同阶段 re-review 可能失去正式 preparation 入口，或被迫通过 concrete Action/next 猜测绕过 Policy，直接破坏 D1 已交付且 Manifest 明确包含的 lifecycle 能力。",
+      "location": "openspec/changes/change-verification-selection-and-change-set/design.md Decision 3; tasks.md 2.1-2.2; specs/flowkit-lean-run-and-action-package/spec.md",
+      "blockingAuthority": "author",
+      "requiredOutcome": "在 revise-propose 中定义唯一的新 execution preparation boundary，显式保留 Policy-owned next 与 review intents，并把 pending continuation 完全移到 resumeRun(expectedRunId)。用 MODIFIED canonical requirement 或等价无冲突 delta 重写现有 dual-entry continuation 语义；补齐 direct re-review、review pending、late terminal 与不得分配新 NNN 的 tasks/tests。",
+      "acceptance": [
+        "Design、delta spec 与 tasks 明确列出 next、explicit review 和 exact target resume 三者的不同 authority/identity/allocator 行为",
+        "explicit review 继续通过 resolveReview/canRun 解析 same-stage review-S，且 non-author blocker 场景不调用 next 猜测、不要求 Author revision",
+        "任何 pending continuation 只接受 expectedRunId；next/review new preparation 均不隐式恢复或改选该 target",
+        "delta 与现有 bounded dual-entry requirement 合并后不存在 ADDED/MODIFIED 语义冲突，并包含相应 regression tasks"
+      ]
+    },
+    {
+      "id": "E1-RP-002",
+      "severity": "blocking",
+      "title": "context v5 migration 未冻结完整 v2/v3/v4 historical reader compatibility",
+      "problem": "112 的 Design、delta spec 与 tasks 只声明保留 context v4，再让 new writer 使用 v5；但 current persistence contract 与真实 reader 同时拥有 bounded schemaVersion 2/3/4 history，其中 v2 还包含 exact immutable compatibility corpus。新 v5 requirement 以 ADDED 方式存在，未修改 canonical context physical-schema/current-writer requirement，也未说明 v2/v3 如何继续被严格、只读地判别。",
+      "contractRef": "openspec/specs/flowkit-formal-fact-reader-and-persistence/spec.md Requirements: context.json 物理 schema + 确定性投影 + 身份校验 / Bootstrap Run 兼容性 + 三路判别器; openspec/changes/change-verification-selection-and-change-set/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "invariant": "schema migration 必须为 new writer 建立唯一 v5 语义，同时完整保留所有已存在 historical context versions 的 immutable、bounded、fail-closed reader contract；不得只保留最近的 v4 而使更早正式 Run 失读，也不得让 canonical spec 同时要求不同 current writer version。",
+      "evidence": [
+        "Design Decision 2、Migration Plan 1 与 tasks 1.2 只列 v4/v5 compatibility，没有 v2/v3 matrix 或 fixtures",
+        "delta requirement 只说 historical context v4 保持 immutable/legacy-readable，并全部位于 ADDED Requirements",
+        "CodeGraph current source显示 ContextFile schemaVersion 为 2 | 3 | 4，注释明确 historical v2/v3 read-only compatible、new Runs write v4",
+        "CodeGraph current legacy recognizer 对 exact pre-Q1 schemaVersion 2 contexts 使用 fingerprint-bound compatibility；该正式 history 不能被 v5 migration 泛化或丢弃",
+        "canonical physical-schema requirement 仍把 schemaVersion 2 定义为 current shape；112 未提供 MODIFIED requirement 来形成同步后的单一 v5 writer contract"
+      ],
+      "impact": "实现可能在升级 validator/discriminator 后拒绝历史 Q1/A1/B1/C1 Run，或同步出同时要求 v2 与 v5 current writer 的矛盾 canonical spec，导致 Reader conflicts、Policy blocked 与 checkout recovery 退化。",
+      "location": "design.md Decision 2 and Migration Plan 1; tasks.md 1.1-1.2; specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "blockingAuthority": "author",
+      "requiredOutcome": "在 revise-propose 中给出 v2/v3/v4/v5 closed compatibility matrix：new Standard Run writer 只写 v5；v2/v3/v4 按各自现有 exact/bounded contract 只读且 bytes 不变。以 MODIFIED requirement 或等价完整 delta 取代冲突的 current physical-schema语义，并为每个历史版本增加 discriminator/reader fixture，证明 malformed unknown versions 仍 fail closed。",
+      "acceptance": [
+        "Design 和 delta spec 明确 new writer=v5，historical v2/v3/v4 各自保持 immutable read-only compatibility，未知版本不降级",
+        "canonical context physical-schema requirement 在 sync 后只有一个 current writer version，不再同时要求 v2 与 v5",
+        "tasks 覆盖 v2 exact compatibility、v3 Owner-fact context、v4 current history 与 v5 new writer fixtures，并证明不重写历史 bytes",
+        "ActionPackage v1/v2 compatibility 与 context version matrix 的组合读取/恢复边界明确且无 silent authority synthesis"
+      ]
+    },
+    {
+      "id": "E1-RP-003",
+      "severity": "blocking",
+      "title": "terminal CAS 与 post-action record publication 的顺序自相矛盾",
+      "problem": "Design Decision 3 把 admitRunResult 顺序写成 exact validation → terminal CAS → post-action processing；同一 Design Decision 8、tasks 2.3 与 5.5 却要求 verification.md / immutable record commit marker 先发布，terminal CAS-last。两种顺序对 crash、late replay 和 Reader 可见状态产生相反语义，无法作为单一可执行 contract。",
+      "contractRef": "openspec/changes/change-verification-selection-and-change-set/design.md Decisions 3 and 8; tasks.md 2.3 and 5.5; specs/flowkit-change-verification-selection/spec.md Requirement: Core 必须发布 immutable verification-selection record",
+      "invariant": "terminal completed authority 不得早于该 Action 必需的 Core-owned post-action observations、canonical verification projection 与 immutable commit marker；发布顺序与每个 crash/replay 分支必须唯一且可恢复。",
+      "evidence": [
+        "Design Decision 3 的 admitRunResult pipeline 明确把 terminal CAS 放在 post-action processing 之前",
+        "Design Decision 8 明确先 atomic rename verification.md、再 immutable record atomic create、最后 terminal result CAS",
+        "tasks 2.3 要求 post-action record commit marker + terminal CAS-last，tasks 5.5 同样把 record 作为 commit marker",
+        "若遵循 Decision 3，Reader 可观察到 completed result 而 selection record/verification.md 尚未提交；若此时 crash，Decision 8 的 recovery invariant 已被破坏"
+      ],
+      "impact": "Apply admission 可能在 post-action authority 缺失时提前成为 terminal completed，造成 Policy/Review 读取部分提交状态；重试也无法确定是补发 record、返回 terminal，还是报告冲突。",
+      "location": "openspec/changes/change-verification-selection-and-change-set/design.md Decisions 3 and 8; tasks.md 2.3, 5.5",
+      "blockingAuthority": "author",
+      "requiredOutcome": "在 revise-propose 中冻结唯一 admission state machine 和 publication order。若采用已写明的 commit-marker方案，应统一为 logical/exact validation → fresh post-action observation/selection → deterministic verification.md staging/publication → immutable record atomic create commit marker → terminal result CAS-last，并定义每个边界 crash 后的 exact recovery与 equivalent/different replay结果。",
+      "acceptance": [
+        "Design 所有伪代码、Decision、delta specs 与 tasks 对 terminal CAS 的唯一位置一致",
+        "record absent/Markdown present、record present/Run pending、terminal present 三种状态都有 deterministic exact recovery 或 fail-closed 规则",
+        "任何可见 terminal completed Run 都已 exact-bound 到完整 immutable post-action record 与 canonical verification.md",
+        "tests 覆盖每个 publication boundary 的 crash、late completion、equivalent replay 与 conflicting replay"
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}

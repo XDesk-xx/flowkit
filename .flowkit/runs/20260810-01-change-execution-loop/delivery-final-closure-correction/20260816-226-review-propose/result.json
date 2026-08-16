@@ -1,0 +1,16 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "Review 225 Contract Reset Proposal: approved. Reviewer independently verified the Owner reset lineage after failed 224, compared every I1 MODIFIED Requirement against the Base canonical specs and confirmed all still-applicable canonical Scenario identities are preserved, including `OpenSpec executable identity is propagated from the current adapter`. Reviewer also independently executed OpenSpec 1.7.0 strict validation and a real disposable `archive delivery-final-closure-correction --json --yes` against the exact current openspec/ candidate, obtaining structured success with specsUpdated=true and totals added=2/modified=3/removed=0/renamed=0; post-archive canonical strict validation passes and the canonical candidate is not mutated. The reusable preflight design remains thin: exact openspec/ copy, current resolved executable, real OpenSpec archive, existing typed outcome, cleanup; no Flowkit-side merge engine. The 20-selector apply/revise-apply scope is unique/lexically ordered and expands the prior approved scope only with B1 admission and Verification selection source/tests required by the reset. Existing I1 implementation outcomes, I1-RA-001 resolved semantics, EOF-only checkpoint hygiene and Delivery Full Test boundary remain preserved."
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "fa1206a7a438da23d2f60abb72241d060f9ad66eec1acf3fc4fd518218b62821"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [],
+  "reviewFindingConvergence": []
+}

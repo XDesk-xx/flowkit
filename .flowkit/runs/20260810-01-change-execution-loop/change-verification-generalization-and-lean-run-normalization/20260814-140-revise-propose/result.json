@@ -1,0 +1,49 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-propose",
+    "executionStatus": "completed",
+    "summary": "E2 revise-propose closes E2-RP-001 with an explicit historical E1-v5 / current E2-migration-v5 / prospective v6 verification-generation bridge, and closes E2-RP-002 by reconnecting the formal Delivery dependency graph to E1 → E2 → F1 → G1 with checkpoint-gated v6 activation.",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/design.md",
+        "versionFingerprint": "d52be87b8d5f206b536e399de9ca5a0d7353fedbe02f84cd8b165bccafd945a8",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/proposal.md",
+        "versionFingerprint": "4d05c87a95e3492d35bd390ed1d688c6866da0238c2a7cb1dfa7288e6522254b",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "04d105b41efd07ded05689a531a77da984a19e5fdec75ca6330b8695e235550c",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "3905beae33d2cf68f3280ef1cd01e895ac691b87ab2fc11167ba2c9150eb14dc",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-lean-run-and-action-package/spec.md",
+        "versionFingerprint": "5ad98edb00874018469212f7b5d9145ce91e2d3a6e3745a0a2d9090b9dff8c08",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/tasks.md",
+        "versionFingerprint": "9d45445671dbb7bc627634aca7f108893320548eb5a30fe83d51d22816ca29c1",
+        "kind": "produced-artifact"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-generalization-and-lean-run-normalization/20260814-139-review-propose/result.json",
+      "versionFingerprint": "a73eb4a6964320fed157b667f5de8da76dedd38c93f849667d1ee72a9aa285b7",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "9f28ed1221cb45200302c7ba989a5427b6c8bbcff92968123823b097d3aae5ba"
+  }
+}

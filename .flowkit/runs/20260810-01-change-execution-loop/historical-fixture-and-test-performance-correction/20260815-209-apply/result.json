@@ -1,0 +1,18 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "apply",
+    "executionStatus": "completed",
+    "summary": "H1 correctness/performance/fixture/Verification Closure implementation retained from the approved candidate; current-corpus and physical-sentinel regressions, focused/affected Change checks, typecheck, lint, build, quality and strict current-Change OpenSpec validation passed. Complete formal H1 Change Verification; Delivery-level test:full remains out of H1 Apply."
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "87fab831be3701bd5078012dcb504142f499cb3b9269da1dde4abe92bfc56181",
+    "currentVerification": {
+      "logicalRef": "openspec/changes/historical-fixture-and-test-performance-correction/verification.md",
+      "versionFingerprint": "0295648fea297fbbd244be1358685fb32ad128c173d5e729dc34223545ec6936",
+      "selectionFingerprint": "5e3df597de238fcfb47828c96efd8be298c7d31c5ba01705ab88503931050e62",
+      "status": "passed"
+    }
+  }
+}

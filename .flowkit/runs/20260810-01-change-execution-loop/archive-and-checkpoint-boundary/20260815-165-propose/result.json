@@ -1,0 +1,30 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "propose",
+    "executionStatus": "completed",
+    "summary": "冻结 F1 Proposal：Archive success 继续直接关闭 Change；current checkpoint recognition 升级为完整 Git identity + checkpoint-time Owner authorize-checkpoint temporal binding，禁止 later fact 事后追认；以 E2 checkpoint 为 bounded strict cutover 保留 pre-anchor legacy compatibility；新增纯 handoff/preflight service、F1 disposable lifecycle regression、generic Verification physical mapping 与 mutation-declaration isolated fixture scope。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/archive-and-checkpoint-boundary/design.md",
+        "versionFingerprint": "878f47a0c33162e531fd3a319d67e774dedac2e526654a3243dfbb1d778cc766",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-and-checkpoint-boundary/proposal.md",
+        "versionFingerprint": "d9c2f57e06d0f3e481e39f105370876ad7e0526aa5c1e8fa2ede9376675b4be4",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-and-checkpoint-boundary/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+        "versionFingerprint": "27f07a3ca3142d215177629a396dc9cfa7caed9e91a3376f6a01660ec5b36869",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-and-checkpoint-boundary/tasks.md",
+        "versionFingerprint": "662a6c68d39ecfffb0d39a0dd52ba13c18eeee612168b2342f3aec14bf1ecdfb",
+        "kind": "produced-artifact"
+      }
+    ]
+  }
+}

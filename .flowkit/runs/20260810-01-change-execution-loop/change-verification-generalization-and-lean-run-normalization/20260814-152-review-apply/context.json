@@ -1,0 +1,280 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260814-152-review-apply",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "review-apply",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "94a596bea90d59ac6aef98cf897f86bc2eae0da791b393ee15078df9b5bf7543",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:1f4b0ee08f7de45ac707d0dea97d84fe95dd6940254b61106bc3d0be70c805fe",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-verification-generalization-and-lean-run-normalization",
+      "scope": "E2 Proposal internal version design: supersede the 140/141 Proposal generation version-family architecture while preserving the approved 136 Explore feasibility facts and E2 required outcomes.",
+      "requiredOutcomes": [
+        "Do not establish independent long-lived version lifecycles for Context, ActionPackage, verification selection/evidence schema, renderer, or Verification Catalog.",
+        "E2 itself continues on the pre-E2/current runner and may implement generic Verification; post-E2 prospective three-file writer activates only after the E2 checkpoint, with F1 as first formal dogfood consumer.",
+        "Flowkit product version remains the product-level version; current Git/source defines current internal implementation.",
+        "Historical E1 persisted shapes remain immutable and readable through small bounded legacy compatibility; do not migrate historical E1 Runs or build a generic migration/version framework.",
+        "Historical verification publication should validate persisted bytes/fingerprint/binding rather than require renderer-version replay; keep only the minimum bounded compatibility mechanism actually required.",
+        "Preserve generic Change Verification, current-Change decoupling, prospective three-file Run, historical E1 readability, crash/recovery correctness, next-consumer regressions, and E1→E2→F1→G1 dependency boundary without expanding into F1/G1/03 scope.",
+        "Use a minimal formatVersion only when a persisted breaking format cannot be reliably discriminated structurally by the latest reader; formatVersion is only a serialization discriminator.",
+        "Verification Catalog has no generation lifecycle; current source is authority and point-in-time identity uses content fingerprint when needed."
+      ],
+      "sourceRef": "owner-explicit-contract-reset-20260814-e2-internal-version-design"
+    },
+    {
+      "ref": "owner:f555b953e24a23edf219588c44d37a5e89a737c1721cc23c006d44f368b2f3cd",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-verification-generalization-and-lean-run-normalization",
+      "scope": "E2 Proposal mutation scope correction after failed 20260814-146-apply; architecture and all approved E2 semantics remain unchanged.",
+      "requiredOutcomes": [
+        "Add tests/unit/services/a1-write-service.test.ts as an exact allowed selector under both apply and revise-apply flowkitMutationScope, because E2 insertion changes the canonical Delivery Change count from 9 to 10 and repository all-green acceptance requires updating that regression.",
+        "After the minimal Proposal/Design scope correction, create a new Proposal generation for Reviewer re-approval before any Apply retry.",
+        "Do not add any other mutation selector or implementation scope unless independently required by a new formal fact.",
+        "Preserve the approved E2 architecture and all Proposal/Design/OpenSpec semantics from the 142/144 generation; do not reopen 136 Explore or redesign generic Verification, historical E1 compatibility, three-file prospective Run, crash/recovery, or next-consumer boundaries.",
+        "Supersede the Proposal/apply generation that culminated in failed 20260814-146-apply only as needed to correct the approved mutation declaration."
+      ],
+      "sourceRef": "owner-chat:2026-08-15T03:49+08:00:E2-mutation-scope-reset-after-146"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-generalization-and-lean-run-normalization/20260814-152-review-apply/",
+  "changeKey": "E2",
+  "changeId": "change-verification-generalization-and-lean-run-normalization",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-generalization-and-lean-run-normalization/20260814-151-revise-apply/result.json",
+    "versionFingerprint": "33577b77780146da6cdadf06f2cd57a3545b668dd0d0a13eb28ef889ad090b6a",
+    "kind": "run-result"
+  },
+  "verificationInputRef": {
+    "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/verification.md",
+    "versionFingerprint": "411b0b06e36069e29953afff70d74cfcbccdbf32f9e9ef58d0ce566d98f2ae85",
+    "kind": "verification-summary"
+  },
+  "reviewedRunId": "20260814-151-revise-apply",
+  "canonicalBase": "e15d0a3c5bf7b46d3a1134eb3a5e208f11f7e564",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-generalization-and-lean-run-normalization/20260814-151-revise-apply/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "33577b77780146da6cdadf06f2cd57a3545b668dd0d0a13eb28ef889ad090b6a"
+    },
+    {
+      "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "cfa0dd24ffbc3529beee2a707cfd385b458247b1b5cca61fbcc99f934e83600e"
+    },
+    {
+      "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/design.md",
+      "versionFingerprint": "f54eb08ff4cbdd7c5ffaf389ad59dbdcda34fb79addeed880f600f196c491a11",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/proposal.md",
+      "versionFingerprint": "e2cc5a5395acef0a522ae729539958e7237f63aa41ca5704b6774ad4ab5227f0",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-change-verification-selection/spec.md",
+      "versionFingerprint": "60a177f06375366b08d44a83d2cb92f07e32504cf8742e4afb52e4492168971b",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "versionFingerprint": "dfb14502f00d58cb58e392b1c3c9faaafa0870508b1a62d9c4b646eb582bb53a",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-lean-run-and-action-package/spec.md",
+      "versionFingerprint": "433923c809c1997cb832dd486b6fad8834984ba5d017da27dd74997b3459c69d",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/tasks.md",
+      "kind": "openspec-contract",
+      "versionFingerprint": "2d1be0e5e24ca3cc8f60ebf5c9c3fe4a22b4a66879b9b4e46c5e1f599ac8872b"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-verification-generalization-and-lean-run-normalization",
+      "runId": "20260814-152-review-apply",
+      "action": "review-apply",
+      "role": "reviewer",
+      "semanticInputFingerprint": "94a596bea90d59ac6aef98cf897f86bc2eae0da791b393ee15078df9b5bf7543"
+    },
+    "definition": {
+      "action": "review-apply",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-implementation-and-verification",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings-plus-verification-ref",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "core-derived",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "cfa0dd24ffbc3529beee2a707cfd385b458247b1b5cca61fbcc99f934e83600e"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/design.md",
+        "versionFingerprint": "f54eb08ff4cbdd7c5ffaf389ad59dbdcda34fb79addeed880f600f196c491a11",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/proposal.md",
+        "versionFingerprint": "e2cc5a5395acef0a522ae729539958e7237f63aa41ca5704b6774ad4ab5227f0",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "60a177f06375366b08d44a83d2cb92f07e32504cf8742e4afb52e4492168971b",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "dfb14502f00d58cb58e392b1c3c9faaafa0870508b1a62d9c4b646eb582bb53a",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-lean-run-and-action-package/spec.md",
+        "versionFingerprint": "433923c809c1997cb832dd486b6fad8834984ba5d017da27dd74997b3459c69d",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/tasks.md",
+        "kind": "openspec-contract",
+        "versionFingerprint": "2d1be0e5e24ca3cc8f60ebf5c9c3fe4a22b4a66879b9b4e46c5e1f599ac8872b"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-generalization-and-lean-run-normalization/20260814-151-revise-apply/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "33577b77780146da6cdadf06f2cd57a3545b668dd0d0a13eb28ef889ad090b6a"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260814-150-review-apply",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-generalization-and-lean-run-normalization/20260814-150-review-apply/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "f449d2c6125e5974a16000d4d03af987b9c3796fd5323b7468f7754682569007"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "E2-RA-001",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "post-E2 three-file writer activation incorrectly expires at the next Delivery Start",
+          "problem": "The prospective writer gate checks only snapshot.gitBoundaries for the current Delivery. readGitBoundarySummaries(repoRoot, deliveryId) intentionally projects boundaries owned by that Delivery, so after 02 completes and a new Delivery starts, the E2 checkpoint is no longer present in the new Delivery snapshot. The same latest code therefore falls back to the pre-E2 full-entry/sidecar writer in 03 and later Deliveries.",
+          "contractRef": "specs/flowkit-formal-fact-reader-and-persistence/spec.md Requirement current structural ContextFile; specs/flowkit-lean-run-and-action-package/spec.md post-E2 prospective Apply; design.md Decision E2 checkpoint is sole writer transition boundary",
+          "invariant": "Once the recognized E2 Change Checkpoint has occurred, the prospective three-file writer is the current product writer for F1 and all later Changes/Deliveries; a later Delivery Start must not erase or reverse that product transition.",
+          "requiredOutcome": "Make post-E2 writer activation a repository-global monotonic fact derived from the recognized E2 checkpoint (or an equivalent already-authorized durable Git fact), not from the current Delivery-only boundary projection. Preserve the rule that production code presence alone cannot self-activate before the E2 checkpoint.",
+          "acceptance": [
+            "Before the E2 checkpoint, E2 Apply/revise-apply still uses the pre-E2 sidecar protocol.",
+            "After the E2 checkpoint, F1/G1 use the three-file writer.",
+            "After a later Delivery Start, a new Apply/revise-apply still uses compact context identity and creates only action.md/context.json/result.json.",
+            "Add a regression spanning two Delivery Start boundaries so the writer cannot revert in 03 or later Deliveries."
+          ]
+        },
+        {
+          "id": "E2-RA-002",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "formal Change Verification does not execute a changed affected regression in the selected execution scope",
+          "problem": "149 actualChangeSet includes tests/unit/services/a1-write-service.test.ts and Catalog maps tests/unit/services to the execution module, selecting tests-execution. However the physical resolver for tests-execution only runs two facts tests plus b1-run-execution-service.test.ts; it does not run a1-write-service.test.ts. Thus the formal verification can report tests-execution passed even when the changed regression itself fails.",
+          "contractRef": "specs/flowkit-change-verification-selection/spec.md generic deterministic selection and compatible affected test aggregation; tasks.md 5.1 and 7.1; design.md Decision affected execution aggregates compatible test files",
+          "invariant": "A formal affected verification check selected because of an actual changed path must execute a test set that covers that affected path/consumer relation; union/dedupe may reduce process count but must not drop required affected tests.",
+          "requiredOutcome": "Make logical affected-test resolution preserve the complete required affected test union for selected modules/paths while still deduplicating compatible Node execution. The concrete implementation may reuse the existing affected-scope resolver or another deterministic mapping, but must not omit changed/required affected regressions.",
+          "acceptance": [
+            "For an actualChangeSet containing tests/unit/services/a1-write-service.test.ts, formal Change Verification executes that test (or a formally equivalent complete affected test set that contains it).",
+            "A failing sentinel in that changed regression makes the selected tests-execution evidence fail rather than pass.",
+            "The compatible Node union remains deduplicated and does not regress to one process per logical module.",
+            "Re-run E2 Change Verification and bind the corrected passed evidence before re-review."
+          ]
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [
+      {
+        "ref": "owner:1f4b0ee08f7de45ac707d0dea97d84fe95dd6940254b61106bc3d0be70c805fe",
+        "decision": "contract-reset",
+        "deliveryId": "20260810-01-change-execution-loop",
+        "changeId": "change-verification-generalization-and-lean-run-normalization",
+        "scope": "E2 Proposal internal version design: supersede the 140/141 Proposal generation version-family architecture while preserving the approved 136 Explore feasibility facts and E2 required outcomes.",
+        "requiredOutcomes": [
+          "Do not establish independent long-lived version lifecycles for Context, ActionPackage, verification selection/evidence schema, renderer, or Verification Catalog.",
+          "E2 itself continues on the pre-E2/current runner and may implement generic Verification; post-E2 prospective three-file writer activates only after the E2 checkpoint, with F1 as first formal dogfood consumer.",
+          "Flowkit product version remains the product-level version; current Git/source defines current internal implementation.",
+          "Historical E1 persisted shapes remain immutable and readable through small bounded legacy compatibility; do not migrate historical E1 Runs or build a generic migration/version framework.",
+          "Historical verification publication should validate persisted bytes/fingerprint/binding rather than require renderer-version replay; keep only the minimum bounded compatibility mechanism actually required.",
+          "Preserve generic Change Verification, current-Change decoupling, prospective three-file Run, historical E1 readability, crash/recovery correctness, next-consumer regressions, and E1→E2→F1→G1 dependency boundary without expanding into F1/G1/03 scope.",
+          "Use a minimal formatVersion only when a persisted breaking format cannot be reliably discriminated structurally by the latest reader; formatVersion is only a serialization discriminator.",
+          "Verification Catalog has no generation lifecycle; current source is authority and point-in-time identity uses content fingerprint when needed."
+        ],
+        "sourceRef": "owner-explicit-contract-reset-20260814-e2-internal-version-design"
+      },
+      {
+        "ref": "owner:f555b953e24a23edf219588c44d37a5e89a737c1721cc23c006d44f368b2f3cd",
+        "decision": "contract-reset",
+        "deliveryId": "20260810-01-change-execution-loop",
+        "changeId": "change-verification-generalization-and-lean-run-normalization",
+        "scope": "E2 Proposal mutation scope correction after failed 20260814-146-apply; architecture and all approved E2 semantics remain unchanged.",
+        "requiredOutcomes": [
+          "Add tests/unit/services/a1-write-service.test.ts as an exact allowed selector under both apply and revise-apply flowkitMutationScope, because E2 insertion changes the canonical Delivery Change count from 9 to 10 and repository all-green acceptance requires updating that regression.",
+          "After the minimal Proposal/Design scope correction, create a new Proposal generation for Reviewer re-approval before any Apply retry.",
+          "Do not add any other mutation selector or implementation scope unless independently required by a new formal fact.",
+          "Preserve the approved E2 architecture and all Proposal/Design/OpenSpec semantics from the 142/144 generation; do not reopen 136 Explore or redesign generic Verification, historical E1 compatibility, three-file prospective Run, crash/recovery, or next-consumer boundaries.",
+          "Supersede the Proposal/apply generation that culminated in failed 20260814-146-apply only as needed to correct the approved mutation declaration."
+        ],
+        "sourceRef": "owner-chat:2026-08-15T03:49+08:00:E2-mutation-scope-reset-after-146"
+      }
+    ],
+    "verificationView": {
+      "status": "passed",
+      "resultRef": {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/verification.md",
+        "kind": "verification-summary",
+        "versionFingerprint": "411b0b06e36069e29953afff70d74cfcbccdbf32f9e9ef58d0ce566d98f2ae85"
+      }
+    },
+    "externalContextFingerprint": "ded8f1e0a53451d939a35048369c27c49d19b8dd65f34cba07d79506236ea509",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "core-derived",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

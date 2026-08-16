@@ -1,0 +1,21 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "按 159→174 审查链复核 173 revise-propose：F1-RP-001 已关闭。Proposal/Design 现在将 bounded legacy admission 与 B1 post-E2 writer activation 统一绑定到同一个 original strict-admitted E2 checkpoint，明确拒绝 subject-only 与 full-trailer-but-checkpoint-time-Owner-unauthorized E2 candidate，保持 Git Reader 为 Git-only，并将 src/services/b1-run-execution-service.ts 及对应 test 纳入 apply/revise-apply mutation scope；现有依赖结构允许 B1 复用 FormalFactReader authority projection，无需第二 Owner truth。Package hash、exact base、git diff hygiene 与 OpenSpec 1.7 strict validation通过，未发现新的 Proposal blocker。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "0fb128d4f301b68735ce063973afae37c2999029eceb6cee48f952b81cab56ae"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [],
+  "reviewFindingConvergence": [
+    {
+      "findingId": "F1-RP-001",
+      "state": "resolved"
+    }
+  ]
+}

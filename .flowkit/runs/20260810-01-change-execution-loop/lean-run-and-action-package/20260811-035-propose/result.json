@@ -1,0 +1,77 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "propose",
+    "executionStatus": "completed",
+    "summary": "B1 Proposal 已基于 034 approved Explore 冻结：以 fixed ActionDefinition + 薄 Run execution preparation/admission service 组合现有 Policy、Delivery-wide Run-ID allocator、createRun/completeRun 与 Core-owned ResultRef；pending Run 本身作为 execution instance，仅持久化 Core-derived compact semantic input fingerprint，semantic input 相同则 resume 同一 Run，drift 则 fail-closed。logical Action Package 只服务十个 Standard Change Actions，Full Test/Finalize 继续是 Delivery behavior、无 Standard Run/package；B1 owns logical package，后置 C1/03 adapter/transport只做 structured/physical mapping。Action Result admission 只接受 logical caller-owned descriptor并复用 completeRun 派生全部 refs。另冻结 bounded CRLF Manifest writer compatibility：LF/CRLF 可读、successful mutation canonical LF，不回退 A1 authority semantics。一个新 capability + 八个 affected capability delta、Design 与 Tasks 已完成，OpenSpec 1.7 strict validation passed。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/lean-run-and-action-package/design.md",
+        "versionFingerprint": "7dabae713bfffb23efad623d156749d6cbb6f12ae3c8ab7c4df3f75a9062ad06",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/lean-run-and-action-package/proposal.md",
+        "versionFingerprint": "fd7c315bbfd070e27d434a826c14fe93c278926ad4b4ac98e9747eff8721e4d6",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/lean-run-and-action-package/specs/flowkit-bootstrap-and-roadmap/spec.md",
+        "versionFingerprint": "5c3e15201c041ff24e7354406a39ec69160d8e682afe1e8208002b6cbcfbb3c7",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/lean-run-and-action-package/specs/flowkit-core-model/spec.md",
+        "versionFingerprint": "fc74fbc3237a6fd271d069221687b7d3390c90d0a6d79879fd89b290a3ad8d05",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/lean-run-and-action-package/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+        "versionFingerprint": "964e1df1039d9223b630b5a85651515c4bf7ba9a921ddfcd9e7b60e1ed054c69",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/lean-run-and-action-package/specs/flowkit-diagnostic-cli/spec.md",
+        "versionFingerprint": "83f0d6f1066fafd7f289cfd880ab1781344fe655636f8e74a14c5257803220dd",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/lean-run-and-action-package/specs/flowkit-domain-and-state-schema/spec.md",
+        "versionFingerprint": "a9adf5391d96a79f2fd24d1ed215852e1212ed47b8254f747d3fae7c21d3658a",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/lean-run-and-action-package/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "2c7567f636dbbf87d177f68d6569fd3c4b100c886b9993a12d135fff34d084fd",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/lean-run-and-action-package/specs/flowkit-integration-boundaries/spec.md",
+        "versionFingerprint": "ca7d059993cd4eed4967b1a914ec4dc3de9b8e9335ecfe9029589aa9b3440c96",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/lean-run-and-action-package/specs/flowkit-lean-run-and-action-package/spec.md",
+        "versionFingerprint": "24fb3bcaf938cd82f4de0cce0f97ef573b9112fb8ef0c1467dcfff12a278a6d5",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/lean-run-and-action-package/specs/flowkit-policy-engine/spec.md",
+        "versionFingerprint": "675c2213153996ac3a1b8b087f165f60a1b9240ebfd93c44e37cded765ea0c71",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/lean-run-and-action-package/tasks.md",
+        "versionFingerprint": "f30de29506b4c68d1933a0899fb0f93a56c42e8227e6ebc2ca3ffe6f383a9dd4",
+        "kind": "produced-artifact"
+      }
+    ],
+    "consumedInputRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/lean-run-and-action-package/20260811-034-review-explore/result.json",
+        "versionFingerprint": "7551a28c3c1649a6fdbc2a3b434cbe1702d7eb22334ca7623b7e29f38fb9101e",
+        "kind": "run-result"
+      }
+    ]
+  }
+}

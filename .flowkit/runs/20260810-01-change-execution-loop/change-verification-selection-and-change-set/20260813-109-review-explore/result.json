@@ -1,0 +1,38 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-explore",
+    "executionStatus": "completed",
+    "summary": "Explicit same-stage re-review of unchanged 107 under new formal Owner fact owner:52c2f519…f17b6d: E1-RE-001 is resolved; E1-RE-003 remains author-owned because Explore Section 9 still contradicts the Owner-defined and Manifest-defined G1 retained responsibilities."
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "E1-RE-003",
+      "severity": "blocking",
+      "title": "107 对 G1 剩余职责的声明与正式 Manifest 冲突",
+      "problem": "新 formal Owner fact owner:52c2f519…f17b6d 已明确关闭 authority 歧义，并要求 G1 保留 Change CLI、full Change E2E、checkout/resume recovery validation、Run/package size、focused/affected timing 与 review convergence observation，只消费而不重复实现 E1 primitives。unchanged 107 Explore Section 9 却仍声明 G1 只收口 phase timing diagnostics 与 Change CLI performance budget。该 Author artifact 与现在更明确的 Owner scope contract 正面冲突，Proposal 仍无法按 107 判断 E1/G1 的唯一职责边界。",
+      "contractRef": "openspec/delivery-groups/20260810-01-change-execution-loop.yaml G1 goal/outputs; openspec/changes/change-verification-selection-and-change-set/explore.md Section 9",
+      "invariant": "相邻 Change 的正式 scope/outputs 与当前 Explore 的范围分界必须一致且可唯一执行；当前 Change 不得以 Author artifact 静默缩减或重写 planned Change 的 formal ownership。",
+      "evidence": [
+        "Core formal fact projection admits owner:52c2f519e846da1aab0ba16b4f2e2355ae362d0fb846f2a21302a2b5bdf17b6d with no conflicts",
+        "The new Owner requiredOutcome explicitly retains G1 ownership of Change CLI, full Change E2E, checkout/resume recovery validation, Run/package size, focused/affected timing and review convergence observation",
+        "unchanged explore.md Section 9 still says G1 only closes phase timing diagnostics and Change CLI performance budget",
+        "Manifest G1 goal/outputs continue to list Change CLI surface, Change E2E matrix, checkout/resume recovery and the remaining observation outputs",
+        "107 produced Explore ResultRef remains exact-match, so this is a same-target re-review under new non-author facts, not target drift",
+        "Independent verification: prior 84 focused tests passed; current formal projection has conflicts=0; formal text hygiene and git diff --check passed"
+      ],
+      "impact": "Without revising Section 9, E1 Proposal can improperly absorb G1 validation/CLI deliverables or omit the intended E1 primitive/G1 consumer boundary despite the Owner fact now being explicit.",
+      "location": "openspec/changes/change-verification-selection-and-change-set/explore.md Section 9; owner:52c2f519e846da1aab0ba16b4f2e2355ae362d0fb846f2a21302a2b5bdf17b6d",
+      "blockingAuthority": "author",
+      "requiredOutcome": "In revise-explore, align Section 9 and related Proposal preflight language with owner:52c2f519…f17b6d: E1 implements exact-retry/projection/cancellation and verification-selection primitives; G1 retains Change CLI, full Change E2E, checkout/resume recovery validation, Run/package size, focused/affected timing and review convergence observations, consuming E1 primitives without duplicating them. Enumerate the boundary so every output belongs to exactly one implementation or validation owner.",
+      "acceptance": [
+        "Explore repeats the complete Owner-defined G1 retained output set rather than reducing it to timing/performance budget.",
+        "E1 primitive implementation and G1 CLI/E2E/recovery validation and observation ownership are explicit, non-overlapping and complete.",
+        "Proposal preflight can map every retry, projection, cancellation, CLI, recovery and observation acceptance to exactly one Change-owned deliverable."
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}

@@ -1,10 +1,14 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { ACTION_DEFINITIONS } from '../../../src/domain/actions.js';
 
 import {
   recognizeLegacyRun,
   normalizeBootstrapRunStatus,
   discriminateRun,
+  discriminateRunForReader,
 } from '../../../src/persistence/legacy-recognizer.js';
 
 // ---------------------------------------------------------------------------
@@ -51,6 +55,90 @@ describe('discriminateRun — three-way discriminator', () => {
     }
   });
 
+  it('reader-only exact Q1 pre-contract revise context compatibility is byte-bounded', () => {
+    const repoRoot = process.cwd();
+    const historicalRunDir = join(
+      repoRoot,
+      '.flowkit/runs/20260810-01-change-execution-loop/core-contract-alignment/20260810-003-revise-explore',
+    );
+    const raw = readFileSync(join(historicalRunDir, 'context.json'), 'utf8');
+    const parsed = JSON.parse(raw) as unknown;
+
+    const strict = discriminateRun(parsed, historicalRunDir);
+    assert.equal(strict.kind, 'conflict');
+
+    const compatible = discriminateRunForReader(raw, parsed, historicalRunDir);
+    assert.equal(compatible.kind, 'c1');
+    if (compatible.kind === 'c1') {
+      assert.equal(compatible.contextFile.sourceReviewRun, '20260810-002-review-explore');
+      assert.equal(compatible.contextFile.sourceReviewVerdict, 'changes-requested');
+    }
+
+    // Same semantic shape with any byte mutation is NOT historical provenance.
+    const mutatedRaw = `${raw} `;
+    const mutated = discriminateRunForReader(mutatedRaw, parsed, historicalRunDir);
+    assert.equal(mutated.kind, 'conflict');
+  });
+
+
+  it('schemaVersion === 3 → current D1 Run path', () => {
+    const result = discriminateRun({ ...c1Context, schemaVersion: 3 }, runDir);
+    assert.equal(result.kind, 'c1');
+    if (result.kind === 'c1') assert.equal(result.contextFile.schemaVersion, 3);
+  });
+
+  it('schemaVersion === 4 → current D2 Run path', () => {
+    const result = discriminateRun({ ...c1Context, schemaVersion: 4 }, runDir);
+    assert.equal(result.kind, 'c1');
+    if (result.kind === 'c1') assert.equal(result.contextFile.schemaVersion, 4);
+  });
+
+  it('schemaVersion === 5 → current v5 Run path', () => {
+    const result = discriminateRun({
+      ...c1Context,
+      schemaVersion: 5,
+      semanticInputFingerprint: 'a'.repeat(64),
+      canonicalBase: 'b'.repeat(40),
+      applicableFactRefs: [],
+      actionPackage: {
+        schemaVersion: 2,
+        run: {
+          runId: c1Context.runId,
+          deliveryId: c1Context.deliveryId,
+          changeId: c1Context.changeId,
+          action: 'explore',
+          role: 'author',
+          semanticInputFingerprint: 'a'.repeat(64),
+        },
+        definition: ACTION_DEFINITIONS.explore,
+        contractRefs: [],
+        handoffRefs: [],
+        ownerAuthorizationRefs: [],
+        requiredResultContract: ACTION_DEFINITIONS.explore.terminalContract,
+      },
+    }, runDir);
+    assert.equal(result.kind, 'c1');
+    if (result.kind === 'c1') assert.equal(result.contextFile.schemaVersion, 5);
+  });
+
+
+  it('accepts E1 migration fixtures v2/v3/v4/v5 and rejects unknown/cross-version combinations', () => {
+    const fixtureRoot = join(process.cwd(), 'tests/fixtures/e1-change-verification-selection');
+    for (const version of [2, 3, 4, 5] as const) {
+      const raw = readFileSync(join(fixtureRoot, `context-v${version}.json`), 'utf8');
+      const parsed = JSON.parse(raw) as unknown;
+      const runDir = join('/repo/.flowkit/runs/D1/e1-fixture', '20990101-001-explore');
+      const result = discriminateRun(parsed, runDir);
+      assert.equal(result.kind, 'c1', `v${version} fixture must remain readable`);
+      if (result.kind === 'c1') assert.equal(result.contextFile.schemaVersion, version);
+    }
+
+    const v5 = JSON.parse(readFileSync(join(fixtureRoot, 'context-v5.json'), 'utf8')) as Record<string, unknown>;
+    assert.equal(discriminateRun({ ...v5, schemaVersion: 6 }, '/repo/.flowkit/runs/D1/e1-fixture/20990101-001-explore').kind, 'conflict');
+    const packageValue = v5['actionPackage'] as Record<string, unknown>;
+    assert.equal(discriminateRun({ ...v5, actionPackage: { ...packageValue, schemaVersion: 1 } }, '/repo/.flowkit/runs/D1/e1-fixture/20990101-001-explore').kind, 'conflict');
+  });
+
   it('schemaVersion === 1 → legacy path, does not call validateContextFile (task 12.49)', () => {
     const legacy = {
       schemaVersion: 1,
@@ -74,8 +162,8 @@ describe('discriminateRun — three-way discriminator', () => {
     assert.equal(result.kind, 'legacy');
   });
 
-  it('schemaVersion === 0 / 3 / negative → FactConflict (task 12.51)', () => {
-    for (const sv of [0, 3, -1]) {
+  it('unknown schemaVersion values still fail closed', () => {
+    for (const sv of [0, 6, -1]) {
       const result = discriminateRun({
         schemaVersion: sv,
         runId: '20260806-001-explore',

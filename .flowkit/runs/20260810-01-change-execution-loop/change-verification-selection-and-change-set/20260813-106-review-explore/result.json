@@ -1,0 +1,61 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-explore",
+    "executionStatus": "completed",
+    "summary": "Fresh review of 105-explore found two Author blockers: unauthorized expansion into exact Run retry/execution-control work, and omission of the frozen E1 module/dependency/capability verificationScope selection contract. CodeGraph analysis and 84 focused tests support the implementation diagnosis; the 105 ResultRef and text hygiene are valid."
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "E1-RE-001",
+      "severity": "blocking",
+      "title": "105 将 exact Run retry 扩入 E1，但没有 formal scope authority",
+      "problem": "E1 的冻结 goal/outputs 是 canonical Git boundary、actualChangeSet、deterministic module ownership/dependency mapping、OpenSpec affected capability、minimal verificationScope 与 Change Verification。checkpoint reset 后的 Manifest mutation 只把 E1 从 planned 改为 active 并记录 activate-change；它没有修改 E1 goal，也没有 Owner Contract Reset/requiredOutcomes 授权 execution-control scope。105 却在 Sections 4.2、8、10 将 prepareNext/resumeRun、timeout=outcome-unknown、terminal replay idempotency 和 late/concurrent retry 设为 E1 correctness 必做，并据此要求修改已批准的 B1 dual-entry continuation contract。105 自己又声明承载这些要求的 reference-v3 是非权威实现参考，因此该参考不能创造 scope authority。",
+      "contractRef": "openspec/delivery-groups/20260810-01-change-execution-loop.yaml E1 goal/outputs and ownerDecisions; openspec/specs/flowkit-lean-run-and-action-package/spec.md bounded dual-entry preparation; AGENTS.md Owner Authority / Write-side",
+      "invariant": "Active Change 的 implementation/review scope 必须来自正式 Change/Delivery contract 或 Owner 独立明确的 contract reset；非权威参考、Author Explore 和 activation fact都不能自行扩大冻结 scope。",
+      "evidence": [
+        "git diff of the Delivery Manifest changes E1 only from planned to active and adds owner:7935d82c... decision=activate-change with source restart-E1-after-checkpoint-reset; E1 goal/outputs are unchanged",
+        "explore.md Section 1 explicitly states 02-change-execution-loop-delivery-implementation-reference-v3.md is non-authoritative",
+        "explore.md Sections 4.2, 8 and 10 nevertheless make exact retry, outcome-unknown, terminal replay and concurrent retry mandatory E1 scope",
+        "CodeGraph: current PrepareActionExecutionInput exposes only entry=next|review and prepareActionExecution resolves Policy before pending continuation, so the proposed prepareNext/resumeRun split is a material B1 contract change rather than a documentation-only clarification",
+        "Delivery G1 separately owns Change E2E and checkout/resume recovery outputs, confirming this execution-control work crosses an existing planned Change boundary"
+      ],
+      "impact": "Approving 105 would let a non-authoritative reference and an Author artifact expand E1 into B1/G1 execution-control work without Owner authority, defeating the checkpoint reset and frozen Delivery decomposition.",
+      "location": "openspec/changes/change-verification-selection-and-change-set/explore.md Sections 2.2, 4.2, 8 and 10",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Revise Explore to keep E1 within its current formal goal: remove exact retry/timeout/terminal replay implementation from E1 correctness scope and Proposal prerequisites, while retaining the safe bootstrap operating rule that a timeout is treated as unknown and agents STOP before retrying next. Record the discovered retry defect only as a future Owner/corrective/G1 decision input. If Owner instead intends to expand E1, stop Author revision and obtain a separate explicit formal scope/reset decision; do not infer it from reference-v3 or activation.",
+      "acceptance": [
+        "Revised E1 correctness scope and Proposal preflight map only to the current Manifest E1 goal/outputs and necessary entry/post-action verification mechanics.",
+        "Exact target retry, generic timeout/replay, concurrent caller and process-tree cancellation implementation are not normative E1 deliverables without a new explicit Owner scope fact.",
+        "The temporary bootstrap instruction remains fail closed: after timeout, inspect and STOP rather than retrying next."
+      ]
+    },
+    {
+      "id": "E1-RE-002",
+      "severity": "blocking",
+      "title": "105 未冻结 E1 的 deterministic verificationScope selection inputs",
+      "problem": "105 保留了 actualChangeSet、verification-selection record 和 verification.md 的时间边界，但其 E1 correctness list 与 Proposal preflight 没有要求 Proposal 定义 frozen Delivery goal 中的 deterministic module ownership/dependency mapping、OpenSpec affected capability relation，以及它们如何与 canonical Git boundary/actualChangeSet 共同产生最小 focused/affected verificationScope。reference-v3 虽提到 module ownership 与 capability relation，但 105 已明确它不具 authority，不能代替 Explore formal fact。",
+      "contractRef": "openspec/delivery-groups/20260810-01-change-execution-loop.yaml E1 goal and outputs; openspec/changes/change-verification-selection-and-change-set/explore.md Sections 4.1, 8 and 10",
+      "invariant": "E1 Proposal 必须从 canonical Git boundary、actualChangeSet、确定性 module ownership/dependency mapping 与当前 OpenSpec affected capabilities 可复验地派生 ordered minimal verificationScope；未知、缺失、冲突或歧义关系必须在进入实现前被明确为 fail-closed。",
+      "evidence": [
+        "Manifest E1 goal explicitly names canonical Git boundary, actualChangeSet, deterministic module ownership/dependency mapping and OpenSpec affected capability",
+        "Manifest E1 outputs explicitly require deterministic verificationScope and focused/affected Change Verification selection",
+        "explore.md Section 8 lists actualChangeSet and verification-selection record but omits module mapping, dependency expansion, affected-capability extraction and minimal focused/affected selection",
+        "explore.md Section 10 asks for record create/persist/read/render but does not require the selection mapping create→persist→read→consume chain or its negative cases",
+        "CodeGraph: current scripts/affected-scopes.ts accepts caller-supplied scope names and maps them to tests; it has no actualChangeSet path ownership, dependency closure or OpenSpec capability derivation, so Proposal cannot safely infer this missing contract from current code"
+      ],
+      "impact": "A Proposal following 105 can fully implement the new time/retry model yet still fail E1’s primary Delivery acceptance by selecting arbitrary, incomplete or caller-chosen verification scope.",
+      "location": "openspec/changes/change-verification-selection-and-change-set/explore.md Sections 8 and 10",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Revise Explore so Proposal preflight must enumerate the complete selection chain: canonical Git boundary/base authority; actualChangeSet path classification; one production-owned module ownership/dependency mapping authority; dependency expansion direction and deterministic ordering/deduplication; structured extraction of current Change OpenSpec affected capabilities; their relation to modules; minimal focused/affected verificationScope; immutable record/verification.md binding; and fail-closed unknown, missing, mismatch, ambiguity and explicit not-applicable cases.",
+      "acceptance": [
+        "Explore correctness scope explicitly includes every input named by the frozen E1 goal and every output listed for E1.",
+        "Proposal preflight requires a deterministic create→persist→read→consume chain from Git/actual changes and OpenSpec capabilities through module/dependency mapping to ordered minimal verificationScope.",
+        "Required tests include ownership/dependency expansion, capability relation, ordering/deduplication, unknown/missing/mismatch/ambiguity, and explicit not-applicable behavior."
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}

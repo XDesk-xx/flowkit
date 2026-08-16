@@ -20,7 +20,7 @@ C1 继承 B1 已冻结的以下事实，不重新定义：
 - 正式角色：`owner / author / reviewer`；不因工具组合增加"远程 Author""本地 Materializer"等核心角色；
 - Policy 权威：当前唯一合法的下一 Action 由 Policy 根据正式事实计算，不持久化 `currentAction`；
 - 事实权威：`One fact, one authority`；
-- Review 与 Revision：`review-* → approved → 向前推进`；`review-* → changes-requested → revise-* → 重新 Review`；
+- Review 与 Revision：`review-* → approved → 向前推进`；`changes-requested` 只表示 target 不可批准，author-only blockers 才进入 `revise-*`；含任一 non-author blocker 时 Author revise 禁止、`next()` blocked，但 explicit same-stage re-review 合法且不由 Policy 自动触发；
 - Run 基础结构：`.flowkit/runs/<delivery-id>/<change-id>/<run-id>/`。
 
 ## 3. Action Definition 与 Action Package
@@ -31,7 +31,7 @@ Action Definition 是某类 Action 的稳定规则，包括角色、目标、前
 
 ### 3.2 Action Package
 
-Action Package 是针对当前 Delivery、Change、Run 和 Action 生成的**逻辑执行输入视图**。
+Action Package 是 B1 针对当前 Delivery、Change、Run 和 Standard Change Action 生成的**provider-neutral 逻辑执行输入视图**。B1 拥有 logical preparation；本 integration layer 只做 structured/physical mapping，不决定下一 Action。
 
 Action Package 不是固定的物理文件包、ZIP、Patch、JSON Manifest 或特定平台 Payload。相同的逻辑输入可以通过不同媒介表达，只要语义完整且无歧义。
 
@@ -48,7 +48,7 @@ Action Package 至少需要让执行者知道：
 哪些 owner 授权已存在或尚未存在
 ```
 
-当当前 Action 需要 owner 授权（如 Apply、Archive、Full Test）时，Action Package 必须标明哪些授权已存在、哪些尚未存在。执行者不得自行授予缺失的授权。
+当当前 Change Action 需要 owner 授权（如 Apply、Archive）时，Action Package 必须标明哪些授权已存在、哪些尚未存在。Delivery Full Test / Finalize 的 Owner authorization 属 Delivery behavior boundary，不是 Standard Change Action Package。执行者不得自行授予缺失的授权。
 
 ## 4. Action Result
 
@@ -225,11 +225,13 @@ C1 不：
 
 ### 11.1 OpenSpec
 
-OpenSpec 拥有 Change 契约。Flowkit 引用当前 Change 的 Explore、Proposal、Design、Specs、Tasks、Verification 和 Archive 结果。Action Package 只暴露当前 Action 所需的契约视图。
+OpenSpec 拥有 Change 契约与 `spec-driven` planning graph。Flowkit 1.7 thin integration只消费固定 machine surface：version/context/doctor/status/artifact instructions/apply contextFiles/strict validate/archive。Planning artifact path只来自 validated `changeRoot/artifactPaths/contextFiles`；Explore 与 Verification 只在 validated `changeRoot` 下派生 owned filename。Action Package 只暴露当前 Action 所需的契约视图。
 
-OpenSpec 不得决定 Delivery、当前 Action 或 owner 授权。Flowkit 不复制 OpenSpec 全部内部状态。
+兼容性以 **stable `1.7.0` minimum baseline + required structured machine-contract conformance** 为准，不设置固定 minor/major upper bound。Below-baseline、malformed 与 prerelease version fail closed；高于 baseline 的 stable version 只有在 required command、JSON shape、requested-Change/path identity、exit/result coherence 与 archive semantics 全部继续满足 C1 typed contract 时才可消费。Version number 只是 compatibility signal，不是唯一 compatibility authority。
 
-当未来 Change Runner 调用 OpenSpec archive 时，archive 内部的 delta spec sync、artifact relocation 以及 operation success/failure 都由 OpenSpec 定义。Flowkit 只负责调用前的流程 gate / 必要 handoff，并记录 OpenSpec 返回的执行结果；operation 成功后不再扫描 archive path 做二次 proof。
+OpenSpec 不得决定 Delivery、当前 Action、Reviewer Verdict 或 owner 授权。Flowkit 不复制 OpenSpec 全部内部状态，也不维护第二套 proposal/spec/design/tasks dependency graph。Strict validation是 contract check，不是 Policy authority。
+
+Mutating archive 仍由 OpenSpec 定义 delta sync、relocation 与 structured terminal result；但 Flowkit 在 child spawn 前 MUST durable arm `openspec-archive-mutation-v1` guard，并在可接纳 terminal result 后先 durable publish normalized terminal observation，再用 post-V1 与 pre-archive F 做 safety classification。只有 `success + drift` 可接纳成功；`success + same` fail closed；`failure + same`普通失败；`failure + drift` recovery-required；无 durable terminal observation 时无论 same/drift 都是 outcome-unknown。该 recovery proof 只覆盖 active changeRoot、canonical `openspec/specs/**` 与 archive immediate-child collision namespace，不扫描历史 archive 正文，也不包含 `.flowkit/.git/node_modules/dist`。Operation success 后仍不得扫描 archive path 做第二套 OpenSpec success proof。
 
 ### 11.2 Git
 
@@ -358,3 +360,31 @@ docs/adapters/github-snapshot-workspace.md
 ```
 
 这些草案中有价值的背景只能作为"为什么不能固定媒介"的问题证据，不得直接转入正式文档。
+
+## 16. A1 Owner / Manifest / OpenSpec Write Boundary
+
+A1 冻结以下 authority：
+
+```text
+Owner independent input
+→ authority source
+
+Delivery Manifest ownerDecisions
+→ source-controlled Owner provenance
+
+Delivery Manifest Change fields
+→ lifecycle / dependency / architectureImpact facts
+
+Policy
+→ whether a lifecycle boundary is legal
+
+A1 write service
+→ mechanical mutation only
+
+OpenSpec
+→ Change artifact lifecycle
+```
+
+A1 只初始化 target Change minimal `.openspec.yaml`，不调用或复制 OpenSpec 1.7 artifact lifecycle。C1 checkpoint 后的新 activation request MUST显式提供 `specDeltaMode=required|skip`：`required`只写 `schema: spec-driven` + `created`，`skip`另写 `skip_specs: true`；不得从 goal/outputs/Proposal/spec 数量推断。当前 Delivery C1 checkpoint 前已存在的 exact D1–G1 identity仅允许 bounded missing-mode→`required` compatibility。Run `ownerAuthorization`、Reviewer prose、Git commit message或聊天摘要都不能替代 Manifest Owner record。
+
+pre-A1 exact legacy Change 缺失 `architectureImpact` 时，不得从 Delivery architecture、OpenSpec、goal、outputs、Run 或 Git 推断 boolean。

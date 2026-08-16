@@ -88,7 +88,10 @@ interface RawLine {
  */
 function preprocessLines(input: string): RawLine[] {
   const result: RawLine[] = [];
-  const rawLines = input.split('\n');
+  // Split on \n and strip a trailing \r so CRLF (Windows checkout) files
+  // parse identically to LF files. Without this, every mapping key on a
+  // CRLF line (e.g. `delivery:\r`) is misread as a plain scalar.
+  const rawLines = input.replace(/\r\n/g, '\n').split('\n');
   for (let i = 0; i < rawLines.length; i++) {
     const raw = rawLines[i] as string;
     const stripped = stripComment(raw);

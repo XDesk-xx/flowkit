@@ -1,0 +1,11 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "从 001 开始回溯完整审查链后，009 已准确关闭 008 唯一 blocker Q1-RP-001：explicit same-stage direct re-review admission 已从无法机器证明 fact-arrival 的 `MAY` 收敛为仅依赖 matching non-author blockingAuthorities 的 deterministic `MUST allowed`；`next()` 继续停在 non-author blocked boundary，Author revise 继续禁止，unchanged target 可进入新 Reviewer generation，Policy 不证明或自动调度 authority fact/re-review。Q1-RP-002 diagnostic-cli 修订保持不变。OpenSpec strict、transport/hash/lineage、produced ResultRef、scope 与文本卫生均通过，未发现新的 Proposal 级 blocker。",
+    "nextActionRecommendation": "owner-decision: authorize-apply"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindings": []
+}

@@ -1,0 +1,20 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-explore",
+    "executionStatus": "completed",
+    "summary": "E1 revise-explore 依据 Owner 扩展后的 Manifest 纳入 exact retry、OpenSpec projection/cancellation，并补齐 deterministic verificationScope selection chain。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/explore.md",
+        "versionFingerprint": "0cb7fadb4b00085bc54f2d2c5ebe3060095711613996374f0568031b304791a9",
+        "kind": "produced-artifact"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260813-106-review-explore/result.json",
+      "versionFingerprint": "d9abb49e7f6d2e563da1058de0b92d9fd871408909300ff0317eb00e85937ca1",
+      "kind": "run-result"
+    }
+  }
+}

@@ -31,7 +31,7 @@ describe('domain object types compile (B1-RE-004)', () => {
       fullTestStatus: 'not-ready',
       architecture: { impact: true, archifyPlan: 'required' },
       changes: [
-        { key: 'B1', id: 'domain-and-state-schema', dependsOn: ['A1'], state: 'active', required: true, outputs: ['src/domain/types.ts'] },
+        { key: 'B1', id: 'domain-and-state-schema', dependsOn: ['A1'], state: 'active', required: true, architectureImpact: false, outputs: ['src/domain/types.ts'] },
       ],
     };
     assert.equal(delivery.state, 'active');
@@ -48,13 +48,14 @@ describe('domain object types compile (B1-RE-004)', () => {
       required: true,
       dependsOn: ['A1'],
       state: 'active',
+      architectureImpact: false,
       outputs: ['src/domain/types.ts'],
     };
     assert.deepEqual([...(change.outputs ?? [])], ['src/domain/types.ts']);
   });
 
-  it('Run type is usable with and without changeId', () => {
-    const runWithChange: Run = {
+  it('Run type is Change-scoped', () => {
+    const run: Run = {
       runId: '20260806-001-explore',
       deliveryId: '20260806-01-deterministic-core',
       changeId: 'domain-and-state-schema',
@@ -62,28 +63,28 @@ describe('domain object types compile (B1-RE-004)', () => {
       role: 'author',
       status: 'pending',
     };
-    const runDelivery: Run = {
-      runId: '20260806-002-full-test',
-      deliveryId: '20260806-01-deterministic-core',
-      action: 'full-test',
-      role: 'owner',
-      status: 'pending',
-    };
-    assert.equal(runWithChange.changeId, 'domain-and-state-schema');
-    assert.equal(runDelivery.changeId, undefined);
+    assert.equal(run.changeId, 'domain-and-state-schema');
   });
 
-  it('ActionDefinition has integration-boundaries fields', () => {
+  it('ActionDefinition has the frozen B1 execution boundary fields', () => {
     const def: ActionDefinition = {
       action: 'explore',
+      version: 1,
       role: 'author',
-      goal: 'Explore a Change.',
-      preconditions: ['change.state === active'],
-      allowedOutputs: ['explore.md'],
-      completionConditions: ['conclusion.md exists'],
+      goalClass: 'investigate-change',
+      mutationClass: 'explore-planning-only',
+      outputClass: 'current-explore-artifact-set',
+      terminalContract: {
+        kind: 'artifact',
+        verdictRequired: false,
+        bindsReviewedRun: false,
+        bindsSourceReview: false,
+        verificationSummaryRef: 'none',
+        gitCheckpointOutputAllowed: false,
+      },
     };
     assert.equal(def.role, 'author');
-    assert.equal(def.preconditions.length, 1);
+    assert.equal(def.goalClass, 'investigate-change');
   });
 
   it('ActionResult uses logical minimal fields', () => {
@@ -136,13 +137,16 @@ describe('domain object types compile (B1-RE-004)', () => {
     assert.equal(summary.overallStatus, 'passed');
   });
 
-  it('OwnerAuthorizationRef is provider-neutral', () => {
+  it('OwnerAuthorizationRef is provider-neutral and target-specific', () => {
     const auth: OwnerAuthorizationRef = {
-      ref: 'auth-001',
-      scope: 'apply',
+      ref: 'owner:abc',
+      decision: 'authorize-apply',
+      deliveryId: '20260806-01-deterministic-core',
+      changeId: 'domain-and-state-schema',
+      sourceRef: 'chat-owner-input:1',
     };
-    assert.equal(auth.scope, 'apply');
-    assert.equal(auth.authorizedAt, undefined);
+    assert.equal(auth.decision, 'authorize-apply');
+    assert.equal(auth.changeId, 'domain-and-state-schema');
   });
 
   it('ContinuationContext type is usable', () => {

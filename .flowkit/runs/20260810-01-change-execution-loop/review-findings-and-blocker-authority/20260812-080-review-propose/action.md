@@ -1,0 +1,15 @@
+# Action: review-propose
+
+- Run: `20260812-080-review-propose`
+- Delivery: `20260810-01-change-execution-loop`
+- Change: `D1 review-findings-and-blocker-authority`
+- Role: `reviewer`
+- semanticInputFingerprint: `f994495450b0d09ed2bbbf17a8a6738086b5bfcce3a5098cab886b2ffd4bcd2d`
+
+## Prepared boundary
+
+- goalClass: `judge-proposal`
+- mutationClass: `reviewer-result-only`
+- outputClass: `review-verdict-findings`
+
+该 Run 由 B1 deterministic preparation surface 创建；Policy 决定 Action，caller 不直接指定 Formal Action。

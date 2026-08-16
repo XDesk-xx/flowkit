@@ -1,0 +1,8 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "apply",
+    "executionStatus": "completed",
+    "summary": "Owner Contract Reset generation corrected only the OpenSpec archive-sync scenario identity while preserving the archive-terminal checkpoint gate semantics; verification passed."
+  }
+}

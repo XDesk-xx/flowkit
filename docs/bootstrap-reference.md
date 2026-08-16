@@ -59,16 +59,9 @@ temporary-flowkit-state/
 
 ### 3.1 何时创建新 Run
 
-仅在以下边界创建新 Run：
+Bootstrap 与后续 Runner 必须共享 B1 的唯一 Standard Run preparation semantics。Caller 只能请求 normal `next` 或 explicit unified `review` intent；concrete Action、Role 与 Delivery-wide NNN 由 Policy/catalog/allocator 确定。
 
-```text
-正式 Action 改变
-执行角色改变
-本次目标改变
-前一 Run failed / cancelled 后重试同一 Action
-```
-
-只有正式 Action、执行角色和本次目标三者均未改变时，多轮交流、内容完善、补充检查以及普通 Commit 才保持在同一个 Run。任一改变即创建新 Run。
+同一 pending Run 仅在 resolved Action/Role 与 Core-derived `semanticInputFingerprint` 仍匹配时继续；聊天、provider session、工具重开或普通 Commit 本身不得创建新 Run。Failed/cancelled retry、new Reviewer execution、real author revise 或 new formal Action 才创建新的 Delivery-wide NNN。Explicit direct re-review 必须由 shared Policy 的统一 `review` admission 解析，不得把 blocked `next()` 自动转换成 review。
 
 ### 3.2 Run 文件最低内容
 
@@ -81,7 +74,7 @@ Run 的基础结构（B1 已冻结）：
 └─ result.json
 ```
 
-Run ID：`YYYYMMDD-NNN-action`，`NNN` 在整个 Delivery 内唯一且单调递增。
+Run ID：`YYYYMMDD-NNN-action`，`NNN` 在整个 Delivery 内唯一且单调递增。Checkpoint 不消耗或重置 NNN；低层 Run persistence 也必须拒绝 malformed/non-monotonic/duplicate NNN、suffix mismatch 与错误 Action→Role。
 
 **action.md** 保存人类可读的当前 Run 执行说明：
 
@@ -177,9 +170,11 @@ Run 进入 terminal 状态后保留原记录。需要重试时创建新 Run，�
 
 ### 3.7 Canonical artifact 与 point-in-time 引用
 
-`openspec/changes/<changeId>/` 下的 `explore.md / proposal.md / design.md / specs/** / tasks.md / verification.md` 是 OpenSpec 的 **current-state canonical path**：
+OpenSpec 1.7 `status/instructions` 返回的 validated `changeRoot/artifactPaths/contextFiles` 是 current planning path authority。`proposal/design/specs/tasks` MUST 由 structured view 解析；`explore.md` 与 `verification.md` 不是 `spec-driven` graph node，只能在同一 validated `changeRoot` 下由 Flowkit / Verification 派生 owned filename。默认 repo-local layout 当前通常落在 `openspec/changes/<changeId>/`，但该默认路径不得重新成为 Flowkit 的第二套 OpenSpec path rule。
 
-- 合法 `revise-*` MAY 覆盖同一路径；历史 terminal Run 的 mutable artifact / verification ResultRef 只表达“该 Run 当时引用的版本”，不要求未来 current path 永久保持相同 bytes；
+OpenSpec compatibility 从 stable `1.7.0` 起步，但不冻结 `<1.8.0` 一类 upper bound。Prerelease 不因数值达到 baseline 自动获得支持；higher stable release 必须逐 required machine surface 通过 typed conformance，任何 command/JSON/path/coherence/archive semantic drift 都 fail closed。
+
+- 合法 `revise-*` MAY 覆盖当前 structured logical path；历史 terminal Run 的 mutable artifact / verification ResultRef 只表达“该 Run 当时引用的版本”，不要求未来 current path 永久保持相同 bytes；
 - 当前 Review 或下一 Action 真正消费某一版本时，Core MAY 在该 handoff 边界做 exact check；handoff 成功后，不把 predecessor ref 延伸成未来 artifact authority；
 - `pending` 只表示 Run 尚未 terminal，不产生 revision-window / supersession / generation class；
 - 不建立 `.flowkit/artifacts/`、`openspec/.history/` 或其他 per-Run artifact snapshot store；
@@ -596,3 +591,18 @@ Checkpoint 的具体 Git 操作
 - Checkpoint 的具体 Git 操作 → §5.4 Change Checkpoint Commit
 
 D1 不修改 `docs/delivery-lifecycle.md`。若后续确需修改 B1 文档，必须由 owner 授权独立 corrective Change。
+
+## 10. A1 之后的 Bootstrap 收缩
+
+A1 product write-side 可用后，正常后续 Change 不再通过手工 Manifest mutation完成 creation / Owner provenance / activation：
+
+```text
+flowkit create delivery
+flowkit create change
+flowkit owner record
+flowkit activate
+```
+
+当前 02 Delivery 在 A1 之前已经形成的 Bootstrap history 保持原样，不回写历史 Owner strings，也不补写历史 `architectureImpact`。Reader 对 Base `448fa042de86d07e893bcc51da528f93eb7ced3a` 冻结的 exact legacy identities只做 read-only unknown compatibility。
+
+这不改变 Git Bootstrap 边界：activation 仍不是 Change Start Commit；Change Checkpoint 仍在 Archive/complete 后由 Owner 授权的 Git workflow执行。

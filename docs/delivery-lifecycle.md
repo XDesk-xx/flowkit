@@ -9,7 +9,7 @@ Flowkit 必须保持：
 3. 当前合法下一 Action 由 Policy 根据正式事实计算；
 4. 不持久化 `currentAction`、current pointer 或并列流程状态；
 5. Review 是正式边界；
-6. Revision/Fix 仅在 `changes-requested` 时合法；
+6. Revision/Fix 仅在 matching `changes-requested` 的 blocking authorities 非空且全部为 `author` 时合法；
 7. owner 授权不能被 reviewer、Skill 或验证工具替代。
 
 ## 2. Delivery 生命周期
@@ -83,12 +83,14 @@ planned → active
 explore
 → review-explore
 → approved: propose
-→ changes-requested: revise-explore → review-explore
+→ changes-requested + author-only blockers: revise-explore → review-explore
+→ changes-requested + any non-author blocker: blocked authority boundary
+   └─ explicit same-stage review-explore 合法；next() 不自动触发
 ```
 
 Review 前，owner 与 author 对同一份 Explore 的讨论和收敛仍属于同一次 `explore`。
 
-只有 reviewer 返回 `changes-requested` 后，`revise-explore` 才合法。
+`changes-requested` 本身不等价于 revise-required。只有当前 matching Review 的 blocking authorities 非空且全部为 `author` 时，`revise-explore` 才合法；存在任一 non-author blocker 时 Author revise 不合法。
 
 ### 3.3 Propose
 
@@ -96,7 +98,9 @@ Review 前，owner 与 author 对同一份 Explore 的讨论和收敛仍属于�
 propose
 → review-propose
 → approved: 等待 owner 授权 apply
-→ changes-requested: revise-propose → review-propose
+→ changes-requested + author-only blockers: revise-propose → review-propose
+→ changes-requested + any non-author blocker: blocked authority boundary
+   └─ explicit same-stage review-propose 合法；next() 不自动触发
 ```
 
 `review-propose` approved 只表示 Proposal 合法，不自动开始 Apply。
@@ -113,19 +117,32 @@ apply
 → Change Verification
 → review-apply
 → approved: 等待 owner 授权 archive
-→ changes-requested: revise-apply
-→ Change Verification
-→ review-apply
+→ changes-requested + author-only blockers: revise-apply
+   → Change Verification
+   → review-apply
+→ changes-requested + any non-author blocker: blocked authority boundary
+   └─ explicit same-stage review-apply 合法；next() 不自动触发
 ```
 
 规则：
 
 - Apply/Revision 后必须执行适用的 focused、affected、lint、typecheck 或文档检查；
 - Verification 为 failed 或 not-run 时不能进入 review-apply；
-- `revise-apply` 必须只处理当前 `review-apply` Findings，不得扩张 Change 范围；
+- `revise-apply` 仅在 matching Review 为 author-only blocking 时合法，并且必须只处理当前 `review-apply` Findings，不得扩张 Change 范围；
 - `fix-review-findings` 是 `revise-apply` 的 goal，而不是正式 Action；
 - 修订后必须重新验证；
 - Apply、Revision、Review 和 Archive 都不得自动运行 Full Test。
+
+
+### 3.4.1 Non-author blocker 与显式 re-review
+
+对于任一阶段的 matching `changes-requested` Review：
+
+- blocking authorities 全部为 `author`：Author revise 合法，Policy 可推导对应 `revise-*`；
+- 包含任一 `owner / verification / external`：Author revise 不合法，`next()` 必须保持 blocked 在 non-author authority boundary；
+- 在后一种情况下，explicit same-stage `review-*` 在 Policy 层必须合法，unchanged target 也可进入新的 Reviewer execution / Review generation；
+- 每次显式 re-review 都由 Reviewer 使用执行时最新可用 authority facts 重新判断 Findings / Verdict；
+- Policy 只判断 Action 是否合法，不机器证明“现在是否值得重审”，也不自动调度或触发 re-review。
 
 ### 3.5 Archive 与完成
 
@@ -170,13 +187,17 @@ active  → cancelled
 
 ### 3.7 Change artifact 生命周期
 
-active Change 的正式 artifact 位于 `openspec/changes/<changeId>/`：
+active Change 的正式 planning path由 OpenSpec 1.7 structured view确定：
 
 ```text
-explore.md / proposal.md / design.md / specs/** / tasks.md / verification.md
+validated changeRoot
+├─ explore.md                         # Flowkit-owned
+├─ proposal.md / design.md / tasks.md # OpenSpec artifactPaths
+├─ specs/**                           # OpenSpec artifactPaths/contextFiles exact set
+└─ verification.md                    # Verification-owned
 ```
 
-这些是 **mutable current-state canonical path**，不是每个 terminal Run 的 immutable history store：
+默认 repo-local layout可以是 `openspec/changes/<changeId>/`，但 Flowkit MUST NOT把该默认布局重新编码成 OpenSpec planning path authority。以上 logical path 是 **mutable current-state path**，不是每个 terminal Run 的 immutable history store：
 
 - 合法 `revise-explore` / `revise-propose` MAY 覆盖同一路径；历史 `producedResultRefs` / `verificationSummaryRef` 只表达 point-in-time 版本，不因后续合法 current bytes 变化产生历史 conflict；
 - Reader 只把当前 Policy 真正需要的 active Change Runs 投影为 Change-level facts，不通过 `current / superseded / revision-window` 重放 completed Change 的 mutable artifact 历史；
@@ -281,9 +302,11 @@ Flowkit 不保存 `currentAction`。Policy 使用以下正式事实计算唯一�
 
 ## 8. Run 与生命周期
 
-同一角色、同一 Action、同一目标的多轮工作属于同一个 Run。
+Current Standard Run continuation 由 B1 semantic identity 决定：同一 pending Run 的 Action/Role 与 `semanticInputFingerprint` 都未变化时继续同一 runId；contract/handoff/review/verification/Owner authority identity 漂移时必须 fail-closed，不能静默重写 fingerprint。
 
-Author 完成 Action 后只记录 `nextAction: review-*`；Reviewer 真正开始 Review 时才创建下一 reviewer Run。
+Failed/cancelled retry、new Reviewer execution、real revise 或 new formal Action 使用新的 Delivery-wide NNN。Q1 non-author blocker 下 `next()` 可以保持 blocked，同时 explicit unified `review` 仍可由 shared Policy 创建/恢复 same-stage Reviewer Run。
+
+Action execution 完成后由 logical result admission 进入现有 Core `completeRun()`；ResultRef 仍由 Core 从真实 authority bytes 派生。
 
 Git Commit 只记录文件历史，不决定 Action 或 Run 数量。
 
@@ -324,3 +347,25 @@ Git Commit 只记录文件历史，不决定 Action 或 Run 数量。
 - reviewer 如何执行统一 `review`；
 - author 如何执行统一 `revise`；
 - Checkpoint 的具体 Git 操作。
+
+## 11. A1 Creation 与 Activation Boundary
+
+正常产品 write-side：
+
+```text
+create Delivery
+→ Delivery active
+
+create Change
+→ Change planned
+
+Policy: owner-decision activate-change
++ Owner explicit sourceRef
+→ minimal OpenSpec metadata
+→ atomic Manifest publish(owner decision + planned→active)
+→ next() = explore
+```
+
+`dependsOn` 必须按 `Change.id` 判断 completed dependency。Activation 不是 Formal Action，也不产生 Standard Run 或独立 Git boundary。
+
+Authorization-only Owner record（Apply / Archive / Checkpoint / Full Test / Finalize）只能在 fresh formal snapshot 的 current Policy 正在请求完全相同 decision 与 canonical target 时写入；否则 fail-closed 且 Manifest byte-identical。

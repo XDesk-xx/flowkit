@@ -1,0 +1,28 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-explore",
+    "executionStatus": "completed",
+    "summary": "Q1 Explore 的核心判断方向正确：当前 Core 确实仍把 changes-requested 机械映射到 revise-*，且 full-test / delivery-finalize 仍作为 Delivery-level Formal Action/Run；001 也正确限定 Q1 不提前实现完整 D1/03。但完整 blocking scan 发现两个 Author-actionable 缺口：其一，Explore 漏掉了仍明确冻结 changes-requested → Author Revision 的 canonical flowkit-bootstrap-and-roadmap capability spec；其二，删除 Delivery Formal Action 后、03 A1 尚未实现前，Q1 必须维持的 deterministic Policy 过渡边界没有被列为 Proposal 必须冻结的问题。两项均会直接影响 Q1 Proposal 的 delta scope 与 Policy contract，因此本轮 changes-requested。",
+    "nextActionRecommendation": "revise-explore"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindings": [
+    {
+      "id": "Q1-RE-001",
+      "severity": "blocking",
+      "title": "Explore 漏掉仍冻结旧 Review→Revision 规则的 canonical bootstrap-and-roadmap spec",
+      "problem": "001 第 11 节列出的 canonical drift surface 没有包含 `openspec/specs/flowkit-bootstrap-and-roadmap/spec.md`。但 exact Base 中该 active capability spec 仍明确要求：Reviewer 在 `changes-requested` 后由 Author 执行对应 Revision（约第 462 行），并再次规定 `changes-requested MUST 交回 Author 修复`（约第 483 行）。Q1 的验收要求 docs/specs/code/AGENTS 表达同一 contract；如果 Proposal 按 001 的 capability surface 形成 delta specs，这两条 frozen requirement 会继续与 `changes-requested ≠ revise-required` 冲突。",
+      "location": "openspec/changes/core-contract-alignment/explore.md:546-574; openspec/specs/flowkit-bootstrap-and-roadmap/spec.md:462-483",
+      "requiredChange": "修订 Explore，把 `flowkit-bootstrap-and-roadmap` 纳入已确认的 affected canonical spec surface，并指出其中 Review/Revision requirement 必须随 Q1 对齐；同时明确 Proposal 需基于 repo-wide canonical scan 冻结完整 affected capability set，而不是只修改当前列出的三个/四个 spec。"
+    },
+    {
+      "id": "Q1-RE-002",
+      "severity": "blocking",
+      "title": "移除 Delivery Formal Action 后的 Q1 Policy 过渡契约尚未被识别",
+      "problem": "001 正确指出 `src/policy/next.ts` 目前在 fullTestStatus=authorized 时返回 `action: full-test`、在 passed+finalize authorization 时返回 `action: delivery-finalize`，并要求 Q1 去掉这两个 Standard Delivery Action；同时又把 Delivery behavior 的正式 machine model 后置到 03 A1。但第 13 节列出的 P1-P4 没有要求 Proposal 冻结：在 Q1 已移除这些 FormalAction、而 03 尚未存在的阶段，`next()` 对 no-active-change / awaiting-user-decision / authorized / passed 等 Delivery 状态应返回什么现有 Policy boundary，才能继续 deterministic、fail-closed 且不创建 Delivery Run、不越界实现 03。缺少这一过渡契约会使 Proposal 只能在实现时临时决定，存在重新保留伪 Action 或提前引入 03 behavior union 的风险。",
+      "location": "openspec/changes/core-contract-alignment/explore.md:390-426,610-672",
+      "requiredChange": "在 Explore 的 Proposal-freeze questions/acceptance 中补充这一过渡边界：要求 Proposal 明确定义 Q1 后现有 Policy 在 Delivery-level no-active-change 状态的 deterministic/fail-closed 输出，并明确不得返回 full-test/delivery-finalize Formal Action、不得创建 Delivery Run、不得实现 03 A1 的完整 Delivery behavior executor/model。Reviewer 不指定具体返回形态。"
+    }
+  ]
+}

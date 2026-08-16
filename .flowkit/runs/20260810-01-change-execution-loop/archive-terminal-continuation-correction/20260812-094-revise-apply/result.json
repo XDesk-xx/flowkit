@@ -1,0 +1,13 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-apply",
+    "executionStatus": "completed",
+    "summary": "补充真实 OpenSpec 1.7 normal future archive lifecycle E2E，证明 schemaVersion 4 archive entry projection 经真实 relocation 后由正常 terminal admission 完成同一 archive Run，并在 Run terminal 前保持 Checkpoint gate closed；同步修正 tasks/verification。",
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/archive-terminal-continuation-correction/20260812-093-review-apply/result.json",
+      "versionFingerprint": "253d7ce25350f57dc250bfee1c9de72eb52d5e914e264fa4761c32380276ad13",
+      "kind": "run-result"
+    }
+  }
+}

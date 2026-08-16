@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260816-215-review-explore",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "review-explore",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "a561933539c39af01b4478e94f733d89ca0473460cde14b0cf54a4eb9ee0344b",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-215-review-explore/",
+  "changeKey": "I1",
+  "changeId": "delivery-final-closure-correction",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-214-revise-explore/result.json",
+    "versionFingerprint": "5cb2af3ad94b079fcfeed3d69c3f15f79fde0cbc38320f44b8bca3592c8966fa",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260816-214-revise-explore",
+  "canonicalBase": "1783983440e4d1b29d6282bc5c1af55d390f392d",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-214-revise-explore/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "5cb2af3ad94b079fcfeed3d69c3f15f79fde0cbc38320f44b8bca3592c8966fa"
+    },
+    {
+      "ref": "openspec/changes/delivery-final-closure-correction/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+    },
+    {
+      "ref": "openspec/changes/delivery-final-closure-correction/explore.md",
+      "versionFingerprint": "996f48a5c693428e2fb4a9e4a6fae4bb00d033a1425f13f624860ace7630d24e",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "delivery-final-closure-correction",
+      "runId": "20260816-215-review-explore",
+      "action": "review-explore",
+      "role": "reviewer",
+      "semanticInputFingerprint": "a561933539c39af01b4478e94f733d89ca0473460cde14b0cf54a4eb9ee0344b"
+    },
+    "definition": {
+      "action": "review-explore",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-explore",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+      },
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/explore.md",
+        "versionFingerprint": "996f48a5c693428e2fb4a9e4a6fae4bb00d033a1425f13f624860ace7630d24e",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-214-revise-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "5cb2af3ad94b079fcfeed3d69c3f15f79fde0cbc38320f44b8bca3592c8966fa"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260816-213-review-explore",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-213-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "6c134e8d42562d67578412cfb166536c83e971fd0cddeac769c4ab40640d1af2"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "I1-RE-001",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "Proof 6 stops at logical module selection and does not prove the planned verification executor regression is a physical selected target",
+          "problem": "212 plans to mutate scripts/verification.ts and its direct behavior regression tests/unit/verification/verification-plan.test.ts, and Proof 6 proposes adding both paths to the verification-selection module. That only yields logical scope tests-verification. The current physical resolver logicalNodeSelectors('tests-verification') executes e1/e2 verification integrations, affected-scopes, and tests/unit/verification/change-selection/*.test.ts; it does not execute tests/unit/verification/verification-plan.test.ts. Therefore the Explore claim that every expected mutation has a physical selected test path, and the result summary claim of closed self-verification mutation surface, are not yet supported. The optional AGENTS.md branch has the same conditional issue unless it is explicitly excluded or separately proven before Proposal.",
+          "contractRef": "Flowkit Explore Skill v2 §4.6 Mutation Surface + Verification Closure Proof / §5 Proof Acceptance Depth",
+          "invariant": "A Proposal-ready verification correction must prove the complete chain actualChangeSet → module ownership → logical check id → physical resolver → actually executed regression target → formal verification result; logical selection alone is insufficient.",
+          "requiredOutcome": "Revise Explore so the planned scripts/verification.ts / verification-plan.test.ts mutation has proven physical Verification closure before Proposal. The proof may extend the existing evidence.ts physical resolver within the already identified mutation surface, but must demonstrate actual execution rather than only module ownership. If AGENTS.md remains a Proposal option, either exclude it from this Change or prove its exact ownership/verification closure as well.",
+          "acceptance": [
+            "After the disposable correction, scripts/verification.ts and tests/unit/verification/verification-plan.test.ts each map to exactly one Verification module.",
+            "The selected logical scope resolves to a physical target set that includes tests/unit/verification/verification-plan.test.ts.",
+            "A sentinel/fault in verification-plan.test.ts or equivalent selected-target execution proof makes formal selected Verification fail, and restoring it makes the same formal selection pass.",
+            "The final feasible mutation surface explicitly includes every file needed for that physical resolver change; no Apply-time scope discovery is deferred.",
+            "If AGENTS.md is retained as an allowed Proposal mutation, its exact module ownership and required verification closure are proven in Explore; otherwise Explore freezes AGENTS.md out of the Proposal-ready surface."
+          ]
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "c1601ac3fadb220ec5bb27a4e0014e900cdfe38bcff19ca5c4b489c77a33b632",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

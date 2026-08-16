@@ -1,0 +1,19 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "056对055的durable archive recovery方向进行了实质修订，并修正specDeltaMode文案；但C1-RP-005仍未关闭。056把preArchiveGenerationFingerprint定义为validated planningHome整个目录树（仅排除.tmp/**），而真实OpenSpec 1.7 repo-local planningHome.root就是repoRoot；同一guard又写入repoRoot/.flowkit/.../context.json。因此先计算F再持久化guard会立刻改变被哈希surface，stored F与当前generation天然不再一致，armed状态下无法通过其自身定义的exact recovery admission。该surface还会纳入.git、node_modules等与OpenSpec archive mutation无关且环境可变的repoRoot内容，进一步使proof不稳定。必须把recovery fingerprint收缩到明确的OpenSpec archive mutation-owned surface，并排除承载guard/control-plane与无关环境状态，同时仍覆盖Change relocation、archive collision/relevant archive namespace与canonical specs。"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindings": [
+    {
+      "id": "C1-RP-005",
+      "severity": "blocking",
+      "title": "archive recovery fingerprint 仍自引用并错误覆盖整个 repoRoot，durable recovery gate 不可满足",
+      "problem": "056已增加durable pre-spawn archiveMutationGuard，但把preArchiveGenerationFingerprint冻结为“validated planningHome recursively every directory + regular file，仅排除.tmp/**”。真实OpenSpec 1.7 repo-local status中planningHome.root等于canonical repoRoot；guard自身又原子写入repoRoot/.flowkit/runs/.../context.json。于是fresh pending先计算F，再写入包含F的context.json后，被哈希surface立即变化为F'，stored F不可能在guard仍存在时与current fingerprint exact-match，recovery-admitted条件形成自引用死锁。同时整个repoRoot还会包含.git、node_modules及其它与OpenSpec archive无关、可因环境/工具活动变化的内容，导致所谓OpenSpec mutation generation被非OpenSpec事实污染。",
+      "blockingAuthority": "author",
+      "requiredChange": "revise-propose必须重新冻结pre-archive generation proof的明确mutation surface，使其只覆盖OpenSpec archive本次可能修改/冲突判定所依赖的OpenSpec-owned bytes与directory identity，并明确排除archiveMutationGuard/.flowkit控制面、.git、dependencies及其它无关repo环境状态；该surface仍必须足以证明active Change relocation source、相关archive destination/collision namespace与canonical specs等OpenSpec mutation facts已精确恢复。必须补机器测试证明：arm写入guard本身不会改变stored generation proof；armed跨session仍阻塞retry；archive mutation后proof mismatch；精确恢复OpenSpec mutation surface后可recovery-admit。不得退回filesystem scan猜archive success，也不得用B1 semantic fingerprint替代该proof。"
+    }
+  ]
+}

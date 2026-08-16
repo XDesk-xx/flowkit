@@ -161,31 +161,45 @@ CLI 入口 `src/bin/flowkit.ts` MUST 是薄壳，只 import 并调用。`package
 
 ### Requirement: shared 工程基础模块
 
-`src/shared/` MUST 提供 4 个工程基础模块：`paths.ts`、`atomic-write.ts`、`external-command.ts`、`errors.ts`。
+`src/shared/` MUST提供 `paths.ts`、`atomic-write.ts`、`external-command.ts`、`errors.ts` 等工程基础能力。`external-command.ts` MUST继续作为无业务语义的低层process helper，捕获stdout/stderr/exitCode，并支持bounded timeout、spawn-error diagnosis与跨平台`.cmd/.bat` launcher resolution；它 MUST NOT解析OpenSpec lifecycle或决定Flowkit Action。
 
 #### Scenario: paths 模块提供跨平台路径归一化
 
-- **WHEN** 调用 `normalizeSeparators` 传入 Windows 路径
-- **THEN** 返回使用 POSIX `/` 分隔符的路径
+- **WHEN**调用`normalizeSeparators`传入Windows路径
+- **THEN**返回使用POSIX `/`分隔符的路径
 
 #### Scenario: atomic-write 模块提供原子写入
 
-- **WHEN** 调用 `atomicWriteFile` 写入文件
-- **THEN** 先写入同目录临时文件
-- **AND** 再 rename 替换目标文件
-- **AND** 失败时不留下半写文件
+- **WHEN**调用`atomicWriteFile`写入文件
+- **THEN**先写入同目录临时文件
+- **AND**再rename替换目标文件
+- **AND**失败时不留下半写文件
 
 #### Scenario: external-command 模块捕获命令输出
 
-- **WHEN** 调用 `runCommand` 执行外部命令
-- **THEN** 返回 `{ stdout, stderr, exitCode }`
-- **AND** 不继承父进程 stdio
+- **WHEN**调用`runCommand`执行外部命令
+- **THEN**返回stdout、stderr与exitCode
+- **AND**不继承父进程stdio
+- **AND** spawn error/timeout MUST可由caller机器区分
+
+#### Scenario: external-command timeout 有确定性终态
+
+- **WHEN** configured timeout到期而child仍未结束
+- **THEN** helper MUST进入确定性timeout completion path
+- **AND** MUST NOT永久保持unresolved Promise
+- **AND** caller MUST能够识别timed-out failure
+
+#### Scenario: Windows command shim 使用 ComSpec
+
+- **WHEN** platform为`win32`且target executable为`.cmd`或`.bat`
+- **THEN** helper MUST通过`ComSpec || cmd.exe`与`/d /s /c`执行
+- **AND** non-Windows executable MUST保持直接spawn语义
 
 #### Scenario: errors 模块提供结构化错误
 
-- **WHEN** 创建 `FlowkitError`
-- **THEN** 包含 `code`（机器可读）、`message`（人类可读）和可选 `context`
-- **AND** `toJSON()` 方法可序列化
+- **WHEN**创建`FlowkitError`
+- **THEN**包含`code`、`message`和可选`context`
+- **AND** `toJSON()`方法可序列化
 
 ### Requirement: 无外部运行时依赖
 
@@ -201,4 +215,59 @@ A1 MUST NOT 引入 Archify、OpenSpec 或 GitHub 的运行时依赖，MUST NOT �
 
 - **WHEN** 检查 `src/` 源码
 - **THEN** 不存在 Plugin、Registry、Gate 等抽象
+
+### Requirement: shared external-command 必须支持 bounded Windows PowerShell ps1 launcher
+
+当 platform=`win32`且 target executable为 `.ps1`时，`runCommand` MUST通过 bounded PowerShell launcher执行 script。Launcher resolution MUST优先 `pwsh.exe`，不可用时 fallback `powershell.exe`；两者都不可用时 MUST以 machine-distinguishable spawn/launcher failure终止。
+
+PowerShell invocation MUST使用 non-profile、non-interactive script execution，并逐项传递 argv；MUST NOT使用 `shell:true`、`Invoke-Expression`、字符串 eval或依赖用户 PowerShell profile。该能力 MUST继续是无业务语义的 low-level process helper，不解析 OpenSpec lifecycle。
+
+#### Scenario: ps1 使用 PowerShell child
+- **WHEN** Windows `runCommand`收到 `.ps1` executable与多个 argv
+- **THEN** helper MUST通过 `pwsh.exe`或 fallback `powershell.exe`执行 script
+- **AND** argv MUST保持逐项边界而非拼接成 shell command string
+
+#### Scenario: missing PowerShell fail closed
+- **WHEN** target为 existing `.ps1`
+- **AND** bounded resolution找不到 `pwsh.exe` 与 `powershell.exe`
+- **THEN** helper MUST返回可由 caller机器识别的 launcher/spawn failure
+- **AND** MUST NOT通过 `cmd.exe`、shell eval或其它隐式 launcher猜测执行
+
+### Requirement: ps1 support 必须保持现有 cmd/bat 与 non-Windows semantics
+
+D1 `.ps1` support MUST NOT改变现有 Windows `.cmd/.bat` 的 `ComSpec || cmd.exe /d /s /c` contract，也 MUST NOT改变 non-Windows executable direct-spawn semantics。Timeout、spawnError、exitCode、stdout/stderr MUST继续使用 existing process result model。
+
+#### Scenario: cmd shim 仍使用 ComSpec
+- **WHEN** Windows target executable为 `.cmd`或`.bat`
+- **THEN** helper MUST继续使用 existing ComSpec execution path
+
+#### Scenario: non-Windows 不经过 PowerShell launcher
+- **WHEN** platform不是 `win32`
+- **THEN** `.ps1` D1 compatibility MUST NOT改变普通 executable direct-spawn behavior
+
+### Requirement: Windows timeout cancellation 必须覆盖 process tree
+
+外部 command runner 在 Windows 上启动 PowerShell、`.cmd`、`.bat` 或其 descendants 时，timeout cancellation MUST 尝试终止整个 owned process tree，并区分 confirmed termination 与 unconfirmed outcome。单个 launcher process 的 kill signal MUST NOT 被解释为整个 writer tree 已停止。
+
+#### Scenario: process tree 已确认终止
+
+- **WHEN** timeout handler 已确认 owned launcher 与 descendants 全部 terminal
+- **THEN** runner MUST 返回 deterministic timed-out/cancelled transport outcome
+- **AND** MUST 保留 stdout、stderr 与 termination diagnostics
+
+#### Scenario: process tree 无法确认终止
+
+- **WHEN** runner 无法证明一个或多个 owned descendants 已停止
+- **THEN** outcome MUST 是 fail-closed `outcome-unknown`
+- **AND** caller MUST NOT 自动重试 new preparation 或其他 write-side operation
+
+### Requirement: external command outcome 必须保留 transport 与 domain 边界
+
+runner MUST 区分 spawn failure、non-zero terminal exit、confirmed timeout cancellation 与 `outcome-unknown`。adapter 或 caller MUST NOT 把 transport ambiguity 伪装为 domain failure/success。
+
+#### Scenario: caller 在 timeout 后恢复
+
+- **WHEN** write-side external command 返回 `outcome-unknown`
+- **THEN** caller MUST 先检查 expected persisted identity 或 authoritative external state
+- **AND** MUST NOT 假定操作未发生
 

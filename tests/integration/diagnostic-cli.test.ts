@@ -30,6 +30,7 @@ async function repoFixture(options: { activeChange?: boolean; verification?: str
       '  - key: E1',
       '    id: diagnostic-cli',
       `    state: ${options.activeChange === false ? 'planned' : 'active'}`,
+      '    architectureImpact: false',
       '    required: true',
       '    dependsOn: []',
     ].join('\n'),
@@ -143,8 +144,10 @@ describe('diagnostic CLI process surface', () => {
   it('returns exit 2 for usage/discovery failures and preserves --version', async () => {
     const root = await createTempDir();
     roots.push(root);
-    assert.equal((await runCli({ argv: ['unknown'], cwd: root })).exitCode, 2);
+    const unknown = await runCli({ argv: ['unknown'], cwd: root });
+    assert.equal(unknown.exitCode, 2);
     assert.equal((await runCli({ argv: ['status'], cwd: root })).exitCode, 2);
+    assert.equal((await runCli({ argv: ['explore', '--result'], cwd: root })).exitCode, 2);
     assert.equal((await runCli({ argv: ['--version'], cwd: root })).stdout, '0.1.0\n');
   });
 });

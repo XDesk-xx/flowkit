@@ -1,0 +1,48 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-propose",
+    "executionStatus": "completed",
+    "summary": "已按 006 Reviewer 的两个 Author-actionable blockers 修订 Q1 Proposal。Q1-RP-001：mixed author+non-author review 继续 fail-closed，旧 matching Review 含任一 non-author authority 时 Author revise 仍被拒绝；但相关 non-author authority fact 实际到位后，pure 或 mixed verdict 都可显式 direct re-review unchanged target，创建新的 Reviewer generation 重新评估完整 target，只有新 matching Review 变成 author-only 后才允许 revise；next 仍 blocked，不自动 review，也未引入 authority-event ledger。Q1-RP-002：affected capabilities 从六个补全为七个，新增 flowkit-diagnostic-cli delta；flowkit next 仅按既有 blocked 格式呈现 non-author-review-blocker / delivery-behavior-not-implemented，flowkit doctor 对二者固定映射 warning，CLI 不复制 Policy decision tree。Proposal/Design/Tasks/相关 delta specs 已同步，OpenSpec 1.7 strict validation 通过；未修改 production/tests/canonical docs/specs，未运行 Delivery Full Test。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/core-contract-alignment/proposal.md",
+        "versionFingerprint": "cc9408f32d247ac6addaaa984f696c45429107420580648c3cb2d1957da59765",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/core-contract-alignment/design.md",
+        "versionFingerprint": "2ab39177956b860797afac49b02ad693e2067671d8a533832a15ef2d1762f843",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/core-contract-alignment/tasks.md",
+        "versionFingerprint": "cba29c725bf75fb7e65da4e250ecbf06c5653519c47f7255cd15bf86f6900db6",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/core-contract-alignment/specs/flowkit-core-model/spec.md",
+        "versionFingerprint": "b47af40f2fc6f6811c69be9cb3ac4412500142dcfb7c4288afbb89eca3f11b07",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/core-contract-alignment/specs/flowkit-policy-engine/spec.md",
+        "versionFingerprint": "fdd32b2f53babeb7c1bd557a44fd7d2b5ae0fa4140ede25c8e75206b7b7641c8",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/core-contract-alignment/specs/flowkit-diagnostic-cli/spec.md",
+        "versionFingerprint": "1bbbe157892f60e51b6274acd43c543bd151f3477d0c55d5bf278b9b28b9ed77",
+        "kind": "produced-artifact"
+      }
+    ],
+    "consumedInputRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/core-contract-alignment/20260810-006-review-propose/result.json",
+        "versionFingerprint": "ecb18b20011d56e99a293c4aa804345bf32fff9dd11fa921467360e6f4835972",
+        "kind": "run-result"
+      }
+    ],
+    "nextActionRecommendation": "review-propose"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-apply",
+    "executionStatus": "completed",
+    "summary": "关闭 B1-RA-003/B1-RA-004：Run preparation 现在按 Action mutation boundary 区分 immutable current target 与 Action-owned mutable progress，review-explore/review-propose 的 reviewed target current-byte drift 会 PENDING_INPUT_DRIFT，而 Apply/revise-apply 自有 tasks/verification progress 继续 same-run resume；同时新增 persisted pending archive recovery seam，从 .flowkit/runs 定位唯一既有 archive execution，并在 OpenSpec relocation 或 Change completed 后恢复该 Change 的 persisted Run/Review lineage、验证 Owner/Review/Verification/contract generation 后恢复同一 runId。completed Change 且无 pending archive 不会创建新 archive Run；Checkpoint 仍非 Action。Focused 87/87、affected 609/609、typecheck/lint/build/quality/OpenSpec strict 全通过，Delivery Full Test 未运行。",
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/lean-run-and-action-package/20260811-042-review-apply/result.json",
+      "versionFingerprint": "6033e17f55a139752d07fa9f9e36506ab38d0979626dd6341c43a6e5207fde26",
+      "kind": "run-result"
+    }
+  }
+}

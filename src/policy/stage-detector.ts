@@ -11,7 +11,8 @@
  */
 
 import type { ChangeAction } from '../domain/actions.js';
-import type { RunFact } from '../facts/formal-fact-snapshot.js';
+import type { FormalFactSnapshot, RunFact } from '../facts/formal-fact-snapshot.js';
+import { projectCurrentContractResetLifecycle } from '../facts/generation-resolver.js';
 
 // ---------------------------------------------------------------------------
 // Stage
@@ -68,8 +69,8 @@ function compareRunIdDesc(a: string, b: string): number {
 /**
  * Return the completed Runs of the active Change, newest-first.
  *
- * Delivery-level Runs (`changeId` absent) and Runs of other Changes are
- * excluded. Only `completed` Runs participate in stage detection —
+ * Historical Delivery-level Runs are excluded by the formal-fact Reader; Runs
+ * of other Changes are excluded here. Only `completed` Runs participate in stage detection —
  * `failed`/`cancelled` Runs do not advance the stage.
  */
 export function completedRunsForChange(
@@ -108,6 +109,38 @@ export function detectStage(
     }
   }
   // No completed Run → Change just activated → explore stage.
+  return 'explore';
+}
+
+
+
+/**
+ * Detect the current lifecycle stage using the same bounded Contract Reset
+ * projection consumed by Policy/preparation. A reset starts a fresh Proposal
+ * generation while preserving the approved Explore discovery, so when the
+ * projected Runs contain only Explore lineage the current stage is `propose`.
+ */
+export function detectCurrentStage(
+  snapshot: Pick<FormalFactSnapshot, 'runs' | 'reviewVerdicts' | 'ownerDecisionFacts'>,
+  changeId: string,
+): Stage {
+  const current = projectCurrentContractResetLifecycle(snapshot, changeId);
+  const stage = detectStage(current.runs, changeId);
+  if (current.resetRefs.length === 0 || stage !== 'explore') return stage;
+
+  const completedExplore = completedRunsForChange(current.runs, changeId)
+    .find((run) => run.action === 'explore' || run.action === 'revise-explore');
+  if (completedExplore === undefined) return 'explore';
+  const approvedExploreReview = completedRunsForChange(current.runs, changeId)
+    .filter((run) => run.action === 'review-explore')
+    .map((run) => current.reviewVerdicts.find((verdict) => verdict.reviewRunId === run.runId))
+    .find((verdict) => verdict !== undefined);
+  if (
+    approvedExploreReview?.verdict === 'approved'
+    && approvedExploreReview.reviewedRunId === completedExplore.runId
+  ) {
+    return 'propose';
+  }
   return 'explore';
 }
 

@@ -131,7 +131,7 @@ Verification/process tests 在 Windows 上遇到 `.cmd` / `.bat` launcher 时 MU
 
 ### Requirement: verify:full 必须固定 Full Test Plan 但不能拥有 Owner authorization
 
-`npm run verify:full` MUST 以固定 fail-fast 顺序执行 `quality → typecheck → lint → build → OpenSpec validate --all --strict → test:full`，并记录每项状态与耗时。该命令是项目验证工具，不是 Flowkit Full Test Action；执行命令本身 MUST NOT 创建或推断 Owner authorization、`fullTestStatus=passed` 或 Delivery finalization eligibility。
+`npm run verify:full` MUST 以固定 fail-fast 顺序执行 `quality → typecheck → lint → build → OpenSpec validate --all --strict → test:full`，并记录每项状态与耗时。OpenSpec strict step 与 public `test:full` MUST消费同一个正式 resolved OpenSpec executable authority；在启动 Full Test Node children 前 MUST将该 resolved identity 作为 execution context传播给 required real OpenSpec conformance target。Required real OpenSpec integration suite MUST实际执行，MUST NOT因为 executable context 缺失而 silent-skip/zero-test success。该命令是项目验证工具，不是 Flowkit Full Test Action；执行命令本身 MUST NOT 创建或推断 Owner authorization、`fullTestStatus=passed` 或 Delivery finalization eligibility。
 
 #### Scenario: verify:full 全部通过
 - **WHEN** 所有聚合检查成功
@@ -148,6 +148,12 @@ Verification/process tests 在 Windows 上遇到 `.cmd` / `.bat` launcher 时 MU
 - **AND** Flowkit 尚未进入 Owner-authorized Delivery Full Test Action
 - **THEN** 该执行 MUST 只作为项目 verification evidence
 - **AND** MUST NOT 自动更新 Delivery `fullTestStatus` 或绕过 Owner boundary
+
+#### Scenario: real OpenSpec conformance 不得 silent skip
+- **WHEN** frozen Full Test Plan包含 required real OpenSpec integration coverage
+- **THEN** public `test:full` MUST向该 physical suite传播正式 resolved OpenSpec executable identity并真实执行 required cases
+- **AND** executable resolution failure或 real-target failing sentinel MUST使 verification command non-zero
+- **AND** zero-test/suite-skip MUST NOT满足 Full Test Plan
 
 ### Requirement: Verification timing budget 只能告警机器成本
 
@@ -191,21 +197,25 @@ F1 MUST 创建 `docs/core-release-candidate.md` 作为内部 Core RC candidate �
 
 ### Requirement: Delivery Full Test 只 qualification 已 checkpoint 的 RC candidate
 
-F1 completed + archived + checkpointed 后，Delivery MAY 按既有 Policy 进入 `awaiting-user-decision → authorized → full-test`。Delivery Full Test passed MUST 表示既有 checkpointed RC candidate 获得 Delivery-level qualification/acceptance，MUST NOT 被解释为“现在才生成 F1 core release candidate”。Full Test failed MUST 使用既有 corrective Change lifecycle，MUST NOT reopen F1。
+F1 completed + archived + checkpointed 后，Delivery MAY 按既有 Owner authorization contract 进入 `awaiting-user-decision → authorized`，随后由 Delivery-level Full Test behavior 对既有 checkpointed RC candidate 进行 qualification。Delivery Full Test MUST NOT 被表示为 Standard `full-test` Action/Run。Delivery Full Test passed MUST 表示既有 checkpointed RC candidate 获得 Delivery-level qualification/acceptance，MUST NOT 被解释为“现在才生成 F1 core release candidate”。Full Test failed MUST 使用既有 corrective Change lifecycle，MUST NOT reopen F1。
 
 #### Scenario: F1 checkpoint 后等待 Full Test authorization
+
 - **WHEN** F1 required output 已形成且 F1 completed/checkpointed
 - **AND** 所有 required Changes 均 completed/checkpointed
-- **THEN** Delivery MUST 按现有 Policy 等待 Owner authorize Full Test
+- **THEN** Delivery MUST 等待 Owner authorize Full Test
 - **AND** MUST NOT 要求 F1 再生成 RC artifact
+- **AND** MUST NOT 创建 `full-test` Standard Run
 
 #### Scenario: Full Test passed qualification candidate
-- **WHEN** Owner-authorized Delivery Full Test 对 checkpointed RC candidate passed
+
+- **WHEN** Owner-authorized Delivery Full Test behavior 对 checkpointed RC candidate passed
 - **THEN** 该 candidate MUST 被视为获得 Delivery-level qualification/acceptance
 - **AND** MUST NOT reopen F1 或产生第二份 F1 RC required output
 
 #### Scenario: Full Test failed 不 reopen F1
-- **WHEN** Owner-authorized Delivery Full Test failed
+
+- **WHEN** Owner-authorized Delivery Full Test behavior failed
 - **THEN** F1 MUST 保持 completed/archived
 - **AND** 后续修复 MUST 通过既有 owner-authorized corrective Change lifecycle
 - **AND** 修复后 MUST 再次等待 Owner authorize Full Test

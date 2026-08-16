@@ -1,0 +1,19 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "explore",
+    "executionStatus": "completed",
+    "summary": "G1 Explore 按 flowkit-explore-skill-v2 完成 Risk Scan 与 CLI scope、single-action authority、checkout/resume、Change E2E primitives、Verification closure、performance/convergence、verify authority七类 feasibility proof；证明可进入薄 CLI Proposal，拒绝 auto-loop、第二 Verification truth、Registry/cache platform 与将 Checkpoint/Full Test/Finalize 做成 Run。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/explore.md",
+        "versionFingerprint": "5817b891cbaedd379a928b5a0389b4f4fc007bb4ec7e14819a189beb6aee91ab",
+        "kind": "produced-artifact"
+      }
+    ]
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "c3f075bfd88756d315ba2a53bf5654e64f882b5b7d53a4874982398f587cda45"
+  }
+}

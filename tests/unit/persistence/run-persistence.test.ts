@@ -1,4 +1,4 @@
-import { describe, it, before, after } from 'node:test';
+import { describe, it, before, after, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdir, readFile, rm, readdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -13,6 +13,7 @@ import {
 import type { ContextFile } from '../../../src/persistence/serialization.js';
 import { validateContextFile } from '../../../src/persistence/serialization.js';
 import { computeResultFileHash } from '../../../src/persistence/result-ref-adapter.js';
+import { ACTION_DEFINITIONS } from '../../../src/domain/actions.js';
 
 // ---------------------------------------------------------------------------
 // Test fixture helpers
@@ -67,15 +68,42 @@ describe('createRun', () => {
     const contextJson = await readFile(join(runDir, 'context.json'), 'utf-8');
     assert.ok(actionMd.includes('explore'));
     const ctx = JSON.parse(contextJson);
-    assert.equal(ctx.schemaVersion, 2);
+    assert.equal(ctx.schemaVersion, 4);
     assert.equal(ctx.runId, '20260806-001-explore');
   });
 
-  it('writes context.json with schemaVersion: 2 + full C1 validation (task 12.62)', async () => {
-    const runDir = await createRun(createRunInput({ runId: '20260806-002-propose' }));
+  it('writes current context.json with schemaVersion: 4 while retaining v2/v3 read compatibility', async () => {
+    const runDir = await createRun(createRunInput({ runId: '20260806-002-explore' }));
     const contextJson = await readFile(join(runDir, 'context.json'), 'utf-8');
     const ctx = validateContextFile(JSON.parse(contextJson));
-    assert.equal(ctx.schemaVersion, 2);
+    assert.equal(ctx.schemaVersion, 4);
+  });
+
+  it('writes a closed v5 ContextFile with a paired v2 ActionPackage when explicitly requested', async () => {
+    const runId = '20260806-001-explore';
+    const deliveryId = 'D5';
+    const semanticInputFingerprint = 'a'.repeat(64);
+    const runDir = await createRun(createRunInput({
+      runId,
+      deliveryId,
+      deliveryRunsDir: join(tempRoot, '.flowkit', 'runs', deliveryId),
+      contextVersion: 5,
+      canonicalBase: 'b'.repeat(40),
+      applicableFactRefs: [],
+      semanticInputFingerprint,
+      actionPackage: {
+        schemaVersion: 2,
+        run: { runId, deliveryId, changeId: 'C1', action: 'explore', role: 'author', semanticInputFingerprint },
+        definition: ACTION_DEFINITIONS.explore,
+        contractRefs: [],
+        handoffRefs: [],
+        ownerAuthorizationRefs: [],
+        requiredResultContract: ACTION_DEFINITIONS.explore.terminalContract,
+      },
+    }));
+    const context = validateContextFile(JSON.parse(await readFile(join(runDir, 'context.json'), 'utf8')));
+    assert.equal(context.schemaVersion, 5);
+    assert.equal(context.actionPackage.schemaVersion, 2);
   });
 
   it('staging directory is invisible to readdir (task 3.6, 12.12)', async () => {
@@ -121,20 +149,36 @@ describe('createRun', () => {
     assert.ok(entries.every((e) => !e.startsWith('.tmp-20260806-006')));
   });
 
-  it('supports Delivery-level Run (no changeId, task 12.34)', async () => {
-    const runDir = await createRun(
-      createRunInput({
-        runId: '20260806-007-full-test',
-        changeKey: undefined,
-        changeId: undefined,
-        action: 'full-test',
-        role: 'owner',
-      }),
+  it('rejects Run-ID action suffix mismatch before pending publish', async () => {
+    await assert.rejects(
+      createRun(createRunInput({ runId: '20260806-005-propose', action: 'explore' })),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'RUN_ID_ACTION_MISMATCH',
     );
-    const contextJson = await readFile(join(runDir, 'context.json'), 'utf-8');
-    const ctx = JSON.parse(contextJson);
-    assert.equal(ctx.changeId, undefined);
-    assert.equal(ctx.changeKey, undefined);
+  });
+
+  it('rejects Action→Role mismatch before pending publish', async () => {
+    await assert.rejects(
+      createRun(createRunInput({ runId: '20260806-006-explore', action: 'explore', role: 'reviewer' })),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'ACTION_ROLE_MISMATCH',
+    );
+  });
+
+  it('rejects duplicate Delivery-wide NNN across different Change directories', async () => {
+    await createRun(createRunInput({ runId: '20260806-007-explore', changeId: 'C1' }));
+    await assert.rejects(
+      createRun(createRunInput({ runId: '20260806-007-explore', changeId: 'C2' })),
+      (e: unknown) => e instanceof FlowkitError && (e.code === 'RUN_ID_NNN_DUPLICATE' || e.code === 'RUN_ID_NNN_NOT_MONOTONIC'),
+    );
+  });
+
+  it('rejects retired Delivery behavior as a current Run', async () => {
+    await assert.rejects(
+      () => createRun(createRunInput({
+        runId: '20260806-007-full-test',
+        action: 'full-test' as never,
+      })),
+      (e: unknown) => e instanceof FlowkitError,
+    );
   });
 });
 
@@ -340,7 +384,7 @@ describe('completeRun publish protocol (fs.link / assertMutable / race)', () => 
 
   it('does not depend on pre-existing exists check (task 12.11)', async () => {
     // Two concurrent writers: both call completeRun; only one succeeds.
-    const runDir = await writeExplore('20260806-016-explore');
+    const runDir = await writeExplore('20260806-020-explore');
     const [r1, r2] = await Promise.allSettled([
       completeRun(runDir, { executionStatus: 'completed', summary: 'race' }),
       completeRun(runDir, { executionStatus: 'completed', summary: 'race2' }),
@@ -490,8 +534,8 @@ async function setupApprovedProposal(changeId: string): Promise<void> {
 }
 
 describe('Q2 current authority boundary', () => {
-  before(makeTempRoot);
-  after(cleanupTempRoot);
+  beforeEach(makeTempRoot);
+  afterEach(cleanupTempRoot);
 
   it('Core derives explore produced ref from current bytes', async () => {
     const c = 'Q2-explore-ref';
@@ -543,6 +587,36 @@ describe('Q2 current authority boundary', () => {
     );
   });
 
+  it('revise-propose rejects a matching non-author changes-requested Review at persistence entry', async () => {
+    const c = 'Q2-revise-owner-blocker';
+    await setupApprovedExplore(c);
+    const p = await createRun(createRunInput({
+      runId: '20260806-203-propose', changeId: c, action: 'propose', consumedRunId: '20260806-202-review-explore',
+    }));
+    await writeProposalArtifacts(c);
+    await completeRun(p, { executionStatus: 'completed', summary: 'P0' });
+    const review = await createRun(createRunInput({
+      runId: '20260806-204-review-propose', changeId: c, action: 'review-propose', role: 'reviewer', reviewedRunId: '20260806-203-propose',
+    }));
+    await completeRun(review, {
+      executionStatus: 'completed', summary: 'CR', reviewVerdict: 'changes-requested',
+      reviewFindings: [{ id: 'F-owner', severity: 'blocking', blockingAuthority: 'owner', title: 'owner decision', problem: 'needs owner fact', contractRef: 'spec:owner', invariant: 'Owner fact must exist', evidence: ['owner fact absent'], impact: 'proposal cannot progress', requiredOutcome: 'Owner supplies the required fact.', acceptance: ['Owner fact is admitted.'] }],
+      reviewFindingConvergence: [],
+    });
+    await assert.rejects(
+      () => createRun(createRunInput({
+        runId: '20260806-205-revise-propose', changeId: c, action: 'revise-propose',
+        sourceReviewRun: '20260806-204-review-propose', sourceReviewVerdict: 'changes-requested',
+      })),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED' && /author-only/.test(e.message),
+    );
+    const rereview = await createRun(createRunInput({
+      runId: '20260806-205-review-propose', changeId: c, action: 'review-propose', role: 'reviewer', reviewedRunId: '20260806-203-propose',
+    }));
+    const rereviewContext = JSON.parse(await readFile(join(rereview, 'context.json'), 'utf-8'));
+    assert.equal(rereviewContext.reviewedRunId, '20260806-203-propose');
+  });
+
   it('revise-propose records a complete current proposal bundle with no predecessor overlay', async () => {
     const c = 'Q2-revise-full';
     await setupApprovedExplore(c);
@@ -556,7 +630,8 @@ describe('Q2 current authority boundary', () => {
     }));
     await completeRun(review, {
       executionStatus: 'completed', summary: 'CR', reviewVerdict: 'changes-requested',
-      reviewFindings: [{ id: 'F1', severity: 'blocking', title: 'fix', problem: 'x', requiredChange: 'revise' }],
+      reviewFindings: [{ id: 'F1', severity: 'blocking', blockingAuthority: 'author', title: 'fix', problem: 'x', contractRef: 'spec:proposal', invariant: 'Proposal must satisfy the contract', evidence: ['fixture mismatch'], impact: 'proposal cannot be approved', requiredOutcome: 'Revise the proposal.', acceptance: ['Proposal satisfies the contract.'] }],
+      reviewFindingConvergence: [],
     });
     const revise = await createRun(createRunInput({
       runId: '20260806-205-revise-propose', changeId: c, action: 'revise-propose',
@@ -644,5 +719,103 @@ describe('Q2 current authority boundary', () => {
       () => completeRun(run, { executionStatus: 'completed', summary: 'x', consumedRunIds: ['../bad'] }),
       (e: unknown) => e instanceof FlowkitError,
     );
+  });
+});
+
+describe('D1 Reviewer Finding v2 convergence', () => {
+  function blockingFinding(id: string, contractRef = 'spec:d1', invariant = 'D1 invariant') {
+    return {
+      id,
+      severity: 'blocking' as const,
+      title: `Finding ${id}`,
+      problem: `Problem ${id}`,
+      contractRef,
+      invariant,
+      evidence: [`evidence:${id}`],
+      impact: `impact:${id}`,
+      blockingAuthority: 'author' as const,
+      requiredOutcome: `resolve:${id}`,
+      acceptance: [`accepted:${id}`],
+    };
+  }
+
+  async function setupReviewedExplore(changeId: string, runId = '20260806-301-explore') {
+    await writeExploreArtifact(changeId);
+    const explore = await createRun(createRunInput({ runId, changeId, action: 'explore' }));
+    await completeRun(explore, { executionStatus: 'completed', summary: 'explore' });
+    return explore;
+  }
+
+  it('writes versioned complete findings and validates direct re-review new/still-open/resolved convergence', async () => {
+    const c = 'D1-finding-convergence';
+    await setupReviewedExplore(c);
+    const r1 = await createRun(createRunInput({ runId: '20260806-302-review-explore', changeId: c, action: 'review-explore', role: 'reviewer', reviewedRunId: '20260806-301-explore' }));
+    await completeRun(r1, {
+      executionStatus: 'completed', summary: 'R1', reviewVerdict: 'changes-requested',
+      reviewFindings: [blockingFinding('F1')], reviewFindingConvergence: [],
+    });
+    const raw1 = JSON.parse(await readFile(join(r1, 'result.json'), 'utf8'));
+    assert.equal(raw1.reviewFindingSchemaVersion, 2);
+    assert.deepEqual(raw1.reviewFindingConvergence, []);
+
+    const r2 = await createRun(createRunInput({ runId: '20260806-303-review-explore', changeId: c, action: 'review-explore', role: 'reviewer', reviewedRunId: '20260806-301-explore' }));
+    await completeRun(r2, {
+      executionStatus: 'completed', summary: 'R2', reviewVerdict: 'changes-requested',
+      reviewFindings: [blockingFinding('F1'), blockingFinding('F2')],
+      reviewFindingConvergence: [
+        { findingId: 'F1', state: 'still-open' },
+        { findingId: 'F2', state: 'new' },
+      ],
+    });
+
+    const r3 = await createRun(createRunInput({ runId: '20260806-304-review-explore', changeId: c, action: 'review-explore', role: 'reviewer', reviewedRunId: '20260806-301-explore' }));
+    await completeRun(r3, {
+      executionStatus: 'completed', summary: 'R3', reviewVerdict: 'changes-requested',
+      reviewFindings: [blockingFinding('F2')],
+      reviewFindingConvergence: [
+        { findingId: 'F1', state: 'resolved' },
+        { findingId: 'F2', state: 'still-open' },
+      ],
+    });
+  });
+
+  it('supports superseded + new and rejects duplicate IDs or same-ID identity drift', async () => {
+    const c = 'D1-finding-identity';
+    await setupReviewedExplore(c, '20260806-306-explore');
+    const r1 = await createRun(createRunInput({ runId: '20260806-307-review-explore', changeId: c, action: 'review-explore', role: 'reviewer', reviewedRunId: '20260806-306-explore' }));
+    await completeRun(r1, {
+      executionStatus: 'completed', summary: 'R1', reviewVerdict: 'changes-requested',
+      reviewFindings: [blockingFinding('OLD')], reviewFindingConvergence: [],
+    });
+
+    const duplicate = await createRun(createRunInput({ runId: '20260806-308-review-explore', changeId: c, action: 'review-explore', role: 'reviewer', reviewedRunId: '20260806-306-explore' }));
+    await assert.rejects(
+      completeRun(duplicate, {
+        executionStatus: 'completed', summary: 'duplicate', reviewVerdict: 'changes-requested',
+        reviewFindings: [blockingFinding('OLD'), blockingFinding('OLD')],
+        reviewFindingConvergence: [{ findingId: 'OLD', state: 'still-open' }],
+      }),
+      (error: unknown) => error instanceof FlowkitError && error.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+
+    const identityDrift = await createRun(createRunInput({ runId: '20260806-309-review-explore', changeId: c, action: 'review-explore', role: 'reviewer', reviewedRunId: '20260806-306-explore' }));
+    await assert.rejects(
+      completeRun(identityDrift, {
+        executionStatus: 'completed', summary: 'drift', reviewVerdict: 'changes-requested',
+        reviewFindings: [blockingFinding('OLD', 'spec:changed')],
+        reviewFindingConvergence: [{ findingId: 'OLD', state: 'still-open' }],
+      }),
+      (error: unknown) => error instanceof FlowkitError && error.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+
+    const supersede = await createRun(createRunInput({ runId: '20260806-310-review-explore', changeId: c, action: 'review-explore', role: 'reviewer', reviewedRunId: '20260806-306-explore' }));
+    await completeRun(supersede, {
+      executionStatus: 'completed', summary: 'supersede', reviewVerdict: 'changes-requested',
+      reviewFindings: [blockingFinding('NEW')],
+      reviewFindingConvergence: [
+        { findingId: 'OLD', state: 'superseded', supersededByFindingId: 'NEW' },
+        { findingId: 'NEW', state: 'new' },
+      ],
+    });
   });
 });

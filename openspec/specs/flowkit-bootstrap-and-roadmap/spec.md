@@ -459,14 +459,14 @@ owner 明确授权的有界例外。符合该边界时 MAY 执行 metadata-only 
 
 面向人的说明性内容默认 MUST 使用简体中文；Action 名、schema key、CLI/code identifier、path、error code、enum 等机器/代码标识 MAY 保持英文。
 
-Reviewer MUST 只读审查 reviewed candidate；除 Reviewer-owned Run/Review artifact 外 MUST NOT 修改 Author artifacts、production code、tests 或 Manifest。Reviewer 发现问题 MUST 通过 Findings/Verdict 返回，在 `changes-requested` 后由 Author 执行对应 Revision；Reviewer MUST NOT 替 Owner 授权 Archive、Checkpoint、Full Test 或 Finalize。
+Reviewer MUST 只读审查 reviewed candidate；除 Reviewer-owned Run/Review artifact 外 MUST NOT 修改 Author artifacts、production code、tests 或 Manifest。Reviewer 发现问题 MUST 通过 typed Findings/Verdict 返回。`changes-requested` 只表示 target 不可批准；只有 blocking findings 全部属于 `blockingAuthority=author` 时才交回 Author 执行对应 Revision。owner / verification / external blocker MUST 停在各自 authority boundary，MUST NOT 通过 Author no-op revise 关闭。Reviewer MUST NOT 替 Owner 授权 Archive、Checkpoint、Full Test 或 Finalize。
 
 #### Scenario: AGENTS 不成为流程 authority
 
 - **WHEN** AGENTS 描述 Agent 操作规则
 - **THEN** MUST NOT 自己决定唯一下一 Action
 - **AND** MUST NOT 覆盖 OpenSpec Change contract
-- **AND** MUST NOT创造 Owner authorization
+- **AND** MUST NOT 创造 Owner authorization
 
 #### Scenario: 人类可读内容默认简体中文
 
@@ -474,12 +474,50 @@ Reviewer MUST 只读审查 reviewed candidate；除 Reviewer-owned Run/Review ar
 - **THEN** 默认 MUST 使用简体中文
 - **AND** 机器/代码标识 MAY 保持英文
 
-#### Scenario: Reviewer mutation boundary
+#### Scenario: Reviewer mutation 与 blocker authority boundary
 
 - **WHEN** Reviewer 执行 review-*
 - **THEN** reviewed candidate MUST 只读
 - **AND** Reviewer MAY 写自己的 Review Run/artifact
 - **AND** MUST NOT 修改 Author artifact、production code、tests 或 Manifest
-- **AND** changes-requested MUST 交回 Author 修复
+- **AND** blocking finding MUST 声明 `blockingAuthority`
+- **AND** author-only blocker MAY 进入 Author Revision
+- **AND** non-author blocker MUST NOT 机械交回 Author 修复
 - **AND** Reviewer MUST NOT 自行授予 Archive、Checkpoint、Full Test 或 Finalize
 
+### Requirement: A1 product write-side 必须取代后续 Bootstrap 手工 creation/activation
+
+A1 可用后，正常后续 Change 的 Delivery/Change creation、Owner provenance 与 activation MUST 使用 A1 product write-side；Bootstrap 手工 mutation 只保留本 Delivery 自举历史与 emergency/recovery 语境。Activation 继续不是 Git boundary，且成功 activation 的 Manifest/OpenSpec metadata 变化 MUST 随当前 Change 正常工作进入后续 Checkpoint。
+
+#### Scenario: 正常 activation 不创建 Change Start Commit
+- **WHEN** A1 product activation 成功
+- **THEN** MUST NOT 创建独立 Change Start Commit
+- **AND** activation bytes MAY 随该 Change 后续工作进入 Change Checkpoint
+
+### Requirement: 历史 Bootstrap Owner strings 必须保持不可升级
+
+A1 MUST NOT 回写或迁移 Q1 001–015 等既有 Run 中的 `ownerAuthorization: explicit/not-required`，也 MUST NOT 从这些字符串生成新的 `ownerDecisions`。新 Owner provenance contract 从 A1 product write-side 启用后适用于新记录。
+
+#### Scenario: checkout 历史 Q1 Runs
+- **WHEN** repository 包含 pre-A1 Bootstrap Run ownerAuthorization strings
+- **THEN** Reader MUST 保持这些 Run bytes 原样
+- **AND** MUST NOT 将其升级成 Owner authority record
+
+### Requirement: pre-A1 architectureImpact compatibility 必须是 frozen bootstrap seam
+
+A1 MUST 把 Base `448fa042de86d07e893bcc51da528f93eb7ced3a` 中已存在 Delivery/Change identities 的 missing `architectureImpact` 视为 bounded Bootstrap compatibility，而不是新 schema 的一般可选字段。Compatibility 只允许 Reader 保留 unknown；不得修改历史 Manifest、不得从其它事实 backfill，也不得让 A1 后新建 Change 省略该字段。
+
+#### Scenario: bootstrap seam 不扩张到 future Change
+- **WHEN** A1 product write-side 已启用
+- **AND** future createDelivery/createChange 创建新的 Change
+- **THEN** `architectureImpact` MUST required and persisted
+- **AND** pre-A1 compatibility MUST NOT 适用于该 Change
+
+### Requirement: Bootstrap 与后续 Runner 必须共享 B1 Standard Run preparation semantics
+
+Bootstrap手工执行与后续 Runner/adapter在创建 current Standard Run时 MUST遵守同一 B1 ActionDefinition、Delivery-wide Run-ID、pending continuation、logical Action Package与logical result admission contract。Bootstrap MAY由人/AI触发单个 Action，但 MUST NOT通过手工选择任意 NNN、错误 Role、provider session identity或自动 while-next loop绕过B1 execution boundary。
+
+#### Scenario: Bootstrap续接 pending Run
+- **WHEN**Bootstrap会话变化但current pending Run与semantic input仍相同
+- **THEN**必须继续同一 Run
+- **AND** MUST NOT仅因新会话创建新 NNN

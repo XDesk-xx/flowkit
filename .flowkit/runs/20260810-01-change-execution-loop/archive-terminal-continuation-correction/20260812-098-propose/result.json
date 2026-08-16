@@ -1,0 +1,45 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "propose",
+    "executionStatus": "completed",
+    "summary": "Owner Contract Reset 后重新建立 D2 Proposal generation：保留 archive continuation 修复与 canonical checkpoint scenario identity，并冻结 reset-currentness 在 stage/lineage/next/preparation 间一致、fresh generation 必须 propose→review-propose→apply→review-apply→archive 的极窄 contract。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/archive-terminal-continuation-correction/design.md",
+        "versionFingerprint": "5259444b4401c27b52eaf2752bb1d00f99ecc5b336cbaad91d6e337288425022",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-terminal-continuation-correction/proposal.md",
+        "versionFingerprint": "eb8f1b279ca22dd4816f2879f46d9f5b826ca4385f04bc90d0eeb52c7250434f",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-terminal-continuation-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "4901012d75b38e913529e9f8324b4221a4f2c0e9991cf7735fa01998d8f3ef34",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-terminal-continuation-correction/specs/flowkit-lean-run-and-action-package/spec.md",
+        "versionFingerprint": "c0d2ae99be4930ec677d6a477ec0e459ba5654e7e9187d87576bc5ea9ddf667d",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-terminal-continuation-correction/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+        "versionFingerprint": "d11fcd8ad87b7e88acdc1068ba4fe4c1b3c56622c21c6a9be5f5dbeb42114790",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-terminal-continuation-correction/specs/flowkit-policy-engine/spec.md",
+        "versionFingerprint": "b4c5b4d182320a856697de55e3969a8e969cd3b35c856afad06b9dd571c018f0",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-terminal-continuation-correction/tasks.md",
+        "versionFingerprint": "2d8c0c91af566007f4956103310eec2ee6573f8cccc84658942609b9e15c160c",
+        "kind": "produced-artifact"
+      }
+    ]
+  }
+}

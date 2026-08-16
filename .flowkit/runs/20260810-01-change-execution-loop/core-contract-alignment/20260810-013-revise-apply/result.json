@@ -1,0 +1,20 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-apply",
+    "executionStatus": "completed",
+    "summary": "关闭 012 的 Q1-RA-001/Q1-RA-002：pre-Q1 revise context 与 old Review finding compatibility 均收窄为 exact persisted identity + raw SHA-256 的 reader-only seam；真实 cumulative snapshot 无 conflicts，current malformed schemaVersion 2 继续 fail closed。",
+    "consumedInputRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/core-contract-alignment/20260810-012-review-apply/result.json",
+        "versionFingerprint": "56568d53fd68a7c71317efeba8e2b8cd9057fba5a84b4516b36ec77de5ff1368",
+        "kind": "run-result"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/core-contract-alignment/20260810-012-review-apply/result.json",
+      "versionFingerprint": "56568d53fd68a7c71317efeba8e2b8cd9057fba5a84b4516b36ec77de5ff1368",
+      "kind": "run-result"
+    }
+  }
+}

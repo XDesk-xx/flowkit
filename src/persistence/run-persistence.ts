@@ -24,27 +24,35 @@
  * `pending` — the deterministic current-Run projection source.
  */
 
-import { link, mkdir, readFile, readdir, rename, rm, stat, unlink, writeFile } from 'node:fs/promises';
+import { link, mkdir, open, readFile, readdir, rename, rm, stat, unlink, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { assertMutable } from '../domain/terminal.js';
 import { validateRun } from '../domain/schema-validator.js';
-import type { Run } from '../domain/types.js';
-import type { ChangeAction, DeliveryAction } from '../domain/actions.js';
+import type { Run, BlockingAuthority, ActionPackageV2, EntryWorkspaceIdentity, CompactEntryWorkspaceIdentity, MutationDeclaration, VersionedAuthorityRef } from '../domain/types.js';
+import { BLOCKING_AUTHORITIES } from '../domain/types.js';
+import { isChangeAction, isRoleAllowedForAction } from '../domain/actions.js';
+import type { ChangeAction } from '../domain/actions.js';
+import { parseRunId } from '../domain/run-id.js';
 import type { ExecutionStatus, ResultRef, ReviewVerdictValue, Role, RunStatus } from '../domain/types.js';
 import { FlowkitError } from '../shared/errors.js';
 import { atomicWriteFile } from '../shared/atomic-write.js';
 import { normalizeSeparators } from '../shared/paths.js';
+import {
+  validateEntryWorkspaceSnapshotRecord,
+  type EntryWorkspaceSnapshot,
+} from '../verification/change-selection/entry-snapshot.js';
 import {
   validateContextFile,
   validateContextFileIdentity,
   validateActionResultWithoutRunRef,
   validateRunResultFileCombination,
   validateReviewVerdictIntegrity,
-  admitC1RunResult,
   validateActionResultApplicability,
+  admitC1RunResult,
   type ContextFile,
   type ContextFileConstraints,
   type RunResultFile,
+  type RunTerminalBinding,
   type ActionResultWithoutRunRef,
   type TerminalRunStatus,
 } from './serialization.js';
@@ -53,8 +61,8 @@ import {
   buildArtifactResultRef,
   computeResultFileHash,
   resolveRunResultPath,
-  resolveSingletonArtifactRef,
-  resolveVerificationSummaryRef,
+  resolveCurrentSingletonArtifactRef,
+  resolveCurrentVerificationSummaryRef,
   enumerateSpecsNamespace,
   readArtifactBytes,
   validateCurrentStageArtifactSet,
@@ -64,12 +72,14 @@ import {
   PRODUCED_ARTIFACT_KIND,
   VERIFICATION_SUMMARY_KIND,
 } from './result-ref-adapter.js';
+import { validateCandidateRunId } from './run-id-fs.js';
+import type { ArchiveMutationGuard, ArchiveEntryOpenSpecProjection } from '../integrations/openspec/openspec-types.js';
 import {
   artifactStage,
   latestCompletedArtifactRunId,
   type LineageFact,
 } from '../facts/generation-resolver.js';
-import type { ReviewFinding } from './serialization.js';
+import type { FindingConvergence, ReviewFinding, ReviewFindingV2 } from './serialization.js';
 
 // ---------------------------------------------------------------------------
 // createRun
@@ -87,13 +97,34 @@ import type { ReviewFinding } from './serialization.js';
 export interface CreateRunInput {
   readonly runId: string;
   readonly deliveryId: string;
-  /** Required for Change-level actions; MUST be absent for Delivery-level. */
-  readonly changeKey?: string;
-  /** Required for Change-level actions; MUST be absent for Delivery-level. */
-  readonly changeId?: string;
-  readonly action: ChangeAction | DeliveryAction;
+  /** Every current Standard Run is Change-scoped. */
+  readonly changeKey: string;
+  readonly changeId: string;
+  readonly action: ChangeAction;
   readonly role: Role;
   readonly ownerAuthorization: string;
+  /** New high-level preparation writes v5; omitted only for bounded historical fixtures. */
+  readonly contextVersion?: 4 | 5;
+  /** Required by all v5 contexts. */
+  readonly canonicalBase?: string;
+  /** Required by all v5 contexts. */
+  readonly applicableFactRefs?: readonly VersionedAuthorityRef[];
+  /** Required by all v5 contexts for exact package reconstruction. */
+  readonly actionPackage?: ActionPackageV2;
+  /** Required only by v5 Apply/revise-apply contexts. */
+  readonly entryWorkspaceIdentity?: EntryWorkspaceIdentity;
+  /** Post-E2 compact Apply identity embedded in context.json; mutually exclusive with entryWorkspaceIdentity. */
+  readonly compactEntryWorkspaceIdentity?: CompactEntryWorkspaceIdentity;
+  /** Required only by v5 Apply/revise-apply contexts. */
+  readonly mutationDeclaration?: MutationDeclaration;
+  /** Required only by v5 Apply/revise-apply contexts; published with the Run. */
+  readonly entryWorkspaceSnapshot?: EntryWorkspaceSnapshot;
+  /** B1 compact semantic input identity persisted in context.json. */
+  readonly semanticInputFingerprint?: string;
+  /** Bootstrap/D1 bounded applicable Owner facts persisted for detached handoff. */
+  readonly ownerFactRefs?: readonly import('../domain/types.js').OwnerFactRef[];
+  /** D2 archive-only keyed OpenSpec entry projection. */
+  readonly archiveEntryOpenSpecProjection?: ArchiveEntryOpenSpecProjection;
   /**
    * Q1: Typed descriptor for the Run whose result.json is the input.
    * Core reads this Run's result.json and derives `context.inputRef`.
@@ -155,6 +186,33 @@ export async function createRun(input: CreateRunInput): Promise<string> {
 
   validateCreateRunDescriptors(input);
 
+  // B1 defense-in-depth: the low-level persistence boundary must not allow
+  // internal callers to bypass Delivery-wide NNN, action suffix or role
+  // invariants even when they skip the high-level preparation service.
+  if (!isChangeAction(input.action as string)) {
+    throw new FlowkitError(
+      'UNKNOWN_ACTION',
+      `Unknown Standard Change Action: ${String(input.action)}`,
+      { runId: input.runId, action: input.action },
+    );
+  }
+  const parsedRunId = parseRunId(input.runId);
+  if (parsedRunId.action !== input.action) {
+    throw new FlowkitError(
+      'RUN_ID_ACTION_MISMATCH',
+      `Run ID action suffix ${parsedRunId.action} does not match formal Action ${input.action}`,
+      { runId: input.runId, action: input.action, suffix: parsedRunId.action },
+    );
+  }
+  if (!isRoleAllowedForAction(input.action, input.role)) {
+    throw new FlowkitError(
+      'ACTION_ROLE_MISMATCH',
+      `Action ${input.action} requires its fixed catalog role, got ${input.role}`,
+      { runId: input.runId, action: input.action, role: input.role },
+    );
+  }
+  await validateCandidateRunId(input.runId, input.deliveryRunsDir);
+
   // 1. Compute the target Run directory and runPath.
   const { runDir, runPath } = computeRunPaths(
     input.deliveryRunsDir,
@@ -204,6 +262,9 @@ export async function createRun(input: CreateRunInput): Promise<string> {
     const contextJsonPath = join(stagingDir, 'context.json');
     await atomicWriteFile(actionMdPath, input.actionMd);
     await atomicWriteFile(contextJsonPath, serializeContextFile(contextFile));
+    if (input.contextVersion === 5 && input.entryWorkspaceSnapshot !== undefined) {
+      await atomicWriteFile(join(stagingDir, 'entry-workspace.json'), `${JSON.stringify(input.entryWorkspaceSnapshot, null, 2)}\n`);
+    }
 
     // 7. Atomically publish via directory rename.
     //
@@ -344,34 +405,20 @@ async function deriveInputRef(input: CreateRunInput): Promise<ResultRef | undefi
  */
 async function readReferencedRunResult(
   deliveryRunsDir: string,
-  changeId: string | undefined,
+  changeId: string,
   runId: string,
 ): Promise<string> {
-  // Q1-RA-005 (defense-in-depth): reject path-shaped / non-Run-ID descriptors
-  // before they can inject path segments into the join below.
   validateRunIdDescriptor(runId);
-
-  // Try same-Change directory first.
-  const candidates: string[] = [];
-  if (changeId !== undefined) {
-    candidates.push(join(deliveryRunsDir, changeId, runId, 'result.json'));
+  const candidate = join(deliveryRunsDir, changeId, runId, 'result.json');
+  try {
+    return await readFile(candidate, 'utf-8');
+  } catch {
+    throw new FlowkitError(
+      'RESULT_REF_TARGET_MISSING',
+      `Referenced Run ${runId} result.json not found or unreadable in Change ${changeId}`,
+      { runId, changeId, candidate },
+    );
   }
-  // Try Delivery root (Delivery-level Run).
-  candidates.push(join(deliveryRunsDir, runId, 'result.json'));
-
-  for (const candidate of candidates) {
-    try {
-      return await readFile(candidate, 'utf-8');
-    } catch {
-      // Try next candidate.
-    }
-  }
-
-  throw new FlowkitError(
-    'RESULT_REF_TARGET_MISSING',
-    `Referenced Run ${runId} result.json not found or unreadable (searched ${candidates.length} locations)`,
-    { runId, changeId, candidates },
-  );
 }
 
 
@@ -419,7 +466,7 @@ async function deriveVerificationInputRef(input: CreateRunInput): Promise<Result
       { action: input.action, runId: input.runId },
     );
   }
-  const logicalRef = resolveVerificationSummaryRef(input.changeId);
+  const logicalRef = await resolveCurrentVerificationSummaryRef(input.repoRoot, input.changeId);
   const content = await readArtifactBytes(input.repoRoot, logicalRef);
   return buildArtifactResultRef(logicalRef, content, VERIFICATION_SUMMARY_KIND);
 }
@@ -769,7 +816,7 @@ async function validateConsumedReviewEntry(input: CreateRunInput, contextFile: C
   }
 }
 
-/** changes-requested Review → revise-* entry handoff. */
+/** Author-only changes-requested Review → revise-* entry handoff. */
 async function validateRevisionEntry(input: CreateRunInput, contextFile: ContextFile): Promise<void> {
   if (!isRevisionAction(input.action)) return;
   const contract = expectedReviewHandoff(input.action)!;
@@ -802,6 +849,14 @@ async function validateRevisionEntry(input: CreateRunInput, contextFile: Context
       { action: input.action, sourceReviewRun: input.sourceReviewRun, reviewAction: review.context.action, verdict: review.verdict },
     );
   }
+  const blockingAuthorities = deriveBlockingAuthoritiesFromReviewResult(review.result);
+  if (blockingAuthorities.length === 0 || blockingAuthorities.some((authority) => authority !== 'author')) {
+    throw new FlowkitError(
+      'SCHEMA_VALIDATION_FAILED',
+      `${input.action} requires an author-only changes-requested source review`,
+      { action: input.action, sourceReviewRun: input.sourceReviewRun, blockingAuthorities },
+    );
+  }
   const expectedRef = buildRunResultRef(
     resolveRunResultPath(input.runsPathPrefix, input.deliveryId, input.changeId, input.sourceReviewRun).replace(/\/result\.json$/, ''),
     review.resultContent,
@@ -820,6 +875,15 @@ async function validateRevisionEntry(input: CreateRunInput, contextFile: Context
   } else {
     await validateReviewVerificationSummaryCurrent(review, input.repoRoot);
   }
+}
+
+function deriveBlockingAuthoritiesFromReviewResult(result: RunResultFile): readonly BlockingAuthority[] {
+  if (result.reviewVerdict !== 'changes-requested') return [];
+  const seen = new Set<BlockingAuthority>();
+  for (const finding of result.reviewFindings ?? []) {
+    if (finding.severity === 'blocking' && finding.blockingAuthority !== undefined) seen.add(finding.blockingAuthority);
+  }
+  return BLOCKING_AUTHORITIES.filter((authority) => seen.has(authority));
 }
 
 /** Read an admitted review verdict for source-review tuple completion validation. */
@@ -878,7 +942,10 @@ export function projectCurrentRun(contextFile: ContextFile): Run {
     action: contextFile.action,
     role: contextFile.role,
     status: 'pending',
-    ...(contextFile.changeId !== undefined && { changeId: contextFile.changeId }),
+    changeId: contextFile.changeId,
+    ...(contextFile.semanticInputFingerprint !== undefined && {
+      semanticInputFingerprint: contextFile.semanticInputFingerprint,
+    }),
     ...(contextFile.inputRef !== undefined && { inputRef: contextFile.inputRef }),
   };
   // MUST pass B1 validateRun.
@@ -1056,11 +1123,15 @@ export interface CompleteRunInput {
   /** Reviewer-owned verdict (completed `review-*` Runs only). */
   readonly reviewVerdict?: ReviewVerdictValue;
   /** Reviewer-owned findings (completed `review-*` Runs only). */
-  readonly reviewFindings?: readonly ReviewFinding[];
+  readonly reviewFindings?: readonly (ReviewFinding | ReviewFindingV2)[];
+  /** D1 v2 previous→current finding convergence (completed review-* only). */
+  readonly reviewFindingConvergence?: readonly FindingConvergence[];
   /** Present → `runStatus = failed` (no actionResult). */
   readonly failureDiagnosis?: string;
   /** Present → `runStatus = cancelled` (no actionResult). */
   readonly cancellationReason?: string;
+  /** E1 Core-derived exact terminal replay binding. Required for every v5 terminal write. */
+  readonly terminalBinding?: RunTerminalBinding;
 }
 
 /**
@@ -1079,7 +1150,119 @@ export async function completeRun(
   validateContextFileIdentity(contextFile, runDir);
   validateCompleteRunInput(contextFile, input);
   const result = await buildRunResultFromDescriptors(contextFile, runDir, input);
+  if (contextFile.action.startsWith('review-') && result.runStatus === 'completed') {
+    await validateReviewFindingConvergenceAgainstPrevious(contextFile, runDir, result);
+  }
   await writeRunResult(runDir, result);
+}
+
+async function validateReviewFindingConvergenceAgainstPrevious(
+  contextFile: ContextFile,
+  runDir: string,
+  result: RunResultFile,
+): Promise<void> {
+  const current = (result.reviewFindings ?? []) as readonly (ReviewFinding | ReviewFindingV2)[];
+  const convergence = result.reviewFindingConvergence ?? [];
+  const previousRunId = await resolvePreviousMatchingReviewRunId(contextFile, runDir);
+  if (previousRunId === undefined) {
+    if (convergence.length !== 0) {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'first matching Review convergence MUST be empty', {
+        runId: contextFile.runId,
+      });
+    }
+    return;
+  }
+
+  const previousPath = join(dirname(runDir), previousRunId, 'result.json');
+  const previousRaw = JSON.parse(await readFile(previousPath, 'utf8')) as RunResultFile;
+  validateRunResultFileCombination(previousRaw);
+  const previous = previousRaw.reviewFindings ?? [];
+  const previousById = new Map(previous.map((finding) => [finding.id, finding] as const));
+  const currentById = new Map(current.map((finding) => [finding.id, finding] as const));
+  const convergenceById = new Map(convergence.map((entry) => [entry.findingId, entry] as const));
+  const union = new Set([...previousById.keys(), ...currentById.keys()]);
+  if (convergenceById.size !== union.size || [...union].some((id) => !convergenceById.has(id))) {
+    throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'reviewFindingConvergence MUST cover previous/current finding union exactly once', {
+      previousRunId,
+    });
+  }
+  for (const id of union) {
+    const prior = previousById.get(id);
+    const now = currentById.get(id);
+    const entry = convergenceById.get(id)!;
+    if (prior !== undefined && now !== undefined) {
+      if (entry.state !== 'still-open') {
+        throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `finding ${id} present in previous/current MUST be still-open`);
+      }
+      if ('contractRef' in prior && 'contractRef' in now && (prior.contractRef !== now.contractRef || prior.invariant !== now.invariant)) {
+        throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `finding ${id} stable identity changed; use superseded + new ID`);
+      }
+      continue;
+    }
+    if (prior === undefined && now !== undefined) {
+      if (entry.state !== 'new') throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `finding ${id} current-only MUST be new`);
+      continue;
+    }
+    if (prior !== undefined && now === undefined && entry.state !== 'resolved' && entry.state !== 'superseded') {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `finding ${id} previous-only MUST be resolved|superseded`);
+    }
+  }
+}
+
+async function resolvePreviousMatchingReviewRunId(
+  contextFile: ContextFile,
+  runDir: string,
+): Promise<string | undefined> {
+  if (contextFile.reviewedRunId === undefined) return undefined;
+  const changeDir = dirname(runDir);
+  const reviewedDir = join(changeDir, contextFile.reviewedRunId);
+  const currentResetRefs = normalizedContractResetRefs(contextFile.ownerFactRefs ?? []);
+  try {
+    const reviewedContext = validateContextFile(JSON.parse(await readFile(join(reviewedDir, 'context.json'), 'utf8')) as unknown);
+    if (
+      (reviewedContext.action === 'revise-explore' || reviewedContext.action === 'revise-propose' || reviewedContext.action === 'revise-apply') &&
+      reviewedContext.sourceReviewRun !== undefined
+    ) {
+      const sourceContext = validateContextFile(JSON.parse(await readFile(join(changeDir, reviewedContext.sourceReviewRun, 'context.json'), 'utf8')) as unknown);
+      const reviewedResetRefs = normalizedContractResetRefs(reviewedContext.ownerFactRefs ?? []);
+      const sourceResetRefs = normalizedContractResetRefs(sourceContext.ownerFactRefs ?? []);
+      if (
+        stableStringifyLocal(reviewedResetRefs) === stableStringifyLocal(currentResetRefs) &&
+        stableStringifyLocal(sourceResetRefs) === stableStringifyLocal(currentResetRefs)
+      ) {
+        return reviewedContext.sourceReviewRun;
+      }
+      return undefined;
+    }
+  } catch {
+    // The ordinary review entry validator owns malformed reviewed/source-target diagnosis.
+  }
+
+  const entries = (await readdir(changeDir, { withFileTypes: true }))
+    .filter((entry) => entry.isDirectory() && entry.name < contextFile.runId)
+    .map((entry) => entry.name)
+    .sort((a, b) => b.localeCompare(a));
+  for (const candidate of entries) {
+    try {
+      const candidateDir = join(changeDir, candidate);
+      const candidateContext = validateContextFile(JSON.parse(await readFile(join(candidateDir, 'context.json'), 'utf8')) as unknown);
+      if (candidateContext.action !== contextFile.action || candidateContext.reviewedRunId !== contextFile.reviewedRunId) continue;
+      if (stableStringifyLocal(normalizedContractResetRefs(candidateContext.ownerFactRefs ?? [])) !== stableStringifyLocal(currentResetRefs)) continue;
+      await readFile(join(candidateDir, 'result.json'));
+      return candidate;
+    } catch {
+      continue;
+    }
+  }
+  return undefined;
+}
+
+function normalizedContractResetRefs(facts: readonly import('../domain/types.js').OwnerFactRef[]): readonly string[] {
+  return facts.filter((fact) => fact.decision === 'contract-reset').map((fact) => fact.ref).sort();
+}
+
+function stableStringifyLocal(value: unknown): string {
+  return JSON.stringify(value);
 }
 
 /** Runtime-validate caller descriptors before filesystem resolution. */
@@ -1101,6 +1284,25 @@ function validateCompleteRunInput(
     for (const runId of input.consumedRunIds) {
       validateRunIdDescriptor(runId);
     }
+  }
+  const terminalStatus = input.failureDiagnosis !== undefined ? 'failed' : input.cancellationReason !== undefined ? 'cancelled' : 'completed';
+  if (contextFile.schemaVersion === 5) {
+    if (input.terminalBinding === undefined) {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'v5 terminal write requires Core-derived terminalBinding', { runId: contextFile.runId });
+    }
+    const isApply = contextFile.action === 'apply' || contextFile.action === 'revise-apply';
+    const compactApply = isApply && 'compactEntryWorkspaceIdentity' in contextFile && contextFile.compactEntryWorkspaceIdentity !== undefined;
+    if (isApply && terminalStatus === 'completed') {
+      if (compactApply && input.terminalBinding.currentVerification === undefined) throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'completed post-E2 Apply terminal requires current verification binding', { runId: contextFile.runId });
+      if (!compactApply && input.terminalBinding.verificationSelection === undefined) throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'completed legacy v5 Apply terminal requires verification-selection binding', { runId: contextFile.runId });
+    }
+    if ((!isApply || terminalStatus !== 'completed') && (input.terminalBinding.verificationSelection !== undefined || input.terminalBinding.currentVerification !== undefined)) {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'verification terminal binding is only allowed on completed v5 Apply/revise-apply', { runId: contextFile.runId });
+    }
+    if (compactApply && input.terminalBinding.verificationSelection !== undefined) throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'post-E2 Apply must not synthesize historical sidecar binding');
+    if (!compactApply && input.terminalBinding.currentVerification !== undefined) throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'legacy v5 Apply must not synthesize current verification binding');
+  } else if (input.terminalBinding !== undefined) {
+    throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'historical v2/v3/v4 terminal writes must not synthesize v5 terminalBinding', { runId: contextFile.runId });
   }
 }
 
@@ -1126,6 +1328,7 @@ async function buildRunResultFromDescriptors(
       runStatus,
       ...(runStatus === 'failed' && { failureDiagnosis: input.failureDiagnosis }),
       ...(runStatus === 'cancelled' && { cancellationReason: input.cancellationReason }),
+      ...(input.terminalBinding !== undefined && { terminalBinding: input.terminalBinding }),
     };
   }
 
@@ -1142,8 +1345,13 @@ async function buildRunResultFromDescriptors(
   return {
     runStatus: 'completed',
     actionResult,
+    ...(input.terminalBinding !== undefined && { terminalBinding: input.terminalBinding }),
     ...(isReviewAction && input.reviewVerdict !== undefined && { reviewVerdict: input.reviewVerdict }),
-    ...(isReviewAction && input.reviewFindings !== undefined && { reviewFindings: input.reviewFindings }),
+    ...(isReviewAction && {
+      reviewFindingSchemaVersion: 2 as const,
+      reviewFindings: input.reviewFindings ?? [],
+      reviewFindingConvergence: input.reviewFindingConvergence ?? [],
+    }),
   };
 }
 
@@ -1181,7 +1389,7 @@ async function deriveActionResult(
   }
 
   return {
-    action: action as ChangeAction | DeliveryAction,
+    action: action as ChangeAction,
     executionStatus: input.executionStatus!,
     summary: input.summary!,
     ...(producedResultRefs !== undefined && { producedResultRefs }),
@@ -1235,7 +1443,7 @@ async function deriveConsumedInputRefs(
   runDir: string,
   consumedRunIds: readonly string[],
 ): Promise<ResultRef[]> {
-  const deliveryRunsDir = deriveDeliveryRunsDir(runDir, contextFile);
+  const deliveryRunsDir = deriveDeliveryRunsDir(runDir);
   const runsPathPrefix = deriveRunsPathPrefix(contextFile);
   const refs: ResultRef[] = [];
   for (const runId of consumedRunIds) {
@@ -1271,7 +1479,7 @@ async function deriveReviewVerdictRef(
       { action: contextFile.action, runId: contextFile.runId },
     );
   }
-  const deliveryRunsDir = deriveDeliveryRunsDir(runDir, contextFile);
+  const deliveryRunsDir = deriveDeliveryRunsDir(runDir);
   const runsPathPrefix = deriveRunsPathPrefix(contextFile);
   const content = await readReferencedRunResult(
     deliveryRunsDir,
@@ -1299,7 +1507,7 @@ async function deriveVerificationSummaryArtifactRef(
   repoRoot: string,
 ): Promise<ResultRef> {
   requireChangeId(contextFile, 'review-apply');
-  const logicalRef = resolveVerificationSummaryRef(contextFile.changeId!);
+  const logicalRef = await resolveCurrentVerificationSummaryRef(repoRoot, contextFile.changeId!);
   const content = await readArtifactBytes(repoRoot, logicalRef);
   return buildArtifactResultRef(logicalRef, content, VERIFICATION_SUMMARY_KIND);
 }
@@ -1318,7 +1526,7 @@ async function buildSingletonArtifactRef(
   changeId: string,
   repoRoot: string,
 ): Promise<ResultRef> {
-  const logicalRef = resolveSingletonArtifactRef(action, tag, changeId);
+  const logicalRef = await resolveCurrentSingletonArtifactRef(repoRoot, action, tag, changeId);
   const content = await readArtifactBytes(repoRoot, logicalRef);
   return buildArtifactResultRef(logicalRef, content, PRODUCED_ARTIFACT_KIND);
 }
@@ -1340,13 +1548,12 @@ function requireChangeId(contextFile: ContextFile, action: string): void {
  * Derive the Delivery runs directory (parent of all Run directories for this
  * Delivery) from the absolute Run directory + ContextFile.
  *
- * - Change-level Run (`changeId` present): `runDir = <deliveryRunsDir>/<changeId>/<runId>`.
- * - Delivery-level Run: `runDir = <deliveryRunsDir>/<runId>`.
+ * Current ContextFile is Change-only, so `runDir` is always
+ * `<deliveryRunsDir>/<changeId>/<runId>`. Historical Delivery-level layouts
+ * are handled by bounded legacy readers, not by current result persistence.
  */
-function deriveDeliveryRunsDir(runDir: string, contextFile: ContextFile): string {
-  return contextFile.changeId !== undefined
-    ? dirname(dirname(runDir))
-    : dirname(runDir);
+function deriveDeliveryRunsDir(runDir: string): string {
+  return dirname(dirname(runDir));
 }
 
 /**
@@ -1494,7 +1701,6 @@ async function readAdmittedSourceReviewVerdicts(
   }
   const deliveryRunsDir = deriveDeliveryRunsDir(
     join(repoRoot, normalizeSeparators(contextFile.runPath)),
-    contextFile,
   );
   // The source review Run is in the same Change directory.
   const changeDir = contextFile.changeId === undefined
@@ -1529,7 +1735,6 @@ async function validateReviewCompletionArtifacts(
   if (contextFile.changeId === undefined || contextFile.reviewedRunId === undefined) return;
   const deliveryRunsDir = deriveDeliveryRunsDir(
     join(repoRoot, normalizeSeparators(contextFile.runPath)),
-    contextFile,
   );
   const changeDir = join(deliveryRunsDir, contextFile.changeId);
 
@@ -1786,17 +1991,12 @@ function computeRunPaths(
   deliveryRunsDir: string,
   runsPathPrefix: string,
   deliveryId: string,
-  changeId: string | undefined,
+  changeId: string,
   runId: string,
 ): { runDir: string; runPath: string } {
-  const segments = [deliveryId];
-  if (changeId !== undefined) {
-    segments.push(changeId);
-  }
-  segments.push(runId);
-
+  const segments = [deliveryId, changeId, runId];
   const relativePart = segments.join('/');
-  const runDir = join(deliveryRunsDir, ...(changeId !== undefined ? [changeId, runId] : [runId]));
+  const runDir = join(deliveryRunsDir, changeId, runId);
   const runPath = `${normalizeSeparators(runsPathPrefix).replace(/\/+$/, '')}/${relativePart}/`;
   return { runDir, runPath };
 }
@@ -1807,16 +2007,73 @@ function buildContextFile(
   inputRef: ResultRef | undefined,
   verificationInputRef: ResultRef | undefined,
 ): ContextFile {
+  if (input.contextVersion === 5) {
+    if (input.canonicalBase === undefined || input.applicableFactRefs === undefined || input.actionPackage === undefined) {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'v5 Run creation requires canonicalBase, applicableFactRefs, and actionPackage');
+    }
+    if (input.action === 'apply' || input.action === 'revise-apply') {
+      if (input.mutationDeclaration === undefined || (input.entryWorkspaceIdentity === undefined) === (input.compactEntryWorkspaceIdentity === undefined)) {
+        throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'v5 Apply creation requires exactly one legacy or compact entry identity plus mutation declaration');
+      }
+      if (input.entryWorkspaceIdentity !== undefined) {
+        if (input.entryWorkspaceSnapshot === undefined) throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'legacy v5 Apply creation requires entry-workspace sidecar snapshot');
+        const entrySnapshot = validateEntryWorkspaceSnapshotRecord(input.entryWorkspaceSnapshot);
+        if (entrySnapshot.canonicalBase !== input.entryWorkspaceIdentity.canonicalBase || entrySnapshot.workspaceFingerprint !== input.entryWorkspaceIdentity.workspaceFingerprint || entrySnapshot.canonicalBase !== input.canonicalBase) {
+          throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'legacy v5 Apply entry workspace snapshot must exactly match context identity and canonical base');
+        }
+      } else if (input.entryWorkspaceSnapshot !== undefined) {
+        throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'post-E2 compact Apply must not create entry-workspace sidecar');
+      }
+      const compact = input.compactEntryWorkspaceIdentity;
+      if (compact !== undefined && compact.canonicalBase !== input.canonicalBase) throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'compact Apply canonical base must equal context canonicalBase');
+      return {
+        schemaVersion: 5, runId: input.runId, deliveryId: input.deliveryId, action: input.action, role: input.role, ownerAuthorization: input.ownerAuthorization,
+        semanticInputFingerprint: input.semanticInputFingerprint ?? '', ...(input.ownerFactRefs !== undefined && { ownerFactRefs: input.ownerFactRefs }), runPath, changeKey: input.changeKey, changeId: input.changeId,
+        ...(inputRef !== undefined && { inputRef }), ...(input.sourceReviewRun !== undefined && { sourceReviewRun: input.sourceReviewRun }), ...(input.sourceReviewVerdict !== undefined && { sourceReviewVerdict: input.sourceReviewVerdict }),
+        canonicalBase: input.canonicalBase, applicableFactRefs: input.applicableFactRefs, actionPackage: input.actionPackage,
+        ...(input.entryWorkspaceIdentity !== undefined && { entryWorkspaceIdentity: input.entryWorkspaceIdentity }),
+        ...(compact !== undefined && { compactEntryWorkspaceIdentity: compact }),
+        mutationDeclaration: input.mutationDeclaration, ...(input.constraints !== undefined && { constraints: input.constraints }),
+      } as ContextFile;
+    }
+    return {
+      schemaVersion: 5,
+      runId: input.runId,
+      deliveryId: input.deliveryId,
+      action: input.action,
+      role: input.role,
+      ownerAuthorization: input.ownerAuthorization,
+      semanticInputFingerprint: input.semanticInputFingerprint ?? '',
+      ...(input.ownerFactRefs !== undefined && { ownerFactRefs: input.ownerFactRefs }),
+      runPath,
+      changeKey: input.changeKey,
+      changeId: input.changeId,
+      ...(inputRef !== undefined && { inputRef }),
+      ...(verificationInputRef !== undefined && { verificationInputRef }),
+      ...(input.sourceReviewRun !== undefined && { sourceReviewRun: input.sourceReviewRun }),
+      ...(input.sourceReviewVerdict !== undefined && { sourceReviewVerdict: input.sourceReviewVerdict }),
+      ...(input.reviewedRunId !== undefined && { reviewedRunId: input.reviewedRunId }),
+      canonicalBase: input.canonicalBase,
+      applicableFactRefs: input.applicableFactRefs,
+      actionPackage: input.actionPackage,
+      ...(input.constraints !== undefined && { constraints: input.constraints }),
+    };
+  }
   const contextFile: ContextFile = {
-    schemaVersion: 2,
+    schemaVersion: 4,
     runId: input.runId,
     deliveryId: input.deliveryId,
     action: input.action,
     role: input.role,
     ownerAuthorization: input.ownerAuthorization,
+    ...(input.semanticInputFingerprint !== undefined && {
+      semanticInputFingerprint: input.semanticInputFingerprint,
+    }),
+    ...(input.ownerFactRefs !== undefined && { ownerFactRefs: input.ownerFactRefs }),
+    ...(input.archiveEntryOpenSpecProjection !== undefined && { archiveEntryOpenSpecProjection: input.archiveEntryOpenSpecProjection }),
     runPath,
-    ...(input.changeKey !== undefined && { changeKey: input.changeKey }),
-    ...(input.changeId !== undefined && { changeId: input.changeId }),
+    changeKey: input.changeKey,
+    changeId: input.changeId,
     ...(inputRef !== undefined && { inputRef }),
     ...(verificationInputRef !== undefined && { verificationInputRef }),
     ...(input.sourceReviewRun !== undefined && { sourceReviewRun: input.sourceReviewRun }),
@@ -1879,6 +2136,70 @@ async function bestEffortUnlink(path: string): Promise<void> {
     await unlink(path);
   } catch {
     // best-effort
+  }
+}
+
+
+// ---------------------------------------------------------------------------
+// C1 OpenSpec archive operational guard persistence
+// ---------------------------------------------------------------------------
+
+function guardIdentity(value: ArchiveMutationGuard | undefined): string {
+  return JSON.stringify(value ?? null);
+}
+
+/** Read the machine-owned archive mutation guard from an archive Run. */
+export async function readArchiveMutationGuard(runDir: string): Promise<ArchiveMutationGuard | undefined> {
+  const context = await readContextFile(runDir);
+  validateContextFileIdentity(context, runDir);
+  if (context.action !== 'archive') {
+    throw new FlowkitError('ARCHIVE_GUARD_NOT_ALLOWED', `Run ${context.runId} is not an archive Run`);
+  }
+  return context.archiveMutationGuard;
+}
+
+/**
+ * Atomic compare-and-set for the sole mutable archive operational field.
+ * A short-lived exclusive lock prevents two local processes from both
+ * observing the same generation and replacing context.json concurrently.
+ */
+export async function compareAndSetArchiveMutationGuard(
+  runDir: string,
+  expected: ArchiveMutationGuard | undefined,
+  nextGuard: ArchiveMutationGuard,
+): Promise<void> {
+  const lockPath = join(runDir, '.archive-guard.lock');
+  let handle;
+  try {
+    handle = await open(lockPath, 'wx');
+  } catch (error) {
+    throw new FlowkitError('ARCHIVE_GUARD_CONCURRENT_UPDATE', 'archive mutation guard is being updated concurrently', {
+      runDir,
+      code: (error as NodeJS.ErrnoException).code,
+    });
+  }
+  try {
+    let terminalExists = false;
+    try { terminalExists = (await stat(join(runDir, 'result.json'))).isFile(); } catch { terminalExists = false; }
+    if (terminalExists) throw new FlowkitError('RUN_TERMINAL', 'archive guard cannot mutate after result.json exists', { runDir });
+
+    const current = await readContextFile(runDir);
+    validateContextFileIdentity(current, runDir);
+    if (current.action !== 'archive') {
+      throw new FlowkitError('ARCHIVE_GUARD_NOT_ALLOWED', `Run ${current.runId} is not an archive Run`);
+    }
+    if (guardIdentity(current.archiveMutationGuard) !== guardIdentity(expected)) {
+      throw new FlowkitError('ARCHIVE_GUARD_COMPARE_FAILED', 'archive mutation guard generation changed before CAS', {
+        runId: current.runId,
+      });
+    }
+    const nextContext: ContextFile = { ...current, archiveMutationGuard: nextGuard };
+    validateContextFile(nextContext);
+    validateContextFileIdentity(nextContext, runDir);
+    await atomicWriteFile(join(runDir, 'context.json'), serializeContextFile(nextContext));
+  } finally {
+    await handle.close();
+    await bestEffortUnlink(lockPath);
   }
 }
 

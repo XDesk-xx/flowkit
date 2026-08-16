@@ -1,0 +1,15 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "explore",
+    "executionStatus": "completed",
+    "summary": "D2 Explore confirms archive terminal continuation, historical pending precedence, and checkpoint-readiness gaps without production mutation.",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/archive-terminal-continuation-correction/explore.md",
+        "versionFingerprint": "c1ad7994bbfd81fc8f3a9063e8d07a1cf781b904ce507d73394e612e568d5629",
+        "kind": "produced-artifact"
+      }
+    ]
+  }
+}

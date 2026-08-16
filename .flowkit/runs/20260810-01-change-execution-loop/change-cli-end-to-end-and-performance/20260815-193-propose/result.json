@@ -1,0 +1,34 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "propose",
+    "executionStatus": "completed",
+    "summary": "Owner Contract Reset 后建立新的 G1 Proposal generation：保持 Explore、Proposal architecture、scope、required outcomes、implementation plan 与 186 已批准的 12 个 mutation selectors 不变；仅在 flowkitMutationScope.apply / revise-apply 各新增 src/services/b1-run-execution-service.ts 与 tests/unit/services/b1-run-execution-service.test.ts，用于把 G1-RA-001 的 changed-surface pending archive pre-OpenSpec recovery discovery 收回既有/窄扩展 B1/F1/D2 production authority boundary，由 CLI 仅消费单一 recovery projection。未新增第二套 archive state machine、未修改 Formal Action/Policy、未进入 03 scope。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/design.md",
+        "versionFingerprint": "36f75b541d46fba041f0fae8b1b3b3a31a0201dda1bd664b178fa72de3057274",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/proposal.md",
+        "versionFingerprint": "75e74945e6423f6c742f7b302fa3cbc84728dcd79e7a0c1c9f4f34a9349a729e",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+        "versionFingerprint": "b39ae82599df4dc0661f94f379a68af222b311120d059fac5f2c682659eaa873",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/tasks.md",
+        "versionFingerprint": "db69e98cfa1d42aa8f0791717c30dd3e70618f3332d0810df4e8c71717b89be7",
+        "kind": "produced-artifact"
+      }
+    ]
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "44b311a3d52ba609c53b50608efff322c3e6e72b2d08a1fc42997f0410c93374"
+  }
+}

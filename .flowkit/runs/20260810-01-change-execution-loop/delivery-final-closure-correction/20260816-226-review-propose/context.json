@@ -1,0 +1,195 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260816-226-review-propose",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "review-propose",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "0e3e3d19f7ec30028fbf09902b33917cba728b9aedf79719524b67034b5d9703",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:95848aa1187f2feed309096caadcf3d4f00f68930bf6b0ab6db94c72bd156c57",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "delivery-final-closure-correction",
+      "scope": "I1 archive-sync completeness after failed 224; supersede only the current proposal/apply/archive generation and preserve accepted implementation outcomes",
+      "requiredOutcomes": [
+        "I1 所有 MODIFIED Requirement 必须保留仍适用的 canonical Scenario identity；明确保留 OpenSpec executable identity is propagated from the current adapter，并整合已批准的 resolved-authority 语义。",
+        "保留已经确认成立的 I1 implementation outcomes 与 I1-RA-001 已解决事实，仅在 224 暴露的 OpenSpec archive-sync completeness 所需最小范围内重新形成 generation。",
+        "再次请求 Owner archive authorization 前，必须在 disposable repository 中使用真实 OpenSpec 1.7 对 exact current I1 candidate 执行真实 archive-sync proof；strict validation 或 synthetic fixture 不足以替代。",
+        "增加最小可复用 archive-sync preflight，使同类 archive-sync completeness 问题在 future Owner archive authorization 前被发现；保持 thin integration，不复制 OpenSpec merge engine，不引入 Registry/Evidence platform。",
+        "废弃延续至 20260816-224-archive failed 的当前 I1 Proposal/Apply/Archive generation；不新增 Change，不重新打开 Explore。"
+      ],
+      "sourceRef": "owner-input:2026-08-16T16:56+08:00:contract-reset:I1-archive-sync-completeness"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-226-review-propose/",
+  "changeKey": "I1",
+  "changeId": "delivery-final-closure-correction",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-225-propose/result.json",
+    "versionFingerprint": "e60a4f4e536e99a11b2391d554165f33cdf463d045aa7310bd7a7315a578f90a",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260816-225-propose",
+  "canonicalBase": "1783983440e4d1b29d6282bc5c1af55d390f392d",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-225-propose/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "e60a4f4e536e99a11b2391d554165f33cdf463d045aa7310bd7a7315a578f90a"
+    },
+    {
+      "ref": "openspec/changes/delivery-final-closure-correction/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+    },
+    {
+      "ref": "openspec/changes/delivery-final-closure-correction/design.md",
+      "versionFingerprint": "772d6e174f9aeea104989cc729253d3279b57c05e519d995a3bbd1c6e57a60c6",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-final-closure-correction/proposal.md",
+      "versionFingerprint": "bfef6c959fe1784cfd35a310cc790ecd4e100a29e65bc8251ace731acc8e4b0f",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-final-closure-correction/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+      "versionFingerprint": "21ccb9e604b8d0cc51756e414289ab42eef056e6ef57785553aafec0b9f97a86",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-final-closure-correction/specs/flowkit-change-verification-selection/spec.md",
+      "versionFingerprint": "c9d5515e1aca0828e1272294516edc5e7c7b78ab28bd1e40a0f3a26082d440ba",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-final-closure-correction/specs/flowkit-core-hardening-and-release-candidate/spec.md",
+      "versionFingerprint": "f7639dc8603a5b3deaca1ce792e1f1e1c2c818670c1b74382515701adc678cb3",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-final-closure-correction/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+      "versionFingerprint": "435f95d0c7ba57d06af5688c19948650481ade8e9bf88f723b7954ce6712b531",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-final-closure-correction/tasks.md",
+      "versionFingerprint": "f661f3e14be92d0295a51b744f7efb7f773241e8bec83e455dc61c74b9ba0b4e",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "delivery-final-closure-correction",
+      "runId": "20260816-226-review-propose",
+      "action": "review-propose",
+      "role": "reviewer",
+      "semanticInputFingerprint": "0e3e3d19f7ec30028fbf09902b33917cba728b9aedf79719524b67034b5d9703"
+    },
+    "definition": {
+      "action": "review-propose",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-proposal",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+      },
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/design.md",
+        "versionFingerprint": "772d6e174f9aeea104989cc729253d3279b57c05e519d995a3bbd1c6e57a60c6",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/proposal.md",
+        "versionFingerprint": "bfef6c959fe1784cfd35a310cc790ecd4e100a29e65bc8251ace731acc8e4b0f",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+        "versionFingerprint": "21ccb9e604b8d0cc51756e414289ab42eef056e6ef57785553aafec0b9f97a86",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "c9d5515e1aca0828e1272294516edc5e7c7b78ab28bd1e40a0f3a26082d440ba",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/specs/flowkit-core-hardening-and-release-candidate/spec.md",
+        "versionFingerprint": "f7639dc8603a5b3deaca1ce792e1f1e1c2c818670c1b74382515701adc678cb3",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+        "versionFingerprint": "435f95d0c7ba57d06af5688c19948650481ade8e9bf88f723b7954ce6712b531",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/tasks.md",
+        "versionFingerprint": "f661f3e14be92d0295a51b744f7efb7f773241e8bec83e455dc61c74b9ba0b4e",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-225-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "e60a4f4e536e99a11b2391d554165f33cdf463d045aa7310bd7a7315a578f90a"
+      }
+    ],
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [
+      {
+        "ref": "owner:95848aa1187f2feed309096caadcf3d4f00f68930bf6b0ab6db94c72bd156c57",
+        "decision": "contract-reset",
+        "deliveryId": "20260810-01-change-execution-loop",
+        "changeId": "delivery-final-closure-correction",
+        "scope": "I1 archive-sync completeness after failed 224; supersede only the current proposal/apply/archive generation and preserve accepted implementation outcomes",
+        "requiredOutcomes": [
+          "I1 所有 MODIFIED Requirement 必须保留仍适用的 canonical Scenario identity；明确保留 OpenSpec executable identity is propagated from the current adapter，并整合已批准的 resolved-authority 语义。",
+          "保留已经确认成立的 I1 implementation outcomes 与 I1-RA-001 已解决事实，仅在 224 暴露的 OpenSpec archive-sync completeness 所需最小范围内重新形成 generation。",
+          "再次请求 Owner archive authorization 前，必须在 disposable repository 中使用真实 OpenSpec 1.7 对 exact current I1 candidate 执行真实 archive-sync proof；strict validation 或 synthetic fixture 不足以替代。",
+          "增加最小可复用 archive-sync preflight，使同类 archive-sync completeness 问题在 future Owner archive authorization 前被发现；保持 thin integration，不复制 OpenSpec merge engine，不引入 Registry/Evidence platform。",
+          "废弃延续至 20260816-224-archive failed 的当前 I1 Proposal/Apply/Archive generation；不新增 Change，不重新打开 Explore。"
+        ],
+        "sourceRef": "owner-input:2026-08-16T16:56+08:00:contract-reset:I1-archive-sync-completeness"
+      }
+    ],
+    "externalContextFingerprint": "715bdd799312c4599c6bb30bda1556232d1bf6c51adf61adba069ffd912afa2a",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

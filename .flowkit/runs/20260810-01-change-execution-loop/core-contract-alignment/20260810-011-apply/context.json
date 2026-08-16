@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 2,
+  "runId": "20260810-011-apply",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "changeKey": "Q1",
+  "changeId": "core-contract-alignment",
+  "action": "apply",
+  "role": "author",
+  "ownerAuthorization": "authorized",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/core-contract-alignment/20260810-010-review-propose/result.json",
+    "versionFingerprint": "336e2cbcb0f016a4fb444f5827c217cf808a389ce0314a62e4012ed2dd8b7c22",
+    "kind": "run-result"
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": true,
+    "mayWriteTestCode": true,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  },
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/core-contract-alignment/20260810-011-apply/"
+}

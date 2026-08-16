@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260815-174-review-propose",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "review-propose",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "d955f516db1130b930ed7c87d77e793e4fb218ad108ff6e8caf363cece771021",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:a8adfe13a9d149cbcb5df514aaf8d09e937e2b47cc920b97cc8f6538260a324e",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "archive-and-checkpoint-boundary",
+      "scope": "F1 architecture and F1-RA-001 required outcome unchanged; do not reopen Explore; only correct Proposal/Design apply and revise-apply mutation scope after failed 20260815-170-revise-apply.",
+      "requiredOutcomes": [
+        "Add tests/unit/services/b1-run-execution-service.test.ts to flowkitMutationScope.apply.",
+        "Add tests/unit/services/b1-run-execution-service.test.ts to flowkitMutationScope.revise-apply.",
+        "Do not reopen Explore; create a new Proposal generation for Reviewer re-approval before Apply/revise-apply.",
+        "Keep F1 architecture unchanged.",
+        "Keep F1-RA-001 required outcome unchanged: remove subject-only E2 checkpoint activation and keep the legacy cutover anchored to the original strict-admitted E2 checkpoint."
+      ],
+      "sourceRef": "owner-chat:2026-08-15T11:07+08:00:F1-RA-001-mutation-scope-reset-after-170"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260815-174-review-propose/",
+  "changeKey": "F1",
+  "changeId": "archive-and-checkpoint-boundary",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260815-173-revise-propose/result.json",
+    "versionFingerprint": "4e7c6f746a727b5a909cfd393e3975cb0e70b8840348ea1fa6316255a3984f9b",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260815-173-revise-propose",
+  "canonicalBase": "e182492181166ef00b8546923f1ce6ad168564f7",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260815-173-revise-propose/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "4e7c6f746a727b5a909cfd393e3975cb0e70b8840348ea1fa6316255a3984f9b"
+    },
+    {
+      "ref": "openspec/changes/archive-and-checkpoint-boundary/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "cfa0dd24ffbc3529beee2a707cfd385b458247b1b5cca61fbcc99f934e83600e"
+    },
+    {
+      "ref": "openspec/changes/archive-and-checkpoint-boundary/design.md",
+      "versionFingerprint": "75cab91f2539bb87cc20f520dc9f0f23dfe5a55802339d6ce23c44552e29c86b",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/archive-and-checkpoint-boundary/proposal.md",
+      "versionFingerprint": "9c691b4da7680c26db4cd2d808c7973f7a3a58273166c7216b3b3b568ea4d251",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/archive-and-checkpoint-boundary/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+      "versionFingerprint": "c70d4c787377710bbfc07daaa49569c16ca5f3ae270e5f3d7bb9158db1cef3cc",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/archive-and-checkpoint-boundary/tasks.md",
+      "versionFingerprint": "f5367be1eaaa6edf092b6cc7b4290a3a3f68c54228a2e91bb9d9d61223150eb7",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "archive-and-checkpoint-boundary",
+      "runId": "20260815-174-review-propose",
+      "action": "review-propose",
+      "role": "reviewer",
+      "semanticInputFingerprint": "d955f516db1130b930ed7c87d77e793e4fb218ad108ff6e8caf363cece771021"
+    },
+    "definition": {
+      "action": "review-propose",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-proposal",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/archive-and-checkpoint-boundary/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "cfa0dd24ffbc3529beee2a707cfd385b458247b1b5cca61fbcc99f934e83600e"
+      },
+      {
+        "ref": "openspec/changes/archive-and-checkpoint-boundary/design.md",
+        "versionFingerprint": "75cab91f2539bb87cc20f520dc9f0f23dfe5a55802339d6ce23c44552e29c86b",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-and-checkpoint-boundary/proposal.md",
+        "versionFingerprint": "9c691b4da7680c26db4cd2d808c7973f7a3a58273166c7216b3b3b568ea4d251",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-and-checkpoint-boundary/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+        "versionFingerprint": "c70d4c787377710bbfc07daaa49569c16ca5f3ae270e5f3d7bb9158db1cef3cc",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-and-checkpoint-boundary/tasks.md",
+        "versionFingerprint": "f5367be1eaaa6edf092b6cc7b4290a3a3f68c54228a2e91bb9d9d61223150eb7",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260815-173-revise-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "4e7c6f746a727b5a909cfd393e3975cb0e70b8840348ea1fa6316255a3984f9b"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260815-172-review-propose",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260815-172-review-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "dc74172f49fc4cc7261fdddd1663c3def3e3b8fef80dcf9d5df6320cfab076c1"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "F1-RP-001",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "writer activation is still weaker than the original strict-admitted E2 cutover",
+          "problem": "171 correctly freezes the legacy window around the original strict-admitted E2 checkpoint, but it only requires B1 writer activation to stop accepting subject-only E2 commits. Under the frozen F1 architecture, Git-only formalIdentityValid checks trailer shape while checkpoint-time Owner temporal admission is completed only by FormalFactReader. Therefore an E2 commit with a syntactically valid subject/trailer set and an owner:<64hex> value that has no matching authorize-checkpoint fact at that boundary can still be exposed by readGitBoundarySummaries and consumed by isPostE2ThreeFileWriterActive. The Proposal does not yet freeze how that consumer is bound to the same strict-admitted cutover.",
+          "contractRef": "20260815-169-review-apply F1-RA-001 requiredOutcome/invariant + openspec/changes/archive-and-checkpoint-boundary/design.md Decisions 1-3 + Owner Contract Reset required outcome",
+          "invariant": "The migration cutover is one authority boundary: the original E2 checkpoint used for bounded legacy compatibility and for post-E2 writer activation must represent the same strict-admitted checkpoint fact. A merely trailer-shaped E2 candidate without checkpoint-time Owner authorization must not activate the writer.",
+          "requiredOutcome": "Revise the Proposal/Design so post-E2 writer activation is explicitly bound to the same original strict-admitted E2 cutover used by legacy compatibility, not merely to subject/trailer shape. Freeze a feasible implementation/mutation surface that preserves the Git-reader/Owner-authority separation or otherwise proves an equivalent one-authority design, and add the missing negative regression for a full-trailer E2 candidate whose Owner authorization did not exist at the boundary.",
+          "acceptance": [
+            "The Proposal states one shared cutover invariant for legacy admission and writer activation: only the original strict-admitted E2 checkpoint activates the migration writer state.",
+            "A migration-lineage E2 commit with exact subject and formal trailers but no matching checkpoint-time authorize-checkpoint Owner fact does not activate the post-E2 writer.",
+            "The existing subject-only activation counterexample remains rejected, later duplicate E2 checkpoints cannot move the legacy cutover, and the real e182 strict E2 checkpoint still activates the writer.",
+            "Fresh/downstream repositories without the Flowkit internal migration lineage continue to use the current three-file writer by default.",
+            "flowkitMutationScope includes every production/test consumer actually required by the chosen design; no Git reader is turned into a second Owner-fact authority merely to avoid widening the proper consumer scope."
+          ]
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [
+      {
+        "ref": "owner:a8adfe13a9d149cbcb5df514aaf8d09e937e2b47cc920b97cc8f6538260a324e",
+        "decision": "contract-reset",
+        "deliveryId": "20260810-01-change-execution-loop",
+        "changeId": "archive-and-checkpoint-boundary",
+        "scope": "F1 architecture and F1-RA-001 required outcome unchanged; do not reopen Explore; only correct Proposal/Design apply and revise-apply mutation scope after failed 20260815-170-revise-apply.",
+        "requiredOutcomes": [
+          "Add tests/unit/services/b1-run-execution-service.test.ts to flowkitMutationScope.apply.",
+          "Add tests/unit/services/b1-run-execution-service.test.ts to flowkitMutationScope.revise-apply.",
+          "Do not reopen Explore; create a new Proposal generation for Reviewer re-approval before Apply/revise-apply.",
+          "Keep F1 architecture unchanged.",
+          "Keep F1-RA-001 required outcome unchanged: remove subject-only E2 checkpoint activation and keep the legacy cutover anchored to the original strict-admitted E2 checkpoint."
+        ],
+        "sourceRef": "owner-chat:2026-08-15T11:07+08:00:F1-RA-001-mutation-scope-reset-after-170"
+      }
+    ],
+    "externalContextFingerprint": "def68c25b06bc9e27f3e87559f3addbaea0db9fd57eaaae352135e64b0d77c59",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

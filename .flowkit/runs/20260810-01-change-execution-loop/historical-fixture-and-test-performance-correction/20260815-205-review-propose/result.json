@@ -1,0 +1,16 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "Review 204 Proposal：严格承接 202/203 approved Explore。Proposal 将 H1 收敛为 archive-safe G1 point-in-time fixture、test-local real-CLI boundary snapshot reuse、self-contained historical real OpenSpec conformance、current 11-Change corpus regression，以及 tests-openspec-runtime physical target + current OpenSpecCliAdapter executable propagation。Apply/revise-apply mutation scope 精确为 H1 tasks/verification + 202 proof 证明的五个 implementation/test paths，7 selectors 唯一且 lexical-sorted；未加入 scripts/verification.ts、module-map、production CLI/Policy/runtime、timeout/concurrency、cache/scheduler 或 03 scope。现有 evidence.ts/runCommand surface 足以在已批准 scope 内实现 executable env propagation。OpenSpec 1.7 strict、typecheck、lint、build 与 git diff --check 均通过，未发现 Proposal blocker。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "006eeb633aa01fecb37edb74b437befeb23f8b859259b7a554a41607db085466"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [],
+  "reviewFindingConvergence": []
+}

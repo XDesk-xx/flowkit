@@ -1,0 +1,15 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "approved",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/openspec-1-7-thin-integration/verification.md",
+      "versionFingerprint": "f2621ebd1713b88a40e533c8ab2c856e0e3e1a43cf0bdecb285e7d3b9bf85b4b",
+      "kind": "verification-summary"
+    }
+  },
+  "reviewVerdict": "approved",
+  "reviewFindings": []
+}

@@ -1,0 +1,39 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-propose",
+    "executionStatus": "completed",
+    "summary": "关闭 F1-RP-001：legacy admission 与 post-E2 writer activation 共同绑定 original strict-admitted E2 checkpoint；B1 production activation 不再以 Git-only subject/trailer candidate 为 authority，并新增 full-trailer 但 checkpoint-time Owner 未授权的负向 acceptance 与完整 production/test mutation surface。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/archive-and-checkpoint-boundary/design.md",
+        "versionFingerprint": "75cab91f2539bb87cc20f520dc9f0f23dfe5a55802339d6ce23c44552e29c86b",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-and-checkpoint-boundary/proposal.md",
+        "versionFingerprint": "9c691b4da7680c26db4cd2d808c7973f7a3a58273166c7216b3b3b568ea4d251",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-and-checkpoint-boundary/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+        "versionFingerprint": "c70d4c787377710bbfc07daaa49569c16ca5f3ae270e5f3d7bb9158db1cef3cc",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/archive-and-checkpoint-boundary/tasks.md",
+        "versionFingerprint": "f5367be1eaaa6edf092b6cc7b4290a3a3f68c54228a2e91bb9d9d61223150eb7",
+        "kind": "produced-artifact"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260815-172-review-propose/result.json",
+      "versionFingerprint": "dc74172f49fc4cc7261fdddd1663c3def3e3b8fef80dcf9d5df6320cfab076c1",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "1e32cc468a04580abc1c799d2ec525e28ce7f771ce84ce9d98be1f3c3ed79e16"
+  }
+}

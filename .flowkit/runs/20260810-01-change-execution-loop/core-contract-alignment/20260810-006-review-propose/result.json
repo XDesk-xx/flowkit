@@ -1,0 +1,28 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "从 001 开始回溯完整审查链后，005 Proposal 的主方向、Q1→03 bridge、Change-only Action/Run 收缩、pre-Q1 finding bounded compatibility 与 OpenSpec artifact 结构均成立，OpenSpec strict validation 通过。但 Proposal 存在两个 Author-actionable blocking gaps：mixed authority 被 non-author boundary 阻塞后又因 direct re-review 仅允许纯 non-author 集合而形成不可恢复 dead-end；repo-wide capability scan 漏掉必须承接新增 BlockedReason/diagnostic formatting 的 active flowkit-diagnostic-cli spec。因此本轮 changes-requested。",
+    "nextActionRecommendation": "revise-propose"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindings": [
+    {
+      "id": "Q1-RP-001",
+      "severity": "blocking",
+      "title": "mixed-authority boundary 与 direct re-review admission 组合后形成永久 dead-end",
+      "problem": "005 Design/Policy delta 同时冻结：mixed author + non-author blockers 时不得 revise，必须停在 non-author boundary；但 explicit direct re-review 又只在 matching changes-requested 的 blockingAuthorities 全部属于 owner/verification/external 时允许。ReviewVerdictFact.blockingAuthorities 又是从 immutable Reviewer result 确定性派生，因此 Owner/Verification/External 新事实到位不会修改旧 mixed verdict。结果是 mixed target 既不能 revise，也不满足 direct re-review admission，无法创建新的 Reviewer execution 来确认 non-author blocker 已关闭并重新分类剩余 author blocker。Design 风险段却声称后续 Reviewer execution 可以做到这一点，和前述 admission contract 互相矛盾。",
+      "location": "openspec/changes/core-contract-alignment/design.md:100-123,154; openspec/changes/core-contract-alignment/specs/flowkit-policy-engine/spec.md:37-63,155-180; openspec/changes/core-contract-alignment/specs/flowkit-core-model/spec.md:51-66",
+      "requiredChange": "修订 Proposal/Design/Policy delta，使 mixed-authority target 在 non-author authority fact 实际到位后存在一个明确、显式、非自动且不经过 Author no-op revise 的合法恢复路径，能够产生新的 Reviewer generation 并重新评估 unchanged target；同时保持 `next()` fail-closed、不自动 review、不提前处理 author mutation。Reviewer 不指定具体 API/事件模型。"
+    },
+    {
+      "id": "Q1-RP-002",
+      "severity": "blocking",
+      "title": "repo-wide canonical capability freeze 漏掉 flowkit-diagnostic-cli",
+      "problem": "005 声称 repo-wide scan 后 affected capability 固定为六个，但 exact Base 的 `openspec/specs/flowkit-diagnostic-cli/spec.md` 仍是 active canonical spec，并明确冻结 `flowkit next` 对 PolicyResult 的呈现以及 doctor 对每个 `BlockedReason` 的 deterministic severity mapping。005 Design/Policy/Tasks 新增 `non-author-review-blocker` 与 `delivery-behavior-not-implemented` 稳定 blocked reason，并要求更新 CLI/diagnostic formatting；如果不为 diagnostic-cli 提供 delta contract，Apply 要么修改 CLI 而没有 canonical capability contract，要么保留旧 spec 对新 Policy reason 未定义的冲突。",
+      "location": "openspec/changes/core-contract-alignment/proposal.md:22-37; openspec/changes/core-contract-alignment/tasks.md:4.3,5.1; openspec/changes/core-contract-alignment/specs/flowkit-policy-engine/spec.md:182-201; exact Base openspec/specs/flowkit-diagnostic-cli/spec.md:117-153,194-209",
+      "requiredChange": "把 `flowkit-diagnostic-cli` 纳入 affected modified capabilities，并增加相应 delta spec，冻结新 blocked reason 在 `next`/`doctor` 中的 deterministic presentation/severity；同步 Proposal Impact/Tasks 与 artifact set，继续保持 CLI 只呈现 Policy 而不成为第二 decision tree。"
+    }
+  ]
+}

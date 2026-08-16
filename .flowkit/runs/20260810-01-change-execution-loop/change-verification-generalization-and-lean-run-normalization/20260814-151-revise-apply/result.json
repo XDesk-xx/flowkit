@@ -1,0 +1,21 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-apply",
+    "executionStatus": "completed",
+    "summary": "关闭 E2-RA-001 与 E2-RA-002：post-E2 three-file writer 由 02/E2 recognized checkpoint 的 repository-global current-HEAD Git ancestry 单调激活，跨后续 Delivery Start 不回退；tests-execution 覆盖 execution module 完整 facts/policy/services test union，failing a1-write sentinel 会使正式 evidence 失败，并重新发布通过的 E2 Change Verification。",
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-generalization-and-lean-run-normalization/20260814-150-review-apply/result.json",
+      "versionFingerprint": "f449d2c6125e5974a16000d4d03af987b9c3796fd5323b7468f7754682569007",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "024cdfcbabca2fc80660287a7d30ebe894872dd0f2dfbcb02d33cc1f85a09556",
+    "verificationSelection": {
+      "logicalRef": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-generalization-and-lean-run-normalization/20260814-151-revise-apply/verification-selection.json",
+      "versionFingerprint": "2f03347dba6068c33fe260f70585cfa8b5fe3afcb91a633b5853929feb9908ad"
+    }
+  }
+}

@@ -11,8 +11,8 @@
  *   - `action`: a formal Action name (letters and hyphens)
  *
  * NNN rules (B1-RE-007, B1-RE-008):
- *   - Unique within a Delivery (Change-level and _delivery-level Runs share
- *     the NNN space).
+ *   - Unique within a Delivery. Current Change Runs and bounded historical
+ *     Delivery-level Run IDs share the NNN space for compatibility.
  *   - Strictly monotonic — never reused; a candidate must be > max(NNN).
  *   - Gaps are allowed (skipped numbers are not backfilled).
  *   - NNN is not reset by date, Change, Action, or role.
@@ -69,9 +69,9 @@ export function parseRunId(value: string): ParsedRunId {
 /**
  * Reject Delivery-wide duplicate NNN values.
  *
- * Scans Change-level and _delivery-level Run IDs together — they share the
- * NNN space within a Delivery. The caller (C1) is responsible for collecting
- * the complete Run-ID list from the filesystem.
+ * Scans current Change Run IDs plus any bounded historical Delivery-level Run
+ * IDs supplied by the persistence layer; both retain the Delivery-wide NNN
+ * space. The caller is responsible for collecting the complete compatible list.
  *
  * @throws {FlowkitError} `RUN_ID_DUPLICATE_NNN` when a duplicate NNN is found.
  */

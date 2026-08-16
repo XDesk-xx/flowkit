@@ -1,0 +1,39 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "propose",
+    "executionStatus": "completed",
+    "summary": "Owner Contract Reset 后形成新的 H1 Proposal generation：保持 204 correctness、performance、fixture、Verification Closure 设计与七 selector implementation mutation surface 不变，仅删除 H1 Apply 中 public test:full terminal PASS 的 Delivery-level acceptance。H1 Apply 终止于 formal Change Verification；repository-wide Delivery Full Test 仅在 H1 archive + checkpoint、Delivery Ready 后由 Owner 独立授权。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/design.md",
+        "versionFingerprint": "927d384e64315bf71bb5981356156e850e9d71383813b6bb916c27197237f8e8",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/proposal.md",
+        "versionFingerprint": "e4d3b81bbbf46acb4aee64efd7d242e2950cb6926d8307b6e05a7c3c8f2e3787",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+        "versionFingerprint": "8588b6952cc0000862ec20090277b417c08b5c373c6aab5e0350c801ee6bbd1b",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "5916c6f4bf7dbf44b4f4f9b13149c4a9bc3cca4db14ab055730e4f4bba0edf14",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/tasks.md",
+        "versionFingerprint": "0aa0199bff0ba23f603f05ce99a6b2ac514b7adc75ef04ec907dd7c9386fc034",
+        "kind": "produced-artifact"
+      }
+    ]
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "1d76250d61e54fde7e8dabfdc5affb8a0f015726d16f3073fb32ab3cd34d2658"
+  }
+}

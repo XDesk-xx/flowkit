@@ -1,0 +1,20 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-explore",
+    "executionStatus": "completed",
+    "summary": "E1 revise-explore 保留 Owner/Manifest 定义的完整 G1 outputs，并冻结 E1 primitive implementation 与 G1 consumer/validation/observation 的非重叠边界。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/explore.md",
+        "versionFingerprint": "9dc75d57727930f2aa15efb2ae7ebc3f22323f6a6ba0ad082d34732ee7298c49",
+        "kind": "produced-artifact"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260813-109-review-explore/result.json",
+      "versionFingerprint": "e579fcb77fe3870ea10e0e07c1fc2cc942895efed086f640d2cb50c562f5a378",
+      "kind": "run-result"
+    }
+  }
+}

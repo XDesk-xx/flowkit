@@ -40,6 +40,7 @@ async function makeRepo(): Promise<string> {
       '  - key: E1',
       '    id: diagnostic-cli',
       '    state: active',
+        '    architectureImpact: false',
       '    required: true',
       '    dependsOn: []',
     ].join('\n'),
@@ -177,5 +178,6 @@ describe('diagnostic CLI real process boundary', () => {
     assert.equal(result.code, 2);
     assert.equal(result.stdout, '');
     assert.match(result.stderr, /^usage: flowkit /);
+    assert.match(result.stderr, /explore\|review\|revise\|propose\|apply\|verify\|archive/);
   });
 });

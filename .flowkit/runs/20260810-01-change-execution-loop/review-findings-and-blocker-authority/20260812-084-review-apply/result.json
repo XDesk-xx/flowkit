@@ -1,0 +1,22 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "083 已关闭 D1-RA-001：Contract Reset-only stale pending Run 可经显式 Core/CLI recovery 正式 cancelled 并释放 pending slot；旧 generation 不可继续，mixed/non-Owner semantic drift 继续 fail closed。独立 Reviewer 验证通过。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/review-findings-and-blocker-authority/verification.md",
+      "versionFingerprint": "3c956da17e60bada3dd9be90aefac13fb1bdd60f589f6ea5e01a9aca1371139a",
+      "kind": "verification-summary"
+    }
+  },
+  "reviewVerdict": "approved",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [],
+  "reviewFindingConvergence": [
+    {
+      "findingId": "D1-RA-001",
+      "state": "resolved"
+    }
+  ]
+}

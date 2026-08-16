@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 4,
+  "runId": "20260814-135-archive",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "archive",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "semanticInputFingerprint": "34b7f43ddab99fc7e3dc1a74a58bbb8ee86385663e0d38b122e43bd8853474ad",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:52c2f519e846da1aab0ba16b4f2e2355ae362d0fb846f2a21302a2b5bdf17b6d",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-verification-selection-and-change-set",
+      "scope": "e1-two-time-boundaries-and-execution-reliability-primitives",
+      "requiredOutcomes": [
+        "E1 must preserve the immutable entry versus Core-owned post-action fact model, context v5 and ActionPackage v2 migration, actualChangeSet, deterministic module/dependency/capability verificationScope selection, and bootstrap verification.",
+        "E1 scope is expanded to implement bounded operation-scoped OpenSpec projection deduplication and Windows process-tree cancellation with fail-closed outcome-unknown fallback.",
+        "E1 scope is expanded to implement exact target Run resume, timeout outcome-unknown, idempotent terminal replay, and late-completion generation safety.",
+        "G1 retains ownership of Change CLI surface, full Change E2E, checkout/resume recovery validation, Run/package size observation, focused/affected timing observation, and review convergence observation; G1 consumes E1 primitives and does not duplicate their implementation.",
+        "Historical Run contexts and results remain immutable; the new Owner fact must be projected through the official write-side and Policy must determine the next legal boundary."
+      ],
+      "sourceRef": "owner-input:2026-08-13:authorize-E1-expanded-scope-before-108-revision"
+    },
+    {
+      "ref": "owner:a2756785a2a56e69a4dc4695ea3d085c4c2af4228b8f1e1884cfa68a5ca2022d",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-verification-selection-and-change-set",
+      "scope": "e1-openspec-modified-requirement-completeness-after-archive-failure",
+      "requiredOutcomes": [
+        "Abandon the proposal/apply/archive generation culminating in 20260814-129-archive; prior proposal/apply/review approval must not authorize the new generation.",
+        "For flowkit-formal-fact-reader-and-persistence, every MODIFIED Requirement must carry forward the canonical requirement scenario identities and semantics that remain applicable, while integrating the intended v5 contract so archive sync cannot silently delete canonical scenarios.",
+        "Re-propose E1 without expanding implementation scope: preserve the accepted E1 runtime/verification outcomes while correcting the OpenSpec delta contract exposed by archive_spec_update_failed.",
+        "The new proposal/review/apply generation must pass OpenSpec strict validation and demonstrate archive-sync compatibility before a new archive authorization is requested."
+      ],
+      "sourceRef": "owner-input:2026-08-14T13:23+08:00:contract-reset:E1-repropose"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260814-135-archive/",
+  "changeKey": "E1",
+  "changeId": "change-verification-selection-and-change-set",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260814-134-review-apply/result.json",
+    "versionFingerprint": "1068da6a7dae57a5ee107d1110788991c65a94f4358a85422a90ab552819e6c0",
+    "kind": "run-result"
+  },
+  "archiveEntryOpenSpecProjection": {
+    "projectionVersion": 1,
+    "version": "1.7.0",
+    "changeId": "change-verification-selection-and-change-set",
+    "changeRootLogical": "openspec/changes/change-verification-selection-and-change-set",
+    "artifactPaths": {
+      "proposal": [
+        "openspec/changes/change-verification-selection-and-change-set/proposal.md"
+      ],
+      "specs": [
+        "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-change-verification-selection/spec.md",
+        "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-core-model/spec.md",
+        "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-lean-run-and-action-package/spec.md",
+        "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+        "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-policy-engine/spec.md",
+        "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-runtime-foundation/spec.md"
+      ],
+      "design": [
+        "openspec/changes/change-verification-selection-and-change-set/design.md"
+      ],
+      "tasks": [
+        "openspec/changes/change-verification-selection-and-change-set/tasks.md"
+      ]
+    }
+  },
+  "archiveMutationGuard": {
+    "state": "armed",
+    "surfaceVersion": "openspec-archive-mutation-v1",
+    "changeRoot": "openspec/changes/change-verification-selection-and-change-set",
+    "canonicalSpecsRoot": "openspec/specs",
+    "archiveNamespaceRoot": "openspec/changes/archive",
+    "preArchiveGenerationFingerprint": "980a9c33641df1629915630f4ab4e1a6e27bf5c1965a4d2d7c1b2af2ca56864d",
+    "terminalObservation": {
+      "kind": "success",
+      "resultFingerprint": "2b5a9f037fa7bc0946f83ebe2cddb7d13e10ae6e4a6fafafe81ac17e8c456f73",
+      "normalized": {
+        "kind": "success",
+        "change": "change-verification-selection-and-change-set",
+        "archivedAs": "2026-08-14-change-verification-selection-and-change-set",
+        "path": "openspec/changes/archive/2026-08-14-change-verification-selection-and-change-set",
+        "specsUpdated": true,
+        "totals": {
+          "added": 20,
+          "modified": 4,
+          "removed": 0,
+          "renamed": 0
+        }
+      }
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

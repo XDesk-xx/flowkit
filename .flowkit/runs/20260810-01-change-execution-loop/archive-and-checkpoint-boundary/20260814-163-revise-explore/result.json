@@ -1,0 +1,24 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-explore",
+    "executionStatus": "completed",
+    "summary": "修订 F1 Explore：关闭 F1-RE-003 的 checkpoint Owner authorization temporal gap；证明 authorization-before-checkpoint 可接受、checkpoint-first→authorization-later 不得被事后追认，同时保持 161 的 strict identity fail-closed、bounded legacy compatibility 与 mutation-surface closure。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/archive-and-checkpoint-boundary/explore.md",
+        "versionFingerprint": "a6f4a5fbd5dfe9cdaa00b2ec493e6ca43a0697c121037d5cfdb0a45dd245b054",
+        "kind": "produced-artifact"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260814-162-review-explore/result.json",
+      "versionFingerprint": "ca9f3f22c412aae831f7a699c45986342e847e8a566e55a865725e124c7476f1",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "2a4af9ee54da76c617b89a9057f8b2711e3810fd416e51d3023d0924816d6773"
+  }
+}

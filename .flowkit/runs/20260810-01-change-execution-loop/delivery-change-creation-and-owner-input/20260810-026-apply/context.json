@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 2,
+  "runId": "20260810-026-apply",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "apply",
+  "role": "author",
+  "ownerAuthorization": "authorized",
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/delivery-change-creation-and-owner-input/20260810-026-apply/",
+  "changeKey": "A1",
+  "changeId": "delivery-change-creation-and-owner-input",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/delivery-change-creation-and-owner-input/20260810-025-review-propose/result.json",
+    "versionFingerprint": "80c30735101c3d58d3ecb503a7d29a6b69de41f58ab76705d1aa663a6f2953c7",
+    "kind": "run-result"
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": true,
+    "mayWriteTestCode": true,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

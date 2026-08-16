@@ -1,0 +1,15 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "explore",
+    "executionStatus": "completed",
+    "summary": "E1 fresh Explore 同时冻结 Action entry/post-action fact boundary 与 timeout outcome-unknown/exact target Run retry boundary。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/explore.md",
+        "versionFingerprint": "7e1b10008607505d4b97f12b6d7b2d31ce1e8d32dec0c26ff9e607c5cd1a2066",
+        "kind": "produced-artifact"
+      }
+    ]
+  }
+}

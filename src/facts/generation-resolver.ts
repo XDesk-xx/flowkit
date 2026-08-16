@@ -8,6 +8,7 @@
  */
 
 import type { ReviewVerdictValue, RunStatus } from '../domain/types.js';
+import type { FormalFactSnapshot, ReviewVerdictFact, RunFact } from './formal-fact-snapshot.js';
 
 /** Minimal persisted lineage fact used by local entry validation. */
 export interface LineageFact {
@@ -57,4 +58,78 @@ export function latestCompletedArtifactRunId(
     .map((run) => run.runId)
     .sort((a, b) => a.localeCompare(b));
   return candidates.at(-1);
+}
+
+/**
+ * D1 bounded reset identity helper. This is not a generation registry: it only
+ * compares the current Manifest-projected Contract Reset refs with the refs
+ * frozen into one Run at preparation time.
+ */
+export function currentContractResetRefs(
+  ownerDecisionFacts: readonly { readonly ref: string; readonly decision: string; readonly changeId?: string }[] | undefined,
+  changeId: string,
+): readonly string[] {
+  return (ownerDecisionFacts ?? [])
+    .filter((fact) => fact.decision === 'contract-reset' && fact.changeId === changeId)
+    .map((fact) => fact.ref)
+    .sort();
+}
+
+export function runMatchesContractResetIdentity(
+  run: { readonly ownerFactRefs?: readonly { readonly ref: string; readonly decision: string }[] },
+  currentRefs: readonly string[],
+): boolean {
+  if (currentRefs.length === 0) return true;
+  const runRefs = (run.ownerFactRefs ?? [])
+    .filter((fact) => fact.decision === 'contract-reset')
+    .map((fact) => fact.ref)
+    .sort();
+  return JSON.stringify(runRefs) === JSON.stringify([...currentRefs].sort());
+}
+
+
+/**
+ * D2 bounded Contract Reset lifecycle projection.
+ *
+ * A Contract Reset keeps the already-approved Explore discovery reusable, but
+ * proposal/apply/archive currentness must come only from Runs that carry the
+ * complete current reset identity. This is deliberately not a generation
+ * registry: it is a pure projection over the existing Manifest Owner facts and
+ * immutable Run envelopes.
+ */
+export interface ContractResetLifecycleProjection {
+  readonly resetRefs: readonly string[];
+  readonly runs: readonly RunFact[];
+  readonly reviewVerdicts: readonly ReviewVerdictFact[];
+}
+
+const EXPLORE_DISCOVERY_ACTIONS = new Set([
+  'explore',
+  'revise-explore',
+  'review-explore',
+]);
+
+export function projectCurrentContractResetLifecycle(
+  snapshot: Pick<FormalFactSnapshot, 'runs' | 'reviewVerdicts' | 'ownerDecisionFacts'>,
+  changeId: string,
+): ContractResetLifecycleProjection {
+  const resetRefs = currentContractResetRefs(snapshot.ownerDecisionFacts, changeId);
+  if (resetRefs.length === 0) {
+    return {
+      resetRefs,
+      runs: snapshot.runs,
+      reviewVerdicts: snapshot.reviewVerdicts,
+    };
+  }
+
+  const runs = snapshot.runs.filter((run) =>
+    run.changeId !== changeId
+    || EXPLORE_DISCOVERY_ACTIONS.has(run.action)
+    || runMatchesContractResetIdentity(run, resetRefs)
+  );
+  const currentRunIds = new Set(runs.map((run) => run.runId));
+  const reviewVerdicts = snapshot.reviewVerdicts.filter((verdict) =>
+    currentRunIds.has(verdict.reviewRunId)
+  );
+  return { resetRefs, runs, reviewVerdicts };
 }

@@ -1,0 +1,187 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "Complete review of 118 Apply: focused tests and strict OpenSpec validation pass, but the implementation does not satisfy the frozen E1 exact-replay, terminal binding, base-to-post actualChangeSet, current-lineage Reader, deterministic selection, operation projection/cancellation, and bootstrap evidence contracts. npm run typecheck also fails on the current candidate.",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/change-verification-selection-and-change-set/verification.md",
+      "versionFingerprint": "d3f7c81e390c8d1cb105a048e2a307f4e13716521c13560dd42bce3540fe98a9",
+      "kind": "verification-summary"
+    }
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "E1-RA-001",
+      "severity": "blocking",
+      "title": "exact resume、terminal replay 与并发 generation safety 尚未实现",
+      "problem": "resumeRun 在发现 result.json 时直接抛出 EXACT_RESUME_NOT_PENDING，admitActionResult 对 terminal Run 也只会落入 RUN_NOT_PENDING/RUN_TERMINAL；接口没有 persisted terminal/equivalent/conflicting replay outcome，也没有保存并比较 canonical logical descriptor digest。prepareNewExecution 的 pending 检查与 allocator/create 之间亦没有同一原子边界，两个并发 caller 可同时越过检查。",
+      "contractRef": "design.md Decision 3；specs/flowkit-lean-run-and-action-package Requirement: new preparation 与 exact Run resume 必须是不同入口；Requirement: terminal replay 必须 exact 且幂等",
+      "invariant": "target-pinned retry 必须在 exact persisted Run 上幂等恢复；同一 legal boundary 的并发 new preparation 至多发布一个 pending Run，不能因 timeout、late completion 或 race 推进 generation。",
+      "evidence": [
+        "src/services/b1-run-execution-service.ts:118-123 对任何已有 result.json 的 expectedRunId 抛出 EXACT_RESUME_NOT_PENDING",
+        "src/services/b1-run-execution-service.ts:1156-1159 要求 admission 时 Run 仍 pending，未提供 equivalent terminal replay",
+        "LogicalActionResultInput/result.json 未保存 canonical logical descriptor digest，无法区分 equivalent 与 conflicting replay",
+        "src/services/b1-run-execution-service.ts:466-491 在 pending 检查后才分配 NNN，src/persistence/run-persistence.ts:createRun 不复核 Delivery 当前 pending 唯一性",
+        "现有 E1 service tests 只覆盖 pending package reconstruction，没有 terminal replay、late completion、wrong descriptor 或 concurrent preparation"
+      ],
+      "impact": "caller timeout 或 late completion 后无法安全恢复；重复/并发请求可能失败为非幂等错误或发布额外 generation，正是 E1 要关闭的根因。",
+      "location": "src/services/b1-run-execution-service.ts resumeRun/prepareNewExecution/admitActionResult；src/persistence/run-persistence.ts createRun/completeRun",
+      "blockingAuthority": "author",
+      "requiredOutcome": "实现 persisted pending/terminal exact-resume result union、canonical logical descriptor binding、equivalent/conflicting replay，以及覆盖 pending check 与 allocator/create 的 Core 原子唯一性；补齐 timeout、late completion、concurrent caller 和 wrong Run/descriptor tests。",
+      "acceptance": [
+        "exact retry 指向 terminal Run 时返回 persisted terminal 或 equivalent replay outcome，不调用 Policy/allocator",
+        "不同 logical descriptor、Role、Action、Run identity 的 replay deterministic fail closed",
+        "并发 next/review preparation 在同一 boundary 至多产生一个 pending Run，其余返回同一 persisted identity或 deterministic conflict",
+        "focused tests 覆盖 preparation timeout、late terminal、equivalent/conflicting replay、wrong Run id 与 generation safety"
+      ]
+    },
+    {
+      "id": "E1-RA-002",
+      "severity": "blocking",
+      "title": "post-action record 没有与 terminal result 建立可恢复的 exact binding",
+      "problem": "verification-selection record 在 completeRun 之前写入，但 terminal ActionResult 没有该 record 的 ResultRef/identity；record-present pending replay 只校验当前 canonical Markdown 的 hash，未校验 package、semantic fingerprint 与 logical descriptor。validatePublishedVerificationSelection 对所有调用都读取 mutable canonical verification.md，无法支持 historical terminal point-in-time replay。另有一个 validateVerificationSelectionRecord closed validator，其 schema 与实际 publication 多出的 producingSemanticInputFingerprint、selection、verificationMarkdownLogicalRef 字段不一致且未被 Reader 使用。",
+      "contractRef": "design.md Decisions 3 and 8；specs/flowkit-formal-fact-reader-and-persistence Requirement: post-action record 必须独立持久化；specs/flowkit-change-verification-selection Requirement: Core 必须发布 immutable verification-selection record",
+      "invariant": "commit marker 必须在 terminal CAS 前完整存在，并由 terminal result exact-bind；pending recovery 可检查 current Markdown，historical terminal replay只能校验 persisted result 与 immutable per-Run authority，不能读取未来 mutable bytes。",
+      "evidence": [
+        "src/services/b1-run-execution-service.ts:1162-1180 先 publishV5ApplyVerificationSelection 后 completeRun，但 logicalToCompleteRunInput 不携带任何 selection record binding",
+        "src/verification/change-selection/publication.ts:94-104 无条件读取 canonicalVerificationPath 并只比较 producingRunId 与 Markdown hash",
+        "src/verification/change-selection/contracts.ts:68-89 的 closed record schema拒绝 publication.ts:10-26 实际写出的完整 record shape，且 production Reader 未调用该 validator",
+        "tests/unit/verification/change-selection/publication.test.ts 只覆盖相同 bytes 重写与不同 record conflict，未覆盖四种 crash/recovery state 或 terminal binding"
+      ],
+      "impact": "record 发布后 terminal preflight 失败时，后续合法 Action bytes 可被旧 record遮蔽；terminal result 也无法证明自己绑定哪份 post-action observation。未来 revise-apply 修改 Markdown 会破坏旧 replay。",
+      "location": "src/verification/change-selection/publication.ts；src/verification/change-selection/contracts.ts；src/services/b1-run-execution-service.ts；src/domain/types.ts",
+      "blockingAuthority": "author",
+      "requiredOutcome": "统一实际 record type与唯一 closed validator，在 terminal preflight/CAS 中 Core 派生并 exact-bind per-Run record identity及 logical descriptor；按 absent/Markdown-only/record+pending/terminal-present 四态实现恢复，historical terminal 路径不得读取 current Markdown。",
+      "acceptance": [
+        "实际 publication bytes 可被唯一 production closed validator完整验证，unknown/extra/malformed字段 fail closed",
+        "completed Apply/revise-apply result exact-bind producing Run 的 immutable record，缺失/mismatch 阻止 terminal CAS",
+        "record-present pending equivalent replay只执行 terminal CAS，conflicting replay fail closed",
+        "old terminal exact replay不读取未来 verification.md，且四态 crash/recovery tests 完整"
+      ]
+    },
+    {
+      "id": "E1-RA-003",
+      "severity": "blocking",
+      "title": "production actualChangeSet 错把 entry 当 canonical base",
+      "problem": "publishV5ApplyVerificationSelection 调用 derivePostActionChangeObservation(entry, entry, postAction, declaration)，所以 actualChangeSet 实际是 entry→post，而不是 canonical base→post。仓库虽有 deriveActualChangeSetFromCanonicalBase primitive，production call path没有使用它。",
+      "contractRef": "design.md Decision 6；tasks.md 4.2；specs/flowkit-change-verification-selection Requirement: Core 必须从 actualChangeSet 选择 verification scope",
+      "invariant": "actualChangeSet 必须描述 canonical base→post-action 的最终 candidate，并保留 Apply entry 时已经存在、Action 内未变化的 candidate bytes；observedActionMutations 才是 entry→post。",
+      "evidence": [
+        "src/services/b1-run-execution-service.ts:1214-1220 将同一个 entry snapshot 同时作为 base 与 entry 参数",
+        "src/verification/change-selection/actual-change-set.ts:72-73 明确第一个参数派生 actualChangeSet、第二个参数派生 observedActionMutations",
+        "tests/unit/verification/change-selection/actual-change-set.test.ts 只验证 primitive 的 base/entry/post 三快照，integration test也直接正确传 base, base, post，未覆盖production publish call"
+      ],
+      "impact": "Apply 开始前已有的合法 candidate 文件会从 selection record 消失，module/capability/scopes 选择不足，review看到的并非最终 Change。",
+      "location": "src/services/b1-run-execution-service.ts publishV5ApplyVerificationSelection；src/verification/change-selection/actual-change-set.ts",
+      "blockingAuthority": "author",
+      "requiredOutcome": "在 production admission 中从 persisted canonical base 重建真实 base state并派生 base→post actualChangeSet，同时独立保持 entry→post observedActionMutations；用 entry 已有 dirty candidate 的 service/integration test证明。",
+      "acceptance": [
+        "production record包含 entry前已存在但Action内未变化的base差异",
+        "observedActionMutations仅包含entry后变化，并继续拒绝 declaration外路径",
+        "create/modify/delete、untracked、rename-like、line ending与reserved Core path测试通过production call path"
+      ]
+    },
+    {
+      "id": "E1-RA-004",
+      "severity": "blocking",
+      "title": "Formal Reader 未实现 current-lineage 与 pending publication 语义",
+      "problem": "readActiveChangeVerificationStatus 仅按最大 runId选择最近 completed apply/revise-apply；它不按 Policy/Review producer lineage判断 current producer，也不识别 pending Apply/revise-apply 已发布 Markdown/record 的 in-flight 状态。若后续 pending revision覆盖 canonical Markdown，它会拿旧 completed record对照新 bytes并产生历史 conflict。record读取也只是 loose object + 两字段比较。",
+      "contractRef": "design.md Decision 8 steps 1-5；tasks.md 5.6/5.8；specs/flowkit-formal-fact-reader-and-persistence Reader current-lineage scenarios",
+      "invariant": "Reader 只验证唯一 current applicable completed producer；pending publication使 projection unavailable/in-flight，不能升级为 authority或让旧 terminal对照future bytes。",
+      "evidence": [
+        "src/facts/formal-fact-reader.ts:1143-1145 只按 runId倒序选第一条 completed producer",
+        "src/facts/formal-fact-reader.ts:1080-1171 未检查任何 pending apply/revise-apply publication state",
+        "src/facts/formal-fact-reader.ts:1157-1167 未调用 closed record validator，也未验证 producer result、semantic identity、selection payload或唯一候选",
+        "tests/unit/facts/formal-fact-reader-e1-verification.test.ts fixtures没有任何 Run，实际只测 marker parsing"
+      ],
+      "impact": "合法 revise-apply publication 可反向冲突旧 Apply，pending record可错误沿用旧authority；Policy和review-apply gate读取的Verification事实不可靠。",
+      "location": "src/facts/formal-fact-reader.ts readActiveChangeVerificationStatus；tests/unit/facts/formal-fact-reader-e1-verification.test.ts",
+      "blockingAuthority": "author",
+      "requiredOutcome": "按现有 review/revision lineage选择唯一 current producer，加入 pending publication in-flight投影，使用统一closed validator完整绑定 producer/result/record/current Markdown，并增加 Apply→review changes-requested→revise-apply old/new lineage tests。",
+      "acceptance": [
+        "初次Apply、被changes-requested的Apply、完成revise-apply三种lineage均选择正确唯一producer",
+        "pending Markdown-only或record publication均使Verification unavailable/in-flight，不比较previous terminal record与新bytes",
+        "current producer/record/result/Markdown任一缺失、歧义或mismatch fail closed",
+        "合法successor publication不产生historical FactConflict"
+      ]
+    },
+    {
+      "id": "E1-RA-005",
+      "severity": "blocking",
+      "title": "verification module authority、not-applicable 与 deterministic record contract 未闭合",
+      "problem": "module-map validator只检查module id排序、非空字段、unknown dependency、跨module ownership overlap和cycle；它接受module内部重复/乱序selectors、dependsOn/scopes/capabilities以及任意unknown scope/capability。VerificationModule/record没有noApplicable predicate/proof、module-map logical ref或capability relation outcome。renderer固定写入status not-run，current record又exact-bind该Markdown，因此正常v5 Apply无法形成passed Verification而不破坏binding。",
+      "contractRef": "design.md Decisions 7-8；tasks.md 5.1/5.4/5.5/5.7；specs/flowkit-change-verification-selection deterministic selection and explicit not-applicable requirements",
+      "invariant": "module/capability authority必须closed、唯一、稳定排序；not-applicable只能由closed predicate显式证明；record保存完整relation/proof authority并生成可进入正式Verification lifecycle的deterministic Markdown。",
+      "evidence": [
+        "src/verification/change-selection/module-map.ts:80-109 不验证inner arrays的unique/lexical order，也没有closed scope/capability authority；当前verification-selection dependsOn自身即非lexical order",
+        "VerificationModule和VerificationSelectionPublication均没有noApplicablePredicateId/proof或relation outcome字段",
+        "src/verification/change-selection/publication.ts:109-133 固定输出 flowkit-change-verification-status: not-run",
+        "module-map/publication/selection tests合计仅6个case，没有unknown scope/capability、nondeterministic ordering、not-applicable或Markdown status lifecycle"
+      ],
+      "impact": "看似稳定的selection可由非canonical map输入产生；缺失mapping无法与合法not-applicable区分；后续v5 Apply会被固定not-run或Markdown binding conflict卡住，不能进入可信review-apply。",
+      "location": "src/verification/change-selection/module-map.ts；selection.ts；publication.ts；contracts.ts",
+      "blockingAuthority": "author",
+      "requiredOutcome": "补全closed module/scope/capability/predicate schema与validator，保存module-map ref、relation outcome及可选not-applicable proof，定义并实现Verification status如何与immutable selection publication一致进入passed/failed/not-applicable lifecycle；补齐负向determinism tests。",
+      "acceptance": [
+        "duplicate/overlap/unknown/cycle/nondeterministic module map全部fail closed",
+        "modules/capabilities/scopes stable sorted/deduped且record保存完整authority/ref/relation outcome",
+        "not-applicable只有closed predicate proof时可产生，missing mapping不得降级",
+        "v5 Apply后的canonical Verification可合法达到passed/failed/not-applicable而不破坏record binding"
+      ]
+    },
+    {
+      "id": "E1-RA-006",
+      "severity": "blocking",
+      "title": "OpenSpec projection 未跨完整 formal operation 共享，Windows cancellation 也只有无诊断 fallback",
+      "problem": "prepareNewExecution 先调用readSnapshot；Formal Reader在readOpenSpecArtifacts中自行new adapter/getChangeStatus，随后deriveSemanticInputs又创建另一OpenSpecOperationProjection，故同一preparation仍重复version/status process。Windows timeout分支只child.kill launcher后立即返回outcome-unknown，没有owned process-tree cancellation seam或launcher/descendant diagnostics。",
+      "contractRef": "design.md Decisions 4-5；tasks.md 3.1-3.6；specs/flowkit-openspec-1-7-thin-integration formal operation projection requirement；specs/flowkit-runtime-foundation Windows timeout requirements",
+      "invariant": "formal snapshot、contract refs、tasks、verification与prepared context必须共享一次operation projection；Windows无法证明process tree终止时必须保留可诊断的ownership/descendant信息并fail closed。",
+      "evidence": [
+        "src/facts/formal-fact-reader.ts:1015-1018 为active Change独立创建OpenSpecCliAdapter并getChangeStatus",
+        "src/services/b1-run-execution-service.ts:456先readSnapshot，1538-1569随后buildOpenSpecPreparedActionContext/createOperationProjection，没有projection参数贯通",
+        "adapter test只证明单个createOperationProjection内部冻结一次status，未覆盖formal preparation总调用次数或real CLI operation共享",
+        "src/shared/external-command.ts:173-191 Windows timeout仅kill launcher并返回outcome-unknown，结果没有process-tree termination diagnostics/seam"
+      ],
+      "impact": "E1原定关闭的61秒重复OpenSpec projection根因仍存在；timeout后无法区分owned descendants与保留终止诊断，只能永久退化到最低fallback。",
+      "location": "src/facts/formal-fact-reader.ts；src/services/b1-run-execution-service.ts；src/integrations/openspec/openspec-cli-adapter.ts；src/shared/external-command.ts",
+      "blockingAuthority": "author",
+      "requiredOutcome": "把一个OpenSpecOperationProjection贯穿每次完整formal read/preparation并用invocation-count/real CLI test证明；实现可注入的Windows owned process-tree cancellation seam，confirmed时返回timed-out-cancelled，无法确认时携带完整diagnostics返回outcome-unknown。",
+      "acceptance": [
+        "同一preparation中的snapshot/artifacts/tasks/verification/contract/action context共享一次version/status projection",
+        "post-action admission使用全新projection且不跨mutation cache",
+        "fake与real CLI invocation-count tests覆盖完整operation而非单adapter方法",
+        "Windows confirmed whole-tree termination与unconfirmed diagnostics/race/late-exit测试齐全"
+      ]
+    },
+    {
+      "id": "E1-RA-007",
+      "severity": "blocking",
+      "title": "bootstrap integration、长期文档与Verification证据尚未完成",
+      "problem": "当前E1 integration仅直接组合snapshot/change-set/selection/publication primitives，没有经过prepareNewExecution→v5 context/ActionPackage v2→resume/admit→Reader，因此不能证明task 6.1/6.2联动。approved mutation scope指定的tests/fixtures/e1-change-verification-selection目录不存在，长期docs/flowkit-self-hosting-bootstrap-and-migration.md也不存在。独立npm run typecheck当前在integration第37行失败，但verification.md声称typecheck与quality通过。除1.3外tasks仍未按真实完成情况勾选。",
+      "contractRef": "tasks.md 6.1-6.4 and 7.1-7.5；design.md Decision 10；AGENTS.md Review=完整审查与正式Verification事实要求",
+      "invariant": "Verification evidence必须与当前bytes和exact commands一致；bootstrap integration必须验证正式production链路，长期migration边界必须落入canonical文档；tasks只能在实际完成后勾选。",
+      "evidence": [
+        "独立执行 npm run typecheck 失败：tests/integration/e1-change-verification-selection.test.ts(37,7) TS2322 string不可赋给VersionedAuthorityRef",
+        "focused node tests 82/82通过、OpenSpec strict通过、git diff --check通过，但没有覆盖RA-001至RA-006场景",
+        "tests/integration/e1-change-verification-selection.test.ts只直接调用四个primitive且手写record；未创建/恢复/admit v5 Run，也未调用Formal Reader",
+        "tests/fixtures/e1-change-verification-selection 与 docs/flowkit-self-hosting-bootstrap-and-migration.md 均不存在",
+        "verification.md仍记录 npm run typecheck、npm run quality通过，与当前typecheck结果冲突；tasks.md除1.3外未勾选"
+      ],
+      "impact": "当前“已全部实施/验证”的正式结论不可复现，未覆盖的production集成缺陷已进入candidate；Policy后续还会因tasks未完成而阻塞。",
+      "location": "tests/integration/e1-change-verification-selection.test.ts；openspec/changes/change-verification-selection-and-change-set/verification.md；tasks.md；docs/flowkit-self-hosting-bootstrap-and-migration.md",
+      "blockingAuthority": "author",
+      "requiredOutcome": "关闭前述实现blocker后建立真正production v5 disposable integration与historical fixtures，补齐长期migration文档，修复typecheck并重跑/如实更新exact verification evidence；最后逐项核验并勾选所有实际完成tasks，未完成项不得勾选。",
+      "acceptance": [
+        "disposable integration走完整prepare/resume/admit/read链并产生真实v5 context、ActionPackage v2、record与terminal binding",
+        "historical v2/v3/v4 fixtures及unknown/cross-version regression完整，且不改写105-116",
+        "长期self-hosting/migration文档明确bootstrap、attribution限制与后续dogfood边界",
+        "npm run typecheck及记录的focused/quality/full/strict/hygiene commands在当前bytes上通过",
+        "Author按真实完成状态勾选tasks.md全部条目，并保留G1边界"
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}

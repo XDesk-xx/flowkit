@@ -1,0 +1,51 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-explore",
+    "executionStatus": "completed",
+    "summary": "161 已关闭 F1-RE-002 的 mutation-surface closure，并实质修正 F1-RE-001 的 subject-only/formal identity gap；但 authority proof 仍缺 authorization-before-checkpoint 的时间绑定。当前 prototype 只匹配历史 commit trailer 与当前 Manifest Owner fact，未排除 checkpoint-first + authorization-later 的事后追认，因此原 RE-001 由更精确的 temporal finding F1-RE-003 supersede，本轮 changes-requested。"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "F1-RE-003",
+      "severity": "blocking",
+      "title": "Checkpoint authority proof 缺少 authorization-before-boundary 的时间绑定，历史 commit 可被 later Owner fact 事后追认",
+      "problem": "161 已解决 subject-only / malformed / wrong-target 的 formal identity matching，但 Proof A 明确让 strict recognition 只把 commit trailer 中的 Owner-Authorization ref 与当前 Manifest canonical Owner fact 匹配；它没有证明该 authorize-checkpoint fact 在 checkpoint Git boundary 形成时已经存在。这样一个 checkpoint commit 可以先携带一个当时尚不存在于正式事实中的 Owner-Authorization ref，随后再把同 ref 的 authorize-checkpoint record写入 Manifest；若 Reader只消费当前 Manifest，历史 checkpoint 会被 retroactively admitted。161 自己的 Acceptance Boundary 是 Owner authorize-checkpoint → formal Git checkpoint，故 temporal order 是该 authority chain 的一部分，当前 Evidence Boundary 尚未覆盖。",
+      "contractRef": "flowkit-operating-model-v8 §27.2; openspec/specs/flowkit-bootstrap-and-roadmap/spec.md Git formal boundary requirement; openspec/specs/flowkit-delivery-change-creation-and-owner-input/spec.md authorize-checkpoint authority boundary",
+      "invariant": "Owner authorization 必须先于其授权的 Change Checkpoint Git boundary 生效；formal checkpoint recognition 不得仅凭后来出现的 current Owner fact 对一个形成时未经授权的历史 commit 进行事后追认。",
+      "evidence": [
+        "explore.md:137-143 defines acceptance as Owner authorize-checkpoint → exact target → formal Git checkpoint identity → recognized checkpoint",
+        "explore.md:159-164 says the prototype consumes the Manifest canonical Owner fact and matches its ref/Delivery/Change to commit trailers, but does not require the fact to exist in the checkpoint commit tree or an ancestor",
+        "explore.md:200-210 negative matrix covers missing/mismatched current provenance but omits checkpoint-first / authorization-later retroactive matching",
+        "explore.md:230 claims the Evidence Boundary covers Owner authorization provenance → strict Git identity → Policy next, so the documented PASS exceeds the actually tested temporal boundary",
+        "canonical E2 checkpoint commit already contains the matching authorize-checkpoint record in its committed Manifest, showing a feasible non-retroactive authority shape without adding a second checkpoint state"
+      ],
+      "impact": "Proposal若按 current Manifest ref equality 冻结 recognition，未来可先形成未经授权的 checkpoint commit，再通过后补 Owner record 使其 retroactively valid；Policy最终会把一个形成时没有合法 Owner authority 的 Git boundary 当成正式 Checkpoint。",
+      "location": "openspec/changes/archive-and-checkpoint-boundary/explore.md:135-165,198-234,597-612,634-641",
+      "blockingAuthority": "author",
+      "requiredOutcome": "补一个最小 temporal authority proof：strict checkpoint admission 必须证明匹配的 authorize-checkpoint authority 在该 Git boundary 形成时已经存在，而不是仅在当前 Manifest 中后来出现。可以验证 checkpoint commit tree/ancestor 中的正式 Owner fact，或采用语义等价的不可事后追认机制；Reviewer不预设具体 Git plumbing。加入 checkpoint-first → authorization-later 反例，并证明它不会被 retroactively admitted；同时保留 161 已证明的 strict identity matching 与 bounded legacy compatibility。",
+      "acceptance": [
+        "Explore 明确把 Owner authorization temporal existence 纳入 strict checkpoint recognition acceptance，而不仅是 current ref equality",
+        "disposable evidence覆盖 authorization-before-checkpoint = accepted，以及 checkpoint-before-authorization-later = not retroactively accepted",
+        "subject-only / wrong Delivery / wrong Change / wrong Boundary / missing或mismatched provenance仍 fail-closed，legacy compatibility继续 bounded且不回写历史 Git"
+      ]
+    }
+  ],
+  "reviewFindingConvergence": [
+    {
+      "findingId": "F1-RE-001",
+      "state": "superseded",
+      "supersededByFindingId": "F1-RE-003"
+    },
+    {
+      "findingId": "F1-RE-002",
+      "state": "resolved"
+    },
+    {
+      "findingId": "F1-RE-003",
+      "state": "new"
+    }
+  ]
+}

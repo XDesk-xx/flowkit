@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 2,
+  "runId": "20260810-003-revise-explore",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "revise-explore",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/core-contract-alignment/20260810-003-revise-explore/",
+  "changeKey": "Q1",
+  "changeId": "core-contract-alignment",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/core-contract-alignment/20260810-002-review-explore/result.json",
+    "versionFingerprint": "09a0da2b699269f8915f88632d6a21cfa494988dd7e4beed4a969b761e8b1a05",
+    "kind": "run-result"
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "125 closes E1-RA-009 and E1-RA-010. E1-RA-008 remains open for historical legacy reset recovery, and E1-RA-011 is a new actualChangeSet/final verification publication mismatch blocker.",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/change-verification-selection-and-change-set/verification.md",
+      "versionFingerprint": "3ff76afe7e925caffe3bcabadfbac07149a45463a7d1126ab8a2981edf6ca1c0",
+      "kind": "verification-summary"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "97bd499f232d409998d7aefbadcd56de35326bce2d82d430d2229c293cccbe0f"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "E1-RA-008",
+      "severity": "blocking",
+      "title": "Contract Reset recovery 仍用 post-reset current generation 重建 historical pending Run",
+      "problem": "新 E1 spec 已明确 recoverContractResetPendingRun 必须基于 target pending Run 的 persisted entry lineage；122 production implementation 仍在 isContractResetOnlyPendingDrift 中调用 deriveSemanticInputs(current snapshot, context.action, descriptorsFromContext(context))。deriveSemanticInputs→collectContractRefs 又调用 computeResetAwareLineage(snapshot,...).artifact，因此 Reset 正确排除旧 proposal/apply generation 后，旧 pending Apply/revise-apply recovery 仍会要求 current generation producer，重现 `apply has no immutable propose producer generation` deadlock。",
+      "contractRef": "specs/flowkit-formal-fact-reader-and-persistence Requirement: Contract Reset recovery 必须保持 narrow admission；docs/flowkit-self-hosting-bootstrap-and-migration.md persisted-entry invariant",
+      "invariant": "historical pending Run 的 entry truth 来自其 persisted context/inputRef/producer-review lineage；Contract Reset 只改变 currentness，不能迫使 recovery 用新 generation 重新解释旧 Run。",
+      "evidence": [
+        "src/services/b1-run-execution-service.ts:1360-1367 isContractResetOnlyPendingDrift 仍调用 deriveSemanticInputs(current snapshot, context.action, descriptorsFromContext(context))。",
+        "src/services/b1-run-execution-service.ts:1811-1814 collectContractRefs 仍通过 computeResetAwareLineage(current snapshot) 查 current stage producer，缺失时抛 `has no immutable ... producer generation`。",
+        "现有 reset recovery tests 只覆盖 pending explore；没有 approved proposal→pending apply/revise-apply→Contract Reset→old generation non-current 的 regression。"
+      ],
+      "impact": "historical Apply/revise-apply 仍可能成为 orphan pending Run，阻断 fresh proposal generation，违反本次 E1 restart 后已冻结的 recovery contract。",
+      "location": "src/services/b1-run-execution-service.ts isContractResetOnlyPendingDrift / deriveSemanticInputs / collectContractRefs",
+      "blockingAuthority": "author",
+      "requiredOutcome": "为 reset recovery 增加严格 historical reconstruction：以 target context.inputRef、consumed review result、reviewed producer ResultRefs及其 persisted contract/Owner refs重建原始 entry semantic view；只将 current applicable Contract Reset作为允许的唯一差异。缺失、歧义、hash mismatch或 mixed drift 均 fail closed，不得 fallback 到 current-generation producer lookup。",
+      "acceptance": [
+        "synthetic approved proposal/review→pending apply→Contract Reset 后，旧 proposal generation 已 non-current 仍可由 official recovery取消为 superseded-by-owner-contract-reset",
+        "同样覆盖 pending revise-apply historical lineage",
+        "recovery 不要求 post-reset current propose producer",
+        "missing/ambiguous historical refs、multiple pending 与 mixed semantic drift 全部 fail closed"
+      ]
+    },
+    {
+      "id": "E1-RA-011",
+      "severity": "blocking",
+      "title": "125 actualChangeSet 收录了 Core-owned verification.md 的 pre-publication bytes，record 不再描述最终 candidate",
+      "problem": "125 在 Core 写入本 Run的 canonical verification.md 之前就从 Git base→post-action snapshot计算 actualChangeSet；deriveActualChangeSetFromCanonicalBase 只排除 .flowkit 路径，没有排除当前 Change 的 Core-owned verification.md。随后 publishVerificationSelection 重写 verification.md。因此 immutable selection record 中 verification.md 的 contentFingerprintAfter 绑定的是旧 publication，而最终 candidate 已是新 publication。",
+      "contractRef": "openspec/changes/change-verification-selection-and-change-set/design.md §6 entry snapshot 与 actualChangeSet；tasks.md 4.2/4.3；specs/flowkit-change-verification-selection/spec.md Requirement: Core 必须派生 canonical actualChangeSet",
+      "invariant": "reserved Core-owned verification publication 不进入 Author candidate sets；对 actualChangeSet 中保留的每个 file，contentFingerprintAfter 必须描述最终 candidate bytes，而不是 publication 前的临时状态。",
+      "evidence": [
+        "src/services/b1-run-execution-service.ts:1388 先 deriveActualChangeSetFromCanonicalBase(..., postAction)，之后才在 publishVerificationSelection 中发布新的 canonical verification.md。",
+        "src/verification/change-selection/actual-change-set.ts 只排除 .flowkit/**，没有排除 openspec/changes/<change>/verification.md。",
+        "125 verification-selection.json 对 verification.md 记录 contentFingerprintAfter=324b87da22b2eac35ed7264ecab704892ffc21c1ef6d1a75f6e6c14d8cd28f09；最终 payload verification.md SHA-256=3ff76afe7e925caffe3bcabadfbac07149a45463a7d1126ab8a2981edf6ca1c0。独立重算 selection 中所有 non-delete entries，只有该 path fingerprint mismatch。"
+      ],
+      "impact": "immutable actualChangeSet 与最终 cumulative candidate 不一致，并可能让 verification selection 把 Core 自己的 publication path 当作业务/OpenSpec candidate 输入；record 无法作为 final candidate 的可复验 change-set authority。",
+      "location": "src/services/b1-run-execution-service.ts publishV5ApplyVerificationSelection；src/verification/change-selection/actual-change-set.ts",
+      "blockingAuthority": "author",
+      "requiredOutcome": "按 approved reserved-path contract 修正 observation/selection：当前 Run 的 Core-owned verification publication 不得作为 candidate mutation 参与 observedActionMutations/actualChangeSet/verificationScope；对仍保留在 actualChangeSet 的每个 file，最终 immutable record fingerprint 必须与 terminal candidate bytes一致。不得通过在 record 中保留 pre-publication verification.md hash 规避。",
+      "acceptance": [
+        "v5 Apply/revise-apply publication 后，actualChangeSet 不包含当前 Run 的 Core-owned canonical verification.md publication",
+        "对 immutable selection actualChangeSet 的所有 non-delete files 重算 terminal candidate SHA-256，全部与 contentFingerprintAfter 一致",
+        "verificationScope 不因 Core 自己写 verification.md 而扩大",
+        "增加 regression 覆盖 entry 时已有旧 verification.md、Core publication 后 bytes变化的场景"
+      ]
+    }
+  ],
+  "reviewFindingConvergence": [
+    {
+      "findingId": "E1-RA-008",
+      "state": "still-open"
+    },
+    {
+      "findingId": "E1-RA-009",
+      "state": "resolved"
+    },
+    {
+      "findingId": "E1-RA-010",
+      "state": "resolved"
+    },
+    {
+      "findingId": "E1-RA-011",
+      "state": "new"
+    }
+  ]
+}

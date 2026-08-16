@@ -1,0 +1,21 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-apply",
+    "executionStatus": "completed",
+    "summary": "修复 E1-RA-008 与 E1-RA-011：legacy pending Apply/revise-apply 在 Contract Reset 后仅按 persisted historical lineage 恢复并对缺失 producer ref / mixed drift fail-closed；Core-owned verification.md publication 从 observedActionMutations/actualChangeSet/verificationScope 排除，剩余 terminal fingerprint 与最终 candidate bytes 一致。",
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260814-126-review-apply/result.json",
+      "versionFingerprint": "4c4cd8b0ae0c45ed8f75ac76af498de9e80b9bb7a61ef9e43e50e3e3047e0ed6",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "00bad5e206514afd8f85a7d2790a74cffb21af1fa984d34e58254b7d906ccfa5",
+    "verificationSelection": {
+      "logicalRef": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260814-127-revise-apply/verification-selection.json",
+      "versionFingerprint": "b3d7b9777818174bd672a2684794de6eb683a7fd816261ebab9e1e66b566ac15"
+    }
+  }
+}

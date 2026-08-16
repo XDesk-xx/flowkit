@@ -1,0 +1,331 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260815-206-apply",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "apply",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "semanticInputFingerprint": "5083d298cbf1df82433ab1ce8573a8391f697d5c398e49cde6b46878c6adcf58",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/historical-fixture-and-test-performance-correction/20260815-206-apply/",
+  "changeKey": "H1",
+  "changeId": "historical-fixture-and-test-performance-correction",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/historical-fixture-and-test-performance-correction/20260815-205-review-propose/result.json",
+    "versionFingerprint": "a0f639f45f7a1a6fd882c0b4a4e0bbe090e20c93821e00ec2cddabaaacd9d365",
+    "kind": "run-result"
+  },
+  "canonicalBase": "d3d220f4051e55c55223e233eb862bc3b9a8b4cb",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/historical-fixture-and-test-performance-correction/20260815-205-review-propose/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "a0f639f45f7a1a6fd882c0b4a4e0bbe090e20c93821e00ec2cddabaaacd9d365"
+    },
+    {
+      "ref": "openspec/changes/historical-fixture-and-test-performance-correction/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+    },
+    {
+      "ref": "openspec/changes/historical-fixture-and-test-performance-correction/design.md",
+      "versionFingerprint": "5a33f533b3eccbfca153bebae9562661c62eecfaaeb300f789a25716b376355c",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/historical-fixture-and-test-performance-correction/proposal.md",
+      "versionFingerprint": "89eab0aaa98dbeb72bdd388b153aaa26fce5a9047e5238d87e273c39331eed32",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/historical-fixture-and-test-performance-correction/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+      "versionFingerprint": "3a6985a021941a807f118ce589e9b7ce3edb038360fc0cb458a3ca38700064dc",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/historical-fixture-and-test-performance-correction/specs/flowkit-change-verification-selection/spec.md",
+      "versionFingerprint": "5916c6f4bf7dbf44b4f4f9b13149c4a9bc3cca4db14ab055730e4f4bba0edf14",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/historical-fixture-and-test-performance-correction/tasks.md",
+      "versionFingerprint": "02a2aeaa432c9e48e9076e461073881bfabd5a55faf311041fce7cda145609be",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "historical-fixture-and-test-performance-correction",
+      "runId": "20260815-206-apply",
+      "action": "apply",
+      "role": "author",
+      "semanticInputFingerprint": "5083d298cbf1df82433ab1ce8573a8391f697d5c398e49cde6b46878c6adcf58"
+    },
+    "definition": {
+      "action": "apply",
+      "version": 1,
+      "role": "author",
+      "goalClass": "implement-approved-contract",
+      "mutationClass": "approved-implementation-and-verification",
+      "outputClass": "implementation-candidate-and-authority-files",
+      "terminalContract": {
+        "kind": "implementation",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+      },
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/design.md",
+        "versionFingerprint": "5a33f533b3eccbfca153bebae9562661c62eecfaaeb300f789a25716b376355c",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/proposal.md",
+        "versionFingerprint": "89eab0aaa98dbeb72bdd388b153aaa26fce5a9047e5238d87e273c39331eed32",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+        "versionFingerprint": "3a6985a021941a807f118ce589e9b7ce3edb038360fc0cb458a3ca38700064dc",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "5916c6f4bf7dbf44b4f4f9b13149c4a9bc3cca4db14ab055730e4f4bba0edf14",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/tasks.md",
+        "versionFingerprint": "02a2aeaa432c9e48e9076e461073881bfabd5a55faf311041fce7cda145609be",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/historical-fixture-and-test-performance-correction/20260815-205-review-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "a0f639f45f7a1a6fd882c0b4a4e0bbe090e20c93821e00ec2cddabaaacd9d365"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260815-205-review-propose",
+      "verdict": "approved",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/historical-fixture-and-test-performance-correction/20260815-205-review-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "a0f639f45f7a1a6fd882c0b4a4e0bbe090e20c93821e00ec2cddabaaacd9d365"
+      },
+      "blockingAuthorities": [],
+      "findings": []
+    },
+    "ownerAuthorizationRefs": [
+      {
+        "ref": "owner:3b71b410b499e02f9bc2437404dbd375917d45d251be8a8816dba7195ad026ea",
+        "decision": "authorize-apply",
+        "deliveryId": "20260810-01-change-execution-loop",
+        "changeId": "historical-fixture-and-test-performance-correction",
+        "sourceRef": "owner-input:2026-08-16T02:28+08:00:authorize-apply:H1-204"
+      }
+    ],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "f49bd4ed9ef6f7565434a05f1e7d08c6424464247719b5fe1fedbb4074aaa5c9",
+    "requiredResultContract": {
+      "kind": "implementation",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    },
+    "compactEntryWorkspaceIdentity": {
+      "canonicalBase": "d3d220f4051e55c55223e233eb862bc3b9a8b4cb",
+      "workspaceFingerprint": "af5beab3a4af7f320fae9e23ac851392959f2f430af2ec4fb826ccf6164a4288",
+      "entries": [
+        {
+          "path": "openspec/changes/historical-fixture-and-test-performance-correction/.openspec.yaml",
+          "state": "untracked",
+          "contentFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+        },
+        {
+          "path": "openspec/changes/historical-fixture-and-test-performance-correction/design.md",
+          "state": "untracked",
+          "contentFingerprint": "5a33f533b3eccbfca153bebae9562661c62eecfaaeb300f789a25716b376355c"
+        },
+        {
+          "path": "openspec/changes/historical-fixture-and-test-performance-correction/explore.md",
+          "state": "untracked",
+          "contentFingerprint": "a8e76a34937ad2a04b99205ce7b3fb947fb4744c3185883b2a64ba02d015c755"
+        },
+        {
+          "path": "openspec/changes/historical-fixture-and-test-performance-correction/proposal.md",
+          "state": "untracked",
+          "contentFingerprint": "89eab0aaa98dbeb72bdd388b153aaa26fce5a9047e5238d87e273c39331eed32"
+        },
+        {
+          "path": "openspec/changes/historical-fixture-and-test-performance-correction/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "3a6985a021941a807f118ce589e9b7ce3edb038360fc0cb458a3ca38700064dc"
+        },
+        {
+          "path": "openspec/changes/historical-fixture-and-test-performance-correction/specs/flowkit-change-verification-selection/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "5916c6f4bf7dbf44b4f4f9b13149c4a9bc3cca4db14ab055730e4f4bba0edf14"
+        },
+        {
+          "path": "openspec/changes/historical-fixture-and-test-performance-correction/tasks.md",
+          "state": "untracked",
+          "contentFingerprint": "02a2aeaa432c9e48e9076e461073881bfabd5a55faf311041fce7cda145609be"
+        },
+        {
+          "path": "openspec/delivery-groups/20260810-01-change-execution-loop.yaml",
+          "state": "modified",
+          "contentFingerprint": "3e979d0171ebbd05034aacad603c196437ae6d73f46b69e801a6a8bc39888e68"
+        }
+      ]
+    },
+    "mutationDeclaration": {
+      "schemaVersion": 1,
+      "action": "apply",
+      "designRef": {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/design.md",
+        "kind": "produced-artifact",
+        "versionFingerprint": "5a33f533b3eccbfca153bebae9562661c62eecfaaeb300f789a25716b376355c"
+      },
+      "selectors": [
+        {
+          "kind": "exact",
+          "path": "openspec/changes/historical-fixture-and-test-performance-correction/tasks.md"
+        },
+        {
+          "kind": "exact",
+          "path": "openspec/changes/historical-fixture-and-test-performance-correction/verification.md"
+        },
+        {
+          "kind": "exact",
+          "path": "src/verification/change-selection/evidence.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/integration/g1-change-cli-end-to-end.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/integration/openspec-1-7-real-cli.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/services/a1-write-service.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/verification/change-selection/evidence.test.ts"
+        }
+      ]
+    }
+  },
+  "compactEntryWorkspaceIdentity": {
+    "canonicalBase": "d3d220f4051e55c55223e233eb862bc3b9a8b4cb",
+    "workspaceFingerprint": "af5beab3a4af7f320fae9e23ac851392959f2f430af2ec4fb826ccf6164a4288",
+    "entries": [
+      {
+        "path": "openspec/changes/historical-fixture-and-test-performance-correction/.openspec.yaml",
+        "state": "untracked",
+        "contentFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+      },
+      {
+        "path": "openspec/changes/historical-fixture-and-test-performance-correction/design.md",
+        "state": "untracked",
+        "contentFingerprint": "5a33f533b3eccbfca153bebae9562661c62eecfaaeb300f789a25716b376355c"
+      },
+      {
+        "path": "openspec/changes/historical-fixture-and-test-performance-correction/explore.md",
+        "state": "untracked",
+        "contentFingerprint": "a8e76a34937ad2a04b99205ce7b3fb947fb4744c3185883b2a64ba02d015c755"
+      },
+      {
+        "path": "openspec/changes/historical-fixture-and-test-performance-correction/proposal.md",
+        "state": "untracked",
+        "contentFingerprint": "89eab0aaa98dbeb72bdd388b153aaa26fce5a9047e5238d87e273c39331eed32"
+      },
+      {
+        "path": "openspec/changes/historical-fixture-and-test-performance-correction/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "3a6985a021941a807f118ce589e9b7ce3edb038360fc0cb458a3ca38700064dc"
+      },
+      {
+        "path": "openspec/changes/historical-fixture-and-test-performance-correction/specs/flowkit-change-verification-selection/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "5916c6f4bf7dbf44b4f4f9b13149c4a9bc3cca4db14ab055730e4f4bba0edf14"
+      },
+      {
+        "path": "openspec/changes/historical-fixture-and-test-performance-correction/tasks.md",
+        "state": "untracked",
+        "contentFingerprint": "02a2aeaa432c9e48e9076e461073881bfabd5a55faf311041fce7cda145609be"
+      },
+      {
+        "path": "openspec/delivery-groups/20260810-01-change-execution-loop.yaml",
+        "state": "modified",
+        "contentFingerprint": "3e979d0171ebbd05034aacad603c196437ae6d73f46b69e801a6a8bc39888e68"
+      }
+    ]
+  },
+  "mutationDeclaration": {
+    "schemaVersion": 1,
+    "action": "apply",
+    "designRef": {
+      "ref": "openspec/changes/historical-fixture-and-test-performance-correction/design.md",
+      "kind": "produced-artifact",
+      "versionFingerprint": "5a33f533b3eccbfca153bebae9562661c62eecfaaeb300f789a25716b376355c"
+    },
+    "selectors": [
+      {
+        "kind": "exact",
+        "path": "openspec/changes/historical-fixture-and-test-performance-correction/tasks.md"
+      },
+      {
+        "kind": "exact",
+        "path": "openspec/changes/historical-fixture-and-test-performance-correction/verification.md"
+      },
+      {
+        "kind": "exact",
+        "path": "src/verification/change-selection/evidence.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/integration/g1-change-cli-end-to-end.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/integration/openspec-1-7-real-cli.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/services/a1-write-service.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/verification/change-selection/evidence.test.ts"
+      }
+    ]
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": true,
+    "mayWriteTestCode": true,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

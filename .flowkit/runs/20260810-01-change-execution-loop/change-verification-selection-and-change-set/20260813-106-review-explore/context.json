@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 4,
+  "runId": "20260813-106-review-explore",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "review-explore",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "84cc48b1f3694bf2c2f644aa9dd7e7dfb764b5ec916b1de440c6eef9dfdcc875",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260813-106-review-explore/",
+  "changeKey": "E1",
+  "changeId": "change-verification-selection-and-change-set",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260813-105-explore/result.json",
+    "versionFingerprint": "a0bdadccf88b616f90325f77aa1053259c0357c1e1fd29e81ca262ec98ce27ba",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260813-105-explore",
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

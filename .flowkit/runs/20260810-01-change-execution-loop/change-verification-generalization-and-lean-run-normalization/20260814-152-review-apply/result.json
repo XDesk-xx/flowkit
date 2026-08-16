@@ -1,0 +1,60 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "151 revise-apply closes E2-RA-001 and E2-RA-002, but the new activation gate still treats the Flowkit repository migration checkpoint as a prerequisite in every target repository. A fresh repository running the current implementation has no 02/E2 checkpoint, so it falls back to the legacy sidecar writer instead of the prospective three-file current writer.",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/verification.md",
+      "versionFingerprint": "411b0b06e36069e29953afff70d74cfcbccdbf32f9e9ef58d0ce566d98f2ae85",
+      "kind": "verification-summary"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "fa2956975025ba1dbd034bf29c51bec6d5c77b0b2bff2279caaf451a111e9c2a"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "E2-RA-003",
+      "severity": "blocking",
+      "blockingAuthority": "author",
+      "title": "post-E2 current writer incorrectly depends on every target repository containing Flowkit’s internal E2 migration checkpoint",
+      "problem": "151 fixes cross-Delivery persistence inside the Flowkit repository by searching the target repo Git history for the 20260810-01-change-execution-loop E2 checkpoint and requiring that checkpoint to be an ancestor of HEAD. This makes the Flowkit repository migration marker a permanent runtime prerequisite. A fresh project repository using the current/post-E2 Flowkit implementation has no such historical Delivery or checkpoint, so readGitBoundarySummaries returns no migration boundaries and isPostE2ThreeFileWriterActive returns false, causing new Runs to use the pre-E2 full-entry/sidecar writer.",
+      "contractRef": "Owner Contract Reset current Git/source defines current internal implementation; design.md Goals/Decision 6; 03 implementation reference §2.1 and §14 require the prospective three-file writer as the stable 02 handoff and for disposable self-hosting fixtures",
+      "invariant": "The E2 checkpoint may guard the one-time self-migration inside the Flowkit repository, but after that transition the current Flowkit implementation must use the three-file writer in later/fresh consumer repositories without requiring those repositories to reproduce Flowkit’s internal historical checkpoint.",
+      "evidence": [
+        "src/services/b1-run-execution-service.ts isPostE2ThreeFileWriterActive(repoRoot) calls readGitBoundarySummaries(repoRoot, 20260810-01-change-execution-loop) and returns false when no matching checkpoint is found.",
+        "src/facts/git-boundary-reader.ts returns [] when the requested Delivery Start does not exist in the target repository history.",
+        "Fresh-repository proof: a new Git repository containing only its own Delivery Start returns [] for readGitBoundarySummaries(root, 20260810-01-change-execution-loop); by the 151 gate this selects the legacy writer.",
+        "The Owner Contract Reset explicitly states that current Git/source defines current internal implementation, while 03 expects the 02 baseline to provide the prospective three-file Run writer and later executes disposable E2E repositories that do not naturally contain Flowkit’s internal 02/E2 checkpoint.",
+        "Independent 151 regression remains green (753/753), so this is a missing consumer-boundary case rather than a failing existing test."
+      ],
+      "impact": "Flowkit self-hosting within the same repository can work through F1/G1/03, but the stable runner/current source would silently regress to legacy entry-workspace/verification sidecars in a fresh project or repository that never contained the Bootstrap E2 checkpoint. That violates the long-term three-file Run product boundary and would force future consumers to fake Flowkit-internal migration history.",
+      "location": "src/services/b1-run-execution-service.ts:isPostE2ThreeFileWriterActive; src/facts/git-boundary-reader.ts:readGitBoundarySummaries",
+      "requiredOutcome": "Keep the E2 checkpoint as the bounded self-migration guard for the Flowkit repository, while making the post-E2/current implementation the default writer for repositories that are not that pre-E2 migration repository. Do not require downstream/fresh repositories to contain or synthesize Flowkit’s internal E2 checkpoint, and do not introduce a new component version family.",
+      "acceptance": [
+        "Inside the in-progress E2 migration repository before the E2 checkpoint, E2 still cannot self-activate the prospective writer.",
+        "After the E2 checkpoint, later Flowkit Changes/Deliveries continue using the three-file writer.",
+        "A fresh disposable repository using the current implementation and containing no 20260810-01-change-execution-loop/E2 history creates prospective Standard Runs without entry/selection/evidence sidecars.",
+        "Add a regression covering that fresh-repository consumer case; no fake migration checkpoint is required in the fixture."
+      ]
+    }
+  ],
+  "reviewFindingConvergence": [
+    {
+      "findingId": "E2-RA-001",
+      "state": "resolved"
+    },
+    {
+      "findingId": "E2-RA-002",
+      "state": "resolved"
+    },
+    {
+      "findingId": "E2-RA-003",
+      "state": "new"
+    }
+  ]
+}

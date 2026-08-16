@@ -1,0 +1,13 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-apply",
+    "executionStatus": "completed",
+    "summary": "关闭 B1-RA-001/B1-RA-002：Action Result admission 现在从 caller ActionPackage semantic fields 重算 canonical fingerprint 并与 persisted pending fingerprint exact-match，requiredResultContract 也与 fixed catalog exact-match，因此篡改 contract/handoff/review/verification/Owner authority identity 后保留旧 fingerprint 会在 terminal publish 前 fail closed；Apply-family contractRefs 改为从 stage producer Run 的 Core-derived point-in-time ResultRefs恢复 immutable entry generation，Apply 自身 tasks/verification progress 不再造成 self-drift，revise-apply verification 锁定 source Review verificationSummaryRef，同时 approved proposal/design/delta specs真实外部漂移仍 PENDING_INPUT_DRIFT。新增 tamper、Apply continuation、revise-apply continuation 与 immutable proposal drift regressions；Change Verification affected 604/604、typecheck/lint/build/quality/OpenSpec strict 全通过，Delivery Full Test 未运行。",
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/lean-run-and-action-package/20260811-040-review-apply/result.json",
+      "versionFingerprint": "ff6542184ce46b93ddd55d4e898ab7898aa8ab6fb5cb79cc1253e726605f80c5",
+      "kind": "run-result"
+    }
+  }
+}

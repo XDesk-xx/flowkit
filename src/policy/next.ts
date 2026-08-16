@@ -31,7 +31,8 @@ import {
   blockedResult,
 } from './types.js';
 import { computeLineage } from './lineage.js';
-import { detectStage } from './stage-detector.js';
+import { detectCurrentStage } from './stage-detector.js';
+import { projectCurrentContractResetLifecycle } from '../facts/generation-resolver.js';
 import {
   allRequiredCompleted,
   countActiveChanges,
@@ -41,7 +42,7 @@ import {
   isTasksFactAvailable,
   areTasksComplete,
 } from './preconditions.js';
-import { hasAuthorizationScope } from './owner-decision.js';
+import { hasOwnerAuthorization } from './owner-decision.js';
 import {
   evaluateVerificationGate,
   verificationGateDiagnosis,
@@ -51,10 +52,13 @@ import {
   conflictDiagnosis,
   dependencyIncompleteDiagnosis,
   fullTestFailedDiagnosis,
+  nonAuthorReviewBlockerDiagnosis,
+  deliveryBehaviorNotImplementedDiagnosis,
   noActionableChangeDiagnosis,
   noActiveDeliveryDiagnosis,
   tasksFactsUnavailableDiagnosis,
   tasksIncompleteDiagnosis,
+  archiveTerminalRecoveryRequiredDiagnosis,
 } from './blocked-diagnosis.js';
 
 // ---------------------------------------------------------------------------
@@ -82,7 +86,7 @@ function latestRunForChange(
 }
 
 /**
- * Returns `true` when every dependency key of `change` has a completed Change
+ * Returns `true` when every dependency id of `change` has a completed Change
  * in `snapshot`.
  */
 function dependenciesMet(
@@ -92,8 +96,8 @@ function dependenciesMet(
   if (change.dependsOn.length === 0) {
     return true;
   }
-  return change.dependsOn.every((depKey) =>
-    snapshot.changes.some((c) => c.key === depKey && c.state === 'completed'),
+  return change.dependsOn.every((depId) =>
+    snapshot.changes.some((c) => c.id === depId && c.state === 'completed'),
   );
 }
 
@@ -119,18 +123,21 @@ function decideActiveChange(
   snapshot: FormalFactSnapshot,
   change: ChangeFact,
 ): PolicyResult {
+  const current = projectCurrentContractResetLifecycle(snapshot, change.id);
+  const currentRuns = current.runs;
+  const currentVerdicts = current.reviewVerdicts;
   // 6.11: retry the latest failed/cancelled Run (scope persists; owner need
   // not re-authorize). Lineage agrees because failed/cancelled Runs are not
   // "completed" and thus do not become Current Artifact/Review.
-  const latest = latestRunForChange(snapshot.runs, change.id);
+  const latest = latestRunForChange(currentRuns, change.id);
   if (latest !== null && (latest.status === 'failed' || latest.status === 'cancelled')) {
     return actionResult(latest.action);
   }
 
-  const stage = detectStage(snapshot.runs, change.id);
+  const stage = detectCurrentStage(snapshot, change.id);
   const lineage = computeLineage(
-    snapshot.runs,
-    snapshot.reviewVerdicts,
+    currentRuns,
+    currentVerdicts,
     change.id,
     stage,
   );
@@ -155,6 +162,25 @@ function decideActiveChange(
   }
 }
 
+function decideChangesRequested(
+  stage: 'explore' | 'propose' | 'apply',
+  lineage: ReturnType<typeof computeLineage>,
+): PolicyResult {
+  const authorities = lineage.review?.blockingAuthorities ?? [];
+  if (authorities.length === 0) {
+    return blockedResult(ambiguousStateDiagnosis(`changes-requested ${stage} review has no blocking authority projection`));
+  }
+  if (authorities.every((authority) => authority === 'author')) {
+    const revise: Record<typeof stage, FormalAction> = {
+      explore: 'revise-explore',
+      propose: 'revise-propose',
+      apply: 'revise-apply',
+    };
+    return actionResult(revise[stage]);
+  }
+  return blockedResult(nonAuthorReviewBlockerDiagnosis(authorities));
+}
+
 /**
  * explore stage: null artifact → explore; no match → review-explore;
  * match+approved → propose; match+cr → revise-explore.
@@ -173,8 +199,7 @@ function decideExploreStage(
   if (lineage.verdict === 'approved') {
     return actionResult('propose');
   }
-  // verdict === 'changes-requested'
-  return actionResult('revise-explore');
+  return decideChangesRequested('explore', lineage);
 }
 
 /**
@@ -194,15 +219,14 @@ function decideProposeStage(
     return actionResult('review-propose');
   }
   if (lineage.verdict === 'approved') {
-    if (hasAuthorizationScope(snapshot.ownerAuthorizations, 'apply')) {
+    if (hasOwnerAuthorization(snapshot.ownerAuthorizations, 'authorize-apply', snapshot.deliveryId, _change.id)) {
       return actionResult('apply');
     }
     return ownerDecisionResult('authorize-apply', {
       detail: 'review-propose approved; apply awaits owner authorization',
     });
   }
-  // verdict === 'changes-requested'
-  return actionResult('revise-propose');
+  return decideChangesRequested('propose', lineage);
 }
 
 /**
@@ -237,7 +261,7 @@ function decideApplyStage(
     return actionResult('review-apply');
   }
   if (lineage.verdict === 'changes-requested') {
-    return actionResult('revise-apply');
+    return decideChangesRequested('apply', lineage);
   }
   // verdict === 'approved' → verification gate (D1-7, D1-RA-002, D1-RA-003).
   // Status-aware and fail-closed, shared with canRun(archive) via
@@ -257,7 +281,7 @@ function decideApplyStage(
   }
   // Verification satisfied + all required Tasks completed → archive owner
   // authorization boundary.
-  if (hasAuthorizationScope(snapshot.ownerAuthorizations, 'archive')) {
+  if (hasOwnerAuthorization(snapshot.ownerAuthorizations, 'authorize-archive', snapshot.deliveryId, _change.id)) {
     return actionResult('archive');
   }
   return ownerDecisionResult('authorize-archive', {
@@ -284,9 +308,21 @@ function decideNoActiveChange(snapshot: FormalFactSnapshot): PolicyResult {
   const checkpointPending = getCompletedUncheckpointedChanges(snapshot);
   if (checkpointPending.length === 1) {
     const change = checkpointPending[0]!;
+    const archiveTerminal = snapshot.checkpointArchiveTerminal;
+    if (
+      archiveTerminal === undefined
+      || archiveTerminal.changeId !== change.id
+      || archiveTerminal.status !== 'completed'
+    ) {
+      return blockedResult(archiveTerminalRecoveryRequiredDiagnosis(
+        change.id,
+        archiveTerminal?.status ?? 'missing',
+        archiveTerminal?.runId,
+      ));
+    }
     return ownerDecisionResult('authorize-checkpoint', {
       changeKey: change.key,
-      detail: 'Change is closed by OpenSpec archive; Change Checkpoint Git boundary awaits owner authorization',
+      detail: 'Change is closed by OpenSpec archive and its archive Run is terminal; Change Checkpoint Git boundary awaits owner authorization',
     });
   }
   if (checkpointPending.length > 1) {
@@ -316,24 +352,18 @@ function decideFullTestLifecycle(snapshot: FormalFactSnapshot): PolicyResult {
       return blockedResult(fullTestFailedDiagnosis());
 
     case 'passed':
-      if (hasAuthorizationScope(snapshot.ownerAuthorizations, 'finalize')) {
-        return actionResult('delivery-finalize');
+      if (hasOwnerAuthorization(snapshot.ownerAuthorizations, 'authorize-delivery-finalize', snapshot.deliveryId)) {
+        return blockedResult(deliveryBehaviorNotImplementedDiagnosis('delivery-finalize'));
       }
       return ownerDecisionResult('authorize-delivery-finalize', {
         deliveryFullTestStatus: status,
-        detail: 'Full Test passed; delivery-finalize awaits owner authorization',
+        detail: 'Full Test passed; Delivery Finalize awaits owner authorization',
       });
 
     case 'authorized':
-      // owner has authorized; if scope present, run full-test; else defensive
-      // owner-decision (D1-13 fail-closed on fact inconsistency).
-      if (hasAuthorizationScope(snapshot.ownerAuthorizations, 'full-test')) {
-        return actionResult('full-test');
-      }
-      return ownerDecisionResult('authorize-full-test', {
-        deliveryFullTestStatus: status,
-        detail: 'deliveryFullTestStatus=authorized but full-test scope absent; defensive fail-closed',
-      });
+      // Q1→03 bridge: authorization remains a legal Owner fact, but the
+      // Delivery behavior executor is deliberately not a Standard Action/Run.
+      return blockedResult(deliveryBehaviorNotImplementedDiagnosis('full-test'));
 
     case 'awaiting-user-decision':
       // Pre-authorization state: owner must authorize full-test (D1-13).

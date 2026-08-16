@@ -6,7 +6,8 @@
  * snapshots without repeating boilerplate.
  */
 
-import type { ChangeAction, DeliveryAction } from '../../../src/domain/actions.js';
+import type { ChangeAction } from '../../../src/domain/actions.js';
+import type { OwnerFactRef } from '../../../src/domain/types.js';
 import type {
   ChangeState,
   DeliveryState,
@@ -16,12 +17,14 @@ import type {
   RunStatus,
 } from '../../../src/domain/types.js';
 import type {
+  ArchiveTerminalFact,
   ChangeFact,
   FactConflict,
   FormalFactSnapshot,
   GitBoundaryFact,
   OpenSpecArtifactFact,
   OwnerAuthorizationFact,
+  OwnerDecisionFact,
   ReviewVerdictFact,
   RunFact,
 } from '../../../src/facts/formal-fact-snapshot.js';
@@ -48,6 +51,7 @@ export function buildChange(spec: ChangeSpec = {}): ChangeFact {
     state: spec.state ?? 'active',
     required: spec.required ?? true,
     dependsOn: spec.dependsOn ?? [],
+    architectureImpact: false,
   };
 }
 
@@ -57,10 +61,11 @@ export function buildChange(spec: ChangeSpec = {}): ChangeFact {
 
 export interface RunSpec {
   readonly nnn: number;
-  readonly action: ChangeAction | DeliveryAction;
+  readonly action: ChangeAction;
   readonly status?: RunStatus;
   readonly changeId?: string;
   readonly role?: 'owner' | 'author' | 'reviewer';
+  readonly ownerFactRefs?: readonly OwnerFactRef[];
 }
 
 /**
@@ -73,14 +78,11 @@ export function buildRun(spec: RunSpec): RunFact {
   return {
     runId: `20260806-${nnnStr}-${action}`,
     deliveryId: DELIVERY_ID,
-    ...(spec.changeId === undefined
-      ? { changeId: CHANGE_ID }
-      : spec.changeId === ''
-        ? {}
-        : { changeId: spec.changeId }),
+    changeId: spec.changeId ?? CHANGE_ID,
     action: spec.action,
     role: spec.role ?? 'author',
     status: spec.status ?? 'completed',
+    ...(spec.ownerFactRefs !== undefined ? { ownerFactRefs: spec.ownerFactRefs } : {}),
   };
 }
 
@@ -92,6 +94,7 @@ export interface VerdictSpec {
   readonly reviewNnn: number;
   readonly reviewedRunId: string;
   readonly verdict?: ReviewVerdictValue;
+  readonly blockingAuthorities?: ReviewVerdictFact['blockingAuthorities'];
 }
 
 export function buildVerdict(spec: VerdictSpec): ReviewVerdictFact {
@@ -101,6 +104,7 @@ export function buildVerdict(spec: VerdictSpec): ReviewVerdictFact {
     reviewRunId: `20260806-${nnnStr}-${action}`,
     verdict: spec.verdict ?? 'approved',
     reviewedRunId: spec.reviewedRunId,
+    blockingAuthorities: spec.blockingAuthorities ?? ((spec.verdict ?? 'approved') === 'changes-requested' ? ['author'] : []),
   };
 }
 
@@ -122,7 +126,21 @@ function deriveStageOf(runId: string): string {
 // ---------------------------------------------------------------------------
 
 export function buildAuthorization(scope: string): OwnerAuthorizationFact {
-  return { ref: `auth-${scope}`, scope };
+  const decision =
+    scope === 'apply' ? 'authorize-apply' :
+    scope === 'archive' ? 'authorize-archive' :
+    scope === 'full-test' ? 'authorize-full-test' :
+    scope === 'finalize' ? 'authorize-delivery-finalize' :
+    scope === 'checkpoint' ? 'authorize-checkpoint' :
+    (() => { throw new Error(`unknown authorization scope: ${scope}`); })();
+  const changeScoped = scope === 'apply' || scope === 'archive' || scope === 'checkpoint';
+  return {
+    ref: `auth-${scope}`,
+    decision,
+    deliveryId: DELIVERY_ID,
+    ...(changeScoped ? { changeId: CHANGE_ID } : {}),
+    sourceRef: `test:${scope}`,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -151,7 +169,9 @@ export interface SnapshotSpec {
   readonly runs?: readonly RunFact[];
   readonly reviewVerdicts?: readonly ReviewVerdictFact[];
   readonly ownerAuthorizations?: readonly OwnerAuthorizationFact[];
+  readonly ownerDecisionFacts?: readonly OwnerDecisionFact[];
   readonly gitBoundaries?: readonly GitBoundaryFact[];
+  readonly checkpointArchiveTerminal?: ArchiveTerminalFact;
   readonly openSpecArtifacts?: readonly OpenSpecArtifactFact[];
   readonly conflicts?: readonly FactConflict[];
 }
@@ -167,7 +187,9 @@ export function buildSnapshot(spec: SnapshotSpec = {}): FormalFactSnapshot {
     runs: spec.runs ?? [],
     reviewVerdicts: spec.reviewVerdicts ?? [],
     ownerAuthorizations: spec.ownerAuthorizations ?? [],
+    ...(spec.ownerDecisionFacts !== undefined ? { ownerDecisionFacts: spec.ownerDecisionFacts } : {}),
     gitBoundaries: spec.gitBoundaries ?? [],
+    ...(spec.checkpointArchiveTerminal !== undefined && { checkpointArchiveTerminal: spec.checkpointArchiveTerminal }),
     openSpecArtifacts: spec.openSpecArtifacts ?? [],
     conflicts: spec.conflicts ?? [],
   };

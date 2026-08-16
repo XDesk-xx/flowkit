@@ -1,0 +1,19 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "explore",
+    "executionStatus": "completed",
+    "summary": "完成 H1 corrective Explore：证明 G1 post-archive fixture active-path coupling、historical E1 temporal-authority defect、real OpenSpec physical Verification closure gap，以及可通过 reusable formal precondition snapshots 降低重复 CLI setup/process 成本；冻结进入 Proposal 的最小 correction boundary。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/explore.md",
+        "versionFingerprint": "1ff8adfd8b35fc17970f35e65a1c526d8b4da13e8b21dac82344d2703d1ac86a",
+        "kind": "produced-artifact"
+      }
+    ]
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "7e58683b92770aa95b54d2df9eb3725f334bc9dce1cf007f88ca42bdd67fd2af"
+  }
+}

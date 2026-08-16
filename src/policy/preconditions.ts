@@ -1,5 +1,5 @@
 /**
- * D1 policy-engine: Action precondition matrix (Section 4, 12 Actions).
+ * D1 policy-engine: Action precondition matrix for the ten Change-only Standard Actions.
  *
  * Each formal Action has semantic preconditions evaluated against the
  * `FormalFactSnapshot`. `evaluatePreconditions(snapshot, action)` returns the
@@ -27,15 +27,15 @@
  */
 
 import type { FormalAction } from '../domain/actions.js';
-import type { FullTestStatus } from '../domain/types.js';
 import type {
   ChangeFact,
   FormalFactSnapshot,
   RunFact,
 } from '../facts/formal-fact-snapshot.js';
 import { computeLineage } from './lineage.js';
-import type { Stage } from './stage-detector.js';
-import { hasAuthorizationScope } from './owner-decision.js';
+import { type Stage } from './stage-detector.js';
+import { projectCurrentContractResetLifecycle } from '../facts/generation-resolver.js';
+import { hasOwnerAuthorization } from './owner-decision.js';
 import {
   evaluateVerificationGate,
   verificationGateUnmet,
@@ -201,35 +201,23 @@ function hasCompletedRun(
   );
 }
 
-// ---------------------------------------------------------------------------
-// FullTestStatus precondition helpers (D1-12, D1-13)
-// ---------------------------------------------------------------------------
 
-/**
- * Return the unmet precondition for `full-test` arising from the current
- * `deliveryFullTestStatus`. Returns `null` when the status is `authorized`
- * (no status-related unmet).
- *
- * D1-13: only `authorized` is eligible; every other value (incl. `undefined`)
- * is unmet.
- */
-function fullTestStatusUnmet(
-  status: FullTestStatus | undefined,
-): string | null {
-  switch (status) {
-    case 'authorized':
-      return null;
-    case 'awaiting-user-decision':
-      return 'full-test-not-authorized';
-    case 'failed':
-      return 'full-test-already-failed';
-    case 'passed':
-      return 'full-test-already-passed';
-    case 'not-ready':
-      return 'full-test-not-authorized';
-    case undefined:
-      return 'full-test-not-authorized';
-  }
+function lineageForStage(
+  snapshot: FormalFactSnapshot,
+  changeId: string,
+  stage: Stage,
+): ReturnType<typeof computeLineage> {
+  const current = projectCurrentContractResetLifecycle(snapshot, changeId);
+  return computeLineage(current.runs, current.reviewVerdicts, changeId, stage);
+}
+
+function completedRunForCurrentStage(
+  snapshot: FormalFactSnapshot,
+  changeId: string,
+  action: FormalAction,
+): boolean {
+  const current = projectCurrentContractResetLifecycle(snapshot, changeId);
+  return hasCompletedRun(current.runs, changeId, action);
 }
 
 // ---------------------------------------------------------------------------
@@ -247,12 +235,7 @@ function explorePreconditions(snapshot: FormalFactSnapshot): readonly string[] {
     unmet.push('no-active-change');
     return unmet;
   }
-  const lineage = computeLineage(
-    snapshot.runs,
-    snapshot.reviewVerdicts,
-    change.id,
-    'explore',
-  );
+  const lineage = lineageForStage(snapshot, change.id, 'explore');
   if (lineage.artifact !== null) {
     unmet.push('explore-already-run');
   }
@@ -279,20 +262,20 @@ function reviewSPreconditions(
     unmet.push('no-active-change');
     return unmet;
   }
-  const lineage = computeLineage(
-    snapshot.runs,
-    snapshot.reviewVerdicts,
-    change.id,
-    stage,
-  );
+  const lineage = lineageForStage(snapshot, change.id, stage);
   if (lineage.artifact === null) {
     unmet.push(`${stage}-no-artifact`);
     return unmet;
   }
   if (lineage.match) {
     if (lineage.verdict === 'changes-requested') {
-      // D1-10: matching changes-requested requires revision, not another review.
-      unmet.push('matching-changes-requested-requires-revision');
+      const authorities = lineage.review?.blockingAuthorities ?? [];
+      // Author-only blockers require an Author revision before another review.
+      // Any non-author blocker keeps explicit same-stage re-review legal;
+      // whether it is worth executing now is not a Policy prerequisite.
+      if (authorities.length === 0 || authorities.every((authority) => authority === 'author')) {
+        unmet.push(authorities.length === 0 ? 'blocking-authority-unavailable' : 'matching-author-only-changes-requested-requires-revision');
+      }
     } else if (lineage.verdict === 'approved') {
       // match + approved → stage complete, no further review needed.
       unmet.push('matching-approved-stage-complete');
@@ -329,12 +312,7 @@ function reviseSPreconditions(
     unmet.push('no-active-change');
     return unmet;
   }
-  const lineage = computeLineage(
-    snapshot.runs,
-    snapshot.reviewVerdicts,
-    change.id,
-    stage,
-  );
+  const lineage = lineageForStage(snapshot, change.id, stage);
   if (lineage.review === null) {
     unmet.push('no-current-review');
   }
@@ -343,6 +321,13 @@ function reviseSPreconditions(
   }
   if (lineage.verdict !== 'changes-requested') {
     unmet.push('verdict-not-changes-requested');
+  } else {
+    const authorities = lineage.review?.blockingAuthorities ?? [];
+    if (authorities.length === 0) {
+      unmet.push('blocking-authority-unavailable');
+    } else if (authorities.some((authority) => authority !== 'author')) {
+      unmet.push('non-author-review-blocker');
+    }
   }
   return unmet;
 }
@@ -358,21 +343,11 @@ function proposePreconditions(snapshot: FormalFactSnapshot): readonly string[] {
     unmet.push('no-active-change');
     return unmet;
   }
-  const exploreLineage = computeLineage(
-    snapshot.runs,
-    snapshot.reviewVerdicts,
-    change.id,
-    'explore',
-  );
+  const exploreLineage = lineageForStage(snapshot, change.id, 'explore');
   if (!(exploreLineage.match && exploreLineage.verdict === 'approved')) {
     unmet.push('explore-not-approved');
   }
-  const proposeLineage = computeLineage(
-    snapshot.runs,
-    snapshot.reviewVerdicts,
-    change.id,
-    'propose',
-  );
+  const proposeLineage = lineageForStage(snapshot, change.id, 'propose');
   if (proposeLineage.artifact !== null) {
     unmet.push('propose-already-run');
   }
@@ -390,19 +365,14 @@ function applyPreconditions(snapshot: FormalFactSnapshot): readonly string[] {
     unmet.push('no-active-change');
     return unmet;
   }
-  const proposeLineage = computeLineage(
-    snapshot.runs,
-    snapshot.reviewVerdicts,
-    change.id,
-    'propose',
-  );
+  const proposeLineage = lineageForStage(snapshot, change.id, 'propose');
   if (!(proposeLineage.match && proposeLineage.verdict === 'approved')) {
     unmet.push('propose-not-approved');
   }
-  if (!hasAuthorizationScope(snapshot.ownerAuthorizations, 'apply')) {
+  if (!hasOwnerAuthorization(snapshot.ownerAuthorizations, 'authorize-apply', snapshot.deliveryId, change.id)) {
     unmet.push('apply-not-authorized');
   }
-  if (hasCompletedRun(snapshot.runs, change.id, 'apply')) {
+  if (completedRunForCurrentStage(snapshot, change.id, 'apply')) {
     unmet.push('apply-already-completed');
   }
   return unmet;
@@ -421,12 +391,7 @@ function archivePreconditions(snapshot: FormalFactSnapshot): readonly string[] {
     unmet.push('no-active-change');
     return unmet;
   }
-  const applyLineage = computeLineage(
-    snapshot.runs,
-    snapshot.reviewVerdicts,
-    change.id,
-    'apply',
-  );
+  const applyLineage = lineageForStage(snapshot, change.id, 'apply');
   // match + approved ⇒ blocking findings = 0 (an approved verdict carries no
   // blocking findings). Without match+approved, archive cannot proceed.
   if (!(applyLineage.match && applyLineage.verdict === 'approved')) {
@@ -447,62 +412,8 @@ function archivePreconditions(snapshot: FormalFactSnapshot): readonly string[] {
   } else if (!areTasksComplete(snapshot)) {
     unmet.push('tasks-incomplete');
   }
-  if (!hasAuthorizationScope(snapshot.ownerAuthorizations, 'archive')) {
+  if (!hasOwnerAuthorization(snapshot.ownerAuthorizations, 'authorize-archive', snapshot.deliveryId, change.id)) {
     unmet.push('archive-not-authorized');
-  }
-  return unmet;
-}
-
-// ---------------------------------------------------------------------------
-// Delivery-level action preconditions
-// ---------------------------------------------------------------------------
-
-/**
- * `full-test` (D1-13): all required Changes completed+checkpointed;
- * ownerAuthorizations 含 full-test scope; deliveryFullTestStatus = authorized.
- *
- * `awaiting-user-decision`/`not-ready`/`undefined` → `full-test-not-authorized`;
- * `failed` → `full-test-already-failed`; `passed` → `full-test-already-passed`.
- */
-function fullTestPreconditions(snapshot: FormalFactSnapshot): readonly string[] {
-  const unmet: string[] = [];
-  if (!allRequiredCompleted(snapshot)) {
-    unmet.push('required-changes-not-completed');
-  }
-  if (!allRequiredCheckpointed(snapshot)) {
-    unmet.push('required-changes-not-checkpointed');
-  }
-  const statusUnmet = fullTestStatusUnmet(snapshot.deliveryFullTestStatus);
-  if (statusUnmet !== null) {
-    unmet.push(statusUnmet);
-  }
-  if (!hasAuthorizationScope(snapshot.ownerAuthorizations, 'full-test')) {
-    unmet.push('full-test-not-authorized');
-  }
-  return unmet;
-}
-
-/**
- * `delivery-finalize` (D1-12): all required Changes completed; all Change
- * Checkpoint 完成; deliveryFullTestStatus = passed; ownerAuthorizations 含
- * finalize scope. MUST NOT accept `not-applicable` (B1 FullTestStatus has no
- * such value).
- */
-function deliveryFinalizePreconditions(
-  snapshot: FormalFactSnapshot,
-): readonly string[] {
-  const unmet: string[] = [];
-  if (!allRequiredCompleted(snapshot)) {
-    unmet.push('required-changes-not-completed');
-  }
-  if (!allRequiredCheckpointed(snapshot)) {
-    unmet.push('required-changes-not-checkpointed');
-  }
-  if (snapshot.deliveryFullTestStatus !== 'passed') {
-    unmet.push('full-test-not-passed');
-  }
-  if (!hasAuthorizationScope(snapshot.ownerAuthorizations, 'finalize')) {
-    unmet.push('finalize-not-authorized');
   }
   return unmet;
 }
@@ -543,9 +454,5 @@ export function evaluatePreconditions(
       return reviseSPreconditions(snapshot, 'apply');
     case 'archive':
       return archivePreconditions(snapshot);
-    case 'full-test':
-      return fullTestPreconditions(snapshot);
-    case 'delivery-finalize':
-      return deliveryFinalizePreconditions(snapshot);
   }
 }

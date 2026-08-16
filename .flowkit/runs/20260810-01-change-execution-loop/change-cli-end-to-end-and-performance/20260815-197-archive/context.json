@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 4,
+  "runId": "20260815-197-archive",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "archive",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "semanticInputFingerprint": "2c8491d979ff6fe8a4805784d509defc93d805797c3e220b712849902a57ec97",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:398a9e6f90687b299c63b8070e069da64e6fdffae3530c362937a2a55a38dbd3",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-cli-end-to-end-and-performance",
+      "scope": "Keep G1 Explore, Proposal architecture, scope, required outcomes, and implementation plan unchanged; only lexical-sort flowkitMutationScope.apply and flowkitMutationScope.revise-apply selectors without changing membership.",
+      "requiredOutcomes": [
+        "Do not add or remove any mutation selector.",
+        "Preserve G1 Explore, Proposal architecture, scope, required outcomes, and implementation plan unchanged.",
+        "Sort flowkitMutationScope.apply and flowkitMutationScope.revise-apply selectors into existing MutationDeclaration lexical order."
+      ],
+      "sourceRef": "owner-input:2026-08-15T16:38+08:00:G1-contract-reset-mutation-scope-sort"
+    },
+    {
+      "ref": "owner:8dcaf960f267ddbdc5435526ee4472b8ff0da2571567dd0e09585c425f09dbb3",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-cli-end-to-end-and-performance",
+      "scope": "Keep G1 Explore, Proposal architecture, scope, required outcomes, implementation plan, and all 186-approved mutation selectors unchanged; solely extend apply/revise-apply mutation surface with the two B1 service selectors needed to close G1-RA-001 authority-safely.",
+      "requiredOutcomes": [
+        "Add exactly src/services/b1-run-execution-service.ts and tests/unit/services/b1-run-execution-service.test.ts to both flowkitMutationScope.apply and flowkitMutationScope.revise-apply.",
+        "Do not create a second archive state machine, change Formal Action or Policy contracts, enter 03 Delivery behavior, change other G1 architecture/required outcomes, or add any other mutation selector.",
+        "Preserve G1 Explore, Proposal architecture, scope, required outcomes, implementation plan, and every selector approved in 186 unchanged.",
+        "Use the extension only to move changed-surface pending archive pre-OpenSpec recovery discovery behind the existing/narrowly extended B1/F1/D2 production authority boundary, with the CLI consuming one recovery projection."
+      ],
+      "sourceRef": "owner-input:2026-08-15T19:14+08:00:G1-RA-001-B1-service-mutation-scope-reset"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/change-cli-end-to-end-and-performance/20260815-197-archive/",
+  "changeKey": "G1",
+  "changeId": "change-cli-end-to-end-and-performance",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-cli-end-to-end-and-performance/20260815-196-review-apply/result.json",
+    "versionFingerprint": "97638fd0ca637abd3438b7d5bdf720f4ce0b2dde487207d9e7c07f8f3428923d",
+    "kind": "run-result"
+  },
+  "archiveEntryOpenSpecProjection": {
+    "projectionVersion": 1,
+    "version": "1.7.0",
+    "changeId": "change-cli-end-to-end-and-performance",
+    "changeRootLogical": "openspec/changes/change-cli-end-to-end-and-performance",
+    "artifactPaths": {
+      "proposal": [
+        "openspec/changes/change-cli-end-to-end-and-performance/proposal.md"
+      ],
+      "specs": [
+        "openspec/changes/change-cli-end-to-end-and-performance/specs/flowkit-change-cli-end-to-end-and-performance/spec.md"
+      ],
+      "design": [
+        "openspec/changes/change-cli-end-to-end-and-performance/design.md"
+      ],
+      "tasks": [
+        "openspec/changes/change-cli-end-to-end-and-performance/tasks.md"
+      ]
+    }
+  },
+  "archiveMutationGuard": {
+    "state": "armed",
+    "surfaceVersion": "openspec-archive-mutation-v1",
+    "changeRoot": "openspec/changes/change-cli-end-to-end-and-performance",
+    "canonicalSpecsRoot": "openspec/specs",
+    "archiveNamespaceRoot": "openspec/changes/archive",
+    "preArchiveGenerationFingerprint": "464f1eab3d5555fa4988ccc2cabd1d1956d9608eda0fd8a5b91379fcb5e8a94e",
+    "terminalObservation": {
+      "kind": "success",
+      "resultFingerprint": "2af6e6086344c723919198390c8ec0a900fdb756c79054225cf26a80cf0a5422",
+      "normalized": {
+        "kind": "success",
+        "change": "change-cli-end-to-end-and-performance",
+        "archivedAs": "2026-08-15-change-cli-end-to-end-and-performance",
+        "path": "openspec/changes/archive/2026-08-15-change-cli-end-to-end-and-performance",
+        "specsUpdated": true,
+        "totals": {
+          "added": 9,
+          "modified": 0,
+          "removed": 0,
+          "renamed": 0
+        }
+      }
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

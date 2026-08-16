@@ -1,0 +1,195 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260816-218-revise-propose",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "revise-propose",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "c2ffe91a8e36d8d84df1869697adc2ac32a64f6c9086272099ba5498f34daf13",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-218-revise-propose/",
+  "changeKey": "I1",
+  "changeId": "delivery-final-closure-correction",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-217-review-propose/result.json",
+    "versionFingerprint": "55d915fcd3754e45afe0753360700bcd9c7741e3448fd99d14d300395c0fd3dd",
+    "kind": "run-result"
+  },
+  "sourceReviewRun": "20260816-217-review-propose",
+  "sourceReviewVerdict": "changes-requested",
+  "canonicalBase": "1783983440e4d1b29d6282bc5c1af55d390f392d",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-217-review-propose/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "55d915fcd3754e45afe0753360700bcd9c7741e3448fd99d14d300395c0fd3dd"
+    },
+    {
+      "ref": "openspec/changes/delivery-final-closure-correction/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+    },
+    {
+      "ref": "openspec/changes/delivery-final-closure-correction/design.md",
+      "versionFingerprint": "01954746897d7fae5d362c6eba3446043374074e349a1e63e83181c66fe3d7ea",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-final-closure-correction/proposal.md",
+      "versionFingerprint": "470ca39a745f45d3d1475ed8fb4927559d7455dc31c12da9d741684a9aee7450",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-final-closure-correction/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+      "versionFingerprint": "2e452a8554ae96ff636a197907455111634a3d41c741d2bb7dba8045ce9afbc7",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-final-closure-correction/specs/flowkit-change-verification-selection/spec.md",
+      "versionFingerprint": "a24f6c14c65747a7677038924af4c8062848ac2fa10b5689b63002cd4fa792aa",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-final-closure-correction/specs/flowkit-core-hardening-and-release-candidate/spec.md",
+      "versionFingerprint": "f7639dc8603a5b3deaca1ce792e1f1e1c2c818670c1b74382515701adc678cb3",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-final-closure-correction/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+      "versionFingerprint": "7b0bed437ac8f318d8facbfd63133ce03720bdac89f66be25455df3edd8cd674",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-final-closure-correction/tasks.md",
+      "versionFingerprint": "fc347d54db9d8af0aa6bec836d2534145546ab708c12e8af5d9c8027873a0e8c",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "delivery-final-closure-correction",
+      "runId": "20260816-218-revise-propose",
+      "action": "revise-propose",
+      "role": "author",
+      "semanticInputFingerprint": "c2ffe91a8e36d8d84df1869697adc2ac32a64f6c9086272099ba5498f34daf13"
+    },
+    "definition": {
+      "action": "revise-propose",
+      "version": 1,
+      "role": "author",
+      "goalClass": "close-proposal-author-findings",
+      "mutationClass": "proposal-bundle-revision-only",
+      "outputClass": "current-proposal-bundle-set",
+      "terminalContract": {
+        "kind": "artifact",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": true,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+      },
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/design.md",
+        "versionFingerprint": "01954746897d7fae5d362c6eba3446043374074e349a1e63e83181c66fe3d7ea",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/proposal.md",
+        "versionFingerprint": "470ca39a745f45d3d1475ed8fb4927559d7455dc31c12da9d741684a9aee7450",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+        "versionFingerprint": "2e452a8554ae96ff636a197907455111634a3d41c741d2bb7dba8045ce9afbc7",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "a24f6c14c65747a7677038924af4c8062848ac2fa10b5689b63002cd4fa792aa",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/specs/flowkit-core-hardening-and-release-candidate/spec.md",
+        "versionFingerprint": "f7639dc8603a5b3deaca1ce792e1f1e1c2c818670c1b74382515701adc678cb3",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+        "versionFingerprint": "7b0bed437ac8f318d8facbfd63133ce03720bdac89f66be25455df3edd8cd674",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/tasks.md",
+        "versionFingerprint": "fc347d54db9d8af0aa6bec836d2534145546ab708c12e8af5d9c8027873a0e8c",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-217-review-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "55d915fcd3754e45afe0753360700bcd9c7741e3448fd99d14d300395c0fd3dd"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260816-217-review-propose",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-217-review-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "55d915fcd3754e45afe0753360700bcd9c7741e3448fd99d14d300395c0fd3dd"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "I1-RP-001",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "Checkpoint hygiene authority exceeds the approved EOF-only Explore proof",
+          "problem": "214/215 approved Explore Proof 5 proves only a bounded EOF normalization after real OpenSpec 1.7 archive: collapse redundant EOF blank lines and preserve exactly one final newline. The Explore in-scope boundary likewise says EOF-only terminal whitespace normalization, and its Evidence/Gap explicitly says no evidence supports broad formatting authority. 216 Proposal, Design Decision 6, flowkit-archive-and-checkpoint-boundary spec, and task 4.2 expand the same Owner checkpoint authorization to also remove trailing spaces/tabs from touched text files. That additional transformation class was not established by the approved Explore evidence.",
+          "contractRef": "Flowkit Explore Skill v2 §4.7 External Mutation Proof / §5 Proof Acceptance Depth / approved 214 Explore Proof 5",
+          "invariant": "Proposal may freeze only implementation/authority boundaries whose acceptance boundary is covered by approved Explore evidence; a proof-backed EOF-only mechanical normalization must not be silently widened into a larger Executor mutation authority.",
+          "requiredOutcome": "Revise the Proposal generation so checkpoint normalization is limited to the approved EOF-only rule: collapse redundant EOF blank lines and ensure exactly one final newline on candidate/archive-touched text files, with semantic/internal formatting/unrelated-file changes fail-closed. Do not include trailing spaces/tabs removal unless that broader class is first supported by a new legitimate Explore proof/authority boundary.",
+          "acceptance": [
+            "Proposal/Design/spec/tasks no longer authorize generic trailing spaces/tabs removal under the existing checkpoint authorization.",
+            "Allowed checkpoint normalization matches approved Proof 5 exactly: redundant EOF blank-line collapse plus exactly one final newline, limited to candidate/archive-touched text files.",
+            "Forbidden scope continues to include Markdown reflow, internal/semantic formatting changes, unrelated files, and broad formatter execution.",
+            "git diff --check and staged git diff --cached --check remain required after normalization.",
+            "The 16-selector apply/revise-apply surface remains otherwise unchanged unless a separately justified Proposal correction requires a different already-proven path."
+          ]
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "0e25964e07ba99dc06210f4403d251ba521a889a1e2f6dc551ae8c865473dbce",
+    "requiredResultContract": {
+      "kind": "artifact",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": true,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": true,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

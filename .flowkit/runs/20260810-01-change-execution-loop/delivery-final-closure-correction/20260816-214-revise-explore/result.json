@@ -1,0 +1,24 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-explore",
+    "executionStatus": "completed",
+    "summary": "Revise Explore 响应 213 I1-RE-001：补齐 scripts/verification.ts / verification-plan.test.ts 的 formal physical Verification closure。Disposable correction 让两条路径 exact-one map 到 verification-selection，并把 verification-plan.test.ts 加入 tests-verification physical resolver；executeVerificationSelection() 的实际 command 明确包含该 target，原始 target PASS、注入 sentinel 后同一 formal selection FAIL、恢复后同一 selection PASS。TypeScript PASS，相关 module-map/evidence/verification-plan targeted tests 15/15 PASS。AGENTS.md 明确冻结出 I1 Proposal-ready mutation surface；最终 mutation surface 已包含 evidence.ts/module-map 及对应 regression，不再把 scope discovery 推迟到 Apply。Overall Proposal readiness=YES；正式 finding convergence 仍由 Reviewer re-review 决定。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/explore.md",
+        "versionFingerprint": "996f48a5c693428e2fb4a9e4a6fae4bb00d033a1425f13f624860ace7630d24e",
+        "kind": "produced-artifact"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-213-review-explore/result.json",
+      "versionFingerprint": "6c134e8d42562d67578412cfb166536c83e971fd0cddeac769c4ab40640d1af2",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "570705ed9b9d61b52c88d722ff42018f6ac84e64be12659be087ed487e0996b8"
+  }
+}

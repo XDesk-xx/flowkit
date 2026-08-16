@@ -2,7 +2,7 @@
  * C1 formal-fact-reader-and-persistence: formal-fact Reader (D1, D2, D3).
  *
  * Q2 orchestration-authority-boundary-correction:
- * - current Policy projection reads the active Change plus Delivery-level Runs;
+ * - current Policy projection reads only Runs of the active Change;
  * - completed/checkpointed Change Run corpora remain Git history, not current
  *   mutable-artifact replay input;
  * - active schemaVersion 2 Runs keep strict identity, closed-schema and
@@ -10,13 +10,16 @@
  * - pending/failed/cancelled Runs are validated only for status-applicable facts.
  */
 
+import { createHash } from 'node:crypto';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { normalizeSeparators } from '../shared/paths.js';
+import { isFormalAction } from '../domain/actions.js';
 import { parseYaml } from './yaml-parser.js';
-import { readGitBoundarySummaries } from './git-boundary-reader.js';
-import { discriminateRun, normalizeBootstrapRunStatus } from '../persistence/legacy-recognizer.js';
-import { validateContextFile, admitC1RunResult } from '../persistence/serialization.js';
+import { readGitBoundaryProjection, type GitCheckpointBoundaryCandidate } from './git-boundary-reader.js';
+import { discriminateRunForReader, normalizeBootstrapRunStatus } from '../persistence/legacy-recognizer.js';
+import type { LegacyRun } from '../persistence/legacy-recognizer.js';
+import { validateContextFile, admitC1RunResultForReader } from '../persistence/serialization.js';
 import type { ContextFile } from '../persistence/serialization.js';
 import {
   resolveRunResultPath,
@@ -25,16 +28,31 @@ import {
   validateSourceReviewTuple,
   expectedSourceReviewActionFor,
 } from '../persistence/result-ref-adapter.js';
-import type { ResultRef, RunStatus, VerificationStatus } from '../domain/types.js';
+import { BLOCKING_AUTHORITIES } from '../domain/types.js';
+import type { BlockingAuthority, ResultRef, RunStatus, VerificationStatus } from '../domain/types.js';
+import { AUTHORIZATION_ONLY_OWNER_DECISIONS, OWNER_DECISION_RECORD_KINDS } from '../domain/a1-types.js';
+import type { AuthorizationOnlyOwnerDecision, OwnerDecisionRecordKind } from '../domain/a1-types.js';
+import { ownerDecisionRefFor } from '../domain/owner-provenance.js';
+import { isPreA1LegacyArchitectureImpactIdentity } from './pre-a1-legacy-architecture-impact.js';
 import { FlowkitError } from '../shared/errors.js';
+import { runCommand } from '../shared/external-command.js';
+import { OpenSpecCliAdapter } from '../integrations/openspec/openspec-cli-adapter.js';
+import { computeLineage } from '../policy/lineage.js';
+import { projectCurrentContractResetLifecycle } from './generation-resolver.js';
+import { validateCurrentReverificationChain, validateTerminalVerificationSelectionBinding } from '../verification/change-selection/publication.js';
+import { isOpenSpecThinIntegrationActive } from '../integrations/openspec/openspec-integration-state.js';
+import type { OpenSpecOperationProjection } from '../integrations/openspec/openspec-types.js';
 import type {
   ChangeFact,
   FactConflict,
   FormalFactSnapshot,
   GitBoundaryFact,
+  ArchiveTerminalFact,
   OpenSpecArtifactFact,
   ReviewVerdictFact,
   RunFact,
+  OwnerAuthorizationFact,
+  OwnerDecisionFact,
 } from './formal-fact-snapshot.js';
 
 export interface ReadFormalFactSnapshotInput {
@@ -43,42 +61,67 @@ export interface ReadFormalFactSnapshotInput {
   readonly runsPathPrefix: string;
   readonly openspecChangesPath: string;
   readonly manifestPathPrefix: string;
+  /** Optional bounded adapter injection for one formal read operation/test harness. */
+  readonly openSpecAdapter?: OpenSpecCliAdapter;
 }
 
 interface ImmutableValidationResult {
   readonly conflicts: readonly FactConflict[];
 }
 
-export async function readFormalFactSnapshot(
+export interface FormalFactReadOperation {
+  readonly snapshot: FormalFactSnapshot;
+  readonly openSpecProjection?: OpenSpecOperationProjection;
+}
+
+export async function readFormalFactSnapshot(input: ReadFormalFactSnapshotInput): Promise<FormalFactSnapshot> {
+  return (await readFormalFactSnapshotOperation(input)).snapshot;
+}
+
+export async function readFormalFactSnapshotOperation(
   input: ReadFormalFactSnapshotInput,
-): Promise<FormalFactSnapshot> {
+): Promise<FormalFactReadOperation> {
   const conflicts: FactConflict[] = [];
   const deliveryRunsDir = join(input.repoRoot, input.runsPathPrefix, input.deliveryId);
 
   const manifestResult = await readDeliveryManifest(input);
   const activeChangeId = manifestResult.changes.find((change) => change.state === 'active')?.id;
+  let openSpecProjection: OpenSpecOperationProjection | undefined;
+  if (activeChangeId !== undefined && await isOpenSpecThinIntegrationActive(input.repoRoot, activeChangeId)) {
+    openSpecProjection = await (input.openSpecAdapter ?? new OpenSpecCliAdapter({ repoRoot: input.repoRoot })).createOperationProjection(activeChangeId);
+  }
   const { runs, reviewVerdicts, c1RunIds, runConflicts } = await readRuns(deliveryRunsDir, activeChangeId);
   conflicts.push(...runConflicts);
-  const openSpecArtifacts = await readOpenSpecArtifacts(input, manifestResult.changes);
-  const verificationProjection = await readActiveChangeVerificationStatus(
-    input,
-    activeChangeId,
-  );
+  const openSpecArtifacts = await readOpenSpecArtifacts(input, manifestResult.changes, openSpecProjection);
+  const verificationProjection = await readActiveChangeVerificationStatus(input, activeChangeId, runs, reviewVerdicts, manifestResult.ownerDecisionFacts, openSpecProjection);
   conflicts.push(...verificationProjection.conflicts);
   const tasksProjection = await readActiveChangeTasksCompletion(
     input,
     activeChangeId,
+    openSpecProjection,
   );
   conflicts.push(...tasksProjection.conflicts);
 
   let gitBoundaries: GitBoundaryFact[] = [];
   try {
-    gitBoundaries = await readGitBoundarySummaries(input.repoRoot, input.deliveryId);
+    gitBoundaries = await readAdmittedGitBoundaries(input);
   } catch {
-    // Git boundaries are best-effort at Reader level.
+    // Git boundaries are best-effort at Reader level. Invalid/unbound checkpoint
+    // candidates fail closed by absence; Policy therefore keeps the Owner gate.
   }
 
-  const ownerAuthorizations = collectOwnerAuthorizations(runs);
+  let checkpointArchiveTerminal: ArchiveTerminalFact | undefined;
+  if (activeChangeId === undefined) {
+    const checkpointCandidates = completedUncheckpointedChangesForReader(manifestResult.changes, gitBoundaries);
+    if (checkpointCandidates.length === 1) {
+      const projection = await readCheckpointArchiveTerminal(deliveryRunsDir, checkpointCandidates[0]!.id);
+      checkpointArchiveTerminal = projection.fact;
+      conflicts.push(...projection.conflicts);
+    }
+  }
+
+  const ownerAuthorizations = manifestResult.ownerAuthorizations;
+  const ownerDecisionFacts = manifestResult.ownerDecisionFacts;
   conflicts.push(...manifestResult.conflicts);
 
   const bindingResult = await validateReviewExactBindings(
@@ -103,7 +146,7 @@ export async function readFormalFactSnapshot(
 
 
 
-  return {
+  const snapshot: FormalFactSnapshot = {
     deliveryId: input.deliveryId,
     deliveryState: manifestResult.deliveryState,
     deliveryFullTestStatus: manifestResult.deliveryFullTestStatus,
@@ -117,16 +160,21 @@ export async function readFormalFactSnapshot(
     runs,
     openSpecArtifacts,
     gitBoundaries,
+    ...(checkpointArchiveTerminal !== undefined && { checkpointArchiveTerminal }),
     ownerAuthorizations,
+    ownerDecisionFacts,
     reviewVerdicts: admittedReviewVerdicts,
     conflicts,
   };
+  return { snapshot, ...(openSpecProjection !== undefined && { openSpecProjection }) };
 }
 
 interface ManifestResult {
   readonly deliveryState: FormalFactSnapshot['deliveryState'];
   readonly deliveryFullTestStatus: FormalFactSnapshot['deliveryFullTestStatus'];
   readonly changes: readonly ChangeFact[];
+  readonly ownerAuthorizations: readonly OwnerAuthorizationFact[];
+  readonly ownerDecisionFacts: readonly OwnerDecisionFact[];
   readonly conflicts: readonly FactConflict[];
 }
 
@@ -138,6 +186,8 @@ async function readDeliveryManifest(input: ReadFormalFactSnapshotInput): Promise
       deliveryState: undefined,
       deliveryFullTestStatus: undefined,
       changes: [],
+      ownerAuthorizations: [],
+      ownerDecisionFacts: [],
       conflicts,
     };
   }
@@ -155,6 +205,8 @@ async function readDeliveryManifest(input: ReadFormalFactSnapshotInput): Promise
       deliveryState: undefined,
       deliveryFullTestStatus: undefined,
       changes: [],
+      ownerAuthorizations: [],
+      ownerDecisionFacts: [],
       conflicts,
     };
   }
@@ -176,7 +228,9 @@ async function readDeliveryManifest(input: ReadFormalFactSnapshotInput): Promise
     return {
       deliveryState: undefined,
       deliveryFullTestStatus: undefined,
-      changes: readChangeFacts(manifest['changes']),
+      changes: readChangeFacts(input.deliveryId, manifest['changes'], conflicts, manifestPath),
+      ownerAuthorizations: [],
+      ownerDecisionFacts: [],
       conflicts,
     };
   }
@@ -219,15 +273,46 @@ async function readDeliveryManifest(input: ReadFormalFactSnapshotInput): Promise
     fullTestStatus = undefined;
   }
 
+  const changes = readChangeFacts(input.deliveryId, manifest['changes'], conflicts, manifestPath);
+  const ownerDecisionFacts: OwnerDecisionFact[] = [];
+  const ownerAuthorizations = readOwnerAuthorizations(
+    input.deliveryId,
+    manifest['ownerDecisions'],
+    manifest['changes'],
+    conflicts,
+    manifestPath,
+    ownerDecisionFacts,
+  );
+
   return {
     deliveryState,
     deliveryFullTestStatus: fullTestStatus,
-    changes: readChangeFacts(manifest['changes']),
+    changes,
+    ownerAuthorizations,
+    ownerDecisionFacts: latestCurrentOwnerDecisionFacts(ownerDecisionFacts),
     conflicts,
   };
 }
 
-function readChangeFacts(value: unknown): ChangeFact[] {
+function latestCurrentOwnerDecisionFacts(facts: readonly OwnerDecisionFact[]): readonly OwnerDecisionFact[] {
+  const latestByScope = new Map<string, OwnerDecisionFact>();
+  const passthrough: OwnerDecisionFact[] = [];
+  for (const fact of facts) {
+    if (fact.decision !== 'contract-reset') {
+      passthrough.push(fact);
+      continue;
+    }
+    latestByScope.set(`${fact.deliveryId}\0${fact.changeId ?? ''}\0${fact.scope ?? ''}`, fact);
+  }
+  return [...passthrough, ...latestByScope.values()];
+}
+
+function readChangeFacts(
+  deliveryId: string,
+  value: unknown,
+  conflicts: FactConflict[],
+  manifestPath: string,
+): ChangeFact[] {
   if (!Array.isArray(value)) return [];
   const facts: ChangeFact[] = [];
   for (const item of value) {
@@ -242,16 +327,466 @@ function readChangeFacts(value: unknown): ChangeFact[] {
     const outputs = Array.isArray(obj['outputs'])
       ? (obj['outputs'] as unknown[]).filter((s): s is string => typeof s === 'string')
       : undefined;
+
+    let architectureImpact: ChangeFact['architectureImpact'];
+    const architectureImpactRaw = obj['architectureImpact'];
+    if (typeof architectureImpactRaw === 'boolean') {
+      architectureImpact = architectureImpactRaw;
+    } else if (
+      architectureImpactRaw === undefined &&
+      isPreA1LegacyArchitectureImpactIdentity(deliveryId, id)
+    ) {
+      architectureImpact = 'pre-a1-legacy-missing';
+    } else {
+      conflicts.push({
+        dimension: 'change-architecture-impact',
+        authority: manifestPath,
+        message: `Change ${id} architectureImpact missing or invalid`,
+        detail: { deliveryId, changeId: id, value: architectureImpactRaw },
+      });
+      continue;
+    }
+
     facts.push({
       key,
       id,
       state: typeof obj['state'] === 'string' ? (obj['state'] as ChangeFact['state']) : 'planned',
       required: typeof obj['required'] === 'boolean' ? obj['required'] : false,
       dependsOn,
+      architectureImpact,
       ...(outputs !== undefined && { outputs }),
     });
   }
   return facts;
+}
+
+function readOwnerAuthorizations(
+  deliveryId: string,
+  value: unknown,
+  changesValue: unknown,
+  conflicts: FactConflict[],
+  manifestPath: string,
+  ownerDecisionFacts: OwnerDecisionFact[] = [],
+): OwnerAuthorizationFact[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) {
+    conflicts.push({
+      dimension: 'owner-decisions-shape',
+      authority: manifestPath,
+      message: 'ownerDecisions must be a sequence',
+    });
+    return [];
+  }
+
+  const knownChangeIds = new Set<string>();
+  if (Array.isArray(changesValue)) {
+    for (const item of changesValue) {
+      if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
+        const id = (item as Record<string, unknown>)['id'];
+        if (typeof id === 'string') knownChangeIds.add(id);
+      }
+    }
+  }
+
+  const authorizationCandidates: Array<{ readonly index: number; readonly fact: OwnerAuthorizationFact }> = [];
+  const latestResetIndexByChange = new Map<string, number>();
+  const seenRefs = new Map<string, string>();
+  for (const [index, item] of value.entries()) {
+    if (typeof item !== 'object' || item === null || Array.isArray(item)) {
+      conflicts.push({
+        dimension: 'owner-decision-record',
+        authority: manifestPath,
+        message: 'ownerDecisions item must be a mapping',
+      });
+      continue;
+    }
+    const obj = item as Record<string, unknown>;
+    const ref = obj['ref'];
+    const decision = obj['decision'];
+    const recordDeliveryId = obj['deliveryId'];
+    const changeId = obj['changeId'];
+    const scope = obj['scope'];
+    const requiredOutcomes = obj['requiredOutcomes'];
+    const sourceRef = obj['sourceRef'];
+    if (
+      typeof ref !== 'string' ||
+      typeof decision !== 'string' ||
+      typeof recordDeliveryId !== 'string' ||
+      typeof sourceRef !== 'string' ||
+      sourceRef.trim() === ''
+    ) {
+      conflicts.push({
+        dimension: 'owner-decision-record',
+        authority: manifestPath,
+        message: 'ownerDecisions item missing required typed fields',
+        detail: { ref, decision, deliveryId: recordDeliveryId, changeId, sourceRef },
+      });
+      continue;
+    }
+    if (recordDeliveryId !== deliveryId) {
+      conflicts.push({
+        dimension: 'owner-decision-applicability',
+        authority: manifestPath,
+        message: `Owner record ${ref} deliveryId does not match active Delivery`,
+        detail: { recordDeliveryId, deliveryId },
+      });
+      continue;
+    }
+    if (!(OWNER_DECISION_RECORD_KINDS as readonly string[]).includes(decision)) {
+      conflicts.push({
+        dimension: 'owner-decision-record',
+        authority: manifestPath,
+        message: `Owner record ${ref} has unknown decision ${decision}`,
+      });
+      continue;
+    }
+    const typedRecordDecision = decision as OwnerDecisionRecordKind;
+    let normalizedRequiredOutcomes: readonly string[] | undefined;
+    if (typedRecordDecision === 'contract-reset') {
+      if (typeof changeId !== 'string' || typeof scope !== 'string' || scope.trim() === '' ||
+          !Array.isArray(requiredOutcomes) || requiredOutcomes.length === 0 ||
+          requiredOutcomes.some((outcome) => typeof outcome !== 'string' || outcome.trim() === '')) {
+        conflicts.push({
+          dimension: 'owner-decision-record',
+          authority: manifestPath,
+          message: `Owner contract-reset ${ref} missing structured scope/requiredOutcomes/changeId`,
+        });
+        continue;
+      }
+      normalizedRequiredOutcomes = [...new Set((requiredOutcomes as string[]).map((outcome) => outcome.trim()))].sort();
+    } else if (scope !== undefined || requiredOutcomes !== undefined) {
+      conflicts.push({
+        dimension: 'owner-decision-record',
+        authority: manifestPath,
+        message: `Owner record ${ref} carries contract-reset-only fields`,
+      });
+      continue;
+    }
+    const expectedRef = ownerDecisionRefFor({
+      decision: typedRecordDecision,
+      deliveryId: recordDeliveryId,
+      sourceRef,
+      ...(typeof changeId === 'string' ? { changeId } : {}),
+      ...(typeof scope === 'string' ? { scope } : {}),
+      ...(normalizedRequiredOutcomes !== undefined ? { requiredOutcomes: normalizedRequiredOutcomes } : {}),
+    });
+    if (ref !== expectedRef) {
+      conflicts.push({
+        dimension: 'owner-decision-ref',
+        authority: manifestPath,
+        message: `Owner record ${ref} does not match canonical tuple hash`,
+        detail: { expectedRef },
+      });
+      continue;
+    }
+
+    const canonical = JSON.stringify({
+      decision,
+      deliveryId: recordDeliveryId,
+      ...(typeof changeId === 'string' ? { changeId } : {}),
+      ...(typeof scope === 'string' ? { scope } : {}),
+      ...(normalizedRequiredOutcomes !== undefined ? { requiredOutcomes: normalizedRequiredOutcomes } : {}),
+      sourceRef,
+    });
+    const prior = seenRefs.get(ref);
+    if (prior !== undefined && prior !== canonical) {
+      conflicts.push({
+        dimension: 'owner-decision-ref-collision',
+        authority: manifestPath,
+        message: `Owner record ref ${ref} maps to different content`,
+      });
+      continue;
+    }
+    seenRefs.set(ref, canonical);
+
+    const changeScopedRecord =
+      typedRecordDecision === 'create-change' ||
+      typedRecordDecision === 'activate-change' ||
+      typedRecordDecision === 'contract-reset' ||
+      typedRecordDecision === 'authorize-apply' ||
+      typedRecordDecision === 'authorize-archive' ||
+      typedRecordDecision === 'authorize-checkpoint';
+    if (changeScopedRecord) {
+      if (typeof changeId !== 'string' || !knownChangeIds.has(changeId)) {
+        conflicts.push({
+          dimension: 'owner-decision-applicability',
+          authority: manifestPath,
+          message: `Owner record ${ref} requires a known changeId`,
+          detail: { changeId },
+        });
+        continue;
+      }
+    } else if (changeId !== undefined) {
+      conflicts.push({
+        dimension: 'owner-decision-applicability',
+        authority: manifestPath,
+        message: `Delivery-scoped Owner record ${ref} must not carry changeId`,
+        detail: { changeId },
+      });
+      continue;
+    }
+
+    ownerDecisionFacts.push({
+      ref,
+      decision: typedRecordDecision,
+      deliveryId,
+      ...(typeof changeId === 'string' ? { changeId } : {}),
+      ...(typeof scope === 'string' ? { scope } : {}),
+      ...(normalizedRequiredOutcomes !== undefined ? { requiredOutcomes: normalizedRequiredOutcomes } : {}),
+      sourceRef,
+    });
+
+    if (typedRecordDecision === 'contract-reset' && typeof changeId === 'string') {
+      latestResetIndexByChange.set(changeId, index);
+    }
+
+    if (!(AUTHORIZATION_ONLY_OWNER_DECISIONS as readonly string[]).includes(typedRecordDecision)) {
+      // Non-authorization Owner decisions remain formal facts but are not Policy authorization gates.
+      continue;
+    }
+    const typedDecision = typedRecordDecision as AuthorizationOnlyOwnerDecision;
+    authorizationCandidates.push({
+      index,
+      fact: {
+        ref,
+        decision: typedDecision,
+        deliveryId,
+        ...(typeof changeId === 'string' ? { changeId } : {}),
+        ...(typeof scope === 'string' ? { scope } : {}),
+        ...(normalizedRequiredOutcomes !== undefined ? { requiredOutcomes: normalizedRequiredOutcomes } : {}),
+        sourceRef,
+      },
+    });
+  }
+
+  // D2 Contract Reset currentness: Change-scoped apply/archive/checkpoint
+  // authorizations recorded before the latest reset are historical authority
+  // facts, not current gates for the fresh proposal generation. Manifest order
+  // is the existing append-only provenance; no generation registry is added.
+  return authorizationCandidates
+    .filter(({ index, fact }) => {
+      if (fact.changeId === undefined) return true;
+      const resetIndex = latestResetIndexByChange.get(fact.changeId);
+      return resetIndex === undefined || index > resetIndex;
+    })
+    .map(({ fact }) => fact);
+}
+
+const F1_MIGRATION_DELIVERY_ID = '20260810-01-change-execution-loop';
+const F1_STRICT_ANCHOR_CHANGE_ID = 'change-verification-generalization-and-lean-run-normalization';
+
+/**
+ * Resolve the one historical E2 cutover that is both strict-admitted and the
+ * ancestor of every other strict-admitted E2 checkpoint candidate. This is a
+ * narrow migration projection shared by legacy checkpoint admission and the
+ * post-E2 Run writer. Git shape alone is intentionally insufficient: every
+ * candidate is checked against the checkpoint-time Owner authorization fact.
+ */
+export async function resolveOriginalStrictE2Checkpoint(repoRoot: string): Promise<string | undefined> {
+  const projection = await readGitBoundaryProjection(repoRoot, F1_MIGRATION_DELIVERY_ID);
+  const input: ReadFormalFactSnapshotInput = {
+    repoRoot,
+    deliveryId: F1_MIGRATION_DELIVERY_ID,
+    runsPathPrefix: '.flowkit/runs',
+    openspecChangesPath: 'openspec/changes',
+    manifestPathPrefix: 'openspec/delivery-groups',
+  };
+  const strictE2: GitCheckpointBoundaryCandidate[] = [];
+  for (const candidate of projection.checkpointCandidates) {
+    if (candidate.subjectChangeId !== F1_STRICT_ANCHOR_CHANGE_ID) continue;
+    if (!candidate.formalIdentityValid || candidate.ownerAuthorizationTrailer === undefined) continue;
+    if (await checkpointAuthorizationExistedAtBoundary(input, candidate)) strictE2.push(candidate);
+  }
+  if (strictE2.length === 0) return undefined;
+
+  const originals: GitCheckpointBoundaryCandidate[] = [];
+  for (const candidate of strictE2) {
+    let ancestorOfAll = true;
+    for (const other of strictE2) {
+      if (candidate.commitSha === other.commitSha) continue;
+      if (!(await gitIsAncestor(repoRoot, candidate.commitSha, other.commitSha))) {
+        ancestorOfAll = false;
+        break;
+      }
+    }
+    if (ancestorOfAll) originals.push(candidate);
+  }
+  return originals.length === 1 ? originals[0]!.commitSha : undefined;
+}
+
+async function readAdmittedGitBoundaries(
+  input: ReadFormalFactSnapshotInput,
+): Promise<GitBoundaryFact[]> {
+  const projection = await readGitBoundaryProjection(input.repoRoot, input.deliveryId);
+  const strict = new Map<string, GitBoundaryFact>();
+
+  for (const candidate of projection.checkpointCandidates) {
+    const fact = await admitStrictCheckpointCandidate(input, candidate);
+    if (fact !== undefined) strict.set(candidate.commitSha, fact);
+  }
+
+  const facts: GitBoundaryFact[] = [...projection.boundaries, ...strict.values()];
+  if (input.deliveryId !== F1_MIGRATION_DELIVERY_ID) return facts;
+
+  const anchorSha = await resolveOriginalStrictE2Checkpoint(input.repoRoot);
+  if (anchorSha === undefined) return facts;
+  const anchorCandidate = projection.checkpointCandidates.find((candidate) => candidate.commitSha === anchorSha);
+  if (anchorCandidate === undefined || !strict.has(anchorCandidate.commitSha)) return facts;
+
+  // Historical Flowkit checkpoints before the E2 strict anchor remain readable
+  // without rewriting Git. The exemption is ancestry-bounded and cannot apply
+  // to the anchor itself or any descendant/fresh repository checkpoint.
+  for (const candidate of projection.checkpointCandidates) {
+    if (strict.has(candidate.commitSha) || candidate.commitSha === anchorCandidate.commitSha) continue;
+    if (!candidate.legacyCheckpointSubject) continue;
+    if (!(await gitIsAncestor(input.repoRoot, candidate.commitSha, anchorCandidate.commitSha))) continue;
+    facts.push({
+      kind: 'change-checkpoint',
+      commitSha: candidate.commitSha,
+      summary: candidate.summary,
+      ...(candidate.subjectChangeId !== undefined ? { changeId: candidate.subjectChangeId } : {}),
+    });
+  }
+  return facts;
+}
+
+async function admitStrictCheckpointCandidate(
+  input: ReadFormalFactSnapshotInput,
+  candidate: GitCheckpointBoundaryCandidate,
+): Promise<GitBoundaryFact | undefined> {
+  if (
+    !candidate.formalIdentityValid ||
+    candidate.subjectChangeId === undefined ||
+    candidate.ownerAuthorizationTrailer === undefined
+  ) return undefined;
+
+  const authorized = await checkpointAuthorizationExistedAtBoundary(input, candidate);
+  if (!authorized) return undefined;
+  return {
+    kind: 'change-checkpoint',
+    commitSha: candidate.commitSha,
+    summary: candidate.summary,
+    changeId: candidate.subjectChangeId,
+  };
+}
+
+async function checkpointAuthorizationExistedAtBoundary(
+  input: ReadFormalFactSnapshotInput,
+  candidate: GitCheckpointBoundaryCandidate,
+): Promise<boolean> {
+  const manifestRef = normalizeSeparators(`${input.manifestPathPrefix}/${input.deliveryId}.yaml`);
+  const shown = await runCommand('git', ['show', `${candidate.commitSha}:${manifestRef}`], { cwd: input.repoRoot });
+  if (shown.kind !== 'exited' || shown.exitCode !== 0) return false;
+
+  const parsed = parseYaml(shown.stdout);
+  if (!parsed.ok || typeof parsed.value !== 'object' || parsed.value === null || Array.isArray(parsed.value)) {
+    return false;
+  }
+  const manifest = parsed.value as Record<string, unknown>;
+  if (manifest['id'] !== input.deliveryId) return false;
+
+  const conflicts: FactConflict[] = [];
+  const pointInTimeFacts: OwnerDecisionFact[] = [];
+  const authorizations = readOwnerAuthorizations(
+    input.deliveryId,
+    manifest['ownerDecisions'],
+    manifest['changes'],
+    conflicts,
+    `${candidate.commitSha}:${manifestRef}`,
+    pointInTimeFacts,
+  );
+  if (conflicts.length > 0) return false;
+  return authorizations.some((fact) =>
+    fact.decision === 'authorize-checkpoint' &&
+    fact.deliveryId === input.deliveryId &&
+    fact.changeId === candidate.subjectChangeId &&
+    fact.ref === candidate.ownerAuthorizationTrailer
+  );
+}
+
+async function gitIsAncestor(repoRoot: string, ancestor: string, descendant: string): Promise<boolean> {
+  const result = await runCommand('git', ['merge-base', '--is-ancestor', ancestor, descendant], { cwd: repoRoot });
+  return result.kind === 'exited' && result.exitCode === 0;
+}
+
+function completedUncheckpointedChangesForReader(
+  changes: readonly ChangeFact[],
+  gitBoundaries: readonly GitBoundaryFact[],
+): readonly ChangeFact[] {
+  const completed = changes.filter((change) => change.required && change.state === 'completed');
+  const checkpoints = gitBoundaries.filter((boundary) => boundary.kind === 'change-checkpoint');
+  const structured = new Set(checkpoints.flatMap((boundary) => boundary.changeId === undefined ? [] : [boundary.changeId]));
+  const legacyCount = checkpoints.filter((boundary) => boundary.changeId === undefined).length;
+  const legacyCovered = new Set(
+    completed.filter((change) => !structured.has(change.id)).slice(0, legacyCount).map((change) => change.id),
+  );
+  return completed.filter((change) => !structured.has(change.id) && !legacyCovered.has(change.id));
+}
+
+async function readCheckpointArchiveTerminal(
+  deliveryRunsDir: string,
+  changeId: string,
+): Promise<{ readonly fact: ArchiveTerminalFact; readonly conflicts: readonly FactConflict[] }> {
+  const changeDir = join(deliveryRunsDir, changeId);
+  const conflicts: FactConflict[] = [];
+  let entries: string[];
+  try {
+    entries = await readdir(changeDir);
+  } catch {
+    return { fact: { changeId, status: 'missing' }, conflicts };
+  }
+
+  const archives: Array<{ readonly runId: string; readonly status: RunStatus }> = [];
+  for (const runId of entries.filter((entry) => looksLikeRunId(entry) && entry.endsWith('-archive')).sort()) {
+    const runDir = join(changeDir, runId);
+    if (!(await isDirectory(runDir))) continue;
+    let context: ContextFile;
+    try {
+      context = validateContextFile(JSON.parse(await readFile(join(runDir, 'context.json'), 'utf8')) as unknown);
+    } catch (error) {
+      conflicts.push({
+        dimension: 'archive-terminal-context',
+        authority: runDir,
+        message: `archive Run context is unreadable for checkpoint projection: ${(error as Error).message}`,
+      });
+      continue;
+    }
+    if (context.action !== 'archive' || context.changeId !== changeId) {
+      conflicts.push({
+        dimension: 'archive-terminal-context',
+        authority: runDir,
+        message: 'archive-suffixed Run does not carry matching archive Change identity',
+      });
+      continue;
+    }
+
+    let status: RunStatus = 'pending';
+    try {
+      const raw = await readFile(join(runDir, 'result.json'), 'utf8');
+      const result = admitC1RunResultForReader(raw, 'archive', {
+        runId: context.runId,
+        deliveryId: context.deliveryId,
+        changeId: context.changeId,
+      });
+      status = result.runStatus;
+    } catch (error) {
+      if (!isErrnoENOENT(error)) {
+        conflicts.push({
+          dimension: 'archive-terminal-result',
+          authority: join(runDir, 'result.json'),
+          message: `archive result is unreadable for checkpoint projection: ${(error as Error).message}`,
+        });
+        continue;
+      }
+    }
+    archives.push({ runId: context.runId, status });
+  }
+
+  if (archives.length === 0) return { fact: { changeId, status: 'missing' }, conflicts };
+  const pending = archives.filter((archive) => archive.status === 'pending');
+  if (pending.length > 1) return { fact: { changeId, status: 'ambiguous' }, conflicts };
+  const latest = archives.sort((a, b) => b.runId.localeCompare(a.runId))[0]!;
+  return { fact: { changeId, runId: latest.runId, status: latest.status }, conflicts };
 }
 
 interface RunsResult {
@@ -294,13 +829,9 @@ async function readRuns(deliveryRunsDir: string, activeChangeId?: string): Promi
     }
 
     if (looksLikeRunId(entry)) {
-      const result = await readSingleRun(entryPath, entry);
-      if (result.run !== undefined) {
-        runs.push(result.run);
-        if (result.verdict !== undefined) reviewVerdicts.push(result.verdict);
-        if (result.format === 'c1') c1RunIds.add(result.run.runId);
-      }
-      conflicts.push(...result.conflicts);
+      // Historical Delivery-level Run directories are retained only for
+      // bounded legacy/NNN compatibility. They are not current Policy facts.
+      continue;
     }
   }
   return { runs, reviewVerdicts, c1RunIds, runConflicts: conflicts };
@@ -337,7 +868,7 @@ interface SingleRunResult {
   readonly run?: RunFact;
   readonly verdict?: ReviewVerdictFact;
   /** Kept internal to the Reader so C1-only validators never consume bounded legacy projections. */
-  readonly format?: 'c1' | 'legacy';
+  readonly format?: 'c1' | 'c1-pre-q1-compat' | 'legacy';
   readonly conflicts: readonly FactConflict[];
 }
 
@@ -364,7 +895,7 @@ async function readSingleRun(runDir: string, runId: string): Promise<SingleRunRe
     return { conflicts };
   }
 
-  const classification = discriminateRun(parsedContext, runDir);
+  const classification = discriminateRunForReader(contextContent, parsedContext, runDir);
   if (classification.kind === 'conflict') {
     conflicts.push({ ...classification.conflict, authority: runDir });
     return { conflicts };
@@ -373,8 +904,10 @@ async function readSingleRun(runDir: string, runId: string): Promise<SingleRunRe
   const resultPath = join(runDir, 'result.json');
   let hasResult = false;
   let parsedResult: unknown = null;
+  let rawResultContent: string | undefined;
   try {
     const resultContent = await readFile(resultPath, 'utf-8');
+    rawResultContent = resultContent;
     hasResult = true;
     try {
       parsedResult = JSON.parse(resultContent);
@@ -398,7 +931,17 @@ async function readSingleRun(runDir: string, runId: string): Promise<SingleRunRe
   }
 
   if (classification.kind === 'c1') {
-    return readC1Run(classification.contextFile, runDir, runId, resultPath, hasResult, parsedResult, conflicts);
+    return readC1Run(
+      classification.contextFile,
+      runDir,
+      runId,
+      resultPath,
+      hasResult,
+      parsedResult,
+      rawResultContent,
+      conflicts,
+      classification.readerCompatibility,
+    );
   }
 
   return readLegacyRun(
@@ -419,17 +962,23 @@ function readC1Run(
   resultPath: string,
   hasResult: boolean,
   parsedResult: unknown,
+  rawResultContent: string | undefined,
   conflicts: FactConflict[],
+  readerCompatibility?: 'pre-q1-revision-context',
 ): SingleRunResult {
   let status: RunStatus = 'pending';
   let verdict: ReviewVerdictFact | undefined;
   let consumedInputRefs: readonly ResultRef[] | undefined;
   let reviewVerdictRef: ResultRef | undefined;
+  let admittedResult: import('../persistence/serialization.js').RunResultFile | undefined;
 
   if (hasResult && parsedResult !== null) {
-    let admittedResult: import('../persistence/serialization.js').RunResultFile;
     try {
-      admittedResult = admitC1RunResult(JSON.stringify(parsedResult), contextFile.action);
+      admittedResult = admitC1RunResultForReader(rawResultContent ?? JSON.stringify(parsedResult), contextFile.action, {
+        runId: contextFile.runId,
+        deliveryId: contextFile.deliveryId,
+        changeId: contextFile.changeId,
+      });
     } catch (e) {
       conflicts.push({
         dimension: 'run-result-schema',
@@ -440,11 +989,11 @@ function readC1Run(
     }
 
     if (
-      admittedResult.runStatus === 'completed' ||
-      admittedResult.runStatus === 'failed' ||
-      admittedResult.runStatus === 'cancelled'
+      admittedResult!.runStatus === 'completed' ||
+      admittedResult!.runStatus === 'failed' ||
+      admittedResult!.runStatus === 'cancelled'
     ) {
-      status = admittedResult.runStatus;
+      status = admittedResult!.runStatus;
     } else {
       conflicts.push({
         dimension: 'run-result-status',
@@ -454,8 +1003,8 @@ function readC1Run(
       return { conflicts };
     }
 
-    consumedInputRefs = admittedResult.actionResult?.consumedInputRefs;
-    reviewVerdictRef = admittedResult.actionResult?.reviewVerdictRef;
+    consumedInputRefs = admittedResult!.actionResult?.consumedInputRefs;
+    reviewVerdictRef = admittedResult!.actionResult?.reviewVerdictRef;
   }
 
   if (contextFile.action.startsWith('review-') && status === 'completed' && hasResult && parsedResult !== null) {
@@ -475,7 +1024,16 @@ function readC1Run(
           detail: { runId, action: contextFile.action },
         });
       } else {
-        verdict = { reviewRunId: contextFile.runId, verdict: verdictValue, reviewedRunId };
+        const blockingAuthorities = deriveBlockingAuthorities(admittedResult);
+        if (verdictValue === 'changes-requested' && blockingAuthorities.length === 0) {
+          conflicts.push({
+            dimension: 'review-blocking-authority',
+            authority: runDir,
+            message: `C1 review ${runId} has changes-requested without blocking authority projection`,
+          });
+        } else {
+          verdict = { reviewRunId: contextFile.runId, verdict: verdictValue, reviewedRunId, blockingAuthorities };
+        }
       }
     } else {
       conflicts.push({
@@ -493,7 +1051,11 @@ function readC1Run(
     action: contextFile.action,
     role: contextFile.role,
     status,
-    ...(contextFile.changeId !== undefined && { changeId: contextFile.changeId }),
+    changeId: contextFile.changeId,
+    ...(contextFile.semanticInputFingerprint !== undefined && {
+      semanticInputFingerprint: contextFile.semanticInputFingerprint,
+    }),
+    ...(contextFile.ownerFactRefs !== undefined && { ownerFactRefs: contextFile.ownerFactRefs }),
     ...(contextFile.inputRef !== undefined && { inputRef: contextFile.inputRef }),
     ...(consumedInputRefs !== undefined && { consumedInputRefs }),
     ...(reviewVerdictRef !== undefined && { reviewVerdictRef }),
@@ -501,11 +1063,16 @@ function readC1Run(
     ...(contextFile.sourceReviewVerdict !== undefined && { sourceReviewVerdict: contextFile.sourceReviewVerdict }),
     ...(contextFile.reviewedRunId !== undefined && { reviewedRunId: contextFile.reviewedRunId }),
   };
-  return { run, verdict, format: 'c1', conflicts };
+  return {
+    run,
+    verdict,
+    format: readerCompatibility === 'pre-q1-revision-context' ? 'c1-pre-q1-compat' : 'c1',
+    conflicts,
+  };
 }
 
 function readLegacyRun(
-  run: import('../domain/types.js').Run,
+  run: LegacyRun,
   runDir: string,
   runId: string,
   hasResult: boolean,
@@ -513,6 +1080,10 @@ function readLegacyRun(
   parsedContext: unknown,
   conflicts: FactConflict[],
 ): SingleRunResult {
+  if (run.changeId === undefined || !isFormalAction(run.action)) {
+    // Historical Delivery-level legacy Runs stay outside current Policy.
+    return { conflicts };
+  }
   const statusResult = normalizeBootstrapRunStatus(parsedResult, hasResult);
   if (!statusResult.ok) {
     conflicts.push({ ...statusResult.conflict, authority: runDir });
@@ -525,7 +1096,7 @@ function readLegacyRun(
     action: run.action,
     role: run.role,
     status: statusResult.status,
-    ...(run.changeId !== undefined && { changeId: run.changeId }),
+    changeId: run.changeId,
   };
 
   let verdict: ReviewVerdictFact | undefined;
@@ -537,7 +1108,12 @@ function readLegacyRun(
       (verdictValue === 'approved' || verdictValue === 'changes-requested') &&
       reviewedRunId !== undefined
     ) {
-      verdict = { reviewRunId: runId, verdict: verdictValue, reviewedRunId };
+      verdict = {
+        reviewRunId: runId,
+        verdict: verdictValue,
+        reviewedRunId,
+        blockingAuthorities: verdictValue === 'changes-requested' ? ['author'] : [],
+      };
     } else {
       conflicts.push({
         dimension: 'review-verdict-linkage',
@@ -548,6 +1124,17 @@ function readLegacyRun(
     }
   }
   return { run: runFact, verdict, format: 'legacy', conflicts };
+}
+
+function deriveBlockingAuthorities(
+  result: import('../persistence/serialization.js').RunResultFile | undefined,
+): readonly BlockingAuthority[] {
+  if (result?.reviewVerdict !== 'changes-requested') return [];
+  const seen = new Set<BlockingAuthority>();
+  for (const finding of result.reviewFindings ?? []) {
+    if (finding.severity === 'blocking' && finding.blockingAuthority !== undefined) seen.add(finding.blockingAuthority);
+  }
+  return BLOCKING_AUTHORITIES.filter((authority) => seen.has(authority));
 }
 
 function extractLegacyReviewedRunId(parsedContext: unknown): string | undefined {
@@ -582,9 +1169,39 @@ function extractLegacyReviewedRunId(parsedContext: unknown): string | undefined 
 async function readOpenSpecArtifacts(
   input: ReadFormalFactSnapshotInput,
   changes: readonly ChangeFact[],
+  operationProjection?: OpenSpecOperationProjection,
 ): Promise<OpenSpecArtifactFact[]> {
   const artifacts: OpenSpecArtifactFact[] = [];
   for (const change of changes) {
+    const integrationActive = await isOpenSpecThinIntegrationActive(input.repoRoot, change.id);
+    if (integrationActive && change.state === 'active') {
+      const status = operationProjection?.changeId === change.id
+        ? operationProjection.status
+        : await new OpenSpecCliAdapter({ repoRoot: input.repoRoot }).getChangeStatus(change.id);
+      const structuredCandidates = [
+        { kind: 'change-explore' as const, logical: `${status.changeRootLogical}/explore.md` },
+        { kind: 'change-proposal' as const, logical: status.artifactPaths.proposal.logicalPaths[0] ?? '' },
+        { kind: 'change-design' as const, logical: status.artifactPaths.design.logicalPaths[0] ?? '' },
+        { kind: 'change-tasks' as const, logical: status.artifactPaths.tasks.logicalPaths[0] ?? '' },
+        { kind: 'change-verification' as const, logical: `${status.changeRootLogical}/verification.md` },
+      ];
+      for (const candidate of structuredCandidates) {
+        artifacts.push({
+          kind: candidate.kind,
+          path: candidate.logical,
+          exists: candidate.logical !== '' && await pathExists(join(input.repoRoot, candidate.logical)),
+        });
+      }
+      const specLogical = status.artifactPaths.specs.logicalPaths[0] ?? '';
+      artifacts.push({
+        kind: 'change-spec',
+        path: specLogical,
+        exists: specLogical !== '' && await pathExists(join(input.repoRoot, specLogical)),
+      });
+      continue;
+    }
+
+    // Bounded compatibility for pre-C1 facts and closed historical Changes.
     const changeDir = join(input.repoRoot, input.openspecChangesPath, change.id);
     for (const candidate of [
       { kind: 'change-explore' as const, path: join(changeDir, 'explore.md') },
@@ -609,7 +1226,6 @@ async function readOpenSpecArtifacts(
   return artifacts;
 }
 
-
 interface VerificationProjectionResult {
   readonly status?: VerificationStatus;
   readonly conflicts: readonly FactConflict[];
@@ -627,71 +1243,99 @@ const VALID_VERIFICATION_STATUSES: ReadonlySet<string> = new Set([
 async function readActiveChangeVerificationStatus(
   input: ReadFormalFactSnapshotInput,
   activeChangeId: string | undefined,
+  runs: readonly RunFact[],
+  reviewVerdicts: readonly ReviewVerdictFact[],
+  ownerDecisionFacts: readonly OwnerDecisionFact[],
+  operationProjection?: OpenSpecOperationProjection,
 ): Promise<VerificationProjectionResult> {
-  if (activeChangeId === undefined) {
-    return { conflicts: [] };
+  if (activeChangeId === undefined) return { conflicts: [] };
+
+  const verificationPath = await resolveActiveOpenSpecOwnedPath(input, activeChangeId, 'verification', operationProjection);
+  const authority = normalizeSeparators(verificationPath.slice(input.repoRoot.length + 1));
+  let content: string | undefined;
+  try { content = await readFile(verificationPath, 'utf-8'); }
+  catch { content = undefined; }
+
+  const projection = projectCurrentContractResetLifecycle({ runs, reviewVerdicts, ownerDecisionFacts }, activeChangeId);
+  const currentApply = computeLineage(projection.runs, projection.reviewVerdicts, activeChangeId, 'apply').artifact;
+  const pendingApply = projection.runs
+    .filter((run) => run.changeId === activeChangeId && (run.action === 'apply' || run.action === 'revise-apply') && run.status === 'pending')
+    .sort((left, right) => right.runId.localeCompare(left.runId))[0];
+
+  if (pendingApply !== undefined) {
+    const pendingDir = join(input.repoRoot, input.runsPathPrefix, input.deliveryId, activeChangeId, pendingApply.runId);
+    let pendingSchema: unknown;
+    try { pendingSchema = (JSON.parse(await readFile(join(pendingDir, 'context.json'), 'utf8')) as Record<string, unknown>)['schemaVersion']; }
+    catch { pendingSchema = undefined; }
+    if (pendingSchema === 5) {
+      // A current v5 Apply/revise-apply owns the verification publication
+      // window from immutable entry until terminal CAS. During that window the
+      // canonical Markdown may still be the previous producer, Action-mutated
+      // pre-publication bytes, Markdown-only publication, or record+pending.
+      // None is current terminal authority yet, so never compare a previous
+      // terminal record to successor-window bytes.
+      return { conflicts: [] };
+    }
   }
 
-  const verificationPath = join(
-    input.repoRoot,
-    input.openspecChangesPath,
-    activeChangeId,
-    'verification.md',
-  );
-  if (!(await pathExists(verificationPath))) {
-    return { conflicts: [] };
-  }
+  if (content === undefined) return { conflicts: [] };
+  const status = parseVerificationStatusMarker(content, authority);
+  if ('conflict' in status) return { conflicts: [status.conflict] };
 
-  let content: string;
+  if (currentApply === null) return { status: status.value, conflicts: [] };
+  const producerDir = join(input.repoRoot, input.runsPathPrefix, input.deliveryId, activeChangeId, currentApply.runId);
+  let context: ContextFile;
+  try { context = validateContextFile(JSON.parse(await readFile(join(producerDir, 'context.json'), 'utf8')) as unknown); }
+  catch (error) { return { conflicts: [{ dimension: 'change-verification-selection', authority, message: `current verification producer context unavailable: ${error instanceof Error ? error.message : String(error)}` }] }; }
+  if (context.schemaVersion !== 5) return { status: status.value, conflicts: [] };
+
+  let resultRaw: string;
+  try { resultRaw = await readFile(join(producerDir, 'result.json'), 'utf8'); }
+  catch (error) { return { conflicts: [{ dimension: 'change-verification-selection', authority, message: `current verification producer result unavailable: ${error instanceof Error ? error.message : String(error)}` }] }; }
+  let result: ReturnType<typeof admitC1RunResultForReader>;
+  try { result = admitC1RunResultForReader(resultRaw, context.action, { runId: context.runId, deliveryId: context.deliveryId, changeId: context.changeId }); }
+  catch (error) { return { conflicts: [{ dimension: 'change-verification-selection', authority, message: `current verification producer result invalid: ${error instanceof Error ? error.message : String(error)}` }] }; }
+  if (result.runStatus !== 'completed' || result.terminalBinding === undefined || context.semanticInputFingerprint === undefined) {
+    return { conflicts: [{ dimension: 'change-verification-selection', authority, message: 'current verification producer lacks completed terminal binding' }] };
+  }
   try {
-    content = await readFile(verificationPath, 'utf-8');
+    if ('compactEntryWorkspaceIdentity' in context && context.compactEntryWorkspaceIdentity !== undefined) {
+      const binding = result.terminalBinding.currentVerification;
+      if (binding === undefined) throw new Error('post-E2 current verification binding missing');
+      if (binding.logicalRef !== `openspec/changes/${activeChangeId}/verification.md`) throw new Error('post-E2 current verification logicalRef mismatch');
+      const currentFingerprint = createHash('sha256').update(content).digest('hex');
+      const selection = /- selectionFingerprint: `([0-9a-f]{64})`/.exec(content)?.[1];
+      if (currentFingerprint === binding.versionFingerprint) {
+        if (binding.status !== status.value) throw new Error('post-E2 current verification status mismatch');
+        if (selection !== binding.selectionFingerprint) throw new Error('post-E2 current verification selection fingerprint mismatch');
+        return { status: status.value, conflicts: [] };
+      }
+      await validateCurrentReverificationChain({
+        canonicalVerificationPath: verificationPath,
+        currentMarkdown: content,
+        originRunId: context.runId,
+        originBinding: binding,
+      });
+      if (selection !== binding.selectionFingerprint) throw new Error('re-verification selection fingerprint differs from producing Apply terminal binding');
+      return { status: status.value, conflicts: [] };
+    }
+    const binding = result.terminalBinding.verificationSelection;
+    if (binding === undefined) throw new Error('legacy verification-selection binding missing');
+    const record = await validateTerminalVerificationSelectionBinding({ runDir: producerDir, binding, producingRunId: context.runId, producingSemanticInputFingerprint: context.semanticInputFingerprint, logicalDescriptorDigest: result.terminalBinding.logicalDescriptorDigest });
+    if (record.verificationMarkdownFingerprint !== createHash('sha256').update(content).digest('hex')) throw new Error('legacy record does not exact-bind verification.md');
+    if (record.verificationStatus !== status.value) throw new Error('legacy status differs from selection record');
+    return { status: status.value, conflicts: [] };
   } catch (error) {
-    return {
-      conflicts: [
-        {
-          dimension: 'change-verification-status',
-          authority: normalizeSeparators(
-            verificationPath.slice(input.repoRoot.length + 1),
-          ),
-          message: `verification.md unreadable: ${error instanceof Error ? error.message : String(error)}`,
-        },
-      ],
-    };
+    return { conflicts: [{ dimension: 'change-verification-selection', authority, message: `current verification producer binding invalid: ${error instanceof Error ? error.message : String(error)}` }] };
   }
+}
 
+function parseVerificationStatusMarker(content: string, authority: string): { readonly value: VerificationStatus } | { readonly conflict: FactConflict } {
   const matches = [...content.matchAll(CHANGE_VERIFICATION_MARKER)];
-  const authority = normalizeSeparators(
-    verificationPath.slice(input.repoRoot.length + 1),
-  );
-  if (matches.length !== 1) {
-    return {
-      conflicts: [
-        {
-          dimension: 'change-verification-status',
-          authority,
-          message:
-            matches.length === 0
-              ? 'verification.md exists but has no flowkit-change-verification-status marker'
-              : `verification.md must contain exactly one flowkit-change-verification-status marker (found ${matches.length})`,
-        },
-      ],
-    };
-  }
-
+  if (matches.length !== 1) return { conflict: { dimension: 'change-verification-status', authority, message: matches.length === 0 ? 'verification.md exists but has no flowkit-change-verification-status marker' : `verification.md must contain exactly one flowkit-change-verification-status marker (found ${matches.length})` } };
   const raw = matches[0]?.[1];
-  if (raw === undefined || !VALID_VERIFICATION_STATUSES.has(raw)) {
-    return {
-      conflicts: [
-        {
-          dimension: 'change-verification-status',
-          authority,
-          message: `verification.md contains invalid flowkit-change-verification-status value: ${String(raw)}`,
-        },
-      ],
-    };
-  }
-
-  return { status: raw as VerificationStatus, conflicts: [] };
+  if (raw === undefined || !VALID_VERIFICATION_STATUSES.has(raw)) return { conflict: { dimension: 'change-verification-status', authority, message: `verification.md contains invalid flowkit-change-verification-status value: ${String(raw)}` } };
+  return { value: raw as VerificationStatus };
 }
 
 interface TasksCompletionProjectionResult {
@@ -704,17 +1348,13 @@ const REQUIRED_TASK_LINE = /^\s*-\s+\[([ xX])\]/gm;
 async function readActiveChangeTasksCompletion(
   input: ReadFormalFactSnapshotInput,
   activeChangeId: string | undefined,
+  operationProjection?: OpenSpecOperationProjection,
 ): Promise<TasksCompletionProjectionResult> {
   if (activeChangeId === undefined) {
     return { conflicts: [] };
   }
 
-  const tasksPath = join(
-    input.repoRoot,
-    input.openspecChangesPath,
-    activeChangeId,
-    'tasks.md',
-  );
+  const tasksPath = await resolveActiveOpenSpecOwnedPath(input, activeChangeId, 'tasks', operationProjection);
   if (!(await pathExists(tasksPath))) {
     return { conflicts: [] };
   }
@@ -742,6 +1382,24 @@ async function readActiveChangeTasksCompletion(
   return { complete, conflicts: [] };
 }
 
+async function resolveActiveOpenSpecOwnedPath(
+  input: ReadFormalFactSnapshotInput,
+  changeId: string,
+  kind: 'tasks' | 'verification',
+  operationProjection?: OpenSpecOperationProjection,
+): Promise<string> {
+  if (!(await isOpenSpecThinIntegrationActive(input.repoRoot, changeId))) {
+    return join(input.repoRoot, input.openspecChangesPath, changeId, `${kind}.md`);
+  }
+  const status = operationProjection?.changeId === changeId ? operationProjection.status : await new OpenSpecCliAdapter({ repoRoot: input.repoRoot }).getChangeStatus(changeId);
+  if (kind === 'verification') return join(input.repoRoot, status.changeRootLogical, 'verification.md');
+  const paths = status.artifactPaths.tasks.physicalPaths;
+  if (paths.length !== 1) {
+    throw new FlowkitError('OPENSPEC_AMBIGUOUS_ARTIFACT_PATH', 'OpenSpec tasks artifact must resolve to exactly one file', { changeId, paths });
+  }
+  return paths[0]!;
+}
+
 async function findSpecFile(changeDir: string): Promise<string | null> {
   const specsDir = join(changeDir, 'specs');
   let entries: string[];
@@ -757,10 +1415,6 @@ async function findSpecFile(changeDir: string): Promise<string | null> {
   return null;
 }
 
-function collectOwnerAuthorizations(runs: readonly RunFact[]): { ref: string; scope: string }[] {
-  void runs;
-  return [];
-}
 
 async function validateReviewExactBindings(
   runs: readonly RunFact[],

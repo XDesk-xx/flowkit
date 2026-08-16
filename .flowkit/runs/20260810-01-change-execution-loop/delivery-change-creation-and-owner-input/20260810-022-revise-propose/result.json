@@ -1,0 +1,70 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-propose",
+    "executionStatus": "completed",
+    "summary": "关闭 A1-RP-001 与 A1-RP-002：authorization-only Owner record 的 admission 已从 Design/Task 提升为 normative MUST，任何写入前必须 fresh-read formal facts/current Policy，并要求 owner-decision、decision 与 canonical target 完全匹配，否则 fail-closed 且 Manifest 不变；同时 Change-level architectureImpact 已冻结为 Delivery Manifest persisted/read formal fact，createDelivery initial Changes 与 createChange 使用同一语义，Domain/Reader/ChangeFact/checkout-resume 均必须可恢复。保留 dependsOn=Change.id、bounded write CLI、diagnostic read-only、minimal OpenSpec seam 与 no Registry/DB/03 scope。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/delivery-change-creation-and-owner-input/design.md",
+        "versionFingerprint": "65232fae10adfab31d165affb8bafa7c69fff0bb5742e02824192e490045a056",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-change-creation-and-owner-input/proposal.md",
+        "versionFingerprint": "60cadbc40874c1e11a9458e904b4b1772a8866853c386a29ba5c034801d37c49",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-change-creation-and-owner-input/specs/flowkit-bootstrap-and-roadmap/spec.md",
+        "versionFingerprint": "824db46717caf5133f250446327869d0592a18ce154379a8cb95a7859d82665a",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-change-creation-and-owner-input/specs/flowkit-core-model/spec.md",
+        "versionFingerprint": "90a02929c4760e9dc3612767f38a622fee84f330a2ebaed0589896f51b9bde25",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-change-creation-and-owner-input/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+        "versionFingerprint": "7e646bbf1e4953cc070b101bc081ee89a6dd09f1eca14fa217233457ca65ba20",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-change-creation-and-owner-input/specs/flowkit-diagnostic-cli/spec.md",
+        "versionFingerprint": "4cea39b4241c3c7e73ffb3c34b63f6ea7d0546370e07ad580062fc99712b02f8",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-change-creation-and-owner-input/specs/flowkit-domain-and-state-schema/spec.md",
+        "versionFingerprint": "9d955dff8f5c1d29b7730dd5ded1cfd0a2b8039bb8106cfa9111e0adbcfa4b88",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-change-creation-and-owner-input/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "9ea4133b6cc8dca97db4ccbef03c07f3d2c0aade4abff86d2133fd03db630214",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-change-creation-and-owner-input/specs/flowkit-integration-boundaries/spec.md",
+        "versionFingerprint": "d5f94b901f28c4cfa129ae4c3defa6ff1e63e5d54ce8f38f86e36a544b8833c7",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-change-creation-and-owner-input/specs/flowkit-policy-engine/spec.md",
+        "versionFingerprint": "32b19c9e77a7671154b4ba4949bcab0d5a02d7f6674a9e9350f1469b4af95fb1",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-change-creation-and-owner-input/tasks.md",
+        "versionFingerprint": "8b24c9f51f1732bed2df3a18ae14071bc42839c42aca84c489317c857a69fc25",
+        "kind": "produced-artifact"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/delivery-change-creation-and-owner-input/20260810-021-review-propose/result.json",
+      "versionFingerprint": "62e822899821ff3596258014b95652a5219da55e00918d0e3d3bb919636d7f9b",
+      "kind": "run-result"
+    }
+  }
+}

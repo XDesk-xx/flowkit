@@ -1,0 +1,23 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-apply",
+    "executionStatus": "completed",
+    "summary": "关闭 I1-RA-001：resolved OpenSpec authority 现在按 explicit constructor → propagated FLOWKIT_OPENSPEC_BIN → platform/PATH discovery 消费；formal tests-cli 在 G1 physical target 被选择时传播 current resolved identity，G1 child process 不再注入 repo-local node_modules/.bin PATH，direct archive adapter显式消费同一 identity。221 counterfactual 下 PATH 无 openspec、仅绝对 resolved executable 时 G1 7/7/69 subprocess 与 real OpenSpec 5/5 PASS；Windows ps1/cmd/explicit/propagated unit counterfactual、typecheck/lint/build/quality/OpenSpec strict 均 PASS。未执行 Delivery Full Test。",
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-221-review-apply/result.json",
+      "versionFingerprint": "a7f308e58d1b98b1ffda712becb0c47f6e852567c930c6b41d7c8831b797213f",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "d0ca90f7ae1a488cb46cbd20bdf88d9d0b8e5ad88838d58c11f604b3269fa110",
+    "currentVerification": {
+      "logicalRef": "openspec/changes/delivery-final-closure-correction/verification.md",
+      "versionFingerprint": "df5cf527aa3d9d2ee1c46cdec054c3d75a08301af733d94e9a05332d7ce12996",
+      "selectionFingerprint": "e9f8156dacbd58c59b693aed148c12e2350d6140e38da40a4ccd2b71a17e36b3",
+      "status": "passed"
+    }
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 4,
+  "runId": "20260816-224-archive",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "archive",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "semanticInputFingerprint": "c93ff7bcf02b428c368b2d0d772651096f540d6c2dd8db791563a0301eb9cbec",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-224-archive/",
+  "changeKey": "I1",
+  "changeId": "delivery-final-closure-correction",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-223-review-apply/result.json",
+    "versionFingerprint": "73ad1c85718868de2eac9b8111f29e38b403080681fab867d41c7e2d07f3661b",
+    "kind": "run-result"
+  },
+  "archiveEntryOpenSpecProjection": {
+    "projectionVersion": 1,
+    "version": "1.7.0",
+    "changeId": "delivery-final-closure-correction",
+    "changeRootLogical": "openspec/changes/delivery-final-closure-correction",
+    "artifactPaths": {
+      "proposal": [
+        "openspec/changes/delivery-final-closure-correction/proposal.md"
+      ],
+      "specs": [
+        "openspec/changes/delivery-final-closure-correction/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+        "openspec/changes/delivery-final-closure-correction/specs/flowkit-change-verification-selection/spec.md",
+        "openspec/changes/delivery-final-closure-correction/specs/flowkit-core-hardening-and-release-candidate/spec.md",
+        "openspec/changes/delivery-final-closure-correction/specs/flowkit-openspec-1-7-thin-integration/spec.md"
+      ],
+      "design": [
+        "openspec/changes/delivery-final-closure-correction/design.md"
+      ],
+      "tasks": [
+        "openspec/changes/delivery-final-closure-correction/tasks.md"
+      ]
+    }
+  },
+  "archiveMutationGuard": {
+    "state": "armed",
+    "surfaceVersion": "openspec-archive-mutation-v1",
+    "changeRoot": "openspec/changes/delivery-final-closure-correction",
+    "canonicalSpecsRoot": "openspec/specs",
+    "archiveNamespaceRoot": "openspec/changes/archive",
+    "preArchiveGenerationFingerprint": "a2303e10e5d1a9156ce7574c0660c742a7bb9f29359ee22fd15ae95a99a9df52",
+    "terminalObservation": {
+      "kind": "failure",
+      "resultFingerprint": "38284352362ab0bcf32afe692e0dc4ae6be653d1e74fee9feaa62674dec87909",
+      "normalized": {
+        "kind": "failure",
+        "exitCode": 1,
+        "status": [
+          {
+            "severity": "error",
+            "code": "archive_spec_update_failed"
+          }
+        ]
+      }
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260816-216-propose",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "propose",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "448bf7e67e39aa28a1072e34f31cd02124f022375c7a1459aba00da504fde3bb",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-216-propose/",
+  "changeKey": "I1",
+  "changeId": "delivery-final-closure-correction",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-215-review-explore/result.json",
+    "versionFingerprint": "1ed7c06c942efe7e1407cfb54e0c219f026ec11714ed66068d8e35d4b16bb049",
+    "kind": "run-result"
+  },
+  "canonicalBase": "1783983440e4d1b29d6282bc5c1af55d390f392d",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-215-review-explore/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "1ed7c06c942efe7e1407cfb54e0c219f026ec11714ed66068d8e35d4b16bb049"
+    },
+    {
+      "ref": "openspec/changes/delivery-final-closure-correction/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+    },
+    {
+      "ref": "openspec/changes/delivery-final-closure-correction/explore.md",
+      "versionFingerprint": "996f48a5c693428e2fb4a9e4a6fae4bb00d033a1425f13f624860ace7630d24e",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "delivery-final-closure-correction",
+      "runId": "20260816-216-propose",
+      "action": "propose",
+      "role": "author",
+      "semanticInputFingerprint": "448bf7e67e39aa28a1072e34f31cd02124f022375c7a1459aba00da504fde3bb"
+    },
+    "definition": {
+      "action": "propose",
+      "version": 1,
+      "role": "author",
+      "goalClass": "freeze-change-contract",
+      "mutationClass": "proposal-bundle-only",
+      "outputClass": "current-proposal-bundle-set",
+      "terminalContract": {
+        "kind": "artifact",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+      },
+      {
+        "ref": "openspec/changes/delivery-final-closure-correction/explore.md",
+        "versionFingerprint": "996f48a5c693428e2fb4a9e4a6fae4bb00d033a1425f13f624860ace7630d24e",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-215-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "1ed7c06c942efe7e1407cfb54e0c219f026ec11714ed66068d8e35d4b16bb049"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260816-215-review-explore",
+      "verdict": "approved",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-215-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "1ed7c06c942efe7e1407cfb54e0c219f026ec11714ed66068d8e35d4b16bb049"
+      },
+      "blockingAuthorities": [],
+      "findings": [],
+      "convergence": [
+        {
+          "findingId": "I1-RE-001",
+          "state": "resolved"
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "0e25964e07ba99dc06210f4403d251ba521a889a1e2f6dc551ae8c865473dbce",
+    "requiredResultContract": {
+      "kind": "artifact",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": true,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

@@ -1,7 +1,10 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 import { FlowkitError } from '../../../src/shared/errors.js';
+import { getActionDefinition } from '../../../src/domain/actions.js';
 import {
   validateActionResultWithoutRunRef,
   validateResultRefProjection,
@@ -11,6 +14,7 @@ import {
   validateReviewVerdictIntegrity,
   validateActionResultApplicability,
   admitC1RunResult,
+  admitC1RunResultForReader,
   type ContextFile,
   type RunResultFile,
 } from '../../../src/persistence/serialization.js';
@@ -431,13 +435,148 @@ describe('validateContextFile', () => {
     assert.equal(cf.changeId, 'formal-fact-reader-and-persistence');
   });
 
-  it('accepts a valid Delivery-level ContextFile (task 10.5, 12.34)', () => {
-    const cf = validateContextFile(validDeliveryContext);
-    assert.equal(cf.changeId, undefined);
-    assert.equal(cf.changeKey, undefined);
+  it('accepts transitional v2 ownerFactRefs as immutable history but strips them from the typed projection', () => {
+    const cf = validateContextFile({
+      ...validChangeContext,
+      ownerFactRefs: [{
+        ref: `owner:${'a'.repeat(64)}`,
+        decision: 'contract-reset',
+        deliveryId: validChangeContext.deliveryId,
+        changeId: validChangeContext.changeId,
+        scope: 'D1/current-contract',
+        requiredOutcomes: ['structured Owner handoff'],
+        sourceRef: 'owner-input:bootstrap',
+      }],
+    });
+    assert.equal(cf.schemaVersion, 2);
+    assert.equal(cf.ownerFactRefs, undefined);
   });
 
-  it('rejects schemaVersion !== 2 (task 12.16)', () => {
+  it('retains ownerFactRefs in the current v3 typed projection', () => {
+    const ownerFactRefs = [{
+      ref: `owner:${'b'.repeat(64)}`,
+      decision: 'contract-reset',
+      deliveryId: validChangeContext.deliveryId,
+      changeId: validChangeContext.changeId,
+      scope: 'D1/current-contract',
+      requiredOutcomes: ['structured Owner handoff'],
+      sourceRef: 'owner-input:formal',
+    }];
+    const cf = validateContextFile({ ...validChangeContext, schemaVersion: 3, ownerFactRefs });
+    assert.equal(cf.schemaVersion, 3);
+    assert.deepEqual(cf.ownerFactRefs, ownerFactRefs);
+  });
+
+  it('accepts current v4 and enforces archive-only keyed OpenSpec projection shape', () => {
+    const archive = {
+      ...validChangeContext,
+      schemaVersion: 4,
+      runId: '20260806-009-archive',
+      action: 'archive',
+      archiveEntryOpenSpecProjection: {
+        projectionVersion: 1,
+        version: '1.7.0',
+        changeId: validChangeContext.changeId,
+        changeRootLogical: `openspec/changes/${validChangeContext.changeId}`,
+        artifactPaths: {
+          proposal: [`openspec/changes/${validChangeContext.changeId}/custom/proposal.md`],
+          specs: [`openspec/changes/${validChangeContext.changeId}/delta/spec.md`],
+          design: [`openspec/changes/${validChangeContext.changeId}/custom/design.md`],
+          tasks: [`openspec/changes/${validChangeContext.changeId}/work/tasks.md`],
+        },
+      },
+    };
+    const cf = validateContextFile(archive);
+    assert.equal(cf.schemaVersion, 4);
+    assert.deepEqual(cf.archiveEntryOpenSpecProjection?.artifactPaths.proposal, [
+      `openspec/changes/${validChangeContext.changeId}/custom/proposal.md`,
+    ]);
+
+    assert.throws(
+      () => validateContextFile({
+        ...validChangeContext,
+        schemaVersion: 4,
+        archiveEntryOpenSpecProjection: archive.archiveEntryOpenSpecProjection,
+      }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('accepts only a complete v5 Apply context and rejects historical v5 field synthesis', () => {
+    const designRef = {
+      ref: 'openspec/changes/formal-fact-reader-and-persistence/design.md',
+      kind: 'produced-artifact',
+      versionFingerprint: 'c'.repeat(64),
+    };
+    const entryWorkspaceIdentity = {
+      canonicalBase: 'b'.repeat(40),
+      workspaceFingerprint: 'd'.repeat(64),
+    };
+    const mutationDeclaration = {
+      schemaVersion: 1,
+      action: 'apply',
+      designRef,
+      selectors: [{ kind: 'exact', path: 'src/domain/types.ts' }],
+    };
+    const v5 = {
+      ...validChangeContext,
+      schemaVersion: 5,
+      runId: '20260806-010-apply',
+      action: 'apply',
+      semanticInputFingerprint: 'a'.repeat(64),
+      canonicalBase: 'b'.repeat(40),
+      applicableFactRefs: [designRef],
+      entryWorkspaceIdentity,
+      mutationDeclaration,
+      actionPackage: {
+        schemaVersion: 2,
+        run: {
+          runId: '20260806-010-apply',
+          deliveryId: validChangeContext.deliveryId,
+          changeId: validChangeContext.changeId,
+          action: 'apply',
+          role: 'author',
+          semanticInputFingerprint: 'a'.repeat(64),
+        },
+        definition: getActionDefinition('apply'),
+        contractRefs: [designRef],
+        handoffRefs: [],
+        ownerAuthorizationRefs: [],
+        requiredResultContract: getActionDefinition('apply').terminalContract,
+        entryWorkspaceIdentity,
+        mutationDeclaration,
+      },
+    };
+    const context = validateContextFile(v5);
+    assert.equal(context.schemaVersion, 5);
+    assert.equal(context.action, 'apply');
+    assert.equal(context.mutationDeclaration?.selectors[0]?.path, 'src/domain/types.ts');
+
+    assert.throws(
+      () => validateContextFile({ ...validChangeContext, canonicalBase: 'b'.repeat(40) }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+    assert.throws(
+      () => validateContextFile({ ...v5, mutationDeclaration: { ...v5.mutationDeclaration, selectors: [{ kind: 'prefix', path: 'src' }, { kind: 'exact', path: 'src/domain/types.ts' }] } }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+    assert.throws(
+      () => validateContextFile({
+        ...v5,
+        actionPackage: { ...v5.actionPackage, mutationDeclaration: { ...mutationDeclaration, selectors: [{ kind: 'exact', path: 'src/domain/actions.ts' }] } },
+      }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+    );
+  });
+
+  it('rejects retired Delivery behavior as a current schemaVersion 2 ContextFile', () => {
+    assert.throws(
+      () => validateContextFile(validDeliveryContext),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'UNKNOWN_ACTION',
+    );
+  });
+
+  it('rejects unsupported historical schemaVersion 1 (task 12.16)', () => {
     assert.throws(
       () => validateContextFile({ ...validChangeContext, schemaVersion: 1 }),
       (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
@@ -465,15 +604,10 @@ describe('validateContextFile', () => {
     );
   });
 
-  it('rejects Delivery action carrying changeId (task 10.5, 12.32)', () => {
+  it('rejects retired Delivery action even if a caller adds Change identity', () => {
     assert.throws(
-      () =>
-        validateContextFile({
-          ...validDeliveryContext,
-          changeId: 'some-change',
-          changeKey: 'X',
-        }),
-      (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
+      () => validateContextFile({ ...validDeliveryContext, changeId: 'some-change', changeKey: 'X' }),
+      (e: unknown) => e instanceof FlowkitError && e.code === 'UNKNOWN_ACTION',
     );
   });
 
@@ -550,6 +684,28 @@ describe('validateContextFile', () => {
       runPath: '.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-010-review-apply/',
     });
     assert.equal(cf.reviewedRunId, '20260806-009-apply');
+  });
+
+  it('accepts review-apply verificationInputRef under a structured non-default Change root', () => {
+    const cf = validateContextFile({
+      ...validChangeContext,
+      runId: '20260806-010-review-apply',
+      action: 'review-apply',
+      role: 'reviewer',
+      reviewedRunId: '20260806-009-apply',
+      inputRef: {
+        ref: '.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-009-apply/result.json',
+        versionFingerprint: 'abc123',
+        kind: 'run-result',
+      },
+      verificationInputRef: {
+        ref: 'planning/active/formal-fact-reader-and-persistence/verification.md',
+        versionFingerprint: 'def456',
+        kind: 'verification-summary',
+      },
+      runPath: '.flowkit/runs/20260806-01-deterministic-core/formal-fact-reader-and-persistence/20260806-010-review-apply/',
+    });
+    assert.equal(cf.verificationInputRef?.ref, 'planning/active/formal-fact-reader-and-persistence/verification.md');
   });
 
   it('rejects review-* Run missing inputRef (Q1-RA-006)', () => {
@@ -748,24 +904,6 @@ describe('validateContextFileIdentity', () => {
     );
   });
 
-  it('skips changeId check for Delivery-level Run (task 12.42)', () => {
-    const deliveryCf: ContextFile = {
-      schemaVersion: 2,
-      runId: '20260806-002-full-test',
-      deliveryId: '20260806-01-deterministic-core',
-      action: 'full-test',
-      role: 'owner',
-      ownerAuthorization: 'required',
-      runPath: '.flowkit/runs/20260806-01-deterministic-core/20260806-002-full-test/',
-    };
-    assert.doesNotThrow(() =>
-      validateContextFileIdentity(
-        deliveryCf,
-        '/repo/.flowkit/runs/20260806-01-deterministic-core/20260806-002-full-test',
-      ),
-    );
-  });
-
   it('rejects runPath inconsistent with filesystem (task 12.43)', () => {
     const badCf: ContextFile = {
       ...cf,
@@ -874,7 +1012,7 @@ describe('validateReviewVerdictIntegrity', () => {
           actionResult: { action: 'review-propose', executionStatus: 'completed', summary: 'review' },
           reviewVerdict: 'approved',
           reviewFindings: [
-            { id: 'B-001', severity: 'blocking', title: 'major', problem: 'broken', requiredChange: 'fix it' },
+            { id: 'B-001', severity: 'blocking', blockingAuthority: 'author', title: 'major', problem: 'broken', requiredChange: 'fix it' },
           ],
         }),
       (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED',
@@ -888,7 +1026,7 @@ describe('validateReviewVerdictIntegrity', () => {
       actionResult: { action: 'review-propose', executionStatus: 'completed', summary: 'review' },
       reviewVerdict: 'changes-requested',
       reviewFindings: [
-        { id: 'B-001', severity: 'blocking', title: 'major', problem: 'broken', requiredChange: 'fix it' },
+        { id: 'B-001', severity: 'blocking', blockingAuthority: 'author', title: 'major', problem: 'broken', requiredChange: 'fix it' },
       ],
     });
   });
@@ -1096,7 +1234,7 @@ describe('validateActionResultApplicability (Q1-RA-010)', () => {
             },
             reviewVerdict: 'changes-requested',
             reviewFindings: [
-              { id: 'B-001', severity: 'blocking', title: 'f', problem: 'p', requiredChange: 'r' },
+              { id: 'B-001', severity: 'blocking', blockingAuthority: 'author', title: 'f', problem: 'p', requiredChange: 'r' },
             ],
           }),
           'review-apply',
@@ -1120,7 +1258,7 @@ describe('validateActionResultApplicability (Q1-RA-010)', () => {
             },
             reviewVerdict: 'changes-requested',
             reviewFindings: [
-              { id: 'B-001', severity: 'blocking', title: 'f', problem: 'p', requiredChange: 'r' },
+              { id: 'B-001', severity: 'blocking', blockingAuthority: 'author', title: 'f', problem: 'p', requiredChange: 'r' },
             ],
           }),
           'review-apply',
@@ -1220,5 +1358,72 @@ describe('validateActionResultApplicability (Q1-RA-010)', () => {
       }),
       'review-apply',
     );
+  });
+});
+
+
+describe('Q1 blockingAuthority writer and reader compatibility', () => {
+  const base = {
+    runStatus: 'completed' as const,
+    actionResult: { action: 'review-propose' as const, executionStatus: 'completed' as const, summary: 'review' },
+    reviewVerdict: 'changes-requested' as const,
+  };
+
+  it('new writer rejects blocking finding without blockingAuthority', () => {
+    assert.throws(() => admitC1RunResult(JSON.stringify({ ...base, reviewFindings: [
+      { id: 'B1', severity: 'blocking', title: 'fix', problem: 'x', requiredChange: 'revise' },
+    ] }), 'review-propose'), (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED');
+  });
+
+  it('author blocker requires requiredChange while non-author blocker forbids it', () => {
+    assert.doesNotThrow(() => admitC1RunResult(JSON.stringify({ ...base, reviewFindings: [
+      { id: 'B1', severity: 'blocking', blockingAuthority: 'author', title: 'fix', problem: 'x', requiredChange: 'revise' },
+    ] }), 'review-propose'));
+    assert.doesNotThrow(() => admitC1RunResult(JSON.stringify({ ...base, reviewFindings: [
+      { id: 'B2', severity: 'blocking', blockingAuthority: 'owner', title: 'decision', problem: 'x' },
+    ] }), 'review-propose'));
+    assert.throws(() => admitC1RunResult(JSON.stringify({ ...base, reviewFindings: [
+      { id: 'B3', severity: 'blocking', blockingAuthority: 'owner', title: 'decision', problem: 'x', requiredChange: 'wrong' },
+    ] }), 'review-propose'));
+  });
+
+  it('reader-only compatibility requires exact persisted pre-Q1 Review identity + bytes', () => {
+    const runId = '20260810-006-review-propose';
+    const raw = readFileSync(join(
+      process.cwd(),
+      `.flowkit/runs/20260810-01-change-execution-loop/core-contract-alignment/${runId}/result.json`,
+    ), 'utf8');
+
+    assert.throws(() => admitC1RunResult(raw, 'review-propose'));
+    assert.throws(() => admitC1RunResultForReader(raw, 'review-propose'));
+
+    const admitted = admitC1RunResultForReader(raw, 'review-propose', {
+      runId,
+      deliveryId: '20260810-01-change-execution-loop',
+      changeId: 'core-contract-alignment',
+    });
+    assert.equal(admitted.reviewFindings?.[0]?.blockingAuthority, 'author');
+
+    assert.throws(() => admitC1RunResultForReader(`${raw} `, 'review-propose', {
+      runId,
+      deliveryId: '20260810-01-change-execution-loop',
+      changeId: 'core-contract-alignment',
+    }));
+    assert.throws(() => admitC1RunResultForReader(raw, 'review-propose', {
+      runId: '20260810-999-review-propose',
+      deliveryId: '20260810-01-change-execution-loop',
+      changeId: 'core-contract-alignment',
+    }));
+  });
+
+  it('new/current malformed Review with old requiredChange shape still fails closed in Reader', () => {
+    const raw = JSON.stringify({ ...base, reviewFindings: [
+      { id: 'CURRENT', severity: 'blocking', title: 'malformed', problem: 'x', requiredChange: 'revise' },
+    ] });
+    assert.throws(() => admitC1RunResultForReader(raw, 'review-propose', {
+      runId: '20260810-999-review-propose',
+      deliveryId: '20260810-01-change-execution-loop',
+      changeId: 'core-contract-alignment',
+    }), (e: unknown) => e instanceof FlowkitError && e.code === 'SCHEMA_VALIDATION_FAILED');
   });
 });

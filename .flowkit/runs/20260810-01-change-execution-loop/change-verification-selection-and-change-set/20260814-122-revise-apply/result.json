@@ -1,0 +1,21 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-apply",
+    "executionStatus": "completed",
+    "summary": "关闭 119 review-apply 的七个 Author blockers：v5 exact resume/terminal replay/concurrent preparation、verification-selection terminal binding/publication、canonical base→post actualChangeSet、current-lineage Reader、closed verification authority、operation-scoped OpenSpec projection/Windows cancellation，以及 bootstrap integration/migration/verification evidence。120 migration seam 与 121 contaminated entry 均保留为 failed history；122 为 clean-entry v5 retry。",
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260814-119-review-apply/result.json",
+      "versionFingerprint": "70027abc57da02f3ecea01a8b87bb8fa745ac11c7beee0fbf7e7360cf740caab",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "cf4ee6659d1c656a8df56d2faedec2aa14b3a42857ad9a89bbbe1886d5209c92",
+    "verificationSelection": {
+      "logicalRef": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260814-122-revise-apply/verification-selection.json",
+      "versionFingerprint": "2a8964526bd6c2eaf390b509db39455d2716ce318737292d090cbf242613f845"
+    }
+  }
+}

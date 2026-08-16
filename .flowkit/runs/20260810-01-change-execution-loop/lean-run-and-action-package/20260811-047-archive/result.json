@@ -1,0 +1,8 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "archive",
+    "executionStatus": "completed",
+    "summary": "Owner 已明确授权 archive B1；authorize-archive provenance 已通过 A1 write-side 正式写入并使 Policy 推进为 archive。OpenSpec 1.7 archive 成功将 lean-run-and-action-package relocation 为 openspec/changes/archive/2026-08-11-lean-run-and-action-package，operation result 为 specsUpdated=false、canonical specs 0 hash changes。Flowkit 随后仅将 Delivery Manifest 中 B1 state 从 active 更新为 completed。未执行 Change Checkpoint、Commit、Push 或 Delivery Full Test。"
+  }
+}

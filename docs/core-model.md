@@ -96,25 +96,24 @@ Run 状态只描述一次执行实例，不代替 Change 或 Delivery 状态。
 
 ## 4. Action Catalog
 
-### 4.1 主 Action
+### 4.1 Standard Change Action
+
+Standard Formal Action Catalog 固定为 10 个 Change Action：
 
 ```text
 explore
+review-explore
+revise-explore
 propose
+review-propose
+revise-propose
 apply
+review-apply
+revise-apply
 archive
 ```
 
-### 4.2 辅助 Action
-
-```text
-review-explore
-revise-explore
-review-propose
-revise-propose
-review-apply
-revise-apply
-```
+Delivery Full Test、Delivery Finalize 与 Change Checkpoint 都不是 Standard Formal Action，也不创建 Standard Run。Delivery behavior 的完整 machine representation 后置到 Delivery Execution Loop。
 
 Review 与 Revision Action 保持按阶段对称：`review-<stage> ↔ revise-<stage>`。
 
@@ -124,7 +123,7 @@ Review 与 Revision Action 保持按阶段对称：`review-<stage> ↔ revise-<s
 
 `revise-apply` 必须：
 
-- 仅由当前 `review-apply` 的 `changes-requested` 触发；
+- 仅在当前 matching `review-apply` 为 `changes-requested` 且 blocking authorities 全部为 `author` 时合法；
 - 只处理当前 Findings，不得扩张 Change 范围；
 - 完成后重新执行适用的 Change Verification；
 - 验证通过后返回 `review-apply`；
@@ -137,11 +136,11 @@ Review 与 Revision Action 保持按阶段对称：`review-<stage> ↔ revise-<s
 Review、Revision/Fix、Verification 和 Checkpoint 不形成额外 Phase 实体。
 
 - Review：独立判断当前 Action 的完整结果；
-- Revision：处理 `changes-requested` Verdict；
+- Revision：处理 author-only `changes-requested` blocking Findings；
 - Verification：确认 Apply/Revision 后的适用检查；
 - Checkpoint：Change 已由 Archive 关闭后的 Git 正式边界，用于持久化/同步/恢复；它不反向决定 Change 是否 completed。
 
-Review 是正式生命周期边界。Revision 只在对应 Review 返回 `changes-requested` 时适用；Review `approved` 时不创建 skipped 状态或空 Run。
+Review 是正式生命周期边界。`changes-requested` 只表示当前 target 不可批准：只有 matching Review 的 blocking authorities 非空且全部为 `author` 时 Revision 才适用；存在任一 `owner / verification / external` blocker 时 Author Revision 不合法，`next()` 停在 non-author authority boundary。此时显式 same-stage re-review 在 Policy 层合法并创建新的 Reviewer execution，但是否值得现在重审由显式执行者判断，Policy 不自动调度 Review。Review `approved` 时不创建 skipped 状态或空 Run。
 
 ## 6. 角色
 
@@ -180,7 +179,7 @@ Author 完成当前 Action 后只记录推荐的 `nextAction: review-*`。
 
 Author 不预建空 reviewer Run。Reviewer 真正执行统一入口 `review` 时，Policy 先计算唯一具体 Review Action，再创建对应 reviewer Run。
 
-Author 执行统一入口 `revise` 时，Policy 必须从当前唯一的 `changes-requested` Verdict 解析对应 `revise-explore | revise-propose | revise-apply`。不存在、冲突或多解时必须阻塞，并且不创建 Revision Run。
+Author 执行统一入口 `revise` 时，Policy 必须从当前唯一 matching `changes-requested` Review 及其 `blockingAuthorities` 解析对应 `revise-explore | revise-propose | revise-apply`。只有 author-only blockers 才能解析 Revision；包含任一 non-author blocker、不存在 authority、冲突或多解时必须阻塞，并且不创建 Revision Run。对于含 non-author blocker 的 matching Review，显式统一入口 `review` 可解析为同阶段新的 Review generation，即使 target bytes 未变化；`next()` 不自动选择该路径。
 
 ### 7.4 Run 路径
 
@@ -193,16 +192,7 @@ Change 级 Run：
 └─ result.json
 ```
 
-Delivery 级 Run：
-
-```text
-.flowkit/runs/<delivery-id>/_delivery/<run-id>/
-├─ action.md
-├─ context.json
-└─ result.json
-```
-
-`_delivery` 是保留目录，不是 Change ID。
+Current Standard Run 只使用 Change 级路径。历史已存在的 Delivery-level Run（包括旧 `_delivery` / top-level 形状）只能由 bounded legacy reader 与 Delivery-wide NNN enumeration 识别，用于历史兼容；不得作为 current Policy fact、current Run path 或新 Run 创建能力，也不得被迁移/改写。
 
 Run ID 使用：
 
@@ -244,13 +234,19 @@ B1 不绑定具体 Skill 标识。
 
 Skill 只在当前 Action 内提供方法，不得决定 Delivery、Change、Action、是否 Review、是否 Full Test、下一 Action、Archive 或 Finalize。
 
-具体 Action Package、Skill 字段、标识、加载和 Adapter 协议属于 C1。
+B1 拥有十个 Standard Change Actions 的固定 `ActionDefinition`、logical Action Package、same-pending Run preparation/resume 与 logical result admission。Action Package 只覆盖 Standard Change Actions；Delivery Full Test / Finalize 仍是 Delivery behavior，不创建 B1 Action Package/Standard Run。
+
+具体 Skill 标识、外部工具 structured context、physical serialization 和 Adapter/Provider 映射属于后置 C1/03；这些层只执行/映射 B1 已决定的单个 Action，不拥有 `next`。
 
 ## 10. 与后续 Change 的边界
 
+### B1：lean-run-and-action-package
+
+负责固定 ActionDefinition、Delivery-wide Run identity、same-pending semantic continuation、logical Action Package 与 logical result admission。
+
 ### C1：integration-boundaries
 
-负责具体 Action Package、Adapter、Schema、Skill 声明以及外部工具输入输出协议。
+负责 OpenSpec / 外部工具 structured integration 与 physical adapter mapping；不得重新拥有 logical Action Package 或 lifecycle decision。
 
 ### D1：bootstrap-and-roadmap
 
@@ -261,3 +257,13 @@ Skill 只在当前 Action 内提供方法，不得决定 Delivery、Change、Act
 负责生产代码、持久化实现、Policy 执行器和 CLI。
 
 任何后续实现若与本文冲突，必须通过明确 Change 修改正式契约，不得以代码、Run 或临时说明静默偏离。
+
+## 11. A1 Creation / Owner Provenance / Activation
+
+从 A1 起，Flowkit 增加最小 write-side，但不增加新的 Formal Action 或 lifecycle 主状态。
+
+- Delivery creation：由 Owner 独立输入创建 `state=active` Delivery Manifest。
+- Change creation：创建 `state=planned` Change；`dependsOn` 的唯一 canonical identity 为 `Change.id`。
+- Change `architectureImpact` 是 source-controlled persisted/read fact。A1 write-side 创建的新 Change 必须保存 boolean；pre-A1 exact legacy identity 缺失时只允许显式 `pre-a1-legacy-missing`。
+- Owner authority provenance 由 Delivery Manifest 顶层 `ownerDecisions` 拥有；Run 中的 owner 字符串不是 authority。
+- activation 只执行合法 `planned → active` mutation，并初始化最小 OpenSpec metadata；C1 checkpoint 后新 activation 必须显式声明 `specDeltaMode=required|skip`，不得把 Proposal/spec 内容当 metadata authority；不创建 Run、Commit、Push、Full Test 或 Archify asset。

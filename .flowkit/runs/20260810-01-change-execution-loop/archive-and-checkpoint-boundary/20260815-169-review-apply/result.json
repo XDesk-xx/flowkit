@@ -1,0 +1,48 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "按 159→169 完整审查链复核 168 Apply：160/162 的 Explore findings 已在 164 收敛，166 Proposal 已批准；168 的 strict identity、checkpoint-time Owner authorization、read-only checkpoint handoff 与主要 verification 均成立。但 bounded legacy cutover 仍存在一个 Author blocker：strict E2 anchor 可被 subject-only consumer 绕过，且可被未来重复 E2 checkpoint 向前重定义，导致 post-anchor malformed checkpoint 被追溯性 legacy-admit。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/archive-and-checkpoint-boundary/verification.md",
+      "versionFingerprint": "c149de18f7260a6bcbbe6801461e010fc249ccecda48755ea138aa1a135e362b",
+      "kind": "verification-summary"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "9becd7d0bcf4bfcac96e363fcf0aaf79fedf0e7e9a9c7467a447f6f124b68874"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "F1-RA-001",
+      "severity": "blocking",
+      "title": "bounded legacy cutover anchor can be bypassed or moved forward",
+      "problem": "The Apply implements the F1 legacy exemption by matching the E2 change identity instead of binding one stable original strict cutover boundary. readGitBoundarySummaries also special-cases an E2 subject-only candidate as a checkpoint fact. As a result, one consumer can activate post-E2 behavior from a non-strict checkpoint, while FormalFactReader can later select a newer duplicate E2 checkpoint and retroactively extend the legacy-readable window past the original strict anchor.",
+      "contractRef": "openspec/changes/archive-and-checkpoint-boundary/design.md §3 (bounded legacy cutover) + specs/flowkit-archive-and-checkpoint-boundary/spec.md Historical checkpoint compatibility",
+      "invariant": "Only checkpoints strictly before the original strict-admitted E2 cutover may use the bounded legacy read path; the anchor itself and every descendant/future checkpoint must remain strict, and no consumer may treat a subject-only E2 candidate as the activation checkpoint.",
+      "evidence": [
+        "src/facts/git-boundary-reader.ts:139-157 explicitly admits the migration E2 changeId through readGitBoundarySummaries even when formalIdentityValid is false; src/services/b1-run-execution-service.ts:665-671 consumes those summaries to activate the post-E2 writer.",
+        "Disposable Git fixture with Delivery Start + subject-only E2 checkpoint produced a change-checkpoint fact from readGitBoundarySummaries, proving the special case is executable rather than dead compatibility code.",
+        "src/facts/formal-fact-reader.ts:592-605 uses checkpointCandidates.find(...) for the E2 changeId; git log --all is newest-first, so a later duplicate strict E2 checkpoint becomes anchorCandidate.",
+        "Disposable Git fixture with original strict E2 anchor, then a subject-only F1 checkpoint, then a later duplicate strict E2 checkpoint caused readFormalFactSnapshot to admit the intervening subject-only F1 checkpoint as legacy, proving the exemption can expand beyond the original cutover.",
+        "Current exact base e182492181166ef00b8546923f1ce6ad168564f7 already contains the legitimate strict E2 checkpoint, so the required cutover can be fixed without rewriting historical Git."
+      ],
+      "impact": "A malformed post-cutover checkpoint can be interpreted as sufficient E2 activation by the writer path, and a future duplicate E2 checkpoint can retroactively grandfather post-cutover subject-only history. That breaks F1 strict checkpoint authority, makes the legacy exemption non-monotonic, and can let lifecycle/read behavior depend on future Git additions.",
+      "location": "src/facts/git-boundary-reader.ts:139-157; src/facts/formal-fact-reader.ts:575-613; src/services/b1-run-execution-service.ts:644-679",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Bind the migration cutover to a stable strict E2 boundary and make all consumers respect that same strict activation invariant. Remove the subject-only E2 checkpoint exception from any current checkpoint fact/activation surface. Ensure later same-change commits cannot move the cutover forward (for example by deterministically selecting/pinning the original strict E2 anchor or failing closed on ambiguity). Preserve read-only compatibility only for true ancestors of that original anchor and keep the current base e182 strict transition valid.",
+      "acceptance": [
+        "A subject-only E2 checkpoint is not returned/consumed as a current formal activation checkpoint by readGitBoundarySummaries or isPostE2ThreeFileWriterActive.",
+        "After an original strict E2 anchor exists, adding a later strict E2 checkpoint cannot make any descendant of the original anchor eligible for legacy checkpoint admission.",
+        "The real e182 strict E2 checkpoint still activates the prospective three-file writer and true pre-E2 historical checkpoints remain readable without history rewrite.",
+        "Fresh/downstream repositories remain strict by default and no new Delivery-local or subject-only fallback is introduced.",
+        "Regression tests cover both counterexamples: subject-only E2 activation and later duplicate E2 with an intervening malformed post-anchor checkpoint."
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}

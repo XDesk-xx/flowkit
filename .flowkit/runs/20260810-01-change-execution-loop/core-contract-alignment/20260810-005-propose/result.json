@@ -1,0 +1,63 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "propose",
+    "executionStatus": "completed",
+    "summary": "Q1 Proposal 已基于 004 approved Explore 冻结。Standard FormalAction/current schemaVersion 2 Run 收敛为 10 个 Change Action；历史 Delivery-level Run 仅保留 bounded read/NNN compatibility。新 blocking Reviewer finding 必须声明 blockingAuthority，Reader 只向 Policy 投影 deterministic blockingAuthorities；author-only blockers 才可 revise，任一 non-author/mixed blocker fail-closed，non-author-only 可显式 direct re-review但 next 不自动循环。pre-Q1 immutable author-shaped finding 通过 bounded read compatibility 保持可读。Q1→03 期间保留 Owner Full Test/Finalize decision facts，但 authorized Full Test 与 passed+finalize-authorized 均停在 delivery-behavior-not-implemented blocked boundary，不再返回 full-test/delivery-finalize Action，也不实现 03 behavior executor。六个 active capability delta、Design 与 Tasks 已完成，OpenSpec strict validation 通过；未修改 production/tests/canonical docs/specs，未运行 Delivery Full Test。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/core-contract-alignment/proposal.md",
+        "versionFingerprint": "507284a54950cd01589911447207daa809f83b99736ec5f27ec61dae2474903e",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/core-contract-alignment/design.md",
+        "versionFingerprint": "98da58af4b399313671bd8349bf6a446229ffcb20fec961171e30480f788827c",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/core-contract-alignment/tasks.md",
+        "versionFingerprint": "064d6ace0c95467d02a4c55725bfade77dea7db450b7f33580ece2b66103976e",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/core-contract-alignment/specs/flowkit-bootstrap-and-roadmap/spec.md",
+        "versionFingerprint": "0ede63bb713d1c5c8c53c228f2d6022de5a736fe7d0952c3dd3d335bf41ad357",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/core-contract-alignment/specs/flowkit-core-hardening-and-release-candidate/spec.md",
+        "versionFingerprint": "734d35bde52c5edebf7c4fb943bf8ec2940f931c0c9f82172ab7748d7f6f290b",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/core-contract-alignment/specs/flowkit-core-model/spec.md",
+        "versionFingerprint": "08cc26af07b069e256c63b3ee769aa9e8d5bab8378b1ff6a9e6ad1f74b688899",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/core-contract-alignment/specs/flowkit-domain-and-state-schema/spec.md",
+        "versionFingerprint": "f0ef855292dd7e4ed6f93f9889593887cf81e6e8916574b2851a6ccd8c099cd5",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/core-contract-alignment/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "7326a706019fb23fedbada35638678a179038b24666fca0de7febc2e00d0eda6",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/core-contract-alignment/specs/flowkit-policy-engine/spec.md",
+        "versionFingerprint": "2cfd07f843f00cbd185598aee3009dba7a66980d04edfc89cf3646fb7704f6b1",
+        "kind": "produced-artifact"
+      }
+    ],
+    "consumedInputRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/core-contract-alignment/20260810-004-review-explore/result.json",
+        "versionFingerprint": "1ff390c0bf1237d79f71c7dd351eb075cd4fafc3089d20fb27c7698d7a75013f",
+        "kind": "run-result"
+      }
+    ],
+    "nextActionRecommendation": "review-propose"
+  }
+}

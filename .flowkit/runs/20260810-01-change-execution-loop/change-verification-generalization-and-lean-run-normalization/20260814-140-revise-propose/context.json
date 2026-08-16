@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260814-140-revise-propose",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "revise-propose",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "eb116c82b551837db3d052724aba336714513f11b940bd9da6cc33ad13399054",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-generalization-and-lean-run-normalization/20260814-140-revise-propose/",
+  "changeKey": "E2",
+  "changeId": "change-verification-generalization-and-lean-run-normalization",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-generalization-and-lean-run-normalization/20260814-139-review-propose/result.json",
+    "versionFingerprint": "a73eb4a6964320fed157b667f5de8da76dedd38c93f849667d1ee72a9aa285b7",
+    "kind": "run-result"
+  },
+  "sourceReviewRun": "20260814-139-review-propose",
+  "sourceReviewVerdict": "changes-requested",
+  "canonicalBase": "e15d0a3c5bf7b46d3a1134eb3a5e208f11f7e564",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-generalization-and-lean-run-normalization/20260814-139-review-propose/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "a73eb4a6964320fed157b667f5de8da76dedd38c93f849667d1ee72a9aa285b7"
+    },
+    {
+      "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "cfa0dd24ffbc3529beee2a707cfd385b458247b1b5cca61fbcc99f934e83600e"
+    },
+    {
+      "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/design.md",
+      "versionFingerprint": "ec0388b4c257c9832861f80fa93cbe8f6d323f125cc45990b2e8756065ce47ce",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/proposal.md",
+      "versionFingerprint": "dd5be5c68b4a716db1e8aeb9c3930c06829a40a19c0b921f7fe824d851527322",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-change-verification-selection/spec.md",
+      "versionFingerprint": "237cae10e03b9ad39137fdfa91a70c78e1351e8ef05f5c3cd9e239f1f3595609",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "versionFingerprint": "6fd2e772da3c0a93e43a09ba1e860844db8bccba068c86251bf38bf5047467b6",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-lean-run-and-action-package/spec.md",
+      "versionFingerprint": "69dbd141d181e62581b888dd5b7db5f391424b672ef9cdc1f65f21f4fb9085a2",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/tasks.md",
+      "versionFingerprint": "8bbbc077ae9f195b9418fbb1419adfd058a2f25bc6e34c2b4d59f6bc83257b6c",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-verification-generalization-and-lean-run-normalization",
+      "runId": "20260814-140-revise-propose",
+      "action": "revise-propose",
+      "role": "author",
+      "semanticInputFingerprint": "eb116c82b551837db3d052724aba336714513f11b940bd9da6cc33ad13399054"
+    },
+    "definition": {
+      "action": "revise-propose",
+      "version": 1,
+      "role": "author",
+      "goalClass": "close-proposal-author-findings",
+      "mutationClass": "proposal-bundle-revision-only",
+      "outputClass": "current-proposal-bundle-set",
+      "terminalContract": {
+        "kind": "artifact",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": true,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "cfa0dd24ffbc3529beee2a707cfd385b458247b1b5cca61fbcc99f934e83600e"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/design.md",
+        "versionFingerprint": "ec0388b4c257c9832861f80fa93cbe8f6d323f125cc45990b2e8756065ce47ce",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/proposal.md",
+        "versionFingerprint": "dd5be5c68b4a716db1e8aeb9c3930c06829a40a19c0b921f7fe824d851527322",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "237cae10e03b9ad39137fdfa91a70c78e1351e8ef05f5c3cd9e239f1f3595609",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "6fd2e772da3c0a93e43a09ba1e860844db8bccba068c86251bf38bf5047467b6",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-lean-run-and-action-package/spec.md",
+        "versionFingerprint": "69dbd141d181e62581b888dd5b7db5f391424b672ef9cdc1f65f21f4fb9085a2",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/tasks.md",
+        "versionFingerprint": "8bbbc077ae9f195b9418fbb1419adfd058a2f25bc6e34c2b4d59f6bc83257b6c",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-generalization-and-lean-run-normalization/20260814-139-review-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "a73eb4a6964320fed157b667f5de8da76dedd38c93f849667d1ee72a9aa285b7"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260814-139-review-propose",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-generalization-and-lean-run-normalization/20260814-139-review-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "a73eb4a6964320fed157b667f5de8da76dedd38c93f849667d1ee72a9aa285b7"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "E2-RP-001",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "E2 自身 v5 Apply 到 checkpoint 后 v6 之间缺少封闭 migration bridge",
+          "problem": "138 同时冻结：E2 自身继续使用现有 context v5 / ActionPackage v2 writer；generic Verification Catalog/renderer 取代 E1-specific selection；historical v5 sidecar contract 不迁移；v6/v3 three-file writer 只能在 E2 checkpoint 后激活。但 E2 的 Apply/revise-apply Run 必然在该 checkpoint 之前创建，因此仍是 v5/v2。当前 v5 post-action path 的 selection/sidecar/renderer contract 是 E1-era generation，而 136 已证明该 current selector 对 E2 path zero-match。138 没有定义 E2 当前 pending v5 Run 到底使用哪一代 Catalog、selection record、renderer 与 terminal binding，也没有定义如何与 historical E1 v5 terminal reader 区分。",
+          "contractRef": "openspec/changes/change-verification-generalization-and-lean-run-normalization/design.md Decisions 1-6 and Migration Plan; specs/flowkit-change-verification-selection/spec.md; specs/flowkit-formal-fact-reader-and-persistence/spec.md; specs/flowkit-lean-run-and-action-package/spec.md",
+          "invariant": "E2 必须能用一个在 Proposal 阶段已冻结、generation-closed 的 migration contract 完成自己的 Apply/Verification/Review/Archive；不得在 Apply 时临时选择 early-v6、cross-generation synthesis、修改 historical v5 authority 或重新引入 E2-specific verification hardcode。checkpoint 只能是 prospective v6/v3 的激活边界，而不能留下 E2 当前 v5 Apply 无合法 verification/persistence generation。",
+          "requiredOutcome": "在 revise-propose 中冻结一个明确的 E2 migration bridge：说明 E2 自己的 v5/v2 Apply/revise-apply 在 post-action admission 时使用哪一代 generic selection/Catalog、哪一代 renderer/verification publication、哪一种 versioned sidecar或terminal binding contract，以及 reader 如何把该 current migration generation 与 historical E1 v5 和 checkpoint 后 v6 区分。该 bridge 必须可在 E2 checkpoint 前完成正常 Verification/terminal CAS，且 checkpoint 后才能切换 prospective v6/v3 three-file writer。",
+          "acceptance": [
+            "Design/spec/tasks 明确列出至少 historical E1-v5、current E2-migration-v5、prospective v6 三种 generation 的 writer/reader/selection/renderer/persistence 组合，不存在隐式 cross-generation synthesis。",
+            "E2 自己的 v5/v2 Apply 能使用 generic current-Change Verification，不依赖 `change-verification-selection-and-change-set` literal，并能合法生成其 migration-generation terminal authority。",
+            "historical E1 v5 sidecars/renderer 保持 immutable read-only；E2 migration bridge 不反向改变其 schema/currentness validation。",
+            "v6/v3 three-file writer 的激活由 E2 checkpoint 这一正式可观察边界决定，E2 review-apply/revise-apply/archive 在 checkpoint 前不会意外切换到 v6。",
+            "tests/tasks 覆盖 E2 自身 v5 migration Apply + crash/replay，以及 E2 checkpoint 后 F1 首个 v6 consumer。"
+          ]
+        },
+        {
+          "id": "E2-RP-002",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "Delivery Manifest 尚未把 F1 正式依赖重连到 E2",
+          "problem": "138 已把 E2 加入 Delivery Manifest 并在 Proposal/Design 中冻结 `E2 checkpoint → v6/v3 activation → F1 first formal next-consumer`，但 manifest 中 F1 `archive-and-checkpoint-boundary` 的 `dependsOn` 仍只有 `change-verification-selection-and-change-set`（E1）。因此正式 dependency graph 没有表达 E2 是 F1 的 prerequisite；在 E2 尚 planned 且无 active Change 的一般快照中，Policy 可以同时把 E2 与 F1 视为 eligible，而不是唯一要求先完成 E2。",
+          "contractRef": "openspec/delivery-groups/20260810-01-change-execution-loop.yaml F1/E2 entries; openspec/changes/change-verification-generalization-and-lean-run-normalization/design.md Goals and Migration Plan 5-6",
+          "invariant": "既然 E2 是 required corrective Change 且 F1 被定义为 E2 checkpoint 后首个 prospective v6 consumer，正式 Delivery dependency graph 必须编码 E2 → F1，而不能只依赖当前会话里已经发生的 activation 顺序或 checkpoint-precedence 偶然保证本次路径。",
+          "requiredOutcome": "在 revise-propose 中把 F1 的 formal dependency 更新为 E2（并保持 G1→F1），使 Delivery graph 与 `E1 → E2 → F1 → G1` 的当前 required sequence 一致。",
+          "acceptance": [
+            "Manifest 中 F1 `dependsOn` 明确包含 `change-verification-generalization-and-lean-run-normalization`，不再只依赖 E1。",
+            "E2 仍依赖 E1，G1 仍依赖 F1，依赖图无 cycle/duplicate。",
+            "Policy fixture/manifest regression 证明 E2 planned 时 F1 不 eligible；E2 completed + checkpoint boundary处理后 F1 才成为 intended next Change。"
+          ]
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "714753e9b339ec197aaed5d3bc28ca1f972bb81e7ce33fc4ab7a309d91ab0423",
+    "requiredResultContract": {
+      "kind": "artifact",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": true,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": true,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

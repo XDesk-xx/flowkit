@@ -82,6 +82,9 @@ export const BLOCKED_REASONS = [
   'ambiguous-state',
   'dependency-incomplete',
   'full-test-failed',
+  'non-author-review-blocker',
+  'delivery-behavior-not-implemented',
+  'archive-terminal-recovery-required',
 ] as const;
 
 /**

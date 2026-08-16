@@ -1,0 +1,22 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "094 已补充并通过真实 OpenSpec 1.7 normal future archive lifecycle E2E；D2-RA-001 关闭。该 E2E 证明 schemaVersion 4 archive entry 经真实 relocation 后，在同一 archive Run terminal admission 前 checkpoint gate 保持关闭，normal admit 完成后才进入 authorize-checkpoint，且 normal path 不调用 archive-terminal recovery。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/archive-terminal-continuation-correction/verification.md",
+      "versionFingerprint": "6d1d65791ab5ce5b6565f9a87b9b334132fca5a2f134a9972ce2db6bc716e012",
+      "kind": "verification-summary"
+    }
+  },
+  "reviewVerdict": "approved",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [],
+  "reviewFindingConvergence": [
+    {
+      "findingId": "D2-RA-001",
+      "state": "resolved"
+    }
+  ]
+}

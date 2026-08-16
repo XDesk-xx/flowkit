@@ -15,7 +15,7 @@
  * No match          → review-S (new artifact not yet reviewed)
  *
  * This replaces the old "no completed review-S Run" existence rule, which
- * broke the `changes-requested → revise → review` loop. All functions are pure
+ * broke the authority-aware `changes-requested → (revise | blocked/re-review)` loop. All functions are pure
  * and read only snapshot fields.
  */
 

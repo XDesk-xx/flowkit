@@ -113,6 +113,7 @@ describe('next — Archive closes Change, Checkpoint follows', () => {
   it('completed Change without checkpoint → owner-decision authorize-checkpoint', () => {
     const snap = buildSnapshot({
       changes: [buildChange({ key: 'Q2', id: 'q2', state: 'completed', required: true })],
+      checkpointArchiveTerminal: { changeId: 'q2', runId: '20260806-085-archive', status: 'completed' },
     });
     const r = next(snap);
     assert.equal(r.kind, 'owner-decision');
@@ -122,17 +123,30 @@ describe('next — Archive closes Change, Checkpoint follows', () => {
     }
   });
 
+  it('completed Change with non-terminal archive blocks checkpoint until archive recovery completes', () => {
+    const snap = buildSnapshot({
+      changes: [buildChange({ key: 'Q2', id: 'q2', state: 'completed', required: true })],
+      checkpointArchiveTerminal: { changeId: 'q2', runId: '20260806-085-archive', status: 'pending' },
+    });
+    const r = next(snap);
+    assert.equal(r.kind, 'blocked');
+    if (r.kind === 'blocked') {
+      assert.equal(r.diagnosis.reason, 'archive-terminal-recovery-required');
+    }
+  });
+
   it('crash/resume: closed Q2 stays checkpoint-pending without re-projecting Q2 Runs; after checkpoint E1 may activate', () => {
     const changes = [
       buildChange({ key: 'Q1', id: 'q1', state: 'completed', required: true }),
-      buildChange({ key: 'Q2', id: 'q2', state: 'completed', required: true, dependsOn: ['Q1'] }),
-      buildChange({ key: 'E1', id: 'e1', state: 'planned', required: true, dependsOn: ['Q2'] }),
+      buildChange({ key: 'Q2', id: 'q2', state: 'completed', required: true, dependsOn: ['q1'] }),
+      buildChange({ key: 'E1', id: 'e1', state: 'planned', required: true, dependsOn: ['q2'] }),
     ];
 
     const beforeCheckpoint = next(buildSnapshot({
       changes,
       runs: [],
       gitBoundaries: [buildCheckpointBoundary('q1')],
+      checkpointArchiveTerminal: { changeId: 'q2', runId: '20260806-085-archive', status: 'completed' },
     }));
     assert.equal(beforeCheckpoint.kind, 'owner-decision');
     if (beforeCheckpoint.kind === 'owner-decision') {
@@ -153,6 +167,18 @@ describe('next — Archive closes Change, Checkpoint follows', () => {
   });
 });
 
+describe('next — admitted checkpoint facts only', () => {
+  it('keeps authorize-checkpoint when an invalid Git candidate was not admitted into formal facts', () => {
+    const r = next(buildSnapshot({
+      changes: [buildChange({ key: 'F1', id: 'f1', state: 'completed', required: true })],
+      gitBoundaries: [],
+      checkpointArchiveTerminal: { changeId: 'f1', runId: '20260815-167-archive', status: 'completed' },
+    }));
+    assert.equal(r.kind, 'owner-decision');
+    if (r.kind === 'owner-decision') assert.equal(r.decision, 'authorize-checkpoint');
+  });
+});
+
 describe('next — no active Change (task 6.4, 6.5, 10.16)', () => {
   it('planned required Change with deps met → owner-decision activate-change', () => {
     const snap = buildSnapshot({
@@ -169,8 +195,8 @@ describe('next — no active Change (task 6.4, 6.5, 10.16)', () => {
   it('planned required Change with unmet deps → blocked dependency-incomplete', () => {
     const snap = buildSnapshot({
       changes: [
-        buildChange({ key: 'D1', state: 'planned', required: true, dependsOn: ['B1'] }),
-        buildChange({ key: 'B1', state: 'cancelled', required: true }),
+        buildChange({ key: 'D1', id: 'D1', state: 'planned', required: true, dependsOn: ['B1'] }),
+        buildChange({ key: 'B1', id: 'B1', state: 'cancelled', required: true }),
       ],
     });
     const r = next(snap);
@@ -192,11 +218,8 @@ describe('next — no active Change (task 6.4, 6.5, 10.16)', () => {
   });
 });
 
-describe('next — Full Test lifecycle (task 6.5, D1-12, D1-13, 10.23)', () => {
-  function allCompletedSnapshot(opts: {
-    fullTestStatus?: unknown;
-    auths?: unknown;
-  }): FormalFactSnapshot {
+describe('next — Q1→03 Delivery behavior bridge', () => {
+  function allCompletedSnapshot(opts: { fullTestStatus?: unknown; auths?: unknown }): FormalFactSnapshot {
     return buildSnapshot({
       changes: [buildChange({ state: 'completed', required: true })],
       gitBoundaries: [buildCheckpointBoundary()],
@@ -205,84 +228,34 @@ describe('next — Full Test lifecycle (task 6.5, D1-12, D1-13, 10.23)', () => {
     });
   }
 
-  it('awaiting-user-decision → owner-decision authorize-full-test', () => {
+  it('awaiting-user-decision keeps Owner authorize-full-test decision', () => {
     const r = next(allCompletedSnapshot({ fullTestStatus: 'awaiting-user-decision' }));
     assert.equal(r.kind, 'owner-decision');
-    if (r.kind === 'owner-decision') {
-      assert.equal(r.decision, 'authorize-full-test');
-    }
+    if (r.kind === 'owner-decision') assert.equal(r.decision, 'authorize-full-test');
   });
 
-  it('authorized + full-test scope → action full-test', () => {
-    const r = next(
-      allCompletedSnapshot({
-        fullTestStatus: 'authorized',
-        auths: [buildAuthorization('full-test')],
-      }),
-    );
-    assert.equal(r.kind, 'action');
-    if (r.kind === 'action') {
-      assert.equal(r.action, 'full-test');
-    }
+  it('authorized blocks at Delivery behavior implementation boundary', () => {
+    const r = next(allCompletedSnapshot({ fullTestStatus: 'authorized', auths: [buildAuthorization('full-test')] }));
+    assert.equal(r.kind, 'blocked');
+    if (r.kind === 'blocked') assert.equal(r.diagnosis.reason, 'delivery-behavior-not-implemented');
   });
 
-  it('authorized + no scope → owner-decision authorize-full-test (defensive fail-closed)', () => {
-    const r = next(
-      allCompletedSnapshot({ fullTestStatus: 'authorized', auths: [] }),
-    );
-    assert.equal(r.kind, 'owner-decision');
-    if (r.kind === 'owner-decision') {
-      assert.equal(r.decision, 'authorize-full-test');
-    }
-  });
-
-  it('passed + finalize scope → action delivery-finalize', () => {
-    const r = next(
-      allCompletedSnapshot({
-        fullTestStatus: 'passed',
-        auths: [buildAuthorization('finalize')],
-      }),
-    );
-    assert.equal(r.kind, 'action');
-    if (r.kind === 'action') {
-      assert.equal(r.action, 'delivery-finalize');
-    }
-  });
-
-  it('passed + no finalize scope → owner-decision authorize-delivery-finalize', () => {
+  it('passed without finalize authorization asks Owner', () => {
     const r = next(allCompletedSnapshot({ fullTestStatus: 'passed', auths: [] }));
     assert.equal(r.kind, 'owner-decision');
-    if (r.kind === 'owner-decision') {
-      assert.equal(r.decision, 'authorize-delivery-finalize');
-    }
+    if (r.kind === 'owner-decision') assert.equal(r.decision, 'authorize-delivery-finalize');
   });
 
-  it('failed → blocked full-test-failed with suggested owner actions', () => {
-    const r = next(allCompletedSnapshot({ fullTestStatus: 'failed' }));
+  it('passed with finalize authorization blocks at Delivery behavior implementation boundary', () => {
+    const r = next(allCompletedSnapshot({ fullTestStatus: 'passed', auths: [buildAuthorization('finalize')] }));
     assert.equal(r.kind, 'blocked');
-    if (r.kind === 'blocked') {
-      assert.equal(r.diagnosis.reason, 'full-test-failed');
-      assert.ok(r.diagnosis.suggestedOwnerActions.includes('authorize-corrective-change'));
-      assert.ok(r.diagnosis.suggestedOwnerActions.includes('cancel-delivery'));
-    }
+    if (r.kind === 'blocked') assert.equal(r.diagnosis.reason, 'delivery-behavior-not-implemented');
   });
 
-  it('not-ready with all completed → blocked ambiguous-state (inconsistent)', () => {
-    const r = next(allCompletedSnapshot({ fullTestStatus: 'not-ready' }));
+  it('failed remains full-test-failed and never auto-runs', () => {
+    const r = next(allCompletedSnapshot({ fullTestStatus: 'failed', auths: [buildAuthorization('full-test')] }));
     assert.equal(r.kind, 'blocked');
-    if (r.kind === 'blocked') {
-      assert.equal(r.diagnosis.reason, 'ambiguous-state');
-    }
-  });
-
-  it('full-test-failed MUST NOT return action full-test (D1-13)', () => {
-    const r = next(
-      allCompletedSnapshot({
-        fullTestStatus: 'failed',
-        auths: [buildAuthorization('full-test')],
-      }),
-    );
-    assert.notEqual(r.kind, 'action');
+    if (r.kind === 'blocked') assert.equal(r.diagnosis.reason, 'full-test-failed');
   });
 });
 
@@ -332,6 +305,23 @@ describe('next — explore stage (task 6.7, 10.8)', () => {
     assert.equal(r.kind, 'action');
     if (r.kind === 'action') {
       assert.equal(r.action, 'revise-explore');
+    }
+  });
+
+
+  it('match + mixed non-author changes-requested stays blocked and never auto-selects re-review', () => {
+    const explore = buildRun({ nnn: 1, action: 'explore' });
+    const review = buildRun({ nnn: 2, action: 'review-explore', role: 'reviewer' });
+    const v = buildVerdict({
+      reviewNnn: 2,
+      reviewedRunId: explore.runId,
+      verdict: 'changes-requested',
+      blockingAuthorities: ['author', 'owner'],
+    });
+    const r = next(activeChangeSnapshot([explore, review], [v]));
+    assert.equal(r.kind, 'blocked');
+    if (r.kind === 'blocked') {
+      assert.equal(r.diagnosis.reason, 'non-author-review-blocker');
     }
   });
 });

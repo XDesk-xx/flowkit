@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 4,
+  "runId": "20260815-176-review-apply",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "review-apply",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "22c20a15216d96182efda632b1edeacd34353fcb6cdb866213928365ea2c65df",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:a8adfe13a9d149cbcb5df514aaf8d09e937e2b47cc920b97cc8f6538260a324e",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "archive-and-checkpoint-boundary",
+      "scope": "F1 architecture and F1-RA-001 required outcome unchanged; do not reopen Explore; only correct Proposal/Design apply and revise-apply mutation scope after failed 20260815-170-revise-apply.",
+      "requiredOutcomes": [
+        "Add tests/unit/services/b1-run-execution-service.test.ts to flowkitMutationScope.apply.",
+        "Add tests/unit/services/b1-run-execution-service.test.ts to flowkitMutationScope.revise-apply.",
+        "Do not reopen Explore; create a new Proposal generation for Reviewer re-approval before Apply/revise-apply.",
+        "Keep F1 architecture unchanged.",
+        "Keep F1-RA-001 required outcome unchanged: remove subject-only E2 checkpoint activation and keep the legacy cutover anchored to the original strict-admitted E2 checkpoint."
+      ],
+      "sourceRef": "owner-chat:2026-08-15T11:07+08:00:F1-RA-001-mutation-scope-reset-after-170"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260815-176-review-apply/",
+  "changeKey": "F1",
+  "changeId": "archive-and-checkpoint-boundary",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260815-175-apply/result.json",
+    "versionFingerprint": "64b723205497435cf4c7b969e6a5f79e819f2fbbdef5226a45a11105d04f3b71",
+    "kind": "run-result"
+  },
+  "verificationInputRef": {
+    "ref": "openspec/changes/archive-and-checkpoint-boundary/verification.md",
+    "versionFingerprint": "47fa9e9a37b1d9d94b028c496efd2b8bcd838f3b29701abd329ce3f515c7fbec",
+    "kind": "verification-summary"
+  },
+  "reviewedRunId": "20260815-175-apply",
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

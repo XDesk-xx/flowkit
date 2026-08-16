@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 4,
+  "runId": "20260816-234-archive",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "archive",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "semanticInputFingerprint": "2e4eb26d8a5c005b07684d05ddebdc33ea4bd0791fa23b83169f0c303c04629d",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:95848aa1187f2feed309096caadcf3d4f00f68930bf6b0ab6db94c72bd156c57",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "delivery-final-closure-correction",
+      "scope": "I1 archive-sync completeness after failed 224; supersede only the current proposal/apply/archive generation and preserve accepted implementation outcomes",
+      "requiredOutcomes": [
+        "I1 所有 MODIFIED Requirement 必须保留仍适用的 canonical Scenario identity；明确保留 OpenSpec executable identity is propagated from the current adapter，并整合已批准的 resolved-authority 语义。",
+        "保留已经确认成立的 I1 implementation outcomes 与 I1-RA-001 已解决事实，仅在 224 暴露的 OpenSpec archive-sync completeness 所需最小范围内重新形成 generation。",
+        "再次请求 Owner archive authorization 前，必须在 disposable repository 中使用真实 OpenSpec 1.7 对 exact current I1 candidate 执行真实 archive-sync proof；strict validation 或 synthetic fixture 不足以替代。",
+        "增加最小可复用 archive-sync preflight，使同类 archive-sync completeness 问题在 future Owner archive authorization 前被发现；保持 thin integration，不复制 OpenSpec merge engine，不引入 Registry/Evidence platform。",
+        "废弃延续至 20260816-224-archive failed 的当前 I1 Proposal/Apply/Archive generation；不新增 Change，不重新打开 Explore。"
+      ],
+      "sourceRef": "owner-input:2026-08-16T16:56+08:00:contract-reset:I1-archive-sync-completeness"
+    },
+    {
+      "ref": "owner:cffdb6ebc1d838b8ea2b09c757a3a2cb1928e7c744ef98b60fbaa53c90650f3d",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "delivery-final-closure-correction",
+      "scope": "I1 227 verification retry lifecycle after completed Apply with failed Change Verification; supersede only the 225/226/227 generation as needed to add exact-candidate re-verification",
+      "requiredOutcomes": [
+        "re-verification 必须绑定同一 exact Apply target/candidate identity；candidate drift 时必须 fail closed，新的 passed authority 成立后才允许进入 review-apply。",
+        "不得通过修改 timeout、concurrency、scheduler 或 process-heavy batching 解决；不得新增 Formal Action、不得新增 Change、不得制造 no-op revise。",
+        "保留 225/226/227 已成立的 archive-sync completeness、resolved OpenSpec authority、Verification Closure、historical fixture 与 checkpoint hygiene 结果；不重新打开 Explore，不扩大产品范围。",
+        "历史 227 failed verification evidence 与 227 terminal result 必须保持不可改写；新的 Verification authority 必须是新增的 point-in-time authority，不得伪造或覆盖历史失败事实。",
+        "在 completed Apply 且当前 Change Verification failed、candidate bytes 未变化时，提供最小 exact-candidate re-verification 机制，允许产生新的正式 Verification authority。"
+      ],
+      "sourceRef": "owner-input:2026-08-16T18:17+08:00:I1-verification-retry-lifecycle"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-234-archive/",
+  "changeKey": "I1",
+  "changeId": "delivery-final-closure-correction",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/delivery-final-closure-correction/20260816-233-review-apply/result.json",
+    "versionFingerprint": "9c799f9aa21c5f88de89d41fd3e57019f402d5fc8bb4cec9e35b98a6b790af1e",
+    "kind": "run-result"
+  },
+  "archiveEntryOpenSpecProjection": {
+    "projectionVersion": 1,
+    "version": "1.7.0",
+    "changeId": "delivery-final-closure-correction",
+    "changeRootLogical": "openspec/changes/delivery-final-closure-correction",
+    "artifactPaths": {
+      "proposal": [
+        "openspec/changes/delivery-final-closure-correction/proposal.md"
+      ],
+      "specs": [
+        "openspec/changes/delivery-final-closure-correction/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+        "openspec/changes/delivery-final-closure-correction/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+        "openspec/changes/delivery-final-closure-correction/specs/flowkit-change-verification-selection/spec.md",
+        "openspec/changes/delivery-final-closure-correction/specs/flowkit-core-hardening-and-release-candidate/spec.md",
+        "openspec/changes/delivery-final-closure-correction/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "openspec/changes/delivery-final-closure-correction/specs/flowkit-openspec-1-7-thin-integration/spec.md"
+      ],
+      "design": [
+        "openspec/changes/delivery-final-closure-correction/design.md"
+      ],
+      "tasks": [
+        "openspec/changes/delivery-final-closure-correction/tasks.md"
+      ]
+    }
+  },
+  "archiveMutationGuard": {
+    "state": "armed",
+    "surfaceVersion": "openspec-archive-mutation-v1",
+    "changeRoot": "openspec/changes/delivery-final-closure-correction",
+    "canonicalSpecsRoot": "openspec/specs",
+    "archiveNamespaceRoot": "openspec/changes/archive",
+    "preArchiveGenerationFingerprint": "2b3fb6907b9f44b0bf303bd7c555a2ddfaf2be2eb38e5fcff20984e75352bc67",
+    "terminalObservation": {
+      "kind": "success",
+      "resultFingerprint": "7fb0e2ed86ee5593155469c2db0f9c99093d774b52ac420bb21c1b4bafafe47c",
+      "normalized": {
+        "kind": "success",
+        "change": "delivery-final-closure-correction",
+        "archivedAs": "2026-08-16-delivery-final-closure-correction",
+        "path": "openspec/changes/archive/2026-08-16-delivery-final-closure-correction",
+        "specsUpdated": true,
+        "totals": {
+          "added": 3,
+          "modified": 5,
+          "removed": 0,
+          "renamed": 0
+        }
+      }
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

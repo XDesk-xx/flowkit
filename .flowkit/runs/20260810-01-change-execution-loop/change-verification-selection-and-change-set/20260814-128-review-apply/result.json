@@ -1,0 +1,30 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "127 closes E1-RA-008 and E1-RA-011. Independent review confirms historical v4 reset recovery is reset-neutral and fail-closed, Core-owned verification.md publication is excluded from candidate sets, and all retained actualChangeSet fingerprints match terminal candidate bytes.",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/change-verification-selection-and-change-set/verification.md",
+      "versionFingerprint": "8c17c810377ed5a615d89447997b251620fa3eac07010e7e0584945b8de44fe6",
+      "kind": "verification-summary"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "046ac1aaeb9dbe9b20787bcc98293bcbe07ce31b96e8ed743101ff5d239dbcbe"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [],
+  "reviewFindingConvergence": [
+    {
+      "findingId": "E1-RA-008",
+      "state": "resolved"
+    },
+    {
+      "findingId": "E1-RA-011",
+      "state": "resolved"
+    }
+  ]
+}

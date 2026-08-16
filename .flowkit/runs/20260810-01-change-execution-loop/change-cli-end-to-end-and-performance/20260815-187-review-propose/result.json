@@ -1,0 +1,16 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "Review 186 propose：Owner Contract Reset 仅要求对 flowkitMutationScope.apply / revise-apply selector 做 lexical sort。186 保持 184 approved Proposal 的 Explore、architecture、scope、required outcomes、implementation plan 与 selector membership 不变；两组 12 个 selectors 均按当前 MutationDeclaration comparator 严格排序。Proposal generation 合法且无新的 blocking finding。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "7b1c193a5a24fee65be69b18a7687ecbe9433f044456bb0272c94bc1646f5630"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [],
+  "reviewFindingConvergence": []
+}

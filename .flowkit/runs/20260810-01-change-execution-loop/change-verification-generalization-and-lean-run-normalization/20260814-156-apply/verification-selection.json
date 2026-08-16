@@ -1,0 +1,329 @@
+{
+  "schemaVersion": 1,
+  "producingRunId": "20260814-156-apply",
+  "producingSemanticInputFingerprint": "11b9c7d86fb510ca96cdb73a146438d08cff3c0aa7d7bb71f6353655d567faed",
+  "logicalDescriptorDigest": "17a97099936007301111d325abe1e8892f1aeefa294c9dba439755fd39b00891",
+  "canonicalBase": "e15d0a3c5bf7b46d3a1134eb3a5e208f11f7e564",
+  "entryWorkspaceIdentity": {
+    "schemaVersion": 1,
+    "canonicalBase": "e15d0a3c5bf7b46d3a1134eb3a5e208f11f7e564",
+    "workspaceFingerprint": "1774360e3f1e2657fb7ddb34737307323e4de6d02560e25a685953c719b2bd4d"
+  },
+  "postActionWorkspaceFingerprint": "793c8dfafda6b27e44aaa146518fab68ce5dab6706311b0fde7f07c838f970e5",
+  "actualChangeSet": [
+    {
+      "path": "openspec/changes/change-verification-generalization-and-lean-run-normalization/.openspec.yaml",
+      "kind": "create",
+      "pathKindBefore": "missing",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "cfa0dd24ffbc3529beee2a707cfd385b458247b1b5cca61fbcc99f934e83600e"
+    },
+    {
+      "path": "openspec/changes/change-verification-generalization-and-lean-run-normalization/design.md",
+      "kind": "create",
+      "pathKindBefore": "missing",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "578c9b2d8e8d4079ede6a90d1352baacea2008de2e48945d4fb85cb962698679"
+    },
+    {
+      "path": "openspec/changes/change-verification-generalization-and-lean-run-normalization/explore.md",
+      "kind": "create",
+      "pathKindBefore": "missing",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "eddf3135db029a3736fdabd1eeb8b8321a403ef94890b416e89d8ec54bf05570"
+    },
+    {
+      "path": "openspec/changes/change-verification-generalization-and-lean-run-normalization/proposal.md",
+      "kind": "create",
+      "pathKindBefore": "missing",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "120af89304108e9494ce1b32da1c84a229fef6cb1cbfd9b028f635b641d72b28"
+    },
+    {
+      "path": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-change-verification-selection/spec.md",
+      "kind": "create",
+      "pathKindBefore": "missing",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "b159bb82160be2172e919622b3cf8cc92ee68529fa112795397b87282b9f47c4"
+    },
+    {
+      "path": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "kind": "create",
+      "pathKindBefore": "missing",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "f47a2b714591e680eb0f99e4d2cd4d71690a69fa024eb81cfbd05e309a705bc5"
+    },
+    {
+      "path": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-lean-run-and-action-package/spec.md",
+      "kind": "create",
+      "pathKindBefore": "missing",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "fa0c8a670c4c473f132f062a36fd89c7bb9d49b38af456c5894aa1905f90434d"
+    },
+    {
+      "path": "openspec/changes/change-verification-generalization-and-lean-run-normalization/tasks.md",
+      "kind": "create",
+      "pathKindBefore": "missing",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "c3818c23e134bd5e1c42599f8decec69835ce69f6d4af31352e14f4ce55fbb95"
+    },
+    {
+      "path": "openspec/delivery-groups/20260810-01-change-execution-loop.yaml",
+      "kind": "modify",
+      "pathKindBefore": "file",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "1b7117fbdb36a34faf9ef3fe50c75a41d4ae0f691634055ac813dfe0ead637ab"
+    },
+    {
+      "path": "src/domain/types.ts",
+      "kind": "modify",
+      "pathKindBefore": "file",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "c0c2b071740c50c781b7615d39453518d5c82cbcdf6faa634c396d02ef76e5c0"
+    },
+    {
+      "path": "src/facts/formal-fact-reader.ts",
+      "kind": "modify",
+      "pathKindBefore": "file",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "5192a1369c5d0a00ca08885327d3a67eaee1ad7b1df00e75ce24afe072dcaeaa"
+    },
+    {
+      "path": "src/persistence/run-persistence.ts",
+      "kind": "modify",
+      "pathKindBefore": "file",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "30e3e98f4e7bffdc6d76eeee8a86f585144fac0f339501bb67efd285f6e93a88"
+    },
+    {
+      "path": "src/persistence/serialization.ts",
+      "kind": "modify",
+      "pathKindBefore": "file",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "31ee1c7d70f86367b1b20290c066b8cbcb967a5207742a7676a26b5076fc94eb"
+    },
+    {
+      "path": "src/services/b1-run-execution-service.ts",
+      "kind": "modify",
+      "pathKindBefore": "file",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "17eb89522e5a195be0ec6437701e85b3eb48adccc077448147f8c49f2d4710fb"
+    },
+    {
+      "path": "src/verification/change-selection/actual-change-set.ts",
+      "kind": "modify",
+      "pathKindBefore": "file",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "449c33123e5b9c0f6018bedd5c15000622d3b53e38598cf9545c180016348dcc"
+    },
+    {
+      "path": "src/verification/change-selection/entry-snapshot.ts",
+      "kind": "modify",
+      "pathKindBefore": "file",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "63183a3e1d2d26ccaccbaa74284679febc057eae1c85180cae4934932c9c3714"
+    },
+    {
+      "path": "src/verification/change-selection/evidence.ts",
+      "kind": "modify",
+      "pathKindBefore": "file",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "79ae05d9d2c0c6b10c26ffdf6a9c8420e939f8946f1ff1bef868fbac6af99990"
+    },
+    {
+      "path": "src/verification/change-selection/module-map.ts",
+      "kind": "modify",
+      "pathKindBefore": "file",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "41dafe7c1eb0fd7aee65829c48cf06d262f5d3757abcde3d5ea6407cd1954941"
+    },
+    {
+      "path": "src/verification/change-selection/publication.ts",
+      "kind": "modify",
+      "pathKindBefore": "file",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "a2b2afdf854744737b9c1886d523b2c61a4487e94ded669b3062a43e10bd3d01"
+    },
+    {
+      "path": "src/verification/change-selection/selection.ts",
+      "kind": "modify",
+      "pathKindBefore": "file",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "f054dd1bce49cad7e8a35ba89f1531b25cfe67221f2d63e0f3fdda43470a40dc"
+    },
+    {
+      "path": "tests/fixtures/e2-change-verification-generalization/historical-e1/127/context.json",
+      "kind": "create",
+      "pathKindBefore": "missing",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "9cbb3b27244335515a9427c1212bd7414144bb9b3a4a757c0da3dc80f07944c4"
+    },
+    {
+      "path": "tests/fixtures/e2-change-verification-generalization/historical-e1/127/result.json",
+      "kind": "create",
+      "pathKindBefore": "missing",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "e999cd1b7e65d31666b19ac495a5a7ec5ddb44d9dfac26f24835a8c324808bd7"
+    },
+    {
+      "path": "tests/fixtures/e2-change-verification-generalization/historical-e1/127/verification-evidence.json",
+      "kind": "create",
+      "pathKindBefore": "missing",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "05bdd99ac24aaa1928293c82069c11a73605d94afa8ef577fd192f0b085b758f"
+    },
+    {
+      "path": "tests/fixtures/e2-change-verification-generalization/historical-e1/127/verification-selection.json",
+      "kind": "create",
+      "pathKindBefore": "missing",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "b3d7b9777818174bd672a2684794de6eb683a7fd816261ebab9e1e66b566ac15"
+    },
+    {
+      "path": "tests/fixtures/e2-change-verification-generalization/historical-e1/133/context.json",
+      "kind": "create",
+      "pathKindBefore": "missing",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "e7e274d11f3a811afdd3e311eadc57050fd62be8f86791636b2990cb126dbbc1"
+    },
+    {
+      "path": "tests/fixtures/e2-change-verification-generalization/historical-e1/133/result.json",
+      "kind": "create",
+      "pathKindBefore": "missing",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "792fcb4be74b99e3b2d6bc9fd48989e4ee7eda9d23359b94aa8427f1ba41396d"
+    },
+    {
+      "path": "tests/fixtures/e2-change-verification-generalization/historical-e1/133/verification-evidence.json",
+      "kind": "create",
+      "pathKindBefore": "missing",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "126b329f62e97607fc23796016dbc4fa7e2b55399169f92b7fd8b15b6c7a28fb"
+    },
+    {
+      "path": "tests/fixtures/e2-change-verification-generalization/historical-e1/133/verification-selection.json",
+      "kind": "create",
+      "pathKindBefore": "missing",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "aa9fcd90143be9d75c65cd6273db6f9820d903988d3b5581f4225cfbb1f47434"
+    },
+    {
+      "path": "tests/integration/e1-change-verification-selection.test.ts",
+      "kind": "modify",
+      "pathKindBefore": "file",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "8035959fbca8f20a44c8f1d6b951526e794d1ee8036f6d65842011977ba5fa33"
+    },
+    {
+      "path": "tests/integration/e2-change-verification-generalization.test.ts",
+      "kind": "create",
+      "pathKindBefore": "missing",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "3aa4ccfa38b9c069992373aa77ef22d28bbf9d29a6fcfa6a129da16e28519537"
+    },
+    {
+      "path": "tests/unit/services/a1-write-service.test.ts",
+      "kind": "modify",
+      "pathKindBefore": "file",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "49bfbd406332af423faa6a58a43f45edc1e05c23ff7aa66eb08586c558f53603"
+    },
+    {
+      "path": "tests/unit/services/b1-run-execution-service.test.ts",
+      "kind": "modify",
+      "pathKindBefore": "file",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "3782ef45cb075e0a9d4b1a64c3f1268180b38bafd8cca9ccc3575b5035733a87"
+    },
+    {
+      "path": "tests/unit/verification/change-selection/entry-snapshot.test.ts",
+      "kind": "modify",
+      "pathKindBefore": "file",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "7cb080cf11e5d1aaaee4e91ef39db3240c62528f1e19ced8e6f52574e365b434"
+    },
+    {
+      "path": "tests/unit/verification/change-selection/evidence.test.ts",
+      "kind": "create",
+      "pathKindBefore": "missing",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "f410001ab25260e2c00de80f221768be9497a92fe897faf793eb7aa23024458f"
+    },
+    {
+      "path": "tests/unit/verification/change-selection/module-map.test.ts",
+      "kind": "modify",
+      "pathKindBefore": "file",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "7ee0fdf4703cbe6bee979ed412240244b94f181fce065ad6815d4d10e4ec67fe"
+    },
+    {
+      "path": "tests/unit/verification/change-selection/mutation-declaration.test.ts",
+      "kind": "modify",
+      "pathKindBefore": "file",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "e1e162cb1c70cd590e51cee2a8fb67de0ce17610d0806bdf957297f27670ab60"
+    },
+    {
+      "path": "tests/unit/verification/change-selection/publication.test.ts",
+      "kind": "modify",
+      "pathKindBefore": "file",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "1ff35ab83a99b5dfecd759e4df1f0a6268c2876b81c531cb97e1b53897b832f9"
+    },
+    {
+      "path": "tests/unit/verification/change-selection/selection.test.ts",
+      "kind": "modify",
+      "pathKindBefore": "file",
+      "pathKindAfter": "file",
+      "contentFingerprintAfter": "40bad725067d576ce73827c84af5db5b16c0b619e9d142e5ebb2eb10bb54fb5b"
+    }
+  ],
+  "selection": {
+    "moduleMapLogicalRef": "src/verification/change-selection/module-map.ts",
+    "moduleMapFingerprint": "93868d9d9f744066710d0fd93da05041980eea7227cd3c674bac8465b3b58f62",
+    "seedModuleIds": [
+      "change-contract",
+      "core-model",
+      "execution",
+      "persistence",
+      "verification-selection"
+    ],
+    "moduleIds": [
+      "change-contract",
+      "cli-diagnostics",
+      "core-model",
+      "execution",
+      "openspec-runtime",
+      "persistence",
+      "verification-selection"
+    ],
+    "capabilityIds": [
+      "flowkit-change-verification-selection",
+      "flowkit-formal-fact-reader-and-persistence",
+      "flowkit-lean-run-and-action-package"
+    ],
+    "capabilityRefs": [
+      "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-change-verification-selection/spec.md",
+      "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-lean-run-and-action-package/spec.md"
+    ],
+    "capabilityRelation": {
+      "kind": "matched"
+    },
+    "verificationScopes": [
+      "openspec-current-change-strict",
+      "tests-cli",
+      "tests-execution",
+      "tests-openspec-runtime",
+      "tests-persistence",
+      "tests-serialization",
+      "tests-verification",
+      "typecheck"
+    ],
+    "selectionFingerprint": "db7df323dbc4cdd94a39b43868580f21387feebc2a45dd6f2f4ac0f6a07999bc"
+  },
+  "verificationStatus": "passed",
+  "rendererVersion": 2,
+  "verificationMarkdownLogicalRef": "openspec/changes/change-verification-generalization-and-lean-run-normalization/verification.md",
+  "verificationMarkdownFingerprint": "3e8c76d2a21221850249784ea34d4e93bfef03aecf74062237b0e2cb0e822d71"
+}

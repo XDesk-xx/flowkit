@@ -1,0 +1,21 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-apply",
+    "executionStatus": "completed",
+    "summary": "关闭 123 的 RA-008/RA-009/RA-010：Contract Reset pending recovery、v5 exact-resume external semantic revalidation、Verification evidence→canonical publication→immutable binding。",
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260814-123-review-apply/result.json",
+      "versionFingerprint": "1e12029c3c931d7549ee8eae24ebd3ac91fa78c66e16db3dd803b110075e46fe",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "26d800b05de5129a2d9aa3caca962330f74d01e644383e5e451fb33704c13874",
+    "verificationSelection": {
+      "logicalRef": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-selection-and-change-set/20260814-125-revise-apply/verification-selection.json",
+      "versionFingerprint": "0280bddbb2f8fcf65d33dc8bc40e4d4d6a310b0198b9bff0da821aceb4a453c0"
+    }
+  }
+}

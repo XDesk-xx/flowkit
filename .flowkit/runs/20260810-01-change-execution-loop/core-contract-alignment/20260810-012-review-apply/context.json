@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 2,
+  "runId": "20260810-012-review-apply",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "changeKey": "Q1",
+  "changeId": "core-contract-alignment",
+  "action": "review-apply",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/core-contract-alignment/20260810-012-review-apply/",
+  "reviewedRunId": "20260810-011-apply",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/core-contract-alignment/20260810-011-apply/result.json",
+    "versionFingerprint": "f3cafdd19a5aed9f81149db2277490347718c7e2b7283c1fa2518b371f357628",
+    "kind": "run-result"
+  },
+  "verificationInputRef": {
+    "ref": "openspec/changes/core-contract-alignment/verification.md",
+    "versionFingerprint": "9896abff25ee40e7582417a63e30d9b24a90601f4072955fe85ce83dc99bf5a5",
+    "kind": "verification-summary"
+  },
+  "constraints": {
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

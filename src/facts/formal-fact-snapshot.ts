@@ -30,8 +30,11 @@ import type {
   ReviewVerdictValue,
   Role,
   RunStatus,
+  BlockingAuthority,
+  OwnerFactRef,
 } from '../domain/types.js';
-import type { ChangeAction, DeliveryAction } from '../domain/actions.js';
+import type { ArchitectureImpactFact, AuthorizationOnlyOwnerDecision, OwnerDecisionRecordKind } from '../domain/a1-types.js';
+import type { FormalAction } from '../domain/actions.js';
 
 /**
  * A single conflict detected while reading formal facts.
@@ -61,6 +64,7 @@ export interface ChangeFact {
   readonly state: ChangeState;
   readonly required: boolean;
   readonly dependsOn: readonly string[];
+  readonly architectureImpact: ArchitectureImpactFact;
   /** Conceptual product-artifact range, if declared. */
   readonly outputs?: readonly string[];
 }
@@ -77,11 +81,15 @@ export interface ChangeFact {
 export interface RunFact {
   readonly runId: string;
   readonly deliveryId: string;
-  /** Present for Change-level Runs; absent for Delivery-level Runs. */
-  readonly changeId?: string;
-  readonly action: ChangeAction | DeliveryAction;
+  /** Every current Standard Run is bound to a Change. */
+  readonly changeId: string;
+  readonly action: FormalAction;
   readonly role: Role;
   readonly status: RunStatus;
+  /** B1 compact semantic input identity for pending-run continuation. */
+  readonly semanticInputFingerprint?: string;
+  /** D1 bounded prepared Owner facts; authority remains Manifest.ownerDecisions. */
+  readonly ownerFactRefs?: readonly OwnerFactRef[];
   /** Present when the Run consumed a prior result as input. */
   readonly inputRef?: ResultRef;
   /** Terminal result reference, present when `status` is terminal. */
@@ -130,12 +138,41 @@ export interface GitBoundaryFact {
 }
 
 /**
+ * D2 bounded archive terminal projection for the one completed/uncheckpointed
+ * Change considered by the no-active-Change checkpoint gate.
+ */
+export interface ArchiveTerminalFact {
+  readonly changeId: string;
+  readonly status: RunStatus | 'missing' | 'ambiguous';
+  readonly runId?: string;
+}
+
+/**
  * Read-only summary of an owner authorization fact.
  */
 export interface OwnerAuthorizationFact {
   /** Provider-neutral reference to the authorization. */
   readonly ref: string;
-  readonly scope: string;
+  readonly decision: AuthorizationOnlyOwnerDecision;
+  readonly deliveryId: string;
+  readonly changeId?: string;
+  readonly sourceRef: string;
+}
+
+
+/**
+ * Read-only bounded projection of an applicable Owner decision fact.
+ * The Delivery Manifest ownerDecisions record remains the authority source;
+ * this projection is only for execution handoff / semantic identity.
+ */
+export interface OwnerDecisionFact {
+  readonly ref: string;
+  readonly decision: OwnerDecisionRecordKind;
+  readonly deliveryId: string;
+  readonly changeId?: string;
+  readonly scope?: string;
+  readonly requiredOutcomes?: readonly string[];
+  readonly sourceRef: string;
 }
 
 /**
@@ -146,6 +183,8 @@ export interface ReviewVerdictFact {
   readonly verdict: ReviewVerdictValue;
   /** Run reviewed by this review Run. */
   readonly reviewedRunId: string;
+  /** Fixed-order, deduplicated authority projection for blocking findings. */
+  readonly blockingAuthorities: readonly BlockingAuthority[];
 }
 
 /**
@@ -175,8 +214,12 @@ export interface FormalFactSnapshot {
   readonly openSpecArtifacts: readonly OpenSpecArtifactFact[];
   /** Git formal boundary summaries (read-only, not persisted). */
   readonly gitBoundaries: readonly GitBoundaryFact[];
-  /** Owner authorization facts. */
+  /** D2 bounded archive terminal fact for the current checkpoint candidate. */
+  readonly checkpointArchiveTerminal?: ArchiveTerminalFact;
+  /** Owner authorization facts used by Policy gates. */
   readonly ownerAuthorizations: readonly OwnerAuthorizationFact[];
+  /** Bounded Owner decision facts for role handoff; authority remains Manifest.ownerDecisions. */
+  readonly ownerDecisionFacts?: readonly OwnerDecisionFact[];
   /** Reviewer Verdicts attached to Runs. */
   readonly reviewVerdicts: readonly ReviewVerdictFact[];
   /** Collected conflicts — non-empty ⇒ Policy MUST block. */

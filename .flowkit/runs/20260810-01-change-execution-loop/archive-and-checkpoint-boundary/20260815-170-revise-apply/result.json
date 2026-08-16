@@ -1,0 +1,8 @@
+{
+  "runStatus": "failed",
+  "failureDiagnosis": "F1-RA-001 is author-actionable, but closing it without restoring the forbidden subject-only E2 activation path requires updating tests/unit/services/b1-run-execution-service.test.ts so the post-E2 writer fixture records a strict E2 checkpoint. That test path is outside the 165/166 approved revise-apply mutation scope. Disposable proof with only that additional selector plus the approved Reader changes passes targeted 108/108 and full repository 777/777; no other mutation-surface gap was found.",
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "e57966df5ffbf0ed8181977297d79278b050bf47e05bd89cccbb01031e366b39"
+  }
+}

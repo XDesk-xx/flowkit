@@ -1,0 +1,43 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "052 Proposal的主体 authority split、repo-local typed adapter、structured path、validation、A1/B1边界方向成立，但完整审查发现4个author-owned contract blocker：其一，formal-fact resolver的MODIFIED delta未完整携带canonical scenarios，OpenSpec 1.7 strict validate虽通过但真实archive以archive_spec_update_failed拒绝；其二，archive作为有副作用外部操作，在timeout/transport failure发生于mutation之后、result admission之前时产生uncertain outcome，而当前contract仅标记failure且禁止reconciliation proof，安全重试会得到archive_change_not_found；其三，Proposal强制archive success必须含structured totals，但OpenSpec 1.7.0合法skip_specs archive success可不含totals；其四，future zero-delta Change按OpenSpec 1.7需在metadata中显式skip_specs:true，但052又冻结A1 activation metadata只能为schema+created且B1 Propose不允许修改metadata，导致无合法lifecycle seam。需revise-propose后重新review。"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindings": [
+    {
+      "id": "C1-RP-001",
+      "severity": "blocking",
+      "title": "MODIFIED delta 未完整保留 canonical scenario，当前 Proposal 无法被 OpenSpec archive",
+      "problem": "flowkit-formal-fact-reader-and-persistence 的 “Core 拥有 ResultRef field-kind-path resolver” 被声明为 MODIFIED，但052没有携带当前canonical requirement中的 “produced artifact 使用固定 Action+tag mapping” 与 “resolver 在 create preflight Reader 语义一致” scenarios。Reviewer在exact 052 candidate上运行 OpenSpec 1.7 strict validate得到valid=true，但在disposable copy将tasks标complete后执行 archive，OpenSpec返回 archive_spec_update_failed 并明确拒绝以避免丢scenario。",
+      "requiredChange": "revise-propose必须把每个MODIFIED requirement按OpenSpec 1.7 archive merge语义刷新为完整当前canonical block + 本Change显式修改，至少恢复上述两个resolver scenarios并确保语义不被意外删除；对全部MODIFIED capability做scenario completeness复核，并增加proposal-level disposable archive/preflight regression，不能只依赖validate --strict。",
+      "blockingAuthority": "author"
+    },
+    {
+      "id": "C1-RP-002",
+      "severity": "blocking",
+      "title": "Archive timeout/transport failure 的 uncertain outcome 未定义可恢复 contract",
+      "problem": "052要求每个OpenSpec invocation 30s bounded timeout且timeout fail closed，同时要求archive success只能由本次structured operation result证明、不得用filesystem scan二次推断。但archive是有副作用且非安全重试的操作：Reviewer disposable probe让OpenSpec archive先完成relocation并生成成功JSON、再延迟向caller交付stdout；外层timeout只观察到timed-out/no stdout，此时active Change已消失且archive目录存在，再次执行archive返回archive_change_not_found。当前contract既不能承认第一次成功，也不能安全重试。",
+      "requiredChange": "revise-propose必须冻结mutating external operation的ambiguous-completion/recovery语义。必须区分“已知失败且无mutation”与“operation outcome unknown”；timeout/transport loss不得被简单等同普通failure。给出与OpenSpec authority兼容的确定性恢复/人工-external boundary或其它可证明方案，并覆盖archive在mutation后result丢失、retry not-found、same pending Run continuation的acceptance tests；不得靠猜测成功。",
+      "blockingAuthority": "author"
+    },
+    {
+      "id": "C1-RP-003",
+      "severity": "blocking",
+      "title": "Archive success parser 将 totals 设为必需字段，与 OpenSpec 1.7.0 合法输出不兼容",
+      "problem": "052 spec/design规定successful archive至少必须返回structured totals。Reviewer用OpenSpec 1.7.0创建并strict-validate一个合法spec-driven + skip_specs:true disposable Change，archive exit=0并返回change/archivedAs/path/specsUpdated=false，但archive对象没有totals字段。按052 parser contract该真实1.7.0 success会被误判malformed/failure。",
+      "requiredChange": "revise-propose必须以真实1.7.0输出冻结archive result的required/optional字段，不得把只在部分operation shape出现的totals设为普遍必需。补至少“有delta/totals存在”和“skip_specs或合法zero-delta/totals省略”的1.7.0 fixture；仍需精确校验change identity、path、specsUpdated、error status与exit semantics。",
+      "blockingAuthority": "author"
+    },
+    {
+      "id": "C1-RP-004",
+      "severity": "blocking",
+      "title": "Future zero-delta Change 的 skip_specs metadata 没有合法 lifecycle owner",
+      "problem": "OpenSpec 1.7 proposal instructions明确：没有任何spec delta的合法Change必须在.openspec.yaml设置skip_specs:true，否则validate拒绝。052却冻结future A1 activation只能写exact “schema: spec-driven + created”，且B1 propose的mutationClass是proposal-bundle-only并把.openspec.yaml作为versioned contractRef，因此Change激活后没有合法Action可以再加入skip_specs。结果是纯refactor/tooling/docs等zero-delta Change会在Propose验证阶段进入不可修复metadata dead-end。",
+      "requiredChange": "revise-propose必须显式冻结zero-delta Change的支持边界和metadata lifecycle：若支持，skip_specs决定必须在不会破坏B1 semantic binding的合法pre-activation/activation contract中形成；若刻意不支持，则必须在进入active/propose前有确定性的显式拒绝contract，而不能让Change激活后才因不可变metadata失败。不得在Propose中silent rewrite .openspec.yaml。",
+      "blockingAuthority": "author"
+    }
+  ]
+}

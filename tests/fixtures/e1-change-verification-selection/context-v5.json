@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 5,
+  "runId": "20990101-001-explore",
+  "deliveryId": "D1",
+  "changeKey": "E1",
+  "changeId": "e1-fixture",
+  "action": "explore",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "runPath": ".flowkit/runs/D1/e1-fixture/20990101-001-explore/",
+  "semanticInputFingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "canonicalBase": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "applicableFactRefs": [],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "runId": "20990101-001-explore",
+      "deliveryId": "D1",
+      "changeId": "e1-fixture",
+      "action": "explore",
+      "role": "author",
+      "semanticInputFingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "definition": {
+      "action": "explore",
+      "version": 1,
+      "role": "author",
+      "goalClass": "investigate-change",
+      "mutationClass": "explore-planning-only",
+      "outputClass": "current-explore-artifact-set",
+      "terminalContract": {
+        "kind": "artifact",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [],
+    "handoffRefs": [],
+    "ownerAuthorizationRefs": [],
+    "requiredResultContract": {
+      "kind": "artifact",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  }
+}

@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260815-210-review-apply",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "review-apply",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "0fa99a1e70c853226d9d8eed5c4d7de5ba48bcaf41cd4643f3f986dde4bbc092",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:faa57c65e56a77a235adc94b71acbd54bc742abd594c2b7d0b7592eed6dccd2d",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "historical-fixture-and-test-performance-correction",
+      "scope": "change-verification-boundary",
+      "requiredOutcomes": [
+        "H1 Apply 只执行并完成 Change Verification",
+        "保持 H1 correctness、performance、fixture、Verification Closure 的设计全部不变",
+        "删除 H1 Apply/Tasks 中 public test:full terminal PASS 这一 Delivery-level acceptance",
+        "正式 Delivery Full Test 仅在 H1 archive + checkpoint 后 Delivery Ready 时由 Owner 独立授权"
+      ],
+      "sourceRef": "owner-input:2026-08-16T04:23+08:00:H1-contract-reset-remove-change-level-test-full"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/historical-fixture-and-test-performance-correction/20260815-210-review-apply/",
+  "changeKey": "H1",
+  "changeId": "historical-fixture-and-test-performance-correction",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/historical-fixture-and-test-performance-correction/20260815-209-apply/result.json",
+    "versionFingerprint": "b9ba7a92718177e8147d8fb122e2e832ff7857d738a98cdb1c9e1b21917c959b",
+    "kind": "run-result"
+  },
+  "verificationInputRef": {
+    "ref": "openspec/changes/historical-fixture-and-test-performance-correction/verification.md",
+    "versionFingerprint": "0295648fea297fbbd244be1358685fb32ad128c173d5e729dc34223545ec6936",
+    "kind": "verification-summary"
+  },
+  "reviewedRunId": "20260815-209-apply",
+  "canonicalBase": "d3d220f4051e55c55223e233eb862bc3b9a8b4cb",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/historical-fixture-and-test-performance-correction/20260815-209-apply/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "b9ba7a92718177e8147d8fb122e2e832ff7857d738a98cdb1c9e1b21917c959b"
+    },
+    {
+      "ref": "openspec/changes/historical-fixture-and-test-performance-correction/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+    },
+    {
+      "ref": "openspec/changes/historical-fixture-and-test-performance-correction/design.md",
+      "versionFingerprint": "927d384e64315bf71bb5981356156e850e9d71383813b6bb916c27197237f8e8",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/historical-fixture-and-test-performance-correction/proposal.md",
+      "versionFingerprint": "e4d3b81bbbf46acb4aee64efd7d242e2950cb6926d8307b6e05a7c3c8f2e3787",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/historical-fixture-and-test-performance-correction/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+      "versionFingerprint": "8588b6952cc0000862ec20090277b417c08b5c373c6aab5e0350c801ee6bbd1b",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/historical-fixture-and-test-performance-correction/specs/flowkit-change-verification-selection/spec.md",
+      "versionFingerprint": "5916c6f4bf7dbf44b4f4f9b13149c4a9bc3cca4db14ab055730e4f4bba0edf14",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/historical-fixture-and-test-performance-correction/tasks.md",
+      "kind": "openspec-contract",
+      "versionFingerprint": "47484e6c4e047e675233b50b311d124ea7677e3b3f48e16fe9d23bfa7a06e47e"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "historical-fixture-and-test-performance-correction",
+      "runId": "20260815-210-review-apply",
+      "action": "review-apply",
+      "role": "reviewer",
+      "semanticInputFingerprint": "0fa99a1e70c853226d9d8eed5c4d7de5ba48bcaf41cd4643f3f986dde4bbc092"
+    },
+    "definition": {
+      "action": "review-apply",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-implementation-and-verification",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings-plus-verification-ref",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "core-derived",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+      },
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/design.md",
+        "versionFingerprint": "927d384e64315bf71bb5981356156e850e9d71383813b6bb916c27197237f8e8",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/proposal.md",
+        "versionFingerprint": "e4d3b81bbbf46acb4aee64efd7d242e2950cb6926d8307b6e05a7c3c8f2e3787",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+        "versionFingerprint": "8588b6952cc0000862ec20090277b417c08b5c373c6aab5e0350c801ee6bbd1b",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "5916c6f4bf7dbf44b4f4f9b13149c4a9bc3cca4db14ab055730e4f4bba0edf14",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/tasks.md",
+        "kind": "openspec-contract",
+        "versionFingerprint": "47484e6c4e047e675233b50b311d124ea7677e3b3f48e16fe9d23bfa7a06e47e"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/historical-fixture-and-test-performance-correction/20260815-209-apply/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "b9ba7a92718177e8147d8fb122e2e832ff7857d738a98cdb1c9e1b21917c959b"
+      }
+    ],
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [
+      {
+        "ref": "owner:faa57c65e56a77a235adc94b71acbd54bc742abd594c2b7d0b7592eed6dccd2d",
+        "decision": "contract-reset",
+        "deliveryId": "20260810-01-change-execution-loop",
+        "changeId": "historical-fixture-and-test-performance-correction",
+        "scope": "change-verification-boundary",
+        "requiredOutcomes": [
+          "H1 Apply 只执行并完成 Change Verification",
+          "保持 H1 correctness、performance、fixture、Verification Closure 的设计全部不变",
+          "删除 H1 Apply/Tasks 中 public test:full terminal PASS 这一 Delivery-level acceptance",
+          "正式 Delivery Full Test 仅在 H1 archive + checkpoint 后 Delivery Ready 时由 Owner 独立授权"
+        ],
+        "sourceRef": "owner-input:2026-08-16T04:23+08:00:H1-contract-reset-remove-change-level-test-full"
+      }
+    ],
+    "verificationView": {
+      "status": "passed",
+      "resultRef": {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/verification.md",
+        "kind": "verification-summary",
+        "versionFingerprint": "0295648fea297fbbd244be1358685fb32ad128c173d5e729dc34223545ec6936"
+      }
+    },
+    "externalContextFingerprint": "f0afafbc2a95d692afcf78a9e63a4874823d84329ef3c79ed49338d0367e25c7",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "core-derived",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

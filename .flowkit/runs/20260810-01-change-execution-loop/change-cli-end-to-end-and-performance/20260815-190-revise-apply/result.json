@@ -1,0 +1,23 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-apply",
+    "executionStatus": "completed",
+    "summary": "Close G1-RA-001 by projecting durable pending-archive recovery before active OpenSpec discovery, preserving the same archive Run across changed-surface outcome-unknown recovery, and adding a real CLI-process regression.",
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-cli-end-to-end-and-performance/20260815-189-review-apply/result.json",
+      "versionFingerprint": "e53868c8612569af74b902c85d0aed519bb1711a0acfd0ee0cf63a6d6a919e8f",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "28e8faff0392d9f3f1f992df50b940f3054cca09459d3c2b133deb95f2aebe83",
+    "currentVerification": {
+      "logicalRef": "openspec/changes/change-cli-end-to-end-and-performance/verification.md",
+      "versionFingerprint": "d0a12450b910c4e80f78072653cdc773fa60e20b6d030ef9f0473054701678ac",
+      "selectionFingerprint": "c015c7e4f976af64e569452e60e53ae17fb3b9e94cf203567f212acaa51b87fa",
+      "status": "passed"
+    }
+  }
+}

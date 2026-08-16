@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 
 import {
   executeProjectStep,
+  fullTestEnvironment,
   runVerificationPlan,
   verifyChangePlan,
   verifyFullPlan,
@@ -35,17 +36,26 @@ describe('F1 verification plans', () => {
 
     const full = plan.find((step) => step.name === 'full');
     assert.ok(full);
-    const calls: Array<{ executable: string; args: readonly string[] }> = [];
-    const result = await executeProjectStep(full, async (executable, args) => {
-      calls.push({ executable, args });
-      return { exitCode: 0, durationMs: 321 };
-    });
+    const previous = process.env['FLOWKIT_OPENSPEC_BIN'];
+    process.env['FLOWKIT_OPENSPEC_BIN'] = '/resolved/openspec-1.7.0';
+    const calls: Array<{ executable: string; args: readonly string[]; env?: NodeJS.ProcessEnv }> = [];
+    try {
+      const result = await executeProjectStep(full, async (executable, args, options) => {
+        calls.push({ executable, args, env: options.env });
+        return { exitCode: 0, durationMs: 321 };
+      });
 
-    assert.equal(result.exitCode, 0);
-    assert.equal(result.durationMs, 321);
-    assert.equal(calls.length, 1);
-    assert.match(calls[0]!.executable, process.platform === 'win32' ? /npm\.cmd$/u : /npm$/u);
-    assert.deepEqual(calls[0]!.args, ['run', 'test:full']);
+      assert.equal(result.exitCode, 0);
+      assert.equal(result.durationMs, 321);
+      assert.equal(calls.length, 1);
+      assert.match(calls[0]!.executable, process.platform === 'win32' ? /npm\.cmd$/u : /npm$/u);
+      assert.deepEqual(calls[0]!.args, ['run', 'test:full']);
+      assert.equal(calls[0]!.env?.['FLOWKIT_OPENSPEC_BIN'], '/resolved/openspec-1.7.0');
+      assert.equal((await fullTestEnvironment())['FLOWKIT_OPENSPEC_BIN'], '/resolved/openspec-1.7.0');
+    } finally {
+      if (previous === undefined) delete process.env['FLOWKIT_OPENSPEC_BIN'];
+      else process.env['FLOWKIT_OPENSPEC_BIN'] = previous;
+    }
   });
 
 
@@ -58,11 +68,19 @@ describe('F1 verification plans', () => {
       const code = await runVerificationPlan(verifyFullPlan(), async (step) => {
         executed.push(step.name);
         if (step.name !== 'full') return { exitCode: 0, durationMs: 10 };
-        return executeProjectStep(step, async (executable, args) => {
-          assert.match(executable, process.platform === 'win32' ? /npm\.cmd$/u : /npm$/u);
-          assert.deepEqual(args, ['run', 'test:full']);
-          return { exitCode: 7, durationMs: 1_234 };
-        });
+        const previous = process.env['FLOWKIT_OPENSPEC_BIN'];
+        process.env['FLOWKIT_OPENSPEC_BIN'] = '/resolved/openspec-1.7.0';
+        try {
+          return await executeProjectStep(step, async (executable, args, options) => {
+            assert.match(executable, process.platform === 'win32' ? /npm\.cmd$/u : /npm$/u);
+            assert.deepEqual(args, ['run', 'test:full']);
+            assert.equal(options.env?.['FLOWKIT_OPENSPEC_BIN'], '/resolved/openspec-1.7.0');
+            return { exitCode: 7, durationMs: 1_234 };
+          });
+        } finally {
+          if (previous === undefined) delete process.env['FLOWKIT_OPENSPEC_BIN'];
+          else process.env['FLOWKIT_OPENSPEC_BIN'] = previous;
+        }
       });
       assert.equal(code, 7);
       assert.deepEqual(executed, ['quality', 'typecheck', 'lint', 'build', 'openspec-all', 'full']);

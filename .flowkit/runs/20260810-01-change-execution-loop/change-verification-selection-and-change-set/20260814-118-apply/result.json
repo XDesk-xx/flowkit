@@ -1,0 +1,8 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "apply",
+    "executionStatus": "completed",
+    "summary": "Implemented E1 context v5/ActionPackage v2 migration, exact pending resume, operation-scoped OpenSpec projection, outcome-unknown transport handling, actualChangeSet, verification selection/publication primitives, and bootstrap verification."
+  }
+}

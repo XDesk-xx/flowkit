@@ -9,7 +9,6 @@ import {
   buildSnapshot,
   buildAuthorization,
   buildConflict,
-  buildCheckpointBoundary,
 } from './fixtures.js';
 import type { FormalAction } from '../../../src/domain/actions.js';
 
@@ -31,9 +30,10 @@ describe('canRun (task 5.1-5.6, 10.5, 10.9)', () => {
         changes: [buildChange({ state: 'active' })],
         conflicts: [buildConflict()],
       });
-      for (const action of ['explore', 'full-test', 'archive'] as const) {
+      for (const action of ['explore', 'archive'] as const) {
         assert.equal(canRun(snap, action).allowed, false, `${action} should be blocked by conflict`);
       }
+      assert.equal(canRun(snap, 'full-test' as FormalAction).allowed, false, 'retired Delivery behavior should still fail closed under conflict');
     });
 
     it('conflictDimensions empty when no conflicts', () => {
@@ -68,14 +68,11 @@ describe('canRun (task 5.1-5.6, 10.5, 10.9)', () => {
       assert.equal(canRun(snap, 'review-explore').allowed, true);
     });
 
-    it('full-test allowed when authorized + scope + all completed+checkpointed', () => {
-      const snap = buildSnapshot({
-        changes: [buildChange({ state: 'completed', required: true })],
-        gitBoundaries: [buildCheckpointBoundary()],
-        deliveryFullTestStatus: 'authorized',
-        ownerAuthorizations: [buildAuthorization('full-test')],
-      });
-      assert.equal(canRun(snap, 'full-test').allowed, true);
+    it('retired Delivery behavior is not a Standard canRun Action', () => {
+      const snap = buildSnapshot({ changes: [buildChange({ state: 'completed', required: true })] });
+      const result = canRun(snap, 'full-test' as FormalAction);
+      assert.equal(result.allowed, false);
+      assert.deepEqual(result.unmetPreconditions, ['unknown-action']);
     });
   });
 
@@ -90,7 +87,7 @@ describe('canRun (task 5.1-5.6, 10.5, 10.9)', () => {
       assert.ok(result.unmetPreconditions.includes('explore-already-run'));
     });
 
-    it('review-explore not allowed on match+changes-requested (D1-10)', () => {
+    it('review-explore not allowed on author-only match+changes-requested', () => {
       const explore = buildRun({ nnn: 1, action: 'explore' });
       const review = buildRun({ nnn: 2, action: 'review-explore', role: 'reviewer' });
       const v = buildVerdict({ reviewNnn: 2, reviewedRunId: explore.runId, verdict: 'changes-requested' });
@@ -101,7 +98,34 @@ describe('canRun (task 5.1-5.6, 10.5, 10.9)', () => {
       });
       const result = canRun(snap, 'review-explore');
       assert.equal(result.allowed, false);
-      assert.ok(result.unmetPreconditions.includes('matching-changes-requested-requires-revision'));
+      assert.ok(result.unmetPreconditions.includes('matching-author-only-changes-requested-requires-revision'));
+    });
+
+    it('explicit review-explore is allowed on matching non-author blocker', () => {
+      const explore = buildRun({ nnn: 1, action: 'explore' });
+      const review = buildRun({ nnn: 2, action: 'review-explore', role: 'reviewer' });
+      const v = buildVerdict({ reviewNnn: 2, reviewedRunId: explore.runId, verdict: 'changes-requested', blockingAuthorities: ['owner'] });
+      const snap = buildSnapshot({ changes: [buildChange({ state: 'active' })], runs: [explore, review], reviewVerdicts: [v] });
+      assert.equal(canRun(snap, 'review-explore').allowed, true);
+      const revise = canRun(snap, 'revise-explore');
+      assert.equal(revise.allowed, false);
+      assert.ok(revise.unmetPreconditions.includes('non-author-review-blocker'));
+    });
+
+    it('explicit review-explore is allowed on mixed author/non-author blockers while revise stays forbidden', () => {
+      const explore = buildRun({ nnn: 1, action: 'explore' });
+      const review = buildRun({ nnn: 2, action: 'review-explore', role: 'reviewer' });
+      const v = buildVerdict({
+        reviewNnn: 2,
+        reviewedRunId: explore.runId,
+        verdict: 'changes-requested',
+        blockingAuthorities: ['author', 'verification'],
+      });
+      const snap = buildSnapshot({ changes: [buildChange({ state: 'active' })], runs: [explore, review], reviewVerdicts: [v] });
+      assert.equal(canRun(snap, 'review-explore').allowed, true);
+      const revise = canRun(snap, 'revise-explore');
+      assert.equal(revise.allowed, false);
+      assert.ok(revise.unmetPreconditions.includes('non-author-review-blocker'));
     });
 
     it('archive always not allowed in D1 (verification+tasks unavailable)', () => {

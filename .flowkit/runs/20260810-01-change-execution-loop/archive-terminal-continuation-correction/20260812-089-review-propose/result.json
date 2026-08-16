@@ -1,0 +1,36 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "088 Proposal 的 G01/G02/G03 主方向正确，但 archive post-relocation reconstruction 选择仅凭 producer ResultRefs 重建 OpenSpec artifactPaths 时丢失 artifactId→logicalPaths 关联，无法在不推断 OpenSpec path rule 的前提下通用重建 entry externalContextFingerprint。"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "D2-RP-001",
+      "severity": "blocking",
+      "title": "archive entry reconstruction 缺少无损的 OpenSpec artifactId→path identity",
+      "problem": "088 选择不新增 persisted archive-entry projection，并要求 post-relocation 仅从 matching producer ResultRefs 重建 archive OpenSpec semantic context。现有 producedResultRefs 只保存 logical ref、fingerprint 与 generic kind=produced-artifact，不保存 proposal/specs/design/tasks 的 artifactId→logicalPaths 关联；而 archive 的 stored semantic fingerprint 包含由 structured OpenSpec artifactPaths 构成的 externalContextFingerprint。仅有无标签 path set 不能无损重建该 keyed structured view。",
+      "contractRef": "openspec/changes/archive-terminal-continuation-correction/design.md Decision 1；flowkit-formal-fact-reader-and-persistence D2 delta；canonical flowkit-openspec-1-7-thin-integration structured path authority",
+      "invariant": "post-relocation continuation 必须 exact-check entry semantic identity，同时 Flowkit 不得通过默认文件名/目录规则重新拥有 OpenSpec artifact path authority。",
+      "evidence": [
+        "当前 producer result（例如 D1/079）中的 producedResultRefs 只有 ref/versionFingerprint/kind，未持久化 artifactId；refs 按 logical path 展示，无法从数据本身区分任意 structured path 属于 proposal、design、tasks 还是 specs。",
+        "当前 archive prepared OpenSpec semantic projection包含 version/changeId/changeRootLogical/artifactPaths，并将该 keyed structured view hash为 externalContextFingerprint；context.json 只持久化整体 semanticInputFingerprint，没有持久化 externalContextFingerprint 或 artifactPaths mapping。",
+        "canonical C1 contract要求 planning paths 来自 OpenSpec structured artifactPaths/contextFiles，不允许 Flowkit 退回默认 openspec/changes/<id>/proposal.md、design.md、tasks.md、specs/** 等自有 path rule。"
+      ],
+      "impact": "实现若按当前 Design 落地，要么无法 exact-match future crash/resume 的 stored fingerprint，要么只能通过文件名/目录约定猜 artifactId mapping，破坏 OpenSpec thin-integration authority；当前默认布局的 085 即使可特判恢复，也不能证明 future archive continuation contract 完整。",
+      "location": "design.md Decision 1 / archive-specific semantic reconstruction；src/services/b1-run-execution-service.ts buildOpenSpecPreparedActionContext + fingerprintOpenSpecPreparedActionContext 的 archive projection边界",
+      "blockingAuthority": "author",
+      "requiredOutcome": "在 Proposal 中冻结一个无损、bounded 的 archive entry semantic source，使 relocation 后可重建/验证 stored archive semantic identity并保留 OpenSpec artifactId→logicalPaths 关联；不得依赖 active status、filesystem success scan或默认 path inference。可以复用真正保留该 mapping 的 existing authority，或为 future archive entry 持久化极窄 projection；existing 085 legacy compatibility 必须单独证明且不能扩大成第二 OpenSpec state store。",
+      "acceptance": [
+        "future archive 使用非默认/重排 structured artifact paths 时，post-relocation continuation仍能 exact-check entry semantic fingerprint，而不通过文件名/目录规则猜 artifactId。",
+        "existing D1/085 仍可正式恢复；若需要 legacy-specific compatibility，边界必须显式、bounded，并且不修改085历史 context。",
+        "新增/复用的 entry projection只覆盖 archive continuation 所需 semantic identity，不成为 generic semantic ledger、OpenSpec shadow state或完整 Action Package persistence。",
+        "G02 current binding、G03 checkpoint gate与 bounded archive-terminal recovery的其它已冻结边界保持不变。"
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}

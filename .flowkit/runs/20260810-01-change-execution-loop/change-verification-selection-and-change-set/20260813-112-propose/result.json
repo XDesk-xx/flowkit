@@ -1,0 +1,60 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "propose",
+    "executionStatus": "completed",
+    "summary": "E1 Proposal 已冻结 entry/post-action 时间边界、context v5 与 ActionPackage v2 migration、Core-only Run 编号与 exact retry、OpenSpec operation projection、Windows process-tree cancellation，以及 deterministic Change Verification selection contract。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/design.md",
+        "versionFingerprint": "9d7437ad6268c8c27d9ae49bd269cce15d1f6d9085a76b43b5fa61f8a4cc8e7b",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/proposal.md",
+        "versionFingerprint": "921ec1af62210eb0fa07e3f1862a52bde5aa218902769cc12fce0f69b36a7e02",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "d85d7480708b123978d650c1043fb7961a704b976030ba306e336494f7964180",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-core-model/spec.md",
+        "versionFingerprint": "edec8d0d0f1296111b29c2f6523541a7922ea92c8de077a000a6460f6fec7a62",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "7d1a9649bd79ff03ee7fd9b53042c37589f3535014cf25c86214dcb0366dd4e1",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-lean-run-and-action-package/spec.md",
+        "versionFingerprint": "88bccf9910fc3f1fb1b79fade42581818390667a798c82a5168fd300f1174dbc",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+        "versionFingerprint": "ae23ff4ec84d48adfbb98e15b765dd77b304bd062404a72ff7b7c65e8cf39926",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-policy-engine/spec.md",
+        "versionFingerprint": "6a093cb4070f89f8180ffe920a93d9d347603e75315fda2b0e8d70187a6b0e0b",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/specs/flowkit-runtime-foundation/spec.md",
+        "versionFingerprint": "e85b627d4a1c6ed3f3a647db6fac0f756d2e059a30eed8f2671eafa8250fd01d",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-selection-and-change-set/tasks.md",
+        "versionFingerprint": "f6a861fcdcde70068b0588721c2d980cc0866b6aaa6d806e6ec1f71d00696e0f",
+        "kind": "produced-artifact"
+      }
+    ]
+  }
+}

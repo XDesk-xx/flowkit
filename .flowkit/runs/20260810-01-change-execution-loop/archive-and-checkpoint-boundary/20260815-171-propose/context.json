@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260815-171-propose",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "propose",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "02b48d77da5ba6084bbf8327e875e09ae7d996e7eabdc02cd24cfff04eaff2f2",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:a8adfe13a9d149cbcb5df514aaf8d09e937e2b47cc920b97cc8f6538260a324e",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "archive-and-checkpoint-boundary",
+      "scope": "F1 architecture and F1-RA-001 required outcome unchanged; do not reopen Explore; only correct Proposal/Design apply and revise-apply mutation scope after failed 20260815-170-revise-apply.",
+      "requiredOutcomes": [
+        "Add tests/unit/services/b1-run-execution-service.test.ts to flowkitMutationScope.apply.",
+        "Add tests/unit/services/b1-run-execution-service.test.ts to flowkitMutationScope.revise-apply.",
+        "Do not reopen Explore; create a new Proposal generation for Reviewer re-approval before Apply/revise-apply.",
+        "Keep F1 architecture unchanged.",
+        "Keep F1-RA-001 required outcome unchanged: remove subject-only E2 checkpoint activation and keep the legacy cutover anchored to the original strict-admitted E2 checkpoint."
+      ],
+      "sourceRef": "owner-chat:2026-08-15T11:07+08:00:F1-RA-001-mutation-scope-reset-after-170"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260815-171-propose/",
+  "changeKey": "F1",
+  "changeId": "archive-and-checkpoint-boundary",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260814-164-review-explore/result.json",
+    "versionFingerprint": "04322763d2f6e3d55c95892b467a6e723a143391dd955ee9237c2aa65309c0ea",
+    "kind": "run-result"
+  },
+  "canonicalBase": "e182492181166ef00b8546923f1ce6ad168564f7",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260814-164-review-explore/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "04322763d2f6e3d55c95892b467a6e723a143391dd955ee9237c2aa65309c0ea"
+    },
+    {
+      "ref": "openspec/changes/archive-and-checkpoint-boundary/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "cfa0dd24ffbc3529beee2a707cfd385b458247b1b5cca61fbcc99f934e83600e"
+    },
+    {
+      "ref": "openspec/changes/archive-and-checkpoint-boundary/explore.md",
+      "versionFingerprint": "a6f4a5fbd5dfe9cdaa00b2ec493e6ca43a0697c121037d5cfdb0a45dd245b054",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "archive-and-checkpoint-boundary",
+      "runId": "20260815-171-propose",
+      "action": "propose",
+      "role": "author",
+      "semanticInputFingerprint": "02b48d77da5ba6084bbf8327e875e09ae7d996e7eabdc02cd24cfff04eaff2f2"
+    },
+    "definition": {
+      "action": "propose",
+      "version": 1,
+      "role": "author",
+      "goalClass": "freeze-change-contract",
+      "mutationClass": "proposal-bundle-only",
+      "outputClass": "current-proposal-bundle-set",
+      "terminalContract": {
+        "kind": "artifact",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/archive-and-checkpoint-boundary/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "cfa0dd24ffbc3529beee2a707cfd385b458247b1b5cca61fbcc99f934e83600e"
+      },
+      {
+        "ref": "openspec/changes/archive-and-checkpoint-boundary/explore.md",
+        "versionFingerprint": "a6f4a5fbd5dfe9cdaa00b2ec493e6ca43a0697c121037d5cfdb0a45dd245b054",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260814-164-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "04322763d2f6e3d55c95892b467a6e723a143391dd955ee9237c2aa65309c0ea"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260814-164-review-explore",
+      "verdict": "approved",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/archive-and-checkpoint-boundary/20260814-164-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "04322763d2f6e3d55c95892b467a6e723a143391dd955ee9237c2aa65309c0ea"
+      },
+      "blockingAuthorities": [],
+      "findings": [],
+      "convergence": [
+        {
+          "findingId": "F1-RE-003",
+          "state": "resolved"
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [
+      {
+        "ref": "owner:a8adfe13a9d149cbcb5df514aaf8d09e937e2b47cc920b97cc8f6538260a324e",
+        "decision": "contract-reset",
+        "deliveryId": "20260810-01-change-execution-loop",
+        "changeId": "archive-and-checkpoint-boundary",
+        "scope": "F1 architecture and F1-RA-001 required outcome unchanged; do not reopen Explore; only correct Proposal/Design apply and revise-apply mutation scope after failed 20260815-170-revise-apply.",
+        "requiredOutcomes": [
+          "Add tests/unit/services/b1-run-execution-service.test.ts to flowkitMutationScope.apply.",
+          "Add tests/unit/services/b1-run-execution-service.test.ts to flowkitMutationScope.revise-apply.",
+          "Do not reopen Explore; create a new Proposal generation for Reviewer re-approval before Apply/revise-apply.",
+          "Keep F1 architecture unchanged.",
+          "Keep F1-RA-001 required outcome unchanged: remove subject-only E2 checkpoint activation and keep the legacy cutover anchored to the original strict-admitted E2 checkpoint."
+        ],
+        "sourceRef": "owner-chat:2026-08-15T11:07+08:00:F1-RA-001-mutation-scope-reset-after-170"
+      }
+    ],
+    "externalContextFingerprint": "673c0f3d9c1ecd3a282f9f05a61f1dd7874fec59383ee39534c95b388c01b4b2",
+    "requiredResultContract": {
+      "kind": "artifact",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": true,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

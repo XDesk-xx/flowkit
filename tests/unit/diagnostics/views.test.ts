@@ -5,7 +5,7 @@ import { renderStatus } from '../../../src/diagnostics/status.js';
 import { formatPolicyResult } from '../../../src/diagnostics/next.js';
 import { diagnoseRepository, renderDoctor } from '../../../src/diagnostics/doctor.js';
 import { renderResumeContext } from '../../../src/diagnostics/resume-context.js';
-import { buildChange, buildConflict, buildRun, buildSnapshot, buildVerdict } from '../policy/fixtures.js';
+import { buildAuthorization, buildChange, buildCheckpointBoundary, buildConflict, buildRun, buildSnapshot, buildVerdict } from '../policy/fixtures.js';
 
 const change = buildChange({ key: 'E1', id: 'diagnostic-cli' });
 
@@ -33,6 +33,8 @@ describe('diagnostic views', () => {
         'change-state: active',
         'stage: explore',
         'last-run: 20260806-170-review-explore',
+        'pending-run: none',
+        'pending-resume: none',
         'review: approved',
         'verification: not-run',
         'full-test: unavailable',
@@ -94,6 +96,37 @@ describe('diagnostic views', () => {
     assert.doesNotMatch(renderDoctor(snapshot), /policy-blocked:formal-fact-conflict/);
   });
 
+  it('maps Q1 non-author review blocker to doctor warning without inventing an Action', () => {
+    const explore = buildRun({ nnn: 169, action: 'explore', changeId: 'diagnostic-cli' });
+    const review = buildRun({ nnn: 170, action: 'review-explore', changeId: 'diagnostic-cli', role: 'reviewer' });
+    const snapshot = buildSnapshot({
+      changes: [change],
+      runs: [explore, review],
+      reviewVerdicts: [buildVerdict({
+        reviewNnn: 170,
+        reviewedRunId: explore.runId,
+        verdict: 'changes-requested',
+        blockingAuthorities: ['owner'],
+      })],
+      openSpecArtifacts: [artifact('change-explore', 'openspec/changes/diagnostic-cli/explore.md')],
+    });
+    const report = diagnoseRepository(snapshot);
+    assert.equal(report.overall, 'warning');
+    assert.ok(report.findings.some((finding) => finding.code === 'policy-blocked:non-author-review-blocker' && finding.severity === 'warning'));
+  });
+
+  it('maps Q1→03 Delivery behavior bridge to doctor warning', () => {
+    const snapshot = buildSnapshot({
+      changes: [buildChange({ key: 'E1', id: 'diagnostic-cli', state: 'completed', required: true })],
+      gitBoundaries: [buildCheckpointBoundary('diagnostic-cli')],
+      deliveryFullTestStatus: 'authorized',
+      ownerAuthorizations: [buildAuthorization('full-test')],
+    });
+    const report = diagnoseRepository(snapshot);
+    assert.equal(report.overall, 'warning');
+    assert.ok(report.findings.some((finding) => finding.code === 'policy-blocked:delivery-behavior-not-implemented' && finding.severity === 'warning'));
+  });
+
   it('reports one non-resumable pending Run as warning', () => {
     const snapshot = buildSnapshot({
       changes: [change],
@@ -102,6 +135,16 @@ describe('diagnostic views', () => {
     const report = diagnoseRepository(snapshot);
     assert.equal(report.overall, 'warning');
     assert.ok(report.findings.some((finding) => finding.code === 'orphan-pending-run'));
+  });
+
+  it('surfaces B1 pending semantic input drift without mutating lifecycle facts', () => {
+    const pending = buildRun({ nnn: 177, action: 'explore', status: 'pending', changeId: 'diagnostic-cli' });
+    const snapshot = buildSnapshot({ changes: [change], runs: [pending] });
+    const inspection = { runId: pending.runId, action: 'explore', role: 'author', status: 'input-drift' } as const;
+    const report = diagnoseRepository(snapshot, inspection);
+    assert.ok(report.findings.some((finding) => finding.code === 'pending-semantic-input-drift'));
+    assert.match(renderResumeContext(snapshot, inspection), /pending-run: 20260806-177-explore/);
+    assert.match(renderResumeContext(snapshot, inspection), /pending-resume: input-drift/);
   });
 
   it('reports missing current formal artifact as error', () => {

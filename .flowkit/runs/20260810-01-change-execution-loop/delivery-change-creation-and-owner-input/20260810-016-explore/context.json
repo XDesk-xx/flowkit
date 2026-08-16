@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 2,
+  "runId": "20260810-016-explore",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "explore",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/delivery-change-creation-and-owner-input/20260810-016-explore/",
+  "changeKey": "A1",
+  "changeId": "delivery-change-creation-and-owner-input",
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

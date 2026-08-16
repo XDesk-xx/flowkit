@@ -1,0 +1,60 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-propose",
+    "executionStatus": "completed",
+    "summary": "关闭 078 D1-RP-001：补齐最小 reset-aware completed lineage currentness 与实际近邻 Review convergence；Reset 后旧 approval 不再 current、新 generation 不继承旧 findings，历史 completed Runs 保持不可改写。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/review-findings-and-blocker-authority/design.md",
+        "versionFingerprint": "120d5316737ec92c0b808f6973566f99f2d0af8e7d4437bdabf165a2e7307d19",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/review-findings-and-blocker-authority/proposal.md",
+        "versionFingerprint": "e0d6a56584e6c27f22c2f283bdefcdeb069f02fa54c9e3db230949433708d714",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/review-findings-and-blocker-authority/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+        "versionFingerprint": "bd6fd2e99073ce08ea84e04ef086750d24c100f03dd495c54f108a2dfd803125",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/review-findings-and-blocker-authority/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "b27f79998b102f7421908bc7e9cabe5644a78bc5bd9d7ad5676cd72ca541ced4",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/review-findings-and-blocker-authority/specs/flowkit-lean-run-and-action-package/spec.md",
+        "versionFingerprint": "dea19027382f3fb18699e4fa0f84bfd5ed8e72e2a06b605fcf68278186cb6abb",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/review-findings-and-blocker-authority/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+        "versionFingerprint": "dda80889091b59528a5d9061d677546ecf34d91981e9ecd85f4272d8af124c2d",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/review-findings-and-blocker-authority/specs/flowkit-review-findings-and-blocker-authority/spec.md",
+        "versionFingerprint": "2d83489d35b57e8e6b0755c9c24f172bdab32fa56fc1e6c69a8be1ace83d28f8",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/review-findings-and-blocker-authority/specs/flowkit-runtime-foundation/spec.md",
+        "versionFingerprint": "d4d1761c654ef1865188839dc46498dc3f7bec02f0e3f850436d8cb15a956c31",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/review-findings-and-blocker-authority/tasks.md",
+        "versionFingerprint": "fd06467392fe7486190b57f60f1d4b6fea5705b89ece6395ceefc61c82d4d647",
+        "kind": "produced-artifact"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/review-findings-and-blocker-authority/20260812-078-review-propose/result.json",
+      "versionFingerprint": "3a41203dfbd50140232c413c38c2f00062f50f2c480e3fed107303f9dabb5679",
+      "kind": "run-result"
+    }
+  }
+}

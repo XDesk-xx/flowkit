@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260815-205-review-propose",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "review-propose",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "271052778542b4ef0812339568ba17f0331bd8f03af341908e209d5b36d01c7d",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/historical-fixture-and-test-performance-correction/20260815-205-review-propose/",
+  "changeKey": "H1",
+  "changeId": "historical-fixture-and-test-performance-correction",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/historical-fixture-and-test-performance-correction/20260815-204-propose/result.json",
+    "versionFingerprint": "79f37ae7abbb6cf485ca255083c812d42d0de1acb11b14a744e4b407fc3d855a",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260815-204-propose",
+  "canonicalBase": "d3d220f4051e55c55223e233eb862bc3b9a8b4cb",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/historical-fixture-and-test-performance-correction/20260815-204-propose/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "79f37ae7abbb6cf485ca255083c812d42d0de1acb11b14a744e4b407fc3d855a"
+    },
+    {
+      "ref": "openspec/changes/historical-fixture-and-test-performance-correction/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+    },
+    {
+      "ref": "openspec/changes/historical-fixture-and-test-performance-correction/design.md",
+      "versionFingerprint": "5a33f533b3eccbfca153bebae9562661c62eecfaaeb300f789a25716b376355c",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/historical-fixture-and-test-performance-correction/proposal.md",
+      "versionFingerprint": "89eab0aaa98dbeb72bdd388b153aaa26fce5a9047e5238d87e273c39331eed32",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/historical-fixture-and-test-performance-correction/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+      "versionFingerprint": "3a6985a021941a807f118ce589e9b7ce3edb038360fc0cb458a3ca38700064dc",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/historical-fixture-and-test-performance-correction/specs/flowkit-change-verification-selection/spec.md",
+      "versionFingerprint": "5916c6f4bf7dbf44b4f4f9b13149c4a9bc3cca4db14ab055730e4f4bba0edf14",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/historical-fixture-and-test-performance-correction/tasks.md",
+      "versionFingerprint": "02a2aeaa432c9e48e9076e461073881bfabd5a55faf311041fce7cda145609be",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "historical-fixture-and-test-performance-correction",
+      "runId": "20260815-205-review-propose",
+      "action": "review-propose",
+      "role": "reviewer",
+      "semanticInputFingerprint": "271052778542b4ef0812339568ba17f0331bd8f03af341908e209d5b36d01c7d"
+    },
+    "definition": {
+      "action": "review-propose",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-proposal",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "e5e869f897a048752bb2f2e84281ce986103a80679d4939b25cf7c1d31cd21fa"
+      },
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/design.md",
+        "versionFingerprint": "5a33f533b3eccbfca153bebae9562661c62eecfaaeb300f789a25716b376355c",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/proposal.md",
+        "versionFingerprint": "89eab0aaa98dbeb72bdd388b153aaa26fce5a9047e5238d87e273c39331eed32",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+        "versionFingerprint": "3a6985a021941a807f118ce589e9b7ce3edb038360fc0cb458a3ca38700064dc",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "5916c6f4bf7dbf44b4f4f9b13149c4a9bc3cca4db14ab055730e4f4bba0edf14",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/historical-fixture-and-test-performance-correction/tasks.md",
+        "versionFingerprint": "02a2aeaa432c9e48e9076e461073881bfabd5a55faf311041fce7cda145609be",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/historical-fixture-and-test-performance-correction/20260815-204-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "79f37ae7abbb6cf485ca255083c812d42d0de1acb11b14a744e4b407fc3d855a"
+      }
+    ],
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "f0afafbc2a95d692afcf78a9e63a4874823d84329ef3c79ed49338d0367e25c7",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

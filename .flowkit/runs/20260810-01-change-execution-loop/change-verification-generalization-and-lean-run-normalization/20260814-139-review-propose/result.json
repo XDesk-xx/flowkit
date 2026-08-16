@@ -1,0 +1,62 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "Complete review of 138-propose: generic Verification, three-file prospective Run, historical v5 compatibility, crash recovery and archive-sync direction are coherent, and strict OpenSpec/archive probe succeeds. Two author-owned blockers remain: the Proposal does not define the checkpoint-before-v6 bridge that lets E2's own necessarily-v5 Apply use the new generic Verification without mutating historical v5 semantics, and the formal Delivery dependency graph still leaves F1 dependent only on E1 even though the Proposal makes E2 a required prerequisite and F1 the first post-E2 consumer."
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "E2-RP-001",
+      "severity": "blocking",
+      "title": "E2 自身 v5 Apply 到 checkpoint 后 v6 之间缺少封闭 migration bridge",
+      "problem": "138 同时冻结：E2 自身继续使用现有 context v5 / ActionPackage v2 writer；generic Verification Catalog/renderer 取代 E1-specific selection；historical v5 sidecar contract 不迁移；v6/v3 three-file writer 只能在 E2 checkpoint 后激活。但 E2 的 Apply/revise-apply Run 必然在该 checkpoint 之前创建，因此仍是 v5/v2。当前 v5 post-action path 的 selection/sidecar/renderer contract 是 E1-era generation，而 136 已证明该 current selector 对 E2 path zero-match。138 没有定义 E2 当前 pending v5 Run 到底使用哪一代 Catalog、selection record、renderer 与 terminal binding，也没有定义如何与 historical E1 v5 terminal reader 区分。",
+      "contractRef": "openspec/changes/change-verification-generalization-and-lean-run-normalization/design.md Decisions 1-6 and Migration Plan; specs/flowkit-change-verification-selection/spec.md; specs/flowkit-formal-fact-reader-and-persistence/spec.md; specs/flowkit-lean-run-and-action-package/spec.md",
+      "invariant": "E2 必须能用一个在 Proposal 阶段已冻结、generation-closed 的 migration contract 完成自己的 Apply/Verification/Review/Archive；不得在 Apply 时临时选择 early-v6、cross-generation synthesis、修改 historical v5 authority 或重新引入 E2-specific verification hardcode。checkpoint 只能是 prospective v6/v3 的激活边界，而不能留下 E2 当前 v5 Apply 无合法 verification/persistence generation。",
+      "evidence": [
+        "Design Decision 2/3 与 specs 明确规定 E2 checkpoint 后才启用 Context v6 + ActionPackage v3 / three-file writer，E2 自身 MAY 继续使用 v5/v2 writer。",
+        "E2 Apply Run 会在 E2 checkpoint 前由 preparation 创建，因此其 persisted context/package 必然仍是 v5/v2；checkpoint 只有在 Apply→Review→Archive completed 之后才可能存在。",
+        "136 Explore 已记录 current E1 selector 对 E2 active OpenSpec path `openspec/changes/change-verification-generalization-and-lean-run-normalization/.openspec.yaml` zero-match，故 E2 自己不能原样继续使用旧 E1 verification selection。",
+        "Design Decision 4 只定义 historical v5 sidecar behavior 与 prospective v6 result binding；Decision 6 只定义 generic renderer v3 与 historical renderer v2，没有定义 current E2-v5 migration publication/record generation。",
+        "若 Author 在 Apply 时自行决定让 v5 pending Run 使用新 Catalog/renderer/record shape，就会改变 v5 generation semantics；若提前使用 v6 result binding，则违反 checkpoint activation boundary；若继续旧 v5 selection，则 E2 无法通过自身 Verification。"
+      ],
+      "impact": "Apply 阶段将被迫重新发明 migration 规则，最容易产生 E1 已出现过的 self-upgrade/cross-generation failure：E2 可能无法合法 terminalize、历史 v5 reader 被未来 current schema 污染，或为了跑通 E2 再加入一次性 hardcode/sidecar exception。",
+      "location": "design.md Decisions 2-6 / Migration Plan 2-6; tasks.md 2.4, 3.1-3.3, 4.1-4.3",
+      "blockingAuthority": "author",
+      "requiredOutcome": "在 revise-propose 中冻结一个明确的 E2 migration bridge：说明 E2 自己的 v5/v2 Apply/revise-apply 在 post-action admission 时使用哪一代 generic selection/Catalog、哪一代 renderer/verification publication、哪一种 versioned sidecar或terminal binding contract，以及 reader 如何把该 current migration generation 与 historical E1 v5 和 checkpoint 后 v6 区分。该 bridge 必须可在 E2 checkpoint 前完成正常 Verification/terminal CAS，且 checkpoint 后才能切换 prospective v6/v3 three-file writer。",
+      "acceptance": [
+        "Design/spec/tasks 明确列出至少 historical E1-v5、current E2-migration-v5、prospective v6 三种 generation 的 writer/reader/selection/renderer/persistence 组合，不存在隐式 cross-generation synthesis。",
+        "E2 自己的 v5/v2 Apply 能使用 generic current-Change Verification，不依赖 `change-verification-selection-and-change-set` literal，并能合法生成其 migration-generation terminal authority。",
+        "historical E1 v5 sidecars/renderer 保持 immutable read-only；E2 migration bridge 不反向改变其 schema/currentness validation。",
+        "v6/v3 three-file writer 的激活由 E2 checkpoint 这一正式可观察边界决定，E2 review-apply/revise-apply/archive 在 checkpoint 前不会意外切换到 v6。",
+        "tests/tasks 覆盖 E2 自身 v5 migration Apply + crash/replay，以及 E2 checkpoint 后 F1 首个 v6 consumer。"
+      ]
+    },
+    {
+      "id": "E2-RP-002",
+      "severity": "blocking",
+      "title": "Delivery Manifest 尚未把 F1 正式依赖重连到 E2",
+      "problem": "138 已把 E2 加入 Delivery Manifest 并在 Proposal/Design 中冻结 `E2 checkpoint → v6/v3 activation → F1 first formal next-consumer`，但 manifest 中 F1 `archive-and-checkpoint-boundary` 的 `dependsOn` 仍只有 `change-verification-selection-and-change-set`（E1）。因此正式 dependency graph 没有表达 E2 是 F1 的 prerequisite；在 E2 尚 planned 且无 active Change 的一般快照中，Policy 可以同时把 E2 与 F1 视为 eligible，而不是唯一要求先完成 E2。",
+      "contractRef": "openspec/delivery-groups/20260810-01-change-execution-loop.yaml F1/E2 entries; openspec/changes/change-verification-generalization-and-lean-run-normalization/design.md Goals and Migration Plan 5-6",
+      "invariant": "既然 E2 是 required corrective Change 且 F1 被定义为 E2 checkpoint 后首个 prospective v6 consumer，正式 Delivery dependency graph 必须编码 E2 → F1，而不能只依赖当前会话里已经发生的 activation 顺序或 checkpoint-precedence 偶然保证本次路径。",
+      "evidence": [
+        "138 manifest 新增 E2，dependsOn=change-verification-selection-and-change-set。",
+        "同一 manifest 的 F1 仍为 dependsOn=[change-verification-selection-and-change-set]，没有 E2。",
+        "Design Migration Plan 6 明确写 `E2 checkpoint becomes the activation boundary for v6/v3 prospective writer. F1 is the first formal next-consumer/dogfood Change.`",
+        "Policy/A1 的 dependency eligibility 只检查 dependency Change state=completed；若 E2 与 F1 同为 planned 且无 active Change，缺少 F1→E2 dependency 就不能由 dependency graph 唯一表达 intended order。"
+      ],
+      "impact": "Delivery 的 durable plan 与 E2 migration contract 不一致；未来 checkout/reconstruction 或同类 activation 快照可能把 F1 视为可提前激活，破坏 F1 作为 post-E2 first consumer 的前提，也使 checkpoint activation boundary 只存在于 prose 而不在 formal dependency facts 中。",
+      "location": "openspec/delivery-groups/20260810-01-change-execution-loop.yaml F1 dependsOn; design.md Migration Plan 6",
+      "blockingAuthority": "author",
+      "requiredOutcome": "在 revise-propose 中把 F1 的 formal dependency 更新为 E2（并保持 G1→F1），使 Delivery graph 与 `E1 → E2 → F1 → G1` 的当前 required sequence 一致。",
+      "acceptance": [
+        "Manifest 中 F1 `dependsOn` 明确包含 `change-verification-generalization-and-lean-run-normalization`，不再只依赖 E1。",
+        "E2 仍依赖 E1，G1 仍依赖 F1，依赖图无 cycle/duplicate。",
+        "Policy fixture/manifest regression 证明 E2 planned 时 F1 不 eligible；E2 completed + checkpoint boundary处理后 F1 才成为 intended next Change。"
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}

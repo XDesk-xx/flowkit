@@ -1,0 +1,191 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260814-143-review-propose",
+  "deliveryId": "20260810-01-change-execution-loop",
+  "action": "review-propose",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "e613a272e7a12f78cec70cf0aabaaf7eeba7e96e80800272b4a7d2d52654da67",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:1f4b0ee08f7de45ac707d0dea97d84fe95dd6940254b61106bc3d0be70c805fe",
+      "decision": "contract-reset",
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-verification-generalization-and-lean-run-normalization",
+      "scope": "E2 Proposal internal version design: supersede the 140/141 Proposal generation version-family architecture while preserving the approved 136 Explore feasibility facts and E2 required outcomes.",
+      "requiredOutcomes": [
+        "Do not establish independent long-lived version lifecycles for Context, ActionPackage, verification selection/evidence schema, renderer, or Verification Catalog.",
+        "E2 itself continues on the pre-E2/current runner and may implement generic Verification; post-E2 prospective three-file writer activates only after the E2 checkpoint, with F1 as first formal dogfood consumer.",
+        "Flowkit product version remains the product-level version; current Git/source defines current internal implementation.",
+        "Historical E1 persisted shapes remain immutable and readable through small bounded legacy compatibility; do not migrate historical E1 Runs or build a generic migration/version framework.",
+        "Historical verification publication should validate persisted bytes/fingerprint/binding rather than require renderer-version replay; keep only the minimum bounded compatibility mechanism actually required.",
+        "Preserve generic Change Verification, current-Change decoupling, prospective three-file Run, historical E1 readability, crash/recovery correctness, next-consumer regressions, and E1→E2→F1→G1 dependency boundary without expanding into F1/G1/03 scope.",
+        "Use a minimal formatVersion only when a persisted breaking format cannot be reliably discriminated structurally by the latest reader; formatVersion is only a serialization discriminator.",
+        "Verification Catalog has no generation lifecycle; current source is authority and point-in-time identity uses content fingerprint when needed."
+      ],
+      "sourceRef": "owner-explicit-contract-reset-20260814-e2-internal-version-design"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-generalization-and-lean-run-normalization/20260814-143-review-propose/",
+  "changeKey": "E2",
+  "changeId": "change-verification-generalization-and-lean-run-normalization",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-generalization-and-lean-run-normalization/20260814-142-propose/result.json",
+    "versionFingerprint": "f38a6ff8c47dbef58890d1f6b2f7311f850c9b019cd68ee465280a7566ae4d47",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260814-142-propose",
+  "canonicalBase": "e15d0a3c5bf7b46d3a1134eb3a5e208f11f7e564",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-generalization-and-lean-run-normalization/20260814-142-propose/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "f38a6ff8c47dbef58890d1f6b2f7311f850c9b019cd68ee465280a7566ae4d47"
+    },
+    {
+      "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "cfa0dd24ffbc3529beee2a707cfd385b458247b1b5cca61fbcc99f934e83600e"
+    },
+    {
+      "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/design.md",
+      "versionFingerprint": "d1762a5e0169cdc5e7b7252968c0a17d07fd22c0ca880aa1e7638e2ae61cba76",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/proposal.md",
+      "versionFingerprint": "1845f6dbaff1b0d0f7235facfab6a8adf6a0551b6fc5eeeef3eb89f889b15290",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-change-verification-selection/spec.md",
+      "versionFingerprint": "d709c4467f2b22a78e5d2dc3a9245e4c4f96c92110c19ac6292618e8d4344a22",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "versionFingerprint": "dfb14502f00d58cb58e392b1c3c9faaafa0870508b1a62d9c4b646eb582bb53a",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-lean-run-and-action-package/spec.md",
+      "versionFingerprint": "e7bb3e93e4e412a5d86e8929fcea2bb30d42df979eba77f17ab6e461aa333272",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/tasks.md",
+      "versionFingerprint": "990c7f44dd32616a1a053a70e41b70d17eed62eeb753a825a77673177c9b1487",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260810-01-change-execution-loop",
+      "changeId": "change-verification-generalization-and-lean-run-normalization",
+      "runId": "20260814-143-review-propose",
+      "action": "review-propose",
+      "role": "reviewer",
+      "semanticInputFingerprint": "e613a272e7a12f78cec70cf0aabaaf7eeba7e96e80800272b4a7d2d52654da67"
+    },
+    "definition": {
+      "action": "review-propose",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-proposal",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "cfa0dd24ffbc3529beee2a707cfd385b458247b1b5cca61fbcc99f934e83600e"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/design.md",
+        "versionFingerprint": "d1762a5e0169cdc5e7b7252968c0a17d07fd22c0ca880aa1e7638e2ae61cba76",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/proposal.md",
+        "versionFingerprint": "1845f6dbaff1b0d0f7235facfab6a8adf6a0551b6fc5eeeef3eb89f889b15290",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "d709c4467f2b22a78e5d2dc3a9245e4c4f96c92110c19ac6292618e8d4344a22",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "dfb14502f00d58cb58e392b1c3c9faaafa0870508b1a62d9c4b646eb582bb53a",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/specs/flowkit-lean-run-and-action-package/spec.md",
+        "versionFingerprint": "e7bb3e93e4e412a5d86e8929fcea2bb30d42df979eba77f17ab6e461aa333272",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-verification-generalization-and-lean-run-normalization/tasks.md",
+        "versionFingerprint": "990c7f44dd32616a1a053a70e41b70d17eed62eeb753a825a77673177c9b1487",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-verification-generalization-and-lean-run-normalization/20260814-142-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "f38a6ff8c47dbef58890d1f6b2f7311f850c9b019cd68ee465280a7566ae4d47"
+      }
+    ],
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [
+      {
+        "ref": "owner:1f4b0ee08f7de45ac707d0dea97d84fe95dd6940254b61106bc3d0be70c805fe",
+        "decision": "contract-reset",
+        "deliveryId": "20260810-01-change-execution-loop",
+        "changeId": "change-verification-generalization-and-lean-run-normalization",
+        "scope": "E2 Proposal internal version design: supersede the 140/141 Proposal generation version-family architecture while preserving the approved 136 Explore feasibility facts and E2 required outcomes.",
+        "requiredOutcomes": [
+          "Do not establish independent long-lived version lifecycles for Context, ActionPackage, verification selection/evidence schema, renderer, or Verification Catalog.",
+          "E2 itself continues on the pre-E2/current runner and may implement generic Verification; post-E2 prospective three-file writer activates only after the E2 checkpoint, with F1 as first formal dogfood consumer.",
+          "Flowkit product version remains the product-level version; current Git/source defines current internal implementation.",
+          "Historical E1 persisted shapes remain immutable and readable through small bounded legacy compatibility; do not migrate historical E1 Runs or build a generic migration/version framework.",
+          "Historical verification publication should validate persisted bytes/fingerprint/binding rather than require renderer-version replay; keep only the minimum bounded compatibility mechanism actually required.",
+          "Preserve generic Change Verification, current-Change decoupling, prospective three-file Run, historical E1 readability, crash/recovery correctness, next-consumer regressions, and E1→E2→F1→G1 dependency boundary without expanding into F1/G1/03 scope.",
+          "Use a minimal formatVersion only when a persisted breaking format cannot be reliably discriminated structurally by the latest reader; formatVersion is only a serialization discriminator.",
+          "Verification Catalog has no generation lifecycle; current source is authority and point-in-time identity uses content fingerprint when needed."
+        ],
+        "sourceRef": "owner-explicit-contract-reset-20260814-e2-internal-version-design"
+      }
+    ],
+    "externalContextFingerprint": "ded8f1e0a53451d939a35048369c27c49d19b8dd65f34cba07d79506236ea509",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

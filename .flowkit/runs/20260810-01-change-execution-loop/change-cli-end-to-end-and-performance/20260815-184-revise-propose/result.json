@@ -1,0 +1,39 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-propose",
+    "executionStatus": "completed",
+    "summary": "关闭 183 的 G1-RP-001：verify 改为消费既有 FormalFact/OpenSpec structured Change Verification projection 发现 status/authority path；禁止 CLI 自建 openspec/changes/<changeId>/verification.md 规则，缺失/歧义/冲突 projection fail closed；selectionFingerprint/logical checks 仅从 projected authoritative publication 读取。保持 read-only Verification authority，且不扩大已冻结 Apply mutation surface。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/design.md",
+        "versionFingerprint": "fe51b01e8174ea79d4bb1689ada3352db40d4d871dfb1bd95186e554f3ad2501",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/proposal.md",
+        "versionFingerprint": "75e74945e6423f6c742f7b302fa3cbc84728dcd79e7a0c1c9f4f34a9349a729e",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+        "versionFingerprint": "b39ae82599df4dc0661f94f379a68af222b311120d059fac5f2c682659eaa873",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/change-cli-end-to-end-and-performance/tasks.md",
+        "versionFingerprint": "d5424b9560e9a07c9a621d57d53cf49553cf2408ee70ce5433c1b16cd3160c86",
+        "kind": "produced-artifact"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260810-01-change-execution-loop/change-cli-end-to-end-and-performance/20260815-183-review-propose/result.json",
+      "versionFingerprint": "4ec3f6d20dbd1fd9c56d875bd093637287fcbc0a2ff2fd74a306ce2793695202",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "75ab6290894c5b6e96687792a5c4362dd27d0baae8ea5af77ddcfd8896cb2779"
+  }
+}

@@ -10,8 +10,8 @@ async function writeManifest(root: string, deliveryId: string, activeId: string,
   const dir = join(root, '.flowkit', 'manifests');
   await mkdir(dir, { recursive: true });
   const changes = [
-    ...completed.map((id, index) => `  - key: H${index + 1}\n    id: ${id}\n    state: completed\n    required: true\n    dependsOn: []`),
-    `  - key: Q2\n    id: ${activeId}\n    state: active\n    required: true\n    dependsOn: []`,
+    ...completed.map((id, index) => `  - key: H${index + 1}\n    id: ${id}\n    state: completed\n    architectureImpact: false\n    required: true\n    dependsOn: []`),
+    `  - key: Q2\n    id: ${activeId}\n    state: active\n    architectureImpact: false\n    required: true\n    dependsOn: []`,
   ].join('\n');
   await writeFile(join(dir, `${deliveryId}.yaml`), `id: ${deliveryId}\ndelivery:\n  state: active\n  fullTestStatus: not-ready\nchanges:\n${changes}\n`);
 }
