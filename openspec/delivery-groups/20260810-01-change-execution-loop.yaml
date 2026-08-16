@@ -11,8 +11,8 @@ goal: >
   Archify runtime、stable Agent runtime 或自动 Author / Reviewer 循环。
 
 delivery:
-  state: active
-  fullTestStatus: not-ready
+  state: completed
+  fullTestStatus: passed
 
 technicalBaseline:
   language: TypeScript
@@ -707,6 +707,14 @@ ownerDecisions:
     deliveryId: "20260810-01-change-execution-loop"
     changeId: "delivery-final-closure-correction"
     sourceRef: "ref/Flowkit 本地 AI Handoff — I1 Archive 完成后.md"
+  - ref: "owner:2b7a5de9ff425bf6b2c92653514c405db981289f5e4bab7ef00228894ae52044"
+    decision: "authorize-full-test"
+    deliveryId: "20260810-01-change-execution-loop"
+    sourceRef: "owner-input:2026-08-16T20:59+08:00:authorize-delivery-full-test"
+  - ref: "owner:7159648a5098b0f7152cd7c7efc8a96429fc208d36bef8e3d7eb3edda3c6f80f"
+    decision: "authorize-delivery-finalize"
+    deliveryId: "20260810-01-change-execution-loop"
+    sourceRef: "owner-input:2026-08-16T21:05+08:00:authorize-delivery-finalize"
 verification:
   change:
     requireApplicableChecks: true
