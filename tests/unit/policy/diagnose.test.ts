@@ -178,7 +178,7 @@ describe('diagnose — blocked reasons (task 7.4, 10.7)', () => {
     const snap = allCompletedSnapshot({ fullTestStatus: 'failed' });
     const d = diagnose(snap);
     assert.equal(d.reason, 'full-test-failed');
-    assert.ok(d.suggestedOwnerActions.includes('authorize-corrective-change'));
+    assert.ok(d.suggestedOwnerActions.includes('create-corrective-change'));
     assert.ok(d.suggestedOwnerActions.includes('cancel-delivery'));
     // diagnose MUST NOT surface an action even with a full-test scope present.
     const withScope = allCompletedSnapshot({

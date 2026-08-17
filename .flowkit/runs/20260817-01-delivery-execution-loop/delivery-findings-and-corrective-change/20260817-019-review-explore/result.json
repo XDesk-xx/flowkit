@@ -1,0 +1,67 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-explore",
+    "executionStatus": "completed",
+    "summary": "Review 018 Explore：B1 的总体边界正确，已把 Full Test failed 保持为 Delivery-level failure，Owner 独立决定 corrective Change，历史 completed Change 不重开，corrective Change 复用普通 02 lifecycle，且 fresh Full Test authorization 由 A1 重新要求。Reviewer 独立复核 Base 55622af3c2a62075e3d774d9d33c1ea222795eda、package checksum、candidate status/next/doctor 与 baseline A1/Policy regressions 58/58 PASS。但 Proposal-ready 结论仍有两个 author blocker：其一，018 要在 failed→not-ready 时清除 current Verification terminal result，却没有证明 sourceResultRef 仍指向一个 durable Verification authority；当前 Base 没有 Full Test result history，若只留下 Finding/哈希会让 derived projection 取代原 Verification truth。其二，Risk Scan 明确命中 schema/persistence migration、self-hosting writer change 与 activation persistence，但没有完成 Explore Skill v2 要求的 migration/activation proof；现有 future-Delivery proof 仍使用 current A1 schema + 手工模拟 reset，不能证明 B1 新字段在 B1 checkpoint 后、fresh process、later Change/future Delivery 与 pre-B1 historical manifests 上的读写兼容。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "f5140ef57294d7b521eb18d729c86fc2ccc40f2ea162b18819f6ec9a68b27f63"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "B1-RE-001",
+      "severity": "blocking",
+      "title": "failed→not-ready reset may destroy the only durable Verification-owned Full Test result",
+      "problem": "018 correctly observes that A1 forbids a non-terminal fullTestStatus from retaining verification.fullTest.result, so B1 must clear the current terminal-result slot during failed→not-ready. However, the exact Base stores the Full Test terminal result only in that current Manifest slot and has no Full Test result-history authority. Proof 2 then treats a minimal Delivery Finding/sourceResultRef/corrective provenance encoding as Proposal-ready without proving where the original Verification-owned result remains durably readable after reset. A content hash by itself is not a durable result authority. If B1 clears the only result bytes and keeps only derived Finding fields plus sourceResultRef, the Finding becomes the de-facto historical failure truth, violating one-fact-one-authority and leaving sourceResultRef dangling.",
+      "contractRef": "03 v6 B1 minimal Delivery Finding/sourceResultRef + Flowkit Operating Model v8 §5 Authority Map / one fact, one authority + Explore Skill v2 §4.4 Authority Proof / §5 Proof Acceptance Depth",
+      "invariant": "After corrective admission resets Full Test from failed to not-ready, the exact failed Verification result that the Delivery Finding cites must still exist as a bounded durable Verification authority; the Flowkit Finding may project/reference it but must not silently replace it as the only remaining failure truth.",
+      "evidence": [
+        "Exact Base formal-fact-reader requires terminal passed|failed to carry verification.fullTest.result and rejects any current result on non-terminal status.",
+        "Exact Base DeliveryManifestDocument publishFullTestResult writes the terminal result into verification.fullTest.result; there is no Full Test result-history persistence path in the current Base.",
+        "018 Proof 2 explicitly requires current terminal result to exit current authority on failed→not-ready, while its Proposal gap leaves only a minimal Finding/provenance encoding decision and does not prove durable retention of the underlying Verification result.",
+        "018 Rejected Approach 6 correctly rejects deleting the failed result with no corrective provenance, but bounded provenance/sourceResultRef alone does not preserve the referenced result bytes/authority."
+      ],
+      "impact": "A corrective Change could be correctly linked to a hash that no longer resolves to any durable Verification fact. Fresh-process resume and later diagnostics would then have only a Flowkit-derived Finding, so failure provenance could not be independently validated against the Verification-owned result and the authority split would collapse.",
+      "location": "openspec/changes/delivery-findings-and-corrective-change/explore.md Proof 2; Feasible Proposal Boundary; Open Decisions 1-2; exact Base src/facts/formal-fact-reader.ts and src/persistence/delivery-manifest-document.ts",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Revise Explore to prove a minimal authority-preserving failure-retention strategy before Proposal. The current terminal slot may still be cleared on failed→not-ready, but the exact failed result must survive as a bounded durable Verification-owned fact/ref that the Delivery Finding and corrective provenance can point to. Do not introduce a generic Evidence/Finding database.",
+      "acceptance": [
+        "Identify the current physical authority for the failed Full Test result and show exactly where that authority lives after failed→not-ready reset.",
+        "After reset, a fresh process can resolve/validate the Finding's sourceResultRef against an existing durable failed-result fact rather than only trusting copied Finding fields or an opaque hash.",
+        "The retention mechanism is bounded to Delivery Full Test failure history/provenance and does not become a generic Evidence platform or duplicate raw logs.",
+        "Stale/mismatched sourceResultRef fails closed during corrective admission and fresh read.",
+        "Proof Result is PASS only after the Evidence Boundary includes post-reset fresh-process provenance reconstruction."
+      ]
+    },
+    {
+      "id": "B1-RE-002",
+      "severity": "blocking",
+      "title": "Migration/self-hosting activation risk is marked yes but the required activation-persistence proof is missing",
+      "problem": "018 Risk Scan marks Schema/persistence migration, Self-hosting/writer changes itself, and Activation persistence across Change/Delivery boundaries as yes. Explore Skill v2 therefore requires an explicit Migration/Self-hosting/Activation Persistence proof answering which implementation starts B1, when the new reader/writer becomes active, how historical data is bounded-read, and which next/future consumers prove the transition persists. The current Proof 3 future-Delivery fixture uses the existing A1 schema and manually simulates only failed→not-ready + current-result removal; because the B1 Finding/provenance physical encoding is intentionally still undecided, it cannot prove that the future B1 reader/writer actually survives B1 Checkpoint, fresh process, later Changes/future Delivery, or reads pre-B1 manifests without the new fields.",
+      "contractRef": "Flowkit Explore Skill v2 §4.3 Migration / Self-hosting / Activation Persistence Proof; §5 Proof Acceptance Depth",
+      "invariant": "A Change that modifies repository-global Delivery persistence/Reader/Policy must prove the activation boundary and bounded historical compatibility before claiming Proposal readiness; same-schema/manual simulation under the old implementation is not evidence that the new schema persists across checkpoint/resume/future consumers.",
+      "evidence": [
+        "018 Risk Scan explicitly marks Schema/persistence migration=yes, Self-hosting/writer changes itself=yes, and Activation must persist across Change/Delivery boundaries=yes.",
+        "018 contains no dedicated proof that states current B1 is started under Base 55622af implementation and that the new B1 reader/writer only becomes canonical after the B1 Change Checkpoint.",
+        "018 Proof 3 manually simulates reset while using current A1 persistence/Reader and intentionally does not implement or exercise the proposed Finding/provenance schema.",
+        "No proof demonstrates that historical/pre-B1 manifests lacking the new B1 fields remain readable while post-B1 manifests with the new fields reconstruct deterministically in fresh processes and a later/future Delivery consumer."
+      ],
+      "impact": "Proposal could freeze a persistence shape that works in the disposable current-schema fixture but fails at the actual self-hosting switch: B1 may checkpoint new facts that later C1-H1/fresh sessions cannot read, or the new reader may reject historical manifests that legitimately predate B1 fields.",
+      "location": "openspec/changes/delivery-findings-and-corrective-change/explore.md Mandatory Risk Scan; Proof 3; Proof 5; Open Decisions",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Add the applicable migration/self-hosting/activation-persistence proof. It may use a minimal disposable candidate encoding rather than production implementation, but it must prove the chosen B1 persistence concept across the real activation boundary and bounded historical compatibility before Proposal freezes the contract.",
+      "acceptance": [
+        "State the activation timeline: B1 018/Author work starts from Base 55622af current implementation; new B1 repository-global semantics become canonical only at the authorized B1 Change Checkpoint.",
+        "Demonstrate bounded read compatibility for a legitimate pre-B1 manifest with no B1 Finding/provenance fields and a post-B1 manifest carrying the selected minimal fields.",
+        "Demonstrate post-checkpoint/fresh-process reconstruction and at least one later/future-Delivery-shaped consumer without chat/session state.",
+        "Show the transition does not silently fall back to the old createChange-only behavior after checkpoint/resume.",
+        "Keep the proof disposable and bounded; do not create a migration framework, Registry, new Formal Action, or parallel lifecycle."
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}

@@ -221,6 +221,50 @@ describe('verification evidence affected Node union', () => {
     }
   });
 
+  it('physically executes the B1 corrective public route through tests-cli and fails on its sentinel', async () => {
+    const root = await createTempDir();
+    try {
+      await symlink(join(process.cwd(), 'node_modules'), join(root, 'node_modules'), 'dir');
+      await writeFile(join(root, 'package.json'), '{"type":"module"}\n', 'utf8');
+      await mkdir(join(root, 'tests', 'integration'), { recursive: true });
+      await mkdir(join(root, 'tests', 'unit', 'cli'), { recursive: true });
+      await mkdir(join(root, 'tests', 'unit', 'diagnostics'), { recursive: true });
+      for (const path of [
+        join(root, 'tests', 'integration', 'diagnostic-cli-process.test.ts'),
+        join(root, 'tests', 'integration', 'diagnostic-cli.test.ts'),
+        join(root, 'tests', 'integration', 'g1-change-cli-end-to-end.test.ts'),
+        join(root, 'tests', 'integration', 'a1-delivery-readiness-and-full-test-behavior.test.ts'),
+      ]) await writeFile(path, "import { test } from 'node:test'; test('ok', () => {});\n", 'utf8');
+      await writeFile(join(root, 'tests', 'integration', 'b1-delivery-findings-and-corrective-change.test.ts'), [
+        "import assert from 'node:assert/strict';",
+        "import { test } from 'node:test';",
+        "test('b1 route sentinel', () => assert.fail('B1 corrective selected target sentinel'));",
+        '',
+      ].join('\n'), 'utf8');
+
+      const previousNodeTestContext = process.env['NODE_TEST_CONTEXT'];
+      delete process.env['NODE_TEST_CONTEXT'];
+      try {
+        const evidence = await executeVerificationSelection({
+          repoRoot: root,
+          changeId: 'b1',
+          runDir: join(root, '.flowkit', 'runs', 'b1-sentinel'),
+          producingRunId: '20990101-008-apply',
+          selection: cliOnlySelection(),
+          fullTestStatus: 'not-ready',
+          openSpecAdapter: { resolveExecutable: async () => '/fixture/openspec' } as OpenSpecCliAdapter,
+        });
+        assert.equal(evidence.overallStatus, 'failed');
+        assert.match(evidence.checks[0]?.commandOrMethod ?? '', /b1-delivery-findings-and-corrective-change\.test\.ts/);
+      } finally {
+        if (previousNodeTestContext === undefined) delete process.env['NODE_TEST_CONTEXT'];
+        else process.env['NODE_TEST_CONTEXT'] = previousNodeTestContext;
+      }
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it('propagates the current resolved OpenSpec executable when tests-cli physically includes G1', async () => {
     const root = await createTempDir();
     const executable = '/resolved/openspec-1.7.0';

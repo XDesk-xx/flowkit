@@ -54,6 +54,13 @@ export function formatPolicyResult(result: PolicyResult): string {
         );
       });
       lines.push(line('owner-actions', listOrNone(result.diagnosis.suggestedOwnerActions)));
+      if (result.diagnosis.fullTestFinding !== undefined) {
+        lines.push(
+          line('finding-id', result.diagnosis.fullTestFinding.findingId),
+          line('authorization-ref', result.diagnosis.fullTestFinding.authorizationRef),
+          line('source-result-ref', result.diagnosis.fullTestFinding.sourceResultRef),
+        );
+      }
       break;
     }
   }

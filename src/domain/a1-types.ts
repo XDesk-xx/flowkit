@@ -56,6 +56,11 @@ export interface ChangeCreateInput {
   readonly dependsOn: readonly string[];
   readonly outputs: readonly string[];
   readonly architectureImpact: boolean;
+  readonly corrective?: {
+    readonly findingId: string;
+    readonly authorizationRef: string;
+    readonly sourceResultRef: string;
+  };
 }
 
 export interface DeliveryScopeInput {

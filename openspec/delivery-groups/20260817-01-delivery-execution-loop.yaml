@@ -79,7 +79,7 @@ changes:
     required: true
     dependsOn:
       - "delivery-readiness-and-full-test-behavior"
-    state: planned
+    state: completed
     architectureImpact: true
     outputs:
       - "failed Full Test projection"
@@ -212,6 +212,26 @@ ownerDecisions:
     deliveryId: "20260817-01-delivery-execution-loop"
     changeId: "delivery-readiness-and-full-test-behavior"
     sourceRef: "ref/a1-post-archive-eof-hygiene-local-ai-handoff.md"
+  - ref: "owner:f2d3a5654f89308f9811291b515fead1bb0ceb7159e2b70544037e73a57d9a0c"
+    decision: "activate-change"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-findings-and-corrective-change"
+    sourceRef: "chat-owner-authorization:a78ef326ede3dc7215678b1969fd6f3be7ad573ae54a83f7d500d91811f3e901"
+  - ref: "owner:0f7aaab4528b24a4ff5b5901ece23d83843154353efae19d8c1d602c75283ed0"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-findings-and-corrective-change"
+    sourceRef: "owner:chat-20260817-b1-authorize-apply-025"
+  - ref: "owner:dab1ca89d8982d9ffd9003e6a06a9b1a3004e46742003efda7ddd28f800bd2e0"
+    decision: "authorize-archive"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-findings-and-corrective-change"
+    sourceRef: "owner:chat-20260817-b1-authorize-archive-027"
+  - ref: "owner:9774dab72e7a6dcaab1412f1d2cd6f9c68b5fe8c833c4913cf1bd254a54fd084"
+    decision: "authorize-checkpoint"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-findings-and-corrective-change"
+    sourceRef: "ref/b1-post-archive-eof-hygiene-local-ai-handoff.md"
 verification:
   change:
     requireApplicableChecks: true

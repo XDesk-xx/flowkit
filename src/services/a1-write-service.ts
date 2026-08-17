@@ -9,6 +9,7 @@ import type {
   OwnerDecisionRecordKind,
 } from '../domain/a1-types.js';
 import type { FullTestExecutionContract } from '../domain/full-test.js';
+import type { ResolvedFullTestFailureFinding } from '../domain/full-test.js';
 import {
   AUTHORIZATION_ONLY_OWNER_DECISIONS,
 } from '../domain/a1-types.js';
@@ -118,6 +119,24 @@ function normalizeChangeInput(value: unknown, field = 'change'): ChangeCreateInp
     throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field} must be an object`);
   }
   const obj = value as Record<string, unknown>;
+  let corrective: ChangeCreateInput['corrective'];
+  if (obj['corrective'] !== undefined) {
+    const raw = obj['corrective'];
+    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field}.corrective must be an object`);
+    }
+    const correctiveObj = raw as Record<string, unknown>;
+    const keys = Object.keys(correctiveObj).sort();
+    const expected = ['authorizationRef', 'findingId', 'sourceResultRef'];
+    if (JSON.stringify(keys) !== JSON.stringify(expected)) {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field}.corrective has unsupported fields`);
+    }
+    corrective = {
+      findingId: nonEmpty(correctiveObj['findingId'], `${field}.corrective.findingId`),
+      authorizationRef: nonEmpty(correctiveObj['authorizationRef'], `${field}.corrective.authorizationRef`),
+      sourceResultRef: nonEmpty(correctiveObj['sourceResultRef'], `${field}.corrective.sourceResultRef`),
+    };
+  }
   return {
     key: nonEmpty(obj['key'], `${field}.key`),
     id: nonEmpty(obj['id'], `${field}.id`),
@@ -126,6 +145,7 @@ function normalizeChangeInput(value: unknown, field = 'change'): ChangeCreateInp
     dependsOn: stringArray(obj['dependsOn'], `${field}.dependsOn`),
     outputs: stringArray(obj['outputs'], `${field}.outputs`),
     architectureImpact: requireBoolean(obj['architectureImpact'], `${field}.architectureImpact`),
+    ...(corrective !== undefined && { corrective }),
   };
 }
 
@@ -377,6 +397,30 @@ export async function createChange(
     throw new FlowkitError('DELIVERY_NOT_ACTIVE', `Delivery ${deliveryId} is not active`);
   }
 
+  const policyResult = next(snapshot);
+  const failedBoundary = policyResult.kind === 'blocked' && policyResult.diagnosis.reason === 'full-test-failed';
+  if (failedBoundary) {
+    if (input.corrective === undefined) {
+      throw new FlowkitError('CORRECTIVE_BINDING_REQUIRED', 'full-test-failed boundary requires change.corrective binding');
+    }
+    if (!input.required) {
+      throw new FlowkitError('CORRECTIVE_CHANGE_MUST_BE_REQUIRED', 'corrective Change must be required=true');
+    }
+    const current = snapshot.currentDeliveryFullTestFinding;
+    if (current === undefined || snapshot.deliveryFullTestResult === undefined) {
+      throw new FlowkitError('CORRECTIVE_FINDING_UNAVAILABLE', 'current Full Test failure occurrence is unavailable');
+    }
+    if (
+      input.corrective.findingId !== current.findingId
+      || input.corrective.authorizationRef !== current.authorizationRef
+      || input.corrective.sourceResultRef !== current.sourceResultRef
+    ) {
+      throw new FlowkitError('CORRECTIVE_BINDING_MISMATCH', 'corrective binding does not match current Full Test failure occurrence');
+    }
+  } else if (input.corrective !== undefined) {
+    throw new FlowkitError('CORRECTIVE_BINDING_NOT_ALLOWED', 'change.corrective is allowed only at the full-test-failed boundary');
+  }
+
   const ids = new Set(snapshot.changes.map((change) => change.id));
   const keys = new Set(snapshot.changes.map((change) => change.key));
   if (ids.has(input.id) || keys.has(input.key)) {
@@ -398,8 +442,28 @@ export async function createChange(
   const path = manifestPath(repoRoot, deliveryId);
   const original = await readFile(path, 'utf8');
   const doc = DeliveryManifestDocument.parse(original);
-  doc.appendChange({ ...input, state: 'planned' });
-  doc.appendOwnerDecision(record);
+  if (failedBoundary) {
+    const current = snapshot.currentDeliveryFullTestFinding!;
+    const failedResult = snapshot.deliveryFullTestResult!;
+    const resolved: ResolvedFullTestFailureFinding = {
+      ...current,
+      summary: failedResult.summary,
+      resolution: {
+        kind: 'corrective-change-created',
+        changeId: input.id,
+        ownerDecisionRef: record.ref,
+      },
+    };
+    doc.retainFullTestFailureResult(failedResult);
+    doc.appendResolvedFullTestFinding(resolved);
+    doc.appendChange({ ...input, state: 'planned' });
+    doc.appendOwnerDecision(record);
+    doc.removeFullTestResult();
+    doc.updateFullTestStatus('failed', 'not-ready');
+  } else {
+    doc.appendChange({ ...input, state: 'planned' });
+    doc.appendOwnerDecision(record);
+  }
   await (options.atomicWrite ?? atomicWriteFile)(path, doc.toString());
   return { deliveryId, changeId: input.id, ownerDecisionRef: record.ref, state: 'planned' };
 }

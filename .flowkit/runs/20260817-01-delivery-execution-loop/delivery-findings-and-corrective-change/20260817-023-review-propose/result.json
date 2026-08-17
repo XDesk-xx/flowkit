@@ -1,0 +1,66 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "Review 022 Proposal：B1 总体 contract 方向正确，保留 Verification/Owner authority，复用 ordinary create-change/lifecycle，使用 bounded failureHistory + resolved finding provenance，并冻结了 mutation scope 与 verification closure。但 Proposal 仍有两个 author blocker：一是把 findingId 纯绑定到 content-addressed resultRef，同时又要求 historical finding identity 唯一，无法表示两轮内容完全相同的 Full Test failure；二是 persisted historical Finding.summary 未被 closed-schema 约束为 retained Verification result.summary，允许 derived projection 与 primary authority 漂移。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "d7e5156b9b995e3195a05cb84fcf6ce4e0359c34b2f57ed9d605809752815b37"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "B1-RP-001",
+      "severity": "blocking",
+      "title": "content-addressed findingId cannot represent repeated identical Full Test failure occurrences",
+      "problem": "022 freezes current Finding identity as findingId=full-test-failure:<same sha256 suffix as resultRef> while the persisted fullTestFindings[] contract requires finding identity to be unique and duplicate identity to fail closed. A1 resultRef is a content hash of schemaVersion/status/summary/totalDurationMs/checks, not an occurrence/generation identity. Therefore two corrective cycles that happen to publish byte-identical structured failed results produce the same resultRef and the same findingId. After the first Finding is historically resolved to corrective Change X1, the second identical failure either collides with that resolved Finding and cannot be appended, or would have to reuse/overwrite the old resolution. Both violate the B1 goal of repeat failure/corrective cycles and point-in-time provenance.",
+      "contractRef": "03 v6 B1 failed→Finding→Owner corrective Change→ordinary lifecycle→fresh Full Test authorization; 022 design Goals require repeat failure cycles; 022 flowkit-formal-fact-reader-and-persistence requires unique persisted Finding identity and duplicate identity fail-closed",
+      "invariant": "Verification resultRef may remain content-addressed and deduplicable, but each Full Test failure occurrence that can drive a distinct Owner corrective decision must have an unambiguous point-in-time Finding occurrence identity. Historical resolution for one occurrence must not make a later identical Verification payload look already resolved.",
+      "evidence": [
+        "Exact A1 Base fullTestResultRefFor hashes only schemaVersion, status, summary, totalDurationMs and checks; it carries no Full Test cycle/authorization/occurrence identity.",
+        "022 flowkit-core-model spec derives findingId deterministically as full-test-failure:<sha256> directly from current resultRef.",
+        "022 persistence spec requires fullTestFindings[] identity to be unique and treats duplicate identity as a FactConflict/fail-closed condition.",
+        "022 Design states post-B1 behavior must support repeat failure cycles, yet contains no counterfactual for two cycles with the same structured failed result."
+      ],
+      "impact": "A legitimate Delivery can complete one correction, rerun Full Test, receive the same structured failure again, and then become unable to persist a second resolved Finding/corrective provenance without violating the frozen schema. Diagnostics may also expose a current Finding whose identity is indistinguishable from an already-resolved historical Finding.",
+      "location": "openspec/changes/delivery-findings-and-corrective-change/design.md Decisions 1-3 / Goals; specs/flowkit-core-model/spec.md; specs/flowkit-formal-fact-reader-and-persistence/spec.md; exact Base src/domain/full-test.ts",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Revise Proposal so source Verification content identity and failure-occurrence/Finding identity are not conflated. Keep A1 resultRef as the Verification authority, but freeze a deterministic bounded occurrence identity sufficient to distinguish distinct corrective cycles even when sourceResultRef is identical. Do not introduce an attempt ledger, generic Finding registry, or new Full Test authority.",
+      "acceptance": [
+        "A counterfactual with two Full Test cycles publishing the exact same structured failed payload can persist two distinct corrective resolutions without overwriting or colliding with the first historical Finding.",
+        "Both Finding occurrences may reference the same content-addressed sourceResultRef/failureHistory entity if deduplication is desired, but each resolution remains point-in-time and unambiguous.",
+        "Current failed diagnostics can distinguish the new unresolved occurrence from an older resolved occurrence with the same sourceResultRef.",
+        "The occurrence identity is derived from bounded existing lifecycle facts or a minimal explicitly frozen fact; it does not create an attempt ledger/generic history platform.",
+        "Fresh-process Reader validation fails closed on duplicate occurrence identity or mismatched source binding."
+      ]
+    },
+    {
+      "id": "B1-RP-002",
+      "severity": "blocking",
+      "title": "persisted historical Finding summary is not constrained to the Verification result it claims to project",
+      "problem": "022 correctly says Finding is only a projection/reference and Verification remains the failure authority. Current Finding summary is explicitly derived from current result.summary. However, the persistence spec for historical fullTestFindings[] requires only a non-empty summary plus a resolvable sourceResultRef; it does not require persisted summary to equal the retained failed result.summary. A malformed or drifted Manifest can therefore carry a valid sourceResultRef with contradictory human summary and still satisfy the frozen Reader contract. That leaves two durable statements about the same failure and weakens the claimed closed-schema/fail-closed authority boundary.",
+      "contractRef": "Flowkit Operating Model v8 one-fact-one-authority / Verification owns check result truth; 022 Design Decision 1 says summary=current result.summary and Decision 3 says historical Finding is bounded resolved provenance; 022 persistence requirement claims closed-schema/fail-closed cross-ref validation",
+      "invariant": "Every persisted field described as a deterministic projection of a Verification-owned source must either be recomputed/not persisted or be validated exactly against that source. A sourceResultRef alone cannot legitimize contradictory copied projection fields.",
+      "evidence": [
+        "022 Design Decision 1 defines current Finding summary = current result.summary.",
+        "022 Design Risk notes that copied summary is only human projection and sourceResultRef remains authority.",
+        "022 flowkit-formal-fact-reader-and-persistence spec requires historical Finding summary only to be non-empty while validating sourceResultRef existence, not equality to retained result.summary.",
+        "Other persisted Finding fields are frozen constants/derived identities, so summary is the remaining unconstrained drift surface."
+      ],
+      "impact": "Fresh-process resume or later consumers can accept historical provenance whose displayed explanation disagrees with the exact retained Verification result. This makes the historical Finding projection non-deterministic and can mislead Owner/diagnostic/audit consumers even though the source hash is valid.",
+      "location": "openspec/changes/delivery-findings-and-corrective-change/design.md Decisions 1 and 3 / Risks; specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Freeze deterministic consistency for persisted Finding projections. If summary is persisted, Writer must derive it from the retained/current Verification result and Reader must require exact equality to that source; alternatively remove the duplicated summary from durable provenance if the product contract permits. Preserve sourceResultRef as the primary Verification authority.",
+      "acceptance": [
+        "A persisted fullTestFindings[] item whose summary differs from its resolved failureHistory result.summary is rejected with a bounded FactConflict before lifecycle advance.",
+        "Corrective admission does not accept caller-authored Finding summary; it derives any persisted projection fields from the verified source result.",
+        "Fresh-process reconstruction yields the same human projection from the same source result.",
+        "No generic Evidence/Finding database or duplicate Verification truth is introduced."
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}

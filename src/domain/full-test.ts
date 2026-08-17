@@ -43,6 +43,25 @@ export interface FullTestTerminalResult extends FullTestProtocolPayload {
   readonly resultRef: string;
 }
 
+export interface FullTestFailureFinding {
+  readonly schemaVersion: 1;
+  readonly findingId: string;
+  readonly authorizationRef: string;
+  readonly sourceResultRef: string;
+  readonly severity: 'blocking';
+  readonly summary: string;
+  readonly affectedScope: 'delivery';
+  readonly requiredOwnerDecision: 'corrective-change-or-cancel-delivery';
+}
+
+export interface ResolvedFullTestFailureFinding extends FullTestFailureFinding {
+  readonly resolution: {
+    readonly kind: 'corrective-change-created';
+    readonly changeId: string;
+    readonly ownerDecisionRef: string;
+  };
+}
+
 export function canonicalFullTestPayload(payload: FullTestProtocolPayload): string {
   return JSON.stringify({
     schemaVersion: payload.schemaVersion,
@@ -60,4 +79,50 @@ export function canonicalFullTestPayload(payload: FullTestProtocolPayload): stri
 export function fullTestResultRefFor(payload: FullTestProtocolPayload): string {
   const hash = createHash('sha256').update(canonicalFullTestPayload(payload), 'utf8').digest('hex');
   return `verification:full-test:${hash}`;
+}
+
+export function canonicalFullTestFailureOccurrence(input: {
+  readonly deliveryId: string;
+  readonly authorizationRef: string;
+  readonly sourceResultRef: string;
+}): string {
+  return JSON.stringify({
+    schemaVersion: 1,
+    deliveryId: input.deliveryId,
+    authorizationRef: input.authorizationRef,
+    sourceResultRef: input.sourceResultRef,
+  });
+}
+
+export function fullTestFailureFindingIdFor(input: {
+  readonly deliveryId: string;
+  readonly authorizationRef: string;
+  readonly sourceResultRef: string;
+}): string {
+  const hash = createHash('sha256')
+    .update(canonicalFullTestFailureOccurrence(input), 'utf8')
+    .digest('hex');
+  return `full-test-failure:${hash}`;
+}
+
+export function deriveFullTestFailureFinding(input: {
+  readonly deliveryId: string;
+  readonly authorizationRef: string;
+  readonly result: FullTestTerminalResult;
+}): FullTestFailureFinding {
+  const sourceResultRef = input.result.resultRef;
+  return {
+    schemaVersion: 1,
+    findingId: fullTestFailureFindingIdFor({
+      deliveryId: input.deliveryId,
+      authorizationRef: input.authorizationRef,
+      sourceResultRef,
+    }),
+    authorizationRef: input.authorizationRef,
+    sourceResultRef,
+    severity: 'blocking',
+    summary: input.result.summary,
+    affectedScope: 'delivery',
+    requiredOwnerDecision: 'corrective-change-or-cancel-delivery',
+  };
 }

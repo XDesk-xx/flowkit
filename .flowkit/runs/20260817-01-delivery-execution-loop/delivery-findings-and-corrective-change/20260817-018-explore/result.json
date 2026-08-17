@@ -1,0 +1,19 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "explore",
+    "executionStatus": "completed",
+    "summary": "B1 proof-based Explore 完成：A1/02 已提供 failed Full Test、Owner boundary、普通 Change lifecycle 与 fresh re-authorization seam；B1 只需冻结 deterministic minimal Delivery Finding、exact failed-result provenance 绑定，以及 Owner corrective creation 时 failed→not-ready/current-result retirement 的原子 write-side contract。future-Delivery fresh-process proof PASS，历史 completed Change 保持 immutable，不需要 corrective Action/Run、generic Finding DB 或自动 corrective Change。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/delivery-findings-and-corrective-change/explore.md",
+        "versionFingerprint": "7512334ce7d71cc050fbc0b78f3c3e09c6e1b81e6fd32b18a833204f71890963",
+        "kind": "produced-artifact"
+      }
+    ]
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "a67620284f13bdf511720924d3c8443b8e024fa3136f765a2e8522c45a715e90"
+  }
+}

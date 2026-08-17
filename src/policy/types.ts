@@ -13,6 +13,7 @@
 
 import type { FormalAction } from '../domain/actions.js';
 import type { FullTestStatus } from '../domain/types.js';
+import type { FullTestFailureFinding } from '../domain/full-test.js';
 import type { FactConflict } from '../facts/formal-fact-snapshot.js';
 
 // ---------------------------------------------------------------------------
@@ -164,6 +165,8 @@ export interface BlockedDiagnosis {
   readonly conflicts: readonly FactConflict[];
   /** Owner actions that could relieve the block, if any. */
   readonly suggestedOwnerActions: readonly string[];
+  /** B1 bounded current Full Test failure occurrence handoff. */
+  readonly fullTestFinding?: FullTestFailureFinding;
 }
 
 // ---------------------------------------------------------------------------

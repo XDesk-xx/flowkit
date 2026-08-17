@@ -36,10 +36,17 @@ export function renderResumeContext(snapshot: FormalFactSnapshot, pending?: Pend
       line('next-kind', policy.kind),
       line('next-detail', summarizePolicyResult(policy)),
     );
+    if (snapshot.currentDeliveryFullTestFinding !== undefined) {
+      lines.push(
+        line('finding-id', snapshot.currentDeliveryFullTestFinding.findingId),
+        line('authorization-ref', snapshot.currentDeliveryFullTestFinding.authorizationRef),
+        line('source-result-ref', snapshot.currentDeliveryFullTestFinding.sourceResultRef),
+      );
+    }
     return `${lines.join('\n')}\n`;
   }
   const stage = currentStage(snapshot, change);
-  return `${[
+  const lines = [
     line('delivery', snapshot.deliveryId),
     line('change', `${change.key} ${change.id}`),
     line('stage', stage),
@@ -53,5 +60,13 @@ export function renderResumeContext(snapshot: FormalFactSnapshot, pending?: Pend
     line('verification', snapshot.changeVerificationStatus ?? 'unavailable'),
     line('next-kind', policy.kind),
     line('next-detail', summarizePolicyResult(policy)),
-  ].join('\n')}\n`;
+  ];
+  if (snapshot.currentDeliveryFullTestFinding !== undefined) {
+    lines.push(
+      line('finding-id', snapshot.currentDeliveryFullTestFinding.findingId),
+      line('authorization-ref', snapshot.currentDeliveryFullTestFinding.authorizationRef),
+      line('source-result-ref', snapshot.currentDeliveryFullTestFinding.sourceResultRef),
+    );
+  }
+  return `${lines.join('\n')}\n`;
 }

@@ -68,6 +68,23 @@ describe('verification module map', () => {
     );
   });
 
+  it('maps the B1 corrective integration and domain occurrence regression into formal physical scopes', () => {
+    const cli = selectAffectedVerificationModules([
+      'tests/integration/b1-delivery-findings-and-corrective-change.test.ts',
+    ]);
+    assert.deepEqual(cli.seedModuleIds, ['cli-diagnostics']);
+    assert.equal(cli.verificationScopes.includes('tests-cli'), true);
+    assert.equal(cli.capabilityIds.includes('flowkit-diagnostic-cli'), true);
+    assert.equal(cli.capabilityIds.includes('flowkit-policy-engine'), true);
+
+    const domain = selectAffectedVerificationModules([
+      'tests/unit/domain/full-test-b1.test.ts',
+    ]);
+    assert.deepEqual(domain.seedModuleIds, ['core-model']);
+    assert.equal(domain.verificationScopes.includes('tests-serialization'), true);
+    assert.equal(domain.capabilityIds.includes('flowkit-core-model'), true);
+  });
+
   it('maps A1 Delivery creation and diagnostic capabilities onto their physical module owners', () => {
     const cli = selectAffectedVerificationModules(['src/diagnostics/next.ts']);
     assert.equal(cli.capabilityIds.includes('flowkit-diagnostic-cli'), true);

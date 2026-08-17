@@ -1,0 +1,220 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260817-025-review-propose",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "review-propose",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "b29be7c7779163de16873b1a9a862944d75b32f51f9e79e01876c4a656e59e70",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-findings-and-corrective-change/20260817-025-review-propose/",
+  "changeKey": "B1",
+  "changeId": "delivery-findings-and-corrective-change",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-findings-and-corrective-change/20260817-024-revise-propose/result.json",
+    "versionFingerprint": "e98f44bd96022054d0c380f60aee7199ae4f4b4a364569d8cfbc9d439e5f1f02",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260817-024-revise-propose",
+  "canonicalBase": "55622af3c2a62075e3d774d9d33c1ea222795eda",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-findings-and-corrective-change/20260817-024-revise-propose/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "e98f44bd96022054d0c380f60aee7199ae4f4b4a364569d8cfbc9d439e5f1f02"
+    },
+    {
+      "ref": "openspec/changes/delivery-findings-and-corrective-change/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "41db595b409c9e6bc00babeabb32990290577eb40245a5bb769e8ec98a1f8d3e"
+    },
+    {
+      "ref": "openspec/changes/delivery-findings-and-corrective-change/design.md",
+      "versionFingerprint": "c2f87dac5a51975f4436db6f41519f61528ce5c433ac35f58a2c7f19c5ba39cc",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-findings-and-corrective-change/proposal.md",
+      "versionFingerprint": "d6a4a80eeef71f322390248818c69a5299de14461880a8b02df90ed3b329ac0e",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-findings-and-corrective-change/specs/flowkit-core-model/spec.md",
+      "versionFingerprint": "a1222659dab76681ef66e1802cc597a7931c74cb4e3599fe32bca052e27e2e40",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-findings-and-corrective-change/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+      "versionFingerprint": "e6b45111cdaf9e6dd1323f6d19dc5f40b78cd706284f697c5d12000df9287b6e",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-findings-and-corrective-change/specs/flowkit-diagnostic-cli/spec.md",
+      "versionFingerprint": "df88e51f0413168aa165960a0e676c03e617288cedf62c356fc9e0b7ef59823c",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-findings-and-corrective-change/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "versionFingerprint": "cc0e57f44c87f759141fc749e525f4ec775100740bdf06c965eb56a85aa068a0",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-findings-and-corrective-change/specs/flowkit-policy-engine/spec.md",
+      "versionFingerprint": "5dd519ff67aee47fe29cfb367aed511141d308f57f7a6173ec6c20941db6a831",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-findings-and-corrective-change/tasks.md",
+      "versionFingerprint": "e31a42febebaf70204771971b249d70818d79e503ebda9e624125abf4877e51a",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "delivery-findings-and-corrective-change",
+      "runId": "20260817-025-review-propose",
+      "action": "review-propose",
+      "role": "reviewer",
+      "semanticInputFingerprint": "b29be7c7779163de16873b1a9a862944d75b32f51f9e79e01876c4a656e59e70"
+    },
+    "definition": {
+      "action": "review-propose",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-proposal",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/delivery-findings-and-corrective-change/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "41db595b409c9e6bc00babeabb32990290577eb40245a5bb769e8ec98a1f8d3e"
+      },
+      {
+        "ref": "openspec/changes/delivery-findings-and-corrective-change/design.md",
+        "versionFingerprint": "c2f87dac5a51975f4436db6f41519f61528ce5c433ac35f58a2c7f19c5ba39cc",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-findings-and-corrective-change/proposal.md",
+        "versionFingerprint": "d6a4a80eeef71f322390248818c69a5299de14461880a8b02df90ed3b329ac0e",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-findings-and-corrective-change/specs/flowkit-core-model/spec.md",
+        "versionFingerprint": "a1222659dab76681ef66e1802cc597a7931c74cb4e3599fe32bca052e27e2e40",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-findings-and-corrective-change/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+        "versionFingerprint": "e6b45111cdaf9e6dd1323f6d19dc5f40b78cd706284f697c5d12000df9287b6e",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-findings-and-corrective-change/specs/flowkit-diagnostic-cli/spec.md",
+        "versionFingerprint": "df88e51f0413168aa165960a0e676c03e617288cedf62c356fc9e0b7ef59823c",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-findings-and-corrective-change/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "cc0e57f44c87f759141fc749e525f4ec775100740bdf06c965eb56a85aa068a0",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-findings-and-corrective-change/specs/flowkit-policy-engine/spec.md",
+        "versionFingerprint": "5dd519ff67aee47fe29cfb367aed511141d308f57f7a6173ec6c20941db6a831",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-findings-and-corrective-change/tasks.md",
+        "versionFingerprint": "e31a42febebaf70204771971b249d70818d79e503ebda9e624125abf4877e51a",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-findings-and-corrective-change/20260817-024-revise-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "e98f44bd96022054d0c380f60aee7199ae4f4b4a364569d8cfbc9d439e5f1f02"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260817-023-review-propose",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-findings-and-corrective-change/20260817-023-review-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "7bf6b9c6f741f801a79db880f73862449b42da3fcca03270dfc935705804e7e1"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "B1-RP-001",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "content-addressed findingId cannot represent repeated identical Full Test failure occurrences",
+          "problem": "022 freezes current Finding identity as findingId=full-test-failure:<same sha256 suffix as resultRef> while the persisted fullTestFindings[] contract requires finding identity to be unique and duplicate identity to fail closed. A1 resultRef is a content hash of schemaVersion/status/summary/totalDurationMs/checks, not an occurrence/generation identity. Therefore two corrective cycles that happen to publish byte-identical structured failed results produce the same resultRef and the same findingId. After the first Finding is historically resolved to corrective Change X1, the second identical failure either collides with that resolved Finding and cannot be appended, or would have to reuse/overwrite the old resolution. Both violate the B1 goal of repeat failure/corrective cycles and point-in-time provenance.",
+          "contractRef": "03 v6 B1 failed→Finding→Owner corrective Change→ordinary lifecycle→fresh Full Test authorization; 022 design Goals require repeat failure cycles; 022 flowkit-formal-fact-reader-and-persistence requires unique persisted Finding identity and duplicate identity fail-closed",
+          "invariant": "Verification resultRef may remain content-addressed and deduplicable, but each Full Test failure occurrence that can drive a distinct Owner corrective decision must have an unambiguous point-in-time Finding occurrence identity. Historical resolution for one occurrence must not make a later identical Verification payload look already resolved.",
+          "requiredOutcome": "Revise Proposal so source Verification content identity and failure-occurrence/Finding identity are not conflated. Keep A1 resultRef as the Verification authority, but freeze a deterministic bounded occurrence identity sufficient to distinguish distinct corrective cycles even when sourceResultRef is identical. Do not introduce an attempt ledger, generic Finding registry, or new Full Test authority.",
+          "acceptance": [
+            "A counterfactual with two Full Test cycles publishing the exact same structured failed payload can persist two distinct corrective resolutions without overwriting or colliding with the first historical Finding.",
+            "Both Finding occurrences may reference the same content-addressed sourceResultRef/failureHistory entity if deduplication is desired, but each resolution remains point-in-time and unambiguous.",
+            "Current failed diagnostics can distinguish the new unresolved occurrence from an older resolved occurrence with the same sourceResultRef.",
+            "The occurrence identity is derived from bounded existing lifecycle facts or a minimal explicitly frozen fact; it does not create an attempt ledger/generic history platform.",
+            "Fresh-process Reader validation fails closed on duplicate occurrence identity or mismatched source binding."
+          ]
+        },
+        {
+          "id": "B1-RP-002",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "persisted historical Finding summary is not constrained to the Verification result it claims to project",
+          "problem": "022 correctly says Finding is only a projection/reference and Verification remains the failure authority. Current Finding summary is explicitly derived from current result.summary. However, the persistence spec for historical fullTestFindings[] requires only a non-empty summary plus a resolvable sourceResultRef; it does not require persisted summary to equal the retained failed result.summary. A malformed or drifted Manifest can therefore carry a valid sourceResultRef with contradictory human summary and still satisfy the frozen Reader contract. That leaves two durable statements about the same failure and weakens the claimed closed-schema/fail-closed authority boundary.",
+          "contractRef": "Flowkit Operating Model v8 one-fact-one-authority / Verification owns check result truth; 022 Design Decision 1 says summary=current result.summary and Decision 3 says historical Finding is bounded resolved provenance; 022 persistence requirement claims closed-schema/fail-closed cross-ref validation",
+          "invariant": "Every persisted field described as a deterministic projection of a Verification-owned source must either be recomputed/not persisted or be validated exactly against that source. A sourceResultRef alone cannot legitimize contradictory copied projection fields.",
+          "requiredOutcome": "Freeze deterministic consistency for persisted Finding projections. If summary is persisted, Writer must derive it from the retained/current Verification result and Reader must require exact equality to that source; alternatively remove the duplicated summary from durable provenance if the product contract permits. Preserve sourceResultRef as the primary Verification authority.",
+          "acceptance": [
+            "A persisted fullTestFindings[] item whose summary differs from its resolved failureHistory result.summary is rejected with a bounded FactConflict before lifecycle advance.",
+            "Corrective admission does not accept caller-authored Finding summary; it derives any persisted projection fields from the verified source result.",
+            "Fresh-process reconstruction yields the same human projection from the same source result.",
+            "No generic Evidence/Finding database or duplicate Verification truth is introduced."
+          ]
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "34afbb9ba095c66782995599d74afc7930468c0c35aff05f2a3f04436523c841",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

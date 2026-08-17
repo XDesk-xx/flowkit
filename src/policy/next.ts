@@ -351,7 +351,7 @@ function decideFullTestLifecycle(snapshot: FormalFactSnapshot): PolicyResult {
     case 'failed':
       // D1-13 / frozen Section 6: keep failed; owner chooses corrective Change
       // or cancel. Policy MUST NOT auto-retry or auto-create corrective Change.
-      return blockedResult(fullTestFailedDiagnosis());
+      return blockedResult(fullTestFailedDiagnosis(snapshot.currentDeliveryFullTestFinding));
 
     case 'passed':
       if (hasOwnerAuthorization(snapshot.ownerAuthorizations, 'authorize-delivery-finalize', snapshot.deliveryId)) {

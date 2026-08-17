@@ -83,6 +83,7 @@ export const VERIFICATION_MODULE_MAP: readonly VerificationModule[] = [
       'src/cli',
       'src/diagnostics',
       'tests/integration/a1-delivery-readiness-and-full-test-behavior.test.ts',
+      'tests/integration/b1-delivery-findings-and-corrective-change.test.ts',
       'tests/integration/diagnostic-cli-process.test.ts',
       'tests/integration/diagnostic-cli.test.ts',
       'tests/integration/g1-change-cli-end-to-end.test.ts',
@@ -101,7 +102,7 @@ export const VERIFICATION_MODULE_MAP: readonly VerificationModule[] = [
   ),
   module(
     'core-model',
-    ['src/domain'],
+    ['src/domain', 'tests/unit/domain'],
     [],
     ['tests-serialization', 'typecheck'],
     ['flowkit-core-model', 'flowkit-lean-run-and-action-package'],

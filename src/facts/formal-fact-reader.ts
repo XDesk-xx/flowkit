@@ -29,11 +29,22 @@ import {
   expectedSourceReviewActionFor,
 } from '../persistence/result-ref-adapter.js';
 import { BLOCKING_AUTHORITIES } from '../domain/types.js';
-import { fullTestResultRefFor } from '../domain/full-test.js';
+import {
+  deriveFullTestFailureFinding,
+  fullTestFailureFindingIdFor,
+  fullTestResultRefFor,
+} from '../domain/full-test.js';
 import type { BlockingAuthority, ResultRef, RunStatus, VerificationStatus } from '../domain/types.js';
 import { AUTHORIZATION_ONLY_OWNER_DECISIONS, OWNER_DECISION_RECORD_KINDS } from '../domain/a1-types.js';
 import type { AuthorizationOnlyOwnerDecision, OwnerDecisionRecordKind } from '../domain/a1-types.js';
-import type { FullTestCheckResult, FullTestExecutionBlock, FullTestExecutionContract, FullTestTerminalResult } from '../domain/full-test.js';
+import type {
+  FullTestCheckResult,
+  FullTestExecutionBlock,
+  FullTestExecutionContract,
+  FullTestFailureFinding,
+  FullTestTerminalResult,
+  ResolvedFullTestFailureFinding,
+} from '../domain/full-test.js';
 import { ownerDecisionRefFor } from '../domain/owner-provenance.js';
 import { isPreA1LegacyArchitectureImpactIdentity } from './pre-a1-legacy-architecture-impact.js';
 import { FlowkitError } from '../shared/errors.js';
@@ -165,6 +176,11 @@ export async function readFormalFactSnapshotOperation(
     ...(manifestResult.deliveryFullTestExecution !== undefined && { deliveryFullTestExecution: manifestResult.deliveryFullTestExecution }),
     ...(manifestResult.deliveryFullTestExecutionBlock !== undefined && { deliveryFullTestExecutionBlock: manifestResult.deliveryFullTestExecutionBlock }),
     ...(manifestResult.deliveryFullTestResult !== undefined && { deliveryFullTestResult: manifestResult.deliveryFullTestResult }),
+    deliveryFullTestFailureHistory: manifestResult.deliveryFullTestFailureHistory,
+    deliveryFullTestFindings: manifestResult.deliveryFullTestFindings,
+    ...(manifestResult.currentDeliveryFullTestFinding !== undefined && {
+      currentDeliveryFullTestFinding: manifestResult.currentDeliveryFullTestFinding,
+    }),
     ...(verificationProjection.status !== undefined && {
       changeVerificationStatus: verificationProjection.status,
     }),
@@ -190,6 +206,9 @@ interface ManifestResult {
   readonly deliveryFullTestExecution?: FullTestExecutionContract;
   readonly deliveryFullTestExecutionBlock?: FullTestExecutionBlock;
   readonly deliveryFullTestResult?: FullTestTerminalResult;
+  readonly deliveryFullTestFailureHistory: readonly FullTestTerminalResult[];
+  readonly deliveryFullTestFindings: readonly ResolvedFullTestFailureFinding[];
+  readonly currentDeliveryFullTestFinding?: FullTestFailureFinding;
   readonly changes: readonly ChangeFact[];
   readonly ownerAuthorizations: readonly OwnerAuthorizationFact[];
   readonly ownerDecisionFacts: readonly OwnerDecisionFact[];
@@ -265,6 +284,207 @@ function readFullTestResult(value: unknown, conflicts: FactConflict[], authority
   return { ...payload, resultRef: obj['resultRef'] };
 }
 
+function readFullTestFailureHistory(
+  value: unknown,
+  conflicts: FactConflict[],
+  authority: string,
+): readonly FullTestTerminalResult[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) {
+    conflicts.push({
+      dimension: 'delivery-full-test-failure-history',
+      authority,
+      message: 'verification.fullTest.failureHistory must be a sequence',
+    });
+    return [];
+  }
+  const results: FullTestTerminalResult[] = [];
+  const refs = new Set<string>();
+  for (const [index, raw] of value.entries()) {
+    const local: FactConflict[] = [];
+    const result = readFullTestResult(raw, local, authority);
+    if (result === undefined || local.length > 0) {
+      conflicts.push({
+        dimension: 'delivery-full-test-failure-history',
+        authority,
+        message: `verification.fullTest.failureHistory[${index}] is invalid`,
+        detail: { causes: local.map((item) => item.message) },
+      });
+      continue;
+    }
+    if (result.status !== 'failed') {
+      conflicts.push({
+        dimension: 'delivery-full-test-failure-history',
+        authority,
+        message: `verification.fullTest.failureHistory[${index}] must have status=failed`,
+      });
+      continue;
+    }
+    if (refs.has(result.resultRef)) {
+      conflicts.push({
+        dimension: 'delivery-full-test-failure-history',
+        authority,
+        message: `duplicate retained Full Test resultRef ${result.resultRef}`,
+      });
+      continue;
+    }
+    refs.add(result.resultRef);
+    results.push(result);
+  }
+  return results;
+}
+
+function latestFullTestAuthorizationRef(
+  deliveryId: string,
+  ownerDecisionFacts: readonly OwnerDecisionFact[],
+): string | undefined {
+  return [...ownerDecisionFacts]
+    .reverse()
+    .find((fact) =>
+      fact.deliveryId === deliveryId
+      && fact.decision === 'authorize-full-test'
+      && fact.changeId === undefined,
+    )?.ref;
+}
+
+function readResolvedFullTestFindings(input: {
+  readonly deliveryId: string;
+  readonly value: unknown;
+  readonly history: readonly FullTestTerminalResult[];
+  readonly ownerDecisionFacts: readonly OwnerDecisionFact[];
+  readonly changes: readonly ChangeFact[];
+  readonly conflicts: FactConflict[];
+  readonly authority: string;
+}): readonly ResolvedFullTestFailureFinding[] {
+  if (input.value === undefined) return [];
+  if (!Array.isArray(input.value)) {
+    input.conflicts.push({
+      dimension: 'delivery-full-test-findings',
+      authority: input.authority,
+      message: 'delivery.fullTestFindings must be a sequence',
+    });
+    return [];
+  }
+  const byResultRef = new Map(input.history.map((result) => [result.resultRef, result] as const));
+  const ownerByRef = new Map(input.ownerDecisionFacts.map((fact) => [fact.ref, fact] as const));
+  const changeIds = new Set(input.changes.map((change) => change.id));
+  const findingIds = new Set<string>();
+  const authorizationRefs = new Set<string>();
+  const findings: ResolvedFullTestFailureFinding[] = [];
+  const expectedKeys = [
+    'affectedScope',
+    'authorizationRef',
+    'findingId',
+    'requiredOwnerDecision',
+    'resolution',
+    'schemaVersion',
+    'severity',
+    'sourceResultRef',
+    'summary',
+  ];
+  const expectedResolutionKeys = ['changeId', 'kind', 'ownerDecisionRef'];
+  for (const [index, raw] of input.value.entries()) {
+    const obj = manifestObject(raw);
+    const fail = (message: string): void => {
+      input.conflicts.push({
+        dimension: 'delivery-full-test-findings',
+        authority: input.authority,
+        message: `delivery.fullTestFindings[${index}] ${message}`,
+      });
+    };
+    if (obj === undefined || JSON.stringify(Object.keys(obj).sort()) !== JSON.stringify(expectedKeys)) {
+      fail('has unsupported shape');
+      continue;
+    }
+    const resolution = manifestObject(obj['resolution']);
+    if (resolution === undefined || JSON.stringify(Object.keys(resolution).sort()) !== JSON.stringify(expectedResolutionKeys)) {
+      fail('resolution has unsupported shape');
+      continue;
+    }
+    const findingId = obj['findingId'];
+    const authorizationRef = obj['authorizationRef'];
+    const sourceResultRef = obj['sourceResultRef'];
+    const summary = obj['summary'];
+    const changeId = resolution['changeId'];
+    const ownerDecisionRef = resolution['ownerDecisionRef'];
+    if (
+      obj['schemaVersion'] !== 1
+      || typeof findingId !== 'string'
+      || typeof authorizationRef !== 'string'
+      || typeof sourceResultRef !== 'string'
+      || obj['severity'] !== 'blocking'
+      || typeof summary !== 'string'
+      || summary.trim() === ''
+      || obj['affectedScope'] !== 'delivery'
+      || obj['requiredOwnerDecision'] !== 'corrective-change-or-cancel-delivery'
+      || resolution['kind'] !== 'corrective-change-created'
+      || typeof changeId !== 'string'
+      || typeof ownerDecisionRef !== 'string'
+    ) {
+      fail('contains invalid fields');
+      continue;
+    }
+    if (findingIds.has(findingId)) {
+      fail(`duplicates findingId ${findingId}`);
+      continue;
+    }
+    if (authorizationRefs.has(authorizationRef)) {
+      fail(`duplicates authorizationRef occurrence ${authorizationRef}`);
+      continue;
+    }
+    const authorization = ownerByRef.get(authorizationRef);
+    if (authorization?.decision !== 'authorize-full-test' || authorization.deliveryId !== input.deliveryId || authorization.changeId !== undefined) {
+      fail(`authorizationRef ${authorizationRef} does not resolve to a delivery-scoped authorize-full-test Owner fact`);
+      continue;
+    }
+    const source = byResultRef.get(sourceResultRef);
+    if (source === undefined) {
+      fail(`sourceResultRef ${sourceResultRef} does not resolve to retained failed Verification result`);
+      continue;
+    }
+    const expectedFindingId = fullTestFailureFindingIdFor({
+      deliveryId: input.deliveryId,
+      authorizationRef,
+      sourceResultRef,
+    });
+    if (findingId !== expectedFindingId) {
+      fail(`findingId does not match canonical occurrence tuple`);
+      continue;
+    }
+    if (summary !== source.summary) {
+      fail('summary does not exactly match retained Verification result summary');
+      continue;
+    }
+    if (!changeIds.has(changeId)) {
+      fail(`resolution.changeId ${changeId} does not resolve to current Delivery Change`);
+      continue;
+    }
+    const createOwner = ownerByRef.get(ownerDecisionRef);
+    if (createOwner?.decision !== 'create-change' || createOwner.deliveryId !== input.deliveryId || createOwner.changeId !== changeId) {
+      fail(`resolution.ownerDecisionRef ${ownerDecisionRef} does not resolve to matching create-change Owner fact`);
+      continue;
+    }
+    findingIds.add(findingId);
+    authorizationRefs.add(authorizationRef);
+    findings.push({
+      schemaVersion: 1,
+      findingId,
+      authorizationRef,
+      sourceResultRef,
+      severity: 'blocking',
+      summary,
+      affectedScope: 'delivery',
+      requiredOwnerDecision: 'corrective-change-or-cancel-delivery',
+      resolution: {
+        kind: 'corrective-change-created',
+        changeId,
+        ownerDecisionRef,
+      },
+    });
+  }
+  return findings;
+}
+
 function allRequiredCheckpointedForEffective(changes: readonly ChangeFact[], boundaries: readonly GitBoundaryFact[]): boolean {
   const required = changes.filter((change) => change.required);
   if (required.length === 0 || !required.every((change) => change.state === 'completed')) return false;
@@ -285,6 +505,8 @@ async function readDeliveryManifest(input: ReadFormalFactSnapshotInput): Promise
       changes: [],
       ownerAuthorizations: [],
       ownerDecisionFacts: [],
+      deliveryFullTestFailureHistory: [],
+      deliveryFullTestFindings: [],
       conflicts,
     };
   }
@@ -304,6 +526,8 @@ async function readDeliveryManifest(input: ReadFormalFactSnapshotInput): Promise
       changes: [],
       ownerAuthorizations: [],
       ownerDecisionFacts: [],
+      deliveryFullTestFailureHistory: [],
+      deliveryFullTestFindings: [],
       conflicts,
     };
   }
@@ -328,6 +552,8 @@ async function readDeliveryManifest(input: ReadFormalFactSnapshotInput): Promise
       changes: readChangeFacts(input.deliveryId, manifest['changes'], conflicts, manifestPath),
       ownerAuthorizations: [],
       ownerDecisionFacts: [],
+      deliveryFullTestFailureHistory: [],
+      deliveryFullTestFindings: [],
       conflicts,
     };
   }
@@ -375,6 +601,7 @@ async function readDeliveryManifest(input: ReadFormalFactSnapshotInput): Promise
   const execution = readFullTestExecution(fullTestObj?.['execution'], conflicts, manifestPath);
   const executionBlock = readFullTestExecutionBlock(fullTestObj?.['executionBlock'], conflicts, manifestPath);
   const result = readFullTestResult(fullTestObj?.['result'], conflicts, manifestPath);
+  const failureHistory = readFullTestFailureHistory(fullTestObj?.['failureHistory'], conflicts, manifestPath);
   if ((fullTestStatus === 'passed' || fullTestStatus === 'failed')) {
     if (result === undefined) conflicts.push({ dimension: 'delivery-full-test-result', authority: manifestPath, message: `terminal delivery.fullTestStatus=${fullTestStatus} requires verification.fullTest.result` });
     else if (result.status !== fullTestStatus) conflicts.push({ dimension: 'delivery-full-test-result', authority: manifestPath, message: 'terminal Full Test status/result mismatch' });
@@ -395,6 +622,40 @@ async function readDeliveryManifest(input: ReadFormalFactSnapshotInput): Promise
     manifestPath,
     ownerDecisionFacts,
   );
+  const currentOwnerDecisionFacts = latestCurrentOwnerDecisionFacts(ownerDecisionFacts);
+  const findings = readResolvedFullTestFindings({
+    deliveryId: input.deliveryId,
+    value: deliveryObj['fullTestFindings'],
+    history: failureHistory,
+    ownerDecisionFacts: currentOwnerDecisionFacts,
+    changes,
+    conflicts,
+    authority: manifestPath,
+  });
+  let currentFinding: FullTestFailureFinding | undefined;
+  if (fullTestStatus === 'failed' && result !== undefined) {
+    const authorizationRef = latestFullTestAuthorizationRef(input.deliveryId, currentOwnerDecisionFacts);
+    if (authorizationRef === undefined) {
+      conflicts.push({
+        dimension: 'delivery-full-test-finding',
+        authority: manifestPath,
+        message: 'failed Full Test result requires a delivery-scoped authorize-full-test Owner fact',
+      });
+    } else {
+      currentFinding = deriveFullTestFailureFinding({
+        deliveryId: input.deliveryId,
+        authorizationRef,
+        result,
+      });
+      if (findings.some((finding) => finding.authorizationRef === authorizationRef)) {
+        conflicts.push({
+          dimension: 'delivery-full-test-finding',
+          authority: manifestPath,
+          message: 'current failed Full Test occurrence is already present in resolved historical findings',
+        });
+      }
+    }
+  }
 
   return {
     deliveryState,
@@ -402,9 +663,12 @@ async function readDeliveryManifest(input: ReadFormalFactSnapshotInput): Promise
     ...(execution !== undefined && { deliveryFullTestExecution: execution }),
     ...(executionBlock !== undefined && { deliveryFullTestExecutionBlock: executionBlock }),
     ...(result !== undefined && { deliveryFullTestResult: result }),
+    deliveryFullTestFailureHistory: failureHistory,
+    deliveryFullTestFindings: findings,
+    ...(currentFinding !== undefined && { currentDeliveryFullTestFinding: currentFinding }),
     changes,
     ownerAuthorizations,
-    ownerDecisionFacts: latestCurrentOwnerDecisionFacts(ownerDecisionFacts),
+    ownerDecisionFacts: currentOwnerDecisionFacts,
     conflicts,
   };
 }
