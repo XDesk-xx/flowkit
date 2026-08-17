@@ -1,0 +1,96 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "Review 005 Proposal：A1 的主方向正确，保留了 Delivery Ready → Owner authorize-full-test → non-Action/no-Run Full Test behavior、failed→B1 handoff、authorized bounded re-entry 与 physical Verification closure。Reviewer 在 exact Base f132db761bd209e6aff72411108b8e3e1c9801f5 上累计 materialize 005，package SHA256 全通过，status=propose、next=review-propose、doctor=ok/0、git diff --check PASS、build PASS、OpenSpec strict PASS。但 Proposal 仍有三个 author blocker：future create-delivery 把当前 Flowkit 专用 npm run verify:full/120000ms binding 固化为所有未来 Delivery 的产品级常量；唯一 executable binding 与实际 structured executor 路径没有形成单一物理 authority；terminal result schema/resultRef hash domain 在 Design 与 Specs 间不一致且未冻结。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "9ccec81d0dc09c213d3554f70140153feeb62a6ecebb16055001baffc05209ee"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "A1-RP-001",
+      "severity": "blocking",
+      "title": "Future Delivery creation hard-codes the current Flowkit full-test command instead of persisting Delivery contract input",
+      "problem": "005 correctly needs an executable Full Test binding for the active 03 Delivery, but it promotes that instance binding into a repository-global product rule: Design Decision 5 freezes id=project-full-verification, command=npm run verify:full and timeoutMs=120000; Migration step 3 and task 1.3 require future `create delivery` to emit the same exact binding; the formal-fact spec then requires every active Delivery to match those exact values. This conflates the current Flowkit repository's 03 Full Test contract with the generic Delivery writer. The frozen 03 reference states that the Full Test Plan comes from the Delivery contract and includes check/method, scope, timeout, result authority and expected result/ref. Future Delivery creation must persist that per-Delivery contract, not synthesize one Flowkit-specific command for every future consumer.",
+      "contractRef": "03 Delivery Execution Loop v6 §9.3 Full Test Plan; Planned Changes v6 A1 `Full Test Plan contract`; approved Explore §5/§7 generic future-Delivery + executable-plan boundary",
+      "invariant": "A1 may migrate the current 03 Manifest to one exact executable binding, but the product-level `createDelivery` capability must remain generic: executable Full Test identity is Delivery contract input, not a hard-coded repository-global command/timeout.",
+      "evidence": [
+        "005 design.md Decision 5 fixes `project-full-verification`, `npm run verify:full`, `120000ms` and says the binding is the only Delivery-level executable authority.",
+        "005 design.md migration step 3 says `create delivery` serialization makes future Deliveries include the same binding.",
+        "005 tasks.md 1.3 requires current 03 and future Delivery creation to include the exact `project-full-verification` binding.",
+        "005 flowkit-formal-fact-reader-and-persistence spec requires the executable binding to exactly equal those current Flowkit-specific values.",
+        "03 v6 §9.3 says Full Test Plan comes from the Delivery contract and includes command/method + timeout + result authority + expected result/ref.",
+        "Exact Base `DeliveryCreateInput` currently accepts Delivery-specific `fullTestPlan`; A1 can extend that contract with one typed execution binding rather than replacing it with a global constant."
+      ],
+      "impact": "The next Delivery may happen to live in the Flowkit repo, but the product writer would permanently require every future Delivery/project to expose `npm run verify:full` with the same 120s budget. That breaks generic Delivery creation and forces later changes to modify Flowkit source merely to choose a different Full Test command.",
+      "location": "proposal.md What Changes; design.md Decisions 5 / Risks / Migration Plan; tasks.md 1.3; specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Separate the A1 executable-binding schema from the current 03 binding instance. Freeze a typed per-Delivery Full Test execution input/contract that `create delivery` validates and persists. The bounded A1 migration of the already-started 03 Delivery may inject the exact current binding (`npm run verify:full`, measured timeout), but future creation must serialize caller/Delivery-contract supplied binding rather than a global constant.",
+      "acceptance": [
+        "Current 03 migration may still produce exactly one `project-full-verification` binding with the proven command/timeout.",
+        "Future `createDelivery` input has a typed executable Full Test binding (or equivalently typed executable plan) that carries command/method, scope, timeout, result authority and expected terminal outcome.",
+        "Future manifest serialization persists the supplied Delivery contract; it does not hard-code `npm run verify:full` or `120000` as universal product constants.",
+        "Reader validates schema/uniqueness and the binding required by that Delivery, without requiring every future Delivery to equal the 03 instance.",
+        "No Tool/Verification Registry, dynamic command discovery, second plan compiler or C1 scope is introduced."
+      ]
+    },
+    {
+      "id": "A1-RP-002",
+      "severity": "blocking",
+      "title": "The declared executable binding is not yet the single physical execution authority",
+      "problem": "005 says `verification.fullTest.execution.command = npm run verify:full` is the only Delivery-level executable authority, but the execution design does not freeze how that exact binding produces the structured per-step result needed for terminal persistence. Decision 4 says the Delivery operator validates the binding and executes one Full Test attempt; Decision 8 says the Delivery service should refactor/reuse `verifyFullPlan()` so it can receive per-step status/duration. On the exact Base, `npm run verify:full` physically executes `scripts/verification.ts verify:full`, whose process contract is exit code + console lines; it does not return a typed per-step result object. If Apply calls `verifyFullPlan()`/`runVerificationPlan()` in-process to get structured data, the Manifest command is no longer the actual executable authority. If Apply spawns the bound npm command, the Proposal has not defined a machine-readable result protocol and would have to infer authority from human stdout. Either choice leaves two possible executor truths.",
+      "contractRef": "Approved Explore Proof 8 / Feasible Proposal Boundary 5–6: one executable authority, no unbound Manifest-plan vs code-plan dual truth; 03 v6 §9.3–9.4 frozen Full Test Plan + Verification authority result",
+      "invariant": "The executable binding consumed by Policy/Delivery behavior must identify the same physical route that is actually executed and that produces the structured Verification result. There must not be a manifest command authority plus a separate internal runner authority.",
+      "evidence": [
+        "005 proposal.md declares one executable binding with `command=npm run verify:full`.",
+        "005 design.md Decision 5 calls that binding the only Delivery-level executable authority.",
+        "005 design.md Decision 8 says the Delivery service receives per-step status/duration from a refactored existing full-plan runner.",
+        "Exact Base `scripts/verification.ts#main('verify:full')` calls `runVerificationPlan(verifyFullPlan())`; the public process returns an exit code and writes `step: ... status=... duration=...` console text, not a typed structured terminal payload.",
+        "005 does not specify a structured stdout/file protocol for the bound command and does not state that parsing human console output is the formal result contract."
+      ],
+      "impact": "Apply can pass tests while implementing either a direct internal runner path or a spawned command path, leaving the other path to drift. Then the Manifest binding ceases to prove what was physically executed, and Full Test timing/status publication may no longer be bound to the frozen Delivery contract.",
+      "location": "design.md Decisions 4, 5 and 8; proposal.md What Changes; tasks.md 3.1–3.2; scripts/verification.ts current verify:full surface",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Freeze one physical execution contract. Either the bound Delivery contract command is actually spawned and exposes a defined machine-readable structured result protocol, or the binding is explicitly a typed method/executor identity whose canonical implementation is the structured runner. Do not leave `command=npm run verify:full` as authority while independently calling internal helpers. Preserve the existing human CLI compatibility as a secondary view, not a second authority.",
+      "acceptance": [
+        "Proposal/Design state exactly what physical executable/method `flowkit delivery full-test` invokes.",
+        "The same bound identity deterministically yields overall status plus per-step result/timing without parsing unspecified human log text.",
+        "A counterfactual test can break the bound physical route and make Delivery Full Test execution tests fail.",
+        "`npm run verify:full` may remain an engineering CLI, but its relationship to the formal Delivery binding is explicit and non-duplicative.",
+        "No second test platform, scheduler, Registry or C1 external-tool migration is introduced."
+      ]
+    },
+    {
+      "id": "A1-RP-003",
+      "severity": "blocking",
+      "title": "Terminal Full Test result schema and content-addressed resultRef are internally inconsistent",
+      "problem": "The Proposal requires deterministic terminal persistence and a content-addressed resultRef, but the frozen artifacts do not define one unique structured payload. Design Decision 6 shows `timing.quality/typecheck/...` as integer durations only. Decision 8 says the runner returns per-step status/duration. The formal-fact spec requires each executable check to contain duration/status. Tasks 3.3 reduces this again to summary/timing publication. In addition, `resultRef = verification:full-test:<sha256>` is described as hashing the canonical structured terminal result payload, but the Proposal never defines the canonical serialization/hash domain or whether `resultRef` itself is excluded. A Reader therefore cannot deterministically recompute and validate the promised content address.",
+      "contractRef": "Planned Changes v6 A1 `passed/failed persistence deterministic` + `Full Test resultRef + timing`; 03 v6 §9.4 minimal persistence/resultRef/timing; One fact, one authority / fail-closed formal-fact reading",
+      "invariant": "The writer, Reader, B1 next-consumer and resume path must share one closed terminal-result schema and one deterministic resultRef computation rule; equivalent semantic results cannot depend on unspecified YAML key ordering or divergent duration/status shapes.",
+      "evidence": [
+        "005 design.md Decision 6 example stores six timing keys as integer values, with no per-check status objects.",
+        "005 design.md Decision 8 requires per-step status/duration.",
+        "005 formal-fact-reader spec says terminal result includes each executable check's duration/status and Reader validates check results.",
+        "005 tasks.md 3.3 says minimal summary/timing publication without freezing the check-result structure.",
+        "005 design.md defines `verification:full-test:<sha256>` over a 'canonical structured terminal result payload' but does not define canonical field order/serialization, hash input, or exclusion of the resultRef field itself."
+      ],
+      "impact": "Different Apply implementations can all look compatible with parts of the Proposal while producing incompatible Manifest result shapes. Reader/resultRef validation and B1 sourceResultRef binding would then be ambiguous, which directly defeats deterministic resume and failed-Full-Test handoff.",
+      "location": "design.md Decision 6 and 8; tasks.md 3.3/5.1; specs/flowkit-core-model/spec.md; specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Freeze one minimal terminal Full Test result schema and exact resultRef derivation. Define overall status, summary, totalDurationMs, the per-step/check representation (including both status and duration if required), deterministic ordering/keys, and the exact canonical payload that is SHA-256 hashed. Reader must be able to recompute the ref and fail closed on mismatch. Keep raw stdout/stderr and historical attempt logs out of the Manifest.",
+      "acceptance": [
+        "Design example, Specs and Tasks use the same terminal result structure.",
+        "Every persisted check/step has an unambiguous status/duration representation, or the spec explicitly removes status if it is not required.",
+        "The exact hash domain/canonicalization for `verification:full-test:<sha256>` is defined and excludes self-reference unambiguously.",
+        "Reader recomputes/validates resultRef and terminal status/result consistency deterministically.",
+        "B1 can consume failed status + resultRef/timing without interpreting raw logs or an implementation-specific shape."
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}

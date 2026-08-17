@@ -1,0 +1,259 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260817-016-review-apply",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "review-apply",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "f8a022dc21cd799a795ee510f61f5170e98a1ed41352dc40637090f9f3a37278",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:e675265cbd4ae1a9c838f6026645d798bdc5fa416c9dc6d533421e8c4314679c",
+      "decision": "contract-reset",
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "delivery-readiness-and-full-test-behavior",
+      "scope": "A1/proposal-mutation-scope-only",
+      "requiredOutcomes": [
+        "add exactly one mandatory flowkitMutationScope section covering apply and revise-apply with complete bounded deterministic selectors for production, tests, Verification mapping, current 03 Manifest migration, and A1 tasks/verification publication",
+        "do not reopen Explore or expand A1 scope",
+        "form a fresh Proposal generation for review-propose; old 010 approval applies only to old Proposal bytes",
+        "preserve all 009 Proposal product semantics and design decisions",
+        "preserve approved Explore conclusions"
+      ],
+      "sourceRef": "owner:chat-20260817-a1-minimal-contract-reset-mutation-scope"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-016-review-apply/",
+  "changeKey": "A1",
+  "changeId": "delivery-readiness-and-full-test-behavior",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-015-revise-apply/result.json",
+    "versionFingerprint": "c06a1b9f0b999a77720083685117c32686d91a98a3b8a46a165170c372d305a9",
+    "kind": "run-result"
+  },
+  "verificationInputRef": {
+    "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/verification.md",
+    "versionFingerprint": "53ee7e289128c359ebd753083ccb1d9328416e839f21b1209729135d1f6d2db0",
+    "kind": "verification-summary"
+  },
+  "reviewedRunId": "20260817-015-revise-apply",
+  "canonicalBase": "f132db761bd209e6aff72411108b8e3e1c9801f5",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-015-revise-apply/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "c06a1b9f0b999a77720083685117c32686d91a98a3b8a46a165170c372d305a9"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "41db595b409c9e6bc00babeabb32990290577eb40245a5bb769e8ec98a1f8d3e"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/design.md",
+      "versionFingerprint": "5cba169b918a65358149901c06d753f1a95478276b06e410a03ec955e2b707f6",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/proposal.md",
+      "versionFingerprint": "711305a04ced4d660f816cead45aed08ca93d8cce4926cea7d978d251c08dc14",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+      "versionFingerprint": "ee74175015bf62d0e833dda59dd79dc1e4e84379a5b57cda4ee738f1f9d8def8",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-core-model/spec.md",
+      "versionFingerprint": "391e0265340a6a774b8e3ed6fc9a3e0a7ce385d5cb0079874ee371740e68efc5",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+      "versionFingerprint": "8f0f0e005a644bc348f0eb364d43aa156e323702803d9b477eca963a85951e91",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-diagnostic-cli/spec.md",
+      "versionFingerprint": "c398e058f410555dd58c85164c276ad93da76ab9affaacb0e35269941a50febb",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "versionFingerprint": "15b692968b60e1444f742bc42df8695c59ae7f57a472c6ae310925d83262f7b7",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-policy-engine/spec.md",
+      "versionFingerprint": "937ffe2bcd05f380931b03ea2c8268e08889b7e3f7a9ff31b673472cc3df0a92",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/tasks.md",
+      "kind": "openspec-contract",
+      "versionFingerprint": "113c2076db224b50d4c84b1fdde70638cc0c0135d5b21c03ca8cbd23b4cad41e"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "delivery-readiness-and-full-test-behavior",
+      "runId": "20260817-016-review-apply",
+      "action": "review-apply",
+      "role": "reviewer",
+      "semanticInputFingerprint": "f8a022dc21cd799a795ee510f61f5170e98a1ed41352dc40637090f9f3a37278"
+    },
+    "definition": {
+      "action": "review-apply",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-implementation-and-verification",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings-plus-verification-ref",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "core-derived",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "41db595b409c9e6bc00babeabb32990290577eb40245a5bb769e8ec98a1f8d3e"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/design.md",
+        "versionFingerprint": "5cba169b918a65358149901c06d753f1a95478276b06e410a03ec955e2b707f6",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/proposal.md",
+        "versionFingerprint": "711305a04ced4d660f816cead45aed08ca93d8cce4926cea7d978d251c08dc14",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+        "versionFingerprint": "ee74175015bf62d0e833dda59dd79dc1e4e84379a5b57cda4ee738f1f9d8def8",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-core-model/spec.md",
+        "versionFingerprint": "391e0265340a6a774b8e3ed6fc9a3e0a7ce385d5cb0079874ee371740e68efc5",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+        "versionFingerprint": "8f0f0e005a644bc348f0eb364d43aa156e323702803d9b477eca963a85951e91",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-diagnostic-cli/spec.md",
+        "versionFingerprint": "c398e058f410555dd58c85164c276ad93da76ab9affaacb0e35269941a50febb",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "15b692968b60e1444f742bc42df8695c59ae7f57a472c6ae310925d83262f7b7",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-policy-engine/spec.md",
+        "versionFingerprint": "937ffe2bcd05f380931b03ea2c8268e08889b7e3f7a9ff31b673472cc3df0a92",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/tasks.md",
+        "kind": "openspec-contract",
+        "versionFingerprint": "113c2076db224b50d4c84b1fdde70638cc0c0135d5b21c03ca8cbd23b4cad41e"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-015-revise-apply/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "c06a1b9f0b999a77720083685117c32686d91a98a3b8a46a165170c372d305a9"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260817-014-review-apply",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-014-review-apply/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "aef4b5b3fef01d98a1e06024a66a20db78c7f324d920cced8d0aae9b5bc7a5e3"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "A1-RA-001",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "Non-Windows timeout is marked re-entry-safe without proving descendant process-tree termination",
+          "problem": "The approved A1 core-model spec requires that a fresh Full Test attempt MAY re-enter from `authorized` only when the prior child/process tree has been proven terminal. 013 implements owned whole-tree cancellation for Windows, but the unchanged non-Windows `runCommand()` timeout path sends SIGKILL only to the direct child PID and then returns `timed-out-cancelled` when that launcher closes. `runDeliveryFullTest()` treats `timed-out-cancelled` as a safe terminal transport failure, leaves raw status `authorized`, writes no executionBlock, and therefore permits an explicit later attempt. This proves only launcher termination, not descendant process-tree termination.",
+          "contractRef": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-core-model/spec.md — `authorized crash 可 bounded re-entry`: only when prior child/process tree is proven terminal; transport-failure scenario: only process-proven-terminal failure MAY remain authorized for re-entry",
+          "invariant": "Without a running/attempt ledger, every timeout path that leaves Full Test re-enterable at raw `authorized` must prove the entire owned prior process tree terminal. If whole-tree termination is not proven, Policy must fail closed and prohibit overlap rather than label the attempt safely cancelled.",
+          "requiredOutcome": "Close non-Windows timeout ownership to the same invariant as Windows: either prove the owned descendant process tree terminal before returning a re-entry-safe cancellation outcome, or conservatively classify unproven termination as outcome-unknown and persist/block through the existing A1 executionBlock semantics. Keep the solution bounded; do not add a scheduler, running state, attempt ledger or background supervisor.",
+          "acceptance": [
+            "A real non-Windows descendant-survival fixture cannot produce re-entry-safe `timed-out-cancelled` while any descendant remains alive.",
+            "Every timeout that leaves raw Full Test status `authorized` and permits later re-entry has a demonstrated whole-process-tree terminal proof.",
+            "If non-Windows whole-tree termination cannot be proven, the attempt becomes fail-closed/non-reenterable through the existing outcome-unknown/executionBlock boundary rather than fabricated Verification failed.",
+            "Windows taskkill whole-tree semantics remain green and unchanged in authority.",
+            "Formal Change Verification selects and physically executes the new/updated timeout regression and remains passed on the revised exact candidate."
+          ]
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [
+      {
+        "ref": "owner:e675265cbd4ae1a9c838f6026645d798bdc5fa416c9dc6d533421e8c4314679c",
+        "decision": "contract-reset",
+        "deliveryId": "20260817-01-delivery-execution-loop",
+        "changeId": "delivery-readiness-and-full-test-behavior",
+        "scope": "A1/proposal-mutation-scope-only",
+        "requiredOutcomes": [
+          "add exactly one mandatory flowkitMutationScope section covering apply and revise-apply with complete bounded deterministic selectors for production, tests, Verification mapping, current 03 Manifest migration, and A1 tasks/verification publication",
+          "do not reopen Explore or expand A1 scope",
+          "form a fresh Proposal generation for review-propose; old 010 approval applies only to old Proposal bytes",
+          "preserve all 009 Proposal product semantics and design decisions",
+          "preserve approved Explore conclusions"
+        ],
+        "sourceRef": "owner:chat-20260817-a1-minimal-contract-reset-mutation-scope"
+      }
+    ],
+    "verificationView": {
+      "status": "passed",
+      "resultRef": {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/verification.md",
+        "kind": "verification-summary",
+        "versionFingerprint": "53ee7e289128c359ebd753083ccb1d9328416e839f21b1209729135d1f6d2db0"
+      }
+    },
+    "externalContextFingerprint": "da2127d356a0bfbdc691fee12cdf4daaaacc7fbf2e022732e451155d30724b09",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "core-derived",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

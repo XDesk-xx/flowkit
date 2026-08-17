@@ -65,7 +65,7 @@ changes:
     required: true
     dependsOn:
       []
-    state: planned
+    state: completed
     architectureImpact: true
     outputs:
       - "Delivery readiness projection"
@@ -175,11 +175,63 @@ ownerDecisions:
     deliveryId: "20260817-01-delivery-execution-loop"
     sourceRef: "ref/03-delivery-start-local-ai-handoff.md"
 
+  - ref: "owner:3cbeef44b31bc1e6e1f8f10590bf4b4dfb74911ebcf35448dc2feefe48ff5cbe"
+    decision: "activate-change"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-readiness-and-full-test-behavior"
+    sourceRef: "owner:chat-20260817-a1-activation-explore"
+  - ref: "owner:775cad782bab218382b2fbeee3d7810c47c32f87ba44cc8417acee36fa464b86"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-readiness-and-full-test-behavior"
+    sourceRef: "owner:chat-20260817-a1-authorize-apply-010"
+  - ref: "owner:e675265cbd4ae1a9c838f6026645d798bdc5fa416c9dc6d533421e8c4314679c"
+    decision: "contract-reset"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-readiness-and-full-test-behavior"
+    scope: "A1/proposal-mutation-scope-only"
+    requiredOutcomes:
+      - "add exactly one mandatory flowkitMutationScope section covering apply and revise-apply with complete bounded deterministic selectors for production, tests, Verification mapping, current 03 Manifest migration, and A1 tasks/verification publication"
+      - "do not reopen Explore or expand A1 scope"
+      - "form a fresh Proposal generation for review-propose; old 010 approval applies only to old Proposal bytes"
+      - "preserve all 009 Proposal product semantics and design decisions"
+      - "preserve approved Explore conclusions"
+    sourceRef: "owner:chat-20260817-a1-minimal-contract-reset-mutation-scope"
+  - ref: "owner:33d3e9eb52e6ca05f4b246f14570f018a3abf4e9503b6f726f853b658e2e628c"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-readiness-and-full-test-behavior"
+    sourceRef: "owner:chat:20260817T1349+08:A1-011-apply"
+  - ref: "owner:71dd5ba143bdfcee6064b5aca8f7b1f9d8539e0e661c668183c0c820a3a1025d"
+    decision: "authorize-archive"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-readiness-and-full-test-behavior"
+    sourceRef: "owner:chat-20260817-a1-authorize-archive-016"
+  - ref: "owner:7b5db1763c5a2c664a4de9dcdbf82a094739a8bccde9f25daa68428adb1855d1"
+    decision: "authorize-checkpoint"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-readiness-and-full-test-behavior"
+    sourceRef: "ref/a1-post-archive-eof-hygiene-local-ai-handoff.md"
 verification:
   change:
     requireApplicableChecks: true
   fullTest:
     requiresOwnerAuthorization: true
+    execution:
+      id: "project-full-verification"
+      kind: command
+      command: "npm"
+      args:
+        - "run"
+        - "verify:full"
+      launcherMode: npm-shim
+      scope: delivery
+      timeoutMs: 120000
+      resultProtocol: flowkit-full-test-result-v1
+      resultAuthority: verification
+      expectedTerminalStatuses:
+        - "passed"
+        - "failed"
     plan:
       - "Deterministic Core suite"
       - "Change Execution Loop suite"

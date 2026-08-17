@@ -8,6 +8,7 @@ import type {
   OwnerDecisionRecord,
   OwnerDecisionRecordKind,
 } from '../domain/a1-types.js';
+import type { FullTestExecutionContract } from '../domain/full-test.js';
 import {
   AUTHORIZATION_ONLY_OWNER_DECISIONS,
 } from '../domain/a1-types.js';
@@ -68,6 +69,48 @@ function stringArray(value: unknown, field: string): readonly string[] {
     });
   }
   return value as string[];
+}
+
+
+function positiveInteger(value: unknown, field: string): number {
+  if (!Number.isInteger(value) || typeof value !== 'number' || value <= 0) {
+    throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field} must be a positive integer`, { field });
+  }
+  return value;
+}
+
+function normalizeFullTestExecution(value: unknown, field = 'fullTestExecution'): FullTestExecutionContract {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field} must be an object`);
+  }
+  const obj = value as Record<string, unknown>;
+  if (obj['kind'] !== 'command') throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field}.kind must be command`);
+  if (obj['launcherMode'] !== 'direct' && obj['launcherMode'] !== 'npm-shim') {
+    throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field}.launcherMode must be direct|npm-shim`);
+  }
+  if (obj['scope'] !== 'delivery') throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field}.scope must be delivery`);
+  if (obj['resultProtocol'] !== 'flowkit-full-test-result-v1') throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field}.resultProtocol is invalid`);
+  if (obj['resultAuthority'] !== 'verification') throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field}.resultAuthority must be verification`);
+  const statuses = obj['expectedTerminalStatuses'];
+  if (!Array.isArray(statuses) || statuses.length != 2 || statuses[0] !== 'passed' || statuses[1] !== 'failed') {
+    throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field}.expectedTerminalStatuses must be [passed, failed]`);
+  }
+  const command = nonEmpty(obj['command'], `${field}.command`);
+  if (obj['launcherMode'] === 'npm-shim' && command !== 'npm') {
+    throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field}.command must be npm when launcherMode=npm-shim`);
+  }
+  return {
+    id: nonEmpty(obj['id'], `${field}.id`),
+    kind: 'command',
+    command,
+    args: stringArray(obj['args'], `${field}.args`),
+    launcherMode: obj['launcherMode'],
+    scope: 'delivery',
+    timeoutMs: positiveInteger(obj['timeoutMs'], `${field}.timeoutMs`),
+    resultProtocol: 'flowkit-full-test-result-v1',
+    resultAuthority: 'verification',
+    expectedTerminalStatuses: ['passed', 'failed'],
+  };
 }
 
 function normalizeChangeInput(value: unknown, field = 'change'): ChangeCreateInput {
@@ -139,6 +182,7 @@ export function validateDeliveryCreateInput(value: unknown): DeliveryCreateInput
       archifyPlan,
     },
     fullTestPlan: stringArray(obj['fullTestPlan'], 'fullTestPlan'),
+    fullTestExecution: normalizeFullTestExecution(obj['fullTestExecution']),
     changes,
   };
   validateDeliveryChangeGraph(input.changes);
@@ -457,6 +501,13 @@ export async function recordOwnerDecision(
   const original = await readFile(path, 'utf8');
   const doc = DeliveryManifestDocument.parse(original);
   const insertion = doc.appendOwnerDecision(record);
+  if (insertion.changed && decision === 'authorize-full-test') {
+    const raw = snapshot.deliveryFullTestRawStatus;
+    if (raw !== 'not-ready' && raw !== 'awaiting-user-decision') {
+      throw new FlowkitError('FULL_TEST_STATUS_MISMATCH', `authorize-full-test requires raw not-ready|awaiting-user-decision, got ${String(raw)}`);
+    }
+    doc.updateFullTestStatus(raw, 'authorized');
+  }
   if (insertion.changed) {
     await (options.atomicWrite ?? atomicWriteFile)(path, doc.toString());
   }

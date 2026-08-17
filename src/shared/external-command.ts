@@ -9,7 +9,14 @@ export interface RunCommandOptions {
   /** D1 bounded test/host override. Normal Windows order is pwsh.exe then powershell.exe. */
   powerShellCandidates?: readonly string[];
   /** E1 owned Windows process-tree cancellation seam. Absence means termination cannot be proven. */
-  windowsProcessTreeCanceller?: (input: { readonly pid: number; readonly command: string; readonly args: readonly string[] }) => Promise<{ readonly terminated: boolean; readonly diagnostics: readonly string[] }>;
+  windowsProcessTreeCanceller?: (input: {
+    readonly pid: number;
+    readonly command: string;
+    readonly args: readonly string[];
+  }) => Promise<{
+    readonly terminated: boolean;
+    readonly diagnostics: readonly string[];
+  }>;
 }
 
 export interface ResolvedCommand {
@@ -24,7 +31,8 @@ interface RunCommandBase {
   readonly exitCode: number;
   readonly spawned: boolean;
   readonly timedOut: boolean;
-  readonly kind: 'spawn-failed' | 'exited' | 'timed-out-cancelled' | 'outcome-unknown';
+  readonly kind:
+    'spawn-failed' | 'exited' | 'timed-out-cancelled' | 'outcome-unknown';
   /** Bounded process fact for failures that occur before/while spawning. */
   readonly spawnError?: {
     readonly code?: string;
@@ -35,9 +43,18 @@ interface RunCommandBase {
 }
 
 export type ExternalCommandOutcome =
-  | (RunCommandBase & { readonly kind: 'spawn-failed'; readonly spawned: false; readonly timedOut: false; readonly spawnError: { readonly code?: string; readonly message: string } })
+  | (RunCommandBase & {
+      readonly kind: 'spawn-failed';
+      readonly spawned: false;
+      readonly timedOut: false;
+      readonly spawnError: { readonly code?: string; readonly message: string };
+    })
   | (RunCommandBase & { readonly kind: 'exited'; readonly timedOut: false })
-  | (RunCommandBase & { readonly kind: 'timed-out-cancelled'; readonly spawned: true; readonly timedOut: true })
+  | (RunCommandBase & {
+      readonly kind: 'timed-out-cancelled';
+      readonly spawned: true;
+      readonly timedOut: true;
+    })
   | (RunCommandBase & { readonly kind: 'outcome-unknown' });
 
 /**
@@ -71,7 +88,11 @@ export function resolveCommandForPlatform(
     return { command, args: [...args], usedWindowsLauncher: false };
   }
 
-  const comSpec = options.comSpec ?? process.env['ComSpec'] ?? process.env['COMSPEC'] ?? 'cmd.exe';
+  const comSpec =
+    options.comSpec ??
+    process.env['ComSpec'] ??
+    process.env['COMSPEC'] ??
+    'cmd.exe';
   // /d disables AutoRun; /s + /c preserves cmd.exe's documented quoting mode.
   // Passing the command as its own argv token avoids shell interpolation by
   // Flowkit. cmd.exe remains the platform launcher authority.
@@ -90,9 +111,81 @@ export function resolvePowerShellScriptCommand(
 ): ResolvedCommand {
   return {
     command: launcher,
-    args: ['-NoLogo', '-NoProfile', '-NonInteractive', '-File', script, ...args],
+    args: [
+      '-NoLogo',
+      '-NoProfile',
+      '-NonInteractive',
+      '-File',
+      script,
+      ...args,
+    ],
     usedWindowsLauncher: true,
   };
+}
+
+const POSIX_PROCESS_GROUP_CONFIRM_TIMEOUT_MS = 1_000;
+const POSIX_PROCESS_GROUP_CONFIRM_POLL_MS = 10;
+
+function positiveTimeout(value: number | undefined): boolean {
+  return value !== undefined && Number.isFinite(value) && value > 0;
+}
+
+function processGroupExists(processGroupId: number): boolean {
+  try {
+    process.kill(-processGroupId, 0);
+    return true;
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === 'ESRCH') return false;
+    throw error;
+  }
+}
+
+async function cancelOwnedPosixProcessGroup(
+  processGroupId: number,
+  command: string,
+): Promise<{
+  readonly terminated: boolean;
+  readonly diagnostics: readonly string[];
+}> {
+  const diagnostics = [
+    `processGroupId=${processGroupId}`,
+    `command=${command}`,
+  ];
+  try {
+    process.kill(-processGroupId, 'SIGKILL');
+    diagnostics.push('process-group-sigkill=sent');
+  } catch (error) {
+    const err = error as NodeJS.ErrnoException;
+    if (err.code === 'ESRCH') {
+      diagnostics.push('process-group=already-terminal');
+      return { terminated: true, diagnostics };
+    }
+    diagnostics.push(`process-group-sigkill-error=${err.code ?? err.message}`);
+    return { terminated: false, diagnostics };
+  }
+
+  const deadline = Date.now() + POSIX_PROCESS_GROUP_CONFIRM_TIMEOUT_MS;
+  while (Date.now() <= deadline) {
+    try {
+      if (!processGroupExists(processGroupId)) {
+        diagnostics.push('process-group-terminal=confirmed');
+        return { terminated: true, diagnostics };
+      }
+    } catch (error) {
+      const err = error as NodeJS.ErrnoException;
+      diagnostics.push(
+        `process-group-confirm-error=${err.code ?? err.message}`,
+      );
+      return { terminated: false, diagnostics };
+    }
+    await new Promise((resolve) =>
+      setTimeout(resolve, POSIX_PROCESS_GROUP_CONFIRM_POLL_MS),
+    );
+  }
+
+  diagnostics.push('process-group-terminal=unconfirmed');
+  return { terminated: false, diagnostics };
 }
 
 function runResolvedCommand(
@@ -100,6 +193,9 @@ function runResolvedCommand(
   options?: RunCommandOptions,
 ): Promise<ExternalCommandOutcome> {
   return new Promise((resolve) => {
+    const platform = options?.platform ?? process.platform;
+    const ownsPosixProcessGroup =
+      platform !== 'win32' && positiveTimeout(options?.timeout);
     let child;
     try {
       child = spawn(resolved.command, [...resolved.args], {
@@ -107,6 +203,7 @@ function runResolvedCommand(
         env: options?.env ?? process.env,
         stdio: ['ignore', 'pipe', 'pipe'],
         windowsHide: true,
+        ...(ownsPosixProcessGroup && { detached: true }),
       });
     } catch (error) {
       const err = error as NodeJS.ErrnoException;
@@ -153,54 +250,177 @@ function runResolvedCommand(
     child.once('error', (error: NodeJS.ErrnoException) => {
       if (!spawned) {
         finish({
-          kind: 'spawn-failed', stdout, stderr, exitCode: 1, spawned: false, timedOut: false,
-          spawnError: { ...(error.code !== undefined && { code: error.code }), message: error.message },
+          kind: 'spawn-failed',
+          stdout,
+          stderr,
+          exitCode: 1,
+          spawned: false,
+          timedOut: false,
+          spawnError: {
+            ...(error.code !== undefined && { code: error.code }),
+            message: error.message,
+          },
         });
         return;
       }
       finish({
-        kind: 'outcome-unknown', stdout, stderr, exitCode: 1, spawned: true, timedOut,
-        spawnError: { ...(error.code !== undefined && { code: error.code }), message: error.message },
+        kind: 'outcome-unknown',
+        stdout,
+        stderr,
+        exitCode: 1,
+        spawned: true,
+        timedOut,
+        spawnError: {
+          ...(error.code !== undefined && { code: error.code }),
+          message: error.message,
+        },
       });
     });
 
     child.once('close', (exitCode: number | null) => {
-      if (timedOut) {
-        if ((options?.platform ?? process.platform) === 'win32') return;
-        finish({ kind: 'timed-out-cancelled', stdout, stderr, exitCode: exitCode ?? 1, spawned: true, timedOut: true });
-        return;
-      }
-      finish({ kind: 'exited', stdout, stderr, exitCode: exitCode ?? 1, spawned, timedOut: false });
+      if (timedOut) return;
+      finish({
+        kind: 'exited',
+        stdout,
+        stderr,
+        exitCode: exitCode ?? 1,
+        spawned,
+        timedOut: false,
+      });
     });
 
     const timeout = options?.timeout;
-    if (timeout !== undefined && Number.isFinite(timeout) && timeout > 0) {
+    if (positiveTimeout(timeout)) {
       timeoutHandle = setTimeout(() => {
         timedOut = true;
-        if ((options?.platform ?? process.platform) === 'win32') {
+        if (platform === 'win32') {
           const pid = child.pid;
           const canceller = options?.windowsProcessTreeCanceller;
           if (pid === undefined || canceller === undefined) {
-            try { child.kill('SIGKILL'); } catch { /* launcher best-effort only */ }
-            finish({ kind: 'outcome-unknown', stdout, stderr, exitCode: 1, spawned, timedOut: true, processTreeDiagnostics: [
-              `launcherPid=${String(pid ?? 'unknown')}`,
-              `command=${resolved.command}`,
-              'owned-process-tree-cancellation=unavailable',
-            ] });
+            try {
+              child.kill('SIGKILL');
+            } catch {
+              /* launcher best-effort only */
+            }
+            finish({
+              kind: 'outcome-unknown',
+              stdout,
+              stderr,
+              exitCode: 1,
+              spawned,
+              timedOut: true,
+              processTreeDiagnostics: [
+                `launcherPid=${String(pid ?? 'unknown')}`,
+                `command=${resolved.command}`,
+                'owned-process-tree-cancellation=unavailable',
+              ],
+            });
             return;
           }
-          void canceller({ pid, command: resolved.command, args: resolved.args }).then((outcome) => {
-            if (outcome.terminated) {
-              finish({ kind: 'timed-out-cancelled', stdout, stderr, exitCode: 1, spawned: true, timedOut: true, processTreeDiagnostics: outcome.diagnostics });
-            } else {
-              finish({ kind: 'outcome-unknown', stdout, stderr, exitCode: 1, spawned: true, timedOut: true, processTreeDiagnostics: outcome.diagnostics });
-            }
-          }).catch((error) => {
-            finish({ kind: 'outcome-unknown', stdout, stderr, exitCode: 1, spawned: true, timedOut: true, processTreeDiagnostics: [`cancellation-error=${error instanceof Error ? error.message : String(error)}`] });
+          void canceller({
+            pid,
+            command: resolved.command,
+            args: resolved.args,
+          })
+            .then((outcome) => {
+              if (outcome.terminated) {
+                finish({
+                  kind: 'timed-out-cancelled',
+                  stdout,
+                  stderr,
+                  exitCode: 1,
+                  spawned: true,
+                  timedOut: true,
+                  processTreeDiagnostics: outcome.diagnostics,
+                });
+              } else {
+                finish({
+                  kind: 'outcome-unknown',
+                  stdout,
+                  stderr,
+                  exitCode: 1,
+                  spawned: true,
+                  timedOut: true,
+                  processTreeDiagnostics: outcome.diagnostics,
+                });
+              }
+            })
+            .catch((error) => {
+              finish({
+                kind: 'outcome-unknown',
+                stdout,
+                stderr,
+                exitCode: 1,
+                spawned: true,
+                timedOut: true,
+                processTreeDiagnostics: [
+                  `cancellation-error=${error instanceof Error ? error.message : String(error)}`,
+                ],
+              });
+            });
+          return;
+        }
+
+        const processGroupId = child.pid;
+        if (processGroupId === undefined || !ownsPosixProcessGroup) {
+          try {
+            child.kill('SIGKILL');
+          } catch {
+            /* launcher best-effort only */
+          }
+          finish({
+            kind: 'outcome-unknown',
+            stdout,
+            stderr,
+            exitCode: 1,
+            spawned,
+            timedOut: true,
+            processTreeDiagnostics: [
+              `processGroupId=${String(processGroupId ?? 'unknown')}`,
+              `command=${resolved.command}`,
+              'owned-process-group-cancellation=unavailable',
+            ],
           });
           return;
         }
-        try { child.kill('SIGKILL'); } catch { /* close/error remains terminal transport signal */ }
+
+        void cancelOwnedPosixProcessGroup(processGroupId, resolved.command)
+          .then((outcome) => {
+            if (outcome.terminated) {
+              finish({
+                kind: 'timed-out-cancelled',
+                stdout,
+                stderr,
+                exitCode: 1,
+                spawned: true,
+                timedOut: true,
+                processTreeDiagnostics: outcome.diagnostics,
+              });
+            } else {
+              finish({
+                kind: 'outcome-unknown',
+                stdout,
+                stderr,
+                exitCode: 1,
+                spawned: true,
+                timedOut: true,
+                processTreeDiagnostics: outcome.diagnostics,
+              });
+            }
+          })
+          .catch((error) => {
+            finish({
+              kind: 'outcome-unknown',
+              stdout,
+              stderr,
+              exitCode: 1,
+              spawned: true,
+              timedOut: true,
+              processTreeDiagnostics: [
+                `process-group-cancellation-error=${error instanceof Error ? error.message : String(error)}`,
+              ],
+            });
+          });
       }, timeout);
       timeoutHandle.unref?.();
     }
@@ -223,11 +443,18 @@ export async function runCommand(
 ): Promise<ExternalCommandOutcome> {
   const platform = options?.platform ?? process.platform;
   if (platform === 'win32' && /\.ps1$/i.test(command)) {
-    const candidates = options?.powerShellCandidates ?? ['pwsh.exe', 'powershell.exe'];
+    const candidates = options?.powerShellCandidates ?? [
+      'pwsh.exe',
+      'powershell.exe',
+    ];
     for (let index = 0; index < candidates.length; index += 1) {
       const launcher = candidates[index]!;
-      const result = await runResolvedCommand(resolvePowerShellScriptCommand(command, args, launcher), options);
-      const launcherAbsent = !result.spawned && result.spawnError?.code === 'ENOENT';
+      const result = await runResolvedCommand(
+        resolvePowerShellScriptCommand(command, args, launcher),
+        options,
+      );
+      const launcherAbsent =
+        !result.spawned && result.spawnError?.code === 'ENOENT';
       if (!launcherAbsent) return result;
       if (index === candidates.length - 1) {
         return {
@@ -241,5 +468,8 @@ export async function runCommand(
     }
   }
 
-  return runResolvedCommand(resolveCommandForPlatform(command, args, options), options);
+  return runResolvedCommand(
+    resolveCommandForPlatform(command, args, options),
+    options,
+  );
 }

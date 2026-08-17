@@ -159,10 +159,10 @@ describe('diagnose — blocked reasons (task 7.4, 10.7)', () => {
     assert.equal(d.reason, 'ambiguous-state');
   });
 
-  it('ambiguous-state when all completed but status not advanced (inconsistent)', () => {
+  it('pre-A1 all-completed not-ready without an execution contract remains delivery-behavior-not-implemented', () => {
     const snap = allCompletedSnapshot({ fullTestStatus: 'not-ready' });
     const d = diagnose(snap);
-    assert.equal(d.reason, 'ambiguous-state');
+    assert.equal(d.reason, 'delivery-behavior-not-implemented');
   });
 
   it('verification-facts-unavailable when apply approved (D1-7)', () => {

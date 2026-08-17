@@ -1,10 +1,15 @@
 import assert from 'node:assert/strict';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, it } from 'node:test';
 
 import {
   executeProjectStep,
   fullTestEnvironment,
   runVerificationPlan,
+  runVerificationPlanDetailed,
+  main as verificationMain,
   verifyChangePlan,
   verifyFullPlan,
 } from '../../../scripts/verification.js';
@@ -88,6 +93,44 @@ describe('F1 verification plans', () => {
       assert.match(logs.join('\n'), /step: full status=failed duration=1\.234s/);
     } finally {
       console.log = originalLog;
+    }
+  });
+
+
+  it('builds the closed Full Test protocol in physical execution order', async () => {
+    const result = await runVerificationPlanDetailed(verifyFullPlan().slice(0, 2), async (step) => ({
+      exitCode: 0,
+      durationMs: step.name === 'quality' ? 3.2 : 4.8,
+    }));
+    assert.equal(result.exitCode, 0);
+    assert.equal(result.payload.schemaVersion, 1);
+    assert.equal(result.payload.status, 'passed');
+    assert.deepEqual(result.payload.checks, [
+      { id: 'quality', status: 'passed', durationMs: 3 },
+      { id: 'typecheck', status: 'passed', durationMs: 5 },
+    ]);
+  });
+
+  it('verify:full main publishes the same structured child protocol when FLOWKIT_FULL_TEST_RESULT_PATH is provided', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'flowkit-verification-protocol-'));
+    const path = join(root, 'result.json');
+    const previous = process.env['FLOWKIT_FULL_TEST_RESULT_PATH'];
+    process.env['FLOWKIT_FULL_TEST_RESULT_PATH'] = path;
+    try {
+      const payload = {
+        schemaVersion: 1 as const,
+        status: 'passed' as const,
+        summary: 'all full-test checks passed',
+        totalDurationMs: 9,
+        checks: [{ id: 'full', status: 'passed' as const, durationMs: 9 }],
+      };
+      const code = await verificationMain(['verify:full'], async () => ({ exitCode: 0, payload }));
+      assert.equal(code, 0);
+      assert.deepEqual(JSON.parse(await readFile(path, 'utf8')), payload);
+    } finally {
+      if (previous === undefined) delete process.env['FLOWKIT_FULL_TEST_RESULT_PATH'];
+      else process.env['FLOWKIT_FULL_TEST_RESULT_PATH'] = previous;
+      await rm(root, { recursive: true, force: true });
     }
   });
 

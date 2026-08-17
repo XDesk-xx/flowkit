@@ -1,0 +1,23 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-apply",
+    "executionStatus": "completed",
+    "summary": "关闭 A1-RA-001：POSIX timeout command 在存在 timeout 时以 detached owned process group 启动；超时后对整个 process group 发送 SIGKILL，并在 bounded window 内用 process-group existence probe 确认 terminal。只有确认 whole owned group terminal 才返回 re-entry-safe timed-out-cancelled；无法确认、缺少 pgid 或 cancellation/confirmation error 均返回 outcome-unknown，继续复用现有 executionBlock fail-closed 语义。Windows taskkill whole-tree authority 保持不变。新增真实 descendant-survival regression，014 旧 direct-child-only kill 反事实下失败，修复后通过；未改变其他 A1 contract。",
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-014-review-apply/result.json",
+      "versionFingerprint": "aef4b5b3fef01d98a1e06024a66a20db78c7f324d920cced8d0aae9b5bc7a5e3",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "f541bc8010087c19f6d0894e675e26a7d328632e04e230b05e49fad409569f23",
+    "currentVerification": {
+      "logicalRef": "openspec/changes/delivery-readiness-and-full-test-behavior/verification.md",
+      "versionFingerprint": "53ee7e289128c359ebd753083ccb1d9328416e839f21b1209729135d1f6d2db0",
+      "selectionFingerprint": "624bba0ddfd11b2103db0d7009a682388d7852a83d67fad480b620b8d7306868",
+      "status": "passed"
+    }
+  }
+}

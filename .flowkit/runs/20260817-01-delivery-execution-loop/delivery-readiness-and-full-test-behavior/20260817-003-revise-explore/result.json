@@ -1,0 +1,24 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-explore",
+    "executionStatus": "completed",
+    "summary": "Revise Explore 完成：关闭 A1-RE-001 与 A1-RE-002。对 exact Base 物理执行 Full Test 六步并证明 build 仅生成 ignored dist/**、full 811/811 两次 PASS、post-success/pre-publication 重入不产生 durable lifecycle authority；同时用不同 Delivery id + X1→X2 multi-Change + 两个 checkpoint + Owner authorize-full-test + fresh process reread 的 disposable fixture 证明跨 Delivery genericity / activation persistence。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/explore.md",
+        "versionFingerprint": "95614aa100f66852cc163a31e8421ad5598210b98b3e07075f8b16afbc334ffc",
+        "kind": "produced-artifact"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-002-review-explore/result.json",
+      "versionFingerprint": "c19b45a544e01e1fd7c1f1904310b5fd5e01fb0a4276cc97cd8042145172d38f",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "b2ae98ff58317e1e1e6e89305b80b812bb958172c7921f2203b544568a095829"
+  }
+}

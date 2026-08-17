@@ -82,6 +82,7 @@ export const BLOCKED_REASONS = [
   'ambiguous-state',
   'dependency-incomplete',
   'full-test-failed',
+  'full-test-execution-outcome-unknown',
   'non-author-review-blocker',
   'delivery-behavior-not-implemented',
   'archive-terminal-recovery-required',
@@ -188,6 +189,12 @@ export interface PolicyOwnerDecisionResult {
   readonly context: OwnerDecisionContext;
 }
 
+export interface PolicyDeliveryBehaviorResult {
+  readonly kind: 'delivery-behavior';
+  readonly behavior: 'full-test';
+  readonly context: OwnerDecisionContext;
+}
+
 /**
  * The `blocked` variant: the system cannot determine a unique legal next
  * action (conflict, missing facts, ambiguity, dependency incomplete, full-test
@@ -211,6 +218,7 @@ export interface PolicyBlockedResult {
 export type PolicyResult =
   | PolicyActionResult
   | PolicyOwnerDecisionResult
+  | PolicyDeliveryBehaviorResult
   | PolicyBlockedResult;
 
 // ---------------------------------------------------------------------------
@@ -232,6 +240,13 @@ export function ownerDecisionResult(
   context: OwnerDecisionContext = {},
 ): PolicyOwnerDecisionResult {
   return { kind: 'owner-decision', decision, context };
+}
+
+export function deliveryBehaviorResult(
+  behavior: 'full-test',
+  context: OwnerDecisionContext = {},
+): PolicyDeliveryBehaviorResult {
+  return { kind: 'delivery-behavior', behavior, context };
 }
 
 /**

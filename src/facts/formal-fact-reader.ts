@@ -29,9 +29,11 @@ import {
   expectedSourceReviewActionFor,
 } from '../persistence/result-ref-adapter.js';
 import { BLOCKING_AUTHORITIES } from '../domain/types.js';
+import { fullTestResultRefFor } from '../domain/full-test.js';
 import type { BlockingAuthority, ResultRef, RunStatus, VerificationStatus } from '../domain/types.js';
 import { AUTHORIZATION_ONLY_OWNER_DECISIONS, OWNER_DECISION_RECORD_KINDS } from '../domain/a1-types.js';
 import type { AuthorizationOnlyOwnerDecision, OwnerDecisionRecordKind } from '../domain/a1-types.js';
+import type { FullTestCheckResult, FullTestExecutionBlock, FullTestExecutionContract, FullTestTerminalResult } from '../domain/full-test.js';
 import { ownerDecisionRefFor } from '../domain/owner-provenance.js';
 import { isPreA1LegacyArchitectureImpactIdentity } from './pre-a1-legacy-architecture-impact.js';
 import { FlowkitError } from '../shared/errors.js';
@@ -146,10 +148,23 @@ export async function readFormalFactSnapshotOperation(
 
 
 
+  const rawFullTestStatus = manifestResult.deliveryFullTestStatus;
+  const effectiveFullTestStatus = rawFullTestStatus === 'not-ready'
+    && activeChangeId === undefined
+    && manifestResult.deliveryFullTestExecution !== undefined
+    && conflicts.length === 0
+    && allRequiredCheckpointedForEffective(manifestResult.changes, gitBoundaries)
+    ? 'awaiting-user-decision'
+    : rawFullTestStatus;
+
   const snapshot: FormalFactSnapshot = {
     deliveryId: input.deliveryId,
     deliveryState: manifestResult.deliveryState,
-    deliveryFullTestStatus: manifestResult.deliveryFullTestStatus,
+    deliveryFullTestStatus: effectiveFullTestStatus,
+    ...(rawFullTestStatus !== undefined && { deliveryFullTestRawStatus: rawFullTestStatus }),
+    ...(manifestResult.deliveryFullTestExecution !== undefined && { deliveryFullTestExecution: manifestResult.deliveryFullTestExecution }),
+    ...(manifestResult.deliveryFullTestExecutionBlock !== undefined && { deliveryFullTestExecutionBlock: manifestResult.deliveryFullTestExecutionBlock }),
+    ...(manifestResult.deliveryFullTestResult !== undefined && { deliveryFullTestResult: manifestResult.deliveryFullTestResult }),
     ...(verificationProjection.status !== undefined && {
       changeVerificationStatus: verificationProjection.status,
     }),
@@ -172,10 +187,92 @@ export async function readFormalFactSnapshotOperation(
 interface ManifestResult {
   readonly deliveryState: FormalFactSnapshot['deliveryState'];
   readonly deliveryFullTestStatus: FormalFactSnapshot['deliveryFullTestStatus'];
+  readonly deliveryFullTestExecution?: FullTestExecutionContract;
+  readonly deliveryFullTestExecutionBlock?: FullTestExecutionBlock;
+  readonly deliveryFullTestResult?: FullTestTerminalResult;
   readonly changes: readonly ChangeFact[];
   readonly ownerAuthorizations: readonly OwnerAuthorizationFact[];
   readonly ownerDecisionFacts: readonly OwnerDecisionFact[];
   readonly conflicts: readonly FactConflict[];
+}
+
+
+function manifestObject(value: unknown): Record<string, unknown> | undefined {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : undefined;
+}
+
+function readFullTestExecution(value: unknown, conflicts: FactConflict[], authority: string): FullTestExecutionContract | undefined {
+  if (value === undefined) return undefined;
+  const obj = manifestObject(value);
+  const conflict = (message: string): undefined => {
+    conflicts.push({ dimension: 'delivery-full-test-execution', authority, message });
+    return undefined;
+  };
+  if (obj === undefined) return conflict('verification.fullTest.execution must be a mapping');
+  const keys = Object.keys(obj).sort();
+  const expected = ['args','command','expectedTerminalStatuses','id','kind','launcherMode','resultAuthority','resultProtocol','scope','timeoutMs'];
+  if (JSON.stringify(keys) !== JSON.stringify(expected)) return conflict('verification.fullTest.execution has unsupported fields');
+  const id = obj['id']; const command = obj['command']; const args = obj['args']; const timeoutMs = obj['timeoutMs'];
+  if (typeof id !== 'string' || id.trim() === '' || typeof command !== 'string' || command.trim() === '') return conflict('verification.fullTest.execution id/command must be non-empty strings');
+  if (!Array.isArray(args) || args.some((item) => typeof item !== 'string' || item.trim() === '')) return conflict('verification.fullTest.execution args must be an array of non-empty strings');
+  if (obj['kind'] !== 'command' || (obj['launcherMode'] !== 'direct' && obj['launcherMode'] !== 'npm-shim') || obj['scope'] !== 'delivery') return conflict('verification.fullTest.execution kind/launcherMode/scope is invalid');
+  if (obj['launcherMode'] === 'npm-shim' && command !== 'npm') return conflict('verification.fullTest.execution npm-shim requires command=npm');
+  if (!Number.isInteger(timeoutMs) || typeof timeoutMs !== 'number' || timeoutMs <= 0) return conflict('verification.fullTest.execution timeoutMs must be a positive integer');
+  if (obj['resultProtocol'] !== 'flowkit-full-test-result-v1' || obj['resultAuthority'] !== 'verification') return conflict('verification.fullTest.execution result protocol/authority is invalid');
+  const statuses = obj['expectedTerminalStatuses'];
+  if (!Array.isArray(statuses) || statuses.length !== 2 || statuses[0] !== 'passed' || statuses[1] !== 'failed') return conflict('verification.fullTest.execution expectedTerminalStatuses must be [passed, failed]');
+  return { id, kind: 'command', command, args: args as string[], launcherMode: obj['launcherMode'], scope: 'delivery', timeoutMs, resultProtocol: 'flowkit-full-test-result-v1', resultAuthority: 'verification', expectedTerminalStatuses: ['passed','failed'] };
+}
+
+function readFullTestExecutionBlock(value: unknown, conflicts: FactConflict[], authority: string): FullTestExecutionBlock | undefined {
+  if (value === undefined) return undefined;
+  const obj = manifestObject(value);
+  const conflict = (message: string): undefined => { conflicts.push({ dimension: 'delivery-full-test-execution-block', authority, message }); return undefined; };
+  if (obj === undefined) return conflict('verification.fullTest.executionBlock must be a mapping');
+  if (JSON.stringify(Object.keys(obj).sort()) !== JSON.stringify(['reason','schemaVersion','summary'])) return conflict('verification.fullTest.executionBlock has unsupported fields');
+  if (obj['schemaVersion'] !== 1 || obj['reason'] !== 'outcome-unknown' || typeof obj['summary'] !== 'string' || obj['summary'].trim() === '') return conflict('verification.fullTest.executionBlock is invalid');
+  return { schemaVersion: 1, reason: 'outcome-unknown', summary: obj['summary'] };
+}
+
+function readFullTestResult(value: unknown, conflicts: FactConflict[], authority: string): FullTestTerminalResult | undefined {
+  if (value === undefined) return undefined;
+  const obj = manifestObject(value);
+  const conflict = (message: string): undefined => { conflicts.push({ dimension: 'delivery-full-test-result', authority, message }); return undefined; };
+  if (obj === undefined) return conflict('verification.fullTest.result must be a mapping');
+  const expected = ['checks','resultRef','schemaVersion','status','summary','totalDurationMs'];
+  if (JSON.stringify(Object.keys(obj).sort()) !== JSON.stringify(expected)) return conflict('verification.fullTest.result has unsupported fields');
+  if (obj['schemaVersion'] !== 1 || (obj['status'] !== 'passed' && obj['status'] !== 'failed') || typeof obj['summary'] !== 'string' || obj['summary'].trim() === '') return conflict('verification.fullTest.result header is invalid');
+  if (!Number.isInteger(obj['totalDurationMs']) || typeof obj['totalDurationMs'] !== 'number' || obj['totalDurationMs'] < 0) return conflict('verification.fullTest.result totalDurationMs must be a non-negative integer');
+  if (!Array.isArray(obj['checks'])) return conflict('verification.fullTest.result checks must be an array');
+  const checks: FullTestCheckResult[] = [];
+  const ids = new Set<string>();
+  for (const [index, raw] of obj['checks'].entries()) {
+    const check = manifestObject(raw);
+    if (check === undefined || JSON.stringify(Object.keys(check).sort()) !== JSON.stringify(['durationMs','id','status'])) return conflict(`verification.fullTest.result checks[${index}] is invalid`);
+    if (typeof check['id'] !== 'string' || check['id'].trim() === '' || ids.has(check['id'])) return conflict(`verification.fullTest.result checks[${index}].id is invalid/duplicate`);
+    if (check['status'] !== 'passed' && check['status'] !== 'failed') return conflict(`verification.fullTest.result checks[${index}].status is invalid`);
+    if (!Number.isInteger(check['durationMs']) || typeof check['durationMs'] !== 'number' || check['durationMs'] < 0) return conflict(`verification.fullTest.result checks[${index}].durationMs is invalid`);
+    ids.add(check['id']);
+    checks.push({ id: check['id'], status: check['status'], durationMs: check['durationMs'] });
+  }
+  if (typeof obj['resultRef'] !== 'string') return conflict('verification.fullTest.result resultRef must be a string');
+  const status = obj['status'] as 'passed' | 'failed';
+  const payload = { schemaVersion: 1 as const, status, summary: obj['summary'], totalDurationMs: obj['totalDurationMs'], checks };
+  const expectedRef = fullTestResultRefFor(payload);
+  if (obj['resultRef'] !== expectedRef) return conflict('verification.fullTest.result resultRef does not match canonical payload');
+  return { ...payload, resultRef: obj['resultRef'] };
+}
+
+function allRequiredCheckpointedForEffective(changes: readonly ChangeFact[], boundaries: readonly GitBoundaryFact[]): boolean {
+  const required = changes.filter((change) => change.required);
+  if (required.length === 0 || !required.every((change) => change.state === 'completed')) return false;
+  const checkpoints = boundaries.filter((boundary) => boundary.kind === 'change-checkpoint');
+  const structured = new Set(checkpoints.flatMap((boundary) => boundary.changeId === undefined ? [] : [boundary.changeId]));
+  const legacyCount = checkpoints.filter((boundary) => boundary.changeId === undefined).length;
+  const legacyCovered = new Set(required.filter((change) => !structured.has(change.id)).slice(0, legacyCount).map((change) => change.id));
+  return required.every((change) => structured.has(change.id) || legacyCovered.has(change.id));
 }
 
 async function readDeliveryManifest(input: ReadFormalFactSnapshotInput): Promise<ManifestResult> {
@@ -273,6 +370,21 @@ async function readDeliveryManifest(input: ReadFormalFactSnapshotInput): Promise
     fullTestStatus = undefined;
   }
 
+  const verificationObj = manifestObject(manifest['verification']);
+  const fullTestObj = verificationObj === undefined ? undefined : manifestObject(verificationObj['fullTest']);
+  const execution = readFullTestExecution(fullTestObj?.['execution'], conflicts, manifestPath);
+  const executionBlock = readFullTestExecutionBlock(fullTestObj?.['executionBlock'], conflicts, manifestPath);
+  const result = readFullTestResult(fullTestObj?.['result'], conflicts, manifestPath);
+  if ((fullTestStatus === 'passed' || fullTestStatus === 'failed')) {
+    if (result === undefined) conflicts.push({ dimension: 'delivery-full-test-result', authority: manifestPath, message: `terminal delivery.fullTestStatus=${fullTestStatus} requires verification.fullTest.result` });
+    else if (result.status !== fullTestStatus) conflicts.push({ dimension: 'delivery-full-test-result', authority: manifestPath, message: 'terminal Full Test status/result mismatch' });
+  } else if (result !== undefined) {
+    conflicts.push({ dimension: 'delivery-full-test-result', authority: manifestPath, message: 'non-terminal Full Test status must not carry verification.fullTest.result' });
+  }
+  if (executionBlock !== undefined && fullTestStatus !== 'authorized') {
+    conflicts.push({ dimension: 'delivery-full-test-execution-block', authority: manifestPath, message: 'executionBlock is only valid while raw Full Test status is authorized' });
+  }
+
   const changes = readChangeFacts(input.deliveryId, manifest['changes'], conflicts, manifestPath);
   const ownerDecisionFacts: OwnerDecisionFact[] = [];
   const ownerAuthorizations = readOwnerAuthorizations(
@@ -287,6 +399,9 @@ async function readDeliveryManifest(input: ReadFormalFactSnapshotInput): Promise
   return {
     deliveryState,
     deliveryFullTestStatus: fullTestStatus,
+    ...(execution !== undefined && { deliveryFullTestExecution: execution }),
+    ...(executionBlock !== undefined && { deliveryFullTestExecutionBlock: executionBlock }),
+    ...(result !== undefined && { deliveryFullTestResult: result }),
     changes,
     ownerAuthorizations,
     ownerDecisionFacts: latestCurrentOwnerDecisionFacts(ownerDecisionFacts),

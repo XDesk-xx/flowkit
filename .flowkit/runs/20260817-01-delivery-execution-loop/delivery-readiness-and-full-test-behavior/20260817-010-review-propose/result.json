@@ -1,0 +1,29 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "Review 009 Revise Proposal：008 的 A1-RP-004/005/006 均已关闭。Per-Delivery execution contract 新增 bounded launcherMode；current 03 npm-shim 明确定义 non-win32 npm、win32 npm.cmd→ComSpec，且 future Delivery 仍由 caller supplied contract 决定。Windows timeout 复用 existing windowsProcessTreeCanceller seam，只有 proven whole-tree termination 才允许 timed-out-cancelled/authorized re-entry；无法证明时原子持久化最小 executionBlock 并阻止新 attempt。Terminal failed/resultRef 只允许由 valid flowkit-full-test-result-v1 + matching child exit 发布；spawn/timeout/protocol transport failure 不再伪造 Verification failed，B1 只消费 genuine failed terminal projection。Reviewer 独立 materialize cumulative candidate @ f132db761bd209e6aff72411108b8e3e1c9801f5，package SHA256 PASS，git diff --check PASS，build PASS，OpenSpec strict PASS，external-command + A1 write-side focused regressions 33/33 PASS；status=propose、last-run=009、next=review-propose、doctor=ok/0。未发现新的 scope leakage、dual authority、Full Test Action/Run 化或 B1/C1/F1 越界。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "ec79011078264a834ab1112d6b90fd4e6b24d1e67e7a1c2bfad8b5c1f174db40"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [],
+  "reviewFindingConvergence": [
+    {
+      "findingId": "A1-RP-004",
+      "state": "resolved"
+    },
+    {
+      "findingId": "A1-RP-005",
+      "state": "resolved"
+    },
+    {
+      "findingId": "A1-RP-006",
+      "state": "resolved"
+    }
+  ]
+}

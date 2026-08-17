@@ -34,6 +34,7 @@ import type {
   OwnerFactRef,
 } from '../domain/types.js';
 import type { ArchitectureImpactFact, AuthorizationOnlyOwnerDecision, OwnerDecisionRecordKind } from '../domain/a1-types.js';
+import type { FullTestExecutionBlock, FullTestExecutionContract, FullTestTerminalResult } from '../domain/full-test.js';
 import type { FormalAction } from '../domain/actions.js';
 
 /**
@@ -198,7 +199,13 @@ export interface FormalFactSnapshot {
   /** Delivery id of the active Delivery (empty string when none active). */
   readonly deliveryId: string;
   readonly deliveryState: DeliveryState | undefined;
+  /** Effective Full Test lifecycle projection used by Policy/diagnostics. */
   readonly deliveryFullTestStatus: FullTestStatus | undefined;
+  /** Raw persisted delivery.fullTestStatus from the Manifest. */
+  readonly deliveryFullTestRawStatus?: FullTestStatus;
+  readonly deliveryFullTestExecution?: FullTestExecutionContract;
+  readonly deliveryFullTestExecutionBlock?: FullTestExecutionBlock;
+  readonly deliveryFullTestResult?: FullTestTerminalResult;
   /** Current active Change Verification status projected from verification.md. */
   readonly changeVerificationStatus?: VerificationStatus;
   /**

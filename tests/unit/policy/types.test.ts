@@ -54,6 +54,7 @@ describe('policy types (task 1.1-1.7, 10.1)', () => {
         'ambiguous-state',
         'dependency-incomplete',
         'full-test-failed',
+        'full-test-execution-outcome-unknown',
         'non-author-review-blocker',
         'delivery-behavior-not-implemented',
         'archive-terminal-recovery-required',

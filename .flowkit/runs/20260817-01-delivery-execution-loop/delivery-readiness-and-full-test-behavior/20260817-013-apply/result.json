@@ -1,0 +1,18 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "apply",
+    "executionStatus": "completed",
+    "summary": "实现 A1 Delivery readiness 与 Owner-authorized Full Test behavior：generic per-Delivery execution contract、read-only effective readiness、atomic authorization/terminal publication、single physical structured verification route、Windows whole-tree fail-closed recovery、no-Run CLI behavior，以及 physical Verification closure。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "5a73cbf23a578f3cf208a1bf712a2e3addc068f1ad5950eed669663e1ca7845b",
+    "currentVerification": {
+      "logicalRef": "openspec/changes/delivery-readiness-and-full-test-behavior/verification.md",
+      "versionFingerprint": "23447d8d3a8e9a80429a2360f7e42bea540002aae6190dcc447ff6b9513411c1",
+      "selectionFingerprint": "dea17ad9aec34014ed30fbfa8faf153407fc7d4ba65d44bc9248a4457d4745e5",
+      "status": "passed"
+    }
+  }
+}

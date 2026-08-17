@@ -5,6 +5,7 @@ import { join } from 'node:path';
 
 import { FlowkitError } from '../../../src/shared/errors.js';
 import { getActionDefinition } from '../../../src/domain/actions.js';
+import { canonicalFullTestPayload, fullTestResultRefFor } from '../../../src/domain/full-test.js';
 import {
   validateActionResultWithoutRunRef,
   validateResultRefProjection,
@@ -1361,6 +1362,29 @@ describe('validateActionResultApplicability (Q1-RA-010)', () => {
   });
 });
 
+
+
+describe('A1 Full Test canonical result identity', () => {
+  it('hashes only the exact closed protocol payload in physical check order and excludes resultRef itself', () => {
+    const payload = {
+      schemaVersion: 1 as const,
+      status: 'passed' as const,
+      summary: 'all full-test checks passed',
+      totalDurationMs: 12,
+      checks: [
+        { id: 'quality', status: 'passed' as const, durationMs: 5 },
+        { id: 'full', status: 'passed' as const, durationMs: 7 },
+      ],
+    };
+    assert.equal(canonicalFullTestPayload(payload), JSON.stringify(payload));
+    const first = fullTestResultRefFor(payload);
+    const same = fullTestResultRefFor({ ...payload, checks: [...payload.checks] });
+    const reordered = fullTestResultRefFor({ ...payload, checks: [...payload.checks].reverse() });
+    assert.equal(first, same);
+    assert.match(first, /^verification:full-test:[0-9a-f]{64}$/);
+    assert.notEqual(first, reordered);
+  });
+});
 
 describe('Q1 blockingAuthority writer and reader compatibility', () => {
   const base = {

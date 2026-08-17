@@ -1,0 +1,975 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260817-015-revise-apply",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "revise-apply",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "4f9813661d51dcd51ab07032e0a1fd34bca6a79626a6f51ee04da6889219248b",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:e675265cbd4ae1a9c838f6026645d798bdc5fa416c9dc6d533421e8c4314679c",
+      "decision": "contract-reset",
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "delivery-readiness-and-full-test-behavior",
+      "scope": "A1/proposal-mutation-scope-only",
+      "requiredOutcomes": [
+        "add exactly one mandatory flowkitMutationScope section covering apply and revise-apply with complete bounded deterministic selectors for production, tests, Verification mapping, current 03 Manifest migration, and A1 tasks/verification publication",
+        "do not reopen Explore or expand A1 scope",
+        "form a fresh Proposal generation for review-propose; old 010 approval applies only to old Proposal bytes",
+        "preserve all 009 Proposal product semantics and design decisions",
+        "preserve approved Explore conclusions"
+      ],
+      "sourceRef": "owner:chat-20260817-a1-minimal-contract-reset-mutation-scope"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-015-revise-apply/",
+  "changeKey": "A1",
+  "changeId": "delivery-readiness-and-full-test-behavior",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-014-review-apply/result.json",
+    "versionFingerprint": "aef4b5b3fef01d98a1e06024a66a20db78c7f324d920cced8d0aae9b5bc7a5e3",
+    "kind": "run-result"
+  },
+  "sourceReviewRun": "20260817-014-review-apply",
+  "sourceReviewVerdict": "changes-requested",
+  "canonicalBase": "f132db761bd209e6aff72411108b8e3e1c9801f5",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-014-review-apply/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "aef4b5b3fef01d98a1e06024a66a20db78c7f324d920cced8d0aae9b5bc7a5e3"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "41db595b409c9e6bc00babeabb32990290577eb40245a5bb769e8ec98a1f8d3e"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/design.md",
+      "versionFingerprint": "5cba169b918a65358149901c06d753f1a95478276b06e410a03ec955e2b707f6",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/proposal.md",
+      "versionFingerprint": "711305a04ced4d660f816cead45aed08ca93d8cce4926cea7d978d251c08dc14",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+      "versionFingerprint": "ee74175015bf62d0e833dda59dd79dc1e4e84379a5b57cda4ee738f1f9d8def8",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-core-model/spec.md",
+      "versionFingerprint": "391e0265340a6a774b8e3ed6fc9a3e0a7ce385d5cb0079874ee371740e68efc5",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+      "versionFingerprint": "8f0f0e005a644bc348f0eb364d43aa156e323702803d9b477eca963a85951e91",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-diagnostic-cli/spec.md",
+      "versionFingerprint": "c398e058f410555dd58c85164c276ad93da76ab9affaacb0e35269941a50febb",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "versionFingerprint": "15b692968b60e1444f742bc42df8695c59ae7f57a472c6ae310925d83262f7b7",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-policy-engine/spec.md",
+      "versionFingerprint": "937ffe2bcd05f380931b03ea2c8268e08889b7e3f7a9ff31b673472cc3df0a92",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/tasks.md",
+      "versionFingerprint": "e203203afcf09477a0fa07b6e19553d094af7763785da89c2aa75e0d0b1cd92a",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "delivery-readiness-and-full-test-behavior",
+      "runId": "20260817-015-revise-apply",
+      "action": "revise-apply",
+      "role": "author",
+      "semanticInputFingerprint": "4f9813661d51dcd51ab07032e0a1fd34bca6a79626a6f51ee04da6889219248b"
+    },
+    "definition": {
+      "action": "revise-apply",
+      "version": 1,
+      "role": "author",
+      "goalClass": "close-apply-author-findings",
+      "mutationClass": "implementation-and-verification-revision",
+      "outputClass": "revised-implementation-candidate",
+      "terminalContract": {
+        "kind": "implementation",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": true,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "41db595b409c9e6bc00babeabb32990290577eb40245a5bb769e8ec98a1f8d3e"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/design.md",
+        "versionFingerprint": "5cba169b918a65358149901c06d753f1a95478276b06e410a03ec955e2b707f6",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/proposal.md",
+        "versionFingerprint": "711305a04ced4d660f816cead45aed08ca93d8cce4926cea7d978d251c08dc14",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+        "versionFingerprint": "ee74175015bf62d0e833dda59dd79dc1e4e84379a5b57cda4ee738f1f9d8def8",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-core-model/spec.md",
+        "versionFingerprint": "391e0265340a6a774b8e3ed6fc9a3e0a7ce385d5cb0079874ee371740e68efc5",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+        "versionFingerprint": "8f0f0e005a644bc348f0eb364d43aa156e323702803d9b477eca963a85951e91",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-diagnostic-cli/spec.md",
+        "versionFingerprint": "c398e058f410555dd58c85164c276ad93da76ab9affaacb0e35269941a50febb",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "15b692968b60e1444f742bc42df8695c59ae7f57a472c6ae310925d83262f7b7",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-policy-engine/spec.md",
+        "versionFingerprint": "937ffe2bcd05f380931b03ea2c8268e08889b7e3f7a9ff31b673472cc3df0a92",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/tasks.md",
+        "versionFingerprint": "e203203afcf09477a0fa07b6e19553d094af7763785da89c2aa75e0d0b1cd92a",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-014-review-apply/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "aef4b5b3fef01d98a1e06024a66a20db78c7f324d920cced8d0aae9b5bc7a5e3"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260817-014-review-apply",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-014-review-apply/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "aef4b5b3fef01d98a1e06024a66a20db78c7f324d920cced8d0aae9b5bc7a5e3"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "A1-RA-001",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "Non-Windows timeout is marked re-entry-safe without proving descendant process-tree termination",
+          "problem": "The approved A1 core-model spec requires that a fresh Full Test attempt MAY re-enter from `authorized` only when the prior child/process tree has been proven terminal. 013 implements owned whole-tree cancellation for Windows, but the unchanged non-Windows `runCommand()` timeout path sends SIGKILL only to the direct child PID and then returns `timed-out-cancelled` when that launcher closes. `runDeliveryFullTest()` treats `timed-out-cancelled` as a safe terminal transport failure, leaves raw status `authorized`, writes no executionBlock, and therefore permits an explicit later attempt. This proves only launcher termination, not descendant process-tree termination.",
+          "contractRef": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-core-model/spec.md — `authorized crash 可 bounded re-entry`: only when prior child/process tree is proven terminal; transport-failure scenario: only process-proven-terminal failure MAY remain authorized for re-entry",
+          "invariant": "Without a running/attempt ledger, every timeout path that leaves Full Test re-enterable at raw `authorized` must prove the entire owned prior process tree terminal. If whole-tree termination is not proven, Policy must fail closed and prohibit overlap rather than label the attempt safely cancelled.",
+          "requiredOutcome": "Close non-Windows timeout ownership to the same invariant as Windows: either prove the owned descendant process tree terminal before returning a re-entry-safe cancellation outcome, or conservatively classify unproven termination as outcome-unknown and persist/block through the existing A1 executionBlock semantics. Keep the solution bounded; do not add a scheduler, running state, attempt ledger or background supervisor.",
+          "acceptance": [
+            "A real non-Windows descendant-survival fixture cannot produce re-entry-safe `timed-out-cancelled` while any descendant remains alive.",
+            "Every timeout that leaves raw Full Test status `authorized` and permits later re-entry has a demonstrated whole-process-tree terminal proof.",
+            "If non-Windows whole-tree termination cannot be proven, the attempt becomes fail-closed/non-reenterable through the existing outcome-unknown/executionBlock boundary rather than fabricated Verification failed.",
+            "Windows taskkill whole-tree semantics remain green and unchanged in authority.",
+            "Formal Change Verification selects and physically executes the new/updated timeout regression and remains passed on the revised exact candidate."
+          ]
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [
+      {
+        "ref": "owner:e675265cbd4ae1a9c838f6026645d798bdc5fa416c9dc6d533421e8c4314679c",
+        "decision": "contract-reset",
+        "deliveryId": "20260817-01-delivery-execution-loop",
+        "changeId": "delivery-readiness-and-full-test-behavior",
+        "scope": "A1/proposal-mutation-scope-only",
+        "requiredOutcomes": [
+          "add exactly one mandatory flowkitMutationScope section covering apply and revise-apply with complete bounded deterministic selectors for production, tests, Verification mapping, current 03 Manifest migration, and A1 tasks/verification publication",
+          "do not reopen Explore or expand A1 scope",
+          "form a fresh Proposal generation for review-propose; old 010 approval applies only to old Proposal bytes",
+          "preserve all 009 Proposal product semantics and design decisions",
+          "preserve approved Explore conclusions"
+        ],
+        "sourceRef": "owner:chat-20260817-a1-minimal-contract-reset-mutation-scope"
+      }
+    ],
+    "verificationView": {
+      "status": "unavailable",
+      "resultRef": {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/verification.md",
+        "versionFingerprint": "23447d8d3a8e9a80429a2360f7e42bea540002aae6190dcc447ff6b9513411c1",
+        "kind": "verification-summary"
+      }
+    },
+    "externalContextFingerprint": "1da92f5656069d05a4f61b918fc67d05e9896c0ab4421cc80b862923f8016648",
+    "requiredResultContract": {
+      "kind": "implementation",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": true,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    },
+    "compactEntryWorkspaceIdentity": {
+      "canonicalBase": "f132db761bd209e6aff72411108b8e3e1c9801f5",
+      "workspaceFingerprint": "0137f53a36410d38703357d66d8b9cb38ddeb7a4627b0e22c0ad9941aa26b419",
+      "entries": [
+        {
+          "path": "openspec/changes/delivery-readiness-and-full-test-behavior/.openspec.yaml",
+          "state": "untracked",
+          "contentFingerprint": "41db595b409c9e6bc00babeabb32990290577eb40245a5bb769e8ec98a1f8d3e"
+        },
+        {
+          "path": "openspec/changes/delivery-readiness-and-full-test-behavior/design.md",
+          "state": "untracked",
+          "contentFingerprint": "5cba169b918a65358149901c06d753f1a95478276b06e410a03ec955e2b707f6"
+        },
+        {
+          "path": "openspec/changes/delivery-readiness-and-full-test-behavior/explore.md",
+          "state": "untracked",
+          "contentFingerprint": "95614aa100f66852cc163a31e8421ad5598210b98b3e07075f8b16afbc334ffc"
+        },
+        {
+          "path": "openspec/changes/delivery-readiness-and-full-test-behavior/proposal.md",
+          "state": "untracked",
+          "contentFingerprint": "711305a04ced4d660f816cead45aed08ca93d8cce4926cea7d978d251c08dc14"
+        },
+        {
+          "path": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "ee74175015bf62d0e833dda59dd79dc1e4e84379a5b57cda4ee738f1f9d8def8"
+        },
+        {
+          "path": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-core-model/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "391e0265340a6a774b8e3ed6fc9a3e0a7ce385d5cb0079874ee371740e68efc5"
+        },
+        {
+          "path": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "8f0f0e005a644bc348f0eb364d43aa156e323702803d9b477eca963a85951e91"
+        },
+        {
+          "path": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-diagnostic-cli/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "c398e058f410555dd58c85164c276ad93da76ab9affaacb0e35269941a50febb"
+        },
+        {
+          "path": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "15b692968b60e1444f742bc42df8695c59ae7f57a472c6ae310925d83262f7b7"
+        },
+        {
+          "path": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-policy-engine/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "937ffe2bcd05f380931b03ea2c8268e08889b7e3f7a9ff31b673472cc3df0a92"
+        },
+        {
+          "path": "openspec/changes/delivery-readiness-and-full-test-behavior/tasks.md",
+          "state": "untracked",
+          "contentFingerprint": "4c183916de491eb79397660d72627c30524e1b31c4100af4f1fbeed470bb6ed4"
+        },
+        {
+          "path": "openspec/changes/delivery-readiness-and-full-test-behavior/verification.md",
+          "state": "untracked",
+          "contentFingerprint": "23447d8d3a8e9a80429a2360f7e42bea540002aae6190dcc447ff6b9513411c1"
+        },
+        {
+          "path": "openspec/delivery-groups/20260817-01-delivery-execution-loop.yaml",
+          "state": "modified",
+          "contentFingerprint": "5264b629a6fbd3c2a1de35496e499b33c02cb222e58ce2fb8266760df42c0b98"
+        },
+        {
+          "path": "scripts/verification.ts",
+          "state": "modified",
+          "contentFingerprint": "7cc6ff8a40a0ae424cde525fff69c3c1a2adedefc5e5948f0eefc57cc0fed10e"
+        },
+        {
+          "path": "src/cli/main.ts",
+          "state": "modified",
+          "contentFingerprint": "32c192e1ca138892f5f9089e318f50cbf3376fc37f3e36b85ff8341a6cc8f8e3"
+        },
+        {
+          "path": "src/diagnostics/doctor.ts",
+          "state": "modified",
+          "contentFingerprint": "f0e0ebb50bd04245d9f6909214070a77528b9d27c201ab7248358290dc98b583"
+        },
+        {
+          "path": "src/diagnostics/next.ts",
+          "state": "modified",
+          "contentFingerprint": "ea0110dce8ea0a74731c89b0ca70c1ddf9e02aecb85dfa47292d8ed82fa6cd2e"
+        },
+        {
+          "path": "src/diagnostics/shared.ts",
+          "state": "modified",
+          "contentFingerprint": "fdd03a403ac382f7be7081dbe97ef587c76762698e53194c66486dfc01492528"
+        },
+        {
+          "path": "src/domain/a1-types.ts",
+          "state": "modified",
+          "contentFingerprint": "1dece466fee4f11d8621d03272fcd5e9ae8481febb5a3afa166b083620e9e272"
+        },
+        {
+          "path": "src/domain/full-test.ts",
+          "state": "untracked",
+          "contentFingerprint": "7c8d71ed1fc903edfa7202ca920ec128998dca683d335290210f7843d6d762cd"
+        },
+        {
+          "path": "src/facts/formal-fact-reader.ts",
+          "state": "modified",
+          "contentFingerprint": "e9cbcf07141cab61069b421bcab8ad0d695105bae5e75fed4045782c46f745d0"
+        },
+        {
+          "path": "src/facts/formal-fact-snapshot.ts",
+          "state": "modified",
+          "contentFingerprint": "bdb82a0054117453b9295ff8a79bd7451a4d951fad77476c4ac7c4b6ef815c3b"
+        },
+        {
+          "path": "src/persistence/delivery-manifest-document.ts",
+          "state": "modified",
+          "contentFingerprint": "1953019c7aab47e86f815c33f5a9ec6de8b4a347ee5981149eb805765afc201b"
+        },
+        {
+          "path": "src/policy/blocked-diagnosis.ts",
+          "state": "modified",
+          "contentFingerprint": "b34638bb75fb179b40d9886120504549dcc82ef3ce7d76b87fbdd99896682e8b"
+        },
+        {
+          "path": "src/policy/next.ts",
+          "state": "modified",
+          "contentFingerprint": "ea0b57c42133237baf54771b69f63878e9d8a3fa335be52a00906854cd8efdf4"
+        },
+        {
+          "path": "src/policy/types.ts",
+          "state": "modified",
+          "contentFingerprint": "e1e3023611541289d515b563c64574d643267d3b2c6d611dc986dd492e0d27f5"
+        },
+        {
+          "path": "src/services/a1-write-service.ts",
+          "state": "modified",
+          "contentFingerprint": "ed1368c9065ea0cb7ede47c9891fea0d84499c2fce5c6b9a511abe431341df29"
+        },
+        {
+          "path": "src/services/delivery-full-test-service.ts",
+          "state": "untracked",
+          "contentFingerprint": "e1308584ed2361d2668017864448b7dcf9ca85867c98d2249966052a7ea9f34b"
+        },
+        {
+          "path": "src/verification/change-selection/evidence.ts",
+          "state": "modified",
+          "contentFingerprint": "ea396b2ddc5914f62abd7749a1930eb0789d5972d78a2b41a40b864eb978fbe8"
+        },
+        {
+          "path": "src/verification/change-selection/module-map.ts",
+          "state": "modified",
+          "contentFingerprint": "0eec86db826dc6eefab64991b3916098799426914987c847715132154118737c"
+        },
+        {
+          "path": "tests/integration/a1-delivery-readiness-and-full-test-behavior.test.ts",
+          "state": "untracked",
+          "contentFingerprint": "df7e2454e83e470c2d578a46191fa6b76211236578997771b4abc5ab7242c677"
+        },
+        {
+          "path": "tests/unit/facts/full-test-reader.test.ts",
+          "state": "untracked",
+          "contentFingerprint": "df5a2e65e9d2f7515e917d8472b48c0f9a732791807bcc4563e3bff104d70dbe"
+        },
+        {
+          "path": "tests/unit/persistence/delivery-manifest-document.test.ts",
+          "state": "modified",
+          "contentFingerprint": "13280b54bec7250966e81a97b81aefd6202e5f4bc102cc95a1074da6b927dd25"
+        },
+        {
+          "path": "tests/unit/persistence/serialization.test.ts",
+          "state": "modified",
+          "contentFingerprint": "8819705ecf1991bc1b8d17f8662dca87323b3b448f4cdac7c0e22f91f5ec4406"
+        },
+        {
+          "path": "tests/unit/policy/diagnose.test.ts",
+          "state": "modified",
+          "contentFingerprint": "f0cda6f5a06e6152ed983185ef5118a73a1a511b88eeb0059d8c40e608442e1d"
+        },
+        {
+          "path": "tests/unit/policy/fixtures.ts",
+          "state": "modified",
+          "contentFingerprint": "1d856b06202b209067e6538e823996672c796379a5750dd24f940a25954cb2a4"
+        },
+        {
+          "path": "tests/unit/policy/next.test.ts",
+          "state": "modified",
+          "contentFingerprint": "7149e8383fa5b6d0fbb3802e9dd8026a81d2694424a433385284fd32457cdb35"
+        },
+        {
+          "path": "tests/unit/policy/types.test.ts",
+          "state": "modified",
+          "contentFingerprint": "d1741c4ec1db68a598b5c15d3d390d1a0f96080d916ea9c4e24eee9c26e3ad7a"
+        },
+        {
+          "path": "tests/unit/services/a1-write-service.test.ts",
+          "state": "modified",
+          "contentFingerprint": "15ec1673ef07d881c8cf4f58d64cfeda47b5039205b8faa0dc3e537a81ce6388"
+        },
+        {
+          "path": "tests/unit/services/delivery-full-test-service.test.ts",
+          "state": "untracked",
+          "contentFingerprint": "50daa9d525006cc9b57720aab8593487f8ba49fba31c0eddf8b79fa5e71cf917"
+        },
+        {
+          "path": "tests/unit/verification/change-selection/evidence.test.ts",
+          "state": "modified",
+          "contentFingerprint": "362f57ac267d5cc638261608c810d5374212649bd0f64dae86f3328e3f8c6d3e"
+        },
+        {
+          "path": "tests/unit/verification/change-selection/module-map.test.ts",
+          "state": "modified",
+          "contentFingerprint": "1cab2c469a5f9d88094924fb24ba7b19935f7dc5a472e5b92d01d32f3ac0a57d"
+        },
+        {
+          "path": "tests/unit/verification/verification-plan.test.ts",
+          "state": "modified",
+          "contentFingerprint": "ea7fb97ab3972710ba7d54d810c4f8969a36c5ae2737ad6c82be56c5f78254ec"
+        }
+      ]
+    },
+    "mutationDeclaration": {
+      "schemaVersion": 1,
+      "action": "revise-apply",
+      "designRef": {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/design.md",
+        "kind": "produced-artifact",
+        "versionFingerprint": "5cba169b918a65358149901c06d753f1a95478276b06e410a03ec955e2b707f6"
+      },
+      "selectors": [
+        {
+          "kind": "exact",
+          "path": "openspec/changes/delivery-readiness-and-full-test-behavior/tasks.md"
+        },
+        {
+          "kind": "exact",
+          "path": "openspec/changes/delivery-readiness-and-full-test-behavior/verification.md"
+        },
+        {
+          "kind": "exact",
+          "path": "openspec/delivery-groups/20260817-01-delivery-execution-loop.yaml"
+        },
+        {
+          "kind": "exact",
+          "path": "scripts/verification.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/cli/main.ts"
+        },
+        {
+          "kind": "prefix",
+          "path": "src/diagnostics"
+        },
+        {
+          "kind": "exact",
+          "path": "src/domain/a1-types.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/domain/full-test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/domain/types.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/facts/formal-fact-reader.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/facts/formal-fact-snapshot.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/persistence/delivery-manifest-document.ts"
+        },
+        {
+          "kind": "prefix",
+          "path": "src/policy"
+        },
+        {
+          "kind": "exact",
+          "path": "src/services/a1-write-service.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/services/delivery-full-test-service.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/shared/external-command.ts"
+        },
+        {
+          "kind": "prefix",
+          "path": "src/verification/change-selection"
+        },
+        {
+          "kind": "prefix",
+          "path": "tests/fixtures/a1-delivery-readiness-and-full-test-behavior"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/integration/a1-delivery-readiness-and-full-test-behavior.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/integration/diagnostic-cli-process.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/integration/diagnostic-cli.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/integration/g1-change-cli-end-to-end.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/integration/verification-commands.test.ts"
+        },
+        {
+          "kind": "prefix",
+          "path": "tests/unit/cli"
+        },
+        {
+          "kind": "prefix",
+          "path": "tests/unit/diagnostics"
+        },
+        {
+          "kind": "prefix",
+          "path": "tests/unit/domain"
+        },
+        {
+          "kind": "prefix",
+          "path": "tests/unit/facts"
+        },
+        {
+          "kind": "prefix",
+          "path": "tests/unit/persistence"
+        },
+        {
+          "kind": "prefix",
+          "path": "tests/unit/policy"
+        },
+        {
+          "kind": "prefix",
+          "path": "tests/unit/services"
+        },
+        {
+          "kind": "prefix",
+          "path": "tests/unit/shared"
+        },
+        {
+          "kind": "prefix",
+          "path": "tests/unit/verification"
+        }
+      ]
+    }
+  },
+  "compactEntryWorkspaceIdentity": {
+    "canonicalBase": "f132db761bd209e6aff72411108b8e3e1c9801f5",
+    "workspaceFingerprint": "0137f53a36410d38703357d66d8b9cb38ddeb7a4627b0e22c0ad9941aa26b419",
+    "entries": [
+      {
+        "path": "openspec/changes/delivery-readiness-and-full-test-behavior/.openspec.yaml",
+        "state": "untracked",
+        "contentFingerprint": "41db595b409c9e6bc00babeabb32990290577eb40245a5bb769e8ec98a1f8d3e"
+      },
+      {
+        "path": "openspec/changes/delivery-readiness-and-full-test-behavior/design.md",
+        "state": "untracked",
+        "contentFingerprint": "5cba169b918a65358149901c06d753f1a95478276b06e410a03ec955e2b707f6"
+      },
+      {
+        "path": "openspec/changes/delivery-readiness-and-full-test-behavior/explore.md",
+        "state": "untracked",
+        "contentFingerprint": "95614aa100f66852cc163a31e8421ad5598210b98b3e07075f8b16afbc334ffc"
+      },
+      {
+        "path": "openspec/changes/delivery-readiness-and-full-test-behavior/proposal.md",
+        "state": "untracked",
+        "contentFingerprint": "711305a04ced4d660f816cead45aed08ca93d8cce4926cea7d978d251c08dc14"
+      },
+      {
+        "path": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "ee74175015bf62d0e833dda59dd79dc1e4e84379a5b57cda4ee738f1f9d8def8"
+      },
+      {
+        "path": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-core-model/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "391e0265340a6a774b8e3ed6fc9a3e0a7ce385d5cb0079874ee371740e68efc5"
+      },
+      {
+        "path": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "8f0f0e005a644bc348f0eb364d43aa156e323702803d9b477eca963a85951e91"
+      },
+      {
+        "path": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-diagnostic-cli/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "c398e058f410555dd58c85164c276ad93da76ab9affaacb0e35269941a50febb"
+      },
+      {
+        "path": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "15b692968b60e1444f742bc42df8695c59ae7f57a472c6ae310925d83262f7b7"
+      },
+      {
+        "path": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-policy-engine/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "937ffe2bcd05f380931b03ea2c8268e08889b7e3f7a9ff31b673472cc3df0a92"
+      },
+      {
+        "path": "openspec/changes/delivery-readiness-and-full-test-behavior/tasks.md",
+        "state": "untracked",
+        "contentFingerprint": "4c183916de491eb79397660d72627c30524e1b31c4100af4f1fbeed470bb6ed4"
+      },
+      {
+        "path": "openspec/changes/delivery-readiness-and-full-test-behavior/verification.md",
+        "state": "untracked",
+        "contentFingerprint": "23447d8d3a8e9a80429a2360f7e42bea540002aae6190dcc447ff6b9513411c1"
+      },
+      {
+        "path": "openspec/delivery-groups/20260817-01-delivery-execution-loop.yaml",
+        "state": "modified",
+        "contentFingerprint": "5264b629a6fbd3c2a1de35496e499b33c02cb222e58ce2fb8266760df42c0b98"
+      },
+      {
+        "path": "scripts/verification.ts",
+        "state": "modified",
+        "contentFingerprint": "7cc6ff8a40a0ae424cde525fff69c3c1a2adedefc5e5948f0eefc57cc0fed10e"
+      },
+      {
+        "path": "src/cli/main.ts",
+        "state": "modified",
+        "contentFingerprint": "32c192e1ca138892f5f9089e318f50cbf3376fc37f3e36b85ff8341a6cc8f8e3"
+      },
+      {
+        "path": "src/diagnostics/doctor.ts",
+        "state": "modified",
+        "contentFingerprint": "f0e0ebb50bd04245d9f6909214070a77528b9d27c201ab7248358290dc98b583"
+      },
+      {
+        "path": "src/diagnostics/next.ts",
+        "state": "modified",
+        "contentFingerprint": "ea0110dce8ea0a74731c89b0ca70c1ddf9e02aecb85dfa47292d8ed82fa6cd2e"
+      },
+      {
+        "path": "src/diagnostics/shared.ts",
+        "state": "modified",
+        "contentFingerprint": "fdd03a403ac382f7be7081dbe97ef587c76762698e53194c66486dfc01492528"
+      },
+      {
+        "path": "src/domain/a1-types.ts",
+        "state": "modified",
+        "contentFingerprint": "1dece466fee4f11d8621d03272fcd5e9ae8481febb5a3afa166b083620e9e272"
+      },
+      {
+        "path": "src/domain/full-test.ts",
+        "state": "untracked",
+        "contentFingerprint": "7c8d71ed1fc903edfa7202ca920ec128998dca683d335290210f7843d6d762cd"
+      },
+      {
+        "path": "src/facts/formal-fact-reader.ts",
+        "state": "modified",
+        "contentFingerprint": "e9cbcf07141cab61069b421bcab8ad0d695105bae5e75fed4045782c46f745d0"
+      },
+      {
+        "path": "src/facts/formal-fact-snapshot.ts",
+        "state": "modified",
+        "contentFingerprint": "bdb82a0054117453b9295ff8a79bd7451a4d951fad77476c4ac7c4b6ef815c3b"
+      },
+      {
+        "path": "src/persistence/delivery-manifest-document.ts",
+        "state": "modified",
+        "contentFingerprint": "1953019c7aab47e86f815c33f5a9ec6de8b4a347ee5981149eb805765afc201b"
+      },
+      {
+        "path": "src/policy/blocked-diagnosis.ts",
+        "state": "modified",
+        "contentFingerprint": "b34638bb75fb179b40d9886120504549dcc82ef3ce7d76b87fbdd99896682e8b"
+      },
+      {
+        "path": "src/policy/next.ts",
+        "state": "modified",
+        "contentFingerprint": "ea0b57c42133237baf54771b69f63878e9d8a3fa335be52a00906854cd8efdf4"
+      },
+      {
+        "path": "src/policy/types.ts",
+        "state": "modified",
+        "contentFingerprint": "e1e3023611541289d515b563c64574d643267d3b2c6d611dc986dd492e0d27f5"
+      },
+      {
+        "path": "src/services/a1-write-service.ts",
+        "state": "modified",
+        "contentFingerprint": "ed1368c9065ea0cb7ede47c9891fea0d84499c2fce5c6b9a511abe431341df29"
+      },
+      {
+        "path": "src/services/delivery-full-test-service.ts",
+        "state": "untracked",
+        "contentFingerprint": "e1308584ed2361d2668017864448b7dcf9ca85867c98d2249966052a7ea9f34b"
+      },
+      {
+        "path": "src/verification/change-selection/evidence.ts",
+        "state": "modified",
+        "contentFingerprint": "ea396b2ddc5914f62abd7749a1930eb0789d5972d78a2b41a40b864eb978fbe8"
+      },
+      {
+        "path": "src/verification/change-selection/module-map.ts",
+        "state": "modified",
+        "contentFingerprint": "0eec86db826dc6eefab64991b3916098799426914987c847715132154118737c"
+      },
+      {
+        "path": "tests/integration/a1-delivery-readiness-and-full-test-behavior.test.ts",
+        "state": "untracked",
+        "contentFingerprint": "df7e2454e83e470c2d578a46191fa6b76211236578997771b4abc5ab7242c677"
+      },
+      {
+        "path": "tests/unit/facts/full-test-reader.test.ts",
+        "state": "untracked",
+        "contentFingerprint": "df5a2e65e9d2f7515e917d8472b48c0f9a732791807bcc4563e3bff104d70dbe"
+      },
+      {
+        "path": "tests/unit/persistence/delivery-manifest-document.test.ts",
+        "state": "modified",
+        "contentFingerprint": "13280b54bec7250966e81a97b81aefd6202e5f4bc102cc95a1074da6b927dd25"
+      },
+      {
+        "path": "tests/unit/persistence/serialization.test.ts",
+        "state": "modified",
+        "contentFingerprint": "8819705ecf1991bc1b8d17f8662dca87323b3b448f4cdac7c0e22f91f5ec4406"
+      },
+      {
+        "path": "tests/unit/policy/diagnose.test.ts",
+        "state": "modified",
+        "contentFingerprint": "f0cda6f5a06e6152ed983185ef5118a73a1a511b88eeb0059d8c40e608442e1d"
+      },
+      {
+        "path": "tests/unit/policy/fixtures.ts",
+        "state": "modified",
+        "contentFingerprint": "1d856b06202b209067e6538e823996672c796379a5750dd24f940a25954cb2a4"
+      },
+      {
+        "path": "tests/unit/policy/next.test.ts",
+        "state": "modified",
+        "contentFingerprint": "7149e8383fa5b6d0fbb3802e9dd8026a81d2694424a433385284fd32457cdb35"
+      },
+      {
+        "path": "tests/unit/policy/types.test.ts",
+        "state": "modified",
+        "contentFingerprint": "d1741c4ec1db68a598b5c15d3d390d1a0f96080d916ea9c4e24eee9c26e3ad7a"
+      },
+      {
+        "path": "tests/unit/services/a1-write-service.test.ts",
+        "state": "modified",
+        "contentFingerprint": "15ec1673ef07d881c8cf4f58d64cfeda47b5039205b8faa0dc3e537a81ce6388"
+      },
+      {
+        "path": "tests/unit/services/delivery-full-test-service.test.ts",
+        "state": "untracked",
+        "contentFingerprint": "50daa9d525006cc9b57720aab8593487f8ba49fba31c0eddf8b79fa5e71cf917"
+      },
+      {
+        "path": "tests/unit/verification/change-selection/evidence.test.ts",
+        "state": "modified",
+        "contentFingerprint": "362f57ac267d5cc638261608c810d5374212649bd0f64dae86f3328e3f8c6d3e"
+      },
+      {
+        "path": "tests/unit/verification/change-selection/module-map.test.ts",
+        "state": "modified",
+        "contentFingerprint": "1cab2c469a5f9d88094924fb24ba7b19935f7dc5a472e5b92d01d32f3ac0a57d"
+      },
+      {
+        "path": "tests/unit/verification/verification-plan.test.ts",
+        "state": "modified",
+        "contentFingerprint": "ea7fb97ab3972710ba7d54d810c4f8969a36c5ae2737ad6c82be56c5f78254ec"
+      }
+    ]
+  },
+  "mutationDeclaration": {
+    "schemaVersion": 1,
+    "action": "revise-apply",
+    "designRef": {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/design.md",
+      "kind": "produced-artifact",
+      "versionFingerprint": "5cba169b918a65358149901c06d753f1a95478276b06e410a03ec955e2b707f6"
+    },
+    "selectors": [
+      {
+        "kind": "exact",
+        "path": "openspec/changes/delivery-readiness-and-full-test-behavior/tasks.md"
+      },
+      {
+        "kind": "exact",
+        "path": "openspec/changes/delivery-readiness-and-full-test-behavior/verification.md"
+      },
+      {
+        "kind": "exact",
+        "path": "openspec/delivery-groups/20260817-01-delivery-execution-loop.yaml"
+      },
+      {
+        "kind": "exact",
+        "path": "scripts/verification.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/cli/main.ts"
+      },
+      {
+        "kind": "prefix",
+        "path": "src/diagnostics"
+      },
+      {
+        "kind": "exact",
+        "path": "src/domain/a1-types.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/domain/full-test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/domain/types.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/facts/formal-fact-reader.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/facts/formal-fact-snapshot.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/persistence/delivery-manifest-document.ts"
+      },
+      {
+        "kind": "prefix",
+        "path": "src/policy"
+      },
+      {
+        "kind": "exact",
+        "path": "src/services/a1-write-service.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/services/delivery-full-test-service.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/shared/external-command.ts"
+      },
+      {
+        "kind": "prefix",
+        "path": "src/verification/change-selection"
+      },
+      {
+        "kind": "prefix",
+        "path": "tests/fixtures/a1-delivery-readiness-and-full-test-behavior"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/integration/a1-delivery-readiness-and-full-test-behavior.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/integration/diagnostic-cli-process.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/integration/diagnostic-cli.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/integration/g1-change-cli-end-to-end.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/integration/verification-commands.test.ts"
+      },
+      {
+        "kind": "prefix",
+        "path": "tests/unit/cli"
+      },
+      {
+        "kind": "prefix",
+        "path": "tests/unit/diagnostics"
+      },
+      {
+        "kind": "prefix",
+        "path": "tests/unit/domain"
+      },
+      {
+        "kind": "prefix",
+        "path": "tests/unit/facts"
+      },
+      {
+        "kind": "prefix",
+        "path": "tests/unit/persistence"
+      },
+      {
+        "kind": "prefix",
+        "path": "tests/unit/policy"
+      },
+      {
+        "kind": "prefix",
+        "path": "tests/unit/services"
+      },
+      {
+        "kind": "prefix",
+        "path": "tests/unit/shared"
+      },
+      {
+        "kind": "prefix",
+        "path": "tests/unit/verification"
+      }
+    ]
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": true,
+    "mayWriteTestCode": true,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

@@ -390,13 +390,13 @@ async function resolveLogicalNodeTests(repoRoot: string, logicalIds: readonly st
 function logicalNodeSelectors(logicalId: string): readonly string[] {
   switch (logicalId) {
     case 'tests-cli':
-      return ['tests/integration/diagnostic-cli-process.test.ts', 'tests/integration/diagnostic-cli.test.ts', 'tests/integration/g1-change-cli-end-to-end.test.ts', 'tests/unit/cli/*.test.ts', 'tests/unit/diagnostics/*.test.ts'];
+      return ['tests/integration/a1-delivery-readiness-and-full-test-behavior.test.ts', 'tests/integration/diagnostic-cli-process.test.ts', 'tests/integration/diagnostic-cli.test.ts', 'tests/integration/g1-change-cli-end-to-end.test.ts', 'tests/unit/cli/*.test.ts', 'tests/unit/diagnostics/*.test.ts'];
     case 'tests-execution':
       return ['tests/integration/f1-archive-and-checkpoint-boundary.test.ts', 'tests/unit/facts/*.test.ts', 'tests/unit/policy/*.test.ts', 'tests/unit/services/*.test.ts'];
     case 'tests-openspec-runtime':
       return ['tests/integration/openspec-1-7-real-cli.test.ts', 'tests/unit/external-command.test.ts', 'tests/unit/integrations/openspec-cli-adapter.test.ts'];
     case 'tests-persistence':
-      return ['tests/unit/persistence/legacy-recognizer.test.ts', 'tests/unit/persistence/run-persistence.test.ts'];
+      return ['tests/unit/persistence/delivery-manifest-document.test.ts', 'tests/unit/persistence/legacy-recognizer.test.ts', 'tests/unit/persistence/run-persistence.test.ts'];
     case 'tests-serialization':
       return ['tests/unit/persistence/serialization.test.ts'];
     case 'tests-verification':

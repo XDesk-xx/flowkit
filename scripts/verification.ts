@@ -1,4 +1,4 @@
-import { access, readdir } from 'node:fs/promises';
+import { access, readdir, rename, writeFile } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import { dirname, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -7,6 +7,7 @@ import { resolveOpenSpecExecutable } from '../src/integrations/openspec/openspec
 import { runCommand as runExternalCommand } from '../src/shared/external-command.js';
 import { resolveAffectedTests, resolveAllTests } from './affected-scopes.js';
 import { runPlatformCommand } from './platform-command.js';
+import type { FullTestProtocolPayload } from '../src/domain/full-test.js';
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 export const projectRoot = resolve(scriptDir, '..');
@@ -247,24 +248,56 @@ export async function executeProjectStep(
 
 export type VerificationStepExecutor = (step: VerificationStep) => Promise<{ exitCode: number; durationMs: number }>;
 
+export async function runVerificationPlanDetailed(
+  plan: readonly VerificationStep[],
+  executeStep: VerificationStepExecutor = executeProjectStep,
+): Promise<{ readonly exitCode: number; readonly payload: FullTestProtocolPayload }> {
+  console.log(environmentLine());
+  const started = process.hrtime.bigint();
+  const checks: { id: string; status: 'passed' | 'failed'; durationMs: number }[] = [];
+  let exitCode = 0;
+  for (const step of plan) {
+    console.log(`step: ${step.name} status=running`);
+    const result = await executeStep(step);
+    const status = result.exitCode === 0 ? 'passed' : 'failed';
+    const durationMs = Math.max(0, Math.round(result.durationMs));
+    checks.push({ id: step.name, status, durationMs });
+    const duration = (result.durationMs / 1_000).toFixed(3);
+    console.log(`step: ${step.name} status=${status} duration=${duration}s`);
+    const budget = STEP_BUDGETS[step.name];
+    if (budget) timingMessage(step.name, result.durationMs, budget.targetMs, budget.warningMs);
+    if (result.exitCode !== 0) { exitCode = result.exitCode; break; }
+  }
+  const totalDurationMs = Math.max(0, Math.round(Number(process.hrtime.bigint() - started) / 1_000_000));
+  const status: 'passed' | 'failed' = exitCode === 0 ? 'passed' : 'failed';
+  return {
+    exitCode,
+    payload: {
+      schemaVersion: 1,
+      status,
+      summary: status === 'passed' ? 'all full-test checks passed' : 'full-test check failed',
+      totalDurationMs,
+      checks,
+    },
+  };
+}
+
 export async function runVerificationPlan(
   plan: readonly VerificationStep[],
   executeStep: VerificationStepExecutor = executeProjectStep,
 ): Promise<number> {
-  console.log(environmentLine());
-  for (const step of plan) {
-    console.log(`step: ${step.name} status=running`);
-    const result = await executeStep(step);
-    const duration = (result.durationMs / 1_000).toFixed(3);
-    console.log(`step: ${step.name} status=${result.exitCode === 0 ? 'passed' : 'failed'} duration=${duration}s`);
-    const budget = STEP_BUDGETS[step.name];
-    if (budget) timingMessage(step.name, result.durationMs, budget.targetMs, budget.warningMs);
-    if (result.exitCode !== 0) return result.exitCode;
-  }
-  return 0;
+  return (await runVerificationPlanDetailed(plan, executeStep)).exitCode;
 }
 
-export async function main(argv = process.argv.slice(2)): Promise<number> {
+async function publishFullTestProtocol(path: string, payload: FullTestProtocolPayload): Promise<void> {
+  const temporary = `${path}.tmp-${process.pid}-${Date.now()}`;
+  await writeFile(temporary, `${JSON.stringify(payload)}\n`, { encoding: 'utf8', flag: 'wx' });
+  await rename(temporary, path);
+}
+
+export type VerificationPlanDetailedRunner = typeof runVerificationPlanDetailed;
+
+export async function main(argv = process.argv.slice(2), runDetailed: VerificationPlanDetailedRunner = runVerificationPlanDetailed): Promise<number> {
   const [mode, ...args] = argv;
   switch (mode) {
     case 'test:focused':
@@ -275,8 +308,12 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
       return runNodeTests(await resolveAllTests(projectRoot), 4, 'full', await fullTestEnvironment());
     case 'verify:change':
       return runVerificationPlan(verifyChangePlan(args));
-    case 'verify:full':
-      return runVerificationPlan(verifyFullPlan());
+    case 'verify:full': {
+      const result = await runDetailed(verifyFullPlan());
+      const resultPath = process.env['FLOWKIT_FULL_TEST_RESULT_PATH'];
+      if (resultPath !== undefined) await publishFullTestProtocol(resultPath, result.payload);
+      return result.exitCode;
+    }
     case 'verify:step': {
       if (args.length !== 1) throw new Error('verify:step requires exactly one full-plan step name');
       const step = verifyFullPlan().find((candidate) => candidate.name === args[0]);

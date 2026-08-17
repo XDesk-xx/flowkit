@@ -28,6 +28,7 @@ import {
   type PolicyResult,
   actionResult,
   ownerDecisionResult,
+  deliveryBehaviorResult,
   blockedResult,
 } from './types.js';
 import { computeLineage } from './lineage.js';
@@ -52,6 +53,7 @@ import {
   conflictDiagnosis,
   dependencyIncompleteDiagnosis,
   fullTestFailedDiagnosis,
+  fullTestExecutionOutcomeUnknownDiagnosis,
   nonAuthorReviewBlockerDiagnosis,
   deliveryBehaviorNotImplementedDiagnosis,
   noActionableChangeDiagnosis,
@@ -361,9 +363,19 @@ function decideFullTestLifecycle(snapshot: FormalFactSnapshot): PolicyResult {
       });
 
     case 'authorized':
-      // Q1→03 bridge: authorization remains a legal Owner fact, but the
-      // Delivery behavior executor is deliberately not a Standard Action/Run.
-      return blockedResult(deliveryBehaviorNotImplementedDiagnosis('full-test'));
+      if (snapshot.deliveryFullTestExecution === undefined) {
+        return blockedResult(deliveryBehaviorNotImplementedDiagnosis('full-test'));
+      }
+      if (snapshot.deliveryFullTestExecutionBlock?.reason === 'outcome-unknown') {
+        return blockedResult(fullTestExecutionOutcomeUnknownDiagnosis());
+      }
+      if (!hasOwnerAuthorization(snapshot.ownerAuthorizations, 'authorize-full-test', snapshot.deliveryId)) {
+        return blockedResult(ambiguousStateDiagnosis('authorized Full Test is missing matching delivery-scoped Owner authorization'));
+      }
+      return deliveryBehaviorResult('full-test', {
+        deliveryFullTestStatus: status,
+        detail: 'Owner-authorized Delivery Full Test behavior is ready for one explicit execution',
+      });
 
     case 'awaiting-user-decision':
       // Pre-authorization state: owner must authorize full-test (D1-13).
@@ -374,9 +386,9 @@ function decideFullTestLifecycle(snapshot: FormalFactSnapshot): PolicyResult {
 
     case 'not-ready':
     case undefined:
-      // All required Changes completed but status has not advanced to
-      // awaiting-user-decision — inconsistent snapshot. D1 cannot advance the
-      // status itself; block as ambiguous.
+      if (snapshot.deliveryFullTestExecution === undefined) {
+        return blockedResult(deliveryBehaviorNotImplementedDiagnosis('full-test'));
+      }
       return blockedResult(
         ambiguousStateDiagnosis(
           'all required Changes completed but deliveryFullTestStatus has not advanced to awaiting-user-decision',

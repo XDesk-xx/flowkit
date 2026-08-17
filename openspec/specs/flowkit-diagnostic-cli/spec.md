@@ -116,7 +116,7 @@ conflicts
 
 ### Requirement: next 必须完整、确定地呈现 PolicyResult
 
-`flowkit next` MUST 对共享 snapshot 调用现有 Policy `next`，并以确定格式呈现 `action`、`owner-decision` 或 `blocked`。CLI MUST NOT 重写 Policy decision tree，也 MUST NOT 因诊断便利将 `blocked` 自动转换为 Action。
+`flowkit next` MUST 对共享 snapshot 调用现有 Policy `next`，并以确定格式呈现 `action`、`owner-decision`、`delivery-behavior` 或 `blocked`。CLI MUST NOT 重写 Policy decision tree，也 MUST NOT 因诊断便利将 `blocked` 自动转换为 Action。
 
 `kind=action` MUST 只输出：
 
@@ -138,6 +138,17 @@ context-detail: <detail | none>
 
 `context-eligible-changes` MUST 保留 Policy 提供的原顺序。
 
+`kind=delivery-behavior` MUST 按以下固定顺序输出；A1 当前只允许 `behavior=full-test`：
+
+```text
+kind: delivery-behavior
+behavior: full-test
+context-full-test: <deliveryFullTestStatus>
+context-detail: <detail | none>
+```
+
+该输出只呈现 Policy boundary，MUST NOT 执行 Full Test。
+
 `kind=blocked` MUST 按以下固定顺序输出：
 
 ```text
@@ -150,7 +161,7 @@ conflict[0]: dimension=<dimension>; authority=<authority>; message=<message>
 owner-actions: <suggestedOwnerActions | none>
 ```
 
-`unmetPreconditions` 与 `suggestedOwnerActions` MUST 保留 Policy 原顺序。`conflict[i]` MUST 保留 `dimension / authority / message`，并按 `(dimension, authority, message)` 升序排序后编号。CLI MUST NOT 丢弃 owner-decision context 或 blocked conflict diagnosis。Q1 新增的 `non-author-review-blocker` 与 `delivery-behavior-not-implemented` MUST 作为普通 `BlockedReason` 通过同一格式稳定呈现；CLI MUST NOT 为二者新增独立 decision branch，也 MUST NOT 把它们转换为 `review-*`、`full-test` 或 `delivery-finalize` Action。
+`unmetPreconditions` 与 `suggestedOwnerActions` MUST 保留 Policy 原顺序。`conflict[i]` MUST 保留 `dimension / authority / message`，并按 `(dimension, authority, message)` 升序排序后编号。CLI MUST NOT 丢弃 owner-decision context 或 blocked conflict diagnosis。Q1 新增的 `non-author-review-blocker`、`delivery-behavior-not-implemented` 与 A1 `full-test-execution-outcome-unknown` MUST 作为普通 `BlockedReason` 通过同一格式稳定呈现；CLI MUST NOT 为二者新增独立 decision branch，也 MUST NOT 把它们转换为 `review-*`、`full-test` 或 `delivery-finalize` Action。
 
 #### Scenario: next 返回 action
 
@@ -174,6 +185,12 @@ owner-actions: <suggestedOwnerActions | none>
 - **AND** MUST 包含对应 `context-eligible-changes`
 - **AND** 相同 PolicyResult MUST 产生 byte-stable 输出
 
+#### Scenario: next 返回 Delivery behavior
+
+- **WHEN** Policy 返回 `kind=delivery-behavior, behavior=full-test`
+- **THEN** CLI MUST 输出 `kind / behavior / context-full-test / context-detail`
+- **AND** MUST NOT 因 `flowkit next` 执行 `npm run verify:full`、修改 Manifest 或创建 Run
+
 #### Scenario: next 返回带 conflicts 的 blocked
 
 - **WHEN** Policy 返回 `kind=blocked`
@@ -184,10 +201,18 @@ owner-actions: <suggestedOwnerActions | none>
 
 #### Scenario: Q1 新 blocked reason 只做稳定呈现
 
-- **WHEN** Policy 返回 `reason=non-author-review-blocker` 或 `reason=delivery-behavior-not-implemented`
+- **WHEN** Policy 返回 `reason=non-author-review-blocker` 或仍适用于未实现 Delivery behavior（例如 F1 前 Finalize）的 `reason=delivery-behavior-not-implemented`
 - **THEN** `flowkit next` MUST 使用既有 `kind=blocked` 格式原样输出该 reason
 - **AND** MUST 保留 Policy 提供的 unmet/conflicts/owner-actions
 - **AND** CLI MUST NOT 自行选择 direct re-review、Author revise、Delivery Full Test 或 Delivery Finalize
+
+#### Scenario: outcome-unknown execution blocker 只做稳定只读呈现
+
+- **WHEN** Policy 因 current Full Test `executionBlock.reason=outcome-unknown` 返回 `reason=full-test-execution-outcome-unknown`
+- **THEN** `flowkit next` MUST 使用既有 `kind=blocked` 格式原样输出该 reason
+- **AND** `status/doctor/resume-context` MUST 保持同一 fail-closed diagnosis 语义
+- **AND** diagnostics MUST NOT 清除 blocker、重试 Full Test、写 Manifest 或生成 Verification `failed`/`resultRef`
+
 ### Requirement: doctor 只汇总 authority-owned conflicts 与最小恢复检查
 
 `flowkit doctor` MUST 汇总当前 Reader conflicts、Policy blocked diagnosis 与少量 E1 专属只读恢复检查。若某问题属于 Reader admission invariant，doctor MUST 消费 Reader conflict 而不是复制对应 validator。pending Run 本身 MUST NOT 被视为错误；completed historical mutable refs MUST NOT 被重放成永久一致性要求。
@@ -284,6 +309,7 @@ Policy finding code MUST 为 `policy-blocked:<reason>`。`overall` MUST 唯一�
 - **THEN** doctor MUST 输出 `policy-blocked:delivery-behavior-not-implemented`
 - **AND** severity MUST 为 `warning`
 - **AND** doctor MUST NOT 把该 finding 转成 `full-test` 或 `delivery-finalize` Action
+
 ### Requirement: resume-context 生成最小可恢复视图并覆盖 Delivery-level 状态
 
 `flowkit resume-context` MUST 输出当前 Delivery、active Change、current stage、last formal artifact、last relevant Run、latest valid Review、Change Verification 与 Policy next。`last formal artifact` MUST 根据当前 stage 与 active Change canonical OpenSpec paths 派生；MUST NOT 根据 historical ResultRef replay、`.tmp/**`、聊天记录或 Provider session 决定。

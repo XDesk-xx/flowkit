@@ -148,6 +148,10 @@ export function dependencyIncompleteDiagnosis(
  * Diagnosis for `full-test-failed` (frozen Section 6). Lists the owner's legal
  * choices; Policy MUST NOT auto-create a corrective Change or auto-retry.
  */
+export function fullTestExecutionOutcomeUnknownDiagnosis(): BlockedDiagnosis {
+  return blockedDiagnosis('full-test-execution-outcome-unknown', ['full-test-prior-process-tree-not-proven-terminal']);
+}
+
 export function fullTestFailedDiagnosis(): BlockedDiagnosis {
   return blockedDiagnosis(
     'full-test-failed',

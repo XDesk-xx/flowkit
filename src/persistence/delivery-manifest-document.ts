@@ -5,6 +5,7 @@ import type {
   PersistedChangeInput,
   DeliveryCreateInput,
 } from '../domain/a1-types.js';
+import type { FullTestExecutionBlock, FullTestExecutionContract, FullTestTerminalResult } from '../domain/full-test.js';
 
 function quote(value: string): string {
   return JSON.stringify(value);
@@ -21,6 +22,56 @@ function requireCleanScalar(value: string, field: string): void {
 function renderStringList(values: readonly string[], indent: string): string[] {
   if (values.length === 0) return [`${indent}[]`];
   return values.map((value) => `${indent}- ${quote(value)}`);
+}
+
+function renderFullTestExecution(execution: FullTestExecutionContract, indent = '    '): string[] {
+  const child = `${indent}  `;
+  return [
+    `${indent}execution:`,
+    `${child}id: ${quote(execution.id)}`,
+    `${child}kind: ${execution.kind}`,
+    `${child}command: ${quote(execution.command)}`,
+    `${child}args:`,
+    ...renderStringList(execution.args, `${child}  `),
+    `${child}launcherMode: ${execution.launcherMode}`,
+    `${child}scope: ${execution.scope}`,
+    `${child}timeoutMs: ${execution.timeoutMs}`,
+    `${child}resultProtocol: ${execution.resultProtocol}`,
+    `${child}resultAuthority: ${execution.resultAuthority}`,
+    `${child}expectedTerminalStatuses:`,
+    ...renderStringList(execution.expectedTerminalStatuses, `${child}  `),
+  ];
+}
+
+function renderFullTestExecutionBlock(block: FullTestExecutionBlock, indent = '    '): string[] {
+  const child = `${indent}  `;
+  return [
+    `${indent}executionBlock:`,
+    `${child}schemaVersion: ${block.schemaVersion}`,
+    `${child}reason: ${block.reason}`,
+    `${child}summary: ${quote(block.summary)}`,
+  ];
+}
+
+function renderFullTestResult(result: FullTestTerminalResult, indent = '    '): string[] {
+  const child = `${indent}  `;
+  const lines = [
+    `${indent}result:`,
+    `${child}schemaVersion: ${result.schemaVersion}`,
+    `${child}status: ${result.status}`,
+    `${child}summary: ${quote(result.summary)}`,
+    `${child}totalDurationMs: ${result.totalDurationMs}`,
+    `${child}checks:`,
+  ];
+  for (const check of result.checks) {
+    lines.push(
+      `${child}  - id: ${quote(check.id)}`,
+      `${child}    status: ${check.status}`,
+      `${child}    durationMs: ${check.durationMs}`,
+    );
+  }
+  lines.push(`${child}resultRef: ${quote(result.resultRef)}`);
+  return lines;
 }
 
 export function renderOwnerDecisionRecord(
@@ -222,6 +273,62 @@ export class DeliveryManifestDocument {
     return { ref: record.ref, changed: true };
   }
 
+  updateFullTestStatus(from: string, to: string): void {
+    const lines = splitLines(this.content);
+    const span = findTopLevelSection(lines, 'delivery');
+    if (span === null) throw new FlowkitError('MANIFEST_UNSUPPORTED_SHAPE', 'delivery section missing');
+    const indices: number[] = [];
+    for (let i = span.start + 1; i < span.end; i++) if (/^ {2}fullTestStatus:\s+/.test(lines[i]!)) indices.push(i);
+    if (indices.length !== 1) throw new FlowkitError('MANIFEST_AMBIGUOUS', 'delivery must contain exactly one fullTestStatus');
+    const index = indices[0]!;
+    const current = lines[index]!.replace(/^ {2}fullTestStatus:\s+/, '').trim();
+    if (current !== from) throw new FlowkitError('FULL_TEST_STATUS_MISMATCH', `expected Full Test status ${from}, got ${current}`);
+    const next = [...lines];
+    next[index] = `  fullTestStatus: ${to}`;
+    this.content = `${next.join('\n')}\n`;
+  }
+
+  private replaceFullTestOwnedBlock(key: 'executionBlock' | 'result', replacement: readonly string[]): void {
+    const lines = splitLines(this.content);
+    const verification = findTopLevelSection(lines, 'verification');
+    if (verification === null) throw new FlowkitError('MANIFEST_UNSUPPORTED_SHAPE', 'verification section missing');
+    const fullStarts: number[] = [];
+    for (let i = verification.start + 1; i < verification.end; i++) if (/^ {2}fullTest:\s*$/.test(lines[i]!)) fullStarts.push(i);
+    if (fullStarts.length !== 1) throw new FlowkitError('MANIFEST_AMBIGUOUS', 'verification must contain exactly one fullTest section');
+    const fullStart = fullStarts[0]!;
+    let fullEnd = verification.end;
+    for (let i = fullStart + 1; i < verification.end; i++) {
+      if (/^ {2}[A-Za-z_][A-Za-z0-9_-]*:\s*/.test(lines[i]!)) { fullEnd = i; break; }
+    }
+    const keyRe = new RegExp(`^ {4}${key}:\\s*$`);
+    const starts: number[] = [];
+    for (let i = fullStart + 1; i < fullEnd; i++) if (keyRe.test(lines[i]!)) starts.push(i);
+    if (starts.length > 1) throw new FlowkitError('MANIFEST_AMBIGUOUS', `duplicate verification.fullTest.${key}`);
+    const next = [...lines];
+    if (starts.length === 1) {
+      const start = starts[0]!;
+      let end = fullEnd;
+      for (let i = start + 1; i < fullEnd; i++) {
+        if (/^ {4}[A-Za-z_][A-Za-z0-9_-]*:\s*/.test(lines[i]!)) { end = i; break; }
+      }
+      next.splice(start, end - start, ...replacement);
+    } else {
+      next.splice(fullEnd, 0, ...replacement);
+    }
+    this.content = `${next.join('\n')}\n`;
+  }
+
+  setFullTestExecutionBlock(block: FullTestExecutionBlock): void {
+    requireCleanScalar(block.summary, 'executionBlock.summary');
+    this.replaceFullTestOwnedBlock('executionBlock', renderFullTestExecutionBlock(block));
+  }
+
+  publishFullTestResult(result: FullTestTerminalResult): void {
+    requireCleanScalar(result.summary, 'result.summary');
+    this.updateFullTestStatus('authorized', result.status);
+    this.replaceFullTestOwnedBlock('result', renderFullTestResult(result));
+  }
+
   appendChange(change: PersistedChangeInput): void {
     const root = parseRoot(this.content);
     if (!Array.isArray(root['changes'])) {
@@ -338,6 +445,7 @@ export function serializeNewDeliveryManifest(
     '    requireApplicableChecks: true',
     '  fullTest:',
     '    requiresOwnerAuthorization: true',
+    ...renderFullTestExecution(input.fullTestExecution),
     '    plan:',
     ...renderStringList(input.fullTestPlan, '      '),
     '',

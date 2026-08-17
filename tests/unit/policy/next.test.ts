@@ -219,12 +219,27 @@ describe('next — no active Change (task 6.4, 6.5, 10.16)', () => {
 });
 
 describe('next — Q1→03 Delivery behavior bridge', () => {
-  function allCompletedSnapshot(opts: { fullTestStatus?: unknown; auths?: unknown }): FormalFactSnapshot {
+  const execution = {
+    id: 'future-full-test',
+    kind: 'command',
+    command: 'node',
+    args: ['verify-full.mjs'],
+    launcherMode: 'direct',
+    scope: 'delivery',
+    timeoutMs: 30_000,
+    resultProtocol: 'flowkit-full-test-result-v1',
+    resultAuthority: 'verification',
+    expectedTerminalStatuses: ['passed', 'failed'],
+  } as const;
+
+  function allCompletedSnapshot(opts: { fullTestStatus?: unknown; auths?: unknown; withExecution?: boolean; executionBlock?: boolean }): FormalFactSnapshot {
     return buildSnapshot({
       changes: [buildChange({ state: 'completed', required: true })],
       gitBoundaries: [buildCheckpointBoundary()],
       deliveryFullTestStatus: opts.fullTestStatus as never,
       ownerAuthorizations: (opts.auths as never) ?? [],
+      ...(opts.withExecution ? { deliveryFullTestExecution: execution } : {}),
+      ...(opts.executionBlock ? { deliveryFullTestExecutionBlock: { schemaVersion: 1, reason: 'outcome-unknown', summary: 'prior process tree not proven terminal' } as const } : {}),
     });
   }
 
@@ -238,6 +253,18 @@ describe('next — Q1→03 Delivery behavior bridge', () => {
     const r = next(allCompletedSnapshot({ fullTestStatus: 'authorized', auths: [buildAuthorization('full-test')] }));
     assert.equal(r.kind, 'blocked');
     if (r.kind === 'blocked') assert.equal(r.diagnosis.reason, 'delivery-behavior-not-implemented');
+  });
+
+  it('authorized with a persisted execution contract exposes the no-Run Full Test Delivery behavior', () => {
+    const r = next(allCompletedSnapshot({ fullTestStatus: 'authorized', auths: [buildAuthorization('full-test')], withExecution: true }));
+    assert.equal(r.kind, 'delivery-behavior');
+    if (r.kind === 'delivery-behavior') assert.equal(r.behavior, 'full-test');
+  });
+
+  it('authorized outcome-unknown blocks re-entry instead of starting a second Full Test attempt', () => {
+    const r = next(allCompletedSnapshot({ fullTestStatus: 'authorized', auths: [buildAuthorization('full-test')], withExecution: true, executionBlock: true }));
+    assert.equal(r.kind, 'blocked');
+    if (r.kind === 'blocked') assert.equal(r.diagnosis.reason, 'full-test-execution-outcome-unknown');
   });
 
   it('passed without finalize authorization asks Owner', () => {

@@ -51,6 +51,22 @@ async function snapshot(root: string, deliveryId: string) {
   });
 }
 
+
+function fullTestExecution(command = 'npm', timeoutMs = 120000) {
+  return {
+    id: 'project-full-verification',
+    kind: 'command',
+    command,
+    args: command === 'npm' ? ['run', 'verify:full'] : ['--full'],
+    launcherMode: command === 'npm' ? 'npm-shim' : 'direct',
+    scope: 'delivery',
+    timeoutMs,
+    resultProtocol: 'flowkit-full-test-result-v1',
+    resultAuthority: 'verification',
+    expectedTerminalStatuses: ['passed', 'failed'],
+  };
+}
+
 function sha256(text: string): string {
   return createHash('sha256').update(text, 'utf8').digest('hex');
 }
@@ -399,6 +415,7 @@ describe('A1 creation write-side', () => {
       acceptance: ['created'],
       architecture: { impact: true, archifyPlan: 'deferred' },
       fullTestPlan: ['typecheck'],
+      fullTestExecution: fullTestExecution(),
       changes: [
         {
           key: 'A1',
@@ -431,6 +448,32 @@ describe('A1 creation write-side', () => {
     const s = await snapshot(root, '20990102-01-created');
     assert.equal(s.conflicts.length, 0);
     assert.equal(s.changes.map((c) => c.architectureImpact).join(','), 'true,false');
+  });
+
+  it('createDelivery persists caller-supplied Full Test execution identity per Delivery instead of a repository-global command/timeout', async () => {
+    const cases = [
+      { id: '20990102-02-node', execution: fullTestExecution('node', 45_000) },
+      { id: '20990102-03-npm', execution: fullTestExecution('npm', 120_000) },
+    ];
+    for (const c of cases) {
+      const root = await freshRoot();
+      await createDelivery(root, {
+        id: c.id,
+        goal: 'Generic Delivery execution binding.',
+        branch: `delivery/${c.id}`,
+        scope: { included: ['genericity'], excluded: ['registry'] },
+        acceptance: ['binding persisted'],
+        architecture: { impact: false, archifyPlan: 'not-required' },
+        fullTestPlan: ['future coverage intent'],
+        fullTestExecution: c.execution,
+        changes: [{ key: 'X1', id: 'future-change', goal: 'Future.', required: true, dependsOn: [], outputs: [], architectureImpact: false }],
+      }, `owner:create:${c.id}`, { now: () => new Date('2099-01-02T00:00:00Z') });
+      const snap = await snapshot(root, c.id);
+      assert.equal(snap.conflicts.length, 0);
+      assert.equal(snap.deliveryFullTestExecution?.command, c.execution.command);
+      assert.equal(snap.deliveryFullTestExecution?.timeoutMs, c.execution.timeoutMs);
+      assert.equal(snap.deliveryFullTestExecution?.launcherMode, c.execution.launcherMode);
+    }
   });
 
   it('createChange appends planned Change and create provenance while preserving unknown section', async () => {
@@ -783,6 +826,7 @@ describe('A1 write CLI', () => {
       acceptance: ['created'],
       architecture: { impact: false, archifyPlan: 'not-required' },
       fullTestPlan: ['typecheck'],
+      fullTestExecution: fullTestExecution(),
       changes: [{
         key: 'A1',
         id: 'cli-change',

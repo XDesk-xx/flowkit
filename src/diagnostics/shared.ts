@@ -111,6 +111,8 @@ export function summarizePolicyResult(result: PolicyResult): string {
   switch (result.kind) {
     case 'action':
       return `action=${result.action}`;
+    case 'delivery-behavior':
+      return `behavior=${result.behavior}; full-test=${result.context.deliveryFullTestStatus ?? 'none'}${result.context.detail === undefined ? '' : `; detail=${escapeScalar(result.context.detail)}`}`;
     case 'owner-decision': {
       const parts = [`decision=${result.decision}`];
       if (result.context.changeKey !== undefined) parts.push(`change=${result.context.changeKey}`);

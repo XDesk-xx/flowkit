@@ -1,0 +1,274 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260817-010-review-propose",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "review-propose",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "6f58e957ae7d98ddd74edb288add46633448ab71898526999134e720919aff95",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-010-review-propose/",
+  "changeKey": "A1",
+  "changeId": "delivery-readiness-and-full-test-behavior",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-009-revise-propose/result.json",
+    "versionFingerprint": "08c9733c331ad1e3dd5686ba23f6e8e76ec50f6af765ea6a75f40d97534bbe66",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260817-009-revise-propose",
+  "canonicalBase": "f132db761bd209e6aff72411108b8e3e1c9801f5",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-009-revise-propose/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "08c9733c331ad1e3dd5686ba23f6e8e76ec50f6af765ea6a75f40d97534bbe66"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "41db595b409c9e6bc00babeabb32990290577eb40245a5bb769e8ec98a1f8d3e"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/design.md",
+      "versionFingerprint": "323a8953a7a28c6072d25af141cba5615ec15fe68c13a06aa2150ab4a36bc0c9",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/proposal.md",
+      "versionFingerprint": "711305a04ced4d660f816cead45aed08ca93d8cce4926cea7d978d251c08dc14",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+      "versionFingerprint": "ee74175015bf62d0e833dda59dd79dc1e4e84379a5b57cda4ee738f1f9d8def8",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-core-model/spec.md",
+      "versionFingerprint": "391e0265340a6a774b8e3ed6fc9a3e0a7ce385d5cb0079874ee371740e68efc5",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+      "versionFingerprint": "8f0f0e005a644bc348f0eb364d43aa156e323702803d9b477eca963a85951e91",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-diagnostic-cli/spec.md",
+      "versionFingerprint": "c398e058f410555dd58c85164c276ad93da76ab9affaacb0e35269941a50febb",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "versionFingerprint": "15b692968b60e1444f742bc42df8695c59ae7f57a472c6ae310925d83262f7b7",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-policy-engine/spec.md",
+      "versionFingerprint": "937ffe2bcd05f380931b03ea2c8268e08889b7e3f7a9ff31b673472cc3df0a92",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/tasks.md",
+      "versionFingerprint": "e203203afcf09477a0fa07b6e19553d094af7763785da89c2aa75e0d0b1cd92a",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "delivery-readiness-and-full-test-behavior",
+      "runId": "20260817-010-review-propose",
+      "action": "review-propose",
+      "role": "reviewer",
+      "semanticInputFingerprint": "6f58e957ae7d98ddd74edb288add46633448ab71898526999134e720919aff95"
+    },
+    "definition": {
+      "action": "review-propose",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-proposal",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "41db595b409c9e6bc00babeabb32990290577eb40245a5bb769e8ec98a1f8d3e"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/design.md",
+        "versionFingerprint": "323a8953a7a28c6072d25af141cba5615ec15fe68c13a06aa2150ab4a36bc0c9",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/proposal.md",
+        "versionFingerprint": "711305a04ced4d660f816cead45aed08ca93d8cce4926cea7d978d251c08dc14",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+        "versionFingerprint": "ee74175015bf62d0e833dda59dd79dc1e4e84379a5b57cda4ee738f1f9d8def8",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-core-model/spec.md",
+        "versionFingerprint": "391e0265340a6a774b8e3ed6fc9a3e0a7ce385d5cb0079874ee371740e68efc5",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+        "versionFingerprint": "8f0f0e005a644bc348f0eb364d43aa156e323702803d9b477eca963a85951e91",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-diagnostic-cli/spec.md",
+        "versionFingerprint": "c398e058f410555dd58c85164c276ad93da76ab9affaacb0e35269941a50febb",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "15b692968b60e1444f742bc42df8695c59ae7f57a472c6ae310925d83262f7b7",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-policy-engine/spec.md",
+        "versionFingerprint": "937ffe2bcd05f380931b03ea2c8268e08889b7e3f7a9ff31b673472cc3df0a92",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/tasks.md",
+        "versionFingerprint": "e203203afcf09477a0fa07b6e19553d094af7763785da89c2aa75e0d0b1cd92a",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-009-revise-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "08c9733c331ad1e3dd5686ba23f6e8e76ec50f6af765ea6a75f40d97534bbe66"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260817-008-review-propose",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-008-review-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "ee2bb0abe7dc301bef66fd3105e63543b281a7fb072ca2025dfe78406aeee9a6"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "A1-RP-004",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "Current 03 command binding is not a cross-platform physical execution identity",
+          "problem": "007 freezes the current 03 instance as `kind=command, command=npm, args=[run, verify:full]` and simultaneously requires `flowkit delivery full-test` to spawn exactly the persisted command/args. On the exact Base, Windows npm execution is already explicitly platform-qualified as `npm.cmd`: `scripts/verification.ts` uses `process.platform === 'win32' ? 'npm.cmd' : 'npm'`, Change Verification uses the same rule, and `resolveCommandForPlatform()` only routes commands that already end in `.cmd/.bat` through ComSpec; it does not translate bare `npm` into `npm.cmd`. Therefore the same durable 03 Manifest binding is proven on Linux but has no frozen Windows launch semantics.",
+          "contractRef": "03 v6 Full Test Plan + Windows compatibility regression; approved Explore physical execution/genericity boundary; 007 Design Decisions 4–6; exact Base src/shared/external-command.ts, scripts/verification.ts, src/verification/change-selection/evidence.ts",
+          "invariant": "A per-Delivery Full Test execution contract must identify one deterministic physical route across the repository's supported execution platforms. Platform launcher mechanics may be a bounded runtime adapter, but they must be part of the frozen contract semantics rather than an ambient-shell assumption.",
+          "requiredOutcome": "Freeze bounded cross-platform launch semantics for the typed execution contract and the current 03 instance. The durable identity must remain one authority, while runtime platform resolution (if needed) is deterministic and explicitly specified/tested. Do not solve this by introducing a Tool Registry, ambient shell discovery, or separate Windows/Linux Full Test truths.",
+          "acceptance": [
+            "The same persisted current-03 execution contract has a specified physical launch on both win32 and non-win32.",
+            "If launcher normalization is used, Proposal/Design state exactly how logical persisted identity maps to the platform launcher and why this is not a second execution authority.",
+            "Windows `.cmd`/ComSpec mechanics are covered by physical/unit regression; bare `npm` is not assumed to work merely because it works on Linux.",
+            "Future caller-supplied contracts remain generic and do not hard-code the current Flowkit npm binding.",
+            "No C1 external-tool runtime or Registry scope is pulled into A1."
+          ]
+        },
+        {
+          "id": "A1-RP-005",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "Windows timeout does not yet prove process-tree termination before authorized re-entry",
+          "problem": "007 gives the per-Delivery command a bounded timeout and relies on raw `authorized` as the only pre-terminal resumable state. However the exact Base `runCommand()` deliberately returns `outcome-unknown` for a Windows timeout unless an owned `windowsProcessTreeCanceller` proves whole-tree termination. The current 03 physical route is `npm -> scripts/verification.ts -> multiple Node/OpenSpec/npm children`, including `build` which writes generated `dist/**`. 007 says timeout fails closed and fresh process may re-enter from `authorized`, but it does not freeze any whole-tree cancellation/termination contract. A timed-out old process tree can therefore remain alive while a fresh authorized attempt starts.",
+          "contractRef": "Approved Explore A1-RE-001 bounded at-least-once re-entry / physical mutation proof; 007 Design Decisions 4, 9 and Risks; exact Base src/shared/external-command.ts Windows timeout semantics",
+          "invariant": "Without a persisted `running`/attempt state, the operator may return to the resumable `authorized` boundary after timeout only when the prior owned process tree is known terminal. Otherwise bounded at-least-once re-entry is not proven and concurrent stale execution can continue mutating generated outputs or consuming resources.",
+          "requiredOutcome": "Freeze timeout ownership so a Full Test attempt cannot return to a re-enterable `authorized` boundary until its spawned process tree is proven terminal. Reuse or extend the existing bounded process mechanics as appropriate; if termination cannot be proven, define a fail-closed behavior that does not silently permit overlapping re-entry. Keep no-Run/no-attempt-ledger/no-running-state unless the frozen contract truly requires otherwise.",
+          "acceptance": [
+            "Windows timeout path has an explicit owned process-tree cancellation/termination contract.",
+            "Operator distinguishes proven `timed-out-cancelled` from `outcome-unknown`; the latter cannot silently be treated as safe re-entry.",
+            "Regression covers a descendant process surviving the launcher and proves Flowkit does not start/accept a new attempt while the prior tree is unproven.",
+            "Linux/non-Windows timeout semantics remain bounded and compatible.",
+            "No general scheduler, background supervisor, attempt ledger or auto-retry system is introduced."
+          ]
+        },
+        {
+          "id": "A1-RP-006",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "Transport/execution failure is not uniquely separated from Verification-owned terminal failed",
+          "problem": "007 correctly requires a valid `flowkit-full-test-result-v1` for terminal Verification result publication, but Design Decision 7 also says timeout/spawn/protocol failure `may publish a bounded failed lifecycle diagnosis only under the closed A1 terminal schema`. The formal-fact/core specs, by contrast, only allow terminal `passed|failed` with a matching valid terminal result/resultRef produced by the physical command. The Proposal therefore leaves two possible implementations for spawn/timeout/missing/malformed protocol: leave durable state `authorized` and return an operator error, or synthesize/publish `failed` despite there being no Verification-owned protocol result.",
+          "contractRef": "One fact, one authority; 03 v6 §9.4 Verification authority result; 007 Design Decisions 7–8; 007 flowkit-core-model terminal publication scenario; formal-fact-reader terminal result consistency requirement",
+          "invariant": "`fullTestStatus=failed` plus `resultRef` is a Verification-owned terminal fact consumed by B1. Infrastructure/transport inability to obtain a valid Verification result must not be silently converted into a fabricated Verification failure, and A1 must define one deterministic durable state transition for each failure class.",
+          "requiredOutcome": "Classify and freeze terminal semantics: a valid Verification protocol `status=failed` may publish durable Full Test `failed`; spawn/timeout/protocol-integrity failures must have one explicit fail-closed lifecycle behavior that does not fabricate a Verification resultRef. Align Design, Tasks, Reader and B1 handoff wording to that single rule.",
+          "acceptance": [
+            "Proposal/Design define exactly which outcomes may transition `authorized -> failed`.",
+            "No `verification:full-test:<hash>` is created without a valid closed Verification protocol payload.",
+            "Spawn failure, timeout/outcome-unknown, missing result and malformed/mismatched protocol each have deterministic durable-state behavior.",
+            "B1 receives only genuine terminal Verification failure (`failed + valid resultRef/check projection`), not transport diagnostics.",
+            "Writer/Reader/Policy/resume tests cover the frozen distinction."
+          ]
+        }
+      ],
+      "convergence": [
+        {
+          "findingId": "A1-RP-001",
+          "state": "resolved"
+        },
+        {
+          "findingId": "A1-RP-002",
+          "state": "resolved"
+        },
+        {
+          "findingId": "A1-RP-003",
+          "state": "resolved"
+        },
+        {
+          "findingId": "A1-RP-004",
+          "state": "new"
+        },
+        {
+          "findingId": "A1-RP-005",
+          "state": "new"
+        },
+        {
+          "findingId": "A1-RP-006",
+          "state": "new"
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "da2127d356a0bfbdc691fee12cdf4daaaacc7fbf2e022732e451155d30724b09",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

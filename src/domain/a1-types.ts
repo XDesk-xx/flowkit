@@ -1,4 +1,5 @@
 import type { ChangeState } from './types.js';
+import type { FullTestExecutionContract } from './full-test.js';
 
 export type ArchitectureImpactFact = boolean | 'pre-a1-legacy-missing';
 
@@ -75,6 +76,7 @@ export interface DeliveryCreateInput {
   readonly acceptance: readonly string[];
   readonly architecture: DeliveryArchitectureInput;
   readonly fullTestPlan: readonly string[];
+  readonly fullTestExecution: FullTestExecutionContract;
   readonly changes: readonly ChangeCreateInput[];
 }
 

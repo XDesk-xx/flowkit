@@ -67,14 +67,14 @@ D1 MUST 实现 `canRun`、`next`、`diagnose` 三个公开纯函数。三个函�
 
 ### Requirement: next 计算唯一合法下一 Action
 
-`next(snapshot)` MUST 返回 `PolicyResult` 互斥联合类型：`action`（唯一合法 Action）、`owner-decision`（需 owner 授权）、`blocked`（无法推进）。`snapshot.conflicts` 非空时 MUST 返回 `blocked`。无 active Delivery 时 MUST 返回 `blocked`。有 active Change 时按 Change 生命周期决策树计算；**无 active Change 时 MUST 先判断是否存在已 completed 但尚未形成 Change Checkpoint 的 Change。只有该 Change 的 matching archive Run 已合法 terminal completed 时，才可进入 `owner-decision: authorize-checkpoint`；若 archive Run仍 pending/non-terminal，则 MUST保持 archive recovery/blocked boundary。Checkpoint 完成后才继续下一 Change 激活或 Delivery-level 流程。** 多解或歧义时 MUST 返回 `blocked`。
+`next(snapshot)` MUST 返回 `PolicyResult` 互斥联合类型：`action`（唯一合法 Standard Change Action）、`owner-decision`（需 owner 授权）、`delivery-behavior`（唯一合法非 Action Delivery behavior）或 `blocked`（无法推进）。A1 只新增 `delivery-behavior: full-test`；Delivery Finalize 继续由 F1 实现。`snapshot.conflicts` 非空时 MUST 返回 `blocked`。无 active Delivery 时 MUST 返回 `blocked`。有 active Change 时按 Change 生命周期决策树计算；**无 active Change 时 MUST 先判断是否存在已 completed 但尚未形成 Change Checkpoint 的 Change。只有该 Change 的 matching archive Run 已合法 terminal completed 时，才可进入 `owner-decision: authorize-checkpoint`；若 archive Run仍 pending/non-terminal，则 MUST保持 archive recovery/blocked boundary。Checkpoint 完成后才继续下一 Change 激活或 Delivery-level 流程。** 多解或歧义时 MUST 返回 `blocked`。
 
 当 active Change存在current Contract Reset时，Policy MUST把该reset解释为新的proposal contract generation boundary：最近合法approved Explore可继续作为handoff；旧 `propose/revise-propose/review-propose/apply/revise-apply/review-apply/archive` Runs若不匹配current reset identity，MUST不参与current stage/currentArtifactRun/current review/lineage。若尚无current propose producer，`next(snapshot)` MUST返回`action: propose`。stage detection、`next`与`canRun` MUST使用同一reset-aware projection，MUST NOT通过all-historical stage fallback重新激活旧approval。
 
 #### Scenario: PolicyResult 为互斥联合类型
 
 - **WHEN** 调用 `next(snapshot)`
-- **THEN** 返回值 MUST 恰好为以下之一：`{ kind: 'action', action }`、`{ kind: 'owner-decision', decision, context }`、`{ kind: 'blocked', diagnosis }`
+- **THEN** 返回值 MUST 恰好为以下之一：`{ kind: 'action', action }`、`{ kind: 'owner-decision', decision, context }`、`{ kind: 'delivery-behavior', behavior: 'full-test', context }`、`{ kind: 'blocked', diagnosis }`
 - **AND** MUST NOT 同时返回多种 kind
 
 #### Scenario: conflicts 非空时 blocked
@@ -115,6 +115,15 @@ D1 MUST 实现 `canRun`、`next`、`diagnose` 三个公开纯函数。三个函�
 - **BUT** matching archive Run仍pending或其它non-terminal状态
 - **THEN** `next(snapshot)` MUST NOT返回 `authorize-checkpoint`
 - **AND** MUST返回bounded blocked/recovery diagnosis，使同一archive continuation先合法terminalize
+
+#### Scenario: authorized Full Test 返回 Delivery behavior
+
+- **WHEN** 当前无 active Change
+- **AND** 所有 required Changes completed/checkpointed
+- **AND** current effective `deliveryFullTestStatus=authorized`
+- **AND** matching delivery-scoped `authorize-full-test` Owner fact 已存在
+- **THEN** `next(snapshot)` MUST 返回 `kind=delivery-behavior, behavior=full-test`
+- **AND** MUST NOT 返回 `action: full-test`、创建 Standard Run 或自动执行该 behavior
 
 #### Scenario: Checkpoint 完成后才继续下一流程
 
@@ -255,7 +264,7 @@ Policy MUST 为全部 10 个 Change-level Action 定义语义前置条件。`rev
 
 ### Requirement: Delivery-level Action 前置条件
 
-Standard `canRun` MUST NOT 接受 `full-test` 或 `delivery-finalize`，因为二者不再是 Standard Formal Action。Delivery Full Test / Finalize 的完整 machine behavior contract 后置到 03。Q1→03 期间 Policy 的 no-active-change 分支 MUST 继续消费 `fullTestStatus` 与 Owner authorization 做 deterministic/fail-closed transition，但不得把 Delivery behavior 伪装为 Action/Run。
+Standard `canRun` MUST NOT 接受 `full-test` 或 `delivery-finalize`，因为二者不再是 Standard Formal Action。A1 MUST实现 Owner-authorized Delivery Full Test 的 machine behavior boundary；Delivery Finalize 仍后置到 F1。Policy 的 no-active-change 分支 MUST消费 current effective `fullTestStatus` 与 Owner authorization 做 deterministic transition，但不得把 Delivery behavior 伪装为 Action/Run。
 
 #### Scenario: Standard canRun 不接受 full-test
 
@@ -271,11 +280,29 @@ Standard `canRun` MUST NOT 接受 `full-test` 或 `delivery-finalize`，因为�
 
 #### Scenario: authorized Full Test 在 03 前 blocked
 
-- **WHEN** 无 active Change且所有 required Changes completed/checkpointed
+- **WHEN** bounded historical/pre-A1 snapshot 中无 active Change且所有 required Changes completed/checkpointed
 - **AND** `deliveryFullTestStatus=authorized`
+- **AND** A1 executable binding或 Delivery behavior executor在该 historical snapshot 中不可用
 - **THEN** `next` MUST 返回 deterministic blocked diagnosis
-- **AND** blocked reason MUST 表达 Delivery behavior 尚未由当前 Change 实现
-- **AND** MUST NOT 返回 `action: full-test`
+- **AND** MUST NOT 返回 `action: full-test`、Standard Run 或 fabricated terminal result
+
+#### Scenario: authorized Full Test 在 A1 后可执行
+
+- **WHEN** current A1+ snapshot 中无 active Change且所有 required Changes completed/checkpointed
+- **AND** `deliveryFullTestStatus=authorized`
+- **AND** matching Owner Full Test authorization 与 executable binding 均存在
+- **AND** current `verification.fullTest.executionBlock` 不存在
+- **THEN** `next` MUST 返回 `delivery-behavior: full-test`
+- **AND** MUST NOT 返回 `action: full-test` 或创建 Standard Run
+
+#### Scenario: authorized + outcome-unknown block 不允许 Full Test 重入
+
+- **WHEN** no active Change
+- **AND** current effective `deliveryFullTestStatus=authorized`
+- **AND** current `verification.fullTest.executionBlock.reason=outcome-unknown`
+- **THEN** Policy MUST 返回 deterministic blocked boundary（例如 `full-test-execution-outcome-unknown`）
+- **AND** MUST NOT 返回 `delivery-behavior: full-test`
+- **AND** MUST NOT返回 Standard Action/Run
 
 #### Scenario: passed + finalize authorized 在 03 前 blocked
 

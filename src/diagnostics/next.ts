@@ -22,6 +22,14 @@ export function formatPolicyResult(result: PolicyResult): string {
     case 'action':
       lines.push(line('kind', 'action'), line('action', result.action));
       break;
+    case 'delivery-behavior':
+      lines.push(
+        line('kind', 'delivery-behavior'),
+        line('behavior', result.behavior),
+        line('context-full-test', result.context.deliveryFullTestStatus ?? 'none'),
+        line('context-detail', result.context.detail ?? 'none'),
+      );
+      break;
     case 'owner-decision':
       lines.push(
         line('kind', 'owner-decision'),
