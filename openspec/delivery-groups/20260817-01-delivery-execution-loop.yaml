@@ -1,0 +1,246 @@
+id: "20260817-01-delivery-execution-loop"
+createdAt: "2026-08-17"
+branch: "delivery/20260817-01-delivery-execution-loop"
+
+goal: "在已完成的 Deterministic Core 与 Change Execution Loop 基础上交付完整 Delivery Execution Loop：让 Flowkit 能够从 Delivery Start 开始，经过 Current System Architecture 冻结、Planned Architecture、Change 生命周期、Delivery Ready、Owner 授权 Full Test、Actual Architecture 与 Planned-vs-Actual Compare、Owner Finalize 与 Delivery Final Git boundary，确定性关闭整条 Delivery。本 Delivery 是最后一条 Bootstrap Delivery；不实现自动 Author/Reviewer 循环、bounded auto-continue、Tool Registry、Skill Registry、Evidence platform 或自动 Commit/Push/Merge。"
+
+delivery:
+  state: active
+  fullTestStatus: not-ready
+
+scope:
+  included:
+    - "Delivery readiness projection"
+    - "Delivery behavior Policy representation (Full Test / Finalize no-Run)"
+    - "Owner-authorized Full Test behavior"
+    - "fullTestStatus persistence/projection"
+    - "Delivery Finding + corrective Change owner boundary"
+    - "FLOWKIT_HOME minimal local-environment contract"
+    - "shared external-tool home resolution (FLOWKIT_HOME/tools)"
+    - "OpenSpec 1.7 managed offline distribution"
+    - "Archify v2.14.0 official offline distribution"
+    - "exact external-tool identity / doctor / fail-closed semantics"
+    - "repository-level architecture/<delivery-id>/json durable source layout"
+    - "architecture/<delivery-id>/html disposable derived view layout"
+    - "initial post-02 System Architecture baseline (exact main @ 74d46f0)"
+    - "03 bootstrap Planned Architecture reconciliation"
+    - "Actual Architecture from final repository"
+    - "Planned vs Actual compare (thin Archify wrapper)"
+    - "accepted Actual -> next SystemArchitectureRef"
+    - "Delivery Finalize behavior + Delivery Final Git boundary"
+    - "sync / resume (no chat dependency)"
+    - "consume 02 generic Change Verification / three-file Run baseline"
+    - "consume exact-candidate Verification retry/history baseline"
+    - "thin single-Change-Action Agent Adapter"
+    - "stable Runner"
+    - "Bootstrap E2E fixture"
+    - "self-hosting acceptance"
+    - "Delivery-level performance observation"
+  excluded:
+    - "automatic Author/Reviewer loop"
+    - "bounded auto-continue"
+    - "background autonomous multi-action execution"
+    - "automatic Full Test / Finalize authorization"
+    - "automatic corrective Change"
+    - "automatic Merge"
+    - "Tool Registry / marketplace / auto installer"
+    - "Plugin / Provider / Agent / Gate Registry"
+    - "Skill Registry / Skill installer"
+    - "Evidence / Receipt platform"
+    - "Archify source vendoring"
+    - "reimplement Archify renderer/schema"
+    - "OpenSpec source vendoring"
+    - "CodeGraph platform"
+    - "per-Change architecture regeneration"
+    - "architecture JSON inferred from chat memory"
+
+architecture:
+  impact: true
+  archifyPlan: "deferred-to-03"
+
+changes:
+  - key: "A1"
+    id: "delivery-readiness-and-full-test-behavior"
+    goal: "让 Flowkit 确定性判断 Delivery Ready，并在 Owner 授权后执行 Delivery Full Test；Full Test 是 Delivery behavior，不是 Change Action/Run。"
+    required: true
+    dependsOn:
+      []
+    state: planned
+    architectureImpact: true
+    outputs:
+      - "Delivery readiness projection"
+      - "Full Test Plan contract"
+      - "Owner authorize-full-test boundary"
+      - "fullTestStatus lifecycle"
+
+  - key: "B1"
+    id: "delivery-findings-and-corrective-change"
+    goal: "把 Delivery Full Test failure 变成 Delivery-level Finding + Owner decision，而不是重开 completed Change 或自动修复。"
+    required: true
+    dependsOn:
+      - "delivery-readiness-and-full-test-behavior"
+    state: planned
+    architectureImpact: true
+    outputs:
+      - "failed Full Test projection"
+      - "minimal Delivery Finding"
+      - "Owner corrective-Change decision boundary"
+      - "fullTestStatus reset to not-ready"
+
+  - key: "C1"
+    id: "external-tool-runtime-and-archify-cli-contract"
+    goal: "建立一个最薄的 shared External Tool Runtime，使 OpenSpec 与 Archify 都能通过 FLOWKIT_HOME/tools 使用 exact offline distribution，消除 canonical ambient PATH ambiguity。"
+    required: true
+    dependsOn:
+      - "delivery-findings-and-corrective-change"
+    state: planned
+    architectureImpact: true
+    outputs:
+      - "FLOWKIT_HOME/tools layout"
+      - "OpenSpec 1.7.0 managed offline distribution"
+      - "Archify v2.14.0 official offline distribution"
+      - "exact tool identity / doctor / fail-closed semantics"
+
+  - key: "D1"
+    id: "architecture-baseline-and-delivery-plan"
+    goal: "建立 Flowkit 第一个可信 System Architecture baseline，并把 03 的计划能力表达成 Planned Architecture；Architecture assets 位于 repository 顶层 architecture/。"
+    required: true
+    dependsOn:
+      - "external-tool-runtime-and-archify-cli-contract"
+    state: planned
+    architectureImpact: true
+    outputs:
+      - "architecture/<delivery-id>/json/** durable source layout"
+      - "post-02 Current/System baseline"
+      - "03 bootstrap Planned reconciliation"
+      - "Archify validate binding"
+
+  - key: "E1"
+    id: "architecture-actual-compare-and-system-promotion"
+    goal: "Delivery final candidate 形成 Actual Architecture，与 Planned 做 Archify compare；Owner 接受后，Accepted Actual ref 成为下一 Delivery 的 System Architecture baseline。"
+    required: true
+    dependsOn:
+      - "architecture-baseline-and-delivery-plan"
+    state: planned
+    architectureImpact: true
+    outputs:
+      - "Actual Architecture from final repository"
+      - "Planned vs Actual compare"
+      - "accepted ActualArchitectureRef -> SystemArchitectureRef promotion"
+
+  - key: "F1"
+    id: "delivery-finalize-and-git-boundary"
+    goal: "在所有 Delivery completion preconditions 与 Owner Finalize authorization 满足后，正式关闭 Delivery，并形成 Delivery Final Git boundary。"
+    required: true
+    dependsOn:
+      - "architecture-actual-compare-and-system-promotion"
+    state: planned
+    architectureImpact: true
+    outputs:
+      - "finalization precondition projection"
+      - "Owner authorize-finalize boundary"
+      - "Delivery state -> completed"
+      - "Delivery Final Git boundary"
+
+  - key: "G1"
+    id: "sync-resume-and-single-action-agent-adapter"
+    goal: "让 Delivery/Change 状态可以只依赖 repository/formal facts resume；提供稳定的、一次一个 Change Action 的薄 Agent Adapter。"
+    required: true
+    dependsOn:
+      - "delivery-finalize-and-git-boundary"
+    state: planned
+    architectureImpact: true
+    outputs:
+      - "Delivery resume projection"
+      - "Verification.md + verification-history lineage read"
+      - "single-action Agent Adapter"
+
+  - key: "H1"
+    id: "stable-runner-and-self-hosting-acceptance"
+    goal: "发布 stable Runner，并通过 disposable end-to-end fixture 证明 01+02+03 已形成可以管理下一条真实 Delivery 的 MVP。"
+    required: true
+    dependsOn:
+      - "sync-resume-and-single-action-agent-adapter"
+    state: planned
+    architectureImpact: true
+    outputs:
+      - "stable dist/bin/flowkit.js"
+      - "full Bootstrap fixture"
+      - "Bootstrap E2E / self-hosting acceptance"
+      - "post-03 SystemArchitectureRef"
+
+ownerDecisions:
+  - ref: "owner:0df75861bcca98dd0adf7c821f5bad559d882419521fce780d234fe6c079e680"
+    decision: "create-delivery"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    sourceRef: "ref/03-delivery-start-local-ai-handoff.md"
+
+verification:
+  change:
+    requireApplicableChecks: true
+  fullTest:
+    requiresOwnerAuthorization: true
+    plan:
+      - "Deterministic Core suite"
+      - "Change Execution Loop suite"
+      - "Delivery readiness projection"
+      - "Delivery behavior Policy result (Full Test no-Run / Finalize no-Run)"
+      - "Full Test authorization boundary"
+      - "Full Test failure / corrective Change lifecycle"
+      - "02 Final verification retry/history regressions"
+      - "OpenSpec archive-sync completeness regression"
+      - "FLOWKIT_HOME resolution"
+      - "OpenSpec managed offline tool"
+      - "OpenSpec legacy migration compatibility"
+      - "Archify exact release identity"
+      - "offline Archify doctor"
+      - "Archify validate architecture"
+      - "Archify deliver architecture"
+      - "Archify compare architecture"
+      - "no ambient PATH canonical dependency"
+      - "architecture/<delivery-id>/json durable-source layout"
+      - "architecture/<delivery-id>/html local derived-view layout"
+      - "flowkit architecture render current/planned/actual thin wrapper"
+      - "flowkit architecture compare thin wrapper"
+      - "initial post-02 System baseline"
+      - "03 bootstrap Planned reconciliation"
+      - "normal future Planned lifecycle"
+      - "Actual / Compare / Promotion"
+      - "HTML absence/staleness does not create second authority"
+      - "Delivery Finalize no-Run invariant"
+      - "Git Delivery Final boundary"
+      - "sync/resume"
+      - "three-file new Run / historical legacy Run compatibility"
+      - "single-action Agent Adapter"
+      - "Bootstrap fixture E2E"
+      - "quality hard guards"
+      - "typecheck"
+      - "lint"
+      - "build"
+      - "OpenSpec strict"
+      - "Windows compatibility regression"
+      - "performance/timing"
+
+acceptance:
+  - "Delivery Ready 可确定性计算（required Changes completed + checkpoints present + Blocking Findings = 0 + formal facts consistent + Full Test Plan available）"
+  - "Policy 可表达 Delivery behavior 而不伪造 Formal Action / Run"
+  - "Full Test 必须 Owner 独立明确授权，不创建 Run"
+  - "Full Test failure -> Delivery Finding + Owner decision，不自动 corrective Change；corrective Change 使用普通 Change lifecycle"
+  - "FLOWKIT_HOME/tools 最小 external-tool model 可用，canonical 执行不依赖 ambient PATH"
+  - "OpenSpec canonical 执行可使用 exact managed offline distribution"
+  - "Archify canonical 执行可使用 exact managed offline distribution"
+  - "legacy OpenSpec launcher/override compatibility 有明确 bounded migration"
+  - "repository 顶层 architecture/ layout 可用；JSON 是 durable source；HTML 是派生视图、默认不提交、可删除重建、非 authority"
+  - "initial post-02 System Architecture baseline 来自 exact pre-03 baseline，03 working tree 不污染 Current"
+  - "03 Bootstrap Planned reconciliation provenance 明确"
+  - "Actual 必须从 final repository 重新观察，不得复制 Planned 冒充"
+  - "flowkit architecture render current|planned|actual / compare 是薄 Archify CLI wrapper"
+  - "Planned vs Actual compare 提供结构证据，不构成 Review verdict / Owner decision"
+  - "Accepted Actual 以 ref promotion 成为下一 Delivery Current 来源"
+  - "Finalize 必须 Owner 授权，不创建 Run，Delivery Final Git boundary 正确"
+  - "PR Merge Commit workflow 保留 Delivery topology，不 squash/rebase"
+  - "sync/resume 无聊天依赖；thin Agent Adapter 一次只执行一个 Change Action"
+  - "new Change Run 保持 action.md/context.json/result.json 三文件；historical E1 legacy Run 可读"
+  - "generic Change Verification 与 exact-candidate retry/history baseline 不回归"
+  - "stable Runner 可用；Bootstrap E2E 通过；self-hosting acceptance passed"
+  - "不存在 auto review/revise、bounded auto-continue、Registry / Evidence platform"
