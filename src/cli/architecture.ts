@@ -11,7 +11,7 @@ export async function runArchitectureCli(
 
   if (args[1] === 'render' && args.length === 3) {
     const kind = args[2];
-    if (kind !== 'current' && kind !== 'planned') return undefined;
+    if (kind !== 'current' && kind !== 'planned' && kind !== 'actual') return undefined;
     return service.render(kind);
   }
 

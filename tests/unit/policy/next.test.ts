@@ -638,3 +638,75 @@ describe('next — purity (task 6.13, 10.19)', () => {
     assert.deepEqual(r1, r2);
   });
 });
+
+describe('next — E1 architecture gate after passed Full Test', () => {
+  const completed = buildChange({ key: 'E1', id: 'e1', state: 'completed', required: true });
+  const checkpoint = buildCheckpointBoundary('e1');
+  const awaitingCycle = {
+    schemaVersion: 1 as const,
+    cycleRef: `architecture-cycle:${'1'.repeat(64)}`,
+    fullTestAuthorizationRef: `owner:${'2'.repeat(64)}`,
+    fullTestResultRef: `verification:full-test:${'3'.repeat(64)}`,
+    actualArchitectureRef: {
+      path: 'architecture/test-delivery/json/actual.architecture.json',
+      sha256: '4'.repeat(64),
+      repositoryRevision: '5'.repeat(40),
+    },
+    compareRef: `architecture-compare:${'6'.repeat(64)}`,
+    acceptance: { status: 'awaiting-owner-decision' as const },
+  };
+
+  function passed(overrides: Partial<FormalFactSnapshot> = {}): FormalFactSnapshot {
+    return {
+      ...buildSnapshot({
+        changes: [completed],
+        gitBoundaries: [checkpoint],
+        deliveryFullTestStatus: 'passed',
+        deliveryFullTestRawStatus: 'passed',
+      }),
+      deliveryArchitectureImpact: true,
+      ...overrides,
+    };
+  }
+
+  it('requests Actual/Compare behavior before a current architecture cycle exists', () => {
+    const r = next(passed());
+    assert.equal(r.kind, 'delivery-behavior');
+    if (r.kind === 'delivery-behavior') assert.equal(r.behavior, 'architecture-actual-compare');
+  });
+
+  it('requests explicit Owner acceptance for the exact awaiting cycle', () => {
+    const r = next(passed({ architectureCurrentCycle: awaitingCycle }));
+    assert.equal(r.kind, 'owner-decision');
+    if (r.kind === 'owner-decision') {
+      assert.equal(r.decision, 'accept-architecture');
+      assert.equal(r.context.architectureCycleRef, awaitingCycle.cycleRef);
+    }
+  });
+
+  it('reaches Finalize only after accepted cycle and exact accepted source match', () => {
+    const ownerRef = `owner:${'7'.repeat(64)}`;
+    const acceptedCycle = {
+      ...awaitingCycle,
+      acceptance: { status: 'accepted' as const, ownerDecisionRef: ownerRef },
+    };
+    const r = next(passed({
+      architectureCurrentCycle: acceptedCycle,
+      acceptedSystemSource: {
+        schemaVersion: 1,
+        sourceDeliveryId: 'test-delivery',
+        actualArchitectureRef: acceptedCycle.actualArchitectureRef,
+        compareRef: acceptedCycle.compareRef,
+        ownerAcceptanceRef: ownerRef,
+      },
+    }));
+    assert.equal(r.kind, 'owner-decision');
+    if (r.kind === 'owner-decision') assert.equal(r.decision, 'authorize-delivery-finalize');
+  });
+
+  it('preserves the pre-E1 Finalize path when architecture impact is false', () => {
+    const r = next({ ...passed(), deliveryArchitectureImpact: false });
+    assert.equal(r.kind, 'owner-decision');
+    if (r.kind === 'owner-decision') assert.equal(r.decision, 'authorize-delivery-finalize');
+  });
+});

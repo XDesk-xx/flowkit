@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 4,
+  "runId": "20260818-073-archive",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "archive",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "semanticInputFingerprint": "ceec4851cc5a16248d49723df43278f2032a27cca3b1625b55454f1461bf301e",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-actual-compare-and-system-promotion/20260818-073-archive/",
+  "changeKey": "E1",
+  "changeId": "architecture-actual-compare-and-system-promotion",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-actual-compare-and-system-promotion/20260818-072-review-apply/result.json",
+    "versionFingerprint": "38a48d2a72d3bba3485e8ac6c36029620702ea93933ffd1697355344ed79df7c",
+    "kind": "run-result"
+  },
+  "archiveEntryOpenSpecProjection": {
+    "projectionVersion": 1,
+    "version": "1.7.0",
+    "changeId": "architecture-actual-compare-and-system-promotion",
+    "changeRootLogical": "openspec/changes/architecture-actual-compare-and-system-promotion",
+    "artifactPaths": {
+      "proposal": [
+        "openspec/changes/architecture-actual-compare-and-system-promotion/proposal.md"
+      ],
+      "specs": [
+        "openspec/changes/architecture-actual-compare-and-system-promotion/specs/flowkit-architecture-assets/spec.md",
+        "openspec/changes/architecture-actual-compare-and-system-promotion/specs/flowkit-change-verification-selection/spec.md",
+        "openspec/changes/architecture-actual-compare-and-system-promotion/specs/flowkit-core-model/spec.md",
+        "openspec/changes/architecture-actual-compare-and-system-promotion/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+        "openspec/changes/architecture-actual-compare-and-system-promotion/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "openspec/changes/architecture-actual-compare-and-system-promotion/specs/flowkit-policy-engine/spec.md"
+      ],
+      "design": [
+        "openspec/changes/architecture-actual-compare-and-system-promotion/design.md"
+      ],
+      "tasks": [
+        "openspec/changes/architecture-actual-compare-and-system-promotion/tasks.md"
+      ]
+    }
+  },
+  "archiveMutationGuard": {
+    "state": "armed",
+    "surfaceVersion": "openspec-archive-mutation-v1",
+    "changeRoot": "openspec/changes/architecture-actual-compare-and-system-promotion",
+    "canonicalSpecsRoot": "openspec/specs",
+    "archiveNamespaceRoot": "openspec/changes/archive",
+    "preArchiveGenerationFingerprint": "ddab0fe5e72d7149ea9f667221e0d2473c35a6c5e10021d3d5566690bee5fca8",
+    "terminalObservation": {
+      "kind": "success",
+      "resultFingerprint": "4f2ca58947e6ff17354929e435f3252270ae39c128337adcd5bcedbe6fe704fd",
+      "normalized": {
+        "kind": "success",
+        "change": "architecture-actual-compare-and-system-promotion",
+        "archivedAs": "2026-08-18-architecture-actual-compare-and-system-promotion",
+        "path": "openspec/changes/archive/2026-08-18-architecture-actual-compare-and-system-promotion",
+        "specsUpdated": true,
+        "totals": {
+          "added": 6,
+          "modified": 11,
+          "removed": 0,
+          "renamed": 0
+        }
+      }
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

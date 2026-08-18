@@ -14,6 +14,7 @@ import {
   AUTHORIZATION_ONLY_OWNER_DECISIONS,
 } from '../domain/a1-types.js';
 import { ownerDecisionRefFor } from '../domain/owner-provenance.js';
+import { acceptedSystemSourceFor } from '../architecture/architecture-lifecycle.js';
 import { parseYaml } from '../facts/yaml-parser.js';
 import { readFormalFactSnapshot } from '../facts/formal-fact-reader.js';
 import type { FormalFactSnapshot } from '../facts/formal-fact-snapshot.js';
@@ -137,6 +138,25 @@ function normalizeChangeInput(value: unknown, field = 'change'): ChangeCreateInp
       sourceResultRef: nonEmpty(correctiveObj['sourceResultRef'], `${field}.corrective.sourceResultRef`),
     };
   }
+  let architectureRemediation: ChangeCreateInput['architectureRemediation'];
+  if (obj['architectureRemediation'] !== undefined) {
+    const raw = obj['architectureRemediation'];
+    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field}.architectureRemediation must be an object`);
+    }
+    const remediationObj = raw as Record<string, unknown>;
+    if (JSON.stringify(Object.keys(remediationObj).sort()) !== JSON.stringify(['cycleRef'])) {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field}.architectureRemediation has unsupported fields`);
+    }
+    const cycleRef = nonEmpty(remediationObj['cycleRef'], `${field}.architectureRemediation.cycleRef`);
+    if (!/^architecture-cycle:[0-9a-f]{64}$/.test(cycleRef)) {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field}.architectureRemediation.cycleRef is invalid`);
+    }
+    architectureRemediation = { cycleRef };
+  }
+  if (corrective !== undefined && architectureRemediation !== undefined) {
+    throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field}.corrective and architectureRemediation are mutually exclusive`);
+  }
   return {
     key: nonEmpty(obj['key'], `${field}.key`),
     id: nonEmpty(obj['id'], `${field}.id`),
@@ -146,6 +166,7 @@ function normalizeChangeInput(value: unknown, field = 'change'): ChangeCreateInp
     outputs: stringArray(obj['outputs'], `${field}.outputs`),
     architectureImpact: requireBoolean(obj['architectureImpact'], `${field}.architectureImpact`),
     ...(corrective !== undefined && { corrective }),
+    ...(architectureRemediation !== undefined && { architectureRemediation }),
   };
 }
 
@@ -259,11 +280,16 @@ export function buildOwnerDecisionRecord(input: {
   readonly changeId?: string;
   readonly scope?: string;
   readonly requiredOutcomes?: readonly string[];
+  readonly architectureCycleRef?: string;
 }): OwnerDecisionRecord {
   const deliveryId = nonEmpty(input.deliveryId, 'deliveryId');
   const sourceRef = nonEmpty(input.sourceRef, 'sourceRef');
   const changeId = input.changeId === undefined ? undefined : nonEmpty(input.changeId, 'changeId');
   const scope = input.scope === undefined ? undefined : nonEmpty(input.scope, 'scope');
+  const architectureCycleRef = input.architectureCycleRef === undefined ? undefined : nonEmpty(input.architectureCycleRef, 'architectureCycleRef');
+  if (architectureCycleRef !== undefined && !/^architecture-cycle:[0-9a-f]{64}$/.test(architectureCycleRef)) {
+    throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'architectureCycleRef is invalid');
+  }
   const requiredOutcomes = input.requiredOutcomes === undefined
     ? undefined
     : [...new Set(input.requiredOutcomes.map((value, index) => nonEmpty(value, `requiredOutcomes[${index}]`)))].sort();
@@ -277,6 +303,7 @@ export function buildOwnerDecisionRecord(input: {
     ...(changeId !== undefined ? { changeId } : {}),
     ...(scope !== undefined ? { scope } : {}),
     ...(requiredOutcomes !== undefined ? { requiredOutcomes } : {}),
+    ...(architectureCycleRef !== undefined ? { architectureCycleRef } : {}),
   });
   return {
     ref,
@@ -285,6 +312,7 @@ export function buildOwnerDecisionRecord(input: {
     ...(changeId !== undefined ? { changeId } : {}),
     ...(scope !== undefined ? { scope } : {}),
     ...(requiredOutcomes !== undefined ? { requiredOutcomes } : {}),
+    ...(architectureCycleRef !== undefined ? { architectureCycleRef } : {}),
     sourceRef,
   };
 }
@@ -399,6 +427,10 @@ export async function createChange(
 
   const policyResult = next(snapshot);
   const failedBoundary = policyResult.kind === 'blocked' && policyResult.diagnosis.reason === 'full-test-failed';
+  const architectureRemediationBoundary =
+    snapshot.deliveryFullTestRawStatus === 'passed'
+    && snapshot.deliveryFullTestStatus === 'passed'
+    && snapshot.architectureCurrentCycle?.acceptance.status === 'awaiting-owner-decision';
   if (failedBoundary) {
     if (input.corrective === undefined) {
       throw new FlowkitError('CORRECTIVE_BINDING_REQUIRED', 'full-test-failed boundary requires change.corrective binding');
@@ -421,6 +453,20 @@ export async function createChange(
     throw new FlowkitError('CORRECTIVE_BINDING_NOT_ALLOWED', 'change.corrective is allowed only at the full-test-failed boundary');
   }
 
+  if (architectureRemediationBoundary) {
+    if (input.architectureRemediation === undefined) {
+      throw new FlowkitError('ARCHITECTURE_REMEDIATION_BINDING_REQUIRED', 'passed architecture gate requires change.architectureRemediation binding');
+    }
+    if (!input.required) {
+      throw new FlowkitError('ARCHITECTURE_REMEDIATION_CHANGE_MUST_BE_REQUIRED', 'architecture remediation Change must be required=true');
+    }
+    if (input.architectureRemediation.cycleRef !== snapshot.architectureCurrentCycle!.cycleRef) {
+      throw new FlowkitError('ARCHITECTURE_REMEDIATION_BINDING_MISMATCH', 'architecture remediation binding does not match current cycle');
+    }
+  } else if (input.architectureRemediation !== undefined) {
+    throw new FlowkitError('ARCHITECTURE_REMEDIATION_BINDING_NOT_ALLOWED', 'change.architectureRemediation is allowed only at passed + awaiting architecture acceptance boundary');
+  }
+
   const ids = new Set(snapshot.changes.map((change) => change.id));
   const keys = new Set(snapshot.changes.map((change) => change.key));
   if (ids.has(input.id) || keys.has(input.key)) {
@@ -438,6 +484,7 @@ export async function createChange(
     deliveryId,
     changeId: input.id,
     sourceRef: nonEmpty(sourceRef, 'sourceRef'),
+    ...(architectureRemediationBoundary ? { architectureCycleRef: snapshot.architectureCurrentCycle!.cycleRef } : {}),
   });
   const path = manifestPath(repoRoot, deliveryId);
   const original = await readFile(path, 'utf8');
@@ -460,6 +507,12 @@ export async function createChange(
     doc.appendOwnerDecision(record);
     doc.removeFullTestResult();
     doc.updateFullTestStatus('failed', 'not-ready');
+  } else if (architectureRemediationBoundary) {
+    doc.appendChange({ ...input, state: 'planned' });
+    doc.appendOwnerDecision(record);
+    doc.removeFullTestResult();
+    doc.updateFullTestStatus('passed', 'not-ready');
+    doc.removeArchitectureCurrentCycle();
   } else {
     doc.appendChange({ ...input, state: 'planned' });
     doc.appendOwnerDecision(record);
@@ -505,11 +558,64 @@ export async function recordOwnerDecision(
 ): Promise<WriteOperationResult> {
   const isAuthorization = (AUTHORIZATION_ONLY_OWNER_DECISIONS as readonly string[]).includes(input.decision);
   const isContractReset = input.decision === 'contract-reset';
-  if (!isAuthorization && !isContractReset) {
+  const isArchitectureAcceptance = input.decision === 'accept-architecture';
+  if (!isAuthorization && !isContractReset && !isArchitectureAcceptance) {
     throw new FlowkitError('OWNER_DECISION_NOT_RECORDABLE', `owner record does not support ${input.decision}`);
   }
   const decision = input.decision as OwnerDecisionRecordKind;
   const deliveryId = await discoverActiveDelivery(repoRoot);
+  const sourceRef = nonEmpty(input.sourceRef, 'sourceRef');
+  const path = manifestPath(repoRoot, deliveryId);
+
+  if (isArchitectureAcceptance) {
+    if (input.changeId !== undefined || input.scope !== undefined || input.requiredOutcomes !== undefined) {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'accept-architecture is delivery-scoped and accepts only sourceRef');
+    }
+    const snapshot = await readSnapshot(repoRoot, deliveryId);
+    assertConflictFree(snapshot);
+    const cycle = snapshot.architectureCurrentCycle;
+    if (cycle === undefined) {
+      throw new FlowkitError('ARCHITECTURE_CYCLE_UNAVAILABLE', 'accept-architecture requires a current architecture cycle');
+    }
+    const record = buildOwnerDecisionRecord({
+      decision: 'accept-architecture',
+      deliveryId,
+      sourceRef,
+      architectureCycleRef: cycle.cycleRef,
+    });
+    if (
+      cycle.acceptance.status === 'accepted'
+      && cycle.acceptance.ownerDecisionRef === record.ref
+      && snapshot.acceptedSystemSource?.ownerAcceptanceRef === record.ref
+    ) {
+      return { deliveryId, ownerDecisionRef: record.ref, idempotent: true };
+    }
+    const current = next(snapshot);
+    if (
+      current.kind !== 'owner-decision'
+      || current.decision !== 'accept-architecture'
+      || current.context.architectureCycleRef !== cycle.cycleRef
+      || cycle.acceptance.status !== 'awaiting-owner-decision'
+    ) {
+      throw new FlowkitError('OWNER_DECISION_GATE_MISMATCH', 'current Policy is not requesting accept-architecture for the current cycle');
+    }
+    const acceptedCycle = {
+      ...cycle,
+      acceptance: { status: 'accepted' as const, ownerDecisionRef: record.ref },
+    };
+    const acceptedSource = acceptedSystemSourceFor({
+      sourceDeliveryId: deliveryId,
+      cycle: acceptedCycle,
+      ownerAcceptanceRef: record.ref,
+    });
+    const original = await readFile(path, 'utf8');
+    const doc = DeliveryManifestDocument.parse(original);
+    doc.appendOwnerDecision(record);
+    doc.publishArchitectureAcceptance(acceptedCycle, acceptedSource);
+    await (options.atomicWrite ?? atomicWriteFile)(path, doc.toString());
+    return { deliveryId, ownerDecisionRef: record.ref };
+  }
+
   if (isContractReset) {
     if (input.changeId === undefined || input.scope === undefined || input.requiredOutcomes === undefined) {
       throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'contract-reset requires --change, scope and requiredOutcomes');
@@ -518,12 +624,11 @@ export async function recordOwnerDecision(
   const record = buildOwnerDecisionRecord({
     decision,
     deliveryId,
-    sourceRef: nonEmpty(input.sourceRef, 'sourceRef'),
+    sourceRef,
     ...(input.changeId !== undefined ? { changeId: input.changeId } : {}),
     ...(input.scope !== undefined ? { scope: input.scope } : {}),
     ...(input.requiredOutcomes !== undefined ? { requiredOutcomes: input.requiredOutcomes } : {}),
   });
-  const path = manifestPath(repoRoot, deliveryId);
 
   const retryProbe = DeliveryManifestDocument.parse(await readFile(path, 'utf8'));
   const retryProbeResult = retryProbe.appendOwnerDecision(record);

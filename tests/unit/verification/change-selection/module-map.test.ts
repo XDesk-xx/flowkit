@@ -266,6 +266,59 @@ describe('verification module map', () => {
     }
   });
 
+  it('builds the E1 expected actualChangeSet into the matched 11-check physical chain', () => {
+    const fingerprint = 'b'.repeat(64);
+    const paths = [
+      'src/architecture/architecture-lifecycle.ts',
+      'src/architecture/architecture-service.ts',
+      'src/cli/architecture.ts',
+      'src/domain/a1-types.ts',
+      'src/domain/owner-provenance.ts',
+      'src/facts/formal-fact-reader.ts',
+      'src/persistence/delivery-manifest-document.ts',
+      'src/policy/next.ts',
+      'src/services/a1-write-service.ts',
+      'src/verification/change-selection/evidence.ts',
+      'src/verification/change-selection/module-map.ts',
+      'tests/integration/e1-architecture-actual-compare-and-system-promotion.test.ts',
+      'tests/unit/architecture/architecture-lifecycle.test.ts',
+      'tests/unit/policy/next.test.ts',
+      'tests/unit/persistence/delivery-manifest-document.test.ts',
+      'tests/unit/services/a1-write-service.test.ts',
+      'tests/unit/verification/change-selection/evidence.test.ts',
+      'tests/unit/verification/change-selection/module-map.test.ts',
+    ] as const;
+    const actualChangeSet = paths.map((path) => ({
+      path,
+      kind: path.endsWith('architecture-lifecycle.ts') || path.includes('tests/integration/e1-') || path.includes('tests/unit/architecture/architecture-lifecycle') ? 'create' as const : 'modify' as const,
+      pathKindBefore: path.endsWith('architecture-lifecycle.ts') || path.includes('tests/integration/e1-') || path.includes('tests/unit/architecture/architecture-lifecycle') ? 'missing' as const : 'file' as const,
+      pathKindAfter: 'file' as const,
+      contentFingerprintAfter: fingerprint,
+    }));
+    const selection = buildVerificationSelection(actualChangeSet, [
+      'openspec/changes/architecture-actual-compare-and-system-promotion/specs/flowkit-architecture-assets/spec.md',
+      'openspec/changes/architecture-actual-compare-and-system-promotion/specs/flowkit-change-verification-selection/spec.md',
+      'openspec/changes/architecture-actual-compare-and-system-promotion/specs/flowkit-core-model/spec.md',
+      'openspec/changes/architecture-actual-compare-and-system-promotion/specs/flowkit-delivery-change-creation-and-owner-input/spec.md',
+      'openspec/changes/architecture-actual-compare-and-system-promotion/specs/flowkit-formal-fact-reader-and-persistence/spec.md',
+      'openspec/changes/architecture-actual-compare-and-system-promotion/specs/flowkit-policy-engine/spec.md',
+    ]);
+    assert.deepEqual(selection.capabilityRelation, { kind: 'matched' });
+    for (const scope of [
+      'openspec-current-change-archive-sync',
+      'openspec-current-change-strict',
+      'tests-architecture',
+      'tests-cli',
+      'tests-execution',
+      'tests-external-tools',
+      'tests-openspec-runtime',
+      'tests-persistence',
+      'tests-serialization',
+      'tests-verification',
+      'typecheck',
+    ]) assert.equal(selection.verificationScopes.includes(scope), true, scope);
+  });
+
   it('keeps C1 external-tool/OpenSpec/CLI ownership exact and non-overlapping', () => {
     const cases = [
       ['src/integrations/external-tools/managed-tool.ts', 'external-tools'],

@@ -44,6 +44,7 @@ import {
   areTasksComplete,
 } from './preconditions.js';
 import { hasOwnerAuthorization } from './owner-decision.js';
+import { acceptedSourceMatchesCycle } from '../architecture/architecture-lifecycle.js';
 import {
   evaluateVerificationGate,
   verificationGateDiagnosis,
@@ -353,14 +354,34 @@ function decideFullTestLifecycle(snapshot: FormalFactSnapshot): PolicyResult {
       // or cancel. Policy MUST NOT auto-retry or auto-create corrective Change.
       return blockedResult(fullTestFailedDiagnosis(snapshot.currentDeliveryFullTestFinding));
 
-    case 'passed':
+    case 'passed': {
+      if (snapshot.deliveryArchitectureImpact === true) {
+        const cycle = snapshot.architectureCurrentCycle;
+        if (cycle === undefined) {
+          return deliveryBehaviorResult('architecture-actual-compare', {
+            deliveryFullTestStatus: status,
+            detail: 'Full Test passed; Architecture Actual/Compare behavior must publish the current cycle before Finalize',
+          });
+        }
+        if (cycle.acceptance.status === 'awaiting-owner-decision') {
+          return ownerDecisionResult('accept-architecture', {
+            deliveryFullTestStatus: status,
+            architectureCycleRef: cycle.cycleRef,
+            detail: 'Planned-vs-Actual compare evidence is current; explicit Owner architecture acceptance is required',
+          });
+        }
+        if (!acceptedSourceMatchesCycle(snapshot.acceptedSystemSource, cycle)) {
+          return blockedResult(ambiguousStateDiagnosis('accepted architecture cycle is missing an exact acceptedSystemSource binding'));
+        }
+      }
       if (hasOwnerAuthorization(snapshot.ownerAuthorizations, 'authorize-delivery-finalize', snapshot.deliveryId)) {
         return blockedResult(deliveryBehaviorNotImplementedDiagnosis('delivery-finalize'));
       }
       return ownerDecisionResult('authorize-delivery-finalize', {
         deliveryFullTestStatus: status,
-        detail: 'Full Test passed; Delivery Finalize awaits owner authorization',
+        detail: 'Full Test passed and architecture gate is satisfied; Delivery Finalize awaits owner authorization',
       });
+    }
 
     case 'authorized':
       if (snapshot.deliveryFullTestExecution === undefined) {

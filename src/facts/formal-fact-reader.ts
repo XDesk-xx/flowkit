@@ -46,6 +46,8 @@ import type {
   ResolvedFullTestFailureFinding,
 } from '../domain/full-test.js';
 import { ownerDecisionRefFor } from '../domain/owner-provenance.js';
+import { acceptedSourceMatchesCycle, parseAcceptedSystemSource, parseCurrentArchitectureCycle } from '../architecture/architecture-lifecycle.js';
+import type { AcceptedSystemSource, CurrentArchitectureCycle } from '../architecture/architecture-lifecycle.js';
 import { isPreA1LegacyArchitectureImpactIdentity } from './pre-a1-legacy-architecture-impact.js';
 import { FlowkitError } from '../shared/errors.js';
 import { runCommand } from '../shared/external-command.js';
@@ -178,6 +180,9 @@ export async function readFormalFactSnapshotOperation(
     ...(manifestResult.deliveryFullTestResult !== undefined && { deliveryFullTestResult: manifestResult.deliveryFullTestResult }),
     deliveryFullTestFailureHistory: manifestResult.deliveryFullTestFailureHistory,
     deliveryFullTestFindings: manifestResult.deliveryFullTestFindings,
+    ...(manifestResult.deliveryArchitectureImpact !== undefined && { deliveryArchitectureImpact: manifestResult.deliveryArchitectureImpact }),
+    ...(manifestResult.architectureCurrentCycle !== undefined && { architectureCurrentCycle: manifestResult.architectureCurrentCycle }),
+    ...(manifestResult.acceptedSystemSource !== undefined && { acceptedSystemSource: manifestResult.acceptedSystemSource }),
     ...(manifestResult.currentDeliveryFullTestFinding !== undefined && {
       currentDeliveryFullTestFinding: manifestResult.currentDeliveryFullTestFinding,
     }),
@@ -209,6 +214,9 @@ interface ManifestResult {
   readonly deliveryFullTestFailureHistory: readonly FullTestTerminalResult[];
   readonly deliveryFullTestFindings: readonly ResolvedFullTestFailureFinding[];
   readonly currentDeliveryFullTestFinding?: FullTestFailureFinding;
+  readonly deliveryArchitectureImpact?: boolean;
+  readonly architectureCurrentCycle?: CurrentArchitectureCycle;
+  readonly acceptedSystemSource?: AcceptedSystemSource;
   readonly changes: readonly ChangeFact[];
   readonly ownerAuthorizations: readonly OwnerAuthorizationFact[];
   readonly ownerDecisionFacts: readonly OwnerDecisionFact[];
@@ -657,6 +665,57 @@ async function readDeliveryManifest(input: ReadFormalFactSnapshotInput): Promise
     }
   }
 
+  let deliveryArchitectureImpact: boolean | undefined;
+  let architectureCurrentCycle: CurrentArchitectureCycle | undefined;
+  let acceptedSystemSource: AcceptedSystemSource | undefined;
+  const architectureObj = manifestObject(manifest['architecture']);
+  if (architectureObj !== undefined) {
+    if (typeof architectureObj['impact'] === 'boolean') {
+      deliveryArchitectureImpact = architectureObj['impact'];
+    } else {
+      conflicts.push({ dimension: 'delivery-architecture', authority: manifestPath, message: 'architecture.impact must be boolean' });
+    }
+    try {
+      if (architectureObj['currentCycle'] !== undefined) {
+        architectureCurrentCycle = parseCurrentArchitectureCycle(architectureObj['currentCycle'], input.deliveryId);
+        const latestAuthorizationRef = latestFullTestAuthorizationRef(input.deliveryId, currentOwnerDecisionFacts);
+        if (fullTestStatus !== 'passed' || result === undefined) {
+          throw new FlowkitError('ARCHITECTURE_CYCLE_QUALIFICATION_MISMATCH', 'current architecture cycle requires current passed Full Test result');
+        }
+        if (architectureCurrentCycle.fullTestResultRef !== result.resultRef || architectureCurrentCycle.fullTestAuthorizationRef !== latestAuthorizationRef) {
+          throw new FlowkitError('ARCHITECTURE_CYCLE_QUALIFICATION_MISMATCH', 'current architecture cycle does not bind current Full Test authorization/result occurrence');
+        }
+        const actualBytes = await readFile(join(input.repoRoot, architectureCurrentCycle.actualArchitectureRef.path));
+        const actualSha = createHash('sha256').update(actualBytes).digest('hex');
+        if (actualSha !== architectureCurrentCycle.actualArchitectureRef.sha256) {
+          throw new FlowkitError('ARCHITECTURE_REF_MISMATCH', 'current architecture Actual fingerprint does not match durable JSON');
+        }
+      }
+      if (architectureObj['acceptedSystemSource'] !== undefined) {
+        acceptedSystemSource = parseAcceptedSystemSource(architectureObj['acceptedSystemSource'], input.deliveryId);
+        if (!acceptedSourceMatchesCycle(acceptedSystemSource, architectureCurrentCycle)) {
+          throw new FlowkitError('ARCHITECTURE_SOURCE_MISMATCH', 'acceptedSystemSource must match accepted current architecture cycle');
+        }
+        const cycle = architectureCurrentCycle!;
+        const ownerRef = cycle.acceptance.status === 'accepted' ? cycle.acceptance.ownerDecisionRef : undefined;
+        const ownerFact = currentOwnerDecisionFacts.find((fact) => fact.ref === acceptedSystemSource!.ownerAcceptanceRef);
+        if (ownerRef !== acceptedSystemSource.ownerAcceptanceRef || ownerFact?.decision !== 'accept-architecture' || ownerFact.architectureCycleRef !== cycle.cycleRef) {
+          throw new FlowkitError('ARCHITECTURE_ACCEPTANCE_MISMATCH', 'acceptedSystemSource Owner acceptance does not bind the same architecture cycle');
+        }
+      } else if (architectureCurrentCycle?.acceptance.status === 'accepted') {
+        throw new FlowkitError('ARCHITECTURE_SOURCE_MISSING', 'accepted current architecture cycle requires acceptedSystemSource');
+      }
+    } catch (error) {
+      conflicts.push({
+        dimension: 'delivery-architecture-lifecycle',
+        authority: manifestPath,
+        message: error instanceof Error ? error.message : String(error),
+      });
+      architectureCurrentCycle = undefined;
+      acceptedSystemSource = undefined;
+    }
+  }
+
   return {
     deliveryState,
     deliveryFullTestStatus: fullTestStatus,
@@ -666,6 +725,9 @@ async function readDeliveryManifest(input: ReadFormalFactSnapshotInput): Promise
     deliveryFullTestFailureHistory: failureHistory,
     deliveryFullTestFindings: findings,
     ...(currentFinding !== undefined && { currentDeliveryFullTestFinding: currentFinding }),
+    ...(deliveryArchitectureImpact !== undefined && { deliveryArchitectureImpact }),
+    ...(architectureCurrentCycle !== undefined && { architectureCurrentCycle }),
+    ...(acceptedSystemSource !== undefined && { acceptedSystemSource }),
     changes,
     ownerAuthorizations,
     ownerDecisionFacts: currentOwnerDecisionFacts,
@@ -786,6 +848,7 @@ function readOwnerAuthorizations(
     const changeId = obj['changeId'];
     const scope = obj['scope'];
     const requiredOutcomes = obj['requiredOutcomes'];
+    const architectureCycleRef = obj['architectureCycleRef'];
     const sourceRef = obj['sourceRef'];
     if (
       typeof ref !== 'string' ||
@@ -841,6 +904,19 @@ function readOwnerAuthorizations(
       });
       continue;
     }
+    if (architectureCycleRef !== undefined) {
+      if (typeof architectureCycleRef !== 'string' || !/^architecture-cycle:[0-9a-f]{64}$/.test(architectureCycleRef)) {
+        conflicts.push({ dimension: 'owner-decision-record', authority: manifestPath, message: `Owner record ${ref} has invalid architectureCycleRef` });
+        continue;
+      }
+      if (typedRecordDecision !== 'accept-architecture' && typedRecordDecision !== 'create-change') {
+        conflicts.push({ dimension: 'owner-decision-record', authority: manifestPath, message: `Owner record ${ref} carries architectureCycleRef for unsupported decision` });
+        continue;
+      }
+    } else if (typedRecordDecision === 'accept-architecture') {
+      conflicts.push({ dimension: 'owner-decision-record', authority: manifestPath, message: `Owner accept-architecture ${ref} requires architectureCycleRef` });
+      continue;
+    }
     const expectedRef = ownerDecisionRefFor({
       decision: typedRecordDecision,
       deliveryId: recordDeliveryId,
@@ -848,6 +924,7 @@ function readOwnerAuthorizations(
       ...(typeof changeId === 'string' ? { changeId } : {}),
       ...(typeof scope === 'string' ? { scope } : {}),
       ...(normalizedRequiredOutcomes !== undefined ? { requiredOutcomes: normalizedRequiredOutcomes } : {}),
+      ...(typeof architectureCycleRef === 'string' ? { architectureCycleRef } : {}),
     });
     if (ref !== expectedRef) {
       conflicts.push({
@@ -865,6 +942,7 @@ function readOwnerAuthorizations(
       ...(typeof changeId === 'string' ? { changeId } : {}),
       ...(typeof scope === 'string' ? { scope } : {}),
       ...(normalizedRequiredOutcomes !== undefined ? { requiredOutcomes: normalizedRequiredOutcomes } : {}),
+      ...(typeof architectureCycleRef === 'string' ? { architectureCycleRef } : {}),
       sourceRef,
     });
     const prior = seenRefs.get(ref);
@@ -912,6 +990,7 @@ function readOwnerAuthorizations(
       ...(typeof changeId === 'string' ? { changeId } : {}),
       ...(typeof scope === 'string' ? { scope } : {}),
       ...(normalizedRequiredOutcomes !== undefined ? { requiredOutcomes: normalizedRequiredOutcomes } : {}),
+      ...(typeof architectureCycleRef === 'string' ? { architectureCycleRef } : {}),
       sourceRef,
     });
 

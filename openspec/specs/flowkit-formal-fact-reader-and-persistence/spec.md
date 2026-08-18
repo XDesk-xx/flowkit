@@ -7,6 +7,8 @@
 
 C1 MUST 提供只读 `FormalFactSnapshot`，用于 Policy 消费 active Delivery/Change、dependencies、OpenSpec artifacts、current Change Runs、Reviewer Verdict 与最小 blocking-authority projection、Change Verification、Tasks completion、Delivery raw/effective `fullTestStatus`、Full Test executable binding/minimal terminal result projection、owner authorization、Archive/Checkpoint/Git boundary 和 conflicts。Snapshot MUST NOT 把完整 Reviewer Finding corpus、Full Test raw logs 或 Verification evidence corpus复制为第二数据库；Policy 所需 blocking authority MUST 从 current matching Reviewer result 派生，Full Test technical result MUST 由 Verification-owned structured result projection提供。
 
+E1 MUST project only the bounded architecture facts needed by Policy/Delivery behavior: current architecture cycle, its acceptance state, and accepted system source. It MUST NOT copy Architecture JSON, generated HTML or Archify receipt payloads into the snapshot.
+
 #### Scenario: Reviewer authority 只投影 Policy 所需最小集合
 
 - **WHEN** Reader 读取 completed `review-*` result
@@ -26,6 +28,12 @@ C1 MUST 提供只读 `FormalFactSnapshot`，用于 Policy 消费 active Delivery
 - **WHEN** Reader 发现当前 Policy relevant formal fact 自相矛盾或不可解析
 - **THEN** MUST 收集 `FactConflict`
 - **AND** Policy MUST NOT 猜测 authority 或下一 Action
+
+#### Scenario: fresh reader projects current architecture qualification
+- **WHEN** Manifest contains a valid E1 current architecture cycle
+- **THEN** a fresh reader MUST project exact cycleRef/fullTestAuthorizationRef/fullTestResultRef/Actual ref/compareRef/acceptance state
+- **AND** fullTestAuthorizationRef MUST resolve to the delivery-scoped `authorize-full-test` Owner fact that qualifies the current passed result
+- **AND** malformed fingerprint/path/Owner/qualification binding MUST surface a formal conflict
 
 ### Requirement: 正式事实 Reader 遵循 One fact, one authority
 
@@ -483,6 +491,8 @@ Terminal `verification.fullTest.result` 只允许在 persisted `fullTestStatus=p
 
 `resultRef` MUST 为 `verification:full-test:<sha256>`。Reader/Writer MUST 重建固定字段顺序 canonical object `{schemaVersion,status,summary,totalDurationMs,checks}`，每个 check 重建固定字段顺序 `{id,status,durationMs}`，保持 `checks` array order，对该 object 的无空白、无 trailing newline UTF-8 `JSON.stringify` bytes 计算 lowercase SHA-256；hash domain MUST 排除 `resultRef` 自身且 MUST NOT 依赖 Manifest/YAML key ordering。Status/result 缺失、不匹配、duplicate check id、unsupported schemaVersion、malformed timing 或 recomputed resultRef mismatch MUST 收集 `FactConflict` 并 fail closed。
 
+The Delivery Manifest `architecture` mapping MAY additionally contain E1 `currentCycle` and `acceptedSystemSource`. Pre-E1 manifests without those optional fields MUST remain readable; present E1 fields MUST use the closed schema and coherent internal bindings. `currentCycle` MUST include both `fullTestAuthorizationRef` and `fullTestResultRef`, and its cycleRef MUST be recomputable from the authorization occurrence plus result/Actual/compare refs.
+
 #### Scenario: 读取嵌套 delivery.state 和 delivery.fullTestStatus
 
 - **WHEN** Reader 读取 Delivery Manifest
@@ -559,6 +569,16 @@ Terminal `verification.fullTest.result` 只允许在 persisted `fullTestStatus=p
 - **WHEN** Delivery Manifest 文件不存在
 - **THEN** `deliveryState` 和 Full Test status projection MUST 为 `undefined`
 - **AND** MUST NOT 收集 `FactConflict`（bootstrap-only Delivery 由 Policy 决定）
+
+#### Scenario: pre-E1 architecture mapping remains compatible
+- **WHEN** `architecture` contains only `impact` and `archifyPlan`
+- **THEN** Reader MUST accept the Manifest and project no current cycle/accepted source
+
+#### Scenario: accepted source must match accepted current cycle and Owner fact
+- **WHEN** acceptedSystemSource is present
+- **THEN** it MUST bind an accepted Actual/compare source and a valid `accept-architecture` Owner record for the same cycle
+- **AND** that cycle MUST retain coherent Full Test authorization occurrence provenance
+- **AND** mismatched source/cycle/Owner refs MUST fail closed
 
 ### Requirement: Review verdict 重建 + reviewed-Run 连接
 
@@ -1128,6 +1148,8 @@ FormalFactReader MUST 把 active Delivery Manifest 的有效 `ownerDecisions` �
 
 A1 persistence MUST 支持：创建 minimal Delivery Manifest（包含 caller-supplied typed `verification.fullTest.execution`）、向 existing active Manifest 追加 planned Change、追加 Owner decision record、把唯一 target Change state 从 planned 改为 active，以及 A1 Delivery Full Test lifecycle 所需的 bounded `delivery.fullTestStatus` / `verification.fullTest.execution` / optional `verification.fullTest.executionBlock` / `verification.fullTest.result` mutation。Existing Manifest mutation MUST 基于唯一 structured spans/indentation contract，只改 owned bytes并 preserve 其它 section；ambiguous/duplicate/unsupported owned shape MUST fail closed。最终文件 MUST atomic publish。
 
+E1 MUST additionally support atomic publication of current architecture cycle creation, Owner acceptance/accepted-source publication, and architecture-remediation invalidation while preserving unrelated fields and exact Full Test semantics.
+
 #### Scenario: existing Manifest round-trip 保留未知 section
 - **WHEN** existing Manifest 含 A1 parser 不消费的合法 top-level section
 - **AND** 只记录 Owner decision、激活 Change 或发布 Full Test lifecycle/result
@@ -1137,6 +1159,16 @@ A1 persistence MUST 支持：创建 minimal Delivery Manifest（包含 caller-su
 - **WHEN** authorized Full Test execution terminal 返回 passed 或 failed
 - **THEN** Manifest writer MUST 在一次 atomic replace 中同时更新 `delivery.fullTestStatus` 与 matching `verification.fullTest.result`
 - **AND** partial status-only 或 result-only durable publication MUST NOT 出现
+
+#### Scenario: compare publication is atomic and bounded
+- **WHEN** post-Full-Test Planned-vs-Actual compare produces a valid current cycle
+- **THEN** persistence MUST publish the complete cycle or leave the prior Manifest unchanged
+- **AND** MUST NOT persist generated HTML/receipt body as authority
+
+#### Scenario: remediation invalidates Full Test and architecture cycle atomically
+- **WHEN** exact architecture remediation admission succeeds
+- **THEN** planned Change append, Owner provenance, Full Test result removal/status reset and currentCycle removal MUST appear in one atomic Manifest publication
+- **AND** partial publication MUST NOT be observable
 
 ### Requirement: Owner decision ref 必须 deterministic 且 idempotent
 

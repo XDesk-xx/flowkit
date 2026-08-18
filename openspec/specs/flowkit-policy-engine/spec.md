@@ -266,6 +266,8 @@ Policy MUST 为全部 10 个 Change-level Action 定义语义前置条件。`rev
 
 Standard `canRun` MUST NOT 接受 `full-test` 或 `delivery-finalize`，因为二者不再是 Standard Formal Action。A1 MUST实现 Owner-authorized Delivery Full Test 的 machine behavior boundary；Delivery Finalize 仍后置到 F1。Policy 的 no-active-change 分支 MUST消费 current effective `fullTestStatus` 与 Owner authorization 做 deterministic transition，但不得把 Delivery behavior 伪装为 Action/Run。
 
+After E1, architecture finalization remains Delivery behavior/Owner decisions outside the Standard Change Action catalog. For `architecture.impact=true`, Full Test passed MUST NOT directly qualify Finalize until a current Actual/Compare cycle exists and explicit Owner architecture acceptance is current.
+
 #### Scenario: Standard canRun 不接受 full-test
 
 - **WHEN** 调用 Standard `canRun` 请求 `full-test`
@@ -311,6 +313,25 @@ Standard `canRun` MUST NOT 接受 `full-test` 或 `delivery-finalize`，因为�
 - **AND** Owner finalize authorization 已存在
 - **THEN** `next` MUST 返回 deterministic blocked diagnosis
 - **AND** MUST NOT 返回 `action: delivery-finalize`
+
+#### Scenario: passed Full Test requests architecture behavior before Finalize
+- **WHEN** all required Changes are completed/checkpointed
+- **AND** Delivery Full Test status is `passed`
+- **AND** architecture impact is true
+- **AND** no current architecture cycle exists
+- **THEN** Policy MUST return a Delivery architecture actual/compare behavior boundary
+- **AND** MUST NOT request Finalize authorization
+
+#### Scenario: compare cycle requests Owner architecture acceptance
+- **WHEN** current architecture cycle exists with acceptance `awaiting-owner-decision`
+- **THEN** Policy MUST return Owner decision `accept-architecture` bound to that Delivery/cycle context
+- **AND** MUST NOT infer acceptance from compare success
+
+#### Scenario: accepted architecture unlocks later Finalize authorization
+- **WHEN** Full Test remains passed
+- **AND** current architecture cycle is accepted
+- **AND** acceptedSystemSource exactly matches that cycle
+- **THEN** Policy MAY proceed to existing `authorize-delivery-finalize` boundary
 
 ### Requirement: fail-closed 冲突优先于一切决策
 
@@ -742,6 +763,8 @@ Policy MUST 先从 formal facts 决定唯一 legal Action；仅在选择 `apply`
 
 合法 corrective admission 原子完成后，raw `fullTestStatus=not-ready`、current terminal result 已退出 current authority且一个 ordinary required planned corrective Change 已存在；Policy MUST 因这些新 formal facts 退出 `full-test-failed` boundary，并继续使用既有 ordinary Change activation/lifecycle 与 A1 readiness/full-test authorization规则。Historical resolved occurrence—even with the same `sourceResultRef`—MUST NOT suppress or replace a later current occurrence with a different `authorizationRef`。
 
+E1 architecture non-acceptance MUST remain separate from this failed boundary. A passed Full Test with an awaiting architecture cycle MUST NOT be projected as `full-test-failed` or consume Full-Test-failure Finding authority.
+
 #### Scenario: failed boundary 暴露 current Finding occurrence context
 - **WHEN** snapshot 有唯一合法 current failed Full Test result与 current authorization fact
 - **THEN** `next/diagnose` MUST 返回 `blocked: full-test-failed`
@@ -769,3 +792,8 @@ Policy MUST 先从 formal facts 决定唯一 legal Action；仅在选择 `apply`
 - **THEN** A1 readiness projection MUST 得到 `awaiting-user-decision`
 - **AND** Policy MUST 请求新的 `authorize-full-test`
 - **AND** MUST NOT 因历史 `authorize-full-test` record 自动返回 executable Full Test behavior
+
+#### Scenario: architecture non-acceptance uses architecture gate not failure Finding
+- **WHEN** Full Test is passed and current architecture cycle awaits Owner acceptance
+- **THEN** Policy MUST NOT return `full-test-failed`
+- **AND** any remediation create-change handoff MUST bind the architecture cycle rather than a Full Test Finding occurrence

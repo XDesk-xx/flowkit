@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260818-067-propose",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "propose",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "19e2960a1d573a138e75f4605ea7cbeb2153319da9103bedbf2b4c79ee634f19",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-actual-compare-and-system-promotion/20260818-067-propose/",
+  "changeKey": "E1",
+  "changeId": "architecture-actual-compare-and-system-promotion",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-actual-compare-and-system-promotion/20260818-066-review-explore/result.json",
+    "versionFingerprint": "6a6f999e29fda16f34626e51bf8b1f91493646e8e339ded325752d0c7bcd4915",
+    "kind": "run-result"
+  },
+  "canonicalBase": "8cf17ed0981717227f9b01ffdef94dae6532366a",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-actual-compare-and-system-promotion/20260818-066-review-explore/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "6a6f999e29fda16f34626e51bf8b1f91493646e8e339ded325752d0c7bcd4915"
+    },
+    {
+      "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+    },
+    {
+      "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/explore.md",
+      "versionFingerprint": "fb257c08a7545b4db3bdc2713a17058d7f2843ccc945193466cf5f4fd15992a6",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "architecture-actual-compare-and-system-promotion",
+      "runId": "20260818-067-propose",
+      "action": "propose",
+      "role": "author",
+      "semanticInputFingerprint": "19e2960a1d573a138e75f4605ea7cbeb2153319da9103bedbf2b4c79ee634f19"
+    },
+    "definition": {
+      "action": "propose",
+      "version": 1,
+      "role": "author",
+      "goalClass": "freeze-change-contract",
+      "mutationClass": "proposal-bundle-only",
+      "outputClass": "current-proposal-bundle-set",
+      "terminalContract": {
+        "kind": "artifact",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+      },
+      {
+        "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/explore.md",
+        "versionFingerprint": "fb257c08a7545b4db3bdc2713a17058d7f2843ccc945193466cf5f4fd15992a6",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-actual-compare-and-system-promotion/20260818-066-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "6a6f999e29fda16f34626e51bf8b1f91493646e8e339ded325752d0c7bcd4915"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260818-066-review-explore",
+      "verdict": "approved",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-actual-compare-and-system-promotion/20260818-066-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "6a6f999e29fda16f34626e51bf8b1f91493646e8e339ded325752d0c7bcd4915"
+      },
+      "blockingAuthorities": [],
+      "findings": [],
+      "convergence": [
+        {
+          "findingId": "E1-RE-001",
+          "state": "resolved"
+        },
+        {
+          "findingId": "E1-RE-002",
+          "state": "resolved"
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "5233d1857645a4279a9177b0c22826d9cced63bea8d0ae6a4b578eca3e68afd4",
+    "requiredResultContract": {
+      "kind": "artifact",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": true,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

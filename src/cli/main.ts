@@ -36,7 +36,7 @@ const DIAGNOSTIC_COMMANDS = new Set(['status', 'next', 'doctor', 'resume-context
 const CHANGE_OPERATOR_COMMANDS = new Set<ChangeOperatorIntent>(['explore', 'review', 'revise', 'propose', 'apply']);
 
 const USAGE =
-  'usage: flowkit <status|next|doctor|resume-context|explore|review|revise|propose|apply|verify|archive|architecture render <current|planned>|architecture compare <base-kind> <head-kind>|delivery full-test|create delivery|create change|owner record|recover contract-reset-pending|recover archive-terminal|activate|--version> [--result <path>] [verify option: --retry]\n';
+  'usage: flowkit <status|next|doctor|resume-context|explore|review|revise|propose|apply|verify|archive|architecture render <current|planned|actual>|architecture compare <base-kind> <head-kind>|delivery full-test|create delivery|create change|owner record|recover contract-reset-pending|recover archive-terminal|activate|--version> [--result <path>] [verify option: --retry]\n';
 
 function optionValue(args: readonly string[], name: string): string | undefined {
   const index = args.indexOf(name);

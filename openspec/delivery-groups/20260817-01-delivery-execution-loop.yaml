@@ -121,7 +121,7 @@ changes:
     required: true
     dependsOn:
       - "architecture-baseline-and-delivery-plan"
-    state: planned
+    state: completed
     architectureImpact: true
     outputs:
       - "Actual Architecture from final repository"
@@ -321,6 +321,26 @@ ownerDecisions:
     deliveryId: "20260817-01-delivery-execution-loop"
     changeId: "architecture-baseline-and-delivery-plan"
     sourceRef: "ref/flowkit-local-ai-handoff-d1-062-archive.md"
+  - ref: "owner:25f59b20ba8106aeb40834fd9d87e4b191b56a2a4ff6352ecdc0f43c780d5fb1"
+    decision: "activate-change"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "architecture-actual-compare-and-system-promotion"
+    sourceRef: "owner-input:2026-08-18T16:12+08:00:E1-activate-and-explore"
+  - ref: "owner:e1ddd03d42328c988dc8a3ba732707f7cbd56d1fa6a207b7dcee594186b25fd7"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "architecture-actual-compare-and-system-promotion"
+    sourceRef: "owner-input:2026-08-18T18:06+08:00:authorize-apply:E1"
+  - ref: "owner:05deca7b4014d46c3d3c665ebe3fbf16a34d5dbe1a950457b08d479d03e625b7"
+    decision: "authorize-archive"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "architecture-actual-compare-and-system-promotion"
+    sourceRef: "owner-input:2026-08-18T19:37+08:00:authorize-archive:E1"
+  - ref: "owner:e2bf484fa59d7a2e556a31ec8f169ce5da5eeaa286658e2b236ea243fa31f5e2"
+    decision: "authorize-checkpoint"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "architecture-actual-compare-and-system-promotion"
+    sourceRef: "ref/flowkit-local-ai-handoff-e1-073-archive.md"
 verification:
   change:
     requireApplicableChecks: true

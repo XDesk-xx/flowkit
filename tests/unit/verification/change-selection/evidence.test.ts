@@ -175,6 +175,44 @@ describe('verification evidence affected Node union', () => {
       await rm(root, { recursive: true, force: true });
     }
   });
+  it('physically executes the E1 Architecture target through tests-architecture and fails on its sentinel', async () => {
+    const root = await createTempDir();
+    try {
+      await symlink(join(process.cwd(), 'node_modules'), join(root, 'node_modules'), 'dir');
+      await writeFile(join(root, 'package.json'), '{"type":"module"}\n', 'utf8');
+      await mkdir(join(root, 'tests', 'integration'), { recursive: true });
+      await mkdir(join(root, 'tests', 'unit', 'architecture'), { recursive: true });
+      await writeFile(join(root, 'tests', 'integration', 'd1-architecture-baseline-and-delivery-plan.test.ts'), "import { test } from 'node:test'; test('d1 ok', () => {});\n", 'utf8');
+      await writeFile(join(root, 'tests', 'integration', 'e1-architecture-actual-compare-and-system-promotion.test.ts'), [
+        "import assert from 'node:assert/strict';",
+        "import { test } from 'node:test';",
+        "test('e1 architecture sentinel', () => assert.fail('E1 architecture selected target sentinel'));",
+        '',
+      ].join('\n'), 'utf8');
+      await writeFile(join(root, 'tests', 'unit', 'architecture', 'ok.test.ts'), "import { test } from 'node:test'; test('ok', () => {});\n", 'utf8');
+      const previousNodeTestContext = process.env['NODE_TEST_CONTEXT'];
+      delete process.env['NODE_TEST_CONTEXT'];
+      try {
+        const evidence = await executeVerificationSelection({
+          repoRoot: root,
+          changeId: 'e1',
+          runDir: join(root, '.flowkit', 'runs', 'e1-sentinel'),
+          producingRunId: '20990101-010-apply',
+          selection: architectureOnlySelection(),
+          fullTestStatus: 'not-ready',
+          openSpecAdapter: { resolveInvocation: async () => ({ toolId: 'openspec', source: 'legacy-compat', command: '/fixture/openspec', argsPrefix: [], propagationEnv: { FLOWKIT_OPENSPEC_BIN: '/fixture/openspec' } }) } as unknown as OpenSpecCliAdapter,
+        });
+        assert.equal(evidence.overallStatus, 'failed');
+        assert.match(evidence.checks[0]?.commandOrMethod ?? '', /e1-architecture-actual-compare-and-system-promotion\.test\.ts/);
+      } finally {
+        if (previousNodeTestContext === undefined) delete process.env['NODE_TEST_CONTEXT'];
+        else process.env['NODE_TEST_CONTEXT'] = previousNodeTestContext;
+      }
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it('uses the reusable archive-sync preflight as a formal logical check and fails closed on structured failure', async () => {
     const root = await createTempDir();
     try {

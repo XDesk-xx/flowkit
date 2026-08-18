@@ -40,6 +40,7 @@ export const OWNER_DECISIONS = [
   'authorize-archive',
   'authorize-full-test',
   'authorize-delivery-finalize',
+  'accept-architecture',
   'authorize-checkpoint',
 ] as const;
 
@@ -138,6 +139,8 @@ export interface OwnerDecisionContext {
   readonly changeKey?: string;
   /** Current Delivery Full Test status (for full-test / finalize decisions). */
   readonly deliveryFullTestStatus?: FullTestStatus;
+  /** E1 exact architecture cycle gate context. */
+  readonly architectureCycleRef?: string;
   /** Eligible planned required change keys (for `activate-change`). */
   readonly eligibleChangeKeys?: readonly string[];
   /** Free-form detail explaining why the decision is requested. */
@@ -194,7 +197,7 @@ export interface PolicyOwnerDecisionResult {
 
 export interface PolicyDeliveryBehaviorResult {
   readonly kind: 'delivery-behavior';
-  readonly behavior: 'full-test';
+  readonly behavior: 'full-test' | 'architecture-actual-compare';
   readonly context: OwnerDecisionContext;
 }
 
@@ -246,7 +249,7 @@ export function ownerDecisionResult(
 }
 
 export function deliveryBehaviorResult(
-  behavior: 'full-test',
+  behavior: 'full-test' | 'architecture-actual-compare',
   context: OwnerDecisionContext = {},
 ): PolicyDeliveryBehaviorResult {
   return { kind: 'delivery-behavior', behavior, context };

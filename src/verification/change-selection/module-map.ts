@@ -79,6 +79,7 @@ export const VERIFICATION_MODULE_MAP: readonly VerificationModule[] = [
       'src/architecture',
       'tests/fixtures/d1-architecture-baseline-and-delivery-plan',
       'tests/integration/d1-architecture-baseline-and-delivery-plan.test.ts',
+      'tests/integration/e1-architecture-actual-compare-and-system-promotion.test.ts',
       'tests/unit/architecture',
     ],
     ['external-tools'],

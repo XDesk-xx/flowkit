@@ -11,6 +11,7 @@ import type {
   FullTestTerminalResult,
   ResolvedFullTestFailureFinding,
 } from '../domain/full-test.js';
+import type { AcceptedSystemSource, CurrentArchitectureCycle } from '../architecture/architecture-lifecycle.js';
 
 function quote(value: string): string {
   return JSON.stringify(value);
@@ -120,6 +121,47 @@ function renderResolvedFullTestFinding(
   ];
 }
 
+
+function renderActualArchitectureRef(ref: CurrentArchitectureCycle['actualArchitectureRef'] | AcceptedSystemSource['actualArchitectureRef'], indent: string): string[] {
+  return [
+    `${indent}path: ${quote(ref.path)}`,
+    `${indent}sha256: ${quote(ref.sha256)}`,
+    `${indent}repositoryRevision: ${quote(ref.repositoryRevision)}`,
+  ];
+}
+
+function renderArchitectureCurrentCycle(cycle: CurrentArchitectureCycle, indent = '  '): string[] {
+  const field = `${indent}  `;
+  const lines = [
+    `${indent}currentCycle:`,
+    `${field}schemaVersion: 1`,
+    `${field}cycleRef: ${quote(cycle.cycleRef)}`,
+    `${field}fullTestAuthorizationRef: ${quote(cycle.fullTestAuthorizationRef)}`,
+    `${field}fullTestResultRef: ${quote(cycle.fullTestResultRef)}`,
+    `${field}actualArchitectureRef:`,
+    ...renderActualArchitectureRef(cycle.actualArchitectureRef, `${field}  `),
+    `${field}compareRef: ${quote(cycle.compareRef)}`,
+    `${field}acceptance:`,
+    `${field}  status: ${cycle.acceptance.status}`,
+  ];
+  if (cycle.acceptance.status === 'accepted') {
+    lines.push(`${field}  ownerDecisionRef: ${quote(cycle.acceptance.ownerDecisionRef)}`);
+  }
+  return lines;
+}
+
+function renderAcceptedSystemSource(source: AcceptedSystemSource, indent = '  '): string[] {
+  const field = `${indent}  `;
+  return [
+    `${indent}acceptedSystemSource:`,
+    `${field}schemaVersion: 1`,
+    `${field}sourceDeliveryId: ${quote(source.sourceDeliveryId)}`,
+    `${field}actualArchitectureRef:`,
+    ...renderActualArchitectureRef(source.actualArchitectureRef, `${field}  `),
+    `${field}compareRef: ${quote(source.compareRef)}`,
+    `${field}ownerAcceptanceRef: ${quote(source.ownerAcceptanceRef)}`,
+  ];
+}
 export function renderOwnerDecisionRecord(
   record: OwnerDecisionRecord,
   itemIndent = '  ',
@@ -139,6 +181,9 @@ export function renderOwnerDecisionRecord(
   if (record.requiredOutcomes !== undefined) {
     lines.push(`${fieldIndent}requiredOutcomes:`);
     lines.push(...renderStringList(record.requiredOutcomes, `${fieldIndent}  `));
+  }
+  if (record.architectureCycleRef !== undefined) {
+    lines.push(`${fieldIndent}architectureCycleRef: ${quote(record.architectureCycleRef)}`);
   }
   lines.push(`${fieldIndent}sourceRef: ${quote(record.sourceRef)}`);
   return lines;
@@ -261,6 +306,7 @@ export class DeliveryManifestDocument {
     requireCleanScalar(record.sourceRef, 'sourceRef');
     if (record.changeId !== undefined) requireCleanScalar(record.changeId, 'changeId');
     if (record.scope !== undefined) requireCleanScalar(record.scope, 'scope');
+    if (record.architectureCycleRef !== undefined) requireCleanScalar(record.architectureCycleRef, 'architectureCycleRef');
     if (record.requiredOutcomes !== undefined) {
       if (record.requiredOutcomes.length === 0) throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'requiredOutcomes must not be empty');
       for (const outcome of record.requiredOutcomes) requireCleanScalar(outcome, 'requiredOutcomes');
@@ -284,6 +330,7 @@ export class DeliveryManifestDocument {
           obj['changeId'] === record.changeId &&
           obj['scope'] === record.scope &&
           JSON.stringify(obj['requiredOutcomes']) === JSON.stringify(record.requiredOutcomes) &&
+          obj['architectureCycleRef'] === record.architectureCycleRef &&
           obj['sourceRef'] === record.sourceRef;
         if (!same) {
           throw new FlowkitError('OWNER_DECISION_REF_COLLISION', `Owner decision ref collision: ${record.ref}`);
@@ -482,6 +529,44 @@ export class DeliveryManifestDocument {
       next.splice(deliverySpan.end, 0, '  fullTestFindings:', ...renderResolvedFullTestFinding(finding));
     }
     this.content = `${next.join('\n')}\n`;
+  }
+
+  private replaceArchitectureOwnedBlock(key: 'currentCycle' | 'acceptedSystemSource', replacement: readonly string[]): void {
+    const lines = splitLines(this.content);
+    const span = findTopLevelSection(lines, 'architecture');
+    if (span === null) throw new FlowkitError('MANIFEST_UNSUPPORTED_SHAPE', 'architecture section missing');
+    const keyRe = new RegExp(`^ {2}${key}:\\s*$`);
+    const starts: number[] = [];
+    for (let i = span.start + 1; i < span.end; i += 1) if (keyRe.test(lines[i]!)) starts.push(i);
+    if (starts.length > 1) throw new FlowkitError('MANIFEST_AMBIGUOUS', `duplicate architecture.${key}`);
+    const next = [...lines];
+    if (starts.length === 1) {
+      const start = starts[0]!;
+      let end = span.end;
+      for (let i = start + 1; i < span.end; i += 1) {
+        if (/^ {2}[A-Za-z_][A-Za-z0-9_-]*:\s*/.test(lines[i]!)) { end = i; break; }
+      }
+      next.splice(start, end - start, ...replacement);
+    } else {
+      next.splice(span.end, 0, ...replacement);
+    }
+    this.content = `${next.join('\n')}\n`;
+  }
+
+  publishArchitectureCurrentCycle(cycle: CurrentArchitectureCycle): void {
+    this.replaceArchitectureOwnedBlock('currentCycle', renderArchitectureCurrentCycle(cycle));
+  }
+
+  removeArchitectureCurrentCycle(): void {
+    this.replaceArchitectureOwnedBlock('currentCycle', []);
+  }
+
+  publishArchitectureAcceptance(cycle: CurrentArchitectureCycle, source: AcceptedSystemSource): void {
+    if (cycle.acceptance.status !== 'accepted') {
+      throw new FlowkitError('ARCHITECTURE_ACCEPTANCE_MISMATCH', 'architecture acceptance publication requires accepted cycle');
+    }
+    this.replaceArchitectureOwnedBlock('currentCycle', renderArchitectureCurrentCycle(cycle));
+    this.replaceArchitectureOwnedBlock('acceptedSystemSource', renderAcceptedSystemSource(source));
   }
 
   appendChange(change: PersistedChangeInput): void {

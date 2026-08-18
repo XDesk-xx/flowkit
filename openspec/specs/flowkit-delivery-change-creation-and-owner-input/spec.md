@@ -98,6 +98,8 @@ Flowkit MUST 只把显式 write operation 收到的 Owner input 记录为 Owner 
 
 A1 MUST NOT 把“未来可能需要该 authorization”当作 admission 条件，也 MUST NOT 建立 generic authority-resolution tracking。create/activate provenance 仍由对应 mutation command 在其自身合法 boundary 内原子记录，不通过 standalone `owner record` 预写。
 
+E1 MUST add `accept-architecture` to the bounded current-gate Owner record surface. The write-side MUST derive and bind the current architecture cycle and atomically publish acceptance plus accepted system source; callers MUST NOT inject arbitrary/stale cycle identity as acceptance authority.
+
 #### Scenario: 提前 authorize-archive 被拒绝
 - **WHEN** current Policy 尚未返回 `owner-decision: authorize-archive` for target Change.id
 - **AND** 调用者尝试持久化该 authorize-archive record
@@ -115,6 +117,17 @@ A1 MUST NOT 把“未来可能需要该 authorization”当作 admission 条件�
 - **AND** persisted raw Full Test status 仍为 readiness-compatible `not-ready|awaiting-user-decision`
 - **THEN** write-side MUST atomic publish matching Owner record 与 `delivery.fullTestStatus=authorized`
 - **AND** MUST NOT执行当前 Delivery 的 Full Test execution contract 或创建 Standard Run
+
+#### Scenario: accept-architecture binds current cycle
+- **WHEN** current Policy requests `accept-architecture` for a non-accepted current architecture cycle
+- **AND** Owner explicitly records the decision with a sourceRef
+- **THEN** the Owner record MUST bind that exact cycleRef through canonical `architectureCycleRef` provenance
+- **AND** current cycle MUST become accepted
+- **AND** acceptedSystemSource MUST be published from the same exact Actual/Compare evidence
+
+#### Scenario: early or stale acceptance is rejected
+- **WHEN** there is no current non-accepted architecture cycle or Policy is not requesting `accept-architecture`
+- **THEN** Owner acceptance admission MUST fail closed without mutating Manifest bytes
 
 ### Requirement: Activation 必须消费 Policy 合法边界与本次 Owner 明确输入
 
@@ -323,6 +336,8 @@ B1 MUST 复用现有 `flowkit create change --input <json> --source-ref <owner-r
 
 `corrective` input MUST NOT接受 `summary`、severity、resolution或其它 Finding projection字段。Writer MUST 从 verified current result与 current authorization fact派生这些 persisted fields。成功 corrective create MUST 继续产生 ordinary `decision=create-change` Owner record；Finding historical projection只引用该 `ownerDecisionRef`、new `changeId`、current `authorizationRef` 与 Verification `sourceResultRef`，Owner record仍是 corrective decision authority。Operation MUST NOT自动 activate new Change、自动 retry Full Test、重开 historical Change、执行 Git boundary或创建 Run。
 
+E1 post-pass architecture remediation MAY reuse the same create-change operator only as a separate mutually-exclusive binding. It MUST NOT reinterpret B1 Full-Test-failed Finding/corrective authority.
+
 #### Scenario: Owner 用现有 create change 创建 bounded corrective Change
 - **WHEN** current Policy 为 `blocked: full-test-failed`
 - **AND** Owner 提供合法 ordinary required Change input、non-empty sourceRef 与 exact current `corrective.findingId/authorizationRef/sourceResultRef`
@@ -351,3 +366,22 @@ B1 MUST 复用现有 `flowkit create change --input <json> --source-ref <owner-r
 - **AND** create input 携带 `corrective`
 - **THEN** operation MUST fail closed
 - **AND** ordinary create semantics MUST 继续要求无 corrective marker
+
+#### Scenario: architecture remediation does not impersonate Full-Test-failed correction
+- **WHEN** raw Full Test is `passed` and current architecture cycle awaits Owner acceptance
+- **THEN** `change.corrective` MUST NOT be accepted as architecture remediation
+- **AND** no Full-Test-failed Finding MUST be created or consumed
+
+### Requirement: post-pass architecture remediation 必须 exact-bind current cycle 并原子失效 stale qualification
+At a passed Full Test + non-accepted current architecture cycle boundary, a required new Change MUST carry `architectureRemediation.cycleRef` matching the exact current cycle. That cycle MUST bind the current delivery-scoped `authorize-full-test` Owner ref plus current technical Full Test resultRef; callers MUST NOT inject or override the authorization occurrence. Missing/stale/mismatched binding MUST fail closed before mutation. Successful admission MUST atomically append the planned Change and Owner provenance, remove current Full Test result, set raw Full Test `passed → not-ready`, and remove current architecture cycle.
+
+#### Scenario: exact remediation binding re-enters fresh Full Test lifecycle
+- **WHEN** Owner creates a required Change with the exact current architecture remediation cycleRef
+- **THEN** the new Change MUST be planned
+- **AND** old current Full Test result/current architecture cycle MUST no longer be current
+- **AND** after normal Change completion+checkpoint readiness MUST project `awaiting-user-decision`
+- **AND** fresh Owner `authorize-full-test` MUST be required before another Actual/Compare cycle
+
+#### Scenario: stale remediation binding cannot mutate repository facts
+- **WHEN** architectureRemediation cycleRef does not equal the current non-accepted cycle, including when it names a prior cycle from an earlier Full Test authorization occurrence
+- **THEN** create-change MUST fail closed before any Manifest mutation

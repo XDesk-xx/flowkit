@@ -42,6 +42,7 @@ import type {
   ResolvedFullTestFailureFinding,
 } from '../domain/full-test.js';
 import type { FormalAction } from '../domain/actions.js';
+import type { AcceptedSystemSource, CurrentArchitectureCycle } from '../architecture/architecture-lifecycle.js';
 
 /**
  * A single conflict detected while reading formal facts.
@@ -179,6 +180,7 @@ export interface OwnerDecisionFact {
   readonly changeId?: string;
   readonly scope?: string;
   readonly requiredOutcomes?: readonly string[];
+  readonly architectureCycleRef?: string;
   readonly sourceRef: string;
 }
 
@@ -214,6 +216,10 @@ export interface FormalFactSnapshot {
   readonly deliveryFullTestResult?: FullTestTerminalResult;
   readonly deliveryFullTestFailureHistory?: readonly FullTestTerminalResult[];
   readonly deliveryFullTestFindings?: readonly ResolvedFullTestFailureFinding[];
+  /** Delivery-level Architecture lifecycle projection (E1). */
+  readonly deliveryArchitectureImpact?: boolean;
+  readonly architectureCurrentCycle?: CurrentArchitectureCycle;
+  readonly acceptedSystemSource?: AcceptedSystemSource;
   readonly currentDeliveryFullTestFinding?: FullTestFailureFinding;
   /** Current active Change Verification status projected from verification.md. */
   readonly changeVerificationStatus?: VerificationStatus;

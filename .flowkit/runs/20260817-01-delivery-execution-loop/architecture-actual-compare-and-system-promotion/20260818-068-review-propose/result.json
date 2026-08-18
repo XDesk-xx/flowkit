@@ -1,0 +1,67 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "Review 067 Proposal：E1 已正确冻结 delayed Actual、post-Full-Test Actual/Compare behavior、explicit Owner accept-architecture、acceptedSystemSource cross-Delivery consumer 与 bounded post-pass architecture remediation；OpenSpec current strict / all 20/20 strict、staging hygiene、build/typecheck 与 Flowkit projection 均正常。完整 Proposal preflight 发现两个 author-owned blocker。第一，067 currentCycle/cycleRef 只绑定 fullTestResultRef，而 Base FullTest resultRef hash 不包含 authorize-full-test Owner occurrence；现有 B1 事实模型明确允许相同 sourceResultRef 在不同 authorizationRef 下成为不同 occurrence，因此 fresh Full Test 后若 result/Actual/compare 相同，旧 architecture cycleRef 可重现，使 stale remediation binding 无法 fail closed。第二，067 明确要求 OwnerDecisionRecord.architectureCycleRef 进入 canonical Owner ref derivation，但 flowkitMutationScope 未包含实际负责 canonical tuple/hash 的 src/domain/owner-provenance.ts；不修改该 consumer 即无法实现 Proposal 自己的 ref-binding invariant。两项均只需 revise-propose，不需要 Owner Contract Reset。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "cb19539a0bc515a78fb0b54ee2eb210ecb1ed6b3f27a9e2e684953a721f29d3b"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "E1-RP-001",
+      "severity": "blocking",
+      "title": "architecture cycle 未绑定 Full Test authorization occurrence，旧 cycleRef 可在 fresh Full Test 后重现",
+      "problem": "067 Design §3/§4 将 currentCycle 只绑定 fullTestResultRef，并以 fullTestResultRef + actualArchitectureRef + compareRef 计算 cycleRef；§7 又只让 architectureRemediation 输入携带 cycleRef。当前 Base 的 Full Test resultRef 仅对 terminal payload {schemaVersion,status,summary,totalDurationMs,checks} 做 hash，不包含 authorize-full-test Owner authorizationRef。Flowkit 已在 B1 failure occurrence 模型中明确承认同一个 sourceResultRef 可以在不同 fresh authorizationRef 下再次出现，并用 authorizationRef + sourceResultRef 区分 occurrence。因此 remediation 失效旧 cycle 后，fresh Owner authorization + fresh Full Test 若产生相同 resultRef，且 Actual/Compare 也相同，新 cycleRef 可以与旧 cycleRef 完全相同；旧 remediation binding 将无法被识别为 stale。",
+      "contractRef": "067 design.md Decisions 3/4/7；flowkit-core-model E1 post-pass remediation invariant；flowkit-delivery-change-creation-and-owner-input stale remediation fail-closed；Base src/domain/full-test.ts canonical resultRef 与 src/facts/formal-fact-reader.ts Full Test occurrence handling。",
+      "invariant": "Architecture current cycle 必须绑定 exact Full Test qualification occurrence，而不是只绑定可跨 fresh authorization 重复的 technical result payload。Fresh authorize-full-test 后形成的新 qualification 必须具有不同 occurrence identity；旧 cycleRef/remediation binding 必须确定性失效。",
+      "evidence": [
+        "067 design.md currentCycle shape 只有 fullTestResultRef；cycleRef 定义为 fullTestResultRef + actualArchitectureRef + compareRef，没有 Full Test authorization occurrence ref。",
+        "Base src/domain/full-test.ts fullTestResultRefFor() 的 canonical payload 不含 authorizationRef；Reviewer 用同一 passed payload得到同一 verification:full-test:* resultRef。",
+        "Base/B1 occurrence 逻辑 fullTestFailureFindingIdFor() 明确使用 deliveryId + authorizationRef + sourceResultRef；Reviewer 对同一 resultRef、两个不同 authorizationRef 得到两个不同 occurrence id，证明 resultRef 本身不具备 occurrence 唯一性。",
+        "067 自身 policy delta 仍保留‘相同 sourceResultRef 的新 occurrence不被历史 resolution吞掉’这一正式事实。"
+      ],
+      "impact": "若直接 Apply，post-pass remediation 后即使完成 fresh Owner Full Test authorization，旧 architecture remediation cycleRef 仍可能与新 current cycleRef 相等。这样 stale binding 可以错误命中新资格，违反 065/067 冻结的 stale-safe remediation 与 fresh Full Test invariant，并可能再次使新 passed qualification 被旧 Owner input消费。",
+      "location": "openspec/changes/architecture-actual-compare-and-system-promotion/design.md Decisions 3/4/7；相关 core-model/create-change/persistence specs与tasks 1/2/4。",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Revise Proposal，使 current architecture cycle exact-bind 当前 Full Test authorization occurrence。最小方向是增加 fullTestAuthorizationRef（或等价 deterministic occurrence ref），由 write-side从 current formal facts派生而不是由 caller注入，并将其纳入 currentCycle closed shape、cycleRef canonical hash、reader/persistence coherence和 remediation exact-binding。不要改变 Full Test result authority，也不要建立新的 Full Test history DB。",
+      "acceptance": [
+        "cycle publication 同时 exact-bind current passed fullTestResultRef 与产生该 current qualification 的 delivery-scoped authorize-full-test Owner ref。",
+        "cycleRef canonical identity包含该 authorization occurrence（或等价 occurrence ref）。",
+        "disposable regression 使用两个不同 authorize-full-test refs，但故意复用完全相同的 Full Test result payload、Actual ref 与 compare evidence；两次 cycleRef 必须不同。",
+        "第一次 cycle 的 stale architectureRemediation binding 在第二次 fresh Full Test cycle 上 MUST fail closed before mutation。",
+        "accepted architecture/acceptedSystemSource 的 Owner binding继续由 exact current cycle传递该 occurrence provenance；不复制 raw Full Test logs。"
+      ]
+    },
+    {
+      "id": "E1-RP-002",
+      "severity": "blocking",
+      "title": "flowkitMutationScope 漏掉 canonical Owner ref 的真实 production consumer",
+      "problem": "067 Design §5 明确规定 Owner decision record 新增 bounded architectureCycleRef，并且 architectureCycleRef 必须进入 canonical Owner ref derivation。当前 Base 真正定义 canonicalOwnerDecisionTuple()/ownerDecisionRefFor() 的文件是 src/domain/owner-provenance.ts；它的 tuple 目前只包含 decision/deliveryId/changeId/scope/requiredOutcomes/sourceRef。067 flowkitMutationScope 的 production selectors只包含 src/domain/a1-types.ts，没有包含 src/domain/owner-provenance.ts。即使 a1-types/a1-write/reader/writer全部新增 architectureCycleRef，只要 canonical owner-provenance不改，Owner ref仍不绑定 cycle，或 TypeScript实现会被迫越出已批准 mutation scope。",
+      "contractRef": "067 design.md Decision 5 + flowkitMutationScope；flowkit-delivery-change-creation-and-owner-input accept-architecture exact cycle binding；Base src/domain/owner-provenance.ts。",
+      "invariant": "Proposal 声明的 required implementation consumer 必须被 Apply mutation scope覆盖；Owner ref 若被 contract要求绑定 architectureCycleRef，则 canonical tuple/hash authority本身必须在合法 mutation surface内。",
+      "evidence": [
+        "067 design.md：‘Owner decision record gains bounded optional architectureCycleRef, included in canonical Owner ref derivation.’",
+        "Base src/services/a1-write-service.ts buildOwnerDecisionRecord() 通过 ownerDecisionRefFor()生成 Owner ref。",
+        "Base src/domain/owner-provenance.ts canonicalOwnerDecisionTuple()/ownerDecisionRefFor() 当前没有 architectureCycleRef字段。",
+        "067 deriveMutationDeclaration(apply|revise-apply) 均为25 selectors，其中有 src/domain/a1-types.ts 和 tests/unit/domain prefix，但没有 src/domain/owner-provenance.ts。"
+      ],
+      "impact": "Apply 要么无法按 approved contract让 Owner ref真正绑定 architecture cycle，要么必须越出 mutation declaration修改 owner-provenance.ts，导致正式 mutation admission/Verification closure在后阶段才失败。",
+      "location": "openspec/changes/architecture-actual-compare-and-system-promotion/design.md flowkitMutationScope；src/domain/owner-provenance.ts。",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Revise Proposal，把 canonical Owner provenance consumer纳入 apply/revise-apply mutation scope，并同步 Proposal proof/expected actualChangeSet。保持现有 owner-provenance authority，不另建第二套 ref generator。",
+      "acceptance": [
+        "apply 与 revise-apply mutation declarations都合法覆盖 src/domain/owner-provenance.ts。",
+        "canonicalOwnerDecisionTuple/ownerDecisionRefFor 对带 architectureCycleRef 的合法 relevant Owner record把 cycle identity纳入 hash domain。",
+        "两个其它字段相同而 architectureCycleRef 不同的 relevant records产生不同 Owner refs；reader recomputation与writer完全一致。",
+        "legacy/non-architecture Owner records保持既有 canonical refs/compatibility，不被无关字段重算破坏。",
+        "重新运行 deriveMutationDeclaration 与 expected buildVerificationSelection；core-model/serialization physical coverage仍闭合。"
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}

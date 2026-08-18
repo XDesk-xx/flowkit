@@ -1,0 +1,231 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260818-070-review-propose",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "review-propose",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "826b0470e46c8c8a2229178cf7285aec89d44ed2c3c9ae882e46099917a381cd",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-actual-compare-and-system-promotion/20260818-070-review-propose/",
+  "changeKey": "E1",
+  "changeId": "architecture-actual-compare-and-system-promotion",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-actual-compare-and-system-promotion/20260818-069-revise-propose/result.json",
+    "versionFingerprint": "a2c92b59fc3a7dcaa9a891d96b2e263ea486babb219ec408bb60ab13ad02b15e",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260818-069-revise-propose",
+  "canonicalBase": "8cf17ed0981717227f9b01ffdef94dae6532366a",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-actual-compare-and-system-promotion/20260818-069-revise-propose/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "a2c92b59fc3a7dcaa9a891d96b2e263ea486babb219ec408bb60ab13ad02b15e"
+    },
+    {
+      "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+    },
+    {
+      "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/design.md",
+      "versionFingerprint": "5554a2ef8ceab5e76c2a97055360ff5bd6300d2724e1825afed07ae83856f98e",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/proposal.md",
+      "versionFingerprint": "1f051371cbb784821df0f89900f3a6335fe8e06eb0069acfd7338f02004e557e",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/specs/flowkit-architecture-assets/spec.md",
+      "versionFingerprint": "0246d31ad125c2fa82d99f5d7f5f4936bacfcbc8d16a368a321b2931d947db07",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/specs/flowkit-change-verification-selection/spec.md",
+      "versionFingerprint": "52194a4c7dec0c1e0f3388eece504f081143c80d093cfcec4f011d479e4c2a17",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/specs/flowkit-core-model/spec.md",
+      "versionFingerprint": "ef0296f426b914d14bde953a9d4c32b4c2844c4de5b4cf4d20fd9e7712b78130",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+      "versionFingerprint": "60be7fbc5703f04ae48ff66ec2e83ae01fdd31819051de46de60e594fa5a5d6e",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "versionFingerprint": "e0900a5b4ada7040ef3ad340753efc3f1da56159e9a9ca1b607fce4887ec7975",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/specs/flowkit-policy-engine/spec.md",
+      "versionFingerprint": "8dd12a8a8fd73074cd350ed983fd04d8610280e785da5bebece4d619afba8940",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/tasks.md",
+      "versionFingerprint": "809995146083703df4bea7da8bff11ebe766ec2fbadcacc03bf226ffa3362f18",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "architecture-actual-compare-and-system-promotion",
+      "runId": "20260818-070-review-propose",
+      "action": "review-propose",
+      "role": "reviewer",
+      "semanticInputFingerprint": "826b0470e46c8c8a2229178cf7285aec89d44ed2c3c9ae882e46099917a381cd"
+    },
+    "definition": {
+      "action": "review-propose",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-proposal",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+      },
+      {
+        "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/design.md",
+        "versionFingerprint": "5554a2ef8ceab5e76c2a97055360ff5bd6300d2724e1825afed07ae83856f98e",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/proposal.md",
+        "versionFingerprint": "1f051371cbb784821df0f89900f3a6335fe8e06eb0069acfd7338f02004e557e",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/specs/flowkit-architecture-assets/spec.md",
+        "versionFingerprint": "0246d31ad125c2fa82d99f5d7f5f4936bacfcbc8d16a368a321b2931d947db07",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "52194a4c7dec0c1e0f3388eece504f081143c80d093cfcec4f011d479e4c2a17",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/specs/flowkit-core-model/spec.md",
+        "versionFingerprint": "ef0296f426b914d14bde953a9d4c32b4c2844c4de5b4cf4d20fd9e7712b78130",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+        "versionFingerprint": "60be7fbc5703f04ae48ff66ec2e83ae01fdd31819051de46de60e594fa5a5d6e",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "e0900a5b4ada7040ef3ad340753efc3f1da56159e9a9ca1b607fce4887ec7975",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/specs/flowkit-policy-engine/spec.md",
+        "versionFingerprint": "8dd12a8a8fd73074cd350ed983fd04d8610280e785da5bebece4d619afba8940",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/tasks.md",
+        "versionFingerprint": "809995146083703df4bea7da8bff11ebe766ec2fbadcacc03bf226ffa3362f18",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-actual-compare-and-system-promotion/20260818-069-revise-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "a2c92b59fc3a7dcaa9a891d96b2e263ea486babb219ec408bb60ab13ad02b15e"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260818-068-review-propose",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-actual-compare-and-system-promotion/20260818-068-review-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "a847bb4281180506a474b6014262ae08695009d16b617ebe9dedeb1eb98c41b3"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "E1-RP-001",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "architecture cycle 未绑定 Full Test authorization occurrence，旧 cycleRef 可在 fresh Full Test 后重现",
+          "problem": "067 Design §3/§4 将 currentCycle 只绑定 fullTestResultRef，并以 fullTestResultRef + actualArchitectureRef + compareRef 计算 cycleRef；§7 又只让 architectureRemediation 输入携带 cycleRef。当前 Base 的 Full Test resultRef 仅对 terminal payload {schemaVersion,status,summary,totalDurationMs,checks} 做 hash，不包含 authorize-full-test Owner authorizationRef。Flowkit 已在 B1 failure occurrence 模型中明确承认同一个 sourceResultRef 可以在不同 fresh authorizationRef 下再次出现，并用 authorizationRef + sourceResultRef 区分 occurrence。因此 remediation 失效旧 cycle 后，fresh Owner authorization + fresh Full Test 若产生相同 resultRef，且 Actual/Compare 也相同，新 cycleRef 可以与旧 cycleRef 完全相同；旧 remediation binding 将无法被识别为 stale。",
+          "contractRef": "067 design.md Decisions 3/4/7；flowkit-core-model E1 post-pass remediation invariant；flowkit-delivery-change-creation-and-owner-input stale remediation fail-closed；Base src/domain/full-test.ts canonical resultRef 与 src/facts/formal-fact-reader.ts Full Test occurrence handling。",
+          "invariant": "Architecture current cycle 必须绑定 exact Full Test qualification occurrence，而不是只绑定可跨 fresh authorization 重复的 technical result payload。Fresh authorize-full-test 后形成的新 qualification 必须具有不同 occurrence identity；旧 cycleRef/remediation binding 必须确定性失效。",
+          "requiredOutcome": "Revise Proposal，使 current architecture cycle exact-bind 当前 Full Test authorization occurrence。最小方向是增加 fullTestAuthorizationRef（或等价 deterministic occurrence ref），由 write-side从 current formal facts派生而不是由 caller注入，并将其纳入 currentCycle closed shape、cycleRef canonical hash、reader/persistence coherence和 remediation exact-binding。不要改变 Full Test result authority，也不要建立新的 Full Test history DB。",
+          "acceptance": [
+            "cycle publication 同时 exact-bind current passed fullTestResultRef 与产生该 current qualification 的 delivery-scoped authorize-full-test Owner ref。",
+            "cycleRef canonical identity包含该 authorization occurrence（或等价 occurrence ref）。",
+            "disposable regression 使用两个不同 authorize-full-test refs，但故意复用完全相同的 Full Test result payload、Actual ref 与 compare evidence；两次 cycleRef 必须不同。",
+            "第一次 cycle 的 stale architectureRemediation binding 在第二次 fresh Full Test cycle 上 MUST fail closed before mutation。",
+            "accepted architecture/acceptedSystemSource 的 Owner binding继续由 exact current cycle传递该 occurrence provenance；不复制 raw Full Test logs。"
+          ]
+        },
+        {
+          "id": "E1-RP-002",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "flowkitMutationScope 漏掉 canonical Owner ref 的真实 production consumer",
+          "problem": "067 Design §5 明确规定 Owner decision record 新增 bounded architectureCycleRef，并且 architectureCycleRef 必须进入 canonical Owner ref derivation。当前 Base 真正定义 canonicalOwnerDecisionTuple()/ownerDecisionRefFor() 的文件是 src/domain/owner-provenance.ts；它的 tuple 目前只包含 decision/deliveryId/changeId/scope/requiredOutcomes/sourceRef。067 flowkitMutationScope 的 production selectors只包含 src/domain/a1-types.ts，没有包含 src/domain/owner-provenance.ts。即使 a1-types/a1-write/reader/writer全部新增 architectureCycleRef，只要 canonical owner-provenance不改，Owner ref仍不绑定 cycle，或 TypeScript实现会被迫越出已批准 mutation scope。",
+          "contractRef": "067 design.md Decision 5 + flowkitMutationScope；flowkit-delivery-change-creation-and-owner-input accept-architecture exact cycle binding；Base src/domain/owner-provenance.ts。",
+          "invariant": "Proposal 声明的 required implementation consumer 必须被 Apply mutation scope覆盖；Owner ref 若被 contract要求绑定 architectureCycleRef，则 canonical tuple/hash authority本身必须在合法 mutation surface内。",
+          "requiredOutcome": "Revise Proposal，把 canonical Owner provenance consumer纳入 apply/revise-apply mutation scope，并同步 Proposal proof/expected actualChangeSet。保持现有 owner-provenance authority，不另建第二套 ref generator。",
+          "acceptance": [
+            "apply 与 revise-apply mutation declarations都合法覆盖 src/domain/owner-provenance.ts。",
+            "canonicalOwnerDecisionTuple/ownerDecisionRefFor 对带 architectureCycleRef 的合法 relevant Owner record把 cycle identity纳入 hash domain。",
+            "两个其它字段相同而 architectureCycleRef 不同的 relevant records产生不同 Owner refs；reader recomputation与writer完全一致。",
+            "legacy/non-architecture Owner records保持既有 canonical refs/compatibility，不被无关字段重算破坏。",
+            "重新运行 deriveMutationDeclaration 与 expected buildVerificationSelection；core-model/serialization physical coverage仍闭合。"
+          ]
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "3b9837cc482769b07a57f5b7fb34c9a5b4ebaf39899439fec7e05784ad3ac5df",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

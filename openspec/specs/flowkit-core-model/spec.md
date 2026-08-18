@@ -291,6 +291,8 @@ Change Verification 状态 MUST 为 `not-run | passed | failed | not-applicable`
 
 `awaiting-user-decision` MAY 是由 current repository formal facts 纯推导出的 effective projection：当 persisted `delivery.fullTestStatus=not-ready`，但所有 required Changes 已 completed、matching Change Checkpoints 已存在、formal conflicts=0 且 current Delivery 的 typed executable Full Test contract 合法可用时，current effective Full Test status MUST 为 `awaiting-user-decision`。该 projection MUST NOT 通过 `status`、`next`、`doctor` 或 `resume-context` 写回 Manifest。
 
+For architecture-impacting Deliveries after E1, a passed Full Test qualifies only the exact current architecture cycle derived from the delivery-scoped Owner authorization occurrence plus that passed technical result. A legal post-pass architecture remediation MUST invalidate the old passed qualification before new required work proceeds.
+
 #### Scenario: Owner 授权 Full Test
 
 - **WHEN** current effective `fullTestStatus=awaiting-user-decision`
@@ -355,6 +357,12 @@ Change Verification 状态 MUST 为 `not-run | passed | failed | not-applicable`
 - **AND** MUST 同步持久化 `schemaVersion/status/summary/totalDurationMs/checks[{id,status,durationMs}]/resultRef`
 - **AND** `resultRef` MUST 由排除自身后的固定字段顺序 canonical JSON payload 做 SHA-256 得出
 - **AND** raw stdout/stderr MUST NOT 被复制进 Standard Run 或 Manifest evidence corpus
+
+#### Scenario: post-pass architecture remediation invalidates qualification
+- **WHEN** a required architecture-remediation Change is admitted against the exact current non-accepted architecture cycle
+- **THEN** raw Full Test status MUST leave `passed`
+- **AND** the old current Full Test result MUST cease to qualify the Delivery
+- **AND** a fresh Full Test authorization/result MUST be required after remediation checkpoint
 
 ### Requirement: Full Test 失败必须进入 owner 决策边界
 
@@ -535,3 +543,24 @@ Finding MUST 投影 `findingId`、`authorizationRef`、`sourceResultRef`、`seve
 - **THEN** effective Full Test status MUST 回到 `awaiting-user-decision`
 - **AND** prior Full Test Owner authorization MUST NOT 自动授权新的 Delivery candidate
 - **AND** Owner MUST 再次显式 `authorize-full-test`
+
+### Requirement: Owner decision identity 必须显式覆盖 architecture acceptance
+The closed Owner decision model MUST include Delivery-scoped `accept-architecture`. An architecture acceptance Owner record MUST bind the exact current architecture cycle and MUST remain distinct from `authorize-delivery-finalize`.
+
+#### Scenario: architecture acceptance and Finalize authorization remain separate
+- **WHEN** current Actual/Compare cycle awaits Owner decision
+- **THEN** Owner MAY record `accept-architecture` only at that exact Policy gate
+- **AND** `authorize-delivery-finalize` MUST remain a later independent Owner decision
+
+### Requirement: E1 Owner canonical provenance extension 必须 bounded 且向后兼容
+For Owner records that carry the E1-only optional `architectureCycleRef`, the existing canonical Owner provenance authority (`canonicalOwnerDecisionTuple` / `ownerDecisionRefFor`) MUST include that cycle identity in the hash domain. Records without `architectureCycleRef` MUST preserve the exact pre-E1 canonical tuple and ref. Flowkit MUST NOT introduce a second Owner ref generator.
+
+#### Scenario: architecture cycle changes relevant Owner ref
+- **WHEN** two otherwise identical relevant Owner records differ only in `architectureCycleRef`
+- **THEN** their canonical Owner refs MUST differ
+- **AND** reader recomputation and writer generation MUST use the same canonical tuple
+
+#### Scenario: legacy Owner ref remains stable when architecture cycle is absent
+- **WHEN** a pre-E1 or non-architecture Owner record has no `architectureCycleRef`
+- **THEN** its canonical tuple/ref MUST remain exactly compatible with the pre-E1 algorithm
+- **AND** the optional E1 field MUST NOT silently rehash unrelated historical Owner facts
