@@ -1,0 +1,57 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-explore",
+    "executionStatus": "completed",
+    "summary": "Review 045 Explore：D1 的核心时序/authority 边界正确，Current 固定 pre-03 main@74d46f0、03 Planned 绑定原始 Delivery Start f132db7、Actual 留给 E1；C1 exact managed Archify 的 repository-evidence seam 与 architecture/** Change Verification gap 也被真实识别。Reviewer 独立确认 Base=9d27efef、f132db7^=74d46f0、74d46f0..9d27efe 224 paths changed、C1 adapter 当前确实未传 --repo-root；同时核对 Archify 2.14.0 repository-evidence 只要求 matching repo/origin + pinned commit available，不要求 worktree HEAD 等于 pinned revision，因此 historical render 可由当前 full-history repo 支撑。唯一 blocking gap 是 Proof G：D1 明确声明跨 Delivery genericity/activation persistence 风险且 v6 acceptance 要求 future Delivery 无 Bootstrap exception 形成 Planned，但 045 只做静态 path/provenance reasoning，没有执行任何 future-Delivery-shaped consumer/prototype，却把 Evidence Boundary 写成覆盖 future Delivery 并判 PASS；这不满足 flowkit-explore 的 cross-Delivery next-consumer proof depth。另记录一项非阻塞工程边界：HTML default-not-committed 的具体 Git hygiene 机制应在 Proposal 冻结。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "bc64d147c01b9a54ef3de13aff100128b0823e9bf24372a179d7016e91296b2a"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "D1-RE-001",
+      "severity": "blocking",
+      "title": "future-Delivery genericity proof 只有静态模型，没有真实 next-consumer",
+      "problem": "045 在 Risk Scan 中把 Generic reusable subsystem 与跨 Change/Delivery activation persistence 都标为 yes，且 D1 v6 acceptance 明确要求 future Delivery can form Planned without Bootstrap exception；但 Proof G 的 Method 只区分 03-specific SHA 与 dynamic <delivery-id> path、读取现有 persisted facts，没有创建/执行任何 different future-Delivery-shaped fixture、prototype 或 consumer。Evidence Boundary 却直接声明覆盖 future Delivery，Result=PASS。这把“设计上看起来可泛化”当成了“跨 Delivery 已证明可泛化”。",
+      "contractRef": "03 Delivery Execution Loop Planned Changes v6 D1 Required proofs / acceptance: future Delivery can form Planned without Bootstrap exception；Flowkit Explore Skill v2 §4.5 Genericity / Next-consumer Proof 与 §5 Proof Acceptance Depth",
+      "invariant": "当 Change 声明 generic reusable subsystem 且 required outcome 跨 Delivery 长期生效时，Explore 必须至少增加一个 future-Delivery-shaped consumer；same-Delivery facts、dynamic path 文案或静态常量分离不能单独证明 future-Delivery PASS。Evidence Boundary 必须实际覆盖 Acceptance Boundary。",
+      "evidence": [
+        "045 Risk Scan 明确记录 Generic reusable subsystem=yes，并写明 path/render/compare wrapper 必须适用于 future Delivery，不能硬编码 03 id/SHA；Activation persistence 也明确要求 future Delivery 正常形成自己的 Current/Planned。",
+        "045 Proof G Method 仅为：区分 03 one-time provenance constants 与 generic product path/service、检查现有 Delivery id/architectureImpact persisted facts、引用 v6 的 <delivery-id> business boundary；没有 synthetic future Delivery repo/manifest、第二 deliveryId、prototype resolver 或实际 Archify consumer execution。",
+        "045 Proof G Evidence 只枚举 74d46f0/f132db7 与 architecture/<delivery-id>/json/{current,planned,actual}.architecture.json 路径，并用文字说明 future Delivery 应建立自己的 asset set；这仍是 contract restatement，不是 next-consumer evidence。",
+        "Flowkit Explore Skill v2 明确要求 generic subsystem 至少 current/synthetic A + different B；若声明跨 Delivery 长期可用，还必须增加 future-Delivery consumer，并明确禁止 same-Delivery PASS 推出 future-Delivery PASS。",
+        "Reviewer 独立核对 D1 当前尚无 architecture path/service implementation，因此在 Proposal 前仍可用最小 disposable fixture/prototype 完成该 proof，不需要扩大 Formal Action 或引入 Registry。"
+      ],
+      "impact": "若直接进入 Proposal，03-specific Start provenance、Current source resolution 或 render path 的隐含假设可能被冻进 generic D1 implementation；这些问题在当前 03 dogfood 中不会暴露，只会到下一条真正 self-hosted Delivery 才失败，正好违背 D1 作为 future normal Planned lifecycle 基础的 acceptance。",
+      "location": "openspec/changes/architecture-baseline-and-delivery-plan/explore.md — Proof G / Feasible Proposal Boundary Genericity",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Revise Explore with one minimal future-Delivery-shaped next-consumer proof. Use a delivery identity distinct from 20260817-01, prove the proposed generic path/provenance/render boundary derives that Delivery's own Current/Planned locations and planning provenance from formal future-Delivery facts (not 74d46f0/f132db7 constants), and exercise the relevant prototype/fixture far enough to show the same managed Archify repository-evidence route can consume it. Keep Accepted Actual -> SystemArchitectureRef promotion in E1 and do not introduce Registry/DB/automatic architecture inference.",
+      "acceptance": [
+        "A disposable/synthetic future Delivery with a different deliveryId is exercised, not merely described.",
+        "The demonstrated architecture paths are derived as architecture/<future-delivery-id>/json/current.architecture.json and planned.architecture.json with no hardcoded 03 deliveryId or 74d46f0/f132db7 in generic resolver/service behavior.",
+        "Future Current/Planned provenance is sourced from future-shaped formal facts (prior accepted architecture/Git baseline and that Delivery's own Start facts) rather than the 03 Bootstrap exception.",
+        "The proof reaches an actual next-consumer/prototype boundary sufficient to show managed Archify repository-evidence validate/render remains feasible for the future-shaped asset, or records any remaining gap as UNKNOWN instead of PASS.",
+        "E1-only Actual acceptance/promotion, Architecture Registry/DB, per-Change regeneration and new Formal Actions remain out of scope."
+      ]
+    },
+    {
+      "id": "D1-RE-NB-001",
+      "severity": "non-blocking",
+      "title": "Proposal 应冻结 HTML 默认不进入 Git boundary 的工程机制",
+      "problem": "045 正确冻结 `architecture/<delivery-id>/html/**` 为 local generated / default not committed，但当前 Base `.gitignore` 没有 architecture HTML 规则，045 的 required mutation surface 也没有说明采用 `.gitignore`、checkpoint staging exclusion 或其他等价机制。Explore 阶段这不阻塞 feasibility，但 Proposal 应明确一种最小机制，避免 derived HTML 在正常 render 后成为容易误带入 checkpoint 的普通 untracked output。",
+      "contractRef": "03 Delivery Execution Loop v6 Repository Architecture Assets / D1 HTML lifecycle: html/** local disposable generated view, default not committed, non-authoritative",
+      "invariant": "Derived HTML 不得成为 durable architecture authority，正常 render 后应有明确、可审查的默认 Git-boundary hygiene；实现方式可以是 .gitignore 或其他等价的最薄机制，不应建立 freshness ledger。",
+      "evidence": [
+        "当前 Base `.gitignore` 只忽略 node_modules、dist/coverage、.tmp、env/log/editor 等路径，没有 architecture/<delivery-id>/html/** 规则。",
+        "045 Scope/Feasible Proposal Boundary 多次声明 html/** default not committed / safe to delete/rebuild，但 mutation-surface 枚举未说明对应 Git hygiene mechanism。"
+      ],
+      "impact": "不影响 D1 架构模型可行性，但若 Proposal 不冻结该边界，后续 render 产生的 derived HTML 容易依赖人工记忆排除，弱化 JSON-only durable authority 的工程表达。",
+      "location": "openspec/changes/architecture-baseline-and-delivery-plan/explore.md — Scope Boundary / Proof F / Feasible Proposal Boundary; repository .gitignore"
+    }
+  ],
+  "reviewFindingConvergence": []
+}

@@ -1,0 +1,333 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Flowkit 完整 Delivery 执行 Sequence",
+    "viewBox": [
+      1200,
+      1690
+    ],
+    "animation": "trace",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "start",
+        "label": "Start 与架构计划",
+        "focus": [
+          "owner",
+          "policy",
+          "assets",
+          "archify",
+          "git"
+        ],
+        "note": "Current / Planned 在 Delivery 级形成。"
+      },
+      {
+        "id": "changes",
+        "label": "Change 执行与 Full Test",
+        "focus": [
+          "policy",
+          "change-loop",
+          "verification",
+          "owner"
+        ],
+        "note": "所有 required Changes 完成并 checkpoint 后才能 Ready。"
+      },
+      {
+        "id": "finish",
+        "label": "Actual / Compare / Finalize",
+        "focus": [
+          "assets",
+          "archify",
+          "owner",
+          "git"
+        ],
+        "note": "Actual 与 Planned 对比通过后才能 Finalize。"
+      }
+    ],
+    "output": "delivery-lifecycle.sequence.html"
+  },
+  "participants": [
+    {
+      "id": "owner",
+      "type": "external",
+      "label": "Owner",
+      "sublabel": "Delivery 决策 / 授权"
+    },
+    {
+      "id": "policy",
+      "type": "backend",
+      "label": "Policy",
+      "sublabel": "Delivery boundary"
+    },
+    {
+      "id": "change-loop",
+      "type": "backend",
+      "label": "Change 执行",
+      "sublabel": "完整 02 Change 周期"
+    },
+    {
+      "id": "verification",
+      "type": "cloud",
+      "label": "Verification",
+      "sublabel": "Full Test 结果权威"
+    },
+    {
+      "id": "archify",
+      "type": "external",
+      "label": "Archify",
+      "sublabel": "验证 / 生成 / 对比"
+    },
+    {
+      "id": "assets",
+      "type": "database",
+      "label": "架构资产",
+      "sublabel": "Architecture JSON"
+    },
+    {
+      "id": "git",
+      "type": "database",
+      "label": "Git",
+      "sublabel": "Git boundaries"
+    }
+  ],
+  "segments": [
+    {
+      "from": 150,
+      "to": 490,
+      "label": "Delivery Start + Planned"
+    },
+    {
+      "from": 510,
+      "to": 900,
+      "label": "Changes + Full Test"
+    },
+    {
+      "from": 920,
+      "to": 1465,
+      "label": "Actual + Compare + Finalize"
+    }
+  ],
+  "messages": [
+    {
+      "from": "owner",
+      "to": "git",
+      "y": 180,
+      "label": "创建 Delivery Start boundary",
+      "variant": "security"
+    },
+    {
+      "from": "git",
+      "to": "policy",
+      "y": 225,
+      "label": "exact Delivery Start baseline",
+      "variant": "return"
+    },
+    {
+      "from": "policy",
+      "to": "assets",
+      "y": 270,
+      "label": "冻结 Current Architecture JSON",
+      "variant": "emphasis"
+    },
+    {
+      "from": "assets",
+      "to": "archify",
+      "y": 315,
+      "label": "validate / deliver Current",
+      "variant": "default"
+    },
+    {
+      "from": "policy",
+      "to": "assets",
+      "y": 365,
+      "label": "形成 Planned Architecture JSON",
+      "variant": "emphasis"
+    },
+    {
+      "from": "assets",
+      "to": "archify",
+      "y": 415,
+      "label": "validate / deliver Planned",
+      "variant": "default"
+    },
+    {
+      "from": "archify",
+      "to": "policy",
+      "y": 465,
+      "label": "structured result / local HTML",
+      "variant": "return"
+    },
+    {
+      "from": "policy",
+      "to": "change-loop",
+      "y": 545,
+      "label": "执行 required Changes",
+      "variant": "emphasis"
+    },
+    {
+      "from": "change-loop",
+      "to": "git",
+      "y": 595,
+      "label": "每个 completed Change → Checkpoint",
+      "variant": "default"
+    },
+    {
+      "from": "git",
+      "to": "policy",
+      "y": 645,
+      "label": "all required Checkpoints present",
+      "variant": "return"
+    },
+    {
+      "from": "policy",
+      "to": "owner",
+      "y": 695,
+      "label": "Delivery Ready：等待 Full Test 授权",
+      "variant": "security"
+    },
+    {
+      "from": "owner",
+      "to": "policy",
+      "y": 745,
+      "label": "authorize-full-test",
+      "variant": "security"
+    },
+    {
+      "from": "policy",
+      "to": "verification",
+      "y": 795,
+      "label": "执行 frozen Full Test Plan",
+      "variant": "emphasis"
+    },
+    {
+      "from": "verification",
+      "to": "policy",
+      "y": 845,
+      "label": "passed / failed + resultRef",
+      "variant": "return"
+    },
+    {
+      "from": "policy",
+      "to": "owner",
+      "y": 895,
+      "label": "若 failed：Delivery Finding → Owner 决策",
+      "variant": "dashed"
+    },
+    {
+      "from": "policy",
+      "to": "assets",
+      "y": 955,
+      "label": "passed 后从 final repository 重建 Actual JSON",
+      "variant": "emphasis"
+    },
+    {
+      "from": "assets",
+      "to": "archify",
+      "y": 1005,
+      "label": "validate / deliver Actual",
+      "variant": "default"
+    },
+    {
+      "from": "policy",
+      "to": "archify",
+      "y": 1055,
+      "label": "compare Planned vs Actual",
+      "variant": "emphasis"
+    },
+    {
+      "from": "archify",
+      "to": "policy",
+      "y": 1105,
+      "label": "compare result / receipt / delta HTML",
+      "variant": "return"
+    },
+    {
+      "from": "policy",
+      "to": "owner",
+      "y": 1160,
+      "label": "架构差异与 blocker 交给 Owner",
+      "variant": "security"
+    },
+    {
+      "from": "owner",
+      "to": "policy",
+      "y": 1210,
+      "label": "接受架构 + authorize-finalize",
+      "variant": "security"
+    },
+    {
+      "from": "policy",
+      "to": "assets",
+      "y": 1260,
+      "label": "绑定 Accepted ActualArchitectureRef",
+      "variant": "emphasis"
+    },
+    {
+      "from": "policy",
+      "to": "git",
+      "y": 1310,
+      "label": "形成 Delivery Final boundary",
+      "variant": "emphasis"
+    },
+    {
+      "from": "git",
+      "to": "policy",
+      "y": 1360,
+      "label": "Delivery Final exact commit",
+      "variant": "return"
+    },
+    {
+      "from": "owner",
+      "to": "git",
+      "y": 1410,
+      "label": "PR 使用 Merge Commit 合入 main",
+      "variant": "security"
+    },
+    {
+      "from": "git",
+      "to": "assets",
+      "y": 1460,
+      "label": "Accepted Actual 成为下一 Delivery Current 来源",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "主闭环",
+      "items": [
+        "Delivery Start → Current / Planned → Changes → Ready → Full Test → Actual / Compare → Finalize → Delivery Final",
+        "Full Test 与 Finalize 都不是 Change Action / Run",
+        "每个 Change 仍完整走 02 生命周期"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "失败回路",
+      "items": [
+        "Full Test failed → Delivery Finding → Owner decision",
+        "Owner 可创建 corrective Change；该 Change 仍走普通 Change lifecycle",
+        "修正后必须重新达到 Ready，并重新获得 Full Test 授权"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "架构边界",
+      "items": [
+        "Current / Planned / Actual JSON 是 Delivery 级 durable source",
+        "HTML 是 Archify 生成的本地视图，不承担 architecture authority",
+        "Compare 结果是结构证据，不等于 Reviewer 或 Owner verdict"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Sequence 补充视角",
+      "items": [
+        "展示 Owner / Policy / Change execution / Verification / Archify / Architecture assets / Git 的交互顺序",
+        "Full Test failed corrective loop 与 passed/finalize 分支仍以同源 Workflow 图表达；Sequence 不成为 lifecycle authority",
+        "与 canonical formal facts 冲突时 reference stale；formal facts win"
+      ]
+    }
+  ]
+}

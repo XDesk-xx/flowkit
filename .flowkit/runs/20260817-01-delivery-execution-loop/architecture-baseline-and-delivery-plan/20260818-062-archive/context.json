@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 4,
+  "runId": "20260818-062-archive",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "archive",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "semanticInputFingerprint": "7b124cf5f28a88959d5ee84bd0f404ea10b43fcb6549f3f6666ad22d5d4289c3",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:517890aabaf47af297deb6b86282ea7c5502372c1945bee89725ba70b24bda89",
+      "decision": "contract-reset",
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "architecture-baseline-and-delivery-plan",
+      "scope": "D1 / architecture reference visualization model correction, retain Workflow + Sequence views, recover failed 057 generation",
+      "requiredOutcomes": [
+        "All architecture/reference JSON remains a human/AI visualization projection downstream of Owner decisions, Flowkit Policy, OpenSpec and canonical code/tests/Git facts; formal facts win conflicts.",
+        "Do not add actual.architecture.json, global system.architecture.json, SystemArchitectureRef promotion, Planned-vs-Actual acceptance, architecture DB/Registry, Archify lifecycle Actions, reference-as-Policy, or HTML freshness authority.",
+        "Do not create a durable Full Test Lifecycle reference in D1; Lifecycle remains suitable only for bounded state-machine views when separately required.",
+        "Fresh Proposal must update proposal/design/specs/tasks/mutation scope/tests/Verification mapping as needed, pass mutation-declaration dry admission, buildVerificationSelection expected-D1 proof, OpenSpec strict/all-strict, staged diff hygiene, and physical Archify validate/deliver for both Workflow and Sequence references plus Current/Planned Architecture.",
+        "HTML remains generated/disposable/default-not-tracked and reproducible from durable JSON plus exact managed Archify 2.14.0.",
+        "Keep four Git-tracked non-authoritative reference JSON sources: Change Workflow, Change Sequence, Delivery Workflow, Delivery Sequence; Workflow is the complete orchestration view and Sequence is the complementary participant-interaction view.",
+        "Preserve Delivery Current at exact pre-03 main 74d46f0920c0dfc6f19b5b264cf9de138f4c2bec and Planned provenance at original 03 Delivery Start f132db761bd209e6aff72411108b8e3e1c9801f5; Actual remains E1.",
+        "Supersede the failed 20260818-057-revise-apply generation without mutating or reinterpreting its historical Run or failed Verification; reopen a fresh Proposal generation."
+      ],
+      "sourceRef": "owner-input:2026-08-18T13:54+08:00:D1-reference-workflow-sequence-reset"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-062-archive/",
+  "changeKey": "D1",
+  "changeId": "architecture-baseline-and-delivery-plan",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-061-review-apply/result.json",
+    "versionFingerprint": "9f5068150d4d2ff5e026f39cd7cd1d90e5dc3525ecc86db61c1ab2b2356b4ee3",
+    "kind": "run-result"
+  },
+  "archiveEntryOpenSpecProjection": {
+    "projectionVersion": 1,
+    "version": "1.7.0",
+    "changeId": "architecture-baseline-and-delivery-plan",
+    "changeRootLogical": "openspec/changes/architecture-baseline-and-delivery-plan",
+    "artifactPaths": {
+      "proposal": [
+        "openspec/changes/architecture-baseline-and-delivery-plan/proposal.md"
+      ],
+      "specs": [
+        "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-architecture-assets/spec.md",
+        "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-change-verification-selection/spec.md",
+        "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-external-tool-runtime/spec.md"
+      ],
+      "design": [
+        "openspec/changes/architecture-baseline-and-delivery-plan/design.md"
+      ],
+      "tasks": [
+        "openspec/changes/architecture-baseline-and-delivery-plan/tasks.md"
+      ]
+    }
+  },
+  "archiveMutationGuard": {
+    "state": "armed",
+    "surfaceVersion": "openspec-archive-mutation-v1",
+    "changeRoot": "openspec/changes/architecture-baseline-and-delivery-plan",
+    "canonicalSpecsRoot": "openspec/specs",
+    "archiveNamespaceRoot": "openspec/changes/archive",
+    "preArchiveGenerationFingerprint": "c65e5898a451f7e1a9fa6acc9aa7fa78775748bb9851a13b8ea35227f6060d75",
+    "terminalObservation": {
+      "kind": "success",
+      "resultFingerprint": "107ff0fcc84775eeb11d12b7bdd3218ae2325aaa9034a73f15f4003b109b4b61",
+      "normalized": {
+        "kind": "success",
+        "change": "architecture-baseline-and-delivery-plan",
+        "archivedAs": "2026-08-18-architecture-baseline-and-delivery-plan",
+        "path": "openspec/changes/archive/2026-08-18-architecture-baseline-and-delivery-plan",
+        "specsUpdated": true,
+        "totals": {
+          "added": 17,
+          "modified": 0,
+          "removed": 0,
+          "renamed": 0
+        }
+      }
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

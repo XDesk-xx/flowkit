@@ -1,0 +1,24 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-explore",
+    "executionStatus": "completed",
+    "summary": "D1 revise-explore closes 046 D1-RE-001 with a real future-Delivery-shaped next-consumer proof: a distinct synthetic Delivery derives its own Current/Planned paths and provenance from previous accepted architecture/Git baseline plus its own Delivery Start facts, with no 03 delivery id or 74d46f0/f132db7 constants in generic derivation; exact managed Archify repository-evidence validate/deliver passes for both future-shaped assets. Owner authorization to modify .gitignore is incorporated into the Proposal boundary as the minimal HTML default-not-committed hygiene mechanism; no production file is mutated during revise-explore.",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/explore.md",
+        "versionFingerprint": "34f5277460e0085f52469c2e36efe7578f5f11fb32edc0b33c0a37d3a0b7e07b",
+        "kind": "produced-artifact"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-046-review-explore/result.json",
+      "versionFingerprint": "71b62124953c6d48966a0d23960d1567e1d5387df2359ddcc1c4b1a2e6afcdbd",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "8e9a5eaeb9c8b295b881faa5e571aa69e83fa3d1afea5c462fa626de140ef442"
+  }
+}

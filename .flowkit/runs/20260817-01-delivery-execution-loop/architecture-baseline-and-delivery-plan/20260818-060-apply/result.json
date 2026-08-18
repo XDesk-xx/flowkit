@@ -1,0 +1,18 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "apply",
+    "executionStatus": "completed",
+    "summary": "Fresh D1 Apply after Owner Contract Reset: preserve Current/Planned Architecture provenance, replace the superseded Delivery Lifecycle reference with durable Change/Delivery Workflow + Sequence projections, keep reference authority downstream of formal facts, extend exact managed Archify 2.14.0 sequence validate/deliver support without repo-root authority, preserve thin Architecture CLI and non-overlapping Verification ownership, and close structural/physical regressions without Actual, promotion, durable Full Test Lifecycle, Registry, or tracked HTML."
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "70445adb4704af13a3148392b7449f5f252399eaebeab219bc150393999f3f71",
+    "currentVerification": {
+      "logicalRef": "openspec/changes/architecture-baseline-and-delivery-plan/verification.md",
+      "versionFingerprint": "acc4db9e135a3c7b8f614f8bab3d170dbf5e4cb2b8b64a50e33e1d95ed437b3e",
+      "selectionFingerprint": "70852c973b4dc1c1be40fe7436615d36987f68a02d55eaf98a7b2a046bf509de",
+      "status": "passed"
+    }
+  }
+}

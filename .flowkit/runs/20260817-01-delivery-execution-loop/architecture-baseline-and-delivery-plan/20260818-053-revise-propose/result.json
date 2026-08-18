@@ -1,0 +1,49 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-propose",
+    "executionStatus": "completed",
+    "summary": "D1 revise-propose closes D1-RP-001 and incorporates the Owner clarification without changing lifecycle authority: architecture/reference/json/change-lifecycle.workflow.json and delivery-lifecycle.lifecycle.json are frozen as Git-tracked non-authoritative visualization source, distinct from Delivery-scoped Current/Planned Architecture JSON; Actual remains E1. cli-diagnostics retains unique src/cli ownership and gains flowkit-architecture-assets capability relation. Read-only prospective buildVerificationSelection over the expected D1 actualChangeSet is matched and selects tests-architecture/tests-cli/tests-external-tools/tests-openspec-runtime/tests-verification/typecheck plus OpenSpec checks. Exact managed Archify 2.14.0 physically validates+delivers workflow, lifecycle, Current architecture and Planned architecture candidates. Apply/revise-apply mutation declarations, OpenSpec strict 19/19 and staging-aware diff hygiene pass.",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/design.md",
+        "versionFingerprint": "feb819aa506ae3c36815e8738108430b7f61a15d55b9ed63cf19682559ebdea5",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/proposal.md",
+        "versionFingerprint": "755cc9a8cb9f05ad360b6492a9ebd2232c8be1643655b6a7b3e486e4d92d701f",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-architecture-assets/spec.md",
+        "versionFingerprint": "461f741222b7605a6e381bed79a938738f26794a58a0b12902d6ef0ef2b05ad4",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "0e5b9f99ace4fff1d8e6915739ce9ce435f356ea2288c4008fc695849801327f",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-external-tool-runtime/spec.md",
+        "versionFingerprint": "622f02ca85267172cc2318d64dd89b7016e24edbd401c89c3bb7b5d96d3a8591",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/tasks.md",
+        "versionFingerprint": "52c6cb7158ca017d8c0619ccc3c78fd5932acf5041ffdf5c41384a088114087a",
+        "kind": "produced-artifact"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-052-review-propose/result.json",
+      "versionFingerprint": "9aa8ff5afa77fb942f490bbbbf6b0ec979988610ff39550dcfd6a226242f7848",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "ff0144801ad40612a5d411d845a45d861b21acb1b6bd6e1884342b3c0cf97ed9"
+  }
+}

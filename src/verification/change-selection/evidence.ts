@@ -53,6 +53,7 @@ export type VerificationSelectionExecutor = (
 ) => Promise<VerificationEvidenceRecord>;
 
 const NODE_TEST_CHECKS = new Set([
+  'tests-architecture',
   'tests-cli',
   'tests-execution',
   'tests-external-tools',
@@ -391,6 +392,8 @@ async function resolveLogicalNodeTests(repoRoot: string, logicalIds: readonly st
 
 function logicalNodeSelectors(logicalId: string): readonly string[] {
   switch (logicalId) {
+    case 'tests-architecture':
+      return ['tests/integration/d1-architecture-baseline-and-delivery-plan.test.ts', 'tests/unit/architecture/*.test.ts'];
     case 'tests-cli':
       return ['tests/integration/a1-delivery-readiness-and-full-test-behavior.test.ts', 'tests/integration/b1-delivery-findings-and-corrective-change.test.ts', 'tests/integration/diagnostic-cli-process.test.ts', 'tests/integration/diagnostic-cli.test.ts', 'tests/integration/g1-change-cli-end-to-end.test.ts', 'tests/unit/cli/*.test.ts', 'tests/unit/diagnostics/*.test.ts'];
     case 'tests-execution':

@@ -1,0 +1,23 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-apply",
+    "executionStatus": "completed",
+    "summary": "关闭 D1-RA-001：以旧 Archify review 的完整生命周期信息结构为 authoring input，但保持正式 native workflow/lifecycle contract；扩展 Change reference 主图显式呈现 review/revise/re-review、non-author blocker STOP、archive/completed/Checkpoint 边界；扩展 Delivery reference 显式呈现 Full Test failed → Delivery Finding → Owner decision → corrective Change → Checkpoint → fresh Ready/authorization 回路，以及 passed → Actual/Compare → architecture acceptance → Owner finalize → Delivery Final/Merge/next Current；新增结构级 regression，保持 Current/Planned、thin CLI、Verification mapping、HTML derived/non-authoritative 与 E1 Actual/promotion 边界不变。",
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-056-review-apply/result.json",
+      "versionFingerprint": "c107e46cb5319781366878ce357143103344332bf22cf141b1876fdb233ea0c1",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "596a474b38433981a75e91ceb0ba29fd6c4a0596deee2d416aa7254fdc875844",
+    "currentVerification": {
+      "logicalRef": "openspec/changes/architecture-baseline-and-delivery-plan/verification.md",
+      "versionFingerprint": "03354917b8dd562b31f37220423637b553c6fcd79e94df113f832ce9202002fc",
+      "selectionFingerprint": "70852c973b4dc1c1be40fe7436615d36987f68a02d55eaf98a7b2a046bf509de",
+      "status": "failed"
+    }
+  }
+}

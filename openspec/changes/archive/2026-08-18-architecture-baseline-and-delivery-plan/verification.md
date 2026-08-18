@@ -1,0 +1,155 @@
+# Change Verification
+
+> Flowkit Change Verification publication. Selection identity is logical and point-in-time; concrete commands belong to the verification executor.
+<!-- flowkit-change-verification-status: passed -->
+
+- Producing Run: `20260818-060-apply`
+- canonicalBase: `9d27efef586bcb3204647c78785c9c30a64be4a2`
+- postActionWorkspaceFingerprint: `540a18bdafdb90fb2f94336bb1125f40ccabd708b4507ca458437e20a262f0cb`
+- verificationCatalog: `src/verification/change-selection/module-map.ts`
+- verificationCatalogFingerprint: `26e03923bded368478aec99caedabf4c50a4a027fa6112bbdced3694558bb36e`
+- selectionFingerprint: `70852c973b4dc1c1be40fe7436615d36987f68a02d55eaf98a7b2a046bf509de`
+- capabilityRelation: `matched`
+- Verification environment: `platform=linux arch=x64 node=v22.16.0`
+- Delivery Full Test status: `not-ready`
+
+## Selected modules
+
+- `architecture`
+- `change-contract`
+- `cli-diagnostics`
+- `external-tools`
+- `openspec-runtime`
+- `verification-selection`
+
+## Selected capabilities
+
+- `flowkit-architecture-assets`
+- `flowkit-change-verification-selection`
+- `flowkit-external-tool-runtime`
+
+## Selected logical checks
+
+- `openspec-current-change-archive-sync`
+- `openspec-current-change-strict`
+- `tests-architecture`
+- `tests-cli`
+- `tests-external-tools`
+- `tests-openspec-runtime`
+- `tests-verification`
+- `typecheck`
+
+## Verification checks
+
+### Check 1
+
+- scope: `openspec-current-change-archive-sync`
+- applicability: `applicable`
+- command/method: `OpenSpecCliAdapter.preflightArchiveSync(currentChangeId)`
+- status: `passed`
+- summary: real disposable OpenSpec archive-sync preflight passed
+- result ref: `openspec/changes/architecture-baseline-and-delivery-plan/verification.md#check-1`
+- environment: `platform=linux arch=x64 node=v22.16.0`
+
+### Check 2
+
+- scope: `openspec-current-change-strict`
+- applicability: `applicable`
+- command/method: `OpenSpecCliAdapter.validateChange(currentChangeId, strict=true)`
+- status: `passed`
+- summary: strict OpenSpec current Change validation passed
+- result ref: `openspec/changes/architecture-baseline-and-delivery-plan/verification.md#check-2`
+- environment: `platform=linux arch=x64 node=v22.16.0`
+
+### Check 3
+
+- scope: `tests-architecture`
+- applicability: `applicable`
+- command/method: `/opt/nvm/versions/node/v22.16.0/bin/node --import tsx --test --test-concurrency=1 tests/integration/d1-architecture-baseline-and-delivery-plan.test.ts tests/unit/architecture/architecture-service.test.ts`
+- status: `passed`
+- summary: logical Node test execution passed
+- result ref: `openspec/changes/architecture-baseline-and-delivery-plan/verification.md#check-3`
+- environment: `platform=linux arch=x64 node=v22.16.0`
+
+### Check 4
+
+- scope: `tests-cli`
+- applicability: `applicable`
+- command/method: `/opt/nvm/versions/node/v22.16.0/bin/node --import tsx --test --test-concurrency=1 tests/integration/a1-delivery-readiness-and-full-test-behavior.test.ts tests/integration/b1-delivery-findings-and-corrective-change.test.ts tests/integration/diagnostic-cli-process.test.ts tests/integration/diagnostic-cli.test.ts tests/integration/g1-change-cli-end-to-end.test.ts tests/unit/cli/architecture.test.ts tests/unit/cli/change-action.test.ts tests/unit/cli/context-loader.test.ts tests/unit/diagnostics/views.test.ts`
+- status: `passed`
+- summary: logical Node test execution passed
+- result ref: `openspec/changes/architecture-baseline-and-delivery-plan/verification.md#check-4`
+- environment: `platform=linux arch=x64 node=v22.16.0`
+
+### Check 5
+
+- scope: `tests-external-tools`
+- applicability: `applicable`
+- command/method: `/opt/nvm/versions/node/v22.16.0/bin/node --import tsx --test --test-concurrency=1 tests/integration/c1-external-tool-runtime-and-archify-cli-contract.test.ts tests/unit/external-tools/archify-cli-adapter.test.ts tests/unit/external-tools/managed-tool.test.ts`
+- status: `passed`
+- summary: logical Node test execution passed
+- result ref: `openspec/changes/architecture-baseline-and-delivery-plan/verification.md#check-5`
+- environment: `platform=linux arch=x64 node=v22.16.0`
+
+### Check 6
+
+- scope: `tests-openspec-runtime`
+- applicability: `applicable`
+- command/method: `/opt/nvm/versions/node/v22.16.0/bin/node --import tsx --test --test-concurrency=1 tests/integration/openspec-1-7-real-cli.test.ts tests/unit/external-command.test.ts tests/unit/integrations/openspec-cli-adapter.test.ts`
+- status: `passed`
+- summary: logical Node test execution passed
+- result ref: `openspec/changes/architecture-baseline-and-delivery-plan/verification.md#check-6`
+- environment: `platform=linux arch=x64 node=v22.16.0`
+
+### Check 7
+
+- scope: `tests-verification`
+- applicability: `applicable`
+- command/method: `/opt/nvm/versions/node/v22.16.0/bin/node --import tsx --test --test-concurrency=1 tests/integration/e1-change-verification-selection.test.ts tests/integration/e2-change-verification-generalization.test.ts tests/unit/verification/affected-scopes.test.ts tests/unit/verification/change-selection/actual-change-set.test.ts tests/unit/verification/change-selection/contracts.test.ts tests/unit/verification/change-selection/entry-snapshot.test.ts tests/unit/verification/change-selection/evidence.test.ts tests/unit/verification/change-selection/module-map.test.ts tests/unit/verification/change-selection/mutation-declaration.test.ts tests/unit/verification/change-selection/publication.test.ts tests/unit/verification/change-selection/selection.test.ts tests/unit/verification/verification-plan.test.ts`
+- status: `passed`
+- summary: logical Node test execution passed
+- result ref: `openspec/changes/architecture-baseline-and-delivery-plan/verification.md#check-7`
+- environment: `platform=linux arch=x64 node=v22.16.0`
+
+### Check 8
+
+- scope: `typecheck`
+- applicability: `applicable`
+- command/method: `npm run typecheck`
+- status: `passed`
+- summary: typecheck execution passed
+- result ref: `openspec/changes/architecture-baseline-and-delivery-plan/verification.md#check-8`
+- environment: `platform=linux arch=x64 node=v22.16.0`
+
+## Actual ChangeSet
+
+- `create` `architecture/.gitignore`
+- `create` `architecture/20260817-01-delivery-execution-loop/json/current.architecture.json`
+- `create` `architecture/20260817-01-delivery-execution-loop/json/planned.architecture.json`
+- `create` `architecture/reference/json/change-lifecycle.sequence.json`
+- `create` `architecture/reference/json/change-lifecycle.workflow.json`
+- `create` `architecture/reference/json/delivery-lifecycle.sequence.json`
+- `create` `architecture/reference/json/delivery-lifecycle.workflow.json`
+- `create` `openspec/changes/architecture-baseline-and-delivery-plan/.openspec.yaml`
+- `create` `openspec/changes/architecture-baseline-and-delivery-plan/design.md`
+- `create` `openspec/changes/architecture-baseline-and-delivery-plan/explore.md`
+- `create` `openspec/changes/architecture-baseline-and-delivery-plan/proposal.md`
+- `create` `openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-architecture-assets/spec.md`
+- `create` `openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-change-verification-selection/spec.md`
+- `create` `openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-external-tool-runtime/spec.md`
+- `create` `openspec/changes/architecture-baseline-and-delivery-plan/tasks.md`
+- `modify` `openspec/delivery-groups/20260817-01-delivery-execution-loop.yaml`
+- `create` `src/architecture/architecture-service.ts`
+- `create` `src/architecture/index.ts`
+- `create` `src/cli/architecture.ts`
+- `modify` `src/cli/main.ts`
+- `modify` `src/integrations/archify/archify-cli-adapter.ts`
+- `modify` `src/verification/change-selection/evidence.ts`
+- `modify` `src/verification/change-selection/module-map.ts`
+- `create` `tests/fixtures/d1-architecture-baseline-and-delivery-plan/expected.json`
+- `create` `tests/integration/d1-architecture-baseline-and-delivery-plan.test.ts`
+- `create` `tests/unit/architecture/architecture-service.test.ts`
+- `create` `tests/unit/cli/architecture.test.ts`
+- `create` `tests/unit/external-tools/archify-cli-adapter.test.ts`
+- `modify` `tests/unit/verification/change-selection/evidence.test.ts`
+- `modify` `tests/unit/verification/change-selection/module-map.test.ts`

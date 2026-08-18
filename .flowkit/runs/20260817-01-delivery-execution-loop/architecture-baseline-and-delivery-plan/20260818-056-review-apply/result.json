@@ -1,0 +1,48 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "Review 055 Apply：D1 durable Current/Planned assets、reference vs Delivery authority separation、HTML ignore boundary、thin Architecture CLI、Archify --repo-root seam、Verification ownership/physical resolver 与 exact managed Archify rendering 均可独立复现；Package 62/62 hash、exact Base materialization、git diff --cached --check、typecheck、OpenSpec current/all strict、D1/Verification/external-tool regressions均通过。唯一 blocking gap 是两个长期 reference visualization 虽采用 053 冻结的 native workflow/lifecycle 类型，却把已经要求的“完整 Change / Delivery 生命周期”压缩成聚合主图：Change 主图没有显式呈现 review-explore/revise-explore、review-propose/revise-propose、review-apply/revise-apply；Delivery 主图没有把 Full Test failed → Delivery Finding → Owner decision → corrective Change → fresh Ready/authorization 等关键闭环作为图结构表达，只放在 cards/note。类型/渲染 PASS 不能证明 complete-lifecycle content PASS。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/verification.md",
+      "versionFingerprint": "3bffb6208f4acb4c092c76f16f611907cc7ccdda6e491677c40f1d8b01f98194",
+      "kind": "verification-summary"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "ccbf45449d62fb656e9f7b661f7ed4c74b8d0020d7c19610d5df9f9c787d5441"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "D1-RA-001",
+      "severity": "blocking",
+      "title": "reference native types 正确，但完整 Change / Delivery 生命周期内容被压缩丢失",
+      "problem": "053 approved Design/Spec 明确要求长期 reference visualizations 表达 Change complete lifecycle 与 Delivery complete lifecycle，并允许旧 preview content 作为 authoring input；055 最终 `change-lifecycle.workflow.json` 的主图仅有 explore/propose/apply gate/apply verify/review close/archive checkpoint 6 个聚合节点，把三个明确 review action、三个 revise action及其 blocker-authority re-review 路径压进 sublabel/cards；`delivery-lifecycle.lifecycle.json` 主图仅有 Start/Changes/Ready+Full Test/Actual+Compare/Finalize+Final 5 个聚合状态，把 Full Test failure → Delivery Finding → Owner decision → corrective Change → checkpoint → fresh Ready/fresh Full Test authorization 等闭环仅写在 cards。两文件虽然 Archify validate/deliver PASS，但“renderer-valid”不等于“complete lifecycle visualization”。",
+      "contractRef": "053 approved Design Goals/Decision 2 and flowkit-architecture-assets spec: long-lived reference visualization sources for the complete Change and Delivery lifecycles; human review presentation order = Change complete lifecycle → Delivery complete lifecycle → Current → Planned",
+      "invariant": "长期 reference 可以是非权威 projection，但既然被命名并冻结为 complete lifecycle visualization，其主图结构必须足以让人/AI直接看到正式生命周期关键 Action/gate/loop；不得把决定流程理解的 review/revise 或 failure/corrective loop 仅降级为卡片注释。Formal facts 仍是 authority，但 visualization 必须忠实投影这些 facts。",
+      "evidence": [
+        "055 `architecture/reference/json/change-lifecycle.workflow.json` mainPath 只有 6 个聚合节点；`review-explore`, `revise-explore`, `review-propose`, `revise-propose`, `review-apply`, `revise-apply` 均不作为 nodes/edges 显式出现，只由 `含 review` 或 cards 文字概括。",
+        "055 `architecture/reference/json/delivery-lifecycle.lifecycle.json` 只有 5 states/4 transitions；Full Test failure、Delivery Finding、Owner corrective decision、corrective Change、重新 checkpoint/Ready 与 fresh authorization 没有 transition/loop，只存在于 `Corrective loop` card。",
+        "053 approved Design 明确写 `Author two long-lived, non-authoritative reference visualization JSON sources for the complete Change and Delivery lifecycles`，并说明旧 preview `.sequence.json` 可 inform content，只是最终 physical type 必须改为 workflow/lifecycle。",
+        "Reviewer 对 055 exact files 使用 managed Archify 2.14.0 重跑 workflow/lifecycle validate+deliver 均 PASS，证明问题不在 renderer/type，而在 authoring content completeness；Current/Planned architecture assets则与已批准内容保持一致。",
+        "055 D1 integration test 目前只断言两份 reference 能 validate/deliver，没有断言 complete lifecycle 的关键 Action/gate/loop，因此该内容退化不会被 formal tests 捕获。"
+      ],
+      "impact": "如果现在批准并长期 Git-track，这两份 reference 会以“完整生命周期”名义保存，但实际只能看到高度压缩的阶段摘要。后续人/AI查看 reference 时会丢失 `changes-requested ≠ revise-required` 对应的显式 review/revise路径，以及 Delivery Full Test failure/corrective loop 等关键结构；虽然不会改变 Policy authority，却削弱了 D1 建立长期架构可视化 reference 的核心价值，并与已冻结的人类 review 目标不一致。",
+      "location": "architecture/reference/json/change-lifecycle.workflow.json; architecture/reference/json/delivery-lifecycle.lifecycle.json; tests/integration/d1-architecture-baseline-and-delivery-plan.test.ts",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Revise Apply while preserving the native Archify physical contract (`workflow` for Change, `lifecycle` for Delivery) and the non-authoritative reference boundary. Expand the reference graph structures so the complete canonical lifecycle is visible in the visualization itself, not only in notes/cards. Strengthen D1 regression coverage enough that future simplification cannot silently remove the required lifecycle steps/loops. Do not revert to `.sequence.json`, do not make reference authoritative, and do not change Current/Planned/E1 boundaries.",
+      "acceptance": [
+        "Change workflow visibly represents explore → review-explore → author-only revise-explore/re-review boundary → propose → review-propose → author-only revise-propose/re-review → Owner apply authorization → apply → Change Verification → review-apply → author-only revise-apply/reverification/re-review → Owner archive authorization → archive → completed → separate Git Change Checkpoint boundary. Equivalent native-workflow structuring is acceptable; exact layout is not prescribed.",
+        "Change visualization makes `changes-requested ≠ revise-required` and Owner/Verification/External blocker stop-boundary semantics visible without requiring the reader to infer the whole lifecycle only from a card.",
+        "Delivery lifecycle visibly represents Delivery Start/Current+Planned → required Changes+Checkpoints → Ready → Owner Full Test authorization → passed/failed split; failed path reaches Delivery Finding → Owner decision → optional corrective Change → ordinary Change lifecycle/checkpoint → fresh Ready/fresh authorization; passed path reaches Actual/Compare → architecture acceptance/Owner finalize authorization → Delivery Final → Merge/next Current source as applicable to the frozen reference scope.",
+        "Both updated files remain `diagram_type=workflow|lifecycle`, exact managed Archify 2.14.0 validate+deliver PASS, and `architecture/reference/**` remains a stale-able projection with formal facts winning conflicts.",
+        "D1 tests assert the presence/structure of the key complete-lifecycle steps/loops in addition to merely asserting Archify renderability; Current/Planned JSON, thin CLI, Verification mapping and HTML-ignore boundaries remain green."
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}

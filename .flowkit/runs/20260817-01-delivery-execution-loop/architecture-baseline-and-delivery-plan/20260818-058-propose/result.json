@@ -1,0 +1,44 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "propose",
+    "executionStatus": "completed",
+    "summary": "D1 fresh Proposal generation supersedes failed 057 without rewriting history. Owner-selected reference contract now keeps four durable non-authoritative views: Change Workflow + Sequence and Delivery Workflow + Sequence; Full Test Lifecycle example is excluded. Current remains exact pre-03 74d46f0 and Planned provenance remains original 03 Delivery Start f132db7. Sequence is added as a bounded exact-Archify validate/deliver type while architecture-only repo-root semantics stay unchanged. Proposal preflight passes apply/revise-apply mutation declaration (23 selectors), matched expected-D1 buildVerificationSelection, exact managed Archify validate+deliver for both Workflow/Sequence references and Current/Planned Architecture, OpenSpec current/all strict and staged diff hygiene.",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/design.md",
+        "versionFingerprint": "c3fb5ed81bb50c898205e5bf74033b96bf4dd5ced28434e7139ee4df596c1d32",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/proposal.md",
+        "versionFingerprint": "88cc2c379a8c260d9848aef2c300fa74871cd36cff834be8866ca039cb01bfde",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-architecture-assets/spec.md",
+        "versionFingerprint": "5dcb31ebaab026e79dbde79d7d654656c16f6a161cfe5abc7a466d5fb27c1642",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "b7d50dde00df106a12f282021e24b6fdac3ebdbd05ae50d1afe7fc9755c3eead",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-external-tool-runtime/spec.md",
+        "versionFingerprint": "fa21aa8476e240eaef80689dc111e3a551a224613806fb0cfb4fc3e33bb832f1",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/tasks.md",
+        "versionFingerprint": "d10cee4c7162de57c6bdacbc74ac476fe2f0a0ad453ac5d2ed99522bf2faf919",
+        "kind": "produced-artifact"
+      }
+    ]
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "f679ab8803a12d0e311d60b3339bc40f62d0ed657c1aa7d7d96d219ffcf3be31"
+  }
+}

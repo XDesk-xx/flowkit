@@ -6,6 +6,7 @@ import {
   validateVerificationModuleMap,
   VERIFICATION_MODULE_MAP,
 } from '../../../../src/verification/change-selection/module-map.js';
+import { buildVerificationSelection } from '../../../../src/verification/change-selection/selection.js';
 
 describe('verification module map', () => {
   it('maps each actual path once and includes reverse dependency consumers', () => {
@@ -14,6 +15,7 @@ describe('verification module map', () => {
       {
         seedModuleIds: ['core-model'],
         moduleIds: [
+          'architecture',
           'cli-diagnostics',
           'core-model',
           'execution',
@@ -23,6 +25,7 @@ describe('verification module map', () => {
           'verification-selection',
         ],
         capabilityIds: [
+          'flowkit-architecture-assets',
           'flowkit-archive-and-checkpoint-boundary',
           'flowkit-change-cli-end-to-end-and-performance',
           'flowkit-change-verification-selection',
@@ -41,6 +44,7 @@ describe('verification module map', () => {
         verificationScopes: [
           'openspec-current-change-archive-sync',
           'openspec-current-change-strict',
+          'tests-architecture',
           'tests-cli',
           'tests-execution',
           'tests-external-tools',
@@ -188,6 +192,80 @@ describe('verification module map', () => {
   });
 
 
+  it('keeps D1 Architecture ownership non-overlapping while CLI remains cli-diagnostics with a D1 capability relation', () => {
+    const cases = [
+      ['architecture/reference/json/change-lifecycle.workflow.json', 'architecture'],
+      ['architecture/reference/json/change-lifecycle.sequence.json', 'architecture'],
+      ['architecture/reference/json/delivery-lifecycle.workflow.json', 'architecture'],
+      ['architecture/reference/json/delivery-lifecycle.sequence.json', 'architecture'],
+      ['architecture/20260817-01-delivery-execution-loop/json/current.architecture.json', 'architecture'],
+      ['src/architecture/architecture-service.ts', 'architecture'],
+      ['tests/integration/d1-architecture-baseline-and-delivery-plan.test.ts', 'architecture'],
+      ['tests/unit/architecture/architecture-service.test.ts', 'architecture'],
+      ['src/cli/architecture.ts', 'cli-diagnostics'],
+      ['tests/unit/cli/architecture.test.ts', 'cli-diagnostics'],
+    ] as const;
+    for (const [path, owner] of cases) assert.deepEqual(selectAffectedVerificationModules([path]).seedModuleIds, [owner], path);
+    const cli = selectAffectedVerificationModules(['src/cli/architecture.ts']);
+    assert.equal(cli.capabilityIds.includes('flowkit-architecture-assets'), true);
+    const architecture = selectAffectedVerificationModules(['architecture/reference/json/change-lifecycle.workflow.json']);
+    assert.equal(architecture.verificationScopes.includes('tests-architecture'), true);
+    assert.equal(architecture.verificationScopes.includes('tests-openspec-runtime'), false);
+  });
+
+
+
+  it('builds the fresh D1 Workflow+Sequence actualChangeSet into the full matched physical chain', () => {
+    const fingerprint = 'a'.repeat(64);
+    const paths = [
+      'architecture/reference/json/change-lifecycle.sequence.json',
+      'architecture/reference/json/change-lifecycle.workflow.json',
+      'architecture/reference/json/delivery-lifecycle.lifecycle.json',
+      'architecture/reference/json/delivery-lifecycle.sequence.json',
+      'architecture/reference/json/delivery-lifecycle.workflow.json',
+      'src/integrations/archify/archify-cli-adapter.ts',
+      'tests/integration/d1-architecture-baseline-and-delivery-plan.test.ts',
+      'tests/unit/cli/architecture.test.ts',
+      'tests/unit/verification/change-selection/module-map.test.ts',
+    ] as const;
+    const actualChangeSet = paths.map((path) =>
+      path.endsWith('delivery-lifecycle.lifecycle.json')
+        ? { path, kind: 'delete' as const, pathKindBefore: 'file' as const, pathKindAfter: 'missing' as const }
+        : { path, kind: path.includes('architecture/reference/json/') ? 'create' as const : 'modify' as const, pathKindBefore: path.includes('architecture/reference/json/') ? 'missing' as const : 'file' as const, pathKindAfter: 'file' as const, contentFingerprintAfter: fingerprint },
+    );
+    const selection = buildVerificationSelection(actualChangeSet, [
+      'openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-architecture-assets/spec.md',
+      'openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-change-verification-selection/spec.md',
+      'openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-external-tool-runtime/spec.md',
+    ]);
+    assert.deepEqual(selection.seedModuleIds, [
+      'architecture',
+      'cli-diagnostics',
+      'external-tools',
+      'verification-selection',
+    ]);
+    assert.deepEqual(selection.moduleIds, [
+      'architecture',
+      'cli-diagnostics',
+      'external-tools',
+      'openspec-runtime',
+      'verification-selection',
+    ]);
+    assert.deepEqual(selection.capabilityRelation, { kind: 'matched' });
+    for (const scope of [
+      'openspec-current-change-archive-sync',
+      'openspec-current-change-strict',
+      'tests-architecture',
+      'tests-cli',
+      'tests-external-tools',
+      'tests-openspec-runtime',
+      'tests-verification',
+      'typecheck',
+    ]) {
+      assert.equal(selection.verificationScopes.includes(scope), true, scope);
+    }
+  });
+
   it('keeps C1 external-tool/OpenSpec/CLI ownership exact and non-overlapping', () => {
     const cases = [
       ['src/integrations/external-tools/managed-tool.ts', 'external-tools'],
@@ -236,7 +314,7 @@ describe('verification module map', () => {
   });
 
   it('fails closed for nondeterministic, unknown scope/capability, and cycles', () => {
-    const base = VERIFICATION_MODULE_MAP[0]!;
+    const base = VERIFICATION_MODULE_MAP.find((candidate) => candidate.id === 'change-contract')!;
     assert.throws(
       () =>
         validateVerificationModuleMap([

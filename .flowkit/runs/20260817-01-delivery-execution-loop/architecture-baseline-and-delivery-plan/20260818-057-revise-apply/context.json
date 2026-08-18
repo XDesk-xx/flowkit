@@ -1,0 +1,677 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260818-057-revise-apply",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "revise-apply",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "d9036b389d6ae1fdfc8cbe137bcda6678a1f96d12ccd723d7b3b80f54d5c15d8",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-057-revise-apply/",
+  "changeKey": "D1",
+  "changeId": "architecture-baseline-and-delivery-plan",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-056-review-apply/result.json",
+    "versionFingerprint": "c107e46cb5319781366878ce357143103344332bf22cf141b1876fdb233ea0c1",
+    "kind": "run-result"
+  },
+  "sourceReviewRun": "20260818-056-review-apply",
+  "sourceReviewVerdict": "changes-requested",
+  "canonicalBase": "9d27efef586bcb3204647c78785c9c30a64be4a2",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-056-review-apply/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "c107e46cb5319781366878ce357143103344332bf22cf141b1876fdb233ea0c1"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/design.md",
+      "versionFingerprint": "feb819aa506ae3c36815e8738108430b7f61a15d55b9ed63cf19682559ebdea5",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/proposal.md",
+      "versionFingerprint": "755cc9a8cb9f05ad360b6492a9ebd2232c8be1643655b6a7b3e486e4d92d701f",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-architecture-assets/spec.md",
+      "versionFingerprint": "461f741222b7605a6e381bed79a938738f26794a58a0b12902d6ef0ef2b05ad4",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-change-verification-selection/spec.md",
+      "versionFingerprint": "0e5b9f99ace4fff1d8e6915739ce9ce435f356ea2288c4008fc695849801327f",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-external-tool-runtime/spec.md",
+      "versionFingerprint": "622f02ca85267172cc2318d64dd89b7016e24edbd401c89c3bb7b5d96d3a8591",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/tasks.md",
+      "versionFingerprint": "52c6cb7158ca017d8c0619ccc3c78fd5932acf5041ffdf5c41384a088114087a",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "architecture-baseline-and-delivery-plan",
+      "runId": "20260818-057-revise-apply",
+      "action": "revise-apply",
+      "role": "author",
+      "semanticInputFingerprint": "d9036b389d6ae1fdfc8cbe137bcda6678a1f96d12ccd723d7b3b80f54d5c15d8"
+    },
+    "definition": {
+      "action": "revise-apply",
+      "version": 1,
+      "role": "author",
+      "goalClass": "close-apply-author-findings",
+      "mutationClass": "implementation-and-verification-revision",
+      "outputClass": "revised-implementation-candidate",
+      "terminalContract": {
+        "kind": "implementation",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": true,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/design.md",
+        "versionFingerprint": "feb819aa506ae3c36815e8738108430b7f61a15d55b9ed63cf19682559ebdea5",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/proposal.md",
+        "versionFingerprint": "755cc9a8cb9f05ad360b6492a9ebd2232c8be1643655b6a7b3e486e4d92d701f",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-architecture-assets/spec.md",
+        "versionFingerprint": "461f741222b7605a6e381bed79a938738f26794a58a0b12902d6ef0ef2b05ad4",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "0e5b9f99ace4fff1d8e6915739ce9ce435f356ea2288c4008fc695849801327f",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-external-tool-runtime/spec.md",
+        "versionFingerprint": "622f02ca85267172cc2318d64dd89b7016e24edbd401c89c3bb7b5d96d3a8591",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/tasks.md",
+        "versionFingerprint": "52c6cb7158ca017d8c0619ccc3c78fd5932acf5041ffdf5c41384a088114087a",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-056-review-apply/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "c107e46cb5319781366878ce357143103344332bf22cf141b1876fdb233ea0c1"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260818-056-review-apply",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-056-review-apply/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "c107e46cb5319781366878ce357143103344332bf22cf141b1876fdb233ea0c1"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "D1-RA-001",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "reference native types 正确，但完整 Change / Delivery 生命周期内容被压缩丢失",
+          "problem": "053 approved Design/Spec 明确要求长期 reference visualizations 表达 Change complete lifecycle 与 Delivery complete lifecycle，并允许旧 preview content 作为 authoring input；055 最终 `change-lifecycle.workflow.json` 的主图仅有 explore/propose/apply gate/apply verify/review close/archive checkpoint 6 个聚合节点，把三个明确 review action、三个 revise action及其 blocker-authority re-review 路径压进 sublabel/cards；`delivery-lifecycle.lifecycle.json` 主图仅有 Start/Changes/Ready+Full Test/Actual+Compare/Finalize+Final 5 个聚合状态，把 Full Test failure → Delivery Finding → Owner decision → corrective Change → checkpoint → fresh Ready/fresh Full Test authorization 等闭环仅写在 cards。两文件虽然 Archify validate/deliver PASS，但“renderer-valid”不等于“complete lifecycle visualization”。",
+          "contractRef": "053 approved Design Goals/Decision 2 and flowkit-architecture-assets spec: long-lived reference visualization sources for the complete Change and Delivery lifecycles; human review presentation order = Change complete lifecycle → Delivery complete lifecycle → Current → Planned",
+          "invariant": "长期 reference 可以是非权威 projection，但既然被命名并冻结为 complete lifecycle visualization，其主图结构必须足以让人/AI直接看到正式生命周期关键 Action/gate/loop；不得把决定流程理解的 review/revise 或 failure/corrective loop 仅降级为卡片注释。Formal facts 仍是 authority，但 visualization 必须忠实投影这些 facts。",
+          "requiredOutcome": "Revise Apply while preserving the native Archify physical contract (`workflow` for Change, `lifecycle` for Delivery) and the non-authoritative reference boundary. Expand the reference graph structures so the complete canonical lifecycle is visible in the visualization itself, not only in notes/cards. Strengthen D1 regression coverage enough that future simplification cannot silently remove the required lifecycle steps/loops. Do not revert to `.sequence.json`, do not make reference authoritative, and do not change Current/Planned/E1 boundaries.",
+          "acceptance": [
+            "Change workflow visibly represents explore → review-explore → author-only revise-explore/re-review boundary → propose → review-propose → author-only revise-propose/re-review → Owner apply authorization → apply → Change Verification → review-apply → author-only revise-apply/reverification/re-review → Owner archive authorization → archive → completed → separate Git Change Checkpoint boundary. Equivalent native-workflow structuring is acceptable; exact layout is not prescribed.",
+            "Change visualization makes `changes-requested ≠ revise-required` and Owner/Verification/External blocker stop-boundary semantics visible without requiring the reader to infer the whole lifecycle only from a card.",
+            "Delivery lifecycle visibly represents Delivery Start/Current+Planned → required Changes+Checkpoints → Ready → Owner Full Test authorization → passed/failed split; failed path reaches Delivery Finding → Owner decision → optional corrective Change → ordinary Change lifecycle/checkpoint → fresh Ready/fresh authorization; passed path reaches Actual/Compare → architecture acceptance/Owner finalize authorization → Delivery Final → Merge/next Current source as applicable to the frozen reference scope.",
+            "Both updated files remain `diagram_type=workflow|lifecycle`, exact managed Archify 2.14.0 validate+deliver PASS, and `architecture/reference/**` remains a stale-able projection with formal facts winning conflicts.",
+            "D1 tests assert the presence/structure of the key complete-lifecycle steps/loops in addition to merely asserting Archify renderability; Current/Planned JSON, thin CLI, Verification mapping and HTML-ignore boundaries remain green."
+          ]
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "verificationView": {
+      "status": "unavailable",
+      "resultRef": {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/verification.md",
+        "versionFingerprint": "3bffb6208f4acb4c092c76f16f611907cc7ccdda6e491677c40f1d8b01f98194",
+        "kind": "verification-summary"
+      }
+    },
+    "externalContextFingerprint": "9fb65c095d82f32350cdc9d768b1e4e5166c4f3b7cb51a5ede0ba0e1fff6f649",
+    "requiredResultContract": {
+      "kind": "implementation",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": true,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    },
+    "compactEntryWorkspaceIdentity": {
+      "canonicalBase": "9d27efef586bcb3204647c78785c9c30a64be4a2",
+      "workspaceFingerprint": "3917ad6380de0db6cd217eff4115db992add0e7206908b21ab1ad6788dd859d7",
+      "entries": [
+        {
+          "path": "architecture/.gitignore",
+          "state": "untracked",
+          "contentFingerprint": "a4062e262ad59a0fb8640ba9edbc0857367a321861f3f86f6e1a595cc989d7a1"
+        },
+        {
+          "path": "architecture/20260817-01-delivery-execution-loop/json/current.architecture.json",
+          "state": "untracked",
+          "contentFingerprint": "da0f8b4f3ce26718f2b656af047b5117d86534fad867759c6cac57a4687302f6"
+        },
+        {
+          "path": "architecture/20260817-01-delivery-execution-loop/json/planned.architecture.json",
+          "state": "untracked",
+          "contentFingerprint": "3cb3ee4a2dd5801c9d6f2de29bb0595026c6797b20d8142e9e99d4ecf79b2cbb"
+        },
+        {
+          "path": "architecture/reference/json/change-lifecycle.workflow.json",
+          "state": "untracked",
+          "contentFingerprint": "eb8b83e6300ab5911885b07218e9e81ad0f0c657afac4053f5c26f23b64cda76"
+        },
+        {
+          "path": "architecture/reference/json/delivery-lifecycle.lifecycle.json",
+          "state": "untracked",
+          "contentFingerprint": "35c7eec1f70e038c8641a9777d980aeb89537cf17c441329124f7ed4719ce6e9"
+        },
+        {
+          "path": "openspec/changes/architecture-baseline-and-delivery-plan/.openspec.yaml",
+          "state": "untracked",
+          "contentFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+        },
+        {
+          "path": "openspec/changes/architecture-baseline-and-delivery-plan/design.md",
+          "state": "untracked",
+          "contentFingerprint": "feb819aa506ae3c36815e8738108430b7f61a15d55b9ed63cf19682559ebdea5"
+        },
+        {
+          "path": "openspec/changes/architecture-baseline-and-delivery-plan/explore.md",
+          "state": "untracked",
+          "contentFingerprint": "715736e923688bd5111b4607e951a75a4d02c0c47d49bb7a56f9bc30fe4b6a55"
+        },
+        {
+          "path": "openspec/changes/architecture-baseline-and-delivery-plan/proposal.md",
+          "state": "untracked",
+          "contentFingerprint": "755cc9a8cb9f05ad360b6492a9ebd2232c8be1643655b6a7b3e486e4d92d701f"
+        },
+        {
+          "path": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-architecture-assets/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "461f741222b7605a6e381bed79a938738f26794a58a0b12902d6ef0ef2b05ad4"
+        },
+        {
+          "path": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-change-verification-selection/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "0e5b9f99ace4fff1d8e6915739ce9ce435f356ea2288c4008fc695849801327f"
+        },
+        {
+          "path": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-external-tool-runtime/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "622f02ca85267172cc2318d64dd89b7016e24edbd401c89c3bb7b5d96d3a8591"
+        },
+        {
+          "path": "openspec/changes/architecture-baseline-and-delivery-plan/tasks.md",
+          "state": "untracked",
+          "contentFingerprint": "f86da87727197839a45d62c4f345b4d52bfdd0ac4751acbadfff58730da22abb"
+        },
+        {
+          "path": "openspec/changes/architecture-baseline-and-delivery-plan/verification.md",
+          "state": "untracked",
+          "contentFingerprint": "3bffb6208f4acb4c092c76f16f611907cc7ccdda6e491677c40f1d8b01f98194"
+        },
+        {
+          "path": "openspec/delivery-groups/20260817-01-delivery-execution-loop.yaml",
+          "state": "modified",
+          "contentFingerprint": "2bcc81fa9927df00f915cdbb5f7f150ae4b53f4dae6bcd44612578c9abafa778"
+        },
+        {
+          "path": "src/architecture/architecture-service.ts",
+          "state": "untracked",
+          "contentFingerprint": "dd78a3654c31b170d56165892735008cf91f89eebcee9d098245e1e3040fb33a"
+        },
+        {
+          "path": "src/architecture/index.ts",
+          "state": "untracked",
+          "contentFingerprint": "c771d964465b49a18299014c1021764458aeaf781bee8ac4a3bd0b0e03f8e6fa"
+        },
+        {
+          "path": "src/cli/architecture.ts",
+          "state": "untracked",
+          "contentFingerprint": "ab7eb4f60b140c9d9c59c390662369382a6194b8302eee0fce0cb7a423689a2c"
+        },
+        {
+          "path": "src/cli/main.ts",
+          "state": "modified",
+          "contentFingerprint": "7d589d8234449d54ad7efd9e398a2f22a9a2554411aa33b910553f683f810f50"
+        },
+        {
+          "path": "src/integrations/archify/archify-cli-adapter.ts",
+          "state": "modified",
+          "contentFingerprint": "311161ae4736126c0a5c5ad057275a7da06060696e7e9f8f12eb17422796a0ec"
+        },
+        {
+          "path": "src/verification/change-selection/evidence.ts",
+          "state": "modified",
+          "contentFingerprint": "79a148fba07b8757f61c2df4e7b3851044245b8c02a310d51fed901670431697"
+        },
+        {
+          "path": "src/verification/change-selection/module-map.ts",
+          "state": "modified",
+          "contentFingerprint": "dc837845d79ed7f03374e4efe4f44aef9706f9e102f9f1d8d0ba3c646dc5d472"
+        },
+        {
+          "path": "tests/fixtures/d1-architecture-baseline-and-delivery-plan/expected.json",
+          "state": "untracked",
+          "contentFingerprint": "a0179d52002679de4a19d5956b363e67a04fff04710245f65964a1aaa2b98f83"
+        },
+        {
+          "path": "tests/integration/d1-architecture-baseline-and-delivery-plan.test.ts",
+          "state": "untracked",
+          "contentFingerprint": "300f8ced8f0292c3b128b9b9652ab9e2253975fae5d4adcaa0316017c933b825"
+        },
+        {
+          "path": "tests/unit/architecture/architecture-service.test.ts",
+          "state": "untracked",
+          "contentFingerprint": "55c942f8f1033835267b22e306e39d4bea85f67ca0c98393be471c81f1661d67"
+        },
+        {
+          "path": "tests/unit/cli/architecture.test.ts",
+          "state": "untracked",
+          "contentFingerprint": "88867f863f2a9d40373481b269e8f34e6114b0f90cb0150793faeba63f3ee5fb"
+        },
+        {
+          "path": "tests/unit/external-tools/archify-cli-adapter.test.ts",
+          "state": "untracked",
+          "contentFingerprint": "61c83fa4437d497d024a66cb78b652d8aaa8f8128389621f7ae5692239882ced"
+        },
+        {
+          "path": "tests/unit/verification/change-selection/evidence.test.ts",
+          "state": "modified",
+          "contentFingerprint": "d135bf09ee0e4a4bebd1c187bc754605a77e4afffbbe4789d7444d32c2affb91"
+        },
+        {
+          "path": "tests/unit/verification/change-selection/module-map.test.ts",
+          "state": "modified",
+          "contentFingerprint": "5286f70ad4540b9e3dbe50962e92aa3d81a847e45d7bdc576a5bbb74ccd452a6"
+        }
+      ]
+    },
+    "mutationDeclaration": {
+      "schemaVersion": 1,
+      "action": "revise-apply",
+      "designRef": {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/design.md",
+        "kind": "produced-artifact",
+        "versionFingerprint": "feb819aa506ae3c36815e8738108430b7f61a15d55b9ed63cf19682559ebdea5"
+      },
+      "selectors": [
+        {
+          "kind": "exact",
+          "path": "architecture/.gitignore"
+        },
+        {
+          "kind": "exact",
+          "path": "architecture/20260817-01-delivery-execution-loop/json/current.architecture.json"
+        },
+        {
+          "kind": "exact",
+          "path": "architecture/20260817-01-delivery-execution-loop/json/planned.architecture.json"
+        },
+        {
+          "kind": "exact",
+          "path": "architecture/reference/json/change-lifecycle.workflow.json"
+        },
+        {
+          "kind": "exact",
+          "path": "architecture/reference/json/delivery-lifecycle.lifecycle.json"
+        },
+        {
+          "kind": "exact",
+          "path": "openspec/changes/architecture-baseline-and-delivery-plan/tasks.md"
+        },
+        {
+          "kind": "exact",
+          "path": "openspec/changes/architecture-baseline-and-delivery-plan/verification.md"
+        },
+        {
+          "kind": "prefix",
+          "path": "src/architecture"
+        },
+        {
+          "kind": "exact",
+          "path": "src/cli/architecture.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/cli/main.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/integrations/archify/archify-cli-adapter.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/verification/change-selection/evidence.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/verification/change-selection/module-map.ts"
+        },
+        {
+          "kind": "prefix",
+          "path": "tests/fixtures/d1-architecture-baseline-and-delivery-plan"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/integration/d1-architecture-baseline-and-delivery-plan.test.ts"
+        },
+        {
+          "kind": "prefix",
+          "path": "tests/unit/architecture"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/cli/architecture.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/external-tools/archify-cli-adapter.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/verification/change-selection/evidence.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/verification/change-selection/module-map.test.ts"
+        }
+      ]
+    }
+  },
+  "compactEntryWorkspaceIdentity": {
+    "canonicalBase": "9d27efef586bcb3204647c78785c9c30a64be4a2",
+    "workspaceFingerprint": "3917ad6380de0db6cd217eff4115db992add0e7206908b21ab1ad6788dd859d7",
+    "entries": [
+      {
+        "path": "architecture/.gitignore",
+        "state": "untracked",
+        "contentFingerprint": "a4062e262ad59a0fb8640ba9edbc0857367a321861f3f86f6e1a595cc989d7a1"
+      },
+      {
+        "path": "architecture/20260817-01-delivery-execution-loop/json/current.architecture.json",
+        "state": "untracked",
+        "contentFingerprint": "da0f8b4f3ce26718f2b656af047b5117d86534fad867759c6cac57a4687302f6"
+      },
+      {
+        "path": "architecture/20260817-01-delivery-execution-loop/json/planned.architecture.json",
+        "state": "untracked",
+        "contentFingerprint": "3cb3ee4a2dd5801c9d6f2de29bb0595026c6797b20d8142e9e99d4ecf79b2cbb"
+      },
+      {
+        "path": "architecture/reference/json/change-lifecycle.workflow.json",
+        "state": "untracked",
+        "contentFingerprint": "eb8b83e6300ab5911885b07218e9e81ad0f0c657afac4053f5c26f23b64cda76"
+      },
+      {
+        "path": "architecture/reference/json/delivery-lifecycle.lifecycle.json",
+        "state": "untracked",
+        "contentFingerprint": "35c7eec1f70e038c8641a9777d980aeb89537cf17c441329124f7ed4719ce6e9"
+      },
+      {
+        "path": "openspec/changes/architecture-baseline-and-delivery-plan/.openspec.yaml",
+        "state": "untracked",
+        "contentFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+      },
+      {
+        "path": "openspec/changes/architecture-baseline-and-delivery-plan/design.md",
+        "state": "untracked",
+        "contentFingerprint": "feb819aa506ae3c36815e8738108430b7f61a15d55b9ed63cf19682559ebdea5"
+      },
+      {
+        "path": "openspec/changes/architecture-baseline-and-delivery-plan/explore.md",
+        "state": "untracked",
+        "contentFingerprint": "715736e923688bd5111b4607e951a75a4d02c0c47d49bb7a56f9bc30fe4b6a55"
+      },
+      {
+        "path": "openspec/changes/architecture-baseline-and-delivery-plan/proposal.md",
+        "state": "untracked",
+        "contentFingerprint": "755cc9a8cb9f05ad360b6492a9ebd2232c8be1643655b6a7b3e486e4d92d701f"
+      },
+      {
+        "path": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-architecture-assets/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "461f741222b7605a6e381bed79a938738f26794a58a0b12902d6ef0ef2b05ad4"
+      },
+      {
+        "path": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-change-verification-selection/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "0e5b9f99ace4fff1d8e6915739ce9ce435f356ea2288c4008fc695849801327f"
+      },
+      {
+        "path": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-external-tool-runtime/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "622f02ca85267172cc2318d64dd89b7016e24edbd401c89c3bb7b5d96d3a8591"
+      },
+      {
+        "path": "openspec/changes/architecture-baseline-and-delivery-plan/tasks.md",
+        "state": "untracked",
+        "contentFingerprint": "f86da87727197839a45d62c4f345b4d52bfdd0ac4751acbadfff58730da22abb"
+      },
+      {
+        "path": "openspec/changes/architecture-baseline-and-delivery-plan/verification.md",
+        "state": "untracked",
+        "contentFingerprint": "3bffb6208f4acb4c092c76f16f611907cc7ccdda6e491677c40f1d8b01f98194"
+      },
+      {
+        "path": "openspec/delivery-groups/20260817-01-delivery-execution-loop.yaml",
+        "state": "modified",
+        "contentFingerprint": "2bcc81fa9927df00f915cdbb5f7f150ae4b53f4dae6bcd44612578c9abafa778"
+      },
+      {
+        "path": "src/architecture/architecture-service.ts",
+        "state": "untracked",
+        "contentFingerprint": "dd78a3654c31b170d56165892735008cf91f89eebcee9d098245e1e3040fb33a"
+      },
+      {
+        "path": "src/architecture/index.ts",
+        "state": "untracked",
+        "contentFingerprint": "c771d964465b49a18299014c1021764458aeaf781bee8ac4a3bd0b0e03f8e6fa"
+      },
+      {
+        "path": "src/cli/architecture.ts",
+        "state": "untracked",
+        "contentFingerprint": "ab7eb4f60b140c9d9c59c390662369382a6194b8302eee0fce0cb7a423689a2c"
+      },
+      {
+        "path": "src/cli/main.ts",
+        "state": "modified",
+        "contentFingerprint": "7d589d8234449d54ad7efd9e398a2f22a9a2554411aa33b910553f683f810f50"
+      },
+      {
+        "path": "src/integrations/archify/archify-cli-adapter.ts",
+        "state": "modified",
+        "contentFingerprint": "311161ae4736126c0a5c5ad057275a7da06060696e7e9f8f12eb17422796a0ec"
+      },
+      {
+        "path": "src/verification/change-selection/evidence.ts",
+        "state": "modified",
+        "contentFingerprint": "79a148fba07b8757f61c2df4e7b3851044245b8c02a310d51fed901670431697"
+      },
+      {
+        "path": "src/verification/change-selection/module-map.ts",
+        "state": "modified",
+        "contentFingerprint": "dc837845d79ed7f03374e4efe4f44aef9706f9e102f9f1d8d0ba3c646dc5d472"
+      },
+      {
+        "path": "tests/fixtures/d1-architecture-baseline-and-delivery-plan/expected.json",
+        "state": "untracked",
+        "contentFingerprint": "a0179d52002679de4a19d5956b363e67a04fff04710245f65964a1aaa2b98f83"
+      },
+      {
+        "path": "tests/integration/d1-architecture-baseline-and-delivery-plan.test.ts",
+        "state": "untracked",
+        "contentFingerprint": "300f8ced8f0292c3b128b9b9652ab9e2253975fae5d4adcaa0316017c933b825"
+      },
+      {
+        "path": "tests/unit/architecture/architecture-service.test.ts",
+        "state": "untracked",
+        "contentFingerprint": "55c942f8f1033835267b22e306e39d4bea85f67ca0c98393be471c81f1661d67"
+      },
+      {
+        "path": "tests/unit/cli/architecture.test.ts",
+        "state": "untracked",
+        "contentFingerprint": "88867f863f2a9d40373481b269e8f34e6114b0f90cb0150793faeba63f3ee5fb"
+      },
+      {
+        "path": "tests/unit/external-tools/archify-cli-adapter.test.ts",
+        "state": "untracked",
+        "contentFingerprint": "61c83fa4437d497d024a66cb78b652d8aaa8f8128389621f7ae5692239882ced"
+      },
+      {
+        "path": "tests/unit/verification/change-selection/evidence.test.ts",
+        "state": "modified",
+        "contentFingerprint": "d135bf09ee0e4a4bebd1c187bc754605a77e4afffbbe4789d7444d32c2affb91"
+      },
+      {
+        "path": "tests/unit/verification/change-selection/module-map.test.ts",
+        "state": "modified",
+        "contentFingerprint": "5286f70ad4540b9e3dbe50962e92aa3d81a847e45d7bdc576a5bbb74ccd452a6"
+      }
+    ]
+  },
+  "mutationDeclaration": {
+    "schemaVersion": 1,
+    "action": "revise-apply",
+    "designRef": {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/design.md",
+      "kind": "produced-artifact",
+      "versionFingerprint": "feb819aa506ae3c36815e8738108430b7f61a15d55b9ed63cf19682559ebdea5"
+    },
+    "selectors": [
+      {
+        "kind": "exact",
+        "path": "architecture/.gitignore"
+      },
+      {
+        "kind": "exact",
+        "path": "architecture/20260817-01-delivery-execution-loop/json/current.architecture.json"
+      },
+      {
+        "kind": "exact",
+        "path": "architecture/20260817-01-delivery-execution-loop/json/planned.architecture.json"
+      },
+      {
+        "kind": "exact",
+        "path": "architecture/reference/json/change-lifecycle.workflow.json"
+      },
+      {
+        "kind": "exact",
+        "path": "architecture/reference/json/delivery-lifecycle.lifecycle.json"
+      },
+      {
+        "kind": "exact",
+        "path": "openspec/changes/architecture-baseline-and-delivery-plan/tasks.md"
+      },
+      {
+        "kind": "exact",
+        "path": "openspec/changes/architecture-baseline-and-delivery-plan/verification.md"
+      },
+      {
+        "kind": "prefix",
+        "path": "src/architecture"
+      },
+      {
+        "kind": "exact",
+        "path": "src/cli/architecture.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/cli/main.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/integrations/archify/archify-cli-adapter.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/verification/change-selection/evidence.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/verification/change-selection/module-map.ts"
+      },
+      {
+        "kind": "prefix",
+        "path": "tests/fixtures/d1-architecture-baseline-and-delivery-plan"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/integration/d1-architecture-baseline-and-delivery-plan.test.ts"
+      },
+      {
+        "kind": "prefix",
+        "path": "tests/unit/architecture"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/cli/architecture.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/external-tools/archify-cli-adapter.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/verification/change-selection/evidence.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/verification/change-selection/module-map.test.ts"
+      }
+    ]
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": true,
+    "mayWriteTestCode": true,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

@@ -1,0 +1,168 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260818-049-revise-explore",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "revise-explore",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "72ecde0ac51e439f01c2db4850b62e6e4531f62781fe60a159fc7da89dc5a06b",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-049-revise-explore/",
+  "changeKey": "D1",
+  "changeId": "architecture-baseline-and-delivery-plan",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-048-review-explore/result.json",
+    "versionFingerprint": "70e7e1ef3f54b87be93767c98e8388820e9f9897589c783b41bf01a4aec9add4",
+    "kind": "run-result"
+  },
+  "sourceReviewRun": "20260818-048-review-explore",
+  "sourceReviewVerdict": "changes-requested",
+  "canonicalBase": "9d27efef586bcb3204647c78785c9c30a64be4a2",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-048-review-explore/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "70e7e1ef3f54b87be93767c98e8388820e9f9897589c783b41bf01a4aec9add4"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/explore.md",
+      "versionFingerprint": "34f5277460e0085f52469c2e36efe7578f5f11fb32edc0b33c0a37d3a0b7e07b",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "architecture-baseline-and-delivery-plan",
+      "runId": "20260818-049-revise-explore",
+      "action": "revise-explore",
+      "role": "author",
+      "semanticInputFingerprint": "72ecde0ac51e439f01c2db4850b62e6e4531f62781fe60a159fc7da89dc5a06b"
+    },
+    "definition": {
+      "action": "revise-explore",
+      "version": 1,
+      "role": "author",
+      "goalClass": "close-explore-author-findings",
+      "mutationClass": "explore-planning-revision-only",
+      "outputClass": "current-explore-artifact-set",
+      "terminalContract": {
+        "kind": "artifact",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": true,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/explore.md",
+        "versionFingerprint": "34f5277460e0085f52469c2e36efe7578f5f11fb32edc0b33c0a37d3a0b7e07b",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-048-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "70e7e1ef3f54b87be93767c98e8388820e9f9897589c783b41bf01a4aec9add4"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260818-048-review-explore",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-048-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "70e7e1ef3f54b87be93767c98e8388820e9f9897589c783b41bf01a4aec9add4"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "D1-RE-002",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "Author 将 Reviewer 建议写成不存在的 Owner .gitignore 授权",
+          "problem": "047 在 Current Facts、Scope Boundary、Feasible Proposal Boundary、Open Decisions 和 revise result summary 中反复声明“Owner 已明确授权 D1 修改 repository .gitignore”。但 047 context.json 的 ownerFactRefs=[]、ownerAuthorizationRefs=[]；当前 Delivery Manifest 新增的 D1 Owner fact 仅为 activate-change，sourceRef=owner-input:2026-08-18T10:15+08:00:activate-change:D1-and-explore，没有任何 .gitignore scope/authorization fact。046 Reviewer 只给出了 non-blocking implementation guidance：Proposal 应明确一种最薄的 HTML default-not-committed hygiene mechanism，可为 .gitignore 或等价方式。Reviewer prose 不能创造 Owner authority。",
+          "contractRef": "Flowkit Operating Model v8 / AGENTS.md Owner Authority: 新 Owner authority 只能来自 Owner 独立明确输入；Author/Reviewer prose、解释或建议不能创造 Owner decision；Flowkit Explore Skill v2 Authority Proof",
+          "invariant": "Formal Explore 不得声称不存在的 Owner authorization。已有 D1 scope 可以允许 Author 在 Proposal 中提出最薄 .gitignore implementation choice，但除非存在独立 Owner fact/ref，不得表述为 Owner 已明确授权。",
+          "requiredOutcome": "最小 revise-explore 删除所有“Owner 已明确授权 .gitignore”或等价无来源 authority 陈述。若 .gitignore 仍作为推荐实现，应明确它是 D1 已冻结 JSON/HTML contract 下由 Proposal 待冻结的最薄 implementation choice；只有 Owner 后续独立提供正式 authorization fact 时才能记录为 Owner decision。不要修改 Delivery Manifest 去伪造补写 authorization。",
+          "acceptance": [
+            "explore.md 与 047 后续修订结果不再声称存在未引用的 Owner .gitignore authorization。",
+            ".gitignore 可以继续作为 Proposal 的候选/推荐最薄实现，并保持 architecture/*/html/ default-not-committed、JSON 不被忽略的边界。",
+            "不通过手工 Manifest patch、Run prose 或 Author-created owner ref 补造 Owner authority。",
+            "D1 activation 的真实 Owner fact保持不变。"
+          ]
+        },
+        {
+          "id": "D1-RE-003",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "047 explore.md 仍含 trailing whitespace，canonical staging preflight 会失败",
+          "problem": "046 已明确提醒 045 explore.md 的 Markdown 行尾双空格违反仓库文本卫生，047 revise-explore 后这些尾随空格仍存在。Reviewer 将 047 cumulative candidate 叠加到 exact Base 9d27efef 后执行 git add -A + git diff --cached --check，得到 36 个 trailing whitespace findings，exit code=2。普通 git diff --check 对 untracked new files不会覆盖这一问题，但 canonical staging preflight 会必然失败。",
+          "contractRef": "Flowkit Operating Model v8 / AGENTS.md 跨平台与文本卫生：新增或生成文本使用 LF、无 trailing whitespace、EOF 恰好一个 newline；Checkpoint 前 git diff --check，staging 后 git diff --cached --check",
+          "invariant": "Detached cumulative candidate 必须能够通过 canonical materialization/staging hygiene；不能把已知的纯格式 defect 留到 Executor/Checkpoint 再发现。",
+          "requiredOutcome": "在同一次最小 revise-explore 中移除 explore.md 全部 trailing spaces，保持语义不变，并确认 staging-aware git diff --cached --check 对 cumulative candidate 为 clean。",
+          "acceptance": [
+            "explore.md 不再有行尾空格或 tab。",
+            "文本仍为 LF 且 EOF 恰好一个 newline。",
+            "将 cumulative candidate staged 后 git diff --cached --check 返回 0。",
+            "只做格式 normalization，不借机改变已通过的 future-Delivery proof 或扩大 D1 scope。"
+          ]
+        }
+      ],
+      "convergence": [
+        {
+          "findingId": "D1-RE-001",
+          "state": "resolved"
+        },
+        {
+          "findingId": "D1-RE-002",
+          "state": "new"
+        },
+        {
+          "findingId": "D1-RE-003",
+          "state": "new"
+        },
+        {
+          "findingId": "D1-RE-NB-001",
+          "state": "resolved"
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "4fa1adfbef718957c7e32825dbb789ed0b27a409a331d12f2d2b9231f98e5e14",
+    "requiredResultContract": {
+      "kind": "artifact",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": true,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

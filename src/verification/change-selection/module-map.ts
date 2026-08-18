@@ -25,6 +25,7 @@ export const VERIFICATION_MODULE_MAP_LOGICAL_REF =
 export const CLOSED_VERIFICATION_SCOPES = [
   'openspec-current-change-archive-sync',
   'openspec-current-change-strict',
+  'tests-architecture',
   'tests-cli',
   'tests-execution',
   'tests-external-tools',
@@ -36,6 +37,7 @@ export const CLOSED_VERIFICATION_SCOPES = [
 ] as const;
 
 export const CLOSED_CAPABILITY_IDS = [
+  'flowkit-architecture-assets',
   'flowkit-archive-and-checkpoint-boundary',
   'flowkit-change-cli-end-to-end-and-performance',
   'flowkit-change-verification-generalization-and-lean-run-normalization',
@@ -71,6 +73,19 @@ const VERIFICATION_SELECTION_CAPABILITIES = [
 /** Closed, source-controlled authority for path ownership and logical check selection. */
 export const VERIFICATION_MODULE_MAP: readonly VerificationModule[] = [
   module(
+    'architecture',
+    [
+      'architecture',
+      'src/architecture',
+      'tests/fixtures/d1-architecture-baseline-and-delivery-plan',
+      'tests/integration/d1-architecture-baseline-and-delivery-plan.test.ts',
+      'tests/unit/architecture',
+    ],
+    ['external-tools'],
+    ['tests-architecture', 'typecheck'],
+    ['flowkit-architecture-assets'],
+  ),
+  module(
     'change-contract',
     [
       'docs/flowkit-self-hosting-bootstrap-and-migration.md',
@@ -98,6 +113,7 @@ export const VERIFICATION_MODULE_MAP: readonly VerificationModule[] = [
     ['execution'],
     ['tests-cli', 'typecheck'],
     [
+      'flowkit-architecture-assets',
       'flowkit-change-cli-end-to-end-and-performance',
       'flowkit-diagnostic-cli',
       'flowkit-openspec-1-7-thin-integration',

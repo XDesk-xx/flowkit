@@ -107,7 +107,7 @@ changes:
     required: true
     dependsOn:
       - "external-tool-runtime-and-archify-cli-contract"
-    state: planned
+    state: completed
     architectureImpact: true
     outputs:
       - "architecture/<delivery-id>/json/** durable source layout"
@@ -281,6 +281,46 @@ ownerDecisions:
     deliveryId: "20260817-01-delivery-execution-loop"
     changeId: "external-tool-runtime-and-archify-cli-contract"
     sourceRef: "ref/flowkit-local-ai-handoff-c1-044-archive.md"
+  - ref: "owner:ebecb176e5ab8a64b703e9a7b83b8452a6ad86e390f80ca2be12a871bec1898e"
+    decision: "activate-change"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "architecture-baseline-and-delivery-plan"
+    sourceRef: "owner-input:2026-08-18T10:15+08:00:activate-change:D1-and-explore"
+  - ref: "owner:b84469ab6ee11fca4a9c87dd1dbbd698d10b03979dab742f1cd01c24cf771b00"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "architecture-baseline-and-delivery-plan"
+    sourceRef: "owner:user-message:2026-08-18T12:03+08:00:d1-apply-054"
+  - ref: "owner:517890aabaf47af297deb6b86282ea7c5502372c1945bee89725ba70b24bda89"
+    decision: "contract-reset"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "architecture-baseline-and-delivery-plan"
+    scope: "D1 / architecture reference visualization model correction, retain Workflow + Sequence views, recover failed 057 generation"
+    requiredOutcomes:
+      - "All architecture/reference JSON remains a human/AI visualization projection downstream of Owner decisions, Flowkit Policy, OpenSpec and canonical code/tests/Git facts; formal facts win conflicts."
+      - "Do not add actual.architecture.json, global system.architecture.json, SystemArchitectureRef promotion, Planned-vs-Actual acceptance, architecture DB/Registry, Archify lifecycle Actions, reference-as-Policy, or HTML freshness authority."
+      - "Do not create a durable Full Test Lifecycle reference in D1; Lifecycle remains suitable only for bounded state-machine views when separately required."
+      - "Fresh Proposal must update proposal/design/specs/tasks/mutation scope/tests/Verification mapping as needed, pass mutation-declaration dry admission, buildVerificationSelection expected-D1 proof, OpenSpec strict/all-strict, staged diff hygiene, and physical Archify validate/deliver for both Workflow and Sequence references plus Current/Planned Architecture."
+      - "HTML remains generated/disposable/default-not-tracked and reproducible from durable JSON plus exact managed Archify 2.14.0."
+      - "Keep four Git-tracked non-authoritative reference JSON sources: Change Workflow, Change Sequence, Delivery Workflow, Delivery Sequence; Workflow is the complete orchestration view and Sequence is the complementary participant-interaction view."
+      - "Preserve Delivery Current at exact pre-03 main 74d46f0920c0dfc6f19b5b264cf9de138f4c2bec and Planned provenance at original 03 Delivery Start f132db761bd209e6aff72411108b8e3e1c9801f5; Actual remains E1."
+      - "Supersede the failed 20260818-057-revise-apply generation without mutating or reinterpreting its historical Run or failed Verification; reopen a fresh Proposal generation."
+    sourceRef: "owner-input:2026-08-18T13:54+08:00:D1-reference-workflow-sequence-reset"
+  - ref: "owner:1306e81b8f80d964759b6b7eec7e6020903d981650bc1fb226183046e5a19ffd"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "architecture-baseline-and-delivery-plan"
+    sourceRef: "owner-input:2026-08-18T14:20+08:00:D1-059-authorize-apply"
+  - ref: "owner:c2e1a3d6c880496cba337a415cbd4d4fd85e14c15131c1ffc53868e2b89f2d98"
+    decision: "authorize-archive"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "architecture-baseline-and-delivery-plan"
+    sourceRef: "owner-input:2026-08-18T14:56+08:00:D1-authorize-archive"
+  - ref: "owner:c33ff15bf19fb53e57d4e4336e70eb41221d354ea6d292c492e5a4b7995928c4"
+    decision: "authorize-checkpoint"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "architecture-baseline-and-delivery-plan"
+    sourceRef: "ref/flowkit-local-ai-handoff-d1-062-archive.md"
 verification:
   change:
     requireApplicableChecks: true

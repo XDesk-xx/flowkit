@@ -1,0 +1,504 @@
+{
+  "schema_version": 1,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Flowkit 完整 Change 执行 Workflow",
+    "output": "change-lifecycle.workflow.html",
+    "animation": "trace",
+    "visual_preset": "signal-flow",
+    "quality_profile": "standard",
+    "views": [
+      {
+        "id": "explore-propose",
+        "label": "Explore / Proposal 审查与修订",
+        "focus": [
+          "explore",
+          "review_explore",
+          "revise_explore",
+          "propose",
+          "review_propose",
+          "revise_propose"
+        ],
+        "note": "显式展示 review-* 与仅 Author blocker 才进入 revise-* 的 re-review 回路。"
+      },
+      {
+        "id": "apply-review",
+        "label": "Apply / Verification / Review",
+        "focus": [
+          "authorize_apply",
+          "apply",
+          "change_verification",
+          "review_apply",
+          "revise_apply"
+        ],
+        "note": "Owner apply 授权、Change Verification、review-apply 与 author-only revise/reverify 分离。"
+      },
+      {
+        "id": "authority-stop",
+        "label": "非 Author blocker 停止边界",
+        "focus": [
+          "explore_authority_stop",
+          "propose_authority_stop",
+          "apply_authority_stop"
+        ],
+        "note": "changes-requested ≠ revise-required；Owner / Verification / External blocker 停在对应 authority boundary。"
+      },
+      {
+        "id": "archive-checkpoint",
+        "label": "Archive 与 Git Checkpoint",
+        "focus": [
+          "authorize_archive",
+          "archive",
+          "completed",
+          "authorize_checkpoint",
+          "checkpoint"
+        ],
+        "note": "archive 是 Change Action；completed 后才进入独立 Git Change Checkpoint boundary。"
+      }
+    ]
+  },
+  "lanes": [
+    {
+      "id": "explore_stage",
+      "label": "Explore: explore → review-explore → (author-only revise-explore / re-review)"
+    },
+    {
+      "id": "explore_stop",
+      "label": "Explore non-Author blocker: Owner / Verification / External → STOP",
+      "variant": "exception"
+    },
+    {
+      "id": "proposal_stage",
+      "label": "Proposal: propose → review-propose → (author-only revise-propose / re-review)"
+    },
+    {
+      "id": "proposal_stop",
+      "label": "Proposal non-Author blocker: Owner / Verification / External → STOP",
+      "variant": "exception"
+    },
+    {
+      "id": "apply_exec",
+      "label": "Apply execution: Owner authorize-apply → apply → Change Verification"
+    },
+    {
+      "id": "apply_review",
+      "label": "Apply review: review-apply → (author-only revise-apply → reverify → re-review)"
+    },
+    {
+      "id": "apply_stop",
+      "label": "Apply non-Author blocker: Owner / Verification / External → STOP",
+      "variant": "exception"
+    },
+    {
+      "id": "close_stage",
+      "label": "Close: Owner authorize-archive → OpenSpec archive"
+    },
+    {
+      "id": "completed_lane",
+      "label": "Change completed after archive success"
+    },
+    {
+      "id": "checkpoint_gate",
+      "label": "Owner authorize-checkpoint — separate Git persistence boundary"
+    },
+    {
+      "id": "checkpoint_lane",
+      "label": "Git Change Checkpoint — not Change Action / Run"
+    }
+  ],
+  "mainPath": [
+    "explore",
+    "review_explore",
+    "propose",
+    "review_propose",
+    "authorize_apply",
+    "apply",
+    "change_verification",
+    "review_apply",
+    "authorize_archive",
+    "archive",
+    "completed",
+    "authorize_checkpoint",
+    "checkpoint"
+  ],
+  "nodes": [
+    {
+      "id": "explore",
+      "lane": "explore_stage",
+      "col": 0,
+      "width": 52,
+      "type": "backend",
+      "label": "Explore",
+      "sublabel": "Author"
+    },
+    {
+      "id": "review_explore",
+      "lane": "explore_stage",
+      "col": 1,
+      "width": 52,
+      "type": "security",
+      "label": "Review",
+      "sublabel": "explore"
+    },
+    {
+      "id": "revise_explore",
+      "lane": "explore_stage",
+      "col": 2,
+      "width": 52,
+      "type": "backend",
+      "label": "Revise",
+      "sublabel": "explore",
+      "tag": "author"
+    },
+    {
+      "id": "explore_authority_stop",
+      "lane": "explore_stop",
+      "col": 2,
+      "width": 52,
+      "type": "external",
+      "label": "STOP",
+      "sublabel": "non-author",
+      "tag": "STOP"
+    },
+    {
+      "id": "propose",
+      "lane": "proposal_stage",
+      "col": 1,
+      "width": 52,
+      "type": "backend",
+      "label": "Propose",
+      "sublabel": "Author"
+    },
+    {
+      "id": "review_propose",
+      "lane": "proposal_stage",
+      "col": 2,
+      "width": 52,
+      "type": "security",
+      "label": "Review",
+      "sublabel": "proposal"
+    },
+    {
+      "id": "revise_propose",
+      "lane": "proposal_stage",
+      "col": 3,
+      "width": 52,
+      "type": "backend",
+      "label": "Revise",
+      "sublabel": "proposal",
+      "tag": "author"
+    },
+    {
+      "id": "propose_authority_stop",
+      "lane": "proposal_stop",
+      "col": 3,
+      "width": 52,
+      "type": "external",
+      "label": "STOP",
+      "sublabel": "non-author",
+      "tag": "STOP"
+    },
+    {
+      "id": "authorize_apply",
+      "lane": "apply_exec",
+      "col": 2,
+      "width": 52,
+      "type": "security",
+      "label": "Auth",
+      "sublabel": "apply",
+      "tag": "Owner"
+    },
+    {
+      "id": "apply",
+      "lane": "apply_exec",
+      "col": 3,
+      "width": 52,
+      "type": "backend",
+      "label": "Apply",
+      "sublabel": "Author"
+    },
+    {
+      "id": "change_verification",
+      "lane": "apply_exec",
+      "col": 4,
+      "width": 52,
+      "type": "cloud",
+      "label": "Verify",
+      "sublabel": "checks",
+      "tag": "Verification"
+    },
+    {
+      "id": "review_apply",
+      "lane": "apply_review",
+      "col": 4,
+      "width": 52,
+      "type": "security",
+      "label": "Review",
+      "sublabel": "apply"
+    },
+    {
+      "id": "revise_apply",
+      "lane": "apply_review",
+      "col": 5,
+      "width": 52,
+      "type": "backend",
+      "label": "Revise",
+      "sublabel": "apply",
+      "tag": "author"
+    },
+    {
+      "id": "apply_authority_stop",
+      "lane": "apply_stop",
+      "col": 5,
+      "width": 52,
+      "type": "external",
+      "label": "STOP",
+      "sublabel": "non-author",
+      "tag": "STOP"
+    },
+    {
+      "id": "authorize_archive",
+      "lane": "close_stage",
+      "col": 4,
+      "width": 52,
+      "type": "security",
+      "label": "Auth",
+      "sublabel": "archive",
+      "tag": "Owner"
+    },
+    {
+      "id": "archive",
+      "lane": "close_stage",
+      "col": 5,
+      "width": 52,
+      "type": "external",
+      "label": "Archive",
+      "sublabel": "OpenSpec"
+    },
+    {
+      "id": "completed",
+      "lane": "completed_lane",
+      "col": 5,
+      "width": 52,
+      "type": "backend",
+      "label": "Done",
+      "sublabel": "Change"
+    },
+    {
+      "id": "authorize_checkpoint",
+      "lane": "checkpoint_gate",
+      "col": 5,
+      "width": 52,
+      "type": "security",
+      "label": "Auth",
+      "sublabel": "Git",
+      "tag": "Owner"
+    },
+    {
+      "id": "checkpoint",
+      "lane": "checkpoint_lane",
+      "col": 5,
+      "width": 52,
+      "type": "database",
+      "label": "Git CP",
+      "sublabel": "Git",
+      "tag": "not Action"
+    }
+  ],
+  "edges": [
+    {
+      "from": "explore",
+      "to": "review_explore",
+      "variant": "emphasis"
+    },
+    {
+      "from": "review_explore",
+      "to": "propose",
+      "variant": "emphasis",
+      "route": "drop",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "review_explore",
+      "to": "revise_explore",
+      "variant": "dashed",
+      "role": "branch"
+    },
+    {
+      "from": "revise_explore",
+      "to": "review_explore",
+      "variant": "dashed",
+      "role": "return",
+      "route": "return-left",
+      "fromSide": "left",
+      "toSide": "left"
+    },
+    {
+      "from": "review_explore",
+      "to": "explore_authority_stop",
+      "variant": "security",
+      "role": "error",
+      "route": "drop",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "propose",
+      "to": "review_propose",
+      "variant": "emphasis"
+    },
+    {
+      "from": "review_propose",
+      "to": "authorize_apply",
+      "variant": "emphasis",
+      "route": "drop",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "review_propose",
+      "to": "revise_propose",
+      "variant": "dashed",
+      "role": "branch"
+    },
+    {
+      "from": "revise_propose",
+      "to": "review_propose",
+      "variant": "dashed",
+      "role": "return",
+      "route": "outside-right",
+      "fromSide": "right",
+      "toSide": "right"
+    },
+    {
+      "from": "review_propose",
+      "to": "propose_authority_stop",
+      "variant": "security",
+      "role": "error",
+      "route": "drop",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "authorize_apply",
+      "to": "apply",
+      "variant": "security"
+    },
+    {
+      "from": "apply",
+      "to": "change_verification",
+      "variant": "emphasis",
+      "route": "bottom-channel",
+      "fromSide": "bottom",
+      "toSide": "bottom"
+    },
+    {
+      "from": "change_verification",
+      "to": "review_apply",
+      "variant": "emphasis",
+      "route": "drop",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "review_apply",
+      "to": "authorize_archive",
+      "variant": "emphasis",
+      "route": "drop",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "review_apply",
+      "to": "revise_apply",
+      "variant": "dashed",
+      "role": "branch"
+    },
+    {
+      "from": "revise_apply",
+      "to": "change_verification",
+      "variant": "dashed",
+      "role": "return",
+      "route": "outside-right",
+      "fromSide": "right",
+      "toSide": "right"
+    },
+    {
+      "from": "review_apply",
+      "to": "apply_authority_stop",
+      "variant": "security",
+      "role": "error",
+      "route": "drop",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "authorize_archive",
+      "to": "archive",
+      "variant": "security"
+    },
+    {
+      "from": "archive",
+      "to": "completed",
+      "variant": "emphasis",
+      "route": "drop",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "completed",
+      "to": "authorize_checkpoint",
+      "variant": "dashed",
+      "route": "drop",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "authorize_checkpoint",
+      "to": "checkpoint",
+      "variant": "security",
+      "route": "drop",
+      "fromSide": "bottom",
+      "toSide": "top"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Workflow 主图：完整 Change",
+      "items": [
+        "explore → review-explore → propose → review-propose → Owner apply → apply → Verification → review-apply → Owner archive → archive → completed → Owner checkpoint → Git Checkpoint",
+        "Git Change Checkpoint 在 completed 之后，是独立持久化边界，不是 Change Action / Run",
+        "每个 formal Action 使用轻量 Run；Checkpoint 不消耗 Action/Run 序列"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "changes-requested ≠ revise-required",
+      "items": [
+        "只有 blockingAuthority=author 才进入 revise-*",
+        "revise-explore / revise-propose 必须 re-review；revise-apply 必须 reverify 后再 review",
+        "Owner / Verification / External blocker 停在各自 authority boundary，不机械制造 no-op revise"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Authority direction",
+      "items": [
+        "Owner decisions + Flowkit Policy + OpenSpec + Verification + canonical code/tests/Git facts → reference visualization",
+        "Reference 只投影正式事实；never decides Policy，也不决定 Change contract、lifecycle 或 next Action",
+        "如果 reference 与 formal facts 冲突，reference stale；formal facts win（formal facts 永远获胜）"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Workflow 与 Sequence 的分工",
+      "items": [
+        "Workflow 表达完整 Change orchestration、分支、review/revise loop 与 non-author STOP boundary",
+        "Sequence 补充 Owner / Policy / Author / Reviewer / Verification / OpenSpec / Git 的交互时序",
+        "两者都只投影 formal facts；不成为第二 lifecycle authority，formal facts win"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,191 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260818-059-review-propose",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "review-propose",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "3d29d3b33065a21e0b9fda13734db84e0d931a2ff5a00a1818702af90b583c8b",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:517890aabaf47af297deb6b86282ea7c5502372c1945bee89725ba70b24bda89",
+      "decision": "contract-reset",
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "architecture-baseline-and-delivery-plan",
+      "scope": "D1 / architecture reference visualization model correction, retain Workflow + Sequence views, recover failed 057 generation",
+      "requiredOutcomes": [
+        "All architecture/reference JSON remains a human/AI visualization projection downstream of Owner decisions, Flowkit Policy, OpenSpec and canonical code/tests/Git facts; formal facts win conflicts.",
+        "Do not add actual.architecture.json, global system.architecture.json, SystemArchitectureRef promotion, Planned-vs-Actual acceptance, architecture DB/Registry, Archify lifecycle Actions, reference-as-Policy, or HTML freshness authority.",
+        "Do not create a durable Full Test Lifecycle reference in D1; Lifecycle remains suitable only for bounded state-machine views when separately required.",
+        "Fresh Proposal must update proposal/design/specs/tasks/mutation scope/tests/Verification mapping as needed, pass mutation-declaration dry admission, buildVerificationSelection expected-D1 proof, OpenSpec strict/all-strict, staged diff hygiene, and physical Archify validate/deliver for both Workflow and Sequence references plus Current/Planned Architecture.",
+        "HTML remains generated/disposable/default-not-tracked and reproducible from durable JSON plus exact managed Archify 2.14.0.",
+        "Keep four Git-tracked non-authoritative reference JSON sources: Change Workflow, Change Sequence, Delivery Workflow, Delivery Sequence; Workflow is the complete orchestration view and Sequence is the complementary participant-interaction view.",
+        "Preserve Delivery Current at exact pre-03 main 74d46f0920c0dfc6f19b5b264cf9de138f4c2bec and Planned provenance at original 03 Delivery Start f132db761bd209e6aff72411108b8e3e1c9801f5; Actual remains E1.",
+        "Supersede the failed 20260818-057-revise-apply generation without mutating or reinterpreting its historical Run or failed Verification; reopen a fresh Proposal generation."
+      ],
+      "sourceRef": "owner-input:2026-08-18T13:54+08:00:D1-reference-workflow-sequence-reset"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-059-review-propose/",
+  "changeKey": "D1",
+  "changeId": "architecture-baseline-and-delivery-plan",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-058-propose/result.json",
+    "versionFingerprint": "3895cffb09a652815afa296d29bcfd9b40b129086e8774a25a9d6b68c12360dd",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260818-058-propose",
+  "canonicalBase": "9d27efef586bcb3204647c78785c9c30a64be4a2",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-058-propose/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "3895cffb09a652815afa296d29bcfd9b40b129086e8774a25a9d6b68c12360dd"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/design.md",
+      "versionFingerprint": "c3fb5ed81bb50c898205e5bf74033b96bf4dd5ced28434e7139ee4df596c1d32",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/proposal.md",
+      "versionFingerprint": "88cc2c379a8c260d9848aef2c300fa74871cd36cff834be8866ca039cb01bfde",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-architecture-assets/spec.md",
+      "versionFingerprint": "5dcb31ebaab026e79dbde79d7d654656c16f6a161cfe5abc7a466d5fb27c1642",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-change-verification-selection/spec.md",
+      "versionFingerprint": "b7d50dde00df106a12f282021e24b6fdac3ebdbd05ae50d1afe7fc9755c3eead",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-external-tool-runtime/spec.md",
+      "versionFingerprint": "fa21aa8476e240eaef80689dc111e3a551a224613806fb0cfb4fc3e33bb832f1",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/tasks.md",
+      "versionFingerprint": "d10cee4c7162de57c6bdacbc74ac476fe2f0a0ad453ac5d2ed99522bf2faf919",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "architecture-baseline-and-delivery-plan",
+      "runId": "20260818-059-review-propose",
+      "action": "review-propose",
+      "role": "reviewer",
+      "semanticInputFingerprint": "3d29d3b33065a21e0b9fda13734db84e0d931a2ff5a00a1818702af90b583c8b"
+    },
+    "definition": {
+      "action": "review-propose",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-proposal",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/design.md",
+        "versionFingerprint": "c3fb5ed81bb50c898205e5bf74033b96bf4dd5ced28434e7139ee4df596c1d32",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/proposal.md",
+        "versionFingerprint": "88cc2c379a8c260d9848aef2c300fa74871cd36cff834be8866ca039cb01bfde",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-architecture-assets/spec.md",
+        "versionFingerprint": "5dcb31ebaab026e79dbde79d7d654656c16f6a161cfe5abc7a466d5fb27c1642",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "b7d50dde00df106a12f282021e24b6fdac3ebdbd05ae50d1afe7fc9755c3eead",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-external-tool-runtime/spec.md",
+        "versionFingerprint": "fa21aa8476e240eaef80689dc111e3a551a224613806fb0cfb4fc3e33bb832f1",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/tasks.md",
+        "versionFingerprint": "d10cee4c7162de57c6bdacbc74ac476fe2f0a0ad453ac5d2ed99522bf2faf919",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-058-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "3895cffb09a652815afa296d29bcfd9b40b129086e8774a25a9d6b68c12360dd"
+      }
+    ],
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [
+      {
+        "ref": "owner:517890aabaf47af297deb6b86282ea7c5502372c1945bee89725ba70b24bda89",
+        "decision": "contract-reset",
+        "deliveryId": "20260817-01-delivery-execution-loop",
+        "changeId": "architecture-baseline-and-delivery-plan",
+        "scope": "D1 / architecture reference visualization model correction, retain Workflow + Sequence views, recover failed 057 generation",
+        "requiredOutcomes": [
+          "All architecture/reference JSON remains a human/AI visualization projection downstream of Owner decisions, Flowkit Policy, OpenSpec and canonical code/tests/Git facts; formal facts win conflicts.",
+          "Do not add actual.architecture.json, global system.architecture.json, SystemArchitectureRef promotion, Planned-vs-Actual acceptance, architecture DB/Registry, Archify lifecycle Actions, reference-as-Policy, or HTML freshness authority.",
+          "Do not create a durable Full Test Lifecycle reference in D1; Lifecycle remains suitable only for bounded state-machine views when separately required.",
+          "Fresh Proposal must update proposal/design/specs/tasks/mutation scope/tests/Verification mapping as needed, pass mutation-declaration dry admission, buildVerificationSelection expected-D1 proof, OpenSpec strict/all-strict, staged diff hygiene, and physical Archify validate/deliver for both Workflow and Sequence references plus Current/Planned Architecture.",
+          "HTML remains generated/disposable/default-not-tracked and reproducible from durable JSON plus exact managed Archify 2.14.0.",
+          "Keep four Git-tracked non-authoritative reference JSON sources: Change Workflow, Change Sequence, Delivery Workflow, Delivery Sequence; Workflow is the complete orchestration view and Sequence is the complementary participant-interaction view.",
+          "Preserve Delivery Current at exact pre-03 main 74d46f0920c0dfc6f19b5b264cf9de138f4c2bec and Planned provenance at original 03 Delivery Start f132db761bd209e6aff72411108b8e3e1c9801f5; Actual remains E1.",
+          "Supersede the failed 20260818-057-revise-apply generation without mutating or reinterpreting its historical Run or failed Verification; reopen a fresh Proposal generation."
+        ],
+        "sourceRef": "owner-input:2026-08-18T13:54+08:00:D1-reference-workflow-sequence-reset"
+      }
+    ],
+    "externalContextFingerprint": "f91e3daa9eb2ee4a18a3567f74246ef896a4700dd9c7e109f7079d2682bda58e",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

@@ -6,7 +6,11 @@ import { runCommand, type RunCommandResult } from '../../shared/external-command
 import { FlowkitError } from '../../shared/errors.js';
 
 const DEFAULT_TIMEOUT_MS = 30_000;
-export type ArchifyRenderableType = 'architecture' | 'workflow' | 'lifecycle';
+export type ArchifyRenderableType = 'architecture' | 'workflow' | 'sequence' | 'lifecycle';
+
+export interface ArchifyRepositoryEvidenceOptions {
+  readonly repositoryRoot?: string;
+}
 
 type CommandRunner = (
   command: string,
@@ -64,6 +68,15 @@ function assertProcessSuccess(result: RunCommandResult, operation: string, timeo
   }
 }
 
+function repositoryEvidenceArgs(type: ArchifyRenderableType, options?: ArchifyRepositoryEvidenceOptions): string[] {
+  const repositoryRoot = options?.repositoryRoot;
+  if (repositoryRoot === undefined) return [];
+  if (type !== 'architecture') {
+    throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'Archify --repo-root is supported only for architecture diagrams', { type });
+  }
+  return ['--repo-root', resolve(repositoryRoot)];
+}
+
 export class ArchifyCliAdapter {
   readonly repoRoot: string;
   readonly timeoutMs: number;
@@ -102,8 +115,14 @@ export class ArchifyCliAdapter {
     return { ready: true, stdout: result.stdout };
   }
 
-  async validate(type: ArchifyRenderableType, input: string): Promise<Record<string, unknown>> {
-    const result = await this.invoke(['validate', type, resolve(input), '--json'], `validate ${type}`);
+  async validate(
+    type: ArchifyRenderableType,
+    input: string,
+    options?: ArchifyRepositoryEvidenceOptions,
+  ): Promise<Record<string, unknown>> {
+    const result = await this.invoke([
+      'validate', type, resolve(input), ...repositoryEvidenceArgs(type, options), '--json',
+    ], `validate ${type}`);
     const parsed = parseJson(result.stdout, `validate ${type}`);
     if (parsed['command'] !== 'validate' || parsed['type'] !== type) {
       throw new FlowkitError('ARCHIFY_MALFORMED_OUTPUT', 'Archify validate structured identity mismatch');
@@ -115,9 +134,12 @@ export class ArchifyCliAdapter {
     type: ArchifyRenderableType,
     input: string,
     output: string,
+    options?: ArchifyRepositoryEvidenceOptions,
   ): Promise<Record<string, unknown>> {
     const resolvedOutput = resolve(output);
-    const result = await this.invoke(['deliver', type, resolve(input), resolvedOutput, '--json'], `deliver ${type}`);
+    const result = await this.invoke([
+      'deliver', type, resolve(input), resolvedOutput, ...repositoryEvidenceArgs(type, options), '--json',
+    ], `deliver ${type}`);
     const parsed = parseJson(result.stdout, `deliver ${type}`);
     if (parsed['command'] !== 'deliver' || parsed['type'] !== type || resolve(String(parsed['output'] ?? '')) !== resolvedOutput) {
       throw new FlowkitError('ARCHIFY_MALFORMED_OUTPUT', 'Archify deliver structured identity mismatch');
@@ -135,12 +157,13 @@ export class ArchifyCliAdapter {
     head: string,
     output: string,
     receipt: string,
+    options?: ArchifyRepositoryEvidenceOptions,
   ): Promise<Record<string, unknown>> {
     const resolvedOutput = resolve(output);
     const resolvedReceipt = resolve(receipt);
     const result = await this.invoke([
       'compare', 'architecture', resolve(base), resolve(head), resolvedOutput,
-      '--receipt', resolvedReceipt, '--json',
+      '--receipt', resolvedReceipt, ...repositoryEvidenceArgs('architecture', options), '--json',
     ], 'compare architecture');
     const parsed = parseJson(result.stdout, 'compare architecture');
     if (parsed['command'] !== 'compare' || parsed['type'] !== 'architecture') {
