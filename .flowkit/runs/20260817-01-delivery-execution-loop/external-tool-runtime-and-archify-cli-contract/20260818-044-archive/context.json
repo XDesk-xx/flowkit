@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 4,
+  "runId": "20260818-044-archive",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "archive",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "semanticInputFingerprint": "863db50240f279ffdb43e6d9812bad8e052f5122f9892bb1a46c9f444b86ddac",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:41153a383030a049e69ceaeb8af6dcd518ce93381a058b51683fe2222b4929eb",
+      "decision": "contract-reset",
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "external-tool-runtime-and-archify-cli-contract",
+      "scope": "C1 / Proposal mutationDeclaration lexical canonicalization only",
+      "requiredOutcomes": [
+        "不改变 036 已批准的任何 implementation scope 或 executable precedence。",
+        "仅将 design.md 中 apply / revise-apply 的 flowkitMutationScope selectors 按既有 lexical-order contract canonicalize。",
+        "保持 tests/unit/services/b1-openspec-action-context.test.ts 在 approved mutation scope 内。",
+        "重新完成 Proposal Review 后再进入 Apply。"
+      ],
+      "sourceRef": "owner-input:2026-08-18T07:21+08:00:contract-reset:C1-proposal-mutation-declaration-lexical-canonicalization"
+    },
+    {
+      "ref": "owner:ec84e4aa0627db5f30c030207105d8f3f915370eb4875f2b682a0e51529b6005",
+      "decision": "contract-reset",
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "external-tool-runtime-and-archify-cli-contract",
+      "scope": "C1 / OpenSpec managed-vs-injected execution identity correction",
+      "requiredOutcomes": [
+        "fake/injected runner tests 必须通过显式 executable/invocation seam 表达 injected authority，不得通过 runner presence 隐式推断。",
+        "observational runner 必须继续消费 canonical managed FLOWKIT_HOME OpenSpec identity。",
+        "runner callback 本身不得被解释为 injected executable authority。",
+        "保持 033 已批准的 precedence：explicit/injected → managed FLOWKIT_HOME → legacy FLOWKIT_OPENSPEC_BIN → ambient compatibility。",
+        "保持现有 OpenSpec real-process、archive、verify --retry、G1、Full Test environment regressions。",
+        "重新完成 formal Change Verification physical closure。"
+      ],
+      "sourceRef": "owner-input:2026-08-18T05:59+08:00:contract-reset:C1-managed-vs-injected-execution-identity-correction"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/external-tool-runtime-and-archify-cli-contract/20260818-044-archive/",
+  "changeKey": "C1",
+  "changeId": "external-tool-runtime-and-archify-cli-contract",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/external-tool-runtime-and-archify-cli-contract/20260818-043-review-apply/result.json",
+    "versionFingerprint": "f5b6d7ac46e2dd6c7ac9e0d8005ddcd225717cf0db5e0360cbce1952308fb445",
+    "kind": "run-result"
+  },
+  "archiveEntryOpenSpecProjection": {
+    "projectionVersion": 1,
+    "version": "1.7.0",
+    "changeId": "external-tool-runtime-and-archify-cli-contract",
+    "changeRootLogical": "openspec/changes/external-tool-runtime-and-archify-cli-contract",
+    "artifactPaths": {
+      "proposal": [
+        "openspec/changes/external-tool-runtime-and-archify-cli-contract/proposal.md"
+      ],
+      "specs": [
+        "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-change-verification-selection/spec.md",
+        "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-external-tool-runtime/spec.md",
+        "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-integration-boundaries/spec.md",
+        "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-openspec-1-7-thin-integration/spec.md"
+      ],
+      "design": [
+        "openspec/changes/external-tool-runtime-and-archify-cli-contract/design.md"
+      ],
+      "tasks": [
+        "openspec/changes/external-tool-runtime-and-archify-cli-contract/tasks.md"
+      ]
+    }
+  },
+  "archiveMutationGuard": {
+    "state": "armed",
+    "surfaceVersion": "openspec-archive-mutation-v1",
+    "changeRoot": "openspec/changes/external-tool-runtime-and-archify-cli-contract",
+    "canonicalSpecsRoot": "openspec/specs",
+    "archiveNamespaceRoot": "openspec/changes/archive",
+    "preArchiveGenerationFingerprint": "4cc893c5d05122a264bc548ad75d7470903522e940f06d3ffb8cd50abf1cb491",
+    "terminalObservation": {
+      "kind": "success",
+      "resultFingerprint": "5a7f893b195ef8e029a46c694d5448e98dc98a3b138fc1d6ff637e1b7ec17d2f",
+      "normalized": {
+        "kind": "success",
+        "change": "external-tool-runtime-and-archify-cli-contract",
+        "archivedAs": "2026-08-18-external-tool-runtime-and-archify-cli-contract",
+        "path": "openspec/changes/archive/2026-08-18-external-tool-runtime-and-archify-cli-contract",
+        "specsUpdated": true,
+        "totals": {
+          "added": 8,
+          "modified": 0,
+          "removed": 0,
+          "renamed": 0
+        }
+      }
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

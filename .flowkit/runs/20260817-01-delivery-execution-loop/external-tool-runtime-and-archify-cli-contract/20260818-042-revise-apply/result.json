@@ -1,0 +1,23 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-apply",
+    "executionStatus": "completed",
+    "summary": "Closed C1-RA-001 without product-scope expansion: external-tool tests now use cross-platform absolute-path semantics for FLOWKIT_HOME, and synthetic review ZIP creation/integrity is implemented deterministically in Node with standard ZIP STORE records and CRC validation instead of ambient zip/unzip commands. Managed OpenSpec/Archify, retry/archive/G1, and formal verification-selection regressions remain green; Change Verification is re-executed from the revised exact candidate.",
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/external-tool-runtime-and-archify-cli-contract/20260818-041-review-apply/result.json",
+      "versionFingerprint": "a27b89348e68d77b47dea9c52f42e52e9c659c8cbdadb52c079f093ae7dbfaa0",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "4ec443ee3865641ad2c969edecaa68822dedde33b37edfef2ffe9c3b190e969a",
+    "currentVerification": {
+      "logicalRef": "openspec/changes/external-tool-runtime-and-archify-cli-contract/verification.md",
+      "versionFingerprint": "a3bece2c051c46975e2c58746a8b4bae78b731959aae7a32ac51fa712a022d41",
+      "selectionFingerprint": "e5a188a29828422df84b81cb66a2d5e724396a49aab9faf1c425825c2065f98e",
+      "status": "passed"
+    }
+  }
+}

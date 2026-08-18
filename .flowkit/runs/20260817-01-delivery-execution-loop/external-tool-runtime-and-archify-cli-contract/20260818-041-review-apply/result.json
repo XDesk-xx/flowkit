@@ -1,0 +1,48 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "按 029 起始审查链复核 040 Apply：managed OpenSpec/Archify exact runtime、Owner Reset 的 managed-vs-injected identity correction、Verification ownership、035 failed Verification history preservation、OpenSpec real-process/retry/archive/G1 regressions、typecheck/lint/build/quality/OpenSpec strict 均可独立复现通过；但 C1 新增的正式 tests-external-tools regression 自身引入 POSIX/ambient host assumptions：managed-tool unit test 用 FLOWKIT_HOME.startsWith('/') 判定 fixture，合法 Windows absolute path 会被测试拒绝；synthetic review ZIP integration test 直接 spawn ambient zip/unzip，未经过平台归一化也未作为受控 prerequisite。用 exact managed FLOWKIT_HOME 且移除系统 zip/unzip 的 PATH 重跑时，doctor/validate/deliver/compare 两个核心子测试继续 PASS，而 ZIP 子测试稳定 FAIL。因此当前 formal Verification passed 依赖本 Linux host 的偶然工具环境，尚不能证明 detached/offline + Windows-compatible physical closure。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/verification.md",
+      "versionFingerprint": "4e51bc9fd2900e80bfe883033f0506a7b8a3a2d3c10173f4ed104c4bc077839b",
+      "kind": "verification-summary"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "d08c1b8b5ba2fc8c1e6afa4e3ccb0d8d27af0ec26e095c48982691e84e0e70f6"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "C1-RA-001",
+      "severity": "blocking",
+      "title": "tests-external-tools formal regression 引入 POSIX-only path 与 ambient zip/unzip prerequisite",
+      "problem": "040 将 C1 exact managed external-tool proof 纳入 formal `tests-external-tools`，但该 selected regression 自身不是 platform/detached deterministic。`tests/unit/external-tools/managed-tool.test.ts` 的 `requiredFlowkitHome()` 以 `value.startsWith('/')` 作为 managed fixture 条件，这只接受 POSIX path，合法 Windows absolute `FLOWKIT_HOME` 会在进入 production resolver 前被测试直接拒绝。`tests/integration/c1-external-tool-runtime-and-archify-cli-contract.test.ts` 的 synthetic review ZIP 场景又直接 `spawnSync('zip')` / `spawnSync('unzip')`，依赖未冻结、未归一化的 ambient host commands。040 formal Verification 在当前 Linux host 上因为 `/usr/bin/zip`/`unzip` 恰好存在而 passed，但这不是 C1 exact managed runtime identity 的一部分。",
+      "contractRef": "038 approved Proposal/Design tasks 1.3, 2.2-2.4, 3.5, 4.2-4.4, 5.5; 029 Explore Risk Scan/Proof 6; 03 C1 detached-offline + Windows compatibility boundary; repository platform-launcher operating contract",
+      "invariant": "C1 的 formal physical regression 必须证明 exact managed OpenSpec/Archify 能在受控 detached/offline 环境工作，并保持项目支持的 Windows path/launcher semantics；selected test 本身不得因 POSIX-only path assertion 或未声明 ambient POSIX utility 而把 host coincidence 变成隐藏 verification prerequisite。",
+      "evidence": [
+        "040 `tests/unit/external-tools/managed-tool.test.ts` 中 `requiredFlowkitHome()` 使用 `assert.ok(value && value.startsWith('/'))`；该断言不是 `resolveFlowkitHome()` 的 contract，且合法 Windows absolute path 不以 `/` 开头。",
+        "040 `tests/integration/c1-external-tool-runtime-and-archify-cli-contract.test.ts` 第 3 个场景直接调用 `spawnSync('zip', ...)` 与 `spawnSync('unzip', ...)`，没有 platform branch、launcher normalization 或 declared managed prerequisite。",
+        "Reviewer 使用 exact OpenSpec 1.7.0 / Archify 2.14.0 managed fixture，并把 PATH 收窄到 Node + project node_modules（移除系统 zip/unzip）后重跑该 integration test：doctor/validate/deliver/compare 与 last-good 场景均 PASS；synthetic review ZIP 场景 FAIL，`zip.status` 为 null，整体 exit=1。",
+        "在普通 Linux PATH 下同一 C1 integration test 3/3 PASS，说明当前 formal Verification 的 success 对 ambient zip/unzip 可用性敏感，而不是只由 C1 frozen managed-tool inputs 决定。",
+        "Reviewer 独立复跑其余核心路径均 green：OpenSpec real CLI 6/6、managed/legacy retry、archive service、B1 action context、verification mapping/evidence、typecheck、lint、build、quality、OpenSpec current strict 与 --all --strict 18/18。"
+      ],
+      "impact": "在 Windows 或更小的 detached/offline host 上，即使 `FLOWKIT_HOME/tools` 中 OpenSpec/Archify identity 完全正确，formal `tests-external-tools` 仍可能因测试自身的 POSIX path/ambient ZIP assumptions 失败。这样 C1 Checkpoint 后的 future Change Verification / Full Test 会携带一个隐藏环境依赖，且 040 的 passed publication 会高估跨平台 physical closure。",
+      "location": "tests/unit/external-tools/managed-tool.test.ts requiredFlowkitHome(); tests/integration/c1-external-tool-runtime-and-archify-cli-contract.test.ts synthetic review ZIP subtest",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Revise Apply so the C1 formal external-tool regressions are platform-safe and do not depend on undeclared ambient POSIX zip/unzip availability. Remove the POSIX-only `startsWith('/')` fixture assumption in favor of the same cross-platform absolute-path contract used by production. Rework the synthetic ZIP physical proof so it has a deterministic cross-platform execution contract (or otherwise a formally declared/normalized test prerequisite) without changing C1 product scope, Tool Registry policy, or D1/E1 authority boundary.",
+      "acceptance": [
+        "A valid Windows-shaped `FLOWKIT_HOME` is not rejected by test-only POSIX path logic; the test validates the production cross-platform absolute-path contract rather than `/` prefix semantics.",
+        "The synthetic review ZIP regression no longer assumes ambient `zip`/`unzip` binaries with no platform contract; its create + integrity proof is deterministic for supported execution environments.",
+        "Re-running `tests-external-tools` with exact managed OpenSpec/Archify and without accidental POSIX ZIP utilities does not fail solely because of host PATH contents.",
+        "Existing managed OpenSpec/Archify doctor/validate/deliver/compare, last-good preservation, no formal `architecture/**` authority, Windows OpenSpec shim compatibility, managed/legacy retry and formal Verification selection regressions remain green.",
+        "A new formal Change Verification publication is generated from the revised exact candidate; 035 failed and 040 passed publications remain immutable historical point-in-time facts according to current verification-history rules."
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}

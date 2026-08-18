@@ -1,0 +1,16 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "036 fresh Proposal generation correctly implements the Owner Contract Reset without reopening settled C1 design: runner presence is explicitly non-authoritative; fake/injected executable identity must use explicit executable/invocation seams; observational runners retain the approved explicit/injected → managed FLOWKIT_HOME → legacy FLOWKIT_OPENSPEC_BIN → ambient compatibility precedence; managed observational execution remains process.execPath + exact openspec.js + operation args; affected fake-runner consumers are covered by the approved mutation scope, including the newly admitted execution-owned b1-openspec-action-context test; OpenSpec real-process/archive/verify --retry/G1/Full Test environment regressions and fresh formal Change Verification physical closure are preserved; 035 failed Verification remains immutable historical authority. No new blocking findings after review of the 029→030→031→032→033→034→035→036 chain."
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "b2571321de40ef0805563977470bf504a1315775f5b38c4a88056691bb04cb73"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [],
+  "reviewFindingConvergence": []
+}

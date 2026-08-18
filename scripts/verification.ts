@@ -3,7 +3,7 @@ import { constants } from 'node:fs';
 import { dirname, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { resolveOpenSpecExecutable } from '../src/integrations/openspec/openspec-executable.js';
+import { resolveOpenSpecInvocation } from '../src/integrations/openspec/openspec-executable.js';
 import { runCommand as runExternalCommand } from '../src/shared/external-command.js';
 import { resolveAffectedTests, resolveAllTests } from './affected-scopes.js';
 import { runPlatformCommand } from './platform-command.js';
@@ -147,18 +147,19 @@ function standaloneProjectEnv(): NodeJS.ProcessEnv {
 }
 
 
-async function resolvedProjectOpenSpecExecutable(): Promise<string> {
-  return resolveOpenSpecExecutable({
-    ...(process.env['FLOWKIT_OPENSPEC_BIN'] !== undefined && { executable: process.env['FLOWKIT_OPENSPEC_BIN'] }),
-    env: process.env,
-    platform: process.platform,
-  });
+async function resolvedProjectOpenSpecInvocation() {
+  return resolveOpenSpecInvocation({ env: process.env, platform: process.platform });
+}
+
+function applyOpenSpecPropagation(env: NodeJS.ProcessEnv, propagation: Readonly<NodeJS.ProcessEnv>): NodeJS.ProcessEnv {
+  delete env['FLOWKIT_OPENSPEC_BIN'];
+  delete env['FLOWKIT_HOME'];
+  return { ...env, ...propagation };
 }
 
 export async function fullTestEnvironment(): Promise<NodeJS.ProcessEnv> {
-  const env = standaloneProjectEnv();
-  env['FLOWKIT_OPENSPEC_BIN'] = await resolvedProjectOpenSpecExecutable();
-  return env;
+  const invocation = await resolvedProjectOpenSpecInvocation();
+  return applyOpenSpecPropagation(standaloneProjectEnv(), invocation.propagationEnv);
 }
 
 function writeCapturedOutput(stdout: string, stderr: string): void {
@@ -176,11 +177,11 @@ export async function executeProjectStep(
     const args = [...step.args];
     const index = args.indexOf('<active-change>');
     if (index !== -1) args[index] = await activeChangeId();
-    const executable = await resolvedProjectOpenSpecExecutable();
+    const invocation = await resolvedProjectOpenSpecInvocation();
     const started = process.hrtime.bigint();
-    const outcome = await runExternalCommand(executable, args, {
+    const outcome = await runExternalCommand(invocation.command, [...invocation.argsPrefix, ...args], {
       cwd: projectRoot,
-      env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' },
+      env: applyOpenSpecPropagation({ ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' }, invocation.propagationEnv),
       platform: process.platform,
     });
     writeCapturedOutput(outcome.stdout, outcome.stderr);

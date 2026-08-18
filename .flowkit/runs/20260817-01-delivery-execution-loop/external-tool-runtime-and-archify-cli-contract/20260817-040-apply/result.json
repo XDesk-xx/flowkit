@@ -1,0 +1,18 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "apply",
+    "executionStatus": "completed",
+    "summary": "C1 Reset Apply completed: runner callbacks are observational only; fake/injected authority uses explicit executable or invocation seams; canonical managed FLOWKIT_HOME OpenSpec identity and approved precedence remain unchanged; Reset-added B1 action-context regression is physically covered by tests-execution; formal Change Verification is re-executed by Apply admission."
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "b8ff3b81cc66c12af403b4e5120087f91088a5b2d23545a699089449da4cf5c2",
+    "currentVerification": {
+      "logicalRef": "openspec/changes/external-tool-runtime-and-archify-cli-contract/verification.md",
+      "versionFingerprint": "4e51bc9fd2900e80bfe883033f0506a7b8a3a2d3c10173f4ed104c4bc077839b",
+      "selectionFingerprint": "e5a188a29828422df84b81cb66a2d5e724396a49aab9faf1c425825c2065f98e",
+      "status": "passed"
+    }
+  }
+}

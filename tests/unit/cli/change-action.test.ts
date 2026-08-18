@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { execFile } from 'node:child_process';
-import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { afterEach, describe, it } from 'node:test';
@@ -156,11 +156,34 @@ describe('Change operator intent composition', () => {
   });
 
 
-  it('routes verify --retry through the actual CLI surface and preserves immutable failed authority', async () => {
+  async function exerciseVerifyRetry(mode: 'managed' | 'legacy'): Promise<void> {
     const { root, deliveryId, changeId } = await fixture('retry-cli-change');
-    const openSpecExecutable = process.env['FLOWKIT_OPENSPEC_BIN'];
-    assert.ok(openSpecExecutable, 'FLOWKIT_OPENSPEC_BIN is required for real OpenSpec retry coverage');
-    const adapter = new OpenSpecCliAdapter({ repoRoot: root, executable: openSpecExecutable });
+    const originalFlowkitHome = process.env['FLOWKIT_HOME'];
+    const originalLegacyExecutable = process.env['FLOWKIT_OPENSPEC_BIN'];
+    let expectedSource: 'managed' | 'legacy-compat';
+    if (mode === 'managed') {
+      assert.ok(originalFlowkitHome, 'FLOWKIT_HOME managed OpenSpec is required for canonical retry coverage');
+      delete process.env['FLOWKIT_OPENSPEC_BIN'];
+      expectedSource = 'managed';
+    } else {
+      assert.ok(originalFlowkitHome, 'managed OpenSpec fixture is required to build the compatibility launcher');
+      const managed = await new OpenSpecCliAdapter({ repoRoot: root }).resolveInvocation();
+      const wrapperRoot = await createTempDir();
+      roots.push(wrapperRoot);
+      const wrapper = join(wrapperRoot, process.platform === 'win32' ? 'openspec-compat.cmd' : 'openspec-compat');
+      if (process.platform === 'win32') {
+        await writeFile(wrapper, `@echo off\r\n"${managed.command}" "${managed.argsPrefix[0]}" %*\r\n`);
+      } else {
+        await writeFile(wrapper, `#!/bin/sh\nexec "${managed.command}" "${managed.argsPrefix[0]}" "$@"\n`);
+        await chmod(wrapper, 0o755);
+      }
+      delete process.env['FLOWKIT_HOME'];
+      process.env['FLOWKIT_OPENSPEC_BIN'] = wrapper;
+      expectedSource = 'legacy-compat';
+    }
+    try {
+      const adapter = new OpenSpecCliAdapter({ repoRoot: root });
+      assert.equal((await adapter.resolveInvocation()).source, expectedSource);
 
     await runChangeOperator(root, deliveryId, 'explore');
     await writeFile(join(root, 'openspec', 'changes', changeId, 'explore.md'), '# Explore\n\nRetry CLI feasibility proof.\n');
@@ -228,8 +251,21 @@ describe('Change operator intent composition', () => {
     const nextResult = await runCli({ argv: ['next'], cwd: root });
     assert.equal(nextResult.exitCode, 0, nextResult.stderr);
     assert.match(nextResult.stdout, /review-apply/);
+    } finally {
+      if (originalFlowkitHome === undefined) delete process.env['FLOWKIT_HOME'];
+      else process.env['FLOWKIT_HOME'] = originalFlowkitHome;
+      if (originalLegacyExecutable === undefined) delete process.env['FLOWKIT_OPENSPEC_BIN'];
+      else process.env['FLOWKIT_OPENSPEC_BIN'] = originalLegacyExecutable;
+    }
+  }
+
+  it('routes verify --retry through the canonical managed OpenSpec surface and preserves immutable failed authority', async () => {
+    await exerciseVerifyRetry('managed');
   });
 
+  it('keeps FLOWKIT_OPENSPEC_BIN verify --retry as separately-labelled compatibility coverage', async () => {
+    await exerciseVerifyRetry('legacy');
+  });
   it('keeps a non-author blocker on direct re-review and rejects revise', async () => {
     const { root, deliveryId, changeId } = await fixture('authority-change');
     await runChangeOperator(root, deliveryId, 'explore');

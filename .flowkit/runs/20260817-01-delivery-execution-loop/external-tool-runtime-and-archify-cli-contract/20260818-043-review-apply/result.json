@@ -1,0 +1,26 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "042 revise-apply 精确关闭 041 C1-RA-001：C1 managed-tool tests 已移除 POSIX-only FLOWKIT_HOME startsWith('/') 假设，改为生产一致的跨平台 absolute-path contract，并增加 Windows-shaped absolute path 语义断言；synthetic review ZIP 不再依赖 ambient zip/unzip，而使用 Node 内 deterministic STORE ZIP + CRC32/central-directory integrity proof。Reviewer 在 exact managed OpenSpec/Archify fixture 且 PATH=/poisoned 条件下独立重跑 tests-external-tools 7/7 PASS，证明不再依赖 host ZIP utilities；042 相对 040 未修改 production code/Proposal/Design/Specs，仅修改两个 regression tests 并形成新的 passed Change Verification publication。既有 managed OpenSpec/Archify、last-good、retry/archive/G1、Verification selection 与 no architecture authority boundary 均未发生语义扩张。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/verification.md",
+      "versionFingerprint": "a3bece2c051c46975e2c58746a8b4bae78b731959aae7a32ac51fa712a022d41",
+      "kind": "verification-summary"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "d2caf87be800c87dbac514817acc582e07e3bb17c83e6b52fc179c19fb90d946"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [],
+  "reviewFindingConvergence": [
+    {
+      "findingId": "C1-RA-001",
+      "state": "resolved"
+    }
+  ]
+}

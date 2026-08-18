@@ -41,8 +41,10 @@ describe('F1 verification plans', () => {
 
     const full = plan.find((step) => step.name === 'full');
     assert.ok(full);
-    const previous = process.env['FLOWKIT_OPENSPEC_BIN'];
-    process.env['FLOWKIT_OPENSPEC_BIN'] = '/resolved/openspec-1.7.0';
+    const previousLegacy = process.env['FLOWKIT_OPENSPEC_BIN'];
+    const managedHome = process.env['FLOWKIT_HOME'];
+    assert.ok(managedHome, 'FLOWKIT_HOME managed fixture is required');
+    delete process.env['FLOWKIT_OPENSPEC_BIN'];
     const calls: Array<{ executable: string; args: readonly string[]; env?: NodeJS.ProcessEnv }> = [];
     try {
       const result = await executeProjectStep(full, async (executable, args, options) => {
@@ -55,11 +57,14 @@ describe('F1 verification plans', () => {
       assert.equal(calls.length, 1);
       assert.match(calls[0]!.executable, process.platform === 'win32' ? /npm\.cmd$/u : /npm$/u);
       assert.deepEqual(calls[0]!.args, ['run', 'test:full']);
-      assert.equal(calls[0]!.env?.['FLOWKIT_OPENSPEC_BIN'], '/resolved/openspec-1.7.0');
-      assert.equal((await fullTestEnvironment())['FLOWKIT_OPENSPEC_BIN'], '/resolved/openspec-1.7.0');
+      assert.equal(calls[0]!.env?.['FLOWKIT_HOME'], managedHome);
+      assert.equal(calls[0]!.env?.['FLOWKIT_OPENSPEC_BIN'], undefined);
+      const projected = await fullTestEnvironment();
+      assert.equal(projected['FLOWKIT_HOME'], managedHome);
+      assert.equal(projected['FLOWKIT_OPENSPEC_BIN'], undefined);
     } finally {
-      if (previous === undefined) delete process.env['FLOWKIT_OPENSPEC_BIN'];
-      else process.env['FLOWKIT_OPENSPEC_BIN'] = previous;
+      if (previousLegacy === undefined) delete process.env['FLOWKIT_OPENSPEC_BIN'];
+      else process.env['FLOWKIT_OPENSPEC_BIN'] = previousLegacy;
     }
   });
 
@@ -73,18 +78,21 @@ describe('F1 verification plans', () => {
       const code = await runVerificationPlan(verifyFullPlan(), async (step) => {
         executed.push(step.name);
         if (step.name !== 'full') return { exitCode: 0, durationMs: 10 };
-        const previous = process.env['FLOWKIT_OPENSPEC_BIN'];
-        process.env['FLOWKIT_OPENSPEC_BIN'] = '/resolved/openspec-1.7.0';
+        const previousLegacy = process.env['FLOWKIT_OPENSPEC_BIN'];
+        const managedHome = process.env['FLOWKIT_HOME'];
+        assert.ok(managedHome, 'FLOWKIT_HOME managed fixture is required');
+        delete process.env['FLOWKIT_OPENSPEC_BIN'];
         try {
           return await executeProjectStep(step, async (executable, args, options) => {
             assert.match(executable, process.platform === 'win32' ? /npm\.cmd$/u : /npm$/u);
             assert.deepEqual(args, ['run', 'test:full']);
-            assert.equal(options.env?.['FLOWKIT_OPENSPEC_BIN'], '/resolved/openspec-1.7.0');
+            assert.equal(options.env?.['FLOWKIT_HOME'], managedHome);
+            assert.equal(options.env?.['FLOWKIT_OPENSPEC_BIN'], undefined);
             return { exitCode: 7, durationMs: 1_234 };
           });
         } finally {
-          if (previous === undefined) delete process.env['FLOWKIT_OPENSPEC_BIN'];
-          else process.env['FLOWKIT_OPENSPEC_BIN'] = previous;
+          if (previousLegacy === undefined) delete process.env['FLOWKIT_OPENSPEC_BIN'];
+          else process.env['FLOWKIT_OPENSPEC_BIN'] = previousLegacy;
         }
       });
       assert.equal(code, 7);

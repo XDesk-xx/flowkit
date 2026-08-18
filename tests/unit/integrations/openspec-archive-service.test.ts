@@ -94,7 +94,7 @@ async function fixture(mode: Mode) {
     }
     throw new Error(`unexpected args ${args.join(' ')}`);
   };
-  const adapter = new OpenSpecCliAdapter({ repoRoot: root, runner });
+  const adapter = new OpenSpecCliAdapter({ repoRoot: root, executable: 'openspec-fixture', env: { FLOWKIT_HOME: undefined }, runner });
   return { root, pkg, runDir, canonicalSpec, adapter, getArchiveCalls: () => archiveCalls };
 }
 

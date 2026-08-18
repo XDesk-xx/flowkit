@@ -17,6 +17,7 @@ describe('verification module map', () => {
           'cli-diagnostics',
           'core-model',
           'execution',
+          'external-tools',
           'openspec-runtime',
           'persistence',
           'verification-selection',
@@ -29,7 +30,9 @@ describe('verification module map', () => {
           'flowkit-core-model',
           'flowkit-delivery-change-creation-and-owner-input',
           'flowkit-diagnostic-cli',
+          'flowkit-external-tool-runtime',
           'flowkit-formal-fact-reader-and-persistence',
+          'flowkit-integration-boundaries',
           'flowkit-lean-run-and-action-package',
           'flowkit-openspec-1-7-thin-integration',
           'flowkit-policy-engine',
@@ -40,6 +43,7 @@ describe('verification module map', () => {
           'openspec-current-change-strict',
           'tests-cli',
           'tests-execution',
+          'tests-external-tools',
           'tests-openspec-runtime',
           'tests-persistence',
           'tests-serialization',
@@ -119,6 +123,14 @@ describe('verification module map', () => {
     assert.equal(selected.verificationScopes.includes('tests-execution'), true);
   });
 
+  it('keeps the Reset-added B1 OpenSpec action-context regression uniquely owned by execution', () => {
+    const selected = selectAffectedVerificationModules([
+      'tests/unit/services/b1-openspec-action-context.test.ts',
+    ]);
+    assert.deepEqual(selected.seedModuleIds, ['execution']);
+    assert.equal(selected.verificationScopes.includes('tests-execution'), true);
+  });
+
   it('allows F1 and G1 capabilities to justify verification-selection mutations in the current Change', () => {
     const selected = selectAffectedVerificationModules([
       'src/verification/change-selection/module-map.ts',
@@ -173,6 +185,28 @@ describe('verification module map', () => {
         path,
       );
     }
+  });
+
+
+  it('keeps C1 external-tool/OpenSpec/CLI ownership exact and non-overlapping', () => {
+    const cases = [
+      ['src/integrations/external-tools/managed-tool.ts', 'external-tools'],
+      ['src/integrations/archify/archify-cli-adapter.ts', 'external-tools'],
+      ['tests/unit/external-tools/managed-tool.test.ts', 'external-tools'],
+      ['tests/unit/integrations/openspec-cli-adapter.test.ts', 'openspec-runtime'],
+      ['tests/unit/cli/change-action.test.ts', 'cli-diagnostics'],
+    ] as const;
+    for (const [path, owner] of cases) {
+      assert.deepEqual(selectAffectedVerificationModules([path]).seedModuleIds, [owner], path);
+    }
+    const external = selectAffectedVerificationModules(['src/integrations/external-tools/managed-tool.ts']);
+    assert.equal(external.verificationScopes.includes('tests-external-tools'), true);
+    assert.equal(external.verificationScopes.includes('tests-openspec-runtime'), true);
+    assert.throws(() => validateVerificationModuleMap(VERIFICATION_MODULE_MAP.map((candidate) =>
+      candidate.id === 'external-tools'
+        ? { ...candidate, ownershipSelectors: [...candidate.ownershipSelectors, 'tests/unit/integrations/archify'].sort() }
+        : candidate,
+    )), /overlap/);
   });
 
   it('rejects overlap and dependency cycles', () => {

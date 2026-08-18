@@ -4,7 +4,8 @@ import { join, resolve } from 'node:path';
 
 import { runCommand, type RunCommandResult } from '../../shared/external-command.js';
 import { FlowkitError } from '../../shared/errors.js';
-import { resolveOpenSpecExecutable } from './openspec-executable.js';
+import { resolveOpenSpecInvocation } from './openspec-executable.js';
+import type { ExternalToolInvocation } from '../external-tools/managed-tool.js';
 import {
   assertAbsolutePath,
   assertPhysicalPathWithin,
@@ -42,6 +43,7 @@ type CommandRunner = (
 export interface OpenSpecCliAdapterOptions {
   readonly repoRoot: string;
   readonly executable?: string;
+  readonly invocation?: ExternalToolInvocation;
   readonly timeoutMs?: number;
   readonly env?: NodeJS.ProcessEnv;
   readonly runner?: CommandRunner;
@@ -166,14 +168,16 @@ export class OpenSpecCliAdapter {
   private readonly runner: CommandRunner;
   private readonly platform: NodeJS.Platform;
   private readonly explicitExecutable?: string;
-  private resolvedExecutablePromise?: Promise<string>;
+  private readonly explicitInvocation?: ExternalToolInvocation;
+  private resolvedInvocationPromise?: Promise<ExternalToolInvocation>;
   private versionPromise?: Promise<string>;
 
   constructor(options: OpenSpecCliAdapterOptions) {
     this.repoRoot = resolve(options.repoRoot);
     this.platform = options.platform ?? process.platform;
     this.explicitExecutable = options.executable;
-    this.executable = options.executable ?? (this.platform === 'win32' ? 'openspec.ps1' : 'openspec');
+    this.explicitInvocation = options.invocation;
+    this.executable = this.explicitExecutable ?? options.invocation?.command ?? (this.platform === 'win32' ? 'openspec.ps1' : 'openspec');
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     if (!Number.isFinite(this.timeoutMs) || this.timeoutMs <= 0) {
       throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'OpenSpec timeout must be positive');
@@ -506,34 +510,34 @@ export class OpenSpecCliAdapter {
         errorOnExist: true,
         preserveTimestamps: true,
       });
-      const executable = await this.resolveExecutable();
+      const invocation = await this.resolveInvocation();
       const disposableAdapter = new OpenSpecCliAdapter({
         repoRoot: disposableRoot,
-        executable,
+        invocation,
         timeoutMs: this.timeoutMs,
         env: this.env,
         runner: this.runner,
         platform: this.platform,
       });
-      const invocation = await disposableAdapter.archiveChange(changeId);
-      if (!invocation.spawned) {
+      const archiveInvocation = await disposableAdapter.archiveChange(changeId);
+      if (!archiveInvocation.spawned) {
         throw new FlowkitError('OPENSPEC_ARCHIVE_SYNC_PREFLIGHT_FAILED', 'OpenSpec archive-sync preflight could not spawn', {
           changeId,
-          diagnosis: invocation.transportDiagnosis ?? 'child did not spawn',
+          diagnosis: archiveInvocation.transportDiagnosis ?? 'child did not spawn',
         });
       }
-      if (invocation.timedOut) {
+      if (archiveInvocation.timedOut) {
         throw new FlowkitError('OPENSPEC_ARCHIVE_SYNC_PREFLIGHT_FAILED', 'OpenSpec archive-sync preflight timed out', { changeId });
       }
-      if (invocation.observation?.kind !== 'success') {
+      if (archiveInvocation.observation?.kind !== 'success') {
         throw new FlowkitError('OPENSPEC_ARCHIVE_SYNC_PREFLIGHT_FAILED', 'OpenSpec archive-sync preflight did not produce structured success', {
           changeId,
-          exitCode: invocation.exitCode,
-          ...(invocation.observation !== undefined ? { observation: invocation.observation } : {}),
-          ...(invocation.transportDiagnosis !== undefined ? { diagnosis: invocation.transportDiagnosis } : {}),
+          exitCode: archiveInvocation.exitCode,
+          ...(archiveInvocation.observation !== undefined ? { observation: archiveInvocation.observation } : {}),
+          ...(archiveInvocation.transportDiagnosis !== undefined ? { diagnosis: archiveInvocation.transportDiagnosis } : {}),
         });
       }
-      return invocation.observation;
+      return archiveInvocation.observation;
     } finally {
       await rm(disposableRoot, { recursive: true, force: true });
     }
@@ -691,21 +695,27 @@ export class OpenSpecCliAdapter {
   }
 
   private async invokeRaw(args: string[]): Promise<RunCommandResult> {
-    const executable = await this.resolveExecutable();
-    return this.runner(executable, args, {
+    const invocation = await this.resolveInvocation();
+    return this.runner(invocation.command, [...invocation.argsPrefix, ...args], {
       cwd: this.repoRoot,
-      env: this.env,
+      env: { ...this.env, ...invocation.propagationEnv },
       timeout: this.timeoutMs,
       platform: this.platform,
     });
   }
 
-  async resolveExecutable(): Promise<string> {
-    this.resolvedExecutablePromise ??= resolveOpenSpecExecutable({
+  async resolveInvocation(): Promise<ExternalToolInvocation> {
+    this.resolvedInvocationPromise ??= resolveOpenSpecInvocation({
+      ...(this.explicitInvocation !== undefined && { invocation: this.explicitInvocation }),
       ...(this.explicitExecutable !== undefined && { executable: this.explicitExecutable }),
       env: this.env,
       platform: this.platform,
     });
-    return this.resolvedExecutablePromise;
+    return this.resolvedInvocationPromise;
+  }
+
+  /** Compatibility-only projection for callers that still need the command token. */
+  async resolveExecutable(): Promise<string> {
+    return (await this.resolveInvocation()).command;
   }
 }

@@ -55,6 +55,7 @@ export type VerificationSelectionExecutor = (
 const NODE_TEST_CHECKS = new Set([
   'tests-cli',
   'tests-execution',
+  'tests-external-tools',
   'tests-openspec-runtime',
   'tests-persistence',
   'tests-serialization',
@@ -81,24 +82,25 @@ export async function executeVerificationSelection(
 
   const checksById = new Map<string, VerificationCheckEvidence>();
   const nodeIds = selection.verificationScopes.filter((scope) => NODE_TEST_CHECKS.has(scope));
-  if (nodeIds.length > 0) {
-    const files = await resolveLogicalNodeTests(input.repoRoot, nodeIds);
+  for (const logicalId of nodeIds) {
+    const files = await resolveLogicalNodeTests(input.repoRoot, [logicalId]);
     const nodeEnv: NodeJS.ProcessEnv = { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' };
     const requiresOpenSpecExecutable =
-      nodeIds.includes('tests-openspec-runtime') ||
+      logicalId === 'tests-openspec-runtime' ||
       files.includes('tests/integration/g1-change-cli-end-to-end.test.ts');
     if (requiresOpenSpecExecutable) {
-      nodeEnv['FLOWKIT_OPENSPEC_BIN'] = await input.openSpecAdapter.resolveExecutable();
+      const invocation = await input.openSpecAdapter.resolveInvocation();
+      delete nodeEnv['FLOWKIT_OPENSPEC_BIN'];
+      delete nodeEnv['FLOWKIT_HOME'];
+      Object.assign(nodeEnv, invocation.propagationEnv);
     }
-    const outcome = await runCommand(process.execPath, ['--import', 'tsx', '--test', ...files], {
+    const outcome = await runCommand(process.execPath, ['--import', 'tsx', '--test', '--test-concurrency=1', ...files], {
       cwd: input.repoRoot,
       env: nodeEnv,
       timeout: 120_000,
     });
-    const command = `${process.execPath} --import tsx --test ${files.join(' ')}`;
-    for (const logicalId of nodeIds) {
-      checksById.set(logicalId, evidenceFromOutcome(input, logicalId, command, outcome, environment, 'compatible Node test union/dedupe execution'));
-    }
+    const command = `${process.execPath} --import tsx --test --test-concurrency=1 ${files.join(' ')}`;
+    checksById.set(logicalId, evidenceFromOutcome(input, logicalId, command, outcome, environment, 'logical Node test execution'));
   }
 
   if (selection.verificationScopes.includes('typecheck')) {
@@ -393,6 +395,8 @@ function logicalNodeSelectors(logicalId: string): readonly string[] {
       return ['tests/integration/a1-delivery-readiness-and-full-test-behavior.test.ts', 'tests/integration/b1-delivery-findings-and-corrective-change.test.ts', 'tests/integration/diagnostic-cli-process.test.ts', 'tests/integration/diagnostic-cli.test.ts', 'tests/integration/g1-change-cli-end-to-end.test.ts', 'tests/unit/cli/*.test.ts', 'tests/unit/diagnostics/*.test.ts'];
     case 'tests-execution':
       return ['tests/integration/f1-archive-and-checkpoint-boundary.test.ts', 'tests/unit/facts/*.test.ts', 'tests/unit/policy/*.test.ts', 'tests/unit/services/*.test.ts'];
+    case 'tests-external-tools':
+      return ['tests/integration/c1-external-tool-runtime-and-archify-cli-contract.test.ts', 'tests/unit/external-tools/*.test.ts'];
     case 'tests-openspec-runtime':
       return ['tests/integration/openspec-1-7-real-cli.test.ts', 'tests/unit/external-command.test.ts', 'tests/unit/integrations/openspec-cli-adapter.test.ts'];
     case 'tests-persistence':

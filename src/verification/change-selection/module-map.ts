@@ -27,6 +27,7 @@ export const CLOSED_VERIFICATION_SCOPES = [
   'openspec-current-change-strict',
   'tests-cli',
   'tests-execution',
+  'tests-external-tools',
   'tests-openspec-runtime',
   'tests-persistence',
   'tests-serialization',
@@ -43,7 +44,9 @@ export const CLOSED_CAPABILITY_IDS = [
   'flowkit-core-model',
   'flowkit-delivery-change-creation-and-owner-input',
   'flowkit-diagnostic-cli',
+  'flowkit-external-tool-runtime',
   'flowkit-formal-fact-reader-and-persistence',
+  'flowkit-integration-boundaries',
   'flowkit-lean-run-and-action-package',
   'flowkit-openspec-1-7-thin-integration',
   'flowkit-policy-engine',
@@ -59,7 +62,9 @@ const VERIFICATION_SELECTION_CAPABILITIES = [
   'flowkit-change-cli-end-to-end-and-performance',
   'flowkit-change-verification-selection',
   'flowkit-core-hardening-and-release-candidate',
+  'flowkit-external-tool-runtime',
   'flowkit-formal-fact-reader-and-persistence',
+  'flowkit-integration-boundaries',
   'flowkit-lean-run-and-action-package',
 ] as const;
 
@@ -131,6 +136,19 @@ export const VERIFICATION_MODULE_MAP: readonly VerificationModule[] = [
     ],
   ),
   module(
+    'external-tools',
+    [
+      'src/integrations/archify',
+      'src/integrations/external-tools',
+      'tests/fixtures/c1-external-tool-runtime-and-archify-cli-contract',
+      'tests/integration/c1-external-tool-runtime-and-archify-cli-contract.test.ts',
+      'tests/unit/external-tools',
+    ],
+    ['core-model'],
+    ['tests-external-tools', 'typecheck'],
+    ['flowkit-external-tool-runtime', 'flowkit-integration-boundaries'],
+  ),
+  module(
     'openspec-runtime',
     [
       'src/integrations/openspec',
@@ -139,7 +157,7 @@ export const VERIFICATION_MODULE_MAP: readonly VerificationModule[] = [
       'tests/unit/external-command.test.ts',
       'tests/unit/integrations',
     ],
-    ['core-model', 'execution'],
+    ['core-model', 'execution', 'external-tools'],
     ['tests-openspec-runtime', 'typecheck'],
     [
       'flowkit-archive-and-checkpoint-boundary',

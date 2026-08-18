@@ -1,0 +1,209 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260817-034-review-propose",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "review-propose",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "2923d5d637447c6bf50e565aab611e6bbc50a58b76200ed455e78e3ed19c09d8",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/external-tool-runtime-and-archify-cli-contract/20260817-034-review-propose/",
+  "changeKey": "C1",
+  "changeId": "external-tool-runtime-and-archify-cli-contract",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/external-tool-runtime-and-archify-cli-contract/20260817-033-revise-propose/result.json",
+    "versionFingerprint": "7be888c71d5ab6b0fbbe7c6e1d49f1adaf2406270818d3a4361cef9d648da234",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260817-033-revise-propose",
+  "canonicalBase": "104c14cc245c4a6db3609e7e3dd52e356d0bfc19",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/external-tool-runtime-and-archify-cli-contract/20260817-033-revise-propose/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "7be888c71d5ab6b0fbbe7c6e1d49f1adaf2406270818d3a4361cef9d648da234"
+    },
+    {
+      "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "41db595b409c9e6bc00babeabb32990290577eb40245a5bb769e8ec98a1f8d3e"
+    },
+    {
+      "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/design.md",
+      "versionFingerprint": "ab96129843aad6a70ed066dcae665aebcbd13f00d087d458a31b8199284c5ea2",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/proposal.md",
+      "versionFingerprint": "7d4f61fb610beb841eb444061e306c5a14cf37ecfc3008605c0381e4db6d83b7",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-change-verification-selection/spec.md",
+      "versionFingerprint": "b60b8066036e740061f2cdba6ad53e5ecbfaff347ad5949f20e9bf74cb051642",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-external-tool-runtime/spec.md",
+      "versionFingerprint": "685b9b13711f2ae9a5e081e7156eba8fade5a95dd618d08bb835ea8e554f2e66",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-integration-boundaries/spec.md",
+      "versionFingerprint": "1d79f73e89d35ae67306a3ea725bc67d1d268b99ea8b425d8797eeb94e0b1c46",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+      "versionFingerprint": "be0c9328042ffc852eaafbd99836f7306e545e553a8f4bae9732d7b99c74a76e",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/tasks.md",
+      "versionFingerprint": "9d7e344e0ceb8ef16b8f7914ed2a52bb5605b114b6dc9362565265ca252b107b",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "external-tool-runtime-and-archify-cli-contract",
+      "runId": "20260817-034-review-propose",
+      "action": "review-propose",
+      "role": "reviewer",
+      "semanticInputFingerprint": "2923d5d637447c6bf50e565aab611e6bbc50a58b76200ed455e78e3ed19c09d8"
+    },
+    "definition": {
+      "action": "review-propose",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-proposal",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "41db595b409c9e6bc00babeabb32990290577eb40245a5bb769e8ec98a1f8d3e"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/design.md",
+        "versionFingerprint": "ab96129843aad6a70ed066dcae665aebcbd13f00d087d458a31b8199284c5ea2",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/proposal.md",
+        "versionFingerprint": "7d4f61fb610beb841eb444061e306c5a14cf37ecfc3008605c0381e4db6d83b7",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "b60b8066036e740061f2cdba6ad53e5ecbfaff347ad5949f20e9bf74cb051642",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-external-tool-runtime/spec.md",
+        "versionFingerprint": "685b9b13711f2ae9a5e081e7156eba8fade5a95dd618d08bb835ea8e554f2e66",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-integration-boundaries/spec.md",
+        "versionFingerprint": "1d79f73e89d35ae67306a3ea725bc67d1d268b99ea8b425d8797eeb94e0b1c46",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+        "versionFingerprint": "be0c9328042ffc852eaafbd99836f7306e545e553a8f4bae9732d7b99c74a76e",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/tasks.md",
+        "versionFingerprint": "9d7e344e0ceb8ef16b8f7914ed2a52bb5605b114b6dc9362565265ca252b107b",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/external-tool-runtime-and-archify-cli-contract/20260817-033-revise-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "7be888c71d5ab6b0fbbe7c6e1d49f1adaf2406270818d3a4361cef9d648da234"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260817-032-review-propose",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/external-tool-runtime-and-archify-cli-contract/20260817-032-review-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "7be4d980088155bacd08b98bfdf972c4319a2f0af00606bdee47793e714b9216"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "C1-RP-001",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "external-tools Verification ownership 尚未冻结为 exact non-overlapping mapping",
+          "problem": "029 Proof 8 明确把 exact selectors/check mapping 留给 Proposal 冻结，但 031 Design §9 仍以 ‘relevant unit integration tests’ 描述 external-tools ownership。Base 的 openspec-runtime 已用 `tests/unit/integrations` 整段 prefix 作为 ownership selector，而现有 `owns()` 对任何该目录下更窄 selector也会同时命中。若 Apply 按当前 Design 将新的 Archify/shared-runtime unit tests 归入 external-tools，就会出现同一路径同时匹配 openspec-runtime 与 external-tools；若不归入，则 Design/Tasks 又没有冻结这些测试的唯一 owner。Proposal 因此尚未满足自己要求的 actualChangeSet → exactly one ownership module → selected check 的闭合。",
+          "contractRef": "029 Explore Proof 8 Acceptance/Gap + 031 design.md Decision 9 + tasks.md 4.1-4.4 + flowkit-change-verification-selection delta requirement",
+          "invariant": "C1 Proposal 必须在进入 Apply 前冻结一个 closed、source-controlled 且 non-overlapping 的 ownership/check mapping；每个允许的 C1 candidate mutation path 必须确定性映射到 exactly one Verification module，并从该 module 闭合到实际 physical target。",
+          "requiredOutcome": "Revise Proposal/Design to freeze the exact non-overlapping ownership selectors for external-tools and existing openspec-runtime unit/integration tests, without introducing a Registry. The chosen mapping may narrow existing selectors or keep specific tests under an existing module, but it must make every authorized C1 mutation path map to exactly one module and still select the intended `tests-external-tools` / existing OpenSpec physical coverage.",
+          "acceptance": [
+            "Design enumerates enough exact/prefix ownership selectors to prove no overlap between external-tools and openspec-runtime for all C1 unit/integration test paths.",
+            "Representative new Archify/shared-runtime unit test paths and existing OpenSpec unit test paths each resolve to exactly one module under current owns() semantics.",
+            "Module-map tests include positive unique ownership and a negative overlap guard/counterexample for the chosen layout.",
+            "Formal selection from shared external-tool production mutations reaches `tests-external-tools` and required existing OpenSpec regressions without duplicate ownership."
+          ]
+        },
+        {
+          "id": "C1-RP-002",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "flowkitMutationScope 漏掉现有 verify --retry CLI regression consumer",
+          "problem": "031 freezes managed OpenSpec propagation so managed route carries `FLOWKIT_HOME` rather than reducing identity to `FLOWKIT_OPENSPEC_BIN`, and tasks 2.3/2.4 require verify --retry / real-process regressions to prove the same managed identity. Base `tests/unit/cli/change-action.test.ts` 的 real retry CLI coverage 在测试入口直接要求 `process.env.FLOWKIT_OPENSPEC_BIN` 非空，并用该 executable 构造 OpenSpecCliAdapter。该文件不在 031 apply/revise-apply flowkitMutationScope 中。与此同时 `scripts/verification.ts` 的 full-test environment 正是 C1 要迁移的传播点；按 031 Design 完成 managed route 后，全套 test:full 将不应依赖 legacy env 来证明 canonical managed identity。Apply 因此会在 ‘修改这个直接 consumer’ 与 ‘保持 approved mutation scope’ 之间发生冲突。",
+          "contractRef": "029 Explore Risk Scan + Proof 8; 031 proposal.md OpenSpec managed migration; design.md Decisions 4-5; tasks.md 2.3-2.4 and 5.1; 03 C1 required proof for archive/retry/real-process regressions",
+          "invariant": "Proposal 的 authorized mutation surface 必须覆盖所有因 managed OpenSpec representation/propagation 变化而需要调整的直接 consumer/regression；Apply 不得靠越权修改或保留 legacy-only test assumption 来声称 verify --retry managed identity 已闭合。",
+          "requiredOutcome": "Expand/freeze the Proposal mutation surface and regression design so the existing retry CLI consumer is explicitly handled. At minimum the authorized scope must cover `tests/unit/cli/change-action.test.ts` if it must change, and the Proposal must distinguish canonical managed retry coverage from intentionally retained legacy compatibility coverage without requiring managed Full Test execution to synthesize `FLOWKIT_OPENSPEC_BIN`.",
+          "acceptance": [
+            "flowkitMutationScope includes every direct test consumer that must change for the chosen managed propagation design, including `tests/unit/cli/change-action.test.ts` when its current assumption is replaced.",
+            "The real `verify --retry` CLI path can be exercised under managed `FLOWKIT_HOME` without requiring a canonical `FLOWKIT_OPENSPEC_BIN` executable string.",
+            "Full `test:full` under managed tool environment does not fail because an existing regression still unconditionally requires legacy `FLOWKIT_OPENSPEC_BIN`.",
+            "Any retained explicit/legacy retry regression is clearly compatibility coverage and does not stand in for the managed canonical-path proof."
+          ]
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "745011bdd6c84fbcea5ea73c20dbb21e6df78e3f3b95e70071a151864bb69176",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

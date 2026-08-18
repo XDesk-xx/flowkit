@@ -93,7 +93,7 @@ changes:
     required: true
     dependsOn:
       - "delivery-findings-and-corrective-change"
-    state: planned
+    state: completed
     architectureImpact: true
     outputs:
       - "FLOWKIT_HOME/tools layout"
@@ -232,6 +232,55 @@ ownerDecisions:
     deliveryId: "20260817-01-delivery-execution-loop"
     changeId: "delivery-findings-and-corrective-change"
     sourceRef: "ref/b1-post-archive-eof-hygiene-local-ai-handoff.md"
+  - ref: "owner:1c987731006b6a95d9cf4894c92c8dc651640936aea42c4cbca15c98efebcaca"
+    decision: "activate-change"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "external-tool-runtime-and-archify-cli-contract"
+    sourceRef: "chat-owner-authorization:c1-activate-explore-20260817"
+  - ref: "owner:606d8c81b7f990c366cb874cb649b7a1517d2d0e669b57626e4130c738af66e4"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "external-tool-runtime-and-archify-cli-contract"
+    sourceRef: "chat-owner-authorization:84c720fc855b69f4600dc7e23c8660166dce9a6ee7432db3d912798976599d1f"
+  - ref: "owner:ec84e4aa0627db5f30c030207105d8f3f915370eb4875f2b682a0e51529b6005"
+    decision: "contract-reset"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "external-tool-runtime-and-archify-cli-contract"
+    scope: "C1 / OpenSpec managed-vs-injected execution identity correction"
+    requiredOutcomes:
+      - "fake/injected runner tests 必须通过显式 executable/invocation seam 表达 injected authority，不得通过 runner presence 隐式推断。"
+      - "observational runner 必须继续消费 canonical managed FLOWKIT_HOME OpenSpec identity。"
+      - "runner callback 本身不得被解释为 injected executable authority。"
+      - "保持 033 已批准的 precedence：explicit/injected → managed FLOWKIT_HOME → legacy FLOWKIT_OPENSPEC_BIN → ambient compatibility。"
+      - "保持现有 OpenSpec real-process、archive、verify --retry、G1、Full Test environment regressions。"
+      - "重新完成 formal Change Verification physical closure。"
+    sourceRef: "owner-input:2026-08-18T05:59+08:00:contract-reset:C1-managed-vs-injected-execution-identity-correction"
+  - ref: "owner:41153a383030a049e69ceaeb8af6dcd518ce93381a058b51683fe2222b4929eb"
+    decision: "contract-reset"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "external-tool-runtime-and-archify-cli-contract"
+    scope: "C1 / Proposal mutationDeclaration lexical canonicalization only"
+    requiredOutcomes:
+      - "不改变 036 已批准的任何 implementation scope 或 executable precedence。"
+      - "仅将 design.md 中 apply / revise-apply 的 flowkitMutationScope selectors 按既有 lexical-order contract canonicalize。"
+      - "保持 tests/unit/services/b1-openspec-action-context.test.ts 在 approved mutation scope 内。"
+      - "重新完成 Proposal Review 后再进入 Apply。"
+    sourceRef: "owner-input:2026-08-18T07:21+08:00:contract-reset:C1-proposal-mutation-declaration-lexical-canonicalization"
+  - ref: "owner:747d53e9b848d3a2f434773a0a36a92a99330e7f24a6f0c508b0fd250bb38b00"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "external-tool-runtime-and-archify-cli-contract"
+    sourceRef: "owner-input:2026-08-18T07:32+08:00:authorize-apply:C1-after-039"
+  - ref: "owner:fcbb673b17df8a4ed0db1b64c93ab3c7238534f24087856a352313d257732992"
+    decision: "authorize-archive"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "external-tool-runtime-and-archify-cli-contract"
+    sourceRef: "owner-input:2026-08-18T08:42+08:00:authorize-archive:C1"
+  - ref: "owner:9cdeaef3158dcd6721062880de0d51f83c8eb3b511f6ebf9a8570779cea07190"
+    decision: "authorize-checkpoint"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "external-tool-runtime-and-archify-cli-contract"
+    sourceRef: "ref/flowkit-local-ai-handoff-c1-044-archive.md"
 verification:
   change:
     requireApplicableChecks: true

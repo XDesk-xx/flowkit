@@ -77,7 +77,7 @@ function adapterFor(f: Awaited<ReturnType<typeof fixture>>, progress: { total: n
     }
     throw new Error(`unexpected command: ${args.join(' ')}`);
   };
-  return new OpenSpecCliAdapter({ repoRoot: f.root, runner });
+  return new OpenSpecCliAdapter({ repoRoot: f.root, executable: 'openspec-fixture', runner });
 }
 
 describe('B1 OpenSpec production Action context', () => {

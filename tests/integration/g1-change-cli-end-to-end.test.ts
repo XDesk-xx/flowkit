@@ -22,10 +22,11 @@ const tsxLoaderUrl = pathToFileURL(resolve(projectRoot, 'node_modules/tsx/dist/l
 const roots: string[] = [];
 const templateRoots: string[] = [];
 const g1FixtureSource = join(projectRoot, 'openspec', 'changes', 'archive', '2026-08-15-change-cli-end-to-end-and-performance');
-const resolvedOpenSpecExecutable = process.env['FLOWKIT_OPENSPEC_BIN'];
-if (resolvedOpenSpecExecutable === undefined || resolvedOpenSpecExecutable.trim() === '') {
-  throw new Error('FLOWKIT_OPENSPEC_BIN is required for G1 real-process OpenSpec coverage');
-}
+const openSpecPropagation: NodeJS.ProcessEnv = process.env['FLOWKIT_HOME'] !== undefined
+  ? { FLOWKIT_HOME: process.env['FLOWKIT_HOME'] }
+  : process.env['FLOWKIT_OPENSPEC_BIN'] !== undefined
+    ? { FLOWKIT_OPENSPEC_BIN: process.env['FLOWKIT_OPENSPEC_BIN'] }
+    : (() => { throw new Error('FLOWKIT_HOME managed OpenSpec or legacy FLOWKIT_OPENSPEC_BIN is required for G1 real-process coverage'); })();
 let boundaryTemplatesPromise: Promise<{ explore: string; approvedProposal: string }> | undefined;
 let realCliInvocationCount = 0;
 
@@ -36,7 +37,7 @@ function cli(root: string, args: readonly string[], extraEnv: NodeJS.ProcessEnv 
   return new Promise((resolveResult, reject) => {
     const child = spawn(process.execPath, ['--import', tsxLoaderUrl, binPath, ...args], {
       cwd: root,
-      env: { ...process.env, ...extraEnv, FLOWKIT_OPENSPEC_BIN: resolvedOpenSpecExecutable, NO_COLOR: '1', FORCE_COLOR: '0' },
+      env: { ...process.env, ...openSpecPropagation, ...extraEnv, NO_COLOR: '1', FORCE_COLOR: '0' },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     let stdout = '';
@@ -366,7 +367,7 @@ describe('G1 Change CLI real-process end-to-end', { concurrency: false }, () => 
     await owner(root, 'authorize-archive', changeId, 'archive-recovery');
     await enableThinIntegration(root);
 
-    const realAdapter = new OpenSpecCliAdapter({ repoRoot: root, executable: resolvedOpenSpecExecutable });
+    const realAdapter = new OpenSpecCliAdapter({ repoRoot: root });
     const prepared = await prepareActionExecution({ repoRoot: root, deliveryId, entry: 'next', openSpecAdapter: realAdapter });
     assert.equal(prepared.package.run.action, 'archive');
     const preArchiveOpenSpec = await createTempDir();

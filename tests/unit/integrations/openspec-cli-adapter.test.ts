@@ -63,7 +63,7 @@ describe('OpenSpecCliAdapter', () => {
     const adapter = new OpenSpecCliAdapter({
       repoRoot: f.root,
       platform: 'win32',
-      env: { PATH: `${first};${second}`, FLOWKIT_OPENSPEC_BIN: undefined },
+      env: { FLOWKIT_HOME: undefined, PATH: `${first};${second}`, FLOWKIT_OPENSPEC_BIN: undefined },
       runner: async (command, _args, options) => {
         calls.push({ command, ...(options.platform !== undefined && { platform: options.platform }) });
         return result('1.7.0\n');
@@ -85,7 +85,7 @@ describe('OpenSpecCliAdapter', () => {
     const adapter = new OpenSpecCliAdapter({
       repoRoot: f.root,
       platform: 'win32',
-      env: { PATH: bin, FLOWKIT_OPENSPEC_BIN: undefined },
+      env: { FLOWKIT_HOME: undefined, PATH: bin, FLOWKIT_OPENSPEC_BIN: undefined },
       runner: async (command) => {
         calls.push(command);
         return result('', 9, { stderr: 'ps1 failed' });
@@ -104,7 +104,7 @@ describe('OpenSpecCliAdapter', () => {
     const adapter = new OpenSpecCliAdapter({
       repoRoot: f.root,
       platform: 'win32',
-      env: { PATH: bin, FLOWKIT_OPENSPEC_BIN: undefined },
+      env: { FLOWKIT_HOME: undefined, PATH: bin, FLOWKIT_OPENSPEC_BIN: undefined },
       runner: async (resolved) => { command = resolved; return result('1.7.0\n'); },
     });
     assert.equal(await adapter.resolveExecutable(), join(bin, 'openspec.cmd'));
@@ -119,7 +119,7 @@ describe('OpenSpecCliAdapter', () => {
     const adapter = new OpenSpecCliAdapter({
       repoRoot: f.root,
       platform: 'win32',
-      env: { PATH: '', FLOWKIT_OPENSPEC_BIN: propagated },
+      env: { FLOWKIT_HOME: undefined, PATH: '', FLOWKIT_OPENSPEC_BIN: propagated },
       runner: async (resolved) => { command = resolved; return result('1.7.0\n'); },
     });
     assert.equal(await adapter.resolveExecutable(), propagated);
@@ -135,7 +135,7 @@ describe('OpenSpecCliAdapter', () => {
       repoRoot: f.root,
       executable: explicit,
       platform: 'win32',
-      env: { PATH: '', FLOWKIT_OPENSPEC_BIN: propagated },
+      env: { FLOWKIT_HOME: undefined, PATH: '', FLOWKIT_OPENSPEC_BIN: propagated },
       runner: async () => result('1.7.0\n'),
     });
     assert.equal(await adapter.resolveExecutable(), explicit);
@@ -149,7 +149,7 @@ describe('OpenSpecCliAdapter', () => {
       repoRoot: f.root,
       executable: explicit,
       platform: 'win32',
-      env: { PATH: '' },
+      env: { FLOWKIT_HOME: undefined, PATH: '' },
       runner: async (resolved) => { command = resolved; return result('1.7.0\n'); },
     });
     assert.equal(await adapter.resolveExecutable(), explicit);
@@ -165,17 +165,42 @@ describe('OpenSpecCliAdapter', () => {
     const adapter = new OpenSpecCliAdapter({
       repoRoot: f.root,
       platform: 'win32',
-      env: { PATH: empty, FLOWKIT_OPENSPEC_BIN: undefined },
+      env: { FLOWKIT_HOME: undefined, PATH: empty, FLOWKIT_OPENSPEC_BIN: undefined },
       runner: async () => { called = true; return result('1.7.0\n'); },
     });
     await assert.rejects(adapter.resolveExecutable(), /shim not found/i);
     await assert.rejects(adapter.getVersion(), /shim not found/i);
     assert.equal(called, false);
   });
+  it('does not interpret runner presence as executable authority', async () => {
+    const f = await rootFixture();
+    const calls: Array<{ command: string; args: string[] }> = [];
+    const invocation = {
+      toolId: 'openspec' as const,
+      version: '1.7.0',
+      source: 'managed' as const,
+      toolHome: '/managed/openspec/1.7.0',
+      command: process.execPath,
+      argsPrefix: ['/managed/openspec/1.7.0/runtime/node_modules/@fission-ai/openspec/bin/openspec.js'],
+      propagationEnv: { FLOWKIT_HOME: '/managed' },
+    };
+    const adapter = new OpenSpecCliAdapter({
+      repoRoot: f.root,
+      invocation,
+      runner: async (command, args) => {
+        calls.push({ command, args: [...args] });
+        return result('1.7.0\n');
+      },
+    });
+    assert.deepEqual(await adapter.resolveInvocation(), invocation);
+    assert.equal(await adapter.getVersion(), '1.7.0');
+    assert.deepEqual(calls[0], { command: process.execPath, args: [...invocation.argsPrefix, '--version'] });
+  });
+
   it('admits stable 1.7.0 baseline and higher stable versions while prerelease/below-baseline/malformed fail closed', async () => {
     const f = await rootFixture();
     for (const version of ['1.7.0', '1.7.9', '1.8.0', '2.0.0', '10.4.3+build.7']) {
-      assert.equal(await new OpenSpecCliAdapter({ repoRoot: f.root, runner: async () => result(`${version}\n`) }).getVersion(), version);
+      assert.equal(await new OpenSpecCliAdapter({ repoRoot: f.root, executable: 'openspec-fixture', env: { FLOWKIT_HOME: undefined }, runner: async () => result(`${version}\n`) }).getVersion(), version);
     }
     for (const version of [
       '1.6.99',
@@ -190,7 +215,7 @@ describe('OpenSpecCliAdapter', () => {
       '1.7.0+abc..def',
     ]) {
       await assert.rejects(
-        new OpenSpecCliAdapter({ repoRoot: f.root, runner: async () => result(`${version}\n`) }).getVersion(),
+        new OpenSpecCliAdapter({ repoRoot: f.root, executable: 'openspec-fixture', env: { FLOWKIT_HOME: undefined }, runner: async () => result(`${version}\n`) }).getVersion(),
         /Unsupported OpenSpec version/,
       );
     }
@@ -198,12 +223,14 @@ describe('OpenSpecCliAdapter', () => {
 
   it('uses structured machine-contract conformance rather than a fixed upper version gate', async () => {
     const f = await rootFixture();
-    const compatible = new OpenSpecCliAdapter({ repoRoot: f.root, runner: statusRunner(f, '1.8.0') });
+    const compatible = new OpenSpecCliAdapter({ repoRoot: f.root, executable: 'openspec-fixture', env: { FLOWKIT_HOME: undefined }, runner: statusRunner(f, '1.8.0') });
     assert.equal((await compatible.getChangeStatus(f.changeId)).changeRootLogical, 'openspec/changes/c1');
 
     const drifted = { ...f.status, schemaName: 'future-schema' };
     const incompatible = new OpenSpecCliAdapter({
       repoRoot: f.root,
+      executable: 'openspec-fixture',
+      env: { FLOWKIT_HOME: undefined },
       runner: async (_command, args) => args[0] === '--version'
         ? result('2.1.0\n')
         : result(JSON.stringify(drifted)),
@@ -213,20 +240,20 @@ describe('OpenSpecCliAdapter', () => {
 
   it('fails closed for malformed JSON and spawn failure', async () => {
     const f = await rootFixture();
-    const malformed = new OpenSpecCliAdapter({ repoRoot: f.root, runner: async (_c, args) => args[0] === '--version' ? result('1.7.0\n') : result('{') });
+    const malformed = new OpenSpecCliAdapter({ repoRoot: f.root, executable: 'openspec-fixture', env: { FLOWKIT_HOME: undefined }, runner: async (_c, args) => args[0] === '--version' ? result('1.7.0\n') : result('{') });
     await assert.rejects(malformed.getChangeStatus(f.changeId), /did not return valid JSON/);
-    const spawn = new OpenSpecCliAdapter({ repoRoot: f.root, runner: async () => result('', 1, { spawned: false, spawnError: { code: 'ENOENT', message: 'missing' } }) });
+    const spawn = new OpenSpecCliAdapter({ repoRoot: f.root, executable: 'openspec-fixture', env: { FLOWKIT_HOME: undefined }, runner: async () => result('', 1, { spawned: false, spawnError: { code: 'ENOENT', message: 'missing' } }) });
     await assert.rejects(spawn.getVersion(), /spawn/i);
   });
 
   it('rejects wrong Change identity, lexical escape, and symlink escape from structured status', async () => {
     const f = await rootFixture();
     const wrong = { ...f.status, changeRoot: join(f.root, 'openspec', 'changes', 'other') };
-    const adapter = new OpenSpecCliAdapter({ repoRoot: f.root, runner: async (_c, args) => args[0] === '--version' ? result('1.7.0\n') : result(JSON.stringify(wrong)) });
+    const adapter = new OpenSpecCliAdapter({ repoRoot: f.root, executable: 'openspec-fixture', env: { FLOWKIT_HOME: undefined }, runner: async (_c, args) => args[0] === '--version' ? result('1.7.0\n') : result(JSON.stringify(wrong)) });
     await assert.rejects(adapter.getChangeStatus(f.changeId), /requested Change identity/);
 
     const escaped = { ...f.status, artifactPaths: { ...f.status.artifactPaths, proposal: { resolvedOutputPath: join(f.root, '..', 'escape.md'), existingOutputPaths: [] } } };
-    const adapter2 = new OpenSpecCliAdapter({ repoRoot: f.root, runner: async (_c, args) => args[0] === '--version' ? result('1.7.0\n') : result(JSON.stringify(escaped)) });
+    const adapter2 = new OpenSpecCliAdapter({ repoRoot: f.root, executable: 'openspec-fixture', env: { FLOWKIT_HOME: undefined }, runner: async (_c, args) => args[0] === '--version' ? result('1.7.0\n') : result(JSON.stringify(escaped)) });
     await assert.rejects(adapter2.getChangeStatus(f.changeId), /escapes its authority root/);
 
     const outside = await createTempDir();
@@ -234,7 +261,7 @@ describe('OpenSpecCliAdapter', () => {
     const linkedChange = join(f.root, 'openspec', 'changes', 'linked');
     await symlink(outside, linkedChange, 'dir');
     const linkedStatus = { ...f.status, changeName: 'linked', changeRoot: linkedChange };
-    const adapter3 = new OpenSpecCliAdapter({ repoRoot: f.root, runner: async (_c, args) => args[0] === '--version' ? result('1.7.0\n') : result(JSON.stringify(linkedStatus)) });
+    const adapter3 = new OpenSpecCliAdapter({ repoRoot: f.root, executable: 'openspec-fixture', env: { FLOWKIT_HOME: undefined }, runner: async (_c, args) => args[0] === '--version' ? result('1.7.0\n') : result(JSON.stringify(linkedStatus)) });
     await assert.rejects(adapter3.getChangeStatus('linked'), /symlink|alias/i);
   });
 
@@ -251,7 +278,7 @@ describe('OpenSpecCliAdapter', () => {
       },
     };
     await assert.rejects(
-      new OpenSpecCliAdapter({ repoRoot: f.root, runner: async (_c, args) => args[0] === '--version' ? result('1.7.0\n') : result(JSON.stringify(conflict)) }).getChangeStatus(f.changeId),
+      new OpenSpecCliAdapter({ repoRoot: f.root, executable: 'openspec-fixture', env: { FLOWKIT_HOME: undefined }, runner: async (_c, args) => args[0] === '--version' ? result('1.7.0\n') : result(JSON.stringify(conflict)) }).getChangeStatus(f.changeId),
       /conflicting.*singleton|singleton.*conflicting/i,
     );
 
@@ -266,7 +293,7 @@ describe('OpenSpecCliAdapter', () => {
       },
     };
     await assert.rejects(
-      new OpenSpecCliAdapter({ repoRoot: f.root, runner: async (_c, args) => args[0] === '--version' ? result('1.7.0\n') : result(JSON.stringify(alias)) }).getChangeStatus(f.changeId),
+      new OpenSpecCliAdapter({ repoRoot: f.root, executable: 'openspec-fixture', env: { FLOWKIT_HOME: undefined }, runner: async (_c, args) => args[0] === '--version' ? result('1.7.0\n') : result(JSON.stringify(alias)) }).getChangeStatus(f.changeId),
       /alias.*physical identity/i,
     );
   });
@@ -288,14 +315,14 @@ describe('OpenSpecCliAdapter', () => {
       }));
       throw new Error(args.join(' '));
     };
-    const adapter = new OpenSpecCliAdapter({ repoRoot: f.root, runner });
+    const adapter = new OpenSpecCliAdapter({ repoRoot: f.root, executable: 'openspec-fixture', env: { FLOWKIT_HOME: undefined }, runner });
     assert.deepEqual((await adapter.getArtifactInstructions(f.changeId, 'proposal')).dependencies, ['base']);
     const apply = await adapter.getApplyInstructions(f.changeId);
     assert.deepEqual(apply.contextFiles.tasks, ['openspec/changes/c1/tasks.md']);
     assert.deepEqual(apply.progress, { total: 4, complete: 1, remaining: 3 });
     assert.equal(apply.state, 'ready');
 
-    const wrongApply = new OpenSpecCliAdapter({ repoRoot: f.root, runner: async (_command, args) => {
+    const wrongApply = new OpenSpecCliAdapter({ repoRoot: f.root, executable: 'openspec-fixture', env: { FLOWKIT_HOME: undefined }, runner: async (_command, args) => {
       if (args[0] === '--version') return result('1.7.0\n');
       if (args[0] === 'status') return result(JSON.stringify(f.status));
       return result(JSON.stringify({
@@ -320,7 +347,7 @@ describe('OpenSpecCliAdapter', () => {
       }));
       throw new Error(args.join(' '));
     };
-    const projection = await new OpenSpecCliAdapter({ repoRoot: f.root, runner }).createOperationProjection(f.changeId, {
+    const projection = await new OpenSpecCliAdapter({ repoRoot: f.root, executable: 'openspec-fixture', env: { FLOWKIT_HOME: undefined }, runner }).createOperationProjection(f.changeId, {
       artifactInstructionIds: ['proposal'],
     });
     assert.equal(projection.status.changeId, f.changeId);
@@ -333,6 +360,8 @@ describe('OpenSpecCliAdapter', () => {
     const f = await rootFixture();
     const adapter = new OpenSpecCliAdapter({
       repoRoot: f.root,
+      executable: 'openspec-fixture',
+      env: { FLOWKIT_HOME: undefined },
       runner: async () => ({ ...result(''), kind: 'outcome-unknown', spawned: true, timedOut: true }),
     });
     await assert.rejects(adapter.getChangeStatus(f.changeId), /outcome is unknown/);
@@ -348,10 +377,10 @@ describe('OpenSpecCliAdapter', () => {
       result(validation(true, [{ severity: 'error', code: 'bad' }]), 0),
       result(validation(true, [], [{ severity: 'error', code: 'bad' }]), 0),
     ]) {
-      const adapter = new OpenSpecCliAdapter({ repoRoot: f.root, runner: async (_c, args) => args[0] === '--version' ? result('1.7.0\n') : output });
+      const adapter = new OpenSpecCliAdapter({ repoRoot: f.root, executable: 'openspec-fixture', env: { FLOWKIT_HOME: undefined }, runner: async (_c, args) => args[0] === '--version' ? result('1.7.0\n') : output });
       await assert.rejects(adapter.validateChange(f.changeId, true), /coherence|contradictory/i);
     }
-    const invalid = new OpenSpecCliAdapter({ repoRoot: f.root, runner: async (_c, args) => args[0] === '--version'
+    const invalid = new OpenSpecCliAdapter({ repoRoot: f.root, executable: 'openspec-fixture', env: { FLOWKIT_HOME: undefined }, runner: async (_c, args) => args[0] === '--version'
       ? result('1.7.0\n')
       : result(validation(false, [{ severity: 'error', code: 'invalid' }], [{ severity: 'error', code: 'req' }]), 1) });
     const view = await invalid.validateChange(f.changeId, true);
@@ -377,8 +406,8 @@ describe('OpenSpecCliAdapter', () => {
       }
       throw new Error(args.join(' '));
     };
-    const adapter = new OpenSpecCliAdapter({ repoRoot: f.root, runner });
-    const status = await new OpenSpecCliAdapter({ repoRoot: f.root, runner: statusRunner(f) }).getChangeStatus(f.changeId);
+    const adapter = new OpenSpecCliAdapter({ repoRoot: f.root, executable: 'openspec-fixture', env: { FLOWKIT_HOME: undefined }, runner });
+    const status = await new OpenSpecCliAdapter({ repoRoot: f.root, executable: 'openspec-fixture', env: { FLOWKIT_HOME: undefined }, runner: statusRunner(f) }).getChangeStatus(f.changeId);
     const withTotals = await adapter.archiveChange(f.changeId, status);
     assert.equal(withTotals.observation?.kind, 'success');
     assert.ok(withTotals.observation?.kind === 'success' && withTotals.observation.totals);
