@@ -41,6 +41,8 @@ export interface OwnerDecisionRecord {
   readonly requiredOutcomes?: readonly string[];
   /** E1: exact architecture cycle occurrence for architecture Owner facts. */
   readonly architectureCycleRef?: string;
+  /** F1: exact Finalize qualification occurrence for fresh authorize-delivery-finalize. */
+  readonly finalizationQualificationRef?: string;
   readonly sourceRef: string;
 }
 

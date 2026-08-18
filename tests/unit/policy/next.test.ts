@@ -2,6 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { next } from '../../../src/policy/next.js';
+import { buildDeliveryFinalizationQualification } from '../../../src/domain/delivery-finalization.js';
 import {
   buildChange,
   buildRun,
@@ -232,15 +233,31 @@ describe('next — Q1→03 Delivery behavior bridge', () => {
     expectedTerminalStatuses: ['passed', 'failed'],
   } as const;
 
+  const finalizeQualification = buildDeliveryFinalizationQualification({
+    deliveryId: '20260806-01-deterministic-core',
+    fullTestAuthorizationRef: `owner:${'a'.repeat(64)}`,
+    fullTestResultRef: `verification:full-test:${'b'.repeat(64)}`,
+    qualifiedBaseRevision: 'c'.repeat(40),
+    architecture: { kind: 'not-applicable' },
+  });
+
   function allCompletedSnapshot(opts: { fullTestStatus?: unknown; auths?: unknown; withExecution?: boolean; executionBlock?: boolean }): FormalFactSnapshot {
-    return buildSnapshot({
-      changes: [buildChange({ state: 'completed', required: true })],
-      gitBoundaries: [buildCheckpointBoundary()],
-      deliveryFullTestStatus: opts.fullTestStatus as never,
-      ownerAuthorizations: (opts.auths as never) ?? [],
-      ...(opts.withExecution ? { deliveryFullTestExecution: execution } : {}),
-      ...(opts.executionBlock ? { deliveryFullTestExecutionBlock: { schemaVersion: 1, reason: 'outcome-unknown', summary: 'prior process tree not proven terminal' } as const } : {}),
-    });
+    const auths = ((opts.auths as readonly OwnerAuthorizationFact[] | undefined) ?? []).map((fact) =>
+      fact.decision === 'authorize-delivery-finalize'
+        ? { ...fact, finalizationQualificationRef: finalizeQualification.qualificationRef }
+        : fact,
+    );
+    return {
+      ...buildSnapshot({
+        changes: [buildChange({ state: 'completed', required: true })],
+        gitBoundaries: [buildCheckpointBoundary()],
+        deliveryFullTestStatus: opts.fullTestStatus as never,
+        ownerAuthorizations: auths,
+        ...(opts.withExecution ? { deliveryFullTestExecution: execution } : {}),
+        ...(opts.executionBlock ? { deliveryFullTestExecutionBlock: { schemaVersion: 1, reason: 'outcome-unknown', summary: 'prior process tree not proven terminal' } as const } : {}),
+      }),
+      ...(opts.fullTestStatus === 'passed' ? { deliveryFinalizationQualification: finalizeQualification } : {}),
+    };
   }
 
   it('awaiting-user-decision keeps Owner authorize-full-test decision', () => {
@@ -273,10 +290,17 @@ describe('next — Q1→03 Delivery behavior bridge', () => {
     if (r.kind === 'owner-decision') assert.equal(r.decision, 'authorize-delivery-finalize');
   });
 
-  it('passed with finalize authorization blocks at Delivery behavior implementation boundary', () => {
+  it('passed with exact finalize authorization exposes Delivery Finalize behavior', () => {
     const r = next(allCompletedSnapshot({ fullTestStatus: 'passed', auths: [buildAuthorization('finalize')] }));
-    assert.equal(r.kind, 'blocked');
-    if (r.kind === 'blocked') assert.equal(r.diagnosis.reason, 'delivery-behavior-not-implemented');
+    assert.equal(r.kind, 'delivery-behavior');
+    if (r.kind === 'delivery-behavior') assert.equal(r.behavior, 'delivery-finalize');
+  });
+
+  it('passed with legacy finalize authorization cannot satisfy a fresh F1 qualification', () => {
+    const snap = allCompletedSnapshot({ fullTestStatus: 'passed', auths: [] });
+    const r = next({ ...snap, ownerAuthorizations: [buildAuthorization('finalize')] });
+    assert.equal(r.kind, 'owner-decision');
+    if (r.kind === 'owner-decision') assert.equal(r.decision, 'authorize-delivery-finalize');
   });
 
   it('failed remains full-test-failed and never auto-runs', () => {
@@ -690,6 +714,13 @@ describe('next — E1 architecture gate after passed Full Test', () => {
       ...awaitingCycle,
       acceptance: { status: 'accepted' as const, ownerDecisionRef: ownerRef },
     };
+    const qualification = buildDeliveryFinalizationQualification({
+      deliveryId: passed().deliveryId,
+      fullTestAuthorizationRef: `owner:${'8'.repeat(64)}`,
+      fullTestResultRef: `verification:full-test:${'9'.repeat(64)}`,
+      qualifiedBaseRevision: acceptedCycle.actualArchitectureRef.repositoryRevision,
+      architecture: { kind: 'accepted', cycleRef: acceptedCycle.cycleRef, ownerAcceptanceRef: ownerRef },
+    });
     const r = next(passed({
       architectureCurrentCycle: acceptedCycle,
       acceptedSystemSource: {
@@ -699,13 +730,21 @@ describe('next — E1 architecture gate after passed Full Test', () => {
         compareRef: acceptedCycle.compareRef,
         ownerAcceptanceRef: ownerRef,
       },
+      deliveryFinalizationQualification: qualification,
     }));
     assert.equal(r.kind, 'owner-decision');
     if (r.kind === 'owner-decision') assert.equal(r.decision, 'authorize-delivery-finalize');
   });
 
-  it('preserves the pre-E1 Finalize path when architecture impact is false', () => {
-    const r = next({ ...passed(), deliveryArchitectureImpact: false });
+  it('preserves the Finalize path when architecture impact is false with an exact F1 qualification', () => {
+    const qualification = buildDeliveryFinalizationQualification({
+      deliveryId: passed().deliveryId,
+      fullTestAuthorizationRef: `owner:${'8'.repeat(64)}`,
+      fullTestResultRef: `verification:full-test:${'9'.repeat(64)}`,
+      qualifiedBaseRevision: 'a'.repeat(40),
+      architecture: { kind: 'not-applicable' },
+    });
+    const r = next({ ...passed(), deliveryArchitectureImpact: false, deliveryFinalizationQualification: qualification });
     assert.equal(r.kind, 'owner-decision');
     if (r.kind === 'owner-decision') assert.equal(r.decision, 'authorize-delivery-finalize');
   });

@@ -43,6 +43,7 @@ import type {
 } from '../domain/full-test.js';
 import type { FormalAction } from '../domain/actions.js';
 import type { AcceptedSystemSource, CurrentArchitectureCycle } from '../architecture/architecture-lifecycle.js';
+import type { DeliveryFinalizationProjection, DeliveryFinalizationQualification } from '../domain/delivery-finalization.js';
 
 /**
  * A single conflict detected while reading formal facts.
@@ -164,6 +165,7 @@ export interface OwnerAuthorizationFact {
   readonly decision: AuthorizationOnlyOwnerDecision;
   readonly deliveryId: string;
   readonly changeId?: string;
+  readonly finalizationQualificationRef?: string;
   readonly sourceRef: string;
 }
 
@@ -181,6 +183,7 @@ export interface OwnerDecisionFact {
   readonly scope?: string;
   readonly requiredOutcomes?: readonly string[];
   readonly architectureCycleRef?: string;
+  readonly finalizationQualificationRef?: string;
   readonly sourceRef: string;
 }
 
@@ -220,6 +223,10 @@ export interface FormalFactSnapshot {
   readonly deliveryArchitectureImpact?: boolean;
   readonly architectureCurrentCycle?: CurrentArchitectureCycle;
   readonly acceptedSystemSource?: AcceptedSystemSource;
+  /** F1: current exact Finalize qualification derived from formal facts. */
+  readonly deliveryFinalizationQualification?: DeliveryFinalizationQualification;
+  /** F1: persisted completed Finalize projection, when present. */
+  readonly deliveryFinalization?: DeliveryFinalizationProjection;
   readonly currentDeliveryFullTestFinding?: FullTestFailureFinding;
   /** Current active Change Verification status projected from verification.md. */
   readonly changeVerificationStatus?: VerificationStatus;

@@ -12,6 +12,7 @@ import type {
   ResolvedFullTestFailureFinding,
 } from '../domain/full-test.js';
 import type { AcceptedSystemSource, CurrentArchitectureCycle } from '../architecture/architecture-lifecycle.js';
+import type { DeliveryFinalizationProjection } from '../domain/delivery-finalization.js';
 
 function quote(value: string): string {
   return JSON.stringify(value);
@@ -185,6 +186,9 @@ export function renderOwnerDecisionRecord(
   if (record.architectureCycleRef !== undefined) {
     lines.push(`${fieldIndent}architectureCycleRef: ${quote(record.architectureCycleRef)}`);
   }
+  if (record.finalizationQualificationRef !== undefined) {
+    lines.push(`${fieldIndent}finalizationQualificationRef: ${quote(record.finalizationQualificationRef)}`);
+  }
   lines.push(`${fieldIndent}sourceRef: ${quote(record.sourceRef)}`);
   return lines;
 }
@@ -307,6 +311,7 @@ export class DeliveryManifestDocument {
     if (record.changeId !== undefined) requireCleanScalar(record.changeId, 'changeId');
     if (record.scope !== undefined) requireCleanScalar(record.scope, 'scope');
     if (record.architectureCycleRef !== undefined) requireCleanScalar(record.architectureCycleRef, 'architectureCycleRef');
+    if (record.finalizationQualificationRef !== undefined) requireCleanScalar(record.finalizationQualificationRef, 'finalizationQualificationRef');
     if (record.requiredOutcomes !== undefined) {
       if (record.requiredOutcomes.length === 0) throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'requiredOutcomes must not be empty');
       for (const outcome of record.requiredOutcomes) requireCleanScalar(outcome, 'requiredOutcomes');
@@ -331,6 +336,7 @@ export class DeliveryManifestDocument {
           obj['scope'] === record.scope &&
           JSON.stringify(obj['requiredOutcomes']) === JSON.stringify(record.requiredOutcomes) &&
           obj['architectureCycleRef'] === record.architectureCycleRef &&
+          obj['finalizationQualificationRef'] === record.finalizationQualificationRef &&
           obj['sourceRef'] === record.sourceRef;
         if (!same) {
           throw new FlowkitError('OWNER_DECISION_REF_COLLISION', `Owner decision ref collision: ${record.ref}`);
@@ -561,12 +567,51 @@ export class DeliveryManifestDocument {
     this.replaceArchitectureOwnedBlock('currentCycle', []);
   }
 
+  removeAcceptedSystemSource(): void {
+    this.replaceArchitectureOwnedBlock('acceptedSystemSource', []);
+  }
+
   publishArchitectureAcceptance(cycle: CurrentArchitectureCycle, source: AcceptedSystemSource): void {
     if (cycle.acceptance.status !== 'accepted') {
       throw new FlowkitError('ARCHITECTURE_ACCEPTANCE_MISMATCH', 'architecture acceptance publication requires accepted cycle');
     }
     this.replaceArchitectureOwnedBlock('currentCycle', renderArchitectureCurrentCycle(cycle));
     this.replaceArchitectureOwnedBlock('acceptedSystemSource', renderAcceptedSystemSource(source));
+  }
+
+
+  publishFinalization(projection: DeliveryFinalizationProjection): void {
+    const lines = splitLines(this.content);
+    const span = findTopLevelSection(lines, 'delivery');
+    if (span === null) throw new FlowkitError('MANIFEST_UNSUPPORTED_SHAPE', 'delivery section missing');
+    const state = lines.map((line, i) => ({line,i})).filter(({line,i}) => i>span.start && i<span.end && /^ {2}state:\s+/.test(line));
+    const finals = lines.map((line, i) => ({line,i})).filter(({line,i}) => i>span.start && i<span.end && /^ {2}finalization:\s*$/.test(line));
+    if (state.length !== 1 || finals.length !== 0) throw new FlowkitError('MANIFEST_AMBIGUOUS', 'delivery state/finalization shape is not uniquely finalizable');
+    if (state[0]!.line.replace(/^ {2}state:\s+/, '').trim() !== 'active') throw new FlowkitError('DELIVERY_STATE_MISMATCH', 'Finalize publication requires delivery.state=active');
+    const next=[...lines];
+    next[state[0]!.i]='  state: completed';
+    const currentSpan=findTopLevelSection(next,'delivery')!;
+    next.splice(currentSpan.end,0,
+      '  finalization:',
+      '    schemaVersion: 1',
+      `    qualificationRef: ${quote(projection.qualificationRef)}`,
+      `    ownerAuthorizationRef: ${quote(projection.ownerAuthorizationRef)}`,
+      `    candidateRef: ${quote(projection.candidateRef)}`,
+    );
+    this.content=`${next.join('\n')}\n`;
+  }
+
+  inverseFinalization(): string {
+    const lines=splitLines(this.content);
+    const span=findTopLevelSection(lines,'delivery');
+    if (span===null) throw new FlowkitError('MANIFEST_UNSUPPORTED_SHAPE','delivery section missing');
+    const stateIdx=[] as number[]; const finalIdx=[] as number[];
+    for(let i=span.start+1;i<span.end;i++){ if(/^ {2}state:\s+/.test(lines[i]!)) stateIdx.push(i); if(/^ {2}finalization:\s*$/.test(lines[i]!)) finalIdx.push(i); }
+    if(stateIdx.length!==1 || finalIdx.length!==1 || lines[stateIdx[0]!]!.replace(/^ {2}state:\s+/,'').trim()!=='completed') throw new FlowkitError('DELIVERY_FINALIZATION_INVALID','completed finalization shape is not uniquely invertible');
+    const start=finalIdx[0]!; let end=span.end;
+    for(let i=start+1;i<span.end;i++){ if(/^ {2}[A-Za-z_][A-Za-z0-9_-]*:\s*/.test(lines[i]!)){ end=i; break; } }
+    const next=[...lines]; next[stateIdx[0]!] = '  state: active'; next.splice(start,end-start);
+    return `${next.join('\n')}\n`;
   }
 
   appendChange(change: PersistedChangeInput): void {

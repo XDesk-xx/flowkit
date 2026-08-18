@@ -16,7 +16,7 @@ import { join } from 'node:path';
 import { normalizeSeparators } from '../shared/paths.js';
 import { isFormalAction } from '../domain/actions.js';
 import { parseYaml } from './yaml-parser.js';
-import { readGitBoundaryProjection, type GitCheckpointBoundaryCandidate } from './git-boundary-reader.js';
+import { readGitBoundaryProjection, type GitCheckpointBoundaryCandidate, type GitDeliveryFinalBoundaryCandidate } from './git-boundary-reader.js';
 import { discriminateRunForReader, normalizeBootstrapRunStatus } from '../persistence/legacy-recognizer.js';
 import type { LegacyRun } from '../persistence/legacy-recognizer.js';
 import { validateContextFile, admitC1RunResultForReader } from '../persistence/serialization.js';
@@ -47,6 +47,7 @@ import type {
 } from '../domain/full-test.js';
 import { ownerDecisionRefFor } from '../domain/owner-provenance.js';
 import { acceptedSourceMatchesCycle, parseAcceptedSystemSource, parseCurrentArchitectureCycle } from '../architecture/architecture-lifecycle.js';
+import { buildDeliveryFinalizationQualification, parseDeliveryFinalizationProjection, type DeliveryFinalizationProjection, type DeliveryFinalizationQualification } from '../domain/delivery-finalization.js';
 import type { AcceptedSystemSource, CurrentArchitectureCycle } from '../architecture/architecture-lifecycle.js';
 import { isPreA1LegacyArchitectureImpactIdentity } from './pre-a1-legacy-architecture-impact.js';
 import { FlowkitError } from '../shared/errors.js';
@@ -55,6 +56,8 @@ import { OpenSpecCliAdapter } from '../integrations/openspec/openspec-cli-adapte
 import { computeLineage } from '../policy/lineage.js';
 import { projectCurrentContractResetLifecycle } from './generation-resolver.js';
 import { validateCurrentReverificationChain, validateTerminalVerificationSelectionBinding } from '../verification/change-selection/publication.js';
+import { DeliveryManifestDocument } from '../persistence/delivery-manifest-document.js';
+import { deliveryFinalCandidateRefFor } from '../domain/delivery-finalization.js';
 import { isOpenSpecThinIntegrationActive } from '../integrations/openspec/openspec-integration-state.js';
 import type { OpenSpecOperationProjection } from '../integrations/openspec/openspec-types.js';
 import type {
@@ -170,6 +173,26 @@ export async function readFormalFactSnapshotOperation(
     ? 'awaiting-user-decision'
     : rawFullTestStatus;
 
+  let deliveryFinalizationQualification: DeliveryFinalizationQualification | undefined;
+  try {
+    deliveryFinalizationQualification = await deriveCurrentFinalizationQualification(input.repoRoot, input.deliveryId, {
+      ...manifestResult,
+      deliveryFullTestStatus: effectiveFullTestStatus,
+      gitBoundaries,
+    });
+  } catch (error) {
+    conflicts.push({ dimension: 'delivery-finalization-qualification', authority: input.deliveryId, message: error instanceof Error ? error.message : String(error) });
+  }
+  if (manifestResult.deliveryFinalization !== undefined) {
+    if (deliveryFinalizationQualification === undefined || manifestResult.deliveryFinalization.qualificationRef !== deliveryFinalizationQualification.qualificationRef) {
+      conflicts.push({ dimension: 'delivery-finalization', authority: input.deliveryId, message: 'persisted finalization does not bind the current exact qualification' });
+    }
+    const owner = manifestResult.ownerDecisionFacts.find((fact) => fact.ref === manifestResult.deliveryFinalization!.ownerAuthorizationRef);
+    if (owner?.decision !== 'authorize-delivery-finalize' || owner.finalizationQualificationRef !== manifestResult.deliveryFinalization.qualificationRef) {
+      conflicts.push({ dimension: 'delivery-finalization', authority: input.deliveryId, message: 'persisted finalization Owner authorization does not bind the same qualification' });
+    }
+  }
+
   const snapshot: FormalFactSnapshot = {
     deliveryId: input.deliveryId,
     deliveryState: manifestResult.deliveryState,
@@ -183,6 +206,8 @@ export async function readFormalFactSnapshotOperation(
     ...(manifestResult.deliveryArchitectureImpact !== undefined && { deliveryArchitectureImpact: manifestResult.deliveryArchitectureImpact }),
     ...(manifestResult.architectureCurrentCycle !== undefined && { architectureCurrentCycle: manifestResult.architectureCurrentCycle }),
     ...(manifestResult.acceptedSystemSource !== undefined && { acceptedSystemSource: manifestResult.acceptedSystemSource }),
+    ...(deliveryFinalizationQualification !== undefined && { deliveryFinalizationQualification }),
+    ...(manifestResult.deliveryFinalization !== undefined && { deliveryFinalization: manifestResult.deliveryFinalization }),
     ...(manifestResult.currentDeliveryFullTestFinding !== undefined && {
       currentDeliveryFullTestFinding: manifestResult.currentDeliveryFullTestFinding,
     }),
@@ -217,6 +242,7 @@ interface ManifestResult {
   readonly deliveryArchitectureImpact?: boolean;
   readonly architectureCurrentCycle?: CurrentArchitectureCycle;
   readonly acceptedSystemSource?: AcceptedSystemSource;
+  readonly deliveryFinalization?: DeliveryFinalizationProjection;
   readonly changes: readonly ChangeFact[];
   readonly ownerAuthorizations: readonly OwnerAuthorizationFact[];
   readonly ownerDecisionFacts: readonly OwnerDecisionFact[];
@@ -665,6 +691,12 @@ async function readDeliveryManifest(input: ReadFormalFactSnapshotInput): Promise
     }
   }
 
+  let deliveryFinalization: DeliveryFinalizationProjection | undefined;
+  if (deliveryObj['finalization'] !== undefined) {
+    try { deliveryFinalization = parseDeliveryFinalizationProjection(deliveryObj['finalization']); }
+    catch (error) { conflicts.push({ dimension: 'delivery-finalization', authority: manifestPath, message: error instanceof Error ? error.message : String(error) }); }
+  }
+
   let deliveryArchitectureImpact: boolean | undefined;
   let architectureCurrentCycle: CurrentArchitectureCycle | undefined;
   let acceptedSystemSource: AcceptedSystemSource | undefined;
@@ -728,11 +760,62 @@ async function readDeliveryManifest(input: ReadFormalFactSnapshotInput): Promise
     ...(deliveryArchitectureImpact !== undefined && { deliveryArchitectureImpact }),
     ...(architectureCurrentCycle !== undefined && { architectureCurrentCycle }),
     ...(acceptedSystemSource !== undefined && { acceptedSystemSource }),
+    ...(deliveryFinalization !== undefined && { deliveryFinalization }),
     changes,
     ownerAuthorizations,
     ownerDecisionFacts: currentOwnerDecisionFacts,
     conflicts,
   };
+}
+
+async function deriveCurrentFinalizationQualification(
+  repoRoot: string,
+  deliveryId: string,
+  input: ManifestResult & { readonly gitBoundaries: readonly GitBoundaryFact[] },
+): Promise<DeliveryFinalizationQualification | undefined> {
+  if (input.deliveryFullTestStatus !== 'passed' || input.deliveryFullTestResult === undefined) return undefined;
+  if (input.changes.some((change) => change.required && change.state !== 'completed')) return undefined;
+  const authorizationRef = latestFullTestAuthorizationRef(deliveryId, input.ownerDecisionFacts);
+  if (authorizationRef === undefined) return undefined;
+  const candidates = input.gitBoundaries.filter((boundary) => boundary.kind === 'change-checkpoint' || boundary.kind === 'delivery-start');
+  if (candidates.length === 0) return undefined;
+  const maximal: GitBoundaryFact[] = [];
+  for (const candidate of candidates) {
+    let ancestorOfOther = false;
+    for (const other of candidates) {
+      if (candidate.commitSha === other.commitSha) continue;
+      const rel = await runCommand('git', ['merge-base', '--is-ancestor', candidate.commitSha, other.commitSha], { cwd: repoRoot });
+      if (rel.kind === 'exited' && rel.exitCode === 0) { ancestorOfOther = true; break; }
+    }
+    if (!ancestorOfOther) maximal.push(candidate);
+  }
+  if (maximal.length !== 1) throw new FlowkitError('FINALIZATION_QUALIFIED_BASE_AMBIGUOUS', 'cannot derive a unique latest admitted pre-final Git boundary');
+  const qualifiedBaseRevision = maximal[0]!.commitSha;
+  if (input.deliveryArchitectureImpact === true) {
+    const cycle = input.architectureCurrentCycle;
+    if (cycle?.acceptance.status !== 'accepted' || input.acceptedSystemSource === undefined) return undefined;
+    if (!acceptedSourceMatchesCycle(input.acceptedSystemSource, cycle)) return undefined;
+    if (cycle.actualArchitectureRef.repositoryRevision !== qualifiedBaseRevision) {
+      throw new FlowkitError('FINALIZATION_ARCHITECTURE_REVISION_MISMATCH', 'accepted Actual repositoryRevision does not match qualifiedBaseRevision');
+    }
+    return buildDeliveryFinalizationQualification({
+      deliveryId,
+      fullTestAuthorizationRef: authorizationRef,
+      fullTestResultRef: input.deliveryFullTestResult.resultRef,
+      qualifiedBaseRevision,
+      architecture: { kind: 'accepted', cycleRef: cycle.cycleRef, ownerAcceptanceRef: cycle.acceptance.ownerDecisionRef },
+    });
+  }
+  if (input.deliveryArchitectureImpact === false) {
+    return buildDeliveryFinalizationQualification({
+      deliveryId,
+      fullTestAuthorizationRef: authorizationRef,
+      fullTestResultRef: input.deliveryFullTestResult.resultRef,
+      qualifiedBaseRevision,
+      architecture: { kind: 'not-applicable' },
+    });
+  }
+  return undefined;
 }
 
 function latestCurrentOwnerDecisionFacts(facts: readonly OwnerDecisionFact[]): readonly OwnerDecisionFact[] {
@@ -849,6 +932,7 @@ function readOwnerAuthorizations(
     const scope = obj['scope'];
     const requiredOutcomes = obj['requiredOutcomes'];
     const architectureCycleRef = obj['architectureCycleRef'];
+    const finalizationQualificationRef = obj['finalizationQualificationRef'];
     const sourceRef = obj['sourceRef'];
     if (
       typeof ref !== 'string' ||
@@ -917,6 +1001,16 @@ function readOwnerAuthorizations(
       conflicts.push({ dimension: 'owner-decision-record', authority: manifestPath, message: `Owner accept-architecture ${ref} requires architectureCycleRef` });
       continue;
     }
+    if (finalizationQualificationRef !== undefined) {
+      if (typeof finalizationQualificationRef !== 'string' || !/^delivery-finalization-qualification:[0-9a-f]{64}$/.test(finalizationQualificationRef)) {
+        conflicts.push({ dimension: 'owner-decision-record', authority: manifestPath, message: `Owner record ${ref} has invalid finalizationQualificationRef` });
+        continue;
+      }
+      if (typedRecordDecision !== 'authorize-delivery-finalize') {
+        conflicts.push({ dimension: 'owner-decision-record', authority: manifestPath, message: `Owner record ${ref} carries finalizationQualificationRef for unsupported decision` });
+        continue;
+      }
+    }
     const expectedRef = ownerDecisionRefFor({
       decision: typedRecordDecision,
       deliveryId: recordDeliveryId,
@@ -925,6 +1019,7 @@ function readOwnerAuthorizations(
       ...(typeof scope === 'string' ? { scope } : {}),
       ...(normalizedRequiredOutcomes !== undefined ? { requiredOutcomes: normalizedRequiredOutcomes } : {}),
       ...(typeof architectureCycleRef === 'string' ? { architectureCycleRef } : {}),
+      ...(typeof finalizationQualificationRef === 'string' ? { finalizationQualificationRef } : {}),
     });
     if (ref !== expectedRef) {
       conflicts.push({
@@ -943,6 +1038,7 @@ function readOwnerAuthorizations(
       ...(typeof scope === 'string' ? { scope } : {}),
       ...(normalizedRequiredOutcomes !== undefined ? { requiredOutcomes: normalizedRequiredOutcomes } : {}),
       ...(typeof architectureCycleRef === 'string' ? { architectureCycleRef } : {}),
+      ...(typeof finalizationQualificationRef === 'string' ? { finalizationQualificationRef } : {}),
       sourceRef,
     });
     const prior = seenRefs.get(ref);
@@ -991,6 +1087,7 @@ function readOwnerAuthorizations(
       ...(typeof scope === 'string' ? { scope } : {}),
       ...(normalizedRequiredOutcomes !== undefined ? { requiredOutcomes: normalizedRequiredOutcomes } : {}),
       ...(typeof architectureCycleRef === 'string' ? { architectureCycleRef } : {}),
+      ...(typeof finalizationQualificationRef === 'string' ? { finalizationQualificationRef } : {}),
       sourceRef,
     });
 
@@ -1012,6 +1109,7 @@ function readOwnerAuthorizations(
         ...(typeof changeId === 'string' ? { changeId } : {}),
         ...(typeof scope === 'string' ? { scope } : {}),
         ...(normalizedRequiredOutcomes !== undefined ? { requiredOutcomes: normalizedRequiredOutcomes } : {}),
+        ...(typeof finalizationQualificationRef === 'string' ? { finalizationQualificationRef } : {}),
         sourceRef,
       },
     });
@@ -1083,7 +1181,25 @@ async function readAdmittedGitBoundaries(
     if (fact !== undefined) strict.set(candidate.commitSha, fact);
   }
 
-  const facts: GitBoundaryFact[] = [...projection.boundaries, ...strict.values()];
+  const cutoverShas = await resolveRecognizedF1FinalizeCheckpoints(input.repoRoot);
+  const strictFinalizeActive = cutoverShas.length > 0;
+  const legacyBoundaries: GitBoundaryFact[] = [];
+  for (const boundary of projection.boundaries) {
+    if (boundary.kind !== 'delivery-final'
+      || !strictFinalizeActive
+      || await isAncestorOfEvery(input.repoRoot, boundary.commitSha, cutoverShas)) {
+      legacyBoundaries.push(boundary);
+    }
+  }
+  const strictFinals: GitBoundaryFact[] = [];
+  if (strictFinalizeActive) {
+    for (const candidate of projection.deliveryFinalCandidates) {
+      if (await isAncestorOfEvery(input.repoRoot, candidate.commitSha, cutoverShas)) continue;
+      const admitted = await admitStrictDeliveryFinalCandidate(input, candidate, [...legacyBoundaries, ...strict.values()]);
+      if (admitted !== undefined) strictFinals.push(admitted);
+    }
+  }
+  const facts: GitBoundaryFact[] = [...legacyBoundaries, ...strict.values(), ...strictFinals];
   if (input.deliveryId !== F1_MIGRATION_DELIVERY_ID) return facts;
 
   const anchorSha = await resolveOriginalStrictE2Checkpoint(input.repoRoot);
@@ -1106,6 +1222,84 @@ async function readAdmittedGitBoundaries(
     });
   }
   return facts;
+}
+
+const F1_FINALIZE_CHANGE_ID = 'delivery-finalize-and-git-boundary';
+const F1_FINALIZE_ACTIVATION_DELIVERY_ID = '20260817-01-delivery-execution-loop';
+
+async function isAncestorOfEvery(repoRoot: string, commitSha: string, descendants: readonly string[]): Promise<boolean> {
+  for (const descendant of descendants) {
+    if (!(await gitIsAncestor(repoRoot, commitSha, descendant))) return false;
+  }
+  return true;
+}
+
+/**
+ * F1 strict Delivery Final semantics are a one-way repository migration.
+ * Only the formal F1 checkpoint from the bootstrap 03 Delivery can activate
+ * the cutover; future Deliveries may reuse the same Change id without
+ * becoming additional activation authorities. Multiple valid 03 candidates
+ * (for example a retained divergent ref) keep strict mode active. A boundary
+ * is legacy-compatible only when it provably predates every recognized
+ * activation candidate, so added refs can never downgrade strict semantics.
+ */
+async function resolveRecognizedF1FinalizeCheckpoints(repoRoot: string): Promise<readonly string[]> {
+  const log = await runCommand('git', ['log', '--all', '--format=%H%x1f%s%x1f%B%x1e'], { cwd: repoRoot });
+  if (log.kind !== 'exited' || log.exitCode !== 0) return [];
+  const admitted = new Set<string>();
+  for (const raw of log.stdout.split('\x1e')) {
+    const rec = raw.replace(/^\n+|\n+$/g, ''); if (!rec) continue;
+    const [sha='', subject='', ...bodyParts] = rec.split('\x1f'); const body=bodyParts.join('\x1f');
+    if (subject !== `chore(flowkit): checkpoint ${F1_FINALIZE_CHANGE_ID}`) continue;
+    const vals=(name:string)=>body.split('\n').map((l)=>l.trim()).filter((l)=>l.toLowerCase().startsWith(`${name.toLowerCase()}:`)).map((l)=>l.slice(l.indexOf(':')+1).trim());
+    const ds=vals('Flowkit-Delivery'), cs=vals('Flowkit-Change'), bs=vals('Flowkit-Boundary'), os=vals('Owner-Authorization');
+    if(ds.length!==1||cs.length!==1||bs.length!==1||os.length!==1
+      ||ds[0]!==F1_FINALIZE_ACTIVATION_DELIVERY_ID
+      ||cs[0]!==F1_FINALIZE_CHANGE_ID||bs[0]!=='change-checkpoint'||!/^owner:[0-9a-f]{64}$/.test(os[0]!)) continue;
+    const manifestRef=`openspec/delivery-groups/${ds[0]}.yaml`;
+    const shown=await runCommand('git',['show',`${sha}:${manifestRef}`],{cwd:repoRoot}); if(shown.kind!=='exited'||shown.exitCode!==0) continue;
+    const parsed=parseYaml(shown.stdout); if(!parsed.ok||typeof parsed.value!=='object'||parsed.value===null||Array.isArray(parsed.value)) continue;
+    const m=parsed.value as Record<string,unknown>; const conflicts:FactConflict[]=[]; const facts:OwnerDecisionFact[]=[];
+    const auth=readOwnerAuthorizations(ds[0]!,m['ownerDecisions'],m['changes'],conflicts,`${sha}:${manifestRef}`,facts);
+    if(conflicts.length===0&&auth.some((f)=>f.decision==='authorize-checkpoint'&&f.changeId===F1_FINALIZE_CHANGE_ID&&f.ref===os[0])) admitted.add(sha);
+  }
+  return [...admitted].sort();
+}
+
+async function admitStrictDeliveryFinalCandidate(input: ReadFormalFactSnapshotInput, candidate: GitDeliveryFinalBoundaryCandidate, admittedPreFinal: readonly GitBoundaryFact[]): Promise<GitBoundaryFact | undefined> {
+  if(!candidate.formalIdentityValid||candidate.parents.length!==1||candidate.ownerAuthorizationTrailer===undefined) return undefined;
+  const parent=candidate.parents[0]!;
+  const pre=admittedPreFinal.filter((b)=>b.kind==='delivery-start'||b.kind==='change-checkpoint');
+  const ancestors:GitBoundaryFact[]=[]; for(const b of pre){ if(await gitIsAncestor(input.repoRoot,b.commitSha,parent)) ancestors.push(b); }
+  const maximal:GitBoundaryFact[]=[]; for(const c of ancestors){ let older=false; for(const o of ancestors){ if(c.commitSha!==o.commitSha&&await gitIsAncestor(input.repoRoot,c.commitSha,o.commitSha)){older=true;break;} } if(!older) maximal.push(c); }
+  if(maximal.length!==1||maximal[0]!.commitSha!==parent) return undefined;
+  const qualifiedBaseRevision=parent;
+  const manifestRef=normalizeSeparators(`${input.manifestPathPrefix}/${input.deliveryId}.yaml`);
+  const shown=await runCommand('git',['show',`${candidate.commitSha}:${manifestRef}`],{cwd:input.repoRoot}); if(shown.kind!=='exited'||shown.exitCode!==0) return undefined;
+  const parsed=parseYaml(shown.stdout); if(!parsed.ok||typeof parsed.value!=='object'||parsed.value===null||Array.isArray(parsed.value)) return undefined;
+  const manifest=parsed.value as Record<string,unknown>; const delivery=manifestObject(manifest['delivery']); if(delivery?.['state']!=='completed'||delivery['fullTestStatus']!=='passed') return undefined;
+  let finalization:DeliveryFinalizationProjection; try{ finalization=parseDeliveryFinalizationProjection(delivery['finalization']); }catch{return undefined;}
+  if(finalization.ownerAuthorizationRef!==candidate.ownerAuthorizationTrailer) return undefined;
+  const conflicts:FactConflict[]=[]; const ownerFacts:OwnerDecisionFact[]=[]; readOwnerAuthorizations(input.deliveryId,manifest['ownerDecisions'],manifest['changes'],conflicts,`${candidate.commitSha}:${manifestRef}`,ownerFacts); if(conflicts.length) return undefined;
+  const ftObj=manifestObject(manifestObject(manifest['verification'])?.['fullTest']); const result=readFullTestResult(ftObj?.['result'],conflicts,`${candidate.commitSha}:${manifestRef}`); if(!result||result.status!=='passed') return undefined;
+  const fullAuth=latestFullTestAuthorizationRef(input.deliveryId,ownerFacts); if(!fullAuth) return undefined;
+  const arch=manifestObject(manifest['architecture']); if(!arch||typeof arch['impact']!=='boolean') return undefined;
+  let disposition: {kind:'accepted';cycleRef:string;ownerAcceptanceRef:string}|{kind:'not-applicable'};
+  if(arch['impact']===true){
+    let cycle:CurrentArchitectureCycle, source:AcceptedSystemSource; try{cycle=parseCurrentArchitectureCycle(arch['currentCycle'],input.deliveryId);source=parseAcceptedSystemSource(arch['acceptedSystemSource'],input.deliveryId);}catch{return undefined;}
+    if(cycle.acceptance.status!=='accepted'||!acceptedSourceMatchesCycle(source,cycle)||cycle.actualArchitectureRef.repositoryRevision!==qualifiedBaseRevision) return undefined;
+    disposition={kind:'accepted',cycleRef:cycle.cycleRef,ownerAcceptanceRef:cycle.acceptance.ownerDecisionRef};
+  }else disposition={kind:'not-applicable'};
+  const qual=buildDeliveryFinalizationQualification({deliveryId:input.deliveryId,fullTestAuthorizationRef:fullAuth,fullTestResultRef:result.resultRef,qualifiedBaseRevision,architecture:disposition});
+  if(qual.qualificationRef!==finalization.qualificationRef) return undefined;
+  const owner=ownerFacts.find((f)=>f.ref===finalization.ownerAuthorizationRef&&f.decision==='authorize-delivery-finalize'&&f.finalizationQualificationRef===qual.qualificationRef); if(!owner) return undefined;
+  let active:string; try{active=DeliveryManifestDocument.parse(shown.stdout).inverseFinalization();}catch{return undefined;}
+  const files=[{path:manifestRef,sha256:createHash('sha256').update(active).digest('hex')}];
+  if(arch['impact']===true){const actualRel=`architecture/${input.deliveryId}/json/actual.architecture.json`; const ab=await runCommand('git',['show',`${candidate.commitSha}:${actualRel}`],{cwd:input.repoRoot}); if(ab.kind!=='exited'||ab.exitCode!==0)return undefined; files.push({path:actualRel,sha256:createHash('sha256').update(ab.stdout).digest('hex')});}
+  const ref=deliveryFinalCandidateRefFor({deliveryId:input.deliveryId,qualifiedBaseRevision,files}); if(ref!==finalization.candidateRef) return undefined;
+  const changed=await runCommand('git',['diff-tree','--no-commit-id','--name-only','-r',candidate.commitSha],{cwd:input.repoRoot}); if(changed.kind!=='exited'||changed.exitCode!==0)return undefined;
+  const actualPaths=changed.stdout.split('\n').filter(Boolean).sort(); const expected=files.map((f)=>f.path).sort(); if(JSON.stringify(actualPaths)!==JSON.stringify(expected)) return undefined;
+  return {kind:'delivery-final',commitSha:candidate.commitSha,summary:candidate.summary};
 }
 
 async function admitStrictCheckpointCandidate(

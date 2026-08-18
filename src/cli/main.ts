@@ -12,6 +12,8 @@ import { renderStatus } from '../diagnostics/status.js';
 import { inspectPreparedRun, recoverArchiveTerminalRun, recoverContractResetPendingRun } from '../services/b1-run-execution-service.js';
 import { getVersion } from './version.js';
 import { runDeliveryFullTest } from '../services/delivery-full-test-service.js';
+import { finalizeDelivery } from '../services/delivery-finalize-service.js';
+import { buildDeliveryFinalHandoff } from '../services/delivery-final-boundary-service.js';
 import { runArchitectureCli } from './architecture.js';
 import { projectChangeVerification, retryChangeVerification, runArchiveOperator, runChangeOperator, type ChangeOperatorIntent } from './change-action.js';
 import {
@@ -36,7 +38,7 @@ const DIAGNOSTIC_COMMANDS = new Set(['status', 'next', 'doctor', 'resume-context
 const CHANGE_OPERATOR_COMMANDS = new Set<ChangeOperatorIntent>(['explore', 'review', 'revise', 'propose', 'apply']);
 
 const USAGE =
-  'usage: flowkit <status|next|doctor|resume-context|explore|review|revise|propose|apply|verify|archive|architecture render <current|planned|actual>|architecture compare <base-kind> <head-kind>|delivery full-test|create delivery|create change|owner record|recover contract-reset-pending|recover archive-terminal|activate|--version> [--result <path>] [verify option: --retry]\n';
+  'usage: flowkit <status|next|doctor|resume-context|explore|review|revise|propose|apply|verify|archive|architecture render <current|planned|actual>|architecture compare <base-kind> <head-kind>|delivery full-test|delivery finalize --delivery <id>|delivery final-handoff --delivery <id>|create delivery|create change|owner record|recover contract-reset-pending|recover archive-terminal|activate|--version> [--result <path>] [verify option: --retry]\n';
 
 function optionValue(args: readonly string[], name: string): string | undefined {
   const index = args.indexOf(name);
@@ -141,6 +143,18 @@ export async function runCli(invocation: CliInvocation): Promise<CliResult> {
       const result = await runDeliveryFullTest(repoRoot, deliveryId);
       const exitCode: 0 | 1 | 2 = result.executionStatus === 'passed' ? 0 : result.executionStatus === 'failed' ? 1 : 2;
       return { exitCode, stdout: renderWriteResult(result), stderr: '' };
+    }
+
+    if (args[0] === 'delivery' && args[1] === 'finalize') {
+      const deliveryId = requiredOption(args, '--delivery');
+      const result = await finalizeDelivery(repoRoot, deliveryId);
+      return { exitCode: 0, stdout: renderWriteResult(result), stderr: '' };
+    }
+
+    if (args[0] === 'delivery' && args[1] === 'final-handoff') {
+      const deliveryId = requiredOption(args, '--delivery');
+      const result = await buildDeliveryFinalHandoff(repoRoot, deliveryId);
+      return { exitCode: 0, stdout: renderWriteResult(result), stderr: '' };
     }
 
     if (args[0] === 'recover' && args[1] === 'contract-reset-pending') {

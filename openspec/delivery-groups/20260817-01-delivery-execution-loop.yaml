@@ -134,7 +134,7 @@ changes:
     required: true
     dependsOn:
       - "architecture-actual-compare-and-system-promotion"
-    state: planned
+    state: completed
     architectureImpact: true
     outputs:
       - "finalization precondition projection"
@@ -341,6 +341,26 @@ ownerDecisions:
     deliveryId: "20260817-01-delivery-execution-loop"
     changeId: "architecture-actual-compare-and-system-promotion"
     sourceRef: "ref/flowkit-local-ai-handoff-e1-073-archive.md"
+  - ref: "owner:aedd9bb750cc3718eb6c0de386485714f8ae7d38dd489d08462aaa995edfdb52"
+    decision: "activate-change"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-finalize-and-git-boundary"
+    sourceRef: "owner:chat-20260818-f1-activation-explore"
+  - ref: "owner:06e6ada82524f4cbbaf6b3342fe656e5b0f9e6601bab09338089539b3ef90872"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-finalize-and-git-boundary"
+    sourceRef: "owner-input:2026-08-18T22:38+08:00:authorize-apply:F1"
+  - ref: "owner:28d44ec0f13232d35ef55ca79ff100aaea983302aa4e66ce1b728beac9a80e98"
+    decision: "authorize-archive"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-finalize-and-git-boundary"
+    sourceRef: "owner-input:2026-08-19T07:04+08:00:authorize-archive:F1"
+  - ref: "owner:96fa4954bde966760c06fcb79755fe1faf71c12b90bcca32ec2c84a9a2dda191"
+    decision: "authorize-checkpoint"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-finalize-and-git-boundary"
+    sourceRef: "ref/flowkit-local-ai-handoff-f1-086-archive.md"
 verification:
   change:
     requireApplicableChecks: true

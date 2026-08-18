@@ -281,14 +281,19 @@ export function buildOwnerDecisionRecord(input: {
   readonly scope?: string;
   readonly requiredOutcomes?: readonly string[];
   readonly architectureCycleRef?: string;
+  readonly finalizationQualificationRef?: string;
 }): OwnerDecisionRecord {
   const deliveryId = nonEmpty(input.deliveryId, 'deliveryId');
   const sourceRef = nonEmpty(input.sourceRef, 'sourceRef');
   const changeId = input.changeId === undefined ? undefined : nonEmpty(input.changeId, 'changeId');
   const scope = input.scope === undefined ? undefined : nonEmpty(input.scope, 'scope');
   const architectureCycleRef = input.architectureCycleRef === undefined ? undefined : nonEmpty(input.architectureCycleRef, 'architectureCycleRef');
+  const finalizationQualificationRef = input.finalizationQualificationRef === undefined ? undefined : nonEmpty(input.finalizationQualificationRef, 'finalizationQualificationRef');
   if (architectureCycleRef !== undefined && !/^architecture-cycle:[0-9a-f]{64}$/.test(architectureCycleRef)) {
     throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'architectureCycleRef is invalid');
+  }
+  if (finalizationQualificationRef !== undefined && !/^delivery-finalization-qualification:[0-9a-f]{64}$/.test(finalizationQualificationRef)) {
+    throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'finalizationQualificationRef is invalid');
   }
   const requiredOutcomes = input.requiredOutcomes === undefined
     ? undefined
@@ -304,6 +309,7 @@ export function buildOwnerDecisionRecord(input: {
     ...(scope !== undefined ? { scope } : {}),
     ...(requiredOutcomes !== undefined ? { requiredOutcomes } : {}),
     ...(architectureCycleRef !== undefined ? { architectureCycleRef } : {}),
+    ...(finalizationQualificationRef !== undefined ? { finalizationQualificationRef } : {}),
   });
   return {
     ref,
@@ -313,6 +319,7 @@ export function buildOwnerDecisionRecord(input: {
     ...(scope !== undefined ? { scope } : {}),
     ...(requiredOutcomes !== undefined ? { requiredOutcomes } : {}),
     ...(architectureCycleRef !== undefined ? { architectureCycleRef } : {}),
+    ...(finalizationQualificationRef !== undefined ? { finalizationQualificationRef } : {}),
     sourceRef,
   };
 }
@@ -431,6 +438,7 @@ export async function createChange(
     snapshot.deliveryFullTestRawStatus === 'passed'
     && snapshot.deliveryFullTestStatus === 'passed'
     && snapshot.architectureCurrentCycle?.acceptance.status === 'awaiting-owner-decision';
+  const postPassRequiredBoundary = snapshot.deliveryFullTestRawStatus === 'passed' && input.required;
   if (failedBoundary) {
     if (input.corrective === undefined) {
       throw new FlowkitError('CORRECTIVE_BINDING_REQUIRED', 'full-test-failed boundary requires change.corrective binding');
@@ -484,7 +492,7 @@ export async function createChange(
     deliveryId,
     changeId: input.id,
     sourceRef: nonEmpty(sourceRef, 'sourceRef'),
-    ...(architectureRemediationBoundary ? { architectureCycleRef: snapshot.architectureCurrentCycle!.cycleRef } : {}),
+    ...((architectureRemediationBoundary || postPassRequiredBoundary) && snapshot.architectureCurrentCycle !== undefined ? { architectureCycleRef: snapshot.architectureCurrentCycle.cycleRef } : {}),
   });
   const path = manifestPath(repoRoot, deliveryId);
   const original = await readFile(path, 'utf8');
@@ -507,12 +515,13 @@ export async function createChange(
     doc.appendOwnerDecision(record);
     doc.removeFullTestResult();
     doc.updateFullTestStatus('failed', 'not-ready');
-  } else if (architectureRemediationBoundary) {
+  } else if (architectureRemediationBoundary || postPassRequiredBoundary) {
     doc.appendChange({ ...input, state: 'planned' });
     doc.appendOwnerDecision(record);
     doc.removeFullTestResult();
     doc.updateFullTestStatus('passed', 'not-ready');
-    doc.removeArchitectureCurrentCycle();
+    if (snapshot.architectureCurrentCycle !== undefined) doc.removeArchitectureCurrentCycle();
+    if (snapshot.acceptedSystemSource !== undefined) doc.removeAcceptedSystemSource();
   } else {
     doc.appendChange({ ...input, state: 'planned' });
     doc.appendOwnerDecision(record);
@@ -612,6 +621,31 @@ export async function recordOwnerDecision(
     const doc = DeliveryManifestDocument.parse(original);
     doc.appendOwnerDecision(record);
     doc.publishArchitectureAcceptance(acceptedCycle, acceptedSource);
+    await (options.atomicWrite ?? atomicWriteFile)(path, doc.toString());
+    return { deliveryId, ownerDecisionRef: record.ref };
+  }
+
+  if (decision === 'authorize-delivery-finalize') {
+    if (input.changeId !== undefined || input.scope !== undefined || input.requiredOutcomes !== undefined) {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'authorize-delivery-finalize is delivery-scoped and accepts only sourceRef');
+    }
+    const snapshot = await readSnapshot(repoRoot, deliveryId);
+    assertConflictFree(snapshot);
+    const qualification = snapshot.deliveryFinalizationQualification;
+    if (qualification === undefined) throw new FlowkitError('FINALIZATION_QUALIFICATION_UNAVAILABLE', 'current exact Finalize qualification is unavailable');
+    const record = buildOwnerDecisionRecord({
+      decision: 'authorize-delivery-finalize', deliveryId, sourceRef, finalizationQualificationRef: qualification.qualificationRef,
+    });
+    if (snapshot.ownerAuthorizations.some((fact) => fact.ref === record.ref && fact.decision === 'authorize-delivery-finalize' && fact.finalizationQualificationRef === qualification.qualificationRef)) {
+      return { deliveryId, ownerDecisionRef: record.ref, idempotent: true };
+    }
+    const current = next(snapshot);
+    if (current.kind !== 'owner-decision' || current.decision !== 'authorize-delivery-finalize') {
+      throw new FlowkitError('OWNER_DECISION_GATE_MISMATCH', 'current Policy is not requesting authorize-delivery-finalize');
+    }
+    const doc = DeliveryManifestDocument.parse(await readFile(path, 'utf8'));
+    const insertion = doc.appendOwnerDecision(record);
+    if (!insertion.changed) return { deliveryId, ownerDecisionRef: record.ref, idempotent: true };
     await (options.atomicWrite ?? atomicWriteFile)(path, doc.toString());
     return { deliveryId, ownerDecisionRef: record.ref };
   }

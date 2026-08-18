@@ -1,0 +1,19 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "explore",
+    "executionStatus": "completed",
+    "summary": "F1 proof-based Explore completed. F1 is the legal next Change after E1 checkpoint, but F1 Apply must only implement reusable Delivery Finalize/Delivery Final capability; it must not finalize 03 while G1/H1 remain planned and Full Test/Actual are not final-ready. Explore proved two current fail-open gaps: authorize-delivery-finalize is delivery-scoped without exact final-candidate qualification so an old authorization can be reused after fresh Full Test/architecture cycles, and Git Delivery Final recognition currently accepts loose subject-only commits without formal trailers/Owner admission. A deterministic qualification identity derived from current Full Test occurrence plus architecture disposition, minimal no-Run completed/finalization projection, crash-reconstructible Git handoff, strict candidate->point-in-time Manifest/Owner admission, bounded historical compatibility, Merge Commit topology expectation, and F1 verification physical closure are all feasible without auto commit/push/merge or a new evidence/registry platform.",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/explore.md",
+        "versionFingerprint": "fb74db6ee7300167e6180e2e92b3049eaa0559ee9dd71b1bfa8c92b548ee6837",
+        "kind": "produced-artifact"
+      }
+    ]
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "5277d409d56c6864895050c6b00e1c5173d0e6085fa8a3d143472da4a0d4dded"
+  }
+}

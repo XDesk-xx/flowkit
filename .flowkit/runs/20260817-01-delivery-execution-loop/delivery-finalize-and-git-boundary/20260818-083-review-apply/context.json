@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260818-083-review-apply",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "review-apply",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "84dbb4e1806b195c68d70e6f200280c1081592ca33c0519fb8dd8d090b1934d7",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-finalize-and-git-boundary/20260818-083-review-apply/",
+  "changeKey": "F1",
+  "changeId": "delivery-finalize-and-git-boundary",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-finalize-and-git-boundary/20260818-082-apply/result.json",
+    "versionFingerprint": "e086bfe9dde8f1547ad535d2aa08f98ba0ef6d0ebdfbedc1f3859ab1516efae9",
+    "kind": "run-result"
+  },
+  "verificationInputRef": {
+    "ref": "openspec/changes/delivery-finalize-and-git-boundary/verification.md",
+    "versionFingerprint": "934a3c83502d48d110683446b64d8ec72cee30fae1be65d507c9edbe88111b9a",
+    "kind": "verification-summary"
+  },
+  "reviewedRunId": "20260818-082-apply",
+  "canonicalBase": "b9a9e8108348b130cd5a30c6e57f8336abfe958b",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-finalize-and-git-boundary/20260818-082-apply/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "e086bfe9dde8f1547ad535d2aa08f98ba0ef6d0ebdfbedc1f3859ab1516efae9"
+    },
+    {
+      "ref": "openspec/changes/delivery-finalize-and-git-boundary/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+    },
+    {
+      "ref": "openspec/changes/delivery-finalize-and-git-boundary/design.md",
+      "versionFingerprint": "885a1aca0d06e9cc4f731993e3d896e679484e5795e927acce9f4e6d81827300",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-finalize-and-git-boundary/proposal.md",
+      "versionFingerprint": "540adc7361ba6a14f51838e99612c7b148001a8b961d85014dc8dd177b0fff59",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-finalize-and-git-boundary/specs/flowkit-change-verification-selection/spec.md",
+      "versionFingerprint": "7359fb22cfc27507e184726a87f3d9abc76e82dae3229d8b576091a8a2c4979c",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-finalize-and-git-boundary/specs/flowkit-core-model/spec.md",
+      "versionFingerprint": "6c46394255ff6c169dc2dd2d44105f7e2c54c55cf56cfa84016763da9500b72f",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-finalize-and-git-boundary/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+      "versionFingerprint": "e3ca36b5f32735946707af677c2c6df8253c2ad7f262f88af6e88c955f11c08f",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-finalize-and-git-boundary/specs/flowkit-delivery-finalize-and-git-boundary/spec.md",
+      "versionFingerprint": "67fc602e852bb26f60b39c0488b9bdba7c2aa1a8ec857d8b53c0c9f83db77b02",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-finalize-and-git-boundary/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "versionFingerprint": "873f95f23b21bdafa5f9f213fd5c5ebabb985f0a9b26759bdce2b60ee901cec0",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-finalize-and-git-boundary/specs/flowkit-policy-engine/spec.md",
+      "versionFingerprint": "e1c6c04a28bc733b4a76273dfadf3b2d4d211d4b458012df77b2464581e1bccb",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-finalize-and-git-boundary/tasks.md",
+      "kind": "openspec-contract",
+      "versionFingerprint": "d1e335a515fa5496626842dea8d66dd9c0d550ad15dda96ebc66dbaa4e135306"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "delivery-finalize-and-git-boundary",
+      "runId": "20260818-083-review-apply",
+      "action": "review-apply",
+      "role": "reviewer",
+      "semanticInputFingerprint": "84dbb4e1806b195c68d70e6f200280c1081592ca33c0519fb8dd8d090b1934d7"
+    },
+    "definition": {
+      "action": "review-apply",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-implementation-and-verification",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings-plus-verification-ref",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "core-derived",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+      },
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/design.md",
+        "versionFingerprint": "885a1aca0d06e9cc4f731993e3d896e679484e5795e927acce9f4e6d81827300",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/proposal.md",
+        "versionFingerprint": "540adc7361ba6a14f51838e99612c7b148001a8b961d85014dc8dd177b0fff59",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "7359fb22cfc27507e184726a87f3d9abc76e82dae3229d8b576091a8a2c4979c",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/specs/flowkit-core-model/spec.md",
+        "versionFingerprint": "6c46394255ff6c169dc2dd2d44105f7e2c54c55cf56cfa84016763da9500b72f",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+        "versionFingerprint": "e3ca36b5f32735946707af677c2c6df8253c2ad7f262f88af6e88c955f11c08f",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/specs/flowkit-delivery-finalize-and-git-boundary/spec.md",
+        "versionFingerprint": "67fc602e852bb26f60b39c0488b9bdba7c2aa1a8ec857d8b53c0c9f83db77b02",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "873f95f23b21bdafa5f9f213fd5c5ebabb985f0a9b26759bdce2b60ee901cec0",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/specs/flowkit-policy-engine/spec.md",
+        "versionFingerprint": "e1c6c04a28bc733b4a76273dfadf3b2d4d211d4b458012df77b2464581e1bccb",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/tasks.md",
+        "kind": "openspec-contract",
+        "versionFingerprint": "d1e335a515fa5496626842dea8d66dd9c0d550ad15dda96ebc66dbaa4e135306"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-finalize-and-git-boundary/20260818-082-apply/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "e086bfe9dde8f1547ad535d2aa08f98ba0ef6d0ebdfbedc1f3859ab1516efae9"
+      }
+    ],
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "verificationView": {
+      "status": "passed",
+      "resultRef": {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/verification.md",
+        "kind": "verification-summary",
+        "versionFingerprint": "934a3c83502d48d110683446b64d8ec72cee30fae1be65d507c9edbe88111b9a"
+      }
+    },
+    "externalContextFingerprint": "9c2c1eaaea1fdb913c3224fdfadf9322435eddbcd9d9996276b02fae6806e476",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "core-derived",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

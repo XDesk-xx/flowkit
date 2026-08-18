@@ -397,7 +397,7 @@ function logicalNodeSelectors(logicalId: string): readonly string[] {
     case 'tests-cli':
       return ['tests/integration/a1-delivery-readiness-and-full-test-behavior.test.ts', 'tests/integration/b1-delivery-findings-and-corrective-change.test.ts', 'tests/integration/diagnostic-cli-process.test.ts', 'tests/integration/diagnostic-cli.test.ts', 'tests/integration/g1-change-cli-end-to-end.test.ts', 'tests/unit/cli/*.test.ts', 'tests/unit/diagnostics/*.test.ts'];
     case 'tests-execution':
-      return ['tests/integration/f1-archive-and-checkpoint-boundary.test.ts', 'tests/unit/facts/*.test.ts', 'tests/unit/policy/*.test.ts', 'tests/unit/services/*.test.ts'];
+      return ['tests/integration/f1-archive-and-checkpoint-boundary.test.ts', 'tests/integration/f1-delivery-finalize-and-git-boundary.test.ts', 'tests/unit/facts/*.test.ts', 'tests/unit/policy/*.test.ts', 'tests/unit/services/*.test.ts'];
     case 'tests-external-tools':
       return ['tests/integration/c1-external-tool-runtime-and-archify-cli-contract.test.ts', 'tests/unit/external-tools/*.test.ts'];
     case 'tests-openspec-runtime':

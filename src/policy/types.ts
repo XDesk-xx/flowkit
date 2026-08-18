@@ -197,7 +197,7 @@ export interface PolicyOwnerDecisionResult {
 
 export interface PolicyDeliveryBehaviorResult {
   readonly kind: 'delivery-behavior';
-  readonly behavior: 'full-test' | 'architecture-actual-compare';
+  readonly behavior: 'full-test' | 'architecture-actual-compare' | 'delivery-finalize';
   readonly context: OwnerDecisionContext;
 }
 
@@ -249,7 +249,7 @@ export function ownerDecisionResult(
 }
 
 export function deliveryBehaviorResult(
-  behavior: 'full-test' | 'architecture-actual-compare',
+  behavior: 'full-test' | 'architecture-actual-compare' | 'delivery-finalize',
   context: OwnerDecisionContext = {},
 ): PolicyDeliveryBehaviorResult {
   return { kind: 'delivery-behavior', behavior, context };

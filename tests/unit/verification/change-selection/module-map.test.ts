@@ -32,6 +32,7 @@ describe('verification module map', () => {
           'flowkit-core-hardening-and-release-candidate',
           'flowkit-core-model',
           'flowkit-delivery-change-creation-and-owner-input',
+          'flowkit-delivery-finalize-and-git-boundary',
           'flowkit-diagnostic-cli',
           'flowkit-external-tool-runtime',
           'flowkit-formal-fact-reader-and-persistence',
@@ -119,12 +120,16 @@ describe('verification module map', () => {
     assert.equal(selected.capabilityIds.includes('flowkit-core-model'), true);
   });
 
-  it('maps the F1 lifecycle integration into execution coverage', () => {
-    const selected = selectAffectedVerificationModules([
+  it('maps the F1 checkpoint and Delivery Finalize lifecycle integrations into execution coverage', () => {
+    for (const path of [
       'tests/integration/f1-archive-and-checkpoint-boundary.test.ts',
-    ]);
-    assert.deepEqual(selected.seedModuleIds, ['execution']);
-    assert.equal(selected.verificationScopes.includes('tests-execution'), true);
+      'tests/integration/f1-delivery-finalize-and-git-boundary.test.ts',
+    ]) {
+      const selected = selectAffectedVerificationModules([path]);
+      assert.deepEqual(selected.seedModuleIds, ['execution']);
+      assert.equal(selected.verificationScopes.includes('tests-execution'), true);
+      assert.equal(selected.capabilityIds.includes('flowkit-delivery-finalize-and-git-boundary'), true);
+    }
   });
 
   it('keeps the Reset-added B1 OpenSpec action-context regression uniquely owned by execution', () => {

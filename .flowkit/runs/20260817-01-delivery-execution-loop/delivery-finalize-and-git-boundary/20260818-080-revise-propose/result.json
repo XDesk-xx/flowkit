@@ -1,0 +1,64 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-propose",
+    "executionStatus": "completed",
+    "summary": "F1 revise-propose closes F1-RP-001 by exact-binding finalization qualification and candidate identity to a formal qualifiedBaseRevision derived from the Delivery's admitted pre-final Git boundary. Finalize preflight now requires current HEAD to equal that revision; architecture-impact=true additionally requires accepted Actual repositoryRevision to match it; architecture-impact=false binds the same formal revision without synthesizing architecture. CandidateRef, crash-resume handoff, and strict Delivery Final first-parent admission all reuse the same revision. Disposable proofs for both architecture applicability branches show a clean ordinary post-qualification commit fails before Manifest mutation while bounded Manifest/Actual dirty bytes remain legal. Mutation declaration stays 26 selectors; OpenSpec strict/all-strict and real archive-sync preflight pass.",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/design.md",
+        "versionFingerprint": "885a1aca0d06e9cc4f731993e3d896e679484e5795e927acce9f4e6d81827300",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/proposal.md",
+        "versionFingerprint": "540adc7361ba6a14f51838e99612c7b148001a8b961d85014dc8dd177b0fff59",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "7359fb22cfc27507e184726a87f3d9abc76e82dae3229d8b576091a8a2c4979c",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/specs/flowkit-core-model/spec.md",
+        "versionFingerprint": "6c46394255ff6c169dc2dd2d44105f7e2c54c55cf56cfa84016763da9500b72f",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+        "versionFingerprint": "e3ca36b5f32735946707af677c2c6df8253c2ad7f262f88af6e88c955f11c08f",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/specs/flowkit-delivery-finalize-and-git-boundary/spec.md",
+        "versionFingerprint": "67fc602e852bb26f60b39c0488b9bdba7c2aa1a8ec857d8b53c0c9f83db77b02",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "873f95f23b21bdafa5f9f213fd5c5ebabb985f0a9b26759bdce2b60ee901cec0",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/specs/flowkit-policy-engine/spec.md",
+        "versionFingerprint": "e1c6c04a28bc733b4a76273dfadf3b2d4d211d4b458012df77b2464581e1bccb",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/tasks.md",
+        "versionFingerprint": "c51a7d4ebf89c105e6a3e05c5b30637b26829f63e1d04e0245d16ea6f3d9b2fb",
+        "kind": "produced-artifact"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-finalize-and-git-boundary/20260818-079-review-propose/result.json",
+      "versionFingerprint": "60ac9c451bd5e7e6a8469f3e3f4253d458afb5edcc1ae8e296df0842cf404a13",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "0a5ca54ca483289a10db653fee748d209228cfb52b04b120ba703d7dcb619ab9"
+  }
+}

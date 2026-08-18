@@ -1,0 +1,59 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "propose",
+    "executionStatus": "completed",
+    "summary": "F1 Proposal freezes qualification-bound Owner Finalize authorization, post-pass required-Change freshness invalidation, active-state read-only FinalCandidatePreflight, no-Run Finalize publication, crash-safe Delivery Final handoff, strict Git boundary admission with recognized F1 checkpoint cutover, and physical Verification ownership/selection closure. Current 03 Delivery is not finalized by this Proposal.",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/design.md",
+        "versionFingerprint": "0ca8bfc5a40ce0b60f0bc0673e7b6192a85cea404afab3e63142efc692dcd6b4",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/proposal.md",
+        "versionFingerprint": "2f3b77ffdafbcbc057fc348d88d957c19e3a570aececdf07b89f07eefdbf232d",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "7359fb22cfc27507e184726a87f3d9abc76e82dae3229d8b576091a8a2c4979c",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/specs/flowkit-core-model/spec.md",
+        "versionFingerprint": "25c60e548a653a8ac93c76f419d720ade6f913ad3878786cb0f5b3cb1ed71401",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+        "versionFingerprint": "e3ca36b5f32735946707af677c2c6df8253c2ad7f262f88af6e88c955f11c08f",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/specs/flowkit-delivery-finalize-and-git-boundary/spec.md",
+        "versionFingerprint": "f472122532d9157f583535ac5bbde13ec513fb5277a1e00765170f9248f2b7d8",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "a527cb094fea48b9915461fb12eda5bb07cf6de965ab26131afdf52c940c6ab7",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/specs/flowkit-policy-engine/spec.md",
+        "versionFingerprint": "e1c6c04a28bc733b4a76273dfadf3b2d4d211d4b458012df77b2464581e1bccb",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/tasks.md",
+        "versionFingerprint": "b9b56552f6ede4cb98be85a640a6ee3d2325970471a7bd5363f14fda06f27889",
+        "kind": "produced-artifact"
+      }
+    ]
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "c55a08d1d7f5c412212cc9c6f0c2055946dfa510a186b05398a93ff252c9d893"
+  }
+}

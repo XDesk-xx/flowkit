@@ -646,16 +646,16 @@ describe('verification evidence affected Node union', () => {
     }
   });
 
-  it('physically executes the F1 lifecycle integration through tests-execution', async () => {
+  it('physically executes the new F1 Delivery Finalize integration through tests-execution', async () => {
     const root = await createTempDir();
     try {
       await symlink(join(process.cwd(), 'node_modules'), join(root, 'node_modules'), 'dir');
       await writeFile(join(root, 'package.json'), '{"type":"module"}\n', 'utf8');
       await mkdir(join(root, 'tests', 'integration'), { recursive: true });
-      await writeFile(join(root, 'tests', 'integration', 'f1-archive-and-checkpoint-boundary.test.ts'), [
+      await writeFile(join(root, 'tests', 'integration', 'f1-delivery-finalize-and-git-boundary.test.ts'), [
         "import assert from 'node:assert/strict';",
         "import { test } from 'node:test';",
-        "test('f1 execution sentinel', () => assert.fail('f1 sentinel'));",
+        "test('f1 finalize execution sentinel', () => assert.fail('f1 finalize sentinel'));",
         '',
       ].join('\n'), 'utf8');
 
@@ -678,7 +678,7 @@ describe('verification evidence affected Node union', () => {
       }
 
       assert.equal(evidence.overallStatus, 'failed');
-      assert.match(evidence.checks[0]?.commandOrMethod ?? '', /tests\/integration\/f1-archive-and-checkpoint-boundary\.test\.ts/);
+      assert.match(evidence.checks[0]?.commandOrMethod ?? '', /tests\/integration\/f1-delivery-finalize-and-git-boundary\.test\.ts/);
     } finally {
       await rm(root, { recursive: true, force: true });
     }

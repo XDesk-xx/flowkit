@@ -374,12 +374,19 @@ function decideFullTestLifecycle(snapshot: FormalFactSnapshot): PolicyResult {
           return blockedResult(ambiguousStateDiagnosis('accepted architecture cycle is missing an exact acceptedSystemSource binding'));
         }
       }
-      if (hasOwnerAuthorization(snapshot.ownerAuthorizations, 'authorize-delivery-finalize', snapshot.deliveryId)) {
-        return blockedResult(deliveryBehaviorNotImplementedDiagnosis('delivery-finalize'));
+      const qualification = snapshot.deliveryFinalizationQualification;
+      if (qualification === undefined) {
+        return blockedResult(ambiguousStateDiagnosis('Finalize qualification cannot be derived from the current Full Test/Architecture/Git facts'));
+      }
+      if (hasOwnerAuthorization(snapshot.ownerAuthorizations, 'authorize-delivery-finalize', snapshot.deliveryId, undefined, qualification.qualificationRef)) {
+        return deliveryBehaviorResult('delivery-finalize', {
+          deliveryFullTestStatus: status,
+          detail: 'Fresh exact Finalize qualification is Owner-authorized; Delivery Finalize behavior is ready',
+        });
       }
       return ownerDecisionResult('authorize-delivery-finalize', {
         deliveryFullTestStatus: status,
-        detail: 'Full Test passed and architecture gate is satisfied; Delivery Finalize awaits owner authorization',
+        detail: `Full Test passed and architecture gate is satisfied; Delivery Finalize awaits Owner authorization for ${qualification.qualificationRef}`,
       });
     }
 

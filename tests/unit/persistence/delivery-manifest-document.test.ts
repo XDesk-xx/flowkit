@@ -88,3 +88,48 @@ describe('A1 DeliveryManifestDocument Full Test owned blocks', () => {
     assert.doesNotMatch(text, /\n {4}result:/);
   });
 });
+
+const finalizableManifest = [
+  'id: F1',
+  'delivery:',
+  '  state: active',
+  '  fullTestStatus: passed',
+  'architecture:',
+  '  impact: false',
+  '  archifyPlan: "not-required"',
+  'changes:',
+  '  - key: X1',
+  '    id: completed-change',
+  '    goal: "done"',
+  '    required: true',
+  '    dependsOn: []',
+  '    state: completed',
+  '    architectureImpact: false',
+  '    outputs: []',
+  '',
+].join('\n');
+
+describe('F1 DeliveryManifestDocument Finalize publication', () => {
+  const projection = {
+    schemaVersion: 1 as const,
+    qualificationRef: `delivery-finalization-qualification:${'a'.repeat(64)}`,
+    ownerAuthorizationRef: `owner:${'b'.repeat(64)}`,
+    candidateRef: `delivery-final-candidate:${'c'.repeat(64)}`,
+  };
+
+  it('publishes completed + one closed finalization block and inverses to exact active bytes', () => {
+    const doc = DeliveryManifestDocument.parse(finalizableManifest);
+    doc.publishFinalization(projection);
+    const completed = doc.toString();
+    assert.match(completed, /delivery:\n {2}state: completed\n {2}fullTestStatus: passed\n {2}finalization:/);
+    assert.match(completed, /qualificationRef: "delivery-finalization-qualification:a{64}"/);
+    assert.equal(DeliveryManifestDocument.parse(completed).inverseFinalization(), finalizableManifest);
+  });
+
+  it('fails closed on duplicate publication or non-completed inverse shape', () => {
+    const doc = DeliveryManifestDocument.parse(finalizableManifest);
+    doc.publishFinalization(projection);
+    assert.throws(() => doc.publishFinalization(projection), FlowkitError);
+    assert.throws(() => DeliveryManifestDocument.parse(finalizableManifest).inverseFinalization(), FlowkitError);
+  });
+});

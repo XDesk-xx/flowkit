@@ -1,0 +1,67 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-explore",
+    "executionStatus": "completed",
+    "summary": "Review 074 Explore：F1 的总体职责边界正确，保持 Delivery Finalize 为 Owner-authorized Delivery behavior、非 Standard Action/Run，并正确延迟当前 03 的真实 Finalize 到 G1/H1 checkpoint + fresh Full Test + Actual/Compare/acceptance 之后；074 也真实证明了现有 delivery-scoped Finalize authorization 的 stale replay gap 与 loose Delivery Final Git recognition gap。但完整 blocking scan 发现两个尚未被 074 Evidence Boundary 覆盖的 final-candidate freshness 风险：第一，当前 production createChange() 在 Full Test passed + Architecture accepted 之后仍可追加 ordinary required Change，而不会失效旧 Full Test result/current accepted architecture；074 的 qualification 只绑定 Full Test occurrence + architecture disposition，因此无法证明旧 qualification/authorization 不会在新 Change checkpoint 后重新成立。第二，074 Proof H 明确把 delivery.state=completed/finalization publication 放在 Git handoff/diff preflight 之前，而 Proof I 又把 unrelated repository drift 的检测留到后续 handoff；这样 preflight 失败时会留下 completed Delivery 但无合法 Delivery Final boundary 的半关闭状态。两项均为 author-actionable Explore proof/ordering gap。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "8bbd66ec997f77d7291c81c6ea2cb731aa7a9560d6d100ce11076d8f9a36931f"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "F1-RE-001",
+      "severity": "blocking",
+      "title": "Finalize qualification 未证明覆盖 post-pass 新增 required Change，旧 Full Test/Architecture qualification 可变陈旧",
+      "problem": "074 将 Finalize qualification 冻结为 deliveryId + current Full Test authorization/result + accepted architecture disposition，并证明 fresh Full Test/architecture cycle 会改变 qualification。但 exact Base 的 production createChange() 在 Full Test passed 且 Architecture 已 accepted 后仍允许 ordinary create-change；该普通分支只 append Change/Owner decision，不移除旧 Full Test result、不把 passed 重置为 not-ready，也不移除已接受的 architecture currentCycle/acceptedSystemSource。新 required Change 完成并 checkpoint 后，074 所列 qualification inputs 可以完全不变，因此旧 Finalize authorization 仍可能重新适用于一个并未经过 fresh Full Test/Actual/Compare 的 candidate。",
+      "contractRef": "Flowkit Explore Skill v2 §4.2 Temporal Proof, §4.3 Activation Persistence, §4.6 Mutation Surface + Verification Closure, §5 Proof Acceptance Depth; 03 v6 F1 finalization preconditions; A1/B1/E1 fresh qualification invariants",
+      "invariant": "Delivery Finalize 的 Full Test passed 与 architecture acceptance 必须覆盖当前全部 required Changes/checkpoints 对应的最终 candidate；任何 post-pass required Change mutation 都不得继承旧 Full Test/architecture qualification 并直接进入 Finalize。",
+      "evidence": [
+        "074 explore.md Proof D/Feasible Proposal Boundary #1 的 qualification inputs 只有 current fullTestAuthorizationRef + fullTestResultRef + architecture disposition/cycle/source，没有 current required Change/checkpoint qualification。",
+        "Exact Base src/services/a1-write-service.ts createChange() lines 428-519：当既非 full-test-failed corrective boundary、也非 awaiting architecture acceptance remediation boundary 时，ordinary branch 只 appendChange + appendOwnerDecision；不会 removeFullTestResult、不会 passed -> not-ready、不会 removeArchitectureCurrentCycle。",
+        "Architecture 已 accepted 时 architectureRemediationBoundary=false，因此 Owner 可追加 ordinary required Change；完成+checkpoint 后 allRequiredCompleted 再次成立，但旧 deliveryFullTestStatus=passed 与 accepted architecture facts 仍可保留。",
+        "074 Proof I 只讨论 source/commit drift，并未执行 post-pass scope-extension/new-required-Change next-consumer proof。"
+      ],
+      "impact": "F1 Proposal 可能冻结一个看似 occurrence-bound、实际却不覆盖当前 required Change set 的 Finalize gate。这样新增 required Change 后可以绕过 fresh Full Test 和 fresh Actual/Compare，违反 Delivery Ready/Full Test/Architecture 对 final candidate 的资格语义。",
+      "location": "openspec/changes/delivery-finalize-and-git-boundary/explore.md Proof D, Proof I, Feasible Proposal Boundary #1-3; src/services/a1-write-service.ts createChange()",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Revise Explore，补一个最小 post-pass required-Change mutation proof，并冻结能保证 fresh qualification 的可行边界。允许的实现方向包括：在该边界禁止普通 required Change、或创建时原子失效旧 Full Test/architecture qualification、或其他等价 fail-closed 机制；Reviewer 不预设唯一实现。",
+      "acceptance": [
+        "使用 production createChange()/Policy 或等价 disposable next-consumer，覆盖 Full Test passed + accepted architecture 后新增 ordinary required Change 的路径。",
+        "证明新 required Change 一旦被合法加入，旧 Full Test passed / old architecture acceptance 不可能继续作为新 final candidate 的资格；在 Finalize 前必须重新达到 fresh Full Test，并在 architectureImpact=true 时形成 fresh Actual/Compare/acceptance。",
+        "如果选择 qualification 额外绑定 Change/checkpoint identity，必须同时证明这不仅让旧 Finalize authorization stale，而且不会允许在未重新 Full Test 的情况下仅靠 fresh authorize-delivery-finalize 越过资格门。",
+        "architectureImpact=false 分支也要保持同样的 post-pass required-Change freshness 语义。",
+        "不要引入 generic Finding DB、自动 Change 创建或新的 Delivery Action/Run。"
+      ]
+    },
+    {
+      "id": "F1-RE-002",
+      "severity": "blocking",
+      "title": "Finalize 先发布 completed、后做 repository drift preflight，失败会留下半关闭 Delivery",
+      "problem": "074 Proof H 的明确顺序是 T1 先原子发布 delivery.state=completed + finalization，T2 才派生 Git handoff，T3 Executor 执行 git diff/staged preflight；Proof I 同时承认 Owner Finalize authorization 后 repository 可能发生 unrelated drift，并把该 drift 的 fail-closed 检测放在 Delivery Final handoff/preflight。如果 drift 在 Finalize 前已经存在，T1 仍可能先把 Delivery 正式关闭，随后 T3 才失败。此时正常 discoverActiveDelivery() 已看不到该 Delivery，且 074 没有定义一个合法的 reopen/rollback lifecycle。",
+      "contractRef": "Flowkit Explore Skill v2 §4.2 Temporal Proof, §4.7 External Mutation Proof, §5 Proof Acceptance Depth; Flowkit Operating Model v8 Delivery Finalize/Git hygiene; 03 v6 F1 finalization precondition and Delivery Final tree consistency acceptance",
+      "invariant": "Delivery state active -> completed 只能发生在 exact current final candidate 已通过所有可在 commit 前验证的 read-only preconditions 之后。Repository/worktree/index 的 unrelated drift 必须在 Finalize publication 之前 fail closed；后续 Git handoff preflight 不能成为首次发现 candidate 已失真的地方。",
+      "evidence": [
+        "074 explore.md Proof H lines 340-348：T1 Finalize publication -> T2 handoff -> T3 git diff/staged preflight。",
+        "074 Proof I lines 361-369：明确承认 post-acceptance source/commit mutation 不被当前 qualification 表达，并要求 Delivery Final handoff/preflight 检查 unrelated drift。",
+        "074 Proof H line 351 又指出 completed 后 normal discoverActiveDelivery() 不再发现该 Delivery，因此 T3 fail 后没有普通 active-Delivery write path 可继续修复 formal state。",
+        "F1 目标要求正式关闭 Delivery，并形成严格 Delivery Final Git boundary；先关闭再首次检查 candidate drift 会把失败窗口留在两者之间。"
+      ],
+      "impact": "一次普通未授权 working-tree/index drift 就可能造成 Manifest 已 completed、但 Delivery Final commit 无法合法形成的 stuck state。恢复需要人工修改 formal state或另造补偿机制，破坏 crash-safe、deterministic resume 与 no-hidden-transaction 目标。",
+      "location": "openspec/changes/delivery-finalize-and-git-boundary/explore.md Proof H, Proof I, Feasible Proposal Boundary #3-4",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Revise Explore 的 temporal/external-mutation proof，使 exact candidate drift 检查在 active -> completed mutation 之前完成，或证明一个等价的 qualification/candidate identity 能在 T1 前 fail closed。Delivery Final commit SHA 仍然不应在 commit 前被要求，且 Finalize 不应自动 commit。",
+      "acceptance": [
+        "给出 revised T0..Tn ordering，明确哪一个 read-only precondition 在 finalization publication 前验证 current HEAD/index/worktree 与已接受 final candidate 的关系。",
+        "disposable proof 覆盖：Owner Finalize authorization 已存在后引入 unrelated source/index drift，Finalize MUST 在 Manifest state mutation 前失败，delivery.state 保持 active。",
+        "同时证明 expected final-boundary mutations（例如 durable Actual/accepted architecture artifacts、Owner/finalization Manifest publication及明确冻结的 metadata）不会被错误当成 unrelated drift。",
+        "Finalize publication 成功后，Git handoff仍可从 durable completed facts 重建并由 Executor机械 commit；不要求 chat/stdout，也不把 commit 自动化塞进 Finalize service。",
+        "不引入 rollback engine、transaction platform 或新的 Finalize Run。"
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}
