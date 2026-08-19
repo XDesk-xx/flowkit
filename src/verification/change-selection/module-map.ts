@@ -54,6 +54,7 @@ export const CLOSED_CAPABILITY_IDS = [
   'flowkit-openspec-1-7-thin-integration',
   'flowkit-policy-engine',
   'flowkit-runtime-foundation',
+  'flowkit-sync-resume-and-single-action-agent-adapter',
 ] as const;
 
 const CLOSED_PREDICATES = new Set(['no-candidate-change']);
@@ -69,6 +70,7 @@ const VERIFICATION_SELECTION_CAPABILITIES = [
   'flowkit-formal-fact-reader-and-persistence',
   'flowkit-integration-boundaries',
   'flowkit-lean-run-and-action-package',
+  'flowkit-sync-resume-and-single-action-agent-adapter',
 ] as const;
 
 /** Closed, source-controlled authority for path ownership and logical check selection. */
@@ -109,6 +111,7 @@ export const VERIFICATION_MODULE_MAP: readonly VerificationModule[] = [
       'tests/integration/diagnostic-cli-process.test.ts',
       'tests/integration/diagnostic-cli.test.ts',
       'tests/integration/g1-change-cli-end-to-end.test.ts',
+      'tests/integration/g1-sync-resume-and-single-action-agent-adapter.test.ts',
       'tests/unit/cli',
       'tests/unit/diagnostics',
     ],
@@ -122,6 +125,7 @@ export const VERIFICATION_MODULE_MAP: readonly VerificationModule[] = [
       'flowkit-openspec-1-7-thin-integration',
       'flowkit-policy-engine',
       'flowkit-runtime-foundation',
+      'flowkit-sync-resume-and-single-action-agent-adapter',
     ],
   ),
   module(
@@ -154,6 +158,7 @@ export const VERIFICATION_MODULE_MAP: readonly VerificationModule[] = [
       'flowkit-formal-fact-reader-and-persistence',
       'flowkit-lean-run-and-action-package',
       'flowkit-policy-engine',
+      'flowkit-sync-resume-and-single-action-agent-adapter',
     ],
   ),
   module(

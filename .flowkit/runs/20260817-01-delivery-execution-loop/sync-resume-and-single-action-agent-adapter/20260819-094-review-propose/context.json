@@ -1,0 +1,194 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260819-094-review-propose",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "review-propose",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "001a085f186143cc93d6ee1b26a5f3ce6fe06ea7547b67103c1770e0786d0020",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/sync-resume-and-single-action-agent-adapter/20260819-094-review-propose/",
+  "changeKey": "G1",
+  "changeId": "sync-resume-and-single-action-agent-adapter",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/sync-resume-and-single-action-agent-adapter/20260819-093-revise-propose/result.json",
+    "versionFingerprint": "b991ab19fe1c5f3cdb7e90aa38bb9fe68220675137afa2391bdcc06dc88d22d7",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260819-093-revise-propose",
+  "canonicalBase": "3f4063a3e58fb78b1652e7b29e7c3034a6d968f2",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/sync-resume-and-single-action-agent-adapter/20260819-093-revise-propose/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "b991ab19fe1c5f3cdb7e90aa38bb9fe68220675137afa2391bdcc06dc88d22d7"
+    },
+    {
+      "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+    },
+    {
+      "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/design.md",
+      "versionFingerprint": "ed9ca24ab0f20e37bd17c56358bbda5958f73517a676016e6ba2f3edb2e9b85d",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/proposal.md",
+      "versionFingerprint": "f68358366fa34d46630b588aea49e1c8dc2dade068e2a50292bc723f2505da2b",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-change-verification-selection/spec.md",
+      "versionFingerprint": "9236a3aeb84375068bbbb888418d1ccdf285cb0a2b983fdaf256d4bac2f294c4",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-diagnostic-cli/spec.md",
+      "versionFingerprint": "649578eb84ad87824dada2e972168f5368b75f25c28c1c8d7c8f1a150fb71129",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-lean-run-and-action-package/spec.md",
+      "versionFingerprint": "442b5ce3bafd15521b9373f152aa832c01e5b2eb1a8ebfe6ebdc18ee5e865b5a",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-sync-resume-and-single-action-agent-adapter/spec.md",
+      "versionFingerprint": "9fedfff36e6980f7827e0e789647e37c183b31512074589157e6f4c0d36d8a0c",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/tasks.md",
+      "versionFingerprint": "5d2aefce7205c6425cedfdab7326db071fc67419dece775011d84dbaf60d1785",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "sync-resume-and-single-action-agent-adapter",
+      "runId": "20260819-094-review-propose",
+      "action": "review-propose",
+      "role": "reviewer",
+      "semanticInputFingerprint": "001a085f186143cc93d6ee1b26a5f3ce6fe06ea7547b67103c1770e0786d0020"
+    },
+    "definition": {
+      "action": "review-propose",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-proposal",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+      },
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/design.md",
+        "versionFingerprint": "ed9ca24ab0f20e37bd17c56358bbda5958f73517a676016e6ba2f3edb2e9b85d",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/proposal.md",
+        "versionFingerprint": "f68358366fa34d46630b588aea49e1c8dc2dade068e2a50292bc723f2505da2b",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "9236a3aeb84375068bbbb888418d1ccdf285cb0a2b983fdaf256d4bac2f294c4",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-diagnostic-cli/spec.md",
+        "versionFingerprint": "649578eb84ad87824dada2e972168f5368b75f25c28c1c8d7c8f1a150fb71129",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-lean-run-and-action-package/spec.md",
+        "versionFingerprint": "442b5ce3bafd15521b9373f152aa832c01e5b2eb1a8ebfe6ebdc18ee5e865b5a",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-sync-resume-and-single-action-agent-adapter/spec.md",
+        "versionFingerprint": "9fedfff36e6980f7827e0e789647e37c183b31512074589157e6f4c0d36d8a0c",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/tasks.md",
+        "versionFingerprint": "5d2aefce7205c6425cedfdab7326db071fc67419dece775011d84dbaf60d1785",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/sync-resume-and-single-action-agent-adapter/20260819-093-revise-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "b991ab19fe1c5f3cdb7e90aa38bb9fe68220675137afa2391bdcc06dc88d22d7"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260819-092-review-propose",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/sync-resume-and-single-action-agent-adapter/20260819-092-review-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "57ab7897709d96aad391632c0d9a7e371224f9eabc89b921c441bf8b756e2acf"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "G1-RP-001",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "Design 缺少必需的 flowkitMutationScope，当前 Proposal 无法形成可执行 Apply mutation authority",
+          "problem": "091 Design 只以自然语言列出 expected mutation surface（b1-run-execution-service、publication、resume/adapter modules、resume-context、module-map/evidence 与 tests），但没有当前 production `deriveMutationDeclaration()` 强制读取的 `## flowkitMutationScope` section。当前产品要求 approved Design 恰好包含一个 closed schemaVersion=1 JSON block，并同时定义 apply/revise-apply selectors；没有该 section 时 Apply preparation无法形成 persisted MutationDeclaration。Reviewer在 exact 091 candidate 上直接调用 production `deriveMutationDeclaration(..., 'apply', [091 design ref])`，得到 `MUTATION_DECLARATION_INVALID: Design must contain exactly one flowkitMutationScope section { count: 0 }`。因此 Proposal 当前不是可执行 contract，问题不能留到 Apply 才发现。",
+          "contractRef": "Current product mutation-authority contract: src/verification/change-selection/mutation-declaration.ts deriveMutationDeclaration(); AGENTS.md Contract preflight / Apply exact mutation authority；091 Design §6 Expected mutation surface",
+          "invariant": "Approved Proposal/Design 必须能够由当前 Flowkit write-side确定性派生 Apply/revise-apply MutationDeclaration；Author不得在 Apply 时临时扩大或猜测 mutation surface。Proposal冻结的 required implementation changes必须全部落入 machine-readable authorized selectors。",
+          "requiredOutcome": "Revise Proposal，在 Design 中增加且仅增加一个符合 current closed schema 的 `## flowkitMutationScope` JSON section，冻结 apply 与 revise-apply 的完整 selectors；selectors应覆盖091已冻结的 production/test mutation surface与必要 formal artifacts，但不得借机扩大 G1 scope。随后用 production deriveMutationDeclaration 对 apply/revise-apply 两支实际派生并证明通过，并重新核对 prospective Verification selection 与该 authorized mutation surface闭合。",
+          "acceptance": [
+            "`design.md` 恰好存在一个 `## flowkitMutationScope` section，JSON满足当前 schemaVersion=1 closed shape，只定义 apply/revise-apply，各自仅含 selectors。",
+            "production `deriveMutationDeclaration(repoRoot, 'apply', approvedDesignRef)` PASS，且 `revise-apply` 同样 PASS。",
+            "selectors覆盖 G1 已冻结的 replay/path resolver、typed resume projection、single-action adapter、diagnostic consumer、module-map/evidence 与对应 targeted/unit/integration tests；新增文件使用当前 MutationSelector contract允许的精确 path/prefix表达。",
+            "selectors不授权 H1 stable Runner、Registry/auto-loop、Delivery Full Test/Finalize/Checkpoint adapter、Actual Architecture、04 Engineering Health或其他未批准范围。",
+            "使用冻结 selectors/expected actualChangeSet 重做或核对 production buildVerificationSelection prospective proof，保持 capabilityRelation=matched，并证明新的 G1 integration target有正式 physical resolver closure。"
+          ]
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "46683293692cf948e2f7c5757ed1541769b4e8d4416ed310c4569b357cd77788",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

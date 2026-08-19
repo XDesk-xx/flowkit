@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { afterEach, describe, it } from 'node:test';
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { FlowkitError } from '../../../../src/shared/errors.js';
@@ -283,6 +283,18 @@ describe('verification selection publication', () => {
       originBinding: origin,
     });
     assert.equal(current.status, 'passed');
+
+    const archivedRoot = join(root, 'openspec', 'changes', 'archive', '2099-01-01-e1');
+    await mkdir(join(root, 'openspec', 'changes', 'archive'), { recursive: true });
+    await cp(join(root, 'openspec', 'changes', 'e1'), archivedRoot, { recursive: true });
+    const archived = await validateCurrentReverificationChain({
+      canonicalVerificationPath: join(archivedRoot, 'verification.md'),
+      logicalVerificationRef: 'openspec/changes/e1/verification.md',
+      currentMarkdown: currentBytes,
+      originRunId: failed.record.producingRunId,
+      originBinding: origin,
+    });
+    assert.equal(archived.status, 'passed');
 
     const originHistoryPath = join(root, 'openspec', 'changes', 'e1', 'verification-history', `${origin.versionFingerprint}.md`);
     await rm(originHistoryPath);

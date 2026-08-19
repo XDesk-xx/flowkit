@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260819-090-review-explore",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "review-explore",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "d43769a15335b679d95270aefa93f86a4364b2cecc12b5823436be87a2ab204d",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/sync-resume-and-single-action-agent-adapter/20260819-090-review-explore/",
+  "changeKey": "G1",
+  "changeId": "sync-resume-and-single-action-agent-adapter",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/sync-resume-and-single-action-agent-adapter/20260819-089-revise-explore/result.json",
+    "versionFingerprint": "64444d2aba94b28e158248de4409f777f08b8c52d1eaab3ea23e09015e864414",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260819-089-revise-explore",
+  "canonicalBase": "3f4063a3e58fb78b1652e7b29e7c3034a6d968f2",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/sync-resume-and-single-action-agent-adapter/20260819-089-revise-explore/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "64444d2aba94b28e158248de4409f777f08b8c52d1eaab3ea23e09015e864414"
+    },
+    {
+      "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+    },
+    {
+      "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/explore.md",
+      "versionFingerprint": "58573270e25deadb485434160f9beb6e8d8d504334904a1b40dde61067e26050",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "sync-resume-and-single-action-agent-adapter",
+      "runId": "20260819-090-review-explore",
+      "action": "review-explore",
+      "role": "reviewer",
+      "semanticInputFingerprint": "d43769a15335b679d95270aefa93f86a4364b2cecc12b5823436be87a2ab204d"
+    },
+    "definition": {
+      "action": "review-explore",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-explore",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+      },
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/explore.md",
+        "versionFingerprint": "58573270e25deadb485434160f9beb6e8d8d504334904a1b40dde61067e26050",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/sync-resume-and-single-action-agent-adapter/20260819-089-revise-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "64444d2aba94b28e158248de4409f777f08b8c52d1eaab3ea23e09015e864414"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260819-088-review-explore",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/sync-resume-and-single-action-agent-adapter/20260819-088-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "aa0d8359bd71cce0cb4f958203cf7541f9b0ea2e9aff83eab3e8e3adb29fa946"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "G1-RE-001",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "跨 Delivery single-action resume/adapter 的 genericity 与 activation persistence 只做了静态推理，Evidence Boundary 未到 future Delivery consumer",
+          "problem": "087 Risk Scan 明确把 Generic reusable subsystem 与 Activation must persist across Change/Delivery boundaries 标为 yes，G1 required outcome 又是长期 repository-only resume + single-action Agent Adapter。但 Proof F 的 Method 只是对当前 G1 pending Run、historical F1、existing compatibility readers 与 H1 planned consumer 做 boundary scan；Evidence 只是说明现有 authorities 可组合，并把 `different future Delivery-shaped fixture` 明确推迟到 Proposal/Apply。Explore Conclusion 却把该能力写成 feasible/PASS。按照 flowkit-explore 对 cross-Delivery capability 的要求，same-Delivery H1 作为 planned consumer + 静态 authority map 不能证明 G1 新 resume/adapter semantics 在 G1 checkpoint、03 Final/merge、fresh checkout、next Delivery Start 后不会静默退回旧入口或出现 current-Delivery hardcode。",
+          "contractRef": "Flowkit Explore Skill v2 §4.3 Migration/Self-hosting/Activation Persistence, §4.5 Genericity/Next-consumer, §5 Proof Acceptance Depth；03 G1 acceptance: fresh process resume without chat, one adapter invocation=one Change Action, H1/next Delivery self-hosting consumer",
+          "invariant": "声明跨 Delivery 长期可用的 resume/Agent Adapter capability，Explore PASS 必须实际覆盖 activation boundary 与不同 future Delivery-shaped consumer；Evidence Boundary 必须至少到 fresh checkout/next Delivery consumer，而不能把该 proof 留给 Proposal/Apply。",
+          "requiredOutcome": "Revise Explore，增加一个最小 future-Delivery-shaped feasibility proof，并明确 G1 prospective implementation 的正式 activation boundary。Reviewer 不限定实现：可以用 disposable prototype/fixture组合现有 prepare/resume/OpenSpec-context/admit seams，但必须真实使用不同 deliveryId/changeId，跨 durable checkout/fresh-process boundary消费，而不是只画 authority 箭头。",
+          "acceptance": [
+            "明确 G1 新 resume/adapter semantics 从哪个正式 boundary 对 canonical repository 生效（预期至少不早于 G1 canonical admission/checkpoint），当前 087/本 Change不得中途静默 self-upgrade。",
+            "disposable fixture 使用与 03/G1 不同的 future deliveryId/changeId，在 fresh checkout/process 中只依赖 repository/formal facts恢复一个 pending Action；不读取聊天/provider session，也不硬编码 03、G1、087 或 current Base SHA。",
+            "future consumer 使用同一 bounded provider execution view，能重建该 Action所需 OpenSpec structured context（when applicable），一次 provider invocation最多处理一个 Policy-decided Action并 return control；不得 auto-prepare next。",
+            "证明 G1 checkpoint → H1 same-Delivery consumer → 03 Final/merge/next Delivery-shaped consumer 的长期路径不会因 Delivery/projection/session变化退回旧 resume/adapter semantics。",
+            "不引入 Skill/Provider/Agent Registry、auto-loop、H1 stable Runner实现或新的 lifecycle state。"
+          ]
+        },
+        {
+          "id": "G1-RE-002",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "historical resume proof 未覆盖 03 明确要求的 historical E1 sidecar compatibility 与 no-current-Catalog reinterpretation",
+          "problem": "G1 frozen in-scope 明确包括 `02 three-file Run read`、`historical E1 sidecar compatibility`、`verification.md + verification-history lineage read`，required acceptance 还要求 history 不依赖 current Catalog reinterpretation。087 Proof C 很好地对真实 F1 084/085 三文件/v5历史证明了 Verification retry supersession + OpenSpec archive relocation 的 terminal replay缺口，并找到了可复用 validator/reader；但它没有读取或 fresh-resume/project一个历史 E1 sidecar generation，也没有验证 G1 prospective structured resume projection面对 legacy sidecars时继续使用 persisted historical selection/evidence，而不是拿当前 Verification Catalog/module map重算历史意义。Feasible Proposal Boundary D 只是把 `current three-file Run + bounded historical compatibility` 列为未来 regression，当前 Explore没有对应 Evidence。",
+          "contractRef": "03 Planned Changes v6 G1 In scope/Required proofs；03 Implementation Reference v6 §15.2 Verification resume model, §15.3 Change Run compatibility；Flowkit Explore Skill v2 §4.3 migration compatibility + §5 evidence depth",
+          "invariant": "G1 的 resume capability必须同时消费 current three-file Runs 与已冻结的 historical E1 sidecar facts；历史 Run/Verification 的意义由其 point-in-time persisted facts决定，不得依赖当前 Catalog重新解释。Explore 在进入 Proposal前必须证明这条 migration/compatibility boundary可行。",
+          "requiredOutcome": "Revise Explore 增加最小 historical-E1 compatibility proof：选择一个真实/fixture historical E1 sidecar generation，在 fresh process/repository read 中让 proposed resume projection所依赖的现有 readers消费它，并用反事实证明即使 current Verification Catalog/module map变化，历史 Run/selection/evidence仍按 persisted point-in-time facts解释；同时保持 current three-file/v5路径不回归。",
+          "acceptance": [
+            "使用 repository 内真实 historical E1 Run 或现有 E1 fixture，实际覆盖其 legacy sidecars/context/result读取，而不是仅引用 legacy reader存在。",
+            "fresh process/read 能稳定投影该历史 Run/Verification lineage；不存在要求 provider chat/session或当前 active Change bytes才能解释历史事实。",
+            "加入最小 Catalog-independence反事实：改变/替换 current Catalog interpretation input后，历史 persisted selection/evidence的身份与意义不被重新计算；若 current reader本来就满足，记录真实 proof即可。",
+            "current three-file/v5 F1 084 retry+archive replay gap仍按 Proof C proposed bounded repair处理；不要为历史兼容新增 sidecar、archive DB、Verification ledger或 rewrite历史 result。",
+            "Evidence Boundary至少覆盖 H1 fresh-checkout读取历史 corpus所需的 compatibility boundary。"
+          ]
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "be29aaf0c5f0e57f0cb0bb35ddb93c3d20e8f9b2760b7c87fdb8b1565729ed73",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

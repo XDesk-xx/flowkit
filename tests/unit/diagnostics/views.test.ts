@@ -1,10 +1,13 @@
 import assert from 'node:assert/strict';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { describe, it } from 'node:test';
 
 import { renderStatus } from '../../../src/diagnostics/status.js';
 import { formatPolicyResult } from '../../../src/diagnostics/next.js';
 import { diagnoseRepository, renderDoctor } from '../../../src/diagnostics/doctor.js';
 import { renderResumeContext } from '../../../src/diagnostics/resume-context.js';
+import { createTempDir } from '../../fixtures/helpers.js';
 import { buildAuthorization, buildChange, buildCheckpointBoundary, buildConflict, buildRun, buildSnapshot, buildVerdict } from '../policy/fixtures.js';
 
 const change = buildChange({ key: 'E1', id: 'diagnostic-cli' });
@@ -145,6 +148,25 @@ describe('diagnostic views', () => {
     assert.ok(report.findings.some((finding) => finding.code === 'pending-semantic-input-drift'));
     assert.match(renderResumeContext(snapshot, inspection), /pending-run: 20260806-177-explore/);
     assert.match(renderResumeContext(snapshot, inspection), /pending-resume: input-drift/);
+  });
+
+
+  it('renders Architecture status from the shared repository-stable resume projection without creating Actual', async () => {
+    const root = await createTempDir();
+    try {
+      const base = buildSnapshot({ changes: [change] });
+      const snapshot = { ...base, deliveryArchitectureImpact: true };
+      const jsonRoot = join(root, 'architecture', snapshot.deliveryId, 'json');
+      await mkdir(jsonRoot, { recursive: true });
+      await writeFile(join(jsonRoot, 'current.architecture.json'), '{"kind":"current"}\n', 'utf8');
+      await writeFile(join(jsonRoot, 'planned.architecture.json'), '{"kind":"planned"}\n', 'utf8');
+      const text = renderResumeContext(snapshot, undefined, { repoRoot: root });
+      assert.match(text, /architecture-current: present; path=.*current\.architecture\.json; sha256=[0-9a-f]{64}/);
+      assert.match(text, /architecture-planned: present; path=.*planned\.architecture\.json; sha256=[0-9a-f]{64}/);
+      assert.match(text, /architecture-actual: absent; path=.*actual\.architecture\.json/);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 
   it('reports missing current formal artifact as error', () => {

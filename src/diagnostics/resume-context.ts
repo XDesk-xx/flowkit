@@ -1,66 +1,51 @@
 import type { FormalFactSnapshot } from '../facts/formal-fact-snapshot.js';
-import { next } from '../policy/next.js';
 import {
-  activeChange,
-  currentStage,
-  lastFormalArtifact,
-  latestReviewValue,
+  buildRepositoryStableResumeProjection,
+  resolveResumeProjectionRepoRoot,
+  type ArchitectureResumeAsset,
+} from './resume-projection.js';
+import {
   line,
-  newestRun,
   summarizePolicyResult,
   type PendingRunInspection,
 } from './shared.js';
 
-export function renderResumeContext(snapshot: FormalFactSnapshot, pending?: PendingRunInspection): string {
-  const policy = next(snapshot);
-  const change = activeChange(snapshot);
-  if (change === undefined) {
-    const lines = [
-      line('delivery', snapshot.deliveryId),
-      line('change', 'none'),
-      line('stage', 'delivery-level'),
-      line('last-artifact', 'none'),
-      line('last-run', newestRun(snapshot.runs)?.runId ?? 'none'),
-    ];
-    if (pending?.runId !== undefined) {
-      lines.push(
-        line('pending-run', pending.runId),
-        line('pending-action', pending.action ?? 'none'),
-        line('pending-role', pending.role ?? 'none'),
-        line('pending-resume', pending.status),
-      );
-    }
-    lines.push(
-      line('review', 'none'),
-      line('verification', 'not-applicable'),
-      line('next-kind', policy.kind),
-      line('next-detail', summarizePolicyResult(policy)),
-    );
-    if (snapshot.currentDeliveryFullTestFinding !== undefined) {
-      lines.push(
-        line('finding-id', snapshot.currentDeliveryFullTestFinding.findingId),
-        line('authorization-ref', snapshot.currentDeliveryFullTestFinding.authorizationRef),
-        line('source-result-ref', snapshot.currentDeliveryFullTestFinding.sourceResultRef),
-      );
-    }
-    return `${lines.join('\n')}\n`;
-  }
-  const stage = currentStage(snapshot, change);
+function renderArchitecture(asset: ArchitectureResumeAsset): string {
+  if (asset.status === 'present') return `present; path=${asset.path}; sha256=${asset.sha256}`;
+  return `${asset.status}; path=${asset.path}`;
+}
+
+export function renderResumeContext(
+  snapshot: FormalFactSnapshot,
+  pending?: PendingRunInspection,
+  options: { readonly repoRoot?: string } = {},
+): string {
+  const repoRoot = options.repoRoot ?? resolveResumeProjectionRepoRoot(process.cwd(), snapshot.deliveryId);
+  const projection = buildRepositoryStableResumeProjection({ repoRoot, snapshot, ...(pending !== undefined && { pending }) });
   const lines = [
-    line('delivery', snapshot.deliveryId),
-    line('change', `${change.key} ${change.id}`),
-    line('stage', stage),
-    line('last-artifact', lastFormalArtifact(snapshot, change, stage)),
-    line('last-run', newestRun(snapshot.runs, change.id)?.runId ?? 'none'),
-    line('pending-run', pending?.runId ?? 'none'),
-    line('pending-action', pending?.action ?? 'none'),
-    line('pending-role', pending?.role ?? 'none'),
-    line('pending-resume', pending?.status ?? 'none'),
-    line('review', latestReviewValue(snapshot, change, stage)),
-    line('verification', snapshot.changeVerificationStatus ?? 'unavailable'),
-    line('next-kind', policy.kind),
-    line('next-detail', summarizePolicyResult(policy)),
+    line('delivery', projection.deliveryId),
+    line('change', projection.change === undefined ? 'none' : `${projection.change.key} ${projection.change.id}`),
+    line('stage', projection.stage),
+    line('last-artifact', projection.lastArtifact),
+    line('last-run', projection.lastRunId ?? 'none'),
   ];
+  if (projection.change !== undefined || pending?.runId !== undefined) {
+    lines.push(
+      line('pending-run', projection.pending.runId ?? 'none'),
+      line('pending-action', projection.pending.action ?? 'none'),
+      line('pending-role', projection.pending.role ?? 'none'),
+      line('pending-resume', projection.pending.status),
+    );
+  }
+  lines.push(
+    line('review', projection.review),
+    line('verification', projection.verification),
+    line('architecture-current', renderArchitecture(projection.architecture.current)),
+    line('architecture-planned', renderArchitecture(projection.architecture.planned)),
+    line('architecture-actual', renderArchitecture(projection.architecture.actual)),
+    line('next-kind', projection.policy.kind),
+    line('next-detail', summarizePolicyResult(projection.policy)),
+  );
   if (snapshot.currentDeliveryFullTestFinding !== undefined) {
     lines.push(
       line('finding-id', snapshot.currentDeliveryFullTestFinding.findingId),

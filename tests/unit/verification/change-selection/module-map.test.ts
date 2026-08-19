@@ -41,6 +41,7 @@ describe('verification module map', () => {
           'flowkit-openspec-1-7-thin-integration',
           'flowkit-policy-engine',
           'flowkit-runtime-foundation',
+          'flowkit-sync-resume-and-single-action-agent-adapter',
         ],
         verificationScopes: [
           'openspec-current-change-archive-sync',
@@ -157,6 +158,48 @@ describe('verification module map', () => {
       ),
       true,
     );
+  });
+
+
+  it('owns the G1 resume/adapter implementation and integration target with a matched closed capability relation', () => {
+    for (const [path, expectedSeed] of [
+      ['src/diagnostics/resume-projection.ts', 'cli-diagnostics'],
+      ['src/services/g1-single-action-agent-adapter.ts', 'execution'],
+      ['src/verification/change-selection/publication.ts', 'verification-selection'],
+      ['tests/integration/g1-sync-resume-and-single-action-agent-adapter.test.ts', 'cli-diagnostics'],
+    ] as const) {
+      const selected = selectAffectedVerificationModules([path]);
+      assert.deepEqual(selected.seedModuleIds, [expectedSeed], path);
+      assert.equal(selected.capabilityIds.includes('flowkit-sync-resume-and-single-action-agent-adapter'), true, path);
+    }
+
+    const expectedActualChangeSet = [
+      'src/diagnostics/resume-context.ts',
+      'src/diagnostics/resume-projection.ts',
+      'src/services/b1-run-execution-service.ts',
+      'src/services/g1-single-action-agent-adapter.ts',
+      'src/verification/change-selection/evidence.ts',
+      'src/verification/change-selection/module-map.ts',
+      'src/verification/change-selection/publication.ts',
+      'tests/integration/g1-sync-resume-and-single-action-agent-adapter.test.ts',
+      'tests/unit/diagnostics/resume-projection.test.ts',
+      'tests/unit/diagnostics/views.test.ts',
+      'tests/unit/services/b1-run-execution-service.test.ts',
+      'tests/unit/services/g1-single-action-agent-adapter.test.ts',
+      'tests/unit/verification/change-selection/evidence.test.ts',
+      'tests/unit/verification/change-selection/module-map.test.ts',
+      'tests/unit/verification/change-selection/publication.test.ts',
+    ].map((path) => ({ path, kind: 'modify' as const, pathKindBefore: 'file' as const, pathKindAfter: 'file' as const, contentFingerprintAfter: 'a'.repeat(64) }));
+    const selection = buildVerificationSelection(expectedActualChangeSet, [
+      'openspec/changes/g1/specs/flowkit-sync-resume-and-single-action-agent-adapter/spec.md',
+      'openspec/changes/g1/specs/flowkit-lean-run-and-action-package/spec.md',
+      'openspec/changes/g1/specs/flowkit-change-verification-selection/spec.md',
+      'openspec/changes/g1/specs/flowkit-diagnostic-cli/spec.md',
+    ]);
+    assert.equal(selection.capabilityRelation.kind, 'matched');
+    for (const scope of ['tests-execution', 'tests-cli', 'tests-verification', 'typecheck']) {
+      assert.equal(selection.verificationScopes.includes(scope), true, scope);
+    }
   });
 
   it('maps the historical E1 integration regression into verification-selection coverage', () => {

@@ -148,7 +148,7 @@ changes:
     required: true
     dependsOn:
       - "delivery-finalize-and-git-boundary"
-    state: planned
+    state: completed
     architectureImpact: true
     outputs:
       - "Delivery resume projection"
@@ -361,6 +361,26 @@ ownerDecisions:
     deliveryId: "20260817-01-delivery-execution-loop"
     changeId: "delivery-finalize-and-git-boundary"
     sourceRef: "ref/flowkit-local-ai-handoff-f1-086-archive.md"
+  - ref: "owner:7a8908f8110029f599aefb88892296cf359d240d7263ecb779707a4d073e16ad"
+    decision: "activate-change"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "sync-resume-and-single-action-agent-adapter"
+    sourceRef: "owner-input:2026-08-19T07:32+08:00:activate:G1"
+  - ref: "owner:3a5e54446af9814f31540e10a56971c74c454b8c74cb15c4c0e3b19178d17483"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "sync-resume-and-single-action-agent-adapter"
+    sourceRef: "owner-input:2026-08-19T09:55+08:00:authorize-apply:G1"
+  - ref: "owner:bf19e25d75a62839a971a5080e6be28d04c9bfa5b874e359b2919ddac0229f5f"
+    decision: "authorize-archive"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "sync-resume-and-single-action-agent-adapter"
+    sourceRef: "owner-input:2026-08-19T10:39+08:00:authorize-archive:G1"
+  - ref: "owner:0c1e44f8f15467b4fe05c7c1a81ee3e7970abe36b3b4595d1ea9c2fc08351636"
+    decision: "authorize-checkpoint"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "sync-resume-and-single-action-agent-adapter"
+    sourceRef: "ref/flowkit-local-ai-handoff-g1-097-archive.md"
 verification:
   change:
     requireApplicableChecks: true

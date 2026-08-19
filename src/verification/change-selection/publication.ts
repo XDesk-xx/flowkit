@@ -242,6 +242,7 @@ export function parseCurrentVerificationPublication(markdown: string): ParsedCur
 
 export async function validateCurrentReverificationChain(input: {
   readonly canonicalVerificationPath: string;
+  readonly logicalVerificationRef?: string;
   readonly currentMarkdown: string;
   readonly originRunId: string;
   readonly originBinding: { readonly versionFingerprint: string; readonly selectionFingerprint: string; readonly status: VerificationStatus };
@@ -255,7 +256,7 @@ export async function validateCurrentReverificationChain(input: {
       current.selectionFingerprint !== input.originBinding.selectionFingerprint) {
     throw new FlowkitError('VERIFICATION_RETRY_CHAIN_CONFLICT', 'current re-verification publication does not bind the producing Apply terminal identity');
   }
-  const authorityLogicalRef = normalizeCurrentVerificationLogicalRef(input.canonicalVerificationPath);
+  const authorityLogicalRef = input.logicalVerificationRef ?? normalizeCurrentVerificationLogicalRef(input.canonicalVerificationPath);
   const authorityDir = authorityLogicalRef.slice(0, authorityLogicalRef.lastIndexOf('/'));
   const historyPrefix = `${authorityDir}/verification-history/`;
   const historyDir = join(dirname(input.canonicalVerificationPath), 'verification-history');
