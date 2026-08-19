@@ -1,0 +1,18 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "apply",
+    "executionStatus": "completed",
+    "summary": "Implemented H1 stable installed runner/self-hosting acceptance, read-only exact checkpoint handoff, future-Delivery-shaped end-to-end acceptance fixture, and closed Verification ownership/physical coverage."
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "4821155fe15dd7f0bbfc57900a49ac1c2db1c54ce5dbe31bc084474f7fd6d03f",
+    "currentVerification": {
+      "logicalRef": "openspec/changes/stable-runner-and-self-hosting-acceptance/verification.md",
+      "versionFingerprint": "9263b50dde9491e46da269937826c6c7318f28cc8ca2569d55a4a097514bdecd",
+      "selectionFingerprint": "aa765cd20f4aa0d04441ff9e3c9174291338b7beb328a1899331e945c5223eee",
+      "status": "passed"
+    }
+  }
+}

@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260819-109-propose",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "propose",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "bafe952be62e0112fe44430be3e34bf424721a50427fb485f0349204e61ce1d5",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:b1a8666881c28f23e2f059a85a54e200cd9b79ee0d79842145672a6962149d9d",
+      "decision": "contract-reset",
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "stable-runner-and-self-hosting-acceptance",
+      "scope": "H1/detached-verification-physical-execution-optimization",
+      "requiredOutcomes": [
+        "formal H1 detached tests-cli and tests-execution execute complete selected coverage through bounded physical groups under the existing 120s per-physical-command timeout, with no full-E2E skip",
+        "preserve one logical Verification authority, non-H1 behavior, Owner boundaries, and no timeout inflation or generic 04 verification platform"
+      ],
+      "sourceRef": "owner-input:2026-08-19T20:10+08:00:H1-detached-verification-physical-execution-optimization"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-109-propose/",
+  "changeKey": "H1",
+  "changeId": "stable-runner-and-self-hosting-acceptance",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-101-review-explore/result.json",
+    "versionFingerprint": "a67b41fd19a39eb122f9be9e47c6070106e7ab577f70330a13e43043470d98e5",
+    "kind": "run-result"
+  },
+  "canonicalBase": "bbb9eff528f1ccd9624e2d20454ecaa2f0b4405c",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-101-review-explore/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "a67b41fd19a39eb122f9be9e47c6070106e7ab577f70330a13e43043470d98e5"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "ec0accf47d569b8f60d01e96573f6813f1f2b7d5f135a60e3fc07159f84e74c8"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/explore.md",
+      "versionFingerprint": "327ae00a1ffab25570856d2cba60c87b34262560cca69aa92ca53b93dab68293",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "stable-runner-and-self-hosting-acceptance",
+      "runId": "20260819-109-propose",
+      "action": "propose",
+      "role": "author",
+      "semanticInputFingerprint": "bafe952be62e0112fe44430be3e34bf424721a50427fb485f0349204e61ce1d5"
+    },
+    "definition": {
+      "action": "propose",
+      "version": 1,
+      "role": "author",
+      "goalClass": "freeze-change-contract",
+      "mutationClass": "proposal-bundle-only",
+      "outputClass": "current-proposal-bundle-set",
+      "terminalContract": {
+        "kind": "artifact",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "ec0accf47d569b8f60d01e96573f6813f1f2b7d5f135a60e3fc07159f84e74c8"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/explore.md",
+        "versionFingerprint": "327ae00a1ffab25570856d2cba60c87b34262560cca69aa92ca53b93dab68293",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-101-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "a67b41fd19a39eb122f9be9e47c6070106e7ab577f70330a13e43043470d98e5"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260819-101-review-explore",
+      "verdict": "approved",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-101-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "a67b41fd19a39eb122f9be9e47c6070106e7ab577f70330a13e43043470d98e5"
+      },
+      "blockingAuthorities": [],
+      "findings": [],
+      "convergence": [
+        {
+          "findingId": "H1-RE-001",
+          "state": "resolved"
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [
+      {
+        "ref": "owner:b1a8666881c28f23e2f059a85a54e200cd9b79ee0d79842145672a6962149d9d",
+        "decision": "contract-reset",
+        "deliveryId": "20260817-01-delivery-execution-loop",
+        "changeId": "stable-runner-and-self-hosting-acceptance",
+        "scope": "H1/detached-verification-physical-execution-optimization",
+        "requiredOutcomes": [
+          "formal H1 detached tests-cli and tests-execution execute complete selected coverage through bounded physical groups under the existing 120s per-physical-command timeout, with no full-E2E skip",
+          "preserve one logical Verification authority, non-H1 behavior, Owner boundaries, and no timeout inflation or generic 04 verification platform"
+        ],
+        "sourceRef": "owner-input:2026-08-19T20:10+08:00:H1-detached-verification-physical-execution-optimization"
+      }
+    ],
+    "externalContextFingerprint": "4fc6ef0faae95dc30f7cae8dce697e35bc3e3702aead499870ee1cd3034ae9c5",
+    "requiredResultContract": {
+      "kind": "artifact",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": true,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

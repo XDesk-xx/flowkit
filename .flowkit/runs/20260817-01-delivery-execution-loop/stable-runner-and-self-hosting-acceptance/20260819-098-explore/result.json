@@ -1,0 +1,19 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "explore",
+    "executionStatus": "completed",
+    "summary": "H1 Explore 完成：A1→G1 representative prerequisite integration 28/28 PASS；stable dist/bin runner 已证明可 npm pack/install 到独立 consumer 并在无 target-repo node_modules 的 fresh checkout 中读取正式 facts；真实 03 Actual 必须继续延迟到 H1 completed+checkpointed 后 Owner Full Test PASS；真实 G1 archive 证明 4 个 canonical specs 会出现 redundant EOF blank lines，既有 F1 contract 已正确把 EOF-only normalization authority绑定到 same Owner checkpoint authorization，因此 H1 应纳入 archive→checkpoint hygiene self-hosting acceptance但不得在 archive 后自动 formatter；当前 stable CLI 尚无 public checkpoint handoff surface且不存在 H1-owned full self-hosting physical fixture/Verification target，二者是 H1 Proposal 应最小关闭的 acceptance gaps；不扩展 auto-loop、Registry、自动 Git/Owner authority或 04 Engineering Health。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/explore.md",
+        "versionFingerprint": "bf87f87df73d87c50f7b9c1d0cb0f50942ed3eed00ff77582a0f804c8e75f371",
+        "kind": "produced-artifact"
+      }
+    ]
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "4fd1d4ba2302656780ad08f2e73dff2a94f75cf652f00bd102e311eb1d9dc5ff"
+  }
+}

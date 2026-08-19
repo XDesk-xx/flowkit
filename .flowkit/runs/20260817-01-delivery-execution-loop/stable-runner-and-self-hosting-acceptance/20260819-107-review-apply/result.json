@@ -1,0 +1,50 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "Review 106 Apply：H1 implementation方向、checkpoint-handoff read-only boundary、installed-package fixture、mutation/Verification ownership与大部分工程检查均闭合；但 formal H1 Change Verification 的 tests-cli 默认执行路径只运行 fast installed-runner smoke，并通过 FLOWKIT_H1_FULL_E2E 条件跳过完整 future-Delivery-shaped self-hosting E2E。verification.md 因此记录 passed，但没有满足 H1 delta spec 要求的 formal physical acceptance。唯一 blocker H1-RA-001 要求让正式 selected physical route 实际执行完整 H1 self-hosting E2E，并在现有 Verification authority 下完成；不能以手工环境开关或单独非正式运行替代，也不能仅提高 timeout 掩盖 process-heavy execution。完整 scan 未发现第二个 blocker。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/verification.md",
+      "versionFingerprint": "9263b50dde9491e46da269937826c6c7318f28cc8ca2569d55a4a097514bdecd",
+      "kind": "verification-summary"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "e4f4447780d687779da26cea1fe5437a06788574829cb205ece5ef044f1ae5af"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "H1-RA-001",
+      "severity": "blocking",
+      "blockingAuthority": "author",
+      "title": "formal Change Verification 只执行 H1 fast smoke，完整 future-Delivery self-hosting E2E 被默认跳过",
+      "problem": "106 已实现 tests/integration/h1-stable-runner-and-self-hosting-acceptance.test.ts，但把真正的 future-Delivery-shaped完整 self-hosting acceptance 放在 FLOWKIT_H1_FULL_E2E=1 条件下：默认 formal tests-cli 路径中 runFullAcceptance=false，fast installed-runner smoke 执行，而完整 E2E subtest 使用 skip: !runFullAcceptance 被跳过。production executeVerificationSelection() 对 tests-cli 仅解析文件并执行 node --test，不为 H1 注入 FLOWKIT_H1_FULL_E2E；106 verification.md 记录的 tests-cli command 也没有该开关却标记 passed。Reviewer 独立执行正式默认 target得到 pass=1, skipped=1，明确显示完整 E2E # SKIP。这样 formal Verification 只证明 installed package/diagnostics smoke，不证明 H1 requirement要求的 Delivery Start→两条普通 Change/checkpoint→Delivery Full Test→Actual/Compare→Finalize→Delivery Final→fresh clone/resume 完整 self-hosting chain。现有 sentinel test同样不能补足这一点，因为 FLOWKIT_TEST_FORCE_H1_SELF_HOSTING_FAILURE 在 fast smoke 与full E2E两个subtest中都会触发；formal route能因 sentinel失败只证明文件被物理执行，不证明完整 E2E分支在正常 Verification中被执行。",
+      "contractRef": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-stable-runner-and-self-hosting-acceptance/spec.md Requirement 'H1 MUST prove one future-Delivery-shaped end-to-end self-hosting lifecycle'；specs/flowkit-change-verification-selection/spec.md Requirement 'H1 stable-runner/self-hosting mutation family MUST have closed physical Verification coverage' / Scenario 'H1 E2E target is physically executed'；tasks.md 4.2-4.4, 5.4",
+      "invariant": "H1 self-hosting acceptance 的核心证据必须属于 formal Change Verification authority。正式 selected Node physical route不仅要包含 H1 test文件，还必须在正常 Verification路径实际执行 stable-package/fresh-checkout + future-Delivery-shaped完整 self-hosting acceptance；手工环境变量运行、单独target运行或repository-wide非正式测试不能替代 formal physical closure。",
+      "requiredOutcome": "Revise-Apply 使 production formal H1 selected physical route 在正常 Verification执行中确定性地运行完整 future-Delivery-shaped self-hosting E2E，而不是默认 skip。修复可调整 H1 target默认行为或已有 tests-cli physical execution wiring，但必须保持现有 logical check/authority model，不新增第二 Verification authority。完成后重新生成正式 H1 Verification，verification.md 的 passed 必须来自真正执行完整 E2E的 physical route；同时保留一个能证明完整 E2E branch本身失败会传播到 formal tests-cli 的 sentinel/negative proof。若完整 E2E使现有120s physical execution无法完成，应优化/重构该 physical proof或形成有依据的最小执行设计，不得只通过扩大 timeout隐藏 process-heavy执行。",
+      "acceptance": [
+        "在未依赖人工设置 session-specific FLOWKIT_H1_FULL_E2E 开关的正式 H1 Change Verification路径中，selected tests-cli physical execution实际运行完整 future-Delivery-shaped H1 self-hosting E2E。",
+        "正式 physical E2E 覆盖 independent installed distribution、至少两条普通 Change/checkpoint、Owner Full Test、Actual/Compare、Finalize/Final handoff、Delivery Final Git boundary、fresh clone/resume，以及 installed built G1 single-action Adapter consumption。",
+        "正常 formal Verification日志/证据不能再出现完整 H1 E2E subtest # SKIP 后仍以 fast smoke代表 H1 physical closure。",
+        "negative/sentinel proof必须证明完整 E2E execution branch 的 failure 能使 formally selected logical check失败，而不仅是同文件内 fast smoke assertion失败。",
+        "重新形成的 verification.md 与106 Apply/revise-apply exact candidate绑定，status=passed 仅在上述 formal physical closure实际完成后成立。",
+        "不新增 Verification Registry/第二套 gate，不把 H1 Full Test/Finalize写成真实03 Delivery行为，也不通过单纯提高 timeout规避重型 execution问题。"
+      ],
+      "evidence": [
+        "tests/integration/h1-stable-runner-and-self-hosting-acceptance.test.ts:307 定义 runFullAcceptance = FLOWKIT_H1_FULL_E2E === '1'；line 346 的完整 future Delivery E2E使用 skip: !runFullAcceptance。",
+        "src/verification/change-selection/evidence.ts 的 tests-cli execution只使用 logicalNodeSelectors()解析文件并执行 node --import tsx --test；没有针对H1设置 FLOWKIT_H1_FULL_E2E。",
+        "106 verification.md Check 3 tests-cli command包含 H1 integration target，但没有 FLOWKIT_H1_FULL_E2E；该check仍记录 status=passed。",
+        "Reviewer独立按默认formal target运行：fast installed-runner smoke PASS；完整 future-Delivery E2E显示 # SKIP；tests=2, pass=1, skipped=1。",
+        "H1 Verification delta spec明确要求 formal selected target要 exercise stable-package/fresh-checkout AND future-Delivery-shaped self-hosting acceptance，而不是only unit/smoke。",
+        "Reviewer独立 typecheck/lint/build、checkpoint/verification focused regressions 38/38、OpenSpec current/all strict 22/22、git diff --check均PASS，real 03 Actual仍ABSENT；未发现第二个独立 blocker。"
+      ],
+      "impact": "如果106以当前 verification.md passed进入 archive/checkpoint，03会把H1视为已经正式证明 stable Runner能够管理下一条真实 Delivery，但formal Verification实际只证明了installed package diagnostics smoke。完整self-hosting链的成功仍依赖一个非正式环境开关，核心 acceptance会从formal authority中漏出，可能直到03 Full Test或04第一条真实self-hosted Delivery才暴露。",
+      "location": "tests/integration/h1-stable-runner-and-self-hosting-acceptance.test.ts lines 306-347；src/verification/change-selection/evidence.ts tests-cli executor；openspec/changes/stable-runner-and-self-hosting-acceptance/verification.md Check 3；H1 verification-selection delta spec"
+    }
+  ],
+  "reviewFindingConvergence": []
+}

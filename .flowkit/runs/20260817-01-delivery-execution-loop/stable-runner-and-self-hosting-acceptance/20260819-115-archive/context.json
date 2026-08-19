@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 4,
+  "runId": "20260819-115-archive",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "archive",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "semanticInputFingerprint": "45b9d2161e701638f491bac90aaec3ae4fab1c3bc71a77a1093be939c75d0667",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:b1a8666881c28f23e2f059a85a54e200cd9b79ee0d79842145672a6962149d9d",
+      "decision": "contract-reset",
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "stable-runner-and-self-hosting-acceptance",
+      "scope": "H1/detached-verification-physical-execution-optimization",
+      "requiredOutcomes": [
+        "formal H1 detached tests-cli and tests-execution execute complete selected coverage through bounded physical groups under the existing 120s per-physical-command timeout, with no full-E2E skip",
+        "preserve one logical Verification authority, non-H1 behavior, Owner boundaries, and no timeout inflation or generic 04 verification platform"
+      ],
+      "sourceRef": "owner-input:2026-08-19T20:10+08:00:H1-detached-verification-physical-execution-optimization"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-115-archive/",
+  "changeKey": "H1",
+  "changeId": "stable-runner-and-self-hosting-acceptance",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-114-review-apply/result.json",
+    "versionFingerprint": "821691dcff93ea70a6bb97c41c3a4a19a19fa657dfff937f9ee9bd83e892f026",
+    "kind": "run-result"
+  },
+  "archiveEntryOpenSpecProjection": {
+    "projectionVersion": 1,
+    "version": "1.7.0",
+    "changeId": "stable-runner-and-self-hosting-acceptance",
+    "changeRootLogical": "openspec/changes/stable-runner-and-self-hosting-acceptance",
+    "artifactPaths": {
+      "proposal": [
+        "openspec/changes/stable-runner-and-self-hosting-acceptance/proposal.md"
+      ],
+      "specs": [
+        "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+        "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-change-verification-selection/spec.md",
+        "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-stable-runner-and-self-hosting-acceptance/spec.md"
+      ],
+      "design": [
+        "openspec/changes/stable-runner-and-self-hosting-acceptance/design.md"
+      ],
+      "tasks": [
+        "openspec/changes/stable-runner-and-self-hosting-acceptance/tasks.md"
+      ]
+    }
+  },
+  "archiveMutationGuard": {
+    "state": "armed",
+    "surfaceVersion": "openspec-archive-mutation-v1",
+    "changeRoot": "openspec/changes/stable-runner-and-self-hosting-acceptance",
+    "canonicalSpecsRoot": "openspec/specs",
+    "archiveNamespaceRoot": "openspec/changes/archive",
+    "preArchiveGenerationFingerprint": "e1a993eb84fa1ddc6c4b3a40b485abc73101efdabf5c2ff70be7c3aa14d7ef6d",
+    "terminalObservation": {
+      "kind": "success",
+      "resultFingerprint": "4859982367ec653aa371aad6216c88c0ca431eb675bf82b944bc0e2eb4ec3299",
+      "normalized": {
+        "kind": "success",
+        "change": "stable-runner-and-self-hosting-acceptance",
+        "archivedAs": "2026-08-19-stable-runner-and-self-hosting-acceptance",
+        "path": "openspec/changes/archive/2026-08-19-stable-runner-and-self-hosting-acceptance",
+        "specsUpdated": true,
+        "totals": {
+          "added": 7,
+          "modified": 0,
+          "removed": 0,
+          "renamed": 0
+        }
+      }
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

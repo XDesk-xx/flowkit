@@ -1,0 +1,44 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "propose",
+    "executionStatus": "completed",
+    "summary": "冻结 H1 stable Runner fresh-consumer、future-Delivery-shaped self-hosting E2E、public read-only exact-plan checkpoint handoff 与 H1 formal Verification physical closure。保留 archive→Owner authorize-checkpoint→Executor mechanics、Full Test/Finalize no-Run、G1 single-action、real 03 Actual delayed 等既有 authority/时序；Design 提前冻结 11 个 apply/revise-apply mutation selectors。Proposal-time prospective selection 在 disposable Catalog 中得到 capabilityRelation=matched，覆盖 tests-cli/tests-execution/tests-openspec-runtime/tests-verification/typecheck + OpenSpec strict/archive-sync；未引入 Checkpoint Adapter/write-side Git、auto-loop、Registry、真实03 Actual或04 scope。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/design.md",
+        "versionFingerprint": "74dd2ee1c40d8c3d457f6d9700bc18c69b4ed6db156cfadb8814ba706552642a",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/proposal.md",
+        "versionFingerprint": "c766d2bc1604ffe873c78110dcc58b319508ade9e98f39b17c7c06b45487662e",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+        "versionFingerprint": "39a419add4a1cff37cf8d24eaaf4e2428f45653c2b900c76937229e5d3745927",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "534f2fa114cfceaac2952f92f054a90ac0cafe9c76049f337ce367eeba14ea30",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-stable-runner-and-self-hosting-acceptance/spec.md",
+        "versionFingerprint": "e49d63491f61655a6af29aeac9cf2ae717e1e399b0d5ab373b7a69344e82f01a",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/tasks.md",
+        "versionFingerprint": "a67ccc28249963b8d4249097660b6a0f45c7b87388f575ecb0caf2ede260f238",
+        "kind": "produced-artifact"
+      }
+    ]
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "0d1b55995c8324aac79e82fda6f618cac0136a00db719916ac448999f2a12256"
+  }
+}

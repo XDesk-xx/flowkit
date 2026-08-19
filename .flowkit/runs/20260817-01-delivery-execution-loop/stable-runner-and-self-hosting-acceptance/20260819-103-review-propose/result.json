@@ -1,0 +1,44 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "Review 102 Proposal：checkpoint-handoff 的 authority/scope 已正确冻结为 public read-only exact plan，EOF mutation/stage/commit 仍属于 exact authorize-checkpoint 后的 Executor mechanics；flowkitMutationScope 可机器派生 apply/revise-apply 各 11 selectors，OpenSpec strict 22/22 PASS。唯一 blocker 是 H1 stable Runner self-hosting E2E 的 execution boundary 仍允许绕回 source-workspace service imports：Design §2 明确允许除一个 G1 Adapter Action 外的其余步骤直接调用 existing public/service surfaces，而 stable-runner acceptance 只要求 installed package 执行 version/diagnostics/checkpoint-handoff。这样 H1 可以在 installed runner 仅覆盖少量入口的情况下，使用 source workspace src/services 完成 Change lifecycle、Owner/Review admission、Full Test、Architecture、Finalize 等核心闭环，仍宣称 self-hosting E2E PASS；这与 Explore Proof E 已确认的‘direct import internal service 只能证明源码组合，不足以证明 stable runner/operator surface’矛盾，也不足以证明下一条真实 Delivery 能由 fresh installed distribution 管理。Revise-Propose 需冻结 installed-distribution execution closure：凡 Flowkit 已有 public CLI/runner surface 的 lifecycle boundary，H1 E2E 必须从 independent consumer 的 installed distribution 执行；G1 single-action adapter 若无 CLI，可从 installed package 的 built dist boundary消费，但不得从 source workspace src/** 或 source node_modules 执行。source test harness只可负责 fixture/外部 authority输入/assertion 与 Executor Git mechanics，不能替代 Flowkit-owned boundary。无需新增 Agent Registry/auto-loop或新的 adapter lifecycle。完整 scan 未发现第二个 blocker。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "a6975e9ad2d924f5a67df328a0338df6b3a11bd40deb032d7a62f5587ad877f0"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "H1-RP-001",
+      "severity": "blocking",
+      "blockingAuthority": "author",
+      "title": "self-hosting E2E 允许 source-workspace service bypass，无法证明 fresh installed stable Runner 能管理完整 Delivery",
+      "problem": "102 同时冻结了 stable local package/fresh consumer proof 与 future-Delivery-shaped E2E，但两者没有形成同一个 execution closure。Design §1 只要求 independent installed runner 执行 --version、status/next/doctor/resume-context 及 H1 所需 public handoff surfaces；Design §2 随后允许至少一个 Change Action 通过 G1 runSingleActionAgent()，而‘其余 steps 可直接调用现有 public/service surfaces’。由于 test harness 位于 source workspace，这允许 Apply 直接 import src/services、src/policy 或其他 source-local implementation 完成 Delivery/Change/Full Test/Architecture/Finalize，再仅用 installed flowkit 做少量 smoke checks。这样的 fixture 即使最终从 Start 跑到 Final，也只证明 source services 可组合，不证明 fresh installed stable distribution 拥有下一条真实 Delivery 所需的完整操作面。更直接地，这与已批准 Explore Proof E 的结论冲突：直接 import internal service 只能证明源码组合，不足以证明 stable runner/operator surface。",
+      "contractRef": "03 Planned Changes v6 H1 stable-runner-and-self-hosting-acceptance；03 Delivery Execution Loop Implementation Reference v6 §16 Stable Runner / Bootstrap E2E / Self-hosting acceptance；Flowkit Explore Skill v2 §4.3 self-hosting/activation、§5 Evidence Boundary；approved H1 explore.md Proof B/E/G/J",
+      "invariant": "H1 的 acceptance subject 是 stable Runner + self-hosting，而不是 source-workspace service composition。fresh-consumer package proof与future-Delivery E2E必须在同一 installed-distribution boundary 上闭合；source workspace不得作为隐藏的第二 runtime。Flowkit-owned lifecycle authority仍由既有 Policy/CLI/services拥有，但 test execution必须从 installed package消费这些能力，不能因为测试方便绕回 src/**。",
+      "requiredOutcome": "Revise-Propose 冻结 installed-distribution execution closure。H1 E2E 建立 independent consumer/local package 后，所有已有 public stable CLI/runner surface 的 Flowkit-owned lifecycle步骤必须由该 installed distribution针对fresh disposable repository执行；不得从 source workspace src/**、source dist/** 或 source node_modules直接执行这些步骤。G1 single-action Agent Adapter 当前若没有 CLI surface，不要求新增 Checkpoint/Agent automation：可以从 independent consumer 中安装后的 built dist service boundary消费 runSingleActionAgent（或冻结一个等价 existing installed-package boundary），但同样不得引用 source workspace实现。外层 test harness可以生成外部角色输入/fixture bytes、断言结果，并作为 Executor执行授权后的机械 Git操作；它不能替代 Flowkit-owned prepare/admit/owner/full-test/finalize/resume等已有边界。",
+      "acceptance": [
+        "在 Design/Spec/Tasks 中明确 H1 self-hosting E2E 的 subject 是 independent consumer 中 installed Flowkit distribution，而不是 source workspace runtime。",
+        "凡现有 stable CLI 已提供的 Flowkit-owned boundary（例如 create/owner record/Change Action prepare-admit/archive/diagnostics/architecture render|compare/delivery full-test/finalize/final-handoff/checkpoint-handoff），E2E 必须通过 installed runner/public installed boundary消费；不得直接 import source workspace src/services 绕过该 surface。",
+        "G1 runSingleActionAgent 若无 CLI，不要求新增 Agent Registry/auto-loop；但至少一次 Adapter consumption 必须来自 installed package 的 built dist artifact/independent consumer，而不是 source workspace src/services。",
+        "source workspace node_modules 不得成为 disposable target或installed runner的运行依赖；source harness仅可用于构造测试、外部 authority输入/assertion和 Executor Git mechanics。",
+        "fresh clone/resume after Delivery Final 必须继续通过同一 installed distribution证明，不依赖聊天/session/source workspace state。",
+        "不扩 H1 为新的 generic public API platform、Provider/Agent Registry、auto-loop或Git automation。"
+      ],
+      "evidence": [
+        "102 design.md Decision 1 将 installed runner acceptance限定为 --version、status/next/doctor/resume-context 及 H1 E2E需要的 existing public handoff surfaces。",
+        "102 design.md Decision 2 明确写‘至少一个 Change Action必须通过 G1 runSingleActionAgent()（或 stable package可消费的等价 existing adapter boundary）执行；其余 steps可直接调用现有 public/service surfaces’，因此没有禁止 source-workspace service bypass。",
+        "Approved 100 explore.md Proof E 明确记录：self-hosting fixture如果直接 import internal service，只能证明源码组合，不足以证明 stable runner/operator surface。",
+        "Current package.json exposes stable bin flowkit=dist/bin/flowkit.js；current CLI already exposes Change Actions, owner record, architecture render/compare, delivery full-test/finalize/final-handoff and diagnostics, so most lifecycle boundaries can be proven through the installed distribution without new orchestration semantics。",
+        "Current runSingleActionAgent exists as src/services/g1-single-action-agent-adapter.ts and has no CLI command; this is a bounded installed-package consumption issue, not evidence that the rest of the E2E may use source services。"
+      ],
+      "impact": "If Apply follows the current Proposal literally, H1 can report a full future-Delivery E2E PASS while only smoke-testing the installed runner and executing most control-plane behavior from the source workspace. 03 could then be declared self-hosting-ready even though a fresh installed consumer has never been shown to drive the same lifecycle. This is exactly the kind of evidence-boundary mismatch H1 exists to eliminate and would defer a fundamental runner packaging/integration defect to the first real post-03 Delivery.",
+      "location": "openspec/changes/stable-runner-and-self-hosting-acceptance/design.md Decisions 1-2；specs/flowkit-stable-runner-and-self-hosting-acceptance/spec.md stable Runner + E2E requirements；tasks.md §§2-3"
+    }
+  ],
+  "reviewFindingConvergence": []
+}

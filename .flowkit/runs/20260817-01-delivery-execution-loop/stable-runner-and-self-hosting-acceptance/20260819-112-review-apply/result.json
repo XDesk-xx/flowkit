@@ -1,0 +1,50 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "Review 111 Apply after the approved H1 detached Verification fan-out reset: the implementation now executes the formal H1 self-hosting branch through deterministic bounded physical commands, retains the existing 120000ms per-command hard timeout, aggregates back into the original tests-cli/tests-execution logical evidence, preserves non-H1 behavior, and current formal Verification is passed. Reviewer independently confirmed the dangerous failure-routing/dedup regressions (4/4), current G1/B1 partition completeness against the source tests, typecheck/lint/build, OpenSpec current/all strict 22/22, exact verification fingerprint, and status/doctor. However the active tasks.md still has three required checkboxes 5.4, 5.5 and 6.5 unchecked even though those outcomes are now claimed complete. Because Flowkit Policy explicitly requires canonical Tasks completion after review-apply approval before archive, approving 111 as-is would deterministically strand the Change at tasks-incomplete. One author blocker H1-RA-002 requires revise-apply to project those completed outcomes into canonical tasks.md and then publish a fresh exact-candidate formal Verification before returning to review-apply. No second implementation blocker found.",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/verification.md",
+      "versionFingerprint": "05c138f9c92290eacabc402bcd9438efeeea7f0617f045aacfb476fb52f08efa",
+      "kind": "verification-summary"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "6659bba8d61960f9f4f6d5fc9ed472957ecc52063655348c8420afa6fb8189cf"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "H1-RA-002",
+      "severity": "blocking",
+      "blockingAuthority": "author",
+      "title": "formal Verification 已 passed，但 canonical tasks.md 仍有 3 个 required task 未完成，Review-Apply Approved 后会被 tasks-incomplete 阻塞",
+      "problem": "111 已形成 current formal Verification status=passed，且 111 result terminalBinding 精确绑定 verification.md fingerprint 05c138f9c...；但 openspec/changes/stable-runner-and-self-hosting-acceptance/tasks.md 仍将 5.4、5.5、6.5 保持为 '- [ ]'。这三个 task 分别要求完成 formal H1 Change Verification、只在 Verification authority satisfied 后 hand off review-apply，以及在 Owner Reset 后重新运行 optimized detached production Verification 并要求 tests-cli/tests-execution PASS。111 当前证据已经声称这些 outcomes 成立，却没有把它们投影回 canonical Tasks fact。Flowkit formal-fact-reader 对所有 '- [ ]' required task 投影 changeTasksComplete=false；Policy 在 review-apply approved + Verification passed 后明确要求 Tasks complete 才能进入 authorize-archive，否则 next=blocked(tasks-incomplete)。因此如果 Reviewer 现在 Approved，H1 会在下一 boundary 确定性卡死，且 Reviewer 自身不能修改 Author-owned tasks.md。",
+      "contractRef": "openspec/changes/stable-runner-and-self-hosting-acceptance/tasks.md 5.4, 5.5, 6.5；src/facts/formal-fact-reader.ts readActiveChangeTasksCompletion()/REQUIRED_TASK_LINE；src/policy/next.ts decideApplyStage() 的 approved + Verification satisfied + Tasks complete archive gate",
+      "invariant": "Apply/revise-apply 的 canonical tasks.md 必须真实反映 required implementation/Verification work的完成状态；Reviewer 不得批准一个已知会在 review approval 后因 tasks-incomplete 而无法进入 archive authority boundary 的 candidate。Tasks bytes 是 exact candidate 的一部分，因此修正 checkbox 后必须由新的 revise-apply producer在修正后的 exact candidate 上重新形成正式 Verification，而不能复用111对旧 tasks bytes 的 passed publication。",
+      "requiredOutcome": "执行一个窄范围 revise-apply：把 5.4、5.5、6.5 在其要求确已满足的前提下标记为 [x]，不要借此改动已批准的 fan-out architecture；随后在包含这些 task-byte 修正的 exact candidate 上重新执行 formal H1 Change Verification，使 tests-cli/tests-execution及其它 selected checks再次正式 PASS，并由新的 revise-apply terminalBinding绑定新的 current verification.md。保留111及更早 Verification publication/history；重新进入 review-apply 前确认 canonical Tasks completion=true。",
+      "acceptance": [
+        "tasks.md 中 5.4、5.5、6.5 不再是 required unchecked checkbox，且没有其它 required '- [ ]' task。",
+        "修正 tasks bytes 后，不复用111旧 candidate 的 passed Verification；新的 revise-apply 对修正后的 exact candidate 重新形成 current formal Verification，并且 status=passed。",
+        "新的 formal Verification 继续执行109/110批准的 deterministic bounded H1 tests-cli/tests-execution fan-out；每个 physical command仍使用现有120s hard timeout，完整H1 26 phases不得skip。",
+        "Reviewer/Author 不执行真实03 Delivery Full Test、Actual/Compare、Finalize或Delivery Final；这些仍属于H1 archive/checkpoint之后的Delivery boundary。",
+        "修正后 status/next 能合法回到 review-apply；review-apply若 Approved，则 Tasks completion不会再造成 tasks-incomplete archive blocker。"
+      ],
+      "evidence": [
+        "Reviewer直接读取当前 tasks.md：required unchecked lines 为 5.4、5.5、6.5，共3项。",
+        "src/facts/formal-fact-reader.ts REQUIRED_TASK_LINE=/^\\s*-\\s+\\[([ xX])\\]/gm，任一 [ ] 会使 changeTasksComplete=false。",
+        "src/policy/next.ts decideApplyStage()：review-apply verdict=approved 且 Verification satisfied 后，若 areTasksComplete(snapshot)=false，返回 blocked tasks-incomplete；对应 policy unit regression 也明确覆盖该情形。",
+        "111 current verification.md SHA256=05c138f9c92290eacabc402bcd9438efeeea7f0617f045aacfb476fb52f08efa，与111 terminalBinding完全一致；status=passed。",
+        "Reviewer独立运行H1 Verification routing/dedup sentinel regressions4/4 PASS：formal H1 branch failure传播、H1-only installed smoke dedup、non-H1旧行为保留、B1 bounded worker failure传播。",
+        "Reviewer核对当前source test inventory：G1 Change 7/7 cases、G1 Adapter 3/3 cases、B1除preparation外7/7 suites，以及B1 preparation 22/22 cases均被111 fan-out计划覆盖。",
+        "Reviewer独立 typecheck/lint/build PASS；OpenSpec current strict PASS、all strict 22/22；git diff --check PASS；status显示verification=passed,next=review-apply，doctor=ok/0。"
+      ],
+      "impact": "如果111直接Approved，当前review本身可以完成，但随后Policy在archive boundary读取canonical tasks.md时会得到changeTasksComplete=false并阻塞为tasks-incomplete。由于Reviewer不能改Author-owned tasks，这会把一个已经成功完成核心H1 physical proof的Change人为卡在形式状态上，并需要额外Owner reset或不合法mutation才能继续。现在通过一次窄revise-apply修正并重新绑定exact-candidate Verification即可正常收口。",
+      "location": "openspec/changes/stable-runner-and-self-hosting-acceptance/tasks.md lines 38-39,48；src/facts/formal-fact-reader.ts readActiveChangeTasksCompletion；src/policy/next.ts decideApplyStage archive gate"
+    }
+  ],
+  "reviewFindingConvergence": []
+}

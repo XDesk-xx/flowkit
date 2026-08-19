@@ -1,0 +1,18 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "apply",
+    "executionStatus": "completed",
+    "summary": "Implemented the approved H1 detached Verification physical-execution optimization: tests-cli and tests-execution retain their existing logical authorities while H1 selection executes complete coverage through deterministic bounded physical workers under the existing 120s per-command timeout; H1-only installed-smoke dedup is covered by the stronger installed-package full self-hosting route and non-H1 behavior remains unchanged."
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "58d514365c04b2eb4082203167bc3845cfbbebe93dbb1415a2fe4269e231d394",
+    "currentVerification": {
+      "logicalRef": "openspec/changes/stable-runner-and-self-hosting-acceptance/verification.md",
+      "versionFingerprint": "05c138f9c92290eacabc402bcd9438efeeea7f0617f045aacfb476fb52f08efa",
+      "selectionFingerprint": "aa765cd20f4aa0d04441ff9e3c9174291338b7beb328a1899331e945c5223eee",
+      "status": "passed"
+    }
+  }
+}

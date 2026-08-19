@@ -1,0 +1,389 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260819-106-apply",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "apply",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "semanticInputFingerprint": "243e93dfea813e9663676736747c3a7d7a8292daebe717ad1405b53c1d451005",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-106-apply/",
+  "changeKey": "H1",
+  "changeId": "stable-runner-and-self-hosting-acceptance",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-105-review-propose/result.json",
+    "versionFingerprint": "b4f110614b7c052cd6264e7f552f61399b4fa21c35f49cb97fcfbecc08238734",
+    "kind": "run-result"
+  },
+  "canonicalBase": "bbb9eff528f1ccd9624e2d20454ecaa2f0b4405c",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-105-review-propose/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "b4f110614b7c052cd6264e7f552f61399b4fa21c35f49cb97fcfbecc08238734"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "ec0accf47d569b8f60d01e96573f6813f1f2b7d5f135a60e3fc07159f84e74c8"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/design.md",
+      "versionFingerprint": "25a4db303ac2ca3566d89b72bdb10ce2111ecd2b94fa5ef5e7804170b803a4ce",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/proposal.md",
+      "versionFingerprint": "c766d2bc1604ffe873c78110dcc58b319508ade9e98f39b17c7c06b45487662e",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+      "versionFingerprint": "39a419add4a1cff37cf8d24eaaf4e2428f45653c2b900c76937229e5d3745927",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-change-verification-selection/spec.md",
+      "versionFingerprint": "534f2fa114cfceaac2952f92f054a90ac0cafe9c76049f337ce367eeba14ea30",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-stable-runner-and-self-hosting-acceptance/spec.md",
+      "versionFingerprint": "4a188cad3b4345aebe5d4395e56ca8677b9c454245d00f40cddfe95fa8102cde",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/tasks.md",
+      "versionFingerprint": "2bc97467ad2de583ad8258dc038363751bc39cd83ff6df5325d3e1f20bf6b2ad",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "stable-runner-and-self-hosting-acceptance",
+      "runId": "20260819-106-apply",
+      "action": "apply",
+      "role": "author",
+      "semanticInputFingerprint": "243e93dfea813e9663676736747c3a7d7a8292daebe717ad1405b53c1d451005"
+    },
+    "definition": {
+      "action": "apply",
+      "version": 1,
+      "role": "author",
+      "goalClass": "implement-approved-contract",
+      "mutationClass": "approved-implementation-and-verification",
+      "outputClass": "implementation-candidate-and-authority-files",
+      "terminalContract": {
+        "kind": "implementation",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "ec0accf47d569b8f60d01e96573f6813f1f2b7d5f135a60e3fc07159f84e74c8"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/design.md",
+        "versionFingerprint": "25a4db303ac2ca3566d89b72bdb10ce2111ecd2b94fa5ef5e7804170b803a4ce",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/proposal.md",
+        "versionFingerprint": "c766d2bc1604ffe873c78110dcc58b319508ade9e98f39b17c7c06b45487662e",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+        "versionFingerprint": "39a419add4a1cff37cf8d24eaaf4e2428f45653c2b900c76937229e5d3745927",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "534f2fa114cfceaac2952f92f054a90ac0cafe9c76049f337ce367eeba14ea30",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-stable-runner-and-self-hosting-acceptance/spec.md",
+        "versionFingerprint": "4a188cad3b4345aebe5d4395e56ca8677b9c454245d00f40cddfe95fa8102cde",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/tasks.md",
+        "versionFingerprint": "2bc97467ad2de583ad8258dc038363751bc39cd83ff6df5325d3e1f20bf6b2ad",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-105-review-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "b4f110614b7c052cd6264e7f552f61399b4fa21c35f49cb97fcfbecc08238734"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260819-105-review-propose",
+      "verdict": "approved",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-105-review-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "b4f110614b7c052cd6264e7f552f61399b4fa21c35f49cb97fcfbecc08238734"
+      },
+      "blockingAuthorities": [],
+      "findings": [],
+      "convergence": [
+        {
+          "findingId": "H1-RP-001",
+          "state": "resolved"
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [
+      {
+        "ref": "owner:f0f16b99ac5bb9288ec82107924ba3a92ae5e9a80652141b095fdaa7be6a3c1b",
+        "decision": "authorize-apply",
+        "deliveryId": "20260817-01-delivery-execution-loop",
+        "changeId": "stable-runner-and-self-hosting-acceptance",
+        "sourceRef": "owner-input:chat:authorize-apply:H1"
+      }
+    ],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "d717daca793fbbbce44321b743462acc8c924659eceff2f6f92a589893412951",
+    "requiredResultContract": {
+      "kind": "implementation",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    },
+    "compactEntryWorkspaceIdentity": {
+      "canonicalBase": "bbb9eff528f1ccd9624e2d20454ecaa2f0b4405c",
+      "workspaceFingerprint": "2585cd89ed183ad3549b2a8b8f7098526250e6927c8e2f5897ec89237fe86fc2",
+      "entries": [
+        {
+          "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/.openspec.yaml",
+          "state": "untracked",
+          "contentFingerprint": "ec0accf47d569b8f60d01e96573f6813f1f2b7d5f135a60e3fc07159f84e74c8"
+        },
+        {
+          "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/design.md",
+          "state": "untracked",
+          "contentFingerprint": "25a4db303ac2ca3566d89b72bdb10ce2111ecd2b94fa5ef5e7804170b803a4ce"
+        },
+        {
+          "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/explore.md",
+          "state": "untracked",
+          "contentFingerprint": "327ae00a1ffab25570856d2cba60c87b34262560cca69aa92ca53b93dab68293"
+        },
+        {
+          "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/proposal.md",
+          "state": "untracked",
+          "contentFingerprint": "c766d2bc1604ffe873c78110dcc58b319508ade9e98f39b17c7c06b45487662e"
+        },
+        {
+          "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "39a419add4a1cff37cf8d24eaaf4e2428f45653c2b900c76937229e5d3745927"
+        },
+        {
+          "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-change-verification-selection/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "534f2fa114cfceaac2952f92f054a90ac0cafe9c76049f337ce367eeba14ea30"
+        },
+        {
+          "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-stable-runner-and-self-hosting-acceptance/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "4a188cad3b4345aebe5d4395e56ca8677b9c454245d00f40cddfe95fa8102cde"
+        },
+        {
+          "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/tasks.md",
+          "state": "untracked",
+          "contentFingerprint": "2bc97467ad2de583ad8258dc038363751bc39cd83ff6df5325d3e1f20bf6b2ad"
+        },
+        {
+          "path": "openspec/delivery-groups/20260817-01-delivery-execution-loop.yaml",
+          "state": "modified",
+          "contentFingerprint": "aca32cb723697abc2f483e29b163df816f566872570e6d6e66b190a82c69b2e9"
+        }
+      ]
+    },
+    "mutationDeclaration": {
+      "schemaVersion": 1,
+      "action": "apply",
+      "designRef": {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/design.md",
+        "kind": "produced-artifact",
+        "versionFingerprint": "25a4db303ac2ca3566d89b72bdb10ce2111ecd2b94fa5ef5e7804170b803a4ce"
+      },
+      "selectors": [
+        {
+          "kind": "exact",
+          "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/tasks.md"
+        },
+        {
+          "kind": "exact",
+          "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/verification.md"
+        },
+        {
+          "kind": "exact",
+          "path": "src/cli/main.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/services/f1-checkpoint-boundary-service.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/verification/change-selection/evidence.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/verification/change-selection/module-map.ts"
+        },
+        {
+          "kind": "prefix",
+          "path": "tests/fixtures/h1-stable-runner-and-self-hosting-acceptance"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/integration/h1-stable-runner-and-self-hosting-acceptance.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/services/f1-checkpoint-boundary-service.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/verification/change-selection/evidence.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/verification/change-selection/module-map.test.ts"
+        }
+      ]
+    }
+  },
+  "compactEntryWorkspaceIdentity": {
+    "canonicalBase": "bbb9eff528f1ccd9624e2d20454ecaa2f0b4405c",
+    "workspaceFingerprint": "2585cd89ed183ad3549b2a8b8f7098526250e6927c8e2f5897ec89237fe86fc2",
+    "entries": [
+      {
+        "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/.openspec.yaml",
+        "state": "untracked",
+        "contentFingerprint": "ec0accf47d569b8f60d01e96573f6813f1f2b7d5f135a60e3fc07159f84e74c8"
+      },
+      {
+        "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/design.md",
+        "state": "untracked",
+        "contentFingerprint": "25a4db303ac2ca3566d89b72bdb10ce2111ecd2b94fa5ef5e7804170b803a4ce"
+      },
+      {
+        "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/explore.md",
+        "state": "untracked",
+        "contentFingerprint": "327ae00a1ffab25570856d2cba60c87b34262560cca69aa92ca53b93dab68293"
+      },
+      {
+        "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/proposal.md",
+        "state": "untracked",
+        "contentFingerprint": "c766d2bc1604ffe873c78110dcc58b319508ade9e98f39b17c7c06b45487662e"
+      },
+      {
+        "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "39a419add4a1cff37cf8d24eaaf4e2428f45653c2b900c76937229e5d3745927"
+      },
+      {
+        "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-change-verification-selection/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "534f2fa114cfceaac2952f92f054a90ac0cafe9c76049f337ce367eeba14ea30"
+      },
+      {
+        "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-stable-runner-and-self-hosting-acceptance/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "4a188cad3b4345aebe5d4395e56ca8677b9c454245d00f40cddfe95fa8102cde"
+      },
+      {
+        "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/tasks.md",
+        "state": "untracked",
+        "contentFingerprint": "2bc97467ad2de583ad8258dc038363751bc39cd83ff6df5325d3e1f20bf6b2ad"
+      },
+      {
+        "path": "openspec/delivery-groups/20260817-01-delivery-execution-loop.yaml",
+        "state": "modified",
+        "contentFingerprint": "aca32cb723697abc2f483e29b163df816f566872570e6d6e66b190a82c69b2e9"
+      }
+    ]
+  },
+  "mutationDeclaration": {
+    "schemaVersion": 1,
+    "action": "apply",
+    "designRef": {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/design.md",
+      "kind": "produced-artifact",
+      "versionFingerprint": "25a4db303ac2ca3566d89b72bdb10ce2111ecd2b94fa5ef5e7804170b803a4ce"
+    },
+    "selectors": [
+      {
+        "kind": "exact",
+        "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/tasks.md"
+      },
+      {
+        "kind": "exact",
+        "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/verification.md"
+      },
+      {
+        "kind": "exact",
+        "path": "src/cli/main.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/services/f1-checkpoint-boundary-service.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/verification/change-selection/evidence.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/verification/change-selection/module-map.ts"
+      },
+      {
+        "kind": "prefix",
+        "path": "tests/fixtures/h1-stable-runner-and-self-hosting-acceptance"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/integration/h1-stable-runner-and-self-hosting-acceptance.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/services/f1-checkpoint-boundary-service.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/verification/change-selection/evidence.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/verification/change-selection/module-map.test.ts"
+      }
+    ]
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": true,
+    "mayWriteTestCode": true,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

@@ -1,0 +1,611 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260819-113-revise-apply",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "revise-apply",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "d6541f453528094553b1e29bc16d5812370ea7cbe36bae313917338e0114963b",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:b1a8666881c28f23e2f059a85a54e200cd9b79ee0d79842145672a6962149d9d",
+      "decision": "contract-reset",
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "stable-runner-and-self-hosting-acceptance",
+      "scope": "H1/detached-verification-physical-execution-optimization",
+      "requiredOutcomes": [
+        "formal H1 detached tests-cli and tests-execution execute complete selected coverage through bounded physical groups under the existing 120s per-physical-command timeout, with no full-E2E skip",
+        "preserve one logical Verification authority, non-H1 behavior, Owner boundaries, and no timeout inflation or generic 04 verification platform"
+      ],
+      "sourceRef": "owner-input:2026-08-19T20:10+08:00:H1-detached-verification-physical-execution-optimization"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-113-revise-apply/",
+  "changeKey": "H1",
+  "changeId": "stable-runner-and-self-hosting-acceptance",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-112-review-apply/result.json",
+    "versionFingerprint": "496f1ef313c1c82f696377dec4c5f3f6580ced4a684c1aeeda98e87b83227c08",
+    "kind": "run-result"
+  },
+  "sourceReviewRun": "20260819-112-review-apply",
+  "sourceReviewVerdict": "changes-requested",
+  "canonicalBase": "bbb9eff528f1ccd9624e2d20454ecaa2f0b4405c",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-112-review-apply/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "496f1ef313c1c82f696377dec4c5f3f6580ced4a684c1aeeda98e87b83227c08"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "ec0accf47d569b8f60d01e96573f6813f1f2b7d5f135a60e3fc07159f84e74c8"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/design.md",
+      "versionFingerprint": "2927c0400b00e89c2716bc32cb556cd8aa9706ffc8d1d071237cf422e1d50f4f",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/proposal.md",
+      "versionFingerprint": "d65ec406cf553df060a1d0bc812de46927bce888e6c6ab0c87878b831c540a04",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+      "versionFingerprint": "39a419add4a1cff37cf8d24eaaf4e2428f45653c2b900c76937229e5d3745927",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-change-verification-selection/spec.md",
+      "versionFingerprint": "aedbb88f72b2f5a3e0edd1d1fe1fb09974e638e0e626d0787727afd831b7aef8",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-stable-runner-and-self-hosting-acceptance/spec.md",
+      "versionFingerprint": "4a188cad3b4345aebe5d4395e56ca8677b9c454245d00f40cddfe95fa8102cde",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/tasks.md",
+      "versionFingerprint": "2e0ce8cbc7c79992b6285d254426b4f8fcb7ce4f8ff546305d95ee2e80352208",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "stable-runner-and-self-hosting-acceptance",
+      "runId": "20260819-113-revise-apply",
+      "action": "revise-apply",
+      "role": "author",
+      "semanticInputFingerprint": "d6541f453528094553b1e29bc16d5812370ea7cbe36bae313917338e0114963b"
+    },
+    "definition": {
+      "action": "revise-apply",
+      "version": 1,
+      "role": "author",
+      "goalClass": "close-apply-author-findings",
+      "mutationClass": "implementation-and-verification-revision",
+      "outputClass": "revised-implementation-candidate",
+      "terminalContract": {
+        "kind": "implementation",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": true,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "ec0accf47d569b8f60d01e96573f6813f1f2b7d5f135a60e3fc07159f84e74c8"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/design.md",
+        "versionFingerprint": "2927c0400b00e89c2716bc32cb556cd8aa9706ffc8d1d071237cf422e1d50f4f",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/proposal.md",
+        "versionFingerprint": "d65ec406cf553df060a1d0bc812de46927bce888e6c6ab0c87878b831c540a04",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+        "versionFingerprint": "39a419add4a1cff37cf8d24eaaf4e2428f45653c2b900c76937229e5d3745927",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "aedbb88f72b2f5a3e0edd1d1fe1fb09974e638e0e626d0787727afd831b7aef8",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-stable-runner-and-self-hosting-acceptance/spec.md",
+        "versionFingerprint": "4a188cad3b4345aebe5d4395e56ca8677b9c454245d00f40cddfe95fa8102cde",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/tasks.md",
+        "versionFingerprint": "2e0ce8cbc7c79992b6285d254426b4f8fcb7ce4f8ff546305d95ee2e80352208",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-112-review-apply/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "496f1ef313c1c82f696377dec4c5f3f6580ced4a684c1aeeda98e87b83227c08"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260819-112-review-apply",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-112-review-apply/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "496f1ef313c1c82f696377dec4c5f3f6580ced4a684c1aeeda98e87b83227c08"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "H1-RA-002",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "formal Verification 已 passed，但 canonical tasks.md 仍有 3 个 required task 未完成，Review-Apply Approved 后会被 tasks-incomplete 阻塞",
+          "problem": "111 已形成 current formal Verification status=passed，且 111 result terminalBinding 精确绑定 verification.md fingerprint 05c138f9c...；但 openspec/changes/stable-runner-and-self-hosting-acceptance/tasks.md 仍将 5.4、5.5、6.5 保持为 '- [ ]'。这三个 task 分别要求完成 formal H1 Change Verification、只在 Verification authority satisfied 后 hand off review-apply，以及在 Owner Reset 后重新运行 optimized detached production Verification 并要求 tests-cli/tests-execution PASS。111 当前证据已经声称这些 outcomes 成立，却没有把它们投影回 canonical Tasks fact。Flowkit formal-fact-reader 对所有 '- [ ]' required task 投影 changeTasksComplete=false；Policy 在 review-apply approved + Verification passed 后明确要求 Tasks complete 才能进入 authorize-archive，否则 next=blocked(tasks-incomplete)。因此如果 Reviewer 现在 Approved，H1 会在下一 boundary 确定性卡死，且 Reviewer 自身不能修改 Author-owned tasks.md。",
+          "contractRef": "openspec/changes/stable-runner-and-self-hosting-acceptance/tasks.md 5.4, 5.5, 6.5；src/facts/formal-fact-reader.ts readActiveChangeTasksCompletion()/REQUIRED_TASK_LINE；src/policy/next.ts decideApplyStage() 的 approved + Verification satisfied + Tasks complete archive gate",
+          "invariant": "Apply/revise-apply 的 canonical tasks.md 必须真实反映 required implementation/Verification work的完成状态；Reviewer 不得批准一个已知会在 review approval 后因 tasks-incomplete 而无法进入 archive authority boundary 的 candidate。Tasks bytes 是 exact candidate 的一部分，因此修正 checkbox 后必须由新的 revise-apply producer在修正后的 exact candidate 上重新形成正式 Verification，而不能复用111对旧 tasks bytes 的 passed publication。",
+          "requiredOutcome": "执行一个窄范围 revise-apply：把 5.4、5.5、6.5 在其要求确已满足的前提下标记为 [x]，不要借此改动已批准的 fan-out architecture；随后在包含这些 task-byte 修正的 exact candidate 上重新执行 formal H1 Change Verification，使 tests-cli/tests-execution及其它 selected checks再次正式 PASS，并由新的 revise-apply terminalBinding绑定新的 current verification.md。保留111及更早 Verification publication/history；重新进入 review-apply 前确认 canonical Tasks completion=true。",
+          "acceptance": [
+            "tasks.md 中 5.4、5.5、6.5 不再是 required unchecked checkbox，且没有其它 required '- [ ]' task。",
+            "修正 tasks bytes 后，不复用111旧 candidate 的 passed Verification；新的 revise-apply 对修正后的 exact candidate 重新形成 current formal Verification，并且 status=passed。",
+            "新的 formal Verification 继续执行109/110批准的 deterministic bounded H1 tests-cli/tests-execution fan-out；每个 physical command仍使用现有120s hard timeout，完整H1 26 phases不得skip。",
+            "Reviewer/Author 不执行真实03 Delivery Full Test、Actual/Compare、Finalize或Delivery Final；这些仍属于H1 archive/checkpoint之后的Delivery boundary。",
+            "修正后 status/next 能合法回到 review-apply；review-apply若 Approved，则 Tasks completion不会再造成 tasks-incomplete archive blocker。"
+          ]
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [
+      {
+        "ref": "owner:b1a8666881c28f23e2f059a85a54e200cd9b79ee0d79842145672a6962149d9d",
+        "decision": "contract-reset",
+        "deliveryId": "20260817-01-delivery-execution-loop",
+        "changeId": "stable-runner-and-self-hosting-acceptance",
+        "scope": "H1/detached-verification-physical-execution-optimization",
+        "requiredOutcomes": [
+          "formal H1 detached tests-cli and tests-execution execute complete selected coverage through bounded physical groups under the existing 120s per-physical-command timeout, with no full-E2E skip",
+          "preserve one logical Verification authority, non-H1 behavior, Owner boundaries, and no timeout inflation or generic 04 verification platform"
+        ],
+        "sourceRef": "owner-input:2026-08-19T20:10+08:00:H1-detached-verification-physical-execution-optimization"
+      }
+    ],
+    "verificationView": {
+      "status": "unavailable",
+      "resultRef": {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/verification.md",
+        "versionFingerprint": "05c138f9c92290eacabc402bcd9438efeeea7f0617f045aacfb476fb52f08efa",
+        "kind": "verification-summary"
+      }
+    },
+    "externalContextFingerprint": "d717daca793fbbbce44321b743462acc8c924659eceff2f6f92a589893412951",
+    "requiredResultContract": {
+      "kind": "implementation",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": true,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    },
+    "compactEntryWorkspaceIdentity": {
+      "canonicalBase": "bbb9eff528f1ccd9624e2d20454ecaa2f0b4405c",
+      "workspaceFingerprint": "c54fa6e07ac214342ed9cae3eaa2f6b4bb5c57ff7c3af0f3427fc3132997f67b",
+      "entries": [
+        {
+          "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/.openspec.yaml",
+          "state": "untracked",
+          "contentFingerprint": "ec0accf47d569b8f60d01e96573f6813f1f2b7d5f135a60e3fc07159f84e74c8"
+        },
+        {
+          "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/design.md",
+          "state": "untracked",
+          "contentFingerprint": "2927c0400b00e89c2716bc32cb556cd8aa9706ffc8d1d071237cf422e1d50f4f"
+        },
+        {
+          "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/explore.md",
+          "state": "untracked",
+          "contentFingerprint": "327ae00a1ffab25570856d2cba60c87b34262560cca69aa92ca53b93dab68293"
+        },
+        {
+          "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/proposal.md",
+          "state": "untracked",
+          "contentFingerprint": "d65ec406cf553df060a1d0bc812de46927bce888e6c6ab0c87878b831c540a04"
+        },
+        {
+          "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "39a419add4a1cff37cf8d24eaaf4e2428f45653c2b900c76937229e5d3745927"
+        },
+        {
+          "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-change-verification-selection/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "aedbb88f72b2f5a3e0edd1d1fe1fb09974e638e0e626d0787727afd831b7aef8"
+        },
+        {
+          "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-stable-runner-and-self-hosting-acceptance/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "4a188cad3b4345aebe5d4395e56ca8677b9c454245d00f40cddfe95fa8102cde"
+        },
+        {
+          "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/tasks.md",
+          "state": "untracked",
+          "contentFingerprint": "f0c9f9dcb826f7b2543470906f730775c5bf7e4e6cd0d79c1b8edd29939fcbc0"
+        },
+        {
+          "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/verification-history/33eebfb52f03e5ab4e02223d746b1eb12b89b83e356ea2faeebf072b241c2878.md",
+          "state": "untracked",
+          "contentFingerprint": "33eebfb52f03e5ab4e02223d746b1eb12b89b83e356ea2faeebf072b241c2878"
+        },
+        {
+          "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/verification-history/50aa6b091bb1fbfc174778c24aa8e2a3ba0de65f21071d4d4704832df1b26516.md",
+          "state": "untracked",
+          "contentFingerprint": "50aa6b091bb1fbfc174778c24aa8e2a3ba0de65f21071d4d4704832df1b26516"
+        },
+        {
+          "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/verification.md",
+          "state": "untracked",
+          "contentFingerprint": "05c138f9c92290eacabc402bcd9438efeeea7f0617f045aacfb476fb52f08efa"
+        },
+        {
+          "path": "openspec/delivery-groups/20260817-01-delivery-execution-loop.yaml",
+          "state": "modified",
+          "contentFingerprint": "3d3ec42b671856865e3341db00aca8739ff6f671b1ea86c1377b59bfa15c8526"
+        },
+        {
+          "path": "src/cli/main.ts",
+          "state": "modified",
+          "contentFingerprint": "48b9e4251a1831d547d5a3c8b7117635fbca33c92296b9686f48cc085204ca69"
+        },
+        {
+          "path": "src/services/f1-checkpoint-boundary-service.ts",
+          "state": "modified",
+          "contentFingerprint": "0c4c5229c45f4d95816340540abac9765e27aa196c43478e5784e1a84dd3a42e"
+        },
+        {
+          "path": "src/verification/change-selection/evidence.ts",
+          "state": "modified",
+          "contentFingerprint": "dfd0356112602050e2734b2143c17ab2f182c3cd8fb17266ea54b1d49655e0d1"
+        },
+        {
+          "path": "src/verification/change-selection/module-map.ts",
+          "state": "modified",
+          "contentFingerprint": "586838a11d28d2e2322873057fb73e2f085e1a6ab5e53773fd4eec143da44286"
+        },
+        {
+          "path": "tests/fixtures/h1-stable-runner-and-self-hosting-acceptance/architecture-template.json",
+          "state": "untracked",
+          "contentFingerprint": "3cb3ee4a2dd5801c9d6f2de29bb0595026c6797b20d8142e9e99d4ecf79b2cbb"
+        },
+        {
+          "path": "tests/fixtures/h1-stable-runner-and-self-hosting-acceptance/bootstrap-specs/flowkit-openspec-1-7-thin-integration/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "d3beaa589004e916f4e225feca5dcd75264c67f327f1488525395e7abc0bb53e"
+        },
+        {
+          "path": "tests/fixtures/h1-stable-runner-and-self-hosting-acceptance/change-template/design.md",
+          "state": "untracked",
+          "contentFingerprint": "c9b2cc69b61264ae86fcbaaddbe7226d0255fa78ee5605f1864be6198979c7d9"
+        },
+        {
+          "path": "tests/fixtures/h1-stable-runner-and-self-hosting-acceptance/change-template/explore.md",
+          "state": "untracked",
+          "contentFingerprint": "f899808a0ba2003249fca794f4952412ce982ebd1ac787f3c8d010c02b0d2215"
+        },
+        {
+          "path": "tests/fixtures/h1-stable-runner-and-self-hosting-acceptance/change-template/proposal.md",
+          "state": "untracked",
+          "contentFingerprint": "171f40efc2ed7d9abc15cef5b9e3a72b2e39fa2e4f6fa04fc342286a23985b8d"
+        },
+        {
+          "path": "tests/fixtures/h1-stable-runner-and-self-hosting-acceptance/change-template/specs/flowkit-h1-future-fixture/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "9e8a4b58b4207ccf6c7bdee8a0456ffb3cb013d100bdc693759303a5bb7e8e64"
+        },
+        {
+          "path": "tests/fixtures/h1-stable-runner-and-self-hosting-acceptance/change-template/tasks.md",
+          "state": "untracked",
+          "contentFingerprint": "63e573451e1e03bda66f6cd19d3c8dd8c5fa8dd3daa5ba90aa878a2453b02803"
+        },
+        {
+          "path": "tests/integration/h1-stable-runner-and-self-hosting-acceptance.test.ts",
+          "state": "untracked",
+          "contentFingerprint": "7a50df338f74ab408d6fdf05df20b3317233aa011926dff0df5ec27a35828c32"
+        },
+        {
+          "path": "tests/unit/services/f1-checkpoint-boundary-service.test.ts",
+          "state": "modified",
+          "contentFingerprint": "a2b7ef98f720d89fe6fdddf08098dd21d8f36e6c3f61c7734a96097423d16aa1"
+        },
+        {
+          "path": "tests/unit/verification/change-selection/evidence.test.ts",
+          "state": "modified",
+          "contentFingerprint": "2630a234697be5b4e70e2754a3eba1f07348b1967fb2a21d5ca82899943c389e"
+        },
+        {
+          "path": "tests/unit/verification/change-selection/module-map.test.ts",
+          "state": "modified",
+          "contentFingerprint": "fc3a8bf609f6893f260a259331dc3a45458b280c1b8ff8c64b1d8d13afa6923e"
+        }
+      ]
+    },
+    "mutationDeclaration": {
+      "schemaVersion": 1,
+      "action": "revise-apply",
+      "designRef": {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/design.md",
+        "kind": "produced-artifact",
+        "versionFingerprint": "2927c0400b00e89c2716bc32cb556cd8aa9706ffc8d1d071237cf422e1d50f4f"
+      },
+      "selectors": [
+        {
+          "kind": "exact",
+          "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/tasks.md"
+        },
+        {
+          "kind": "exact",
+          "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/verification.md"
+        },
+        {
+          "kind": "exact",
+          "path": "src/cli/main.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/services/f1-checkpoint-boundary-service.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/verification/change-selection/evidence.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/verification/change-selection/module-map.ts"
+        },
+        {
+          "kind": "prefix",
+          "path": "tests/fixtures/h1-stable-runner-and-self-hosting-acceptance"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/integration/h1-stable-runner-and-self-hosting-acceptance.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/services/f1-checkpoint-boundary-service.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/verification/change-selection/evidence.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/verification/change-selection/module-map.test.ts"
+        }
+      ]
+    }
+  },
+  "compactEntryWorkspaceIdentity": {
+    "canonicalBase": "bbb9eff528f1ccd9624e2d20454ecaa2f0b4405c",
+    "workspaceFingerprint": "c54fa6e07ac214342ed9cae3eaa2f6b4bb5c57ff7c3af0f3427fc3132997f67b",
+    "entries": [
+      {
+        "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/.openspec.yaml",
+        "state": "untracked",
+        "contentFingerprint": "ec0accf47d569b8f60d01e96573f6813f1f2b7d5f135a60e3fc07159f84e74c8"
+      },
+      {
+        "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/design.md",
+        "state": "untracked",
+        "contentFingerprint": "2927c0400b00e89c2716bc32cb556cd8aa9706ffc8d1d071237cf422e1d50f4f"
+      },
+      {
+        "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/explore.md",
+        "state": "untracked",
+        "contentFingerprint": "327ae00a1ffab25570856d2cba60c87b34262560cca69aa92ca53b93dab68293"
+      },
+      {
+        "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/proposal.md",
+        "state": "untracked",
+        "contentFingerprint": "d65ec406cf553df060a1d0bc812de46927bce888e6c6ab0c87878b831c540a04"
+      },
+      {
+        "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "39a419add4a1cff37cf8d24eaaf4e2428f45653c2b900c76937229e5d3745927"
+      },
+      {
+        "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-change-verification-selection/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "aedbb88f72b2f5a3e0edd1d1fe1fb09974e638e0e626d0787727afd831b7aef8"
+      },
+      {
+        "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-stable-runner-and-self-hosting-acceptance/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "4a188cad3b4345aebe5d4395e56ca8677b9c454245d00f40cddfe95fa8102cde"
+      },
+      {
+        "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/tasks.md",
+        "state": "untracked",
+        "contentFingerprint": "f0c9f9dcb826f7b2543470906f730775c5bf7e4e6cd0d79c1b8edd29939fcbc0"
+      },
+      {
+        "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/verification-history/33eebfb52f03e5ab4e02223d746b1eb12b89b83e356ea2faeebf072b241c2878.md",
+        "state": "untracked",
+        "contentFingerprint": "33eebfb52f03e5ab4e02223d746b1eb12b89b83e356ea2faeebf072b241c2878"
+      },
+      {
+        "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/verification-history/50aa6b091bb1fbfc174778c24aa8e2a3ba0de65f21071d4d4704832df1b26516.md",
+        "state": "untracked",
+        "contentFingerprint": "50aa6b091bb1fbfc174778c24aa8e2a3ba0de65f21071d4d4704832df1b26516"
+      },
+      {
+        "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/verification.md",
+        "state": "untracked",
+        "contentFingerprint": "05c138f9c92290eacabc402bcd9438efeeea7f0617f045aacfb476fb52f08efa"
+      },
+      {
+        "path": "openspec/delivery-groups/20260817-01-delivery-execution-loop.yaml",
+        "state": "modified",
+        "contentFingerprint": "3d3ec42b671856865e3341db00aca8739ff6f671b1ea86c1377b59bfa15c8526"
+      },
+      {
+        "path": "src/cli/main.ts",
+        "state": "modified",
+        "contentFingerprint": "48b9e4251a1831d547d5a3c8b7117635fbca33c92296b9686f48cc085204ca69"
+      },
+      {
+        "path": "src/services/f1-checkpoint-boundary-service.ts",
+        "state": "modified",
+        "contentFingerprint": "0c4c5229c45f4d95816340540abac9765e27aa196c43478e5784e1a84dd3a42e"
+      },
+      {
+        "path": "src/verification/change-selection/evidence.ts",
+        "state": "modified",
+        "contentFingerprint": "dfd0356112602050e2734b2143c17ab2f182c3cd8fb17266ea54b1d49655e0d1"
+      },
+      {
+        "path": "src/verification/change-selection/module-map.ts",
+        "state": "modified",
+        "contentFingerprint": "586838a11d28d2e2322873057fb73e2f085e1a6ab5e53773fd4eec143da44286"
+      },
+      {
+        "path": "tests/fixtures/h1-stable-runner-and-self-hosting-acceptance/architecture-template.json",
+        "state": "untracked",
+        "contentFingerprint": "3cb3ee4a2dd5801c9d6f2de29bb0595026c6797b20d8142e9e99d4ecf79b2cbb"
+      },
+      {
+        "path": "tests/fixtures/h1-stable-runner-and-self-hosting-acceptance/bootstrap-specs/flowkit-openspec-1-7-thin-integration/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "d3beaa589004e916f4e225feca5dcd75264c67f327f1488525395e7abc0bb53e"
+      },
+      {
+        "path": "tests/fixtures/h1-stable-runner-and-self-hosting-acceptance/change-template/design.md",
+        "state": "untracked",
+        "contentFingerprint": "c9b2cc69b61264ae86fcbaaddbe7226d0255fa78ee5605f1864be6198979c7d9"
+      },
+      {
+        "path": "tests/fixtures/h1-stable-runner-and-self-hosting-acceptance/change-template/explore.md",
+        "state": "untracked",
+        "contentFingerprint": "f899808a0ba2003249fca794f4952412ce982ebd1ac787f3c8d010c02b0d2215"
+      },
+      {
+        "path": "tests/fixtures/h1-stable-runner-and-self-hosting-acceptance/change-template/proposal.md",
+        "state": "untracked",
+        "contentFingerprint": "171f40efc2ed7d9abc15cef5b9e3a72b2e39fa2e4f6fa04fc342286a23985b8d"
+      },
+      {
+        "path": "tests/fixtures/h1-stable-runner-and-self-hosting-acceptance/change-template/specs/flowkit-h1-future-fixture/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "9e8a4b58b4207ccf6c7bdee8a0456ffb3cb013d100bdc693759303a5bb7e8e64"
+      },
+      {
+        "path": "tests/fixtures/h1-stable-runner-and-self-hosting-acceptance/change-template/tasks.md",
+        "state": "untracked",
+        "contentFingerprint": "63e573451e1e03bda66f6cd19d3c8dd8c5fa8dd3daa5ba90aa878a2453b02803"
+      },
+      {
+        "path": "tests/integration/h1-stable-runner-and-self-hosting-acceptance.test.ts",
+        "state": "untracked",
+        "contentFingerprint": "7a50df338f74ab408d6fdf05df20b3317233aa011926dff0df5ec27a35828c32"
+      },
+      {
+        "path": "tests/unit/services/f1-checkpoint-boundary-service.test.ts",
+        "state": "modified",
+        "contentFingerprint": "a2b7ef98f720d89fe6fdddf08098dd21d8f36e6c3f61c7734a96097423d16aa1"
+      },
+      {
+        "path": "tests/unit/verification/change-selection/evidence.test.ts",
+        "state": "modified",
+        "contentFingerprint": "2630a234697be5b4e70e2754a3eba1f07348b1967fb2a21d5ca82899943c389e"
+      },
+      {
+        "path": "tests/unit/verification/change-selection/module-map.test.ts",
+        "state": "modified",
+        "contentFingerprint": "fc3a8bf609f6893f260a259331dc3a45458b280c1b8ff8c64b1d8d13afa6923e"
+      }
+    ]
+  },
+  "mutationDeclaration": {
+    "schemaVersion": 1,
+    "action": "revise-apply",
+    "designRef": {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/design.md",
+      "kind": "produced-artifact",
+      "versionFingerprint": "2927c0400b00e89c2716bc32cb556cd8aa9706ffc8d1d071237cf422e1d50f4f"
+    },
+    "selectors": [
+      {
+        "kind": "exact",
+        "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/tasks.md"
+      },
+      {
+        "kind": "exact",
+        "path": "openspec/changes/stable-runner-and-self-hosting-acceptance/verification.md"
+      },
+      {
+        "kind": "exact",
+        "path": "src/cli/main.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/services/f1-checkpoint-boundary-service.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/verification/change-selection/evidence.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/verification/change-selection/module-map.ts"
+      },
+      {
+        "kind": "prefix",
+        "path": "tests/fixtures/h1-stable-runner-and-self-hosting-acceptance"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/integration/h1-stable-runner-and-self-hosting-acceptance.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/services/f1-checkpoint-boundary-service.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/verification/change-selection/evidence.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/verification/change-selection/module-map.test.ts"
+      }
+    ]
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": true,
+    "mayWriteTestCode": true,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

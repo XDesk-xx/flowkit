@@ -41,6 +41,7 @@ describe('verification module map', () => {
           'flowkit-openspec-1-7-thin-integration',
           'flowkit-policy-engine',
           'flowkit-runtime-foundation',
+          'flowkit-stable-runner-and-self-hosting-acceptance',
           'flowkit-sync-resume-and-single-action-agent-adapter',
         ],
         verificationScopes: [
@@ -198,6 +199,48 @@ describe('verification module map', () => {
     ]);
     assert.equal(selection.capabilityRelation.kind, 'matched');
     for (const scope of ['tests-execution', 'tests-cli', 'tests-verification', 'typecheck']) {
+      assert.equal(selection.verificationScopes.includes(scope), true, scope);
+    }
+  });
+
+
+  it('owns the H1 stable-runner/self-hosting surface with a matched closed capability relation', () => {
+    for (const [path, expectedSeed] of [
+      ['src/cli/main.ts', 'cli-diagnostics'],
+      ['src/services/f1-checkpoint-boundary-service.ts', 'execution'],
+      ['src/verification/change-selection/evidence.ts', 'verification-selection'],
+      ['tests/fixtures/h1-stable-runner-and-self-hosting-acceptance/change-template/tasks.md', 'cli-diagnostics'],
+      ['tests/integration/h1-stable-runner-and-self-hosting-acceptance.test.ts', 'cli-diagnostics'],
+    ] as const) {
+      const selected = selectAffectedVerificationModules([path]);
+      assert.deepEqual(selected.seedModuleIds, [expectedSeed], path);
+      assert.equal(selected.capabilityIds.includes('flowkit-stable-runner-and-self-hosting-acceptance'), true, path);
+    }
+
+    const expectedActualChangeSet = [
+      'src/cli/main.ts',
+      'src/services/f1-checkpoint-boundary-service.ts',
+      'src/verification/change-selection/evidence.ts',
+      'src/verification/change-selection/module-map.ts',
+      'tests/fixtures/h1-stable-runner-and-self-hosting-acceptance/architecture-template.json',
+      'tests/fixtures/h1-stable-runner-and-self-hosting-acceptance/bootstrap-specs/flowkit-openspec-1-7-thin-integration/spec.md',
+      'tests/fixtures/h1-stable-runner-and-self-hosting-acceptance/change-template/design.md',
+      'tests/fixtures/h1-stable-runner-and-self-hosting-acceptance/change-template/explore.md',
+      'tests/fixtures/h1-stable-runner-and-self-hosting-acceptance/change-template/proposal.md',
+      'tests/fixtures/h1-stable-runner-and-self-hosting-acceptance/change-template/specs/flowkit-h1-future-fixture/spec.md',
+      'tests/fixtures/h1-stable-runner-and-self-hosting-acceptance/change-template/tasks.md',
+      'tests/integration/h1-stable-runner-and-self-hosting-acceptance.test.ts',
+      'tests/unit/services/f1-checkpoint-boundary-service.test.ts',
+      'tests/unit/verification/change-selection/evidence.test.ts',
+      'tests/unit/verification/change-selection/module-map.test.ts',
+    ].map((path) => ({ path, kind: 'modify' as const, pathKindBefore: 'file' as const, pathKindAfter: 'file' as const, contentFingerprintAfter: 'a'.repeat(64) }));
+    const selection = buildVerificationSelection(expectedActualChangeSet, [
+      'openspec/changes/h1/specs/flowkit-archive-and-checkpoint-boundary/spec.md',
+      'openspec/changes/h1/specs/flowkit-change-verification-selection/spec.md',
+      'openspec/changes/h1/specs/flowkit-stable-runner-and-self-hosting-acceptance/spec.md',
+    ]);
+    assert.equal(selection.capabilityRelation.kind, 'matched');
+    for (const scope of ['tests-cli', 'tests-execution', 'tests-verification', 'typecheck']) {
       assert.equal(selection.verificationScopes.includes(scope), true, scope);
     }
   });

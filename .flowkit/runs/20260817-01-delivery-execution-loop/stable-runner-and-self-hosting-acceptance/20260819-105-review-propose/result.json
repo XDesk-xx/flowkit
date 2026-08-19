@@ -1,0 +1,21 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "Review 104 Revise-Propose：H1-RP-001 已关闭。104 已将 self-hosting E2E 的 acceptance subject 明确冻结为 independent consumer 中 installed Flowkit distribution；已有 stable CLI/runner surface 的 Flowkit-owned lifecycle boundary 必须从 installed distribution 执行，source workspace src/**、source dist/**、source node_modules 不得作为隐藏第二 runtime。G1 runSingleActionAgent 的唯一 bounded exception 也被限定为从 independent consumer 安装包的 built dist artifact 消费，不新增 Agent CLI/Registry/auto-loop。Reviewer 独立执行 npm build/pack/install，确认 tarball包含 dist/bin/flowkit.js 与 dist/services/g1-single-action-agent-adapter.js，fresh consumer 安装后 flowkit --version PASS 且 runSingleActionAgent 可从 consumer/node_modules/flowkit/dist/... 解析为函数。checkpoint-handoff 仍保持 read-only exact plan，EOF mutation/stage/commit 继续属于 authorize-checkpoint 后的 Executor mechanics。flowkitMutationScope 可机器派生 apply/revise-apply 各11 selectors；OpenSpec current/all strict 22/22 PASS，git diff --check PASS。完整 blocking scan 未发现新的 Proposal blocker。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "5a6046113aae8531886a3e179b1409d5238bbf8b62c268667c2724865096f80e"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [],
+  "reviewFindingConvergence": [
+    {
+      "findingId": "H1-RP-001",
+      "state": "resolved"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-apply",
+    "executionStatus": "completed",
+    "summary": "关闭 H1-RA-001：H1 的 normal formal selected tests-cli route 不再跳过完整 self-hosting acceptance。保持一个 tests-cli logical authority、不提高 120s timeout；当 H1 capability 被选中时，primary CLI bucket 通过后，以同一 independent installed Flowkit package、同一 future Delivery repository、同一 Run/Git lineage 顺序执行 26 个 bounded formal physical phases，覆盖两个普通 Change/checkpoint、installed G1 adapter、Owner Full Test、Actual/Compare、Finalize/Delivery Final 和 fresh clone/resume。H1 formal branch sentinel 直接故障注入 phase 1 并使 tests-cli fail，证明完整 branch 被 formal route 物理执行；未新增 logical check、Registry、auto-loop 或 Git automation。",
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-107-review-apply/result.json",
+      "versionFingerprint": "8b48f148ce9e24f4e5ac8cd3d1ddc132db6162e0a8496ad6dcadeca55c800912",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "9054d5859d43b18399491ea2fe5eb3cd347461da612ead59e7dd18fbd543a9d6",
+    "currentVerification": {
+      "logicalRef": "openspec/changes/stable-runner-and-self-hosting-acceptance/verification.md",
+      "versionFingerprint": "50aa6b091bb1fbfc174778c24aa8e2a3ba0de65f21071d4d4704832df1b26516",
+      "selectionFingerprint": "aa765cd20f4aa0d04441ff9e3c9174291338b7beb328a1899331e945c5223eee",
+      "status": "failed"
+    }
+  }
+}

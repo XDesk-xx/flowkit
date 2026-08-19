@@ -161,7 +161,7 @@ changes:
     required: true
     dependsOn:
       - "sync-resume-and-single-action-agent-adapter"
-    state: planned
+    state: completed
     architectureImpact: true
     outputs:
       - "stable dist/bin/flowkit.js"
@@ -381,6 +381,40 @@ ownerDecisions:
     deliveryId: "20260817-01-delivery-execution-loop"
     changeId: "sync-resume-and-single-action-agent-adapter"
     sourceRef: "ref/flowkit-local-ai-handoff-g1-097-archive.md"
+  - ref: "owner:fd605d9f496475fc686684dab92f78ff595df039faf2920eccd15ccaccfc5169"
+    decision: "activate-change"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "stable-runner-and-self-hosting-acceptance"
+    sourceRef: "owner-input:2026-08-19T11:06+08:00:activate-change:H1"
+  - ref: "owner:f0f16b99ac5bb9288ec82107924ba3a92ae5e9a80652141b095fdaa7be6a3c1b"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "stable-runner-and-self-hosting-acceptance"
+    sourceRef: "owner-input:chat:authorize-apply:H1"
+  - ref: "owner:b1a8666881c28f23e2f059a85a54e200cd9b79ee0d79842145672a6962149d9d"
+    decision: "contract-reset"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "stable-runner-and-self-hosting-acceptance"
+    scope: "H1/detached-verification-physical-execution-optimization"
+    requiredOutcomes:
+      - "formal H1 detached tests-cli and tests-execution execute complete selected coverage through bounded physical groups under the existing 120s per-physical-command timeout, with no full-E2E skip"
+      - "preserve one logical Verification authority, non-H1 behavior, Owner boundaries, and no timeout inflation or generic 04 verification platform"
+    sourceRef: "owner-input:2026-08-19T20:10+08:00:H1-detached-verification-physical-execution-optimization"
+  - ref: "owner:21788a98a748a581ddffd24710cc7330e2df8524de82cfed6f8674a3e1ff3df8"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "stable-runner-and-self-hosting-acceptance"
+    sourceRef: "owner-input:2026-08-20T01:57+08:00:H1-authorize-apply-after-110"
+  - ref: "owner:80f2e65610fbee17dc95155e86573f51cf39bd7d6d42e118565ef1f7829cc6c2"
+    decision: "authorize-archive"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "stable-runner-and-self-hosting-acceptance"
+    sourceRef: "owner-input:2026-08-20T05:24+08:00:authorize-archive:H1"
+  - ref: "owner:80df6669605ad9b11bb9bab8ce0fc40f6b12fdf4dd444d109fccaa23fc25b1b7"
+    decision: "authorize-checkpoint"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "stable-runner-and-self-hosting-acceptance"
+    sourceRef: "ref/flowkit-local-ai-handoff-h1-115-archive.md"
 verification:
   change:
     requireApplicableChecks: true

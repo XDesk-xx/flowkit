@@ -1,0 +1,26 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "Review 113 Revise-Apply: Approved. H1-RA-002 is resolved. The Author revision is narrow: relative to the 112 reviewer package, only canonical tasks.md and current verification.md changed, plus the new 113 three-file Run; no src/test/fan-out implementation bytes changed. Required tasks 5.4, 5.5, and 6.5 are now [x] and there are no remaining required unchecked tasks. Because the task bytes changed the exact candidate, 113 did not reuse the 111 passed publication: it produced a fresh current verification.md with fingerprint 0883b0da3d03e8e66962a2199c4f9f44211f16d69140c93b25ce432ab8eb8945, exactly bound by the 113 terminalBinding. The formal tests-cli evidence contains all H1 phases 1 through 26 and both tests-cli/tests-execution are passed under the previously approved bounded physical-command model; 108 failed verification history remains intact and prior completed Runs remain immutable point-in-time facts. Reviewer independently confirmed package checksums, exact base bbb9eff528f1..., git diff --check, OpenSpec current strict and all strict 22/22, and formal status/next/doctor projecting verification=passed, next=review-apply, doctor ok/0. No new Review-Apply blocker found.",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/verification.md",
+      "versionFingerprint": "0883b0da3d03e8e66962a2199c4f9f44211f16d69140c93b25ce432ab8eb8945",
+      "kind": "verification-summary"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "7e4c7bb07e43ce5a0d98f894a391902d716159278175c27c68b4cc3fa67ad750"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [],
+  "reviewFindingConvergence": [
+    {
+      "findingId": "H1-RA-002",
+      "state": "resolved"
+    }
+  ]
+}

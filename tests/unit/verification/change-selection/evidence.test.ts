@@ -70,6 +70,41 @@ function cliOnlySelection(): VerificationSelection {
   };
 }
 
+
+function h1CliSelection(): VerificationSelection {
+  const payload = {
+    moduleMapLogicalRef: 'src/verification/change-selection/module-map.ts',
+    moduleMapFingerprint: currentVerificationCatalogFingerprint(),
+    seedModuleIds: ['cli-diagnostics'],
+    moduleIds: ['cli-diagnostics'],
+    capabilityIds: ['flowkit-stable-runner-and-self-hosting-acceptance'],
+    capabilityRefs: ['openspec/changes/h1/specs/flowkit-stable-runner-and-self-hosting-acceptance/spec.md'],
+    capabilityRelation: { kind: 'matched' as const },
+    verificationScopes: ['tests-cli'],
+  };
+  return {
+    ...payload,
+    selectionFingerprint: createHash('sha256').update(canonicalStringify(payload)).digest('hex'),
+  };
+}
+
+function h1ExecutionSelection(): VerificationSelection {
+  const payload = {
+    moduleMapLogicalRef: 'src/verification/change-selection/module-map.ts',
+    moduleMapFingerprint: currentVerificationCatalogFingerprint(),
+    seedModuleIds: ['execution'],
+    moduleIds: ['execution'],
+    capabilityIds: ['flowkit-stable-runner-and-self-hosting-acceptance'],
+    capabilityRefs: ['openspec/changes/h1/specs/flowkit-stable-runner-and-self-hosting-acceptance/spec.md'],
+    capabilityRelation: { kind: 'matched' as const },
+    verificationScopes: ['tests-execution'],
+  };
+  return {
+    ...payload,
+    selectionFingerprint: createHash('sha256').update(canonicalStringify(payload)).digest('hex'),
+  };
+}
+
 function externalToolsSelection(): VerificationSelection {
   const payload = {
     moduleMapLogicalRef: 'src/verification/change-selection/module-map.ts',
@@ -325,6 +360,205 @@ describe('verification evidence affected Node union', () => {
         });
         assert.equal(evidence.overallStatus, 'failed');
         assert.match(evidence.checks[0]?.commandOrMethod ?? '', /g1-sync-resume-and-single-action-agent-adapter\.test\.ts/);
+      } finally {
+        if (previousNodeTestContext === undefined) delete process.env['NODE_TEST_CONTEXT'];
+        else process.env['NODE_TEST_CONTEXT'] = previousNodeTestContext;
+      }
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+
+  it('physically executes the H1 self-hosting target through tests-cli and fails on its sentinel', async () => {
+    const root = await createTempDir();
+    try {
+      await symlink(join(process.cwd(), 'node_modules'), join(root, 'node_modules'), 'dir');
+      await writeFile(join(root, 'package.json'), '{"type":"module"}\n', 'utf8');
+      await mkdir(join(root, 'tests', 'integration'), { recursive: true });
+      await mkdir(join(root, 'tests', 'unit', 'cli'), { recursive: true });
+      await mkdir(join(root, 'tests', 'unit', 'diagnostics'), { recursive: true });
+      for (const name of [
+        'a1-delivery-readiness-and-full-test-behavior.test.ts',
+        'b1-delivery-findings-and-corrective-change.test.ts',
+        'diagnostic-cli-process.test.ts',
+        'diagnostic-cli.test.ts',
+        'g1-change-cli-end-to-end.test.ts',
+        'g1-sync-resume-and-single-action-agent-adapter.test.ts',
+      ]) {
+        await writeFile(join(root, 'tests', 'integration', name), "import { test } from 'node:test'; test('ok', () => {});\n", 'utf8');
+      }
+      const target = join(root, 'tests', 'integration', 'h1-stable-runner-and-self-hosting-acceptance.test.ts');
+      await writeFile(target, [
+        "import assert from 'node:assert/strict';",
+        "import { test } from 'node:test';",
+        "test('h1 formal branch sentinel', () => { if (process.env.FLOWKIT_H1_FORMAL_PHASE === '1') assert.fail('H1 full E2E formal branch sentinel'); });",
+        '',
+      ].join('\n'), 'utf8');
+
+      const previousNodeTestContext = process.env['NODE_TEST_CONTEXT'];
+      delete process.env['NODE_TEST_CONTEXT'];
+      try {
+        const evidence = await executeVerificationSelection({
+          repoRoot: root,
+          changeId: 'h1',
+          runDir: join(root, '.flowkit', 'runs', 'h1-sentinel'),
+          producingRunId: '20990101-010-apply',
+          selection: h1CliSelection(),
+          fullTestStatus: 'not-ready',
+          openSpecAdapter: { resolveInvocation: async () => ({ toolId: 'openspec', source: 'legacy-compat', command: '/fixture/openspec', argsPrefix: [], propagationEnv: { FLOWKIT_OPENSPEC_BIN: '/fixture/openspec' } }) } as unknown as OpenSpecCliAdapter,
+        });
+        assert.equal(evidence.overallStatus, 'failed');
+        assert.match(evidence.checks[0]?.commandOrMethod ?? '', /h1-stable-runner-and-self-hosting-acceptance\.test\.ts/);
+        assert.match(evidence.checks[0]?.commandOrMethod ?? '', /FLOWKIT_H1_FORMAL_PHASE=1/);
+      } finally {
+        if (previousNodeTestContext === undefined) delete process.env['NODE_TEST_CONTEXT'];
+        else process.env['NODE_TEST_CONTEXT'] = previousNodeTestContext;
+      }
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('deduplicates only the legacy npm-installed diagnostic smoke when H1 full installed-runner coverage is selected', async () => {
+    const root = await createTempDir();
+    try {
+      await symlink(join(process.cwd(), 'node_modules'), join(root, 'node_modules'), 'dir');
+      await writeFile(join(root, 'package.json'), '{"type":"module"}\n', 'utf8');
+      await mkdir(join(root, 'tests', 'integration'), { recursive: true });
+      await mkdir(join(root, 'tests', 'unit', 'cli'), { recursive: true });
+      await mkdir(join(root, 'tests', 'unit', 'diagnostics'), { recursive: true });
+      for (const name of [
+        'a1-delivery-readiness-and-full-test-behavior.test.ts',
+        'b1-delivery-findings-and-corrective-change.test.ts',
+        'diagnostic-cli.test.ts',
+        'g1-change-cli-end-to-end.test.ts',
+        'g1-sync-resume-and-single-action-agent-adapter.test.ts',
+      ]) {
+        await writeFile(join(root, 'tests', 'integration', name), "import { test } from 'node:test'; test('ok', () => {});\n", 'utf8');
+      }
+      await writeFile(join(root, 'tests', 'integration', 'diagnostic-cli-process.test.ts'), [
+        "import assert from 'node:assert/strict';",
+        "import { test } from 'node:test';",
+        "test('executes all four commands without mutating repository files', () => {});",
+        "test('executes the npm-installed flowkit bin surface', () => assert.fail('legacy installed smoke must be H1-deduplicated'));",
+        "test('rejects unknown commands with exit 2 on stderr', () => {});",
+        '',
+      ].join('\n'), 'utf8');
+      await writeFile(join(root, 'tests', 'integration', 'h1-stable-runner-and-self-hosting-acceptance.test.ts'), "import { test } from 'node:test'; test('h1 phase', () => {});\n", 'utf8');
+
+      const previousNodeTestContext = process.env['NODE_TEST_CONTEXT'];
+      delete process.env['NODE_TEST_CONTEXT'];
+      try {
+        const evidence = await executeVerificationSelection({
+          repoRoot: root,
+          changeId: 'h1',
+          runDir: join(root, '.flowkit', 'runs', 'h1-dedup'),
+          producingRunId: '20990101-011-apply',
+          selection: h1CliSelection(),
+          fullTestStatus: 'not-ready',
+          openSpecAdapter: { resolveInvocation: async () => ({ toolId: 'openspec', source: 'legacy-compat', command: '/fixture/openspec', argsPrefix: [], propagationEnv: { FLOWKIT_OPENSPEC_BIN: '/fixture/openspec' } }) } as unknown as OpenSpecCliAdapter,
+        });
+        assert.equal(evidence.overallStatus, 'passed');
+        assert.match(evidence.checks[0]?.commandOrMethod ?? '', /diagnostic-cli-process\.test\.ts/);
+        assert.doesNotMatch(evidence.checks[0]?.commandOrMethod ?? '', /npm-installed flowkit bin surface/);
+        assert.match(evidence.checks[0]?.commandOrMethod ?? '', /FLOWKIT_H1_FORMAL_PHASE=26/);
+      } finally {
+        if (previousNodeTestContext === undefined) delete process.env['NODE_TEST_CONTEXT'];
+        else process.env['NODE_TEST_CONTEXT'] = previousNodeTestContext;
+      }
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps the legacy npm-installed diagnostic smoke active for non-H1 tests-cli selection', async () => {
+    const root = await createTempDir();
+    try {
+      await symlink(join(process.cwd(), 'node_modules'), join(root, 'node_modules'), 'dir');
+      await writeFile(join(root, 'package.json'), '{"type":"module"}\n', 'utf8');
+      await mkdir(join(root, 'tests', 'integration'), { recursive: true });
+      await mkdir(join(root, 'tests', 'unit', 'cli'), { recursive: true });
+      await mkdir(join(root, 'tests', 'unit', 'diagnostics'), { recursive: true });
+      for (const name of [
+        'a1-delivery-readiness-and-full-test-behavior.test.ts',
+        'b1-delivery-findings-and-corrective-change.test.ts',
+        'diagnostic-cli.test.ts',
+        'g1-change-cli-end-to-end.test.ts',
+        'g1-sync-resume-and-single-action-agent-adapter.test.ts',
+        'h1-stable-runner-and-self-hosting-acceptance.test.ts',
+      ]) {
+        await writeFile(join(root, 'tests', 'integration', name), "import { test } from 'node:test'; test('ok', () => {});\n", 'utf8');
+      }
+      await writeFile(join(root, 'tests', 'integration', 'diagnostic-cli-process.test.ts'), [
+        "import assert from 'node:assert/strict';",
+        "import { test } from 'node:test';",
+        "test('executes all four commands without mutating repository files', () => {});",
+        "test('executes the npm-installed flowkit bin surface', () => assert.fail('non-H1 legacy installed smoke sentinel'));",
+        "test('rejects unknown commands with exit 2 on stderr', () => {});",
+        '',
+      ].join('\n'), 'utf8');
+
+      const previousNodeTestContext = process.env['NODE_TEST_CONTEXT'];
+      delete process.env['NODE_TEST_CONTEXT'];
+      try {
+        const evidence = await executeVerificationSelection({
+          repoRoot: root,
+          changeId: 'g1',
+          runDir: join(root, '.flowkit', 'runs', 'non-h1-installed-smoke'),
+          producingRunId: '20990101-013-apply',
+          selection: cliOnlySelection(),
+          fullTestStatus: 'not-ready',
+          openSpecAdapter: { resolveInvocation: async () => ({ toolId: 'openspec', source: 'legacy-compat', command: '/fixture/openspec', argsPrefix: [], propagationEnv: { FLOWKIT_OPENSPEC_BIN: '/fixture/openspec' } }) } as unknown as OpenSpecCliAdapter,
+        });
+        assert.equal(evidence.overallStatus, 'failed');
+        assert.match(evidence.checks[0]?.commandOrMethod ?? '', /diagnostic-cli-process\.test\.ts/);
+        assert.doesNotMatch(evidence.checks[0]?.commandOrMethod ?? '', /FLOWKIT_H1_FORMAL_PHASE/);
+      } finally {
+        if (previousNodeTestContext === undefined) delete process.env['NODE_TEST_CONTEXT'];
+        else process.env['NODE_TEST_CONTEXT'] = previousNodeTestContext;
+      }
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('propagates a bounded B1 heavy-case failure into the original tests-execution logical evidence for H1', async () => {
+    const root = await createTempDir();
+    try {
+      await symlink(join(process.cwd(), 'node_modules'), join(root, 'node_modules'), 'dir');
+      await writeFile(join(root, 'package.json'), '{"type":"module"}\n', 'utf8');
+      await mkdir(join(root, 'tests', 'integration'), { recursive: true });
+      await mkdir(join(root, 'tests', 'unit', 'services'), { recursive: true });
+      for (const name of [
+        'f1-archive-and-checkpoint-boundary.test.ts',
+        'f1-delivery-finalize-and-git-boundary.test.ts',
+      ]) {
+        await writeFile(join(root, 'tests', 'integration', name), "import { test } from 'node:test'; test('ok', () => {});\n", 'utf8');
+      }
+      await writeFile(join(root, 'tests', 'unit', 'services', 'b1-run-execution-service.test.ts'), [
+        "import assert from 'node:assert/strict';",
+        "import { test } from 'node:test';",
+        "test('creates one Delivery-wide Run then resumes the same pending semantic input', () => assert.fail('H1 B1 bounded worker sentinel'));",
+        '',
+      ].join('\n'), 'utf8');
+
+      const previousNodeTestContext = process.env['NODE_TEST_CONTEXT'];
+      delete process.env['NODE_TEST_CONTEXT'];
+      try {
+        const evidence = await executeVerificationSelection({
+          repoRoot: root,
+          changeId: 'h1',
+          runDir: join(root, '.flowkit', 'runs', 'h1-execution-sentinel'),
+          producingRunId: '20990101-012-apply',
+          selection: h1ExecutionSelection(),
+          fullTestStatus: 'not-ready',
+          openSpecAdapter: {} as OpenSpecCliAdapter,
+        });
+        assert.equal(evidence.overallStatus, 'failed');
+        assert.equal(evidence.checks[0]?.scope, 'tests-execution');
+        assert.match(evidence.checks[0]?.commandOrMethod ?? '', /b1-run-execution-service\.test\.ts/);
+        assert.match(evidence.checks[0]?.commandOrMethod ?? '', /creates one Delivery-wide Run/);
       } finally {
         if (previousNodeTestContext === undefined) delete process.env['NODE_TEST_CONTEXT'];
         else process.env['NODE_TEST_CONTEXT'] = previousNodeTestContext;

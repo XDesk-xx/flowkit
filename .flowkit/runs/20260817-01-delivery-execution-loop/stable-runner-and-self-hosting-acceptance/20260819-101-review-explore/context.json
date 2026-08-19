@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260819-101-review-explore",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "review-explore",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "9d8e5ad4c9d75c4430b191fdf91623ad6aabb0cb1f668f3a63cf1349b018fb42",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-101-review-explore/",
+  "changeKey": "H1",
+  "changeId": "stable-runner-and-self-hosting-acceptance",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-100-revise-explore/result.json",
+    "versionFingerprint": "c8e7e6d3f2525f702551b327b3295d8c8c577e70ca97414e4262ca95e17335db",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260819-100-revise-explore",
+  "canonicalBase": "bbb9eff528f1ccd9624e2d20454ecaa2f0b4405c",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-100-revise-explore/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "c8e7e6d3f2525f702551b327b3295d8c8c577e70ca97414e4262ca95e17335db"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "ec0accf47d569b8f60d01e96573f6813f1f2b7d5f135a60e3fc07159f84e74c8"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/explore.md",
+      "versionFingerprint": "327ae00a1ffab25570856d2cba60c87b34262560cca69aa92ca53b93dab68293",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "stable-runner-and-self-hosting-acceptance",
+      "runId": "20260819-101-review-explore",
+      "action": "review-explore",
+      "role": "reviewer",
+      "semanticInputFingerprint": "9d8e5ad4c9d75c4430b191fdf91623ad6aabb0cb1f668f3a63cf1349b018fb42"
+    },
+    "definition": {
+      "action": "review-explore",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-explore",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "ec0accf47d569b8f60d01e96573f6813f1f2b7d5f135a60e3fc07159f84e74c8"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/explore.md",
+        "versionFingerprint": "327ae00a1ffab25570856d2cba60c87b34262560cca69aa92ca53b93dab68293",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-100-revise-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "c8e7e6d3f2525f702551b327b3295d8c8c577e70ca97414e4262ca95e17335db"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260819-099-review-explore",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-099-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "60e7c3ff7eb33991f4c75212331cfd41deabca2677864f6c0c024eb53da92ca6"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "H1-RE-001",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "public checkpoint handoff 的 necessity/authority proof 未覆盖 exact normalization plan，且 Open Decision 仍允许扩大为 write-side checkpoint mechanics",
+          "problem": "098 Proof D 已正确证明 EOF-only normalization authority属于 archive completed 之后的 exact authorize-checkpoint Owner boundary，并由 Executor mechanics执行；但 Proof E 进一步把‘stable runner缺少 public checkpoint handoff surface’定义为 H1 acceptance gap，声称公开现有 prepareCheckpointBoundaryHandoff()即可消除当前 canonical dogfood依赖聊天知道哪几个 EOF 文件。实际 production service只返回 changeId、Owner ref、canonical subject/trailers、通用 normalization scope/allowed/forbidden 与 Git preflight，不读取 Git working tree、candidate/archive-touched path set，也不返回具体需要 normalization 的文件/operation。因此 Evidence Boundary只证明‘已有 generic handoff contract可读’，没有证明‘public stable-runner surface可以从 repository facts确定 exact checkpoint hygiene plan并消除聊天依赖’。同时 §8 Open Decision 仍允许 public surface直接执行 EOF-only mutation；这不是 H1 formal required outcome已经证明必需的能力，并可能把 stable runner扩大为新的 write-side checkpoint executor/adapter surface。",
+          "contractRef": "Flowkit Explore Skill v2 §4.1 Scope/Prerequisite Proof、§4.3 Activation/Self-hosting、§5 Proof Acceptance Depth；flowkit-archive-and-checkpoint-boundary canonical spec ‘Checkpoint handoff必须绑定 exact Owner authorization且不执行 Git mutation’；03 Planned Changes v6 H1 stable runner/self-hosting acceptance；Operating Model v8 Executor/Git authority boundary",
+          "invariant": "Archive action不得获得 EOF normalization authority；EOF-only normalization只能在 exact authorize-checkpoint Owner fact存在后作为 Executor mechanics发生。H1如果新增 public checkpoint surface，必须是证明 self-hosting所必需的最小 closure，不能成为第二个 Checkpoint Adapter/Git automation，也不能把‘generic规则可读’误写成‘exact normalization plan可由 stable runner确定’。",
+          "requiredOutcome": "Revise Explore 收紧 Proof E/Feasible Proposal Boundary/Open Decisions。Reviewer不限定唯一实现：可以保留一个最薄 public surface，但必须用 disposable proof证明它从正式 repository/Git facts + exact Owner checkpoint authorization得到足够 deterministic 的 read-only checkpoint handoff/preflight（包括如果 acceptance声称消除聊天选文件，则必须证明 exact bounded path/operation plan如何确定）；实际 EOF bytes mutation仍留给授权后的 Executor mechanics。或者，如果无法证明 public surface是H1必需的，就从H1 required closure中删除它，E2E继续消费既有 F1 handoff contract + Executor mechanics。两种路径都不得让 archive执行 normalization，也不得自动 stage/commit/push/PR/merge。",
+          "acceptance": [
+            "明确确认 archive success只关闭 Change；EOF normalization时机仍是 completed → authorize-checkpoint Owner fact → Executor mechanics，archive Run/CLI不得执行 formatter或EOF mutation。",
+            "如果保留 public checkpoint surface：证明它是 H1 stable-runner/self-hosting所需的最小 operator/read projection，而不是新 lifecycle Action/Run/Agent Adapter；至少输出 exact Delivery/Change/Owner binding、subject/trailers、bounded normalization authority与preflight。",
+            "如果声称 public surface消除‘聊天知道哪几个 EOF 文件’依赖，则用 disposable canonical-like workspace实际证明 exact candidate/archive-touched path set与EOF-only operations可由 repository/Git facts确定；unrelated dirty、semantic/internal whitespace、trailing-space或broad-formatting case必须 fail closed。",
+            "public surface本身保持 read-only；不得自动修改 EOF bytes、stage、commit、push、merge/rebase。实际 EOF-only mutation仍由 exact authorize-checkpoint后的 Executor mechanics执行。",
+            "若 Author选择不新增 public surface，则证明 existing F1 handoff contract + Executor mechanics已足以让 H1 future-Delivery-shaped E2E在无聊天隐藏状态下完成 checkpoint，并删除Proof E中‘current stable runner acceptance FAIL’的过度结论。",
+            "不扩展 H1到 Checkpoint Adapter、Git automation、new checkpoint state、Registry或04 Engineering Health。"
+          ]
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "d0c8a8191518388608ebe13c5ad68565ffb7e4078763bfb4e4a25f7fd595859a",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

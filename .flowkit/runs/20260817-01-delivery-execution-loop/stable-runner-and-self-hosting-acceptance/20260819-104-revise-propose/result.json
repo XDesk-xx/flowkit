@@ -1,0 +1,49 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-propose",
+    "executionStatus": "completed",
+    "summary": "Revise-Propose H1-RP-001：不改变 H1 功能方向，只把 self-hosting E2E 的 acceptance subject 收紧为 independent consumer 中 installed Flowkit distribution。凡已有 stable CLI/runner surface 的 Flowkit-owned boundary，future-Delivery fixture 必须通过 installed runner 执行，禁止 source workspace src/**、source dist/**、source node_modules 作为隐藏第二 runtime；source harness 仅构造 fixture/external-role input、assertion 与授权后的 Executor Git mechanics。G1 runSingleActionAgent 无 CLI 的唯一 bounded exception 只能从 independent consumer 安装包的 built dist artifact 消费。Proposal feasibility proof 已实际 npm pack/install，并确认 installed flowkit CLI 与 dist/services/g1-single-action-agent-adapter.js 均从 consumer node_modules/flowkit 路径解析；未新增 Agent CLI/Registry/auto-loop/Git automation。flowkitMutationScope apply/revise-apply 仍各 11 selectors；OpenSpec current/all strict 22/22 PASS，git diff --check PASS。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/design.md",
+        "versionFingerprint": "25a4db303ac2ca3566d89b72bdb10ce2111ecd2b94fa5ef5e7804170b803a4ce",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/proposal.md",
+        "versionFingerprint": "c766d2bc1604ffe873c78110dcc58b319508ade9e98f39b17c7c06b45487662e",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+        "versionFingerprint": "39a419add4a1cff37cf8d24eaaf4e2428f45653c2b900c76937229e5d3745927",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "534f2fa114cfceaac2952f92f054a90ac0cafe9c76049f337ce367eeba14ea30",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-stable-runner-and-self-hosting-acceptance/spec.md",
+        "versionFingerprint": "4a188cad3b4345aebe5d4395e56ca8677b9c454245d00f40cddfe95fa8102cde",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/tasks.md",
+        "versionFingerprint": "2bc97467ad2de583ad8258dc038363751bc39cd83ff6df5325d3e1f20bf6b2ad",
+        "kind": "produced-artifact"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-103-review-propose/result.json",
+      "versionFingerprint": "d6cb5148f5d600716ad8a6a4566f8af80d024c41c5cded0fbc3b1fb7336c5abd",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "2ff43f8363c4abf2904e22bf32c9f987778f812684b542326b2731e29cbd5023"
+  }
+}

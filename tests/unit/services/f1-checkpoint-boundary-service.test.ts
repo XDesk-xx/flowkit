@@ -1,125 +1,145 @@
 import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { execFile } from 'node:child_process';
+import { appendFile, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { promisify } from 'node:util';
+import { describe, it } from 'node:test';
 
-import { ownerDecisionRefFor } from '../../../src/domain/owner-provenance.js';
 import { prepareCheckpointBoundaryHandoff } from '../../../src/services/f1-checkpoint-boundary-service.js';
-import { createTempDir } from '../../fixtures/helpers.js';
 
-async function fixture(withAuthorization: boolean): Promise<{ root: string; deliveryId: string; changeId: string; ownerRef: string }> {
-  const root = await createTempDir();
-  const deliveryId = '20990301-01-f1-handoff';
-  const changeId = 'archive-and-checkpoint-boundary';
-  const sourceRef = 'owner:test:f1-handoff';
-  const ownerRef = ownerDecisionRefFor({ decision: 'authorize-checkpoint', deliveryId, changeId, sourceRef });
-  await mkdir(join(root, 'openspec', 'delivery-groups'), { recursive: true });
-  await writeFile(join(root, 'openspec', 'delivery-groups', `${deliveryId}.yaml`), [
-    `id: ${deliveryId}`,
-    'delivery:',
-    '  state: active',
-    '  fullTestStatus: not-ready',
-    'changes:',
-    '  - key: F1',
-    `    id: ${changeId}`,
-    '    state: completed',
-    '    architectureImpact: false',
-    '    required: true',
-    '    dependsOn: []',
-    ...(withAuthorization ? [
-      'ownerDecisions:',
-      `  - ref: "${ownerRef}"`,
-      '    decision: "authorize-checkpoint"',
-      `    deliveryId: "${deliveryId}"`,
-      `    changeId: "${changeId}"`,
-      `    sourceRef: "${sourceRef}"`,
-    ] : []),
-    '',
-  ].join('\n'), 'utf8');
+const exec = promisify(execFile);
+const deliveryId = '20260817-01-delivery-execution-loop';
+const changeId = 'sync-resume-and-single-action-agent-adapter';
+const expectedOwnerRef = 'owner:0c1e44f8f15467b4fe05c7c1a81ee3e7970abe36b3b4595d1ea9c2fc08351636';
+const eofTargets = [
+  'openspec/specs/flowkit-change-verification-selection/spec.md',
+  'openspec/specs/flowkit-diagnostic-cli/spec.md',
+  'openspec/specs/flowkit-lean-run-and-action-package/spec.md',
+  'openspec/specs/flowkit-sync-resume-and-single-action-agent-adapter/spec.md',
+] as const;
 
-  const runId = '20990301-001-archive';
-  const runDir = join(root, '.flowkit', 'runs', deliveryId, changeId, runId);
-  await mkdir(runDir, { recursive: true });
-  await writeFile(join(runDir, 'action.md'), '# Archive\n', 'utf8');
-  await writeFile(join(runDir, 'context.json'), `${JSON.stringify({
-    schemaVersion: 2,
-    runId,
-    deliveryId,
-    changeKey: 'F1',
-    changeId,
-    action: 'archive',
-    role: 'author',
-    ownerAuthorization: 'explicit',
-    runPath: `.flowkit/runs/${deliveryId}/${changeId}/${runId}/`,
-  }, null, 2)}\n`, 'utf8');
-  await writeFile(join(runDir, 'result.json'), `${JSON.stringify({
-    runStatus: 'completed',
-    actionResult: { action: 'archive', executionStatus: 'completed', summary: 'archived' },
-  }, null, 2)}\n`, 'utf8');
-  return { root, deliveryId, changeId, ownerRef };
+async function g1PreCheckpointFixture(): Promise<{ root: string; base: string }> {
+  const sourceRoot = process.cwd();
+  const head = (await exec('git', ['rev-parse', 'HEAD'], { cwd: sourceRoot })).stdout.trim();
+  const base = (await exec('git', ['rev-parse', 'HEAD^'], { cwd: sourceRoot })).stdout.trim();
+  const root = await mkdtemp(join(tmpdir(), 'flowkit-h1-checkpoint-'));
+  await exec('git', ['clone', '--quiet', '--no-local', sourceRoot, root]);
+  await exec('git', ['reset', '--hard', base], { cwd: root });
+  await exec('git', ['remote', 'remove', 'origin'], { cwd: root });
+  const patch = (await exec('git', ['diff', '--binary', base, head], { cwd: sourceRoot, maxBuffer: 32 * 1024 * 1024 })).stdout;
+  const patchPath = join(root, '.h1-g1.patch');
+  await writeFile(patchPath, patch, 'utf8');
+  await exec('git', ['apply', '--binary', patchPath], { cwd: root });
+  await rm(patchPath, { force: true });
+  for (const path of eofTargets) await appendFile(join(root, path), '\n', 'utf8');
+  return { root, base };
 }
 
-describe('F1 checkpoint boundary handoff service', () => {
-  it('returns deterministic subject/trailers/preflight without Git mutation', async () => {
-    const f = await fixture(true);
+async function gitState(root: string): Promise<{ status: string; head: string; log: string }> {
+  return {
+    status: (await exec('git', ['status', '--porcelain=v1', '--untracked-files=all'], { cwd: root })).stdout,
+    head: (await exec('git', ['rev-parse', 'HEAD'], { cwd: root })).stdout.trim(),
+    log: (await exec('git', ['log', '-1', '--format=%H%n%B'], { cwd: root })).stdout,
+  };
+}
+
+async function removeG1CheckpointOwner(root: string): Promise<void> {
+  const path = join(root, 'openspec', 'delivery-groups', `${deliveryId}.yaml`);
+  const text = await readFile(path, 'utf8');
+  const block = [
+    `  - ref: "${expectedOwnerRef}"`,
+    '    decision: "authorize-checkpoint"',
+    `    deliveryId: "${deliveryId}"`,
+    `    changeId: "${changeId}"`,
+    '    sourceRef: "ref/flowkit-local-ai-handoff-g1-097-archive.md"',
+    '',
+  ].join('\n');
+  assert.equal(text.includes(block), true, 'expected G1 checkpoint owner block');
+  await writeFile(path, text.replace(block, ''), 'utf8');
+}
+
+describe('F1 checkpoint boundary handoff service', { concurrency: false }, () => {
+  it('derives the exact G1-shaped read-only plan from repository/formal facts', async () => {
+    const f = await g1PreCheckpointFixture();
     try {
-      const handoff = await prepareCheckpointBoundaryHandoff(f.root, f.deliveryId);
-      assert.equal(handoff.changeId, f.changeId);
-      assert.equal(handoff.ownerAuthorizationRef, f.ownerRef);
-      assert.equal(handoff.subject, `chore(flowkit): checkpoint ${f.changeId}`);
+      const before = await gitState(f.root);
+      const handoff = await prepareCheckpointBoundaryHandoff(f.root, deliveryId);
+      const after = await gitState(f.root);
+
+      assert.equal(handoff.changeId, changeId);
+      assert.equal(handoff.ownerAuthorizationRef, expectedOwnerRef);
+      assert.equal(handoff.baseRevision, f.base);
+      assert.equal(handoff.subject, `chore(flowkit): checkpoint ${changeId}`);
       assert.deepEqual(handoff.trailers, [
-        `Flowkit-Delivery: ${f.deliveryId}`,
-        `Flowkit-Change: ${f.changeId}`,
+        `Flowkit-Delivery: ${deliveryId}`,
+        `Flowkit-Change: ${changeId}`,
         'Flowkit-Boundary: change-checkpoint',
-        `Owner-Authorization: ${f.ownerRef}`,
+        `Owner-Authorization: ${expectedOwnerRef}`,
       ]);
-      assert.deepEqual(handoff.normalization, {
-        authority: 'same-owner-checkpoint-authorization',
-        scope: 'candidate-or-archive-touched-text-files',
-        allowed: ['collapse-redundant-eof-blank-lines', 'ensure-exactly-one-final-newline'],
-        forbidden: [
-          'trailing-spaces-or-tabs-cleanup',
-          'markdown-reflow',
-          'internal-whitespace-rewrite',
-          'semantic-text-change',
-          'unrelated-file-mutation',
-          'broad-formatter-execution',
-        ],
-      });
+      assert.equal(handoff.candidatePaths.length > 40, true);
+      assert.deepEqual([...handoff.candidatePaths].sort(), handoff.candidatePaths);
+      for (const path of eofTargets) assert.equal(handoff.candidatePaths.includes(path), true);
+      assert.deepEqual(handoff.normalization.operations, eofTargets.map((path) => ({
+        path,
+        operations: ['collapse-redundant-eof-blank-lines', 'ensure-exactly-one-final-newline'],
+      })));
       assert.deepEqual(handoff.preflight, ['git diff --check', 'git diff --cached --check']);
+      assert.deepEqual(after, before, 'read-only handoff must not mutate worktree/index/history');
     } finally {
       await rm(f.root, { recursive: true, force: true });
     }
   });
 
   it('fails closed when exact checkpoint Owner authority is absent', async () => {
-    const f = await fixture(false);
+    const f = await g1PreCheckpointFixture();
     try {
+      await removeG1CheckpointOwner(f.root);
       await assert.rejects(
-        () => prepareCheckpointBoundaryHandoff(f.root, f.deliveryId),
+        () => prepareCheckpointBoundaryHandoff(f.root, deliveryId),
         /exactly one matching authorize-checkpoint Owner fact/,
       );
     } finally {
       await rm(f.root, { recursive: true, force: true });
     }
   });
-  it('keeps checkpoint hygiene authority EOF-only and fail-closed for broader formatting', async () => {
-    const f = await fixture(true);
+
+  it('fails closed on unrelated dirty paths', async () => {
+    const f = await g1PreCheckpointFixture();
     try {
-      const handoff = await prepareCheckpointBoundaryHandoff(f.root, f.deliveryId);
-      assert.deepEqual(handoff.normalization.allowed, [
-        'collapse-redundant-eof-blank-lines',
-        'ensure-exactly-one-final-newline',
-      ]);
-      assert.equal(handoff.normalization.forbidden.includes('trailing-spaces-or-tabs-cleanup'), true);
-      assert.equal(handoff.normalization.forbidden.includes('internal-whitespace-rewrite'), true);
-      assert.equal(handoff.normalization.forbidden.includes('semantic-text-change'), true);
-      assert.equal(handoff.normalization.forbidden.includes('unrelated-file-mutation'), true);
-      assert.equal(handoff.normalization.forbidden.includes('broad-formatter-execution'), true);
-      assert.deepEqual(handoff.preflight, ['git diff --check', 'git diff --cached --check']);
+      await appendFile(join(f.root, 'README.md'), '\nunrelated\n', 'utf8');
+      await assert.rejects(
+        () => prepareCheckpointBoundaryHandoff(f.root, deliveryId),
+        /outside the current Change\/formal-fact closure/,
+      );
     } finally {
       await rm(f.root, { recursive: true, force: true });
     }
   });
 
+  it('fails closed on non-EOF hygiene instead of broad formatting', async () => {
+    const f = await g1PreCheckpointFixture();
+    try {
+      await appendFile(join(f.root, eofTargets[0]), 'bad trailing spaces  \n', 'utf8');
+      await assert.rejects(
+        () => prepareCheckpointBoundaryHandoff(f.root, deliveryId),
+        /trailing spaces\/tabs/,
+      );
+    } finally {
+      await rm(f.root, { recursive: true, force: true });
+    }
+  });
+
+  it('requires an empty index and never hides staged bytes', async () => {
+    const f = await g1PreCheckpointFixture();
+    try {
+      await exec('git', ['add', eofTargets[0]], { cwd: f.root });
+      await assert.rejects(
+        () => prepareCheckpointBoundaryHandoff(f.root, deliveryId),
+        /requires an empty Git index/,
+      );
+    } finally {
+      await rm(f.root, { recursive: true, force: true });
+    }
+  });
 });
