@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260820-133-propose",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "propose",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "db27c1d9ad9c8af58b3643f387e1c2d7bd804b2f09592e5d0cc91dde2c78fb45",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:dba5691d42657a8f4a8ac9e54f8e48ff3f04c1a9247d0fe30ed4f5b5ebdaeba4",
+      "decision": "contract-reset",
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "delivery-full-test-cross-platform-compatibility-closure",
+      "scope": "Abandon proposal/apply generation 130/131/132; preserve approved Explore 128/129; keep J1 architecture, three corrective boundaries, 13-selector implementation mutation surface, and fresh real-Windows acceptance unchanged; revise only Proposal/Tasks lifecycle sequencing so every required task is complete before first formal Change Verification.",
+      "requiredOutcomes": [
+        "All required tasks must be truthfully complete before the first formal Change Verification begins.",
+        "Before formal Verification: implementation bytes, tests, real-Windows evidence, disposable full-plan evidence, and tasks.md completion are frozen.",
+        "Disposable full physical plan PASS remains a pre-Verification technical task on the final stable candidate.",
+        "Do not re-Explore, change J1 production design, widen into scheduler/timeout/evidence platform work, or redesign I1.",
+        "Formal Change Verification authority is expressed only by verification.md and terminal binding; it must not require later tasks.md mutation.",
+        "Fresh real-Windows legacy kind:command write-read-execute evidence remains a pre-Verification task on the final stable candidate.",
+        "tasks.md must not require post-Verification mutation for formal Change Verification PASS, verification.md publication, or review-apply handoff/verdict."
+      ],
+      "sourceRef": "owner-input:2026-08-20T14:14+08:00:contract-reset:J1-pre-verification-task-sequencing"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-cross-platform-compatibility-closure/20260820-133-propose/",
+  "changeKey": "J1",
+  "changeId": "delivery-full-test-cross-platform-compatibility-closure",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-cross-platform-compatibility-closure/20260820-129-review-explore/result.json",
+    "versionFingerprint": "4a163781acaff472483ad36b79de52fff1c97211d12121b72fa3fea259ac6e52",
+    "kind": "run-result"
+  },
+  "canonicalBase": "2ee79244128b62ea9ddb0388afc1ea08e746e298",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-cross-platform-compatibility-closure/20260820-129-review-explore/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "4a163781acaff472483ad36b79de52fff1c97211d12121b72fa3fea259ac6e52"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "727fc3b35bb3eb09ccede6d08cbc829ea0044b031816d47842ec2573bff99290"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/explore.md",
+      "versionFingerprint": "609f618c59c137e575295fdffebb8584065981b2a684dada89186a3211e6ef4f",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "delivery-full-test-cross-platform-compatibility-closure",
+      "runId": "20260820-133-propose",
+      "action": "propose",
+      "role": "author",
+      "semanticInputFingerprint": "db27c1d9ad9c8af58b3643f387e1c2d7bd804b2f09592e5d0cc91dde2c78fb45"
+    },
+    "definition": {
+      "action": "propose",
+      "version": 1,
+      "role": "author",
+      "goalClass": "freeze-change-contract",
+      "mutationClass": "proposal-bundle-only",
+      "outputClass": "current-proposal-bundle-set",
+      "terminalContract": {
+        "kind": "artifact",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "727fc3b35bb3eb09ccede6d08cbc829ea0044b031816d47842ec2573bff99290"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/explore.md",
+        "versionFingerprint": "609f618c59c137e575295fdffebb8584065981b2a684dada89186a3211e6ef4f",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-cross-platform-compatibility-closure/20260820-129-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "4a163781acaff472483ad36b79de52fff1c97211d12121b72fa3fea259ac6e52"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260820-129-review-explore",
+      "verdict": "approved",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-cross-platform-compatibility-closure/20260820-129-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "4a163781acaff472483ad36b79de52fff1c97211d12121b72fa3fea259ac6e52"
+      },
+      "blockingAuthorities": [],
+      "findings": []
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [
+      {
+        "ref": "owner:dba5691d42657a8f4a8ac9e54f8e48ff3f04c1a9247d0fe30ed4f5b5ebdaeba4",
+        "decision": "contract-reset",
+        "deliveryId": "20260817-01-delivery-execution-loop",
+        "changeId": "delivery-full-test-cross-platform-compatibility-closure",
+        "scope": "Abandon proposal/apply generation 130/131/132; preserve approved Explore 128/129; keep J1 architecture, three corrective boundaries, 13-selector implementation mutation surface, and fresh real-Windows acceptance unchanged; revise only Proposal/Tasks lifecycle sequencing so every required task is complete before first formal Change Verification.",
+        "requiredOutcomes": [
+          "All required tasks must be truthfully complete before the first formal Change Verification begins.",
+          "Before formal Verification: implementation bytes, tests, real-Windows evidence, disposable full-plan evidence, and tasks.md completion are frozen.",
+          "Disposable full physical plan PASS remains a pre-Verification technical task on the final stable candidate.",
+          "Do not re-Explore, change J1 production design, widen into scheduler/timeout/evidence platform work, or redesign I1.",
+          "Formal Change Verification authority is expressed only by verification.md and terminal binding; it must not require later tasks.md mutation.",
+          "Fresh real-Windows legacy kind:command write-read-execute evidence remains a pre-Verification task on the final stable candidate.",
+          "tasks.md must not require post-Verification mutation for formal Change Verification PASS, verification.md publication, or review-apply handoff/verdict."
+        ],
+        "sourceRef": "owner-input:2026-08-20T14:14+08:00:contract-reset:J1-pre-verification-task-sequencing"
+      }
+    ],
+    "externalContextFingerprint": "65f87dd9c831e3964a88633ac45efc314e3ca30422216069065510892c8ff188",
+    "requiredResultContract": {
+      "kind": "artifact",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": true,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

@@ -8,6 +8,19 @@ delivery:
   state: active
   fullTestStatus: not-ready
 
+  fullTestFindings:
+    - schemaVersion: 1
+      findingId: "full-test-failure:674b292ab9012894a5d1ea63d9e7d31dda319a0753e0362fde6ef7f23fc25562"
+      authorizationRef: "owner:9b18910b4bd5c7af3cea466e46f1739818d1a8f04c6516fe7f096f8eabab6785"
+      sourceResultRef: "verification:full-test:f250af14a7de3789d522c8cd9548c746e60a8655b29500105c9b2c2002de11eb"
+      severity: blocking
+      summary: "full-test check failed: full"
+      affectedScope: delivery
+      requiredOwnerDecision: corrective-change-or-cancel-delivery
+      resolution:
+        kind: corrective-change-created
+        changeId: "delivery-full-test-cross-platform-compatibility-closure"
+        ownerDecisionRef: "owner:1e0bb9574e4438886be395d3c94ff3a2dce93ffbffebbd330a7df5101c86268c"
 scope:
   included:
     - "Delivery readiness projection"
@@ -185,6 +198,19 @@ changes:
       - "coverage-complete bounded full-suite partition"
       - "Full Test protocol semantic aggregation closure"
       - "Full Test authorization invalidation and outcome-unknown lifecycle guards"
+
+  - key: "J1"
+    id: "delivery-full-test-cross-platform-compatibility-closure"
+    goal: "关闭 Delivery Full Test 暴露的跨平台兼容性缺口：修复 legacy kind: command Windows YAML round-trip、稳定 Windows PowerShell launcher fallback 的跨环境验证，并上浮 bounded physical failure diagnostics。"
+    required: true
+    dependsOn:
+      - "delivery-full-test-bounded-execution-and-protocol-closure"
+    state: completed
+    architectureImpact: false
+    outputs:
+      - "legacy command Windows path YAML write-read-execute round-trip closure"
+      - "deterministic cross-platform PowerShell launcher fallback regression"
+      - "bounded Full Test physical failure diagnostics surfaced by verify:full"
 ownerDecisions:
   - ref: "owner:0df75861bcca98dd0adf7c821f5bad559d882419521fce780d234fe6c079e680"
     decision: "create-delivery"
@@ -473,6 +499,66 @@ ownerDecisions:
     deliveryId: "20260817-01-delivery-execution-loop"
     changeId: "delivery-full-test-bounded-execution-and-protocol-closure"
     sourceRef: "ref/flowkit-local-ai-handoff-after-i1-127-archive.md"
+  - ref: "owner:9b18910b4bd5c7af3cea466e46f1739818d1a8f04c6516fe7f096f8eabab6785"
+    decision: "authorize-full-test"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    sourceRef: "owner:chat:2026-08-20:authorize-full-test:2ee79244128b62ea9ddb0388afc1ea08e746e298"
+  - ref: "owner:1e0bb9574e4438886be395d3c94ff3a2dce93ffbffebbd330a7df5101c86268c"
+    decision: "create-change"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-full-test-cross-platform-compatibility-closure"
+    sourceRef: "owner:chat:2026-08-20:create-corrective-after-detached-full-test-failure"
+  - ref: "owner:353eab6c5f1263a373268983f7c29ca45ba2fd9ff52474b1294c8415926c37c4"
+    decision: "activate-change"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-full-test-cross-platform-compatibility-closure"
+    sourceRef: "owner:chat:2026-08-20:J1-activate-clean-closure"
+  - ref: "owner:f037f8675fe154851c4c05ecc942a392092094c695e5d4750ef9bcd0879dff04"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-full-test-cross-platform-compatibility-closure"
+    sourceRef: "owner:chat:20260820T1354+08:00:authorize-apply:J1"
+  - ref: "owner:dba5691d42657a8f4a8ac9e54f8e48ff3f04c1a9247d0fe30ed4f5b5ebdaeba4"
+    decision: "contract-reset"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-full-test-cross-platform-compatibility-closure"
+    scope: "Abandon proposal/apply generation 130/131/132; preserve approved Explore 128/129; keep J1 architecture, three corrective boundaries, 13-selector implementation mutation surface, and fresh real-Windows acceptance unchanged; revise only Proposal/Tasks lifecycle sequencing so every required task is complete before first formal Change Verification."
+    requiredOutcomes:
+      - "All required tasks must be truthfully complete before the first formal Change Verification begins."
+      - "Before formal Verification: implementation bytes, tests, real-Windows evidence, disposable full-plan evidence, and tasks.md completion are frozen."
+      - "Disposable full physical plan PASS remains a pre-Verification technical task on the final stable candidate."
+      - "Do not re-Explore, change J1 production design, widen into scheduler/timeout/evidence platform work, or redesign I1."
+      - "Formal Change Verification authority is expressed only by verification.md and terminal binding; it must not require later tasks.md mutation."
+      - "Fresh real-Windows legacy kind:command write-read-execute evidence remains a pre-Verification task on the final stable candidate."
+      - "tasks.md must not require post-Verification mutation for formal Change Verification PASS, verification.md publication, or review-apply handoff/verdict."
+    sourceRef: "owner-input:2026-08-20T14:14+08:00:contract-reset:J1-pre-verification-task-sequencing"
+  - ref: "owner:c2788a597263cd6084295c4648d7d7af0fd49dad420214d4e41f83423857af8e"
+    decision: "contract-reset"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-full-test-cross-platform-compatibility-closure"
+    scope: "Supersede 133/134 real-Windows evidence requirement only; preserve J1 production design, three corrective boundaries, 13-selector mutation surface, tasks-freeze sequencing, Gate F, and 128/129 approved Explore lineage. Replace Gate W with deterministic simulated-Windows proof on the exact frozen candidate and narrow the claim so no real Windows OS semantics are asserted."
+    requiredOutcomes:
+      - "Abandon current 133 propose / 134 review-propose generation as current authority; retain them as immutable history and preserve 128/129 approved Explore as discovery handoff."
+      - "Disposable Full-Plan Gate F remains required and non-authoritative; all task checkboxes complete and tasks.md freezes before Gate W/F; gates do not mutate candidate; formal Change Verification starts only after both gates PASS."
+      - "No re-Explore, no production-design change, no mutation-surface expansion, no scheduler/timeout/evidence platform, and no I1 redesign."
+      - "Replace fresh real-Windows Gate W with a deterministic simulated-Windows Gate bound to the same exact frozen candidate: prove Windows-shaped legacy kind:command Manifest write→read exact semantic equality, platform=win32 execution-branch/argv/launcher semantics through injected controlled runner seams, and passed/failed protocol cases without relying on ambient PATH or host OS."
+      - "Simulation evidence MUST NOT be described as proof of real Windows filesystem/CreateProcess/PowerShell OS semantics; J1 acceptance claim is narrowed to host-independent serialization plus Flowkit win32 branch/transport semantics."
+    sourceRef: "chat:2026-08-20T15:00+08:00-owner-simulated-windows"
+  - ref: "owner:e9dd95555829d2059bb4ac671bdc37c1b7aaa512e6db3c8dcfdfa457eaeb1d98"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-full-test-cross-platform-compatibility-closure"
+    sourceRef: "chat:2026-08-20T15:19+08:00-owner-authorize-apply:J1-136"
+  - ref: "owner:03477ca4468532d1f3dd990d78dd18e1c0f1b924ededebdc2cf4c6a0e3e79ec4"
+    decision: "authorize-archive"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-full-test-cross-platform-compatibility-closure"
+    sourceRef: "owner:chat:20260820T1843+0800:j1-authorize-archive"
+  - ref: "owner:010f0ed040a7597262c9860eec2e7402d2473254934e441a55a45371dc6fe9c4"
+    decision: "authorize-checkpoint"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-full-test-cross-platform-compatibility-closure"
+    sourceRef: "ref/flowkit-local-ai-handoff-after-j1-139-archive.md"
 verification:
   change:
     requireApplicableChecks: true
@@ -547,6 +633,31 @@ verification:
       - "Windows compatibility regression"
       - "performance/timing"
 
+    failureHistory:
+      - schemaVersion: 1
+        status: failed
+        summary: "full-test check failed: full"
+        totalDurationMs: 59799
+        checks:
+          - id: "quality"
+            status: passed
+            durationMs: 1478
+          - id: "typecheck"
+            status: passed
+            durationMs: 5856
+          - id: "lint"
+            status: passed
+            durationMs: 3914
+          - id: "build"
+            status: passed
+            durationMs: 2606
+          - id: "openspec-all"
+            status: passed
+            durationMs: 307
+          - id: "full"
+            status: failed
+            durationMs: 45638
+        resultRef: "verification:full-test:f250af14a7de3789d522c8cd9548c746e60a8655b29500105c9b2c2002de11eb"
 acceptance:
   - "Delivery Ready 可确定性计算（required Changes completed + checkpoints present + Blocking Findings = 0 + formal facts consistent + Full Test Plan available）"
   - "Policy 可表达 Delivery behavior 而不伪造 Formal Action / Run"

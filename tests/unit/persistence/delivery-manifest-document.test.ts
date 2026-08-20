@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { parseYaml } from '../../../src/facts/yaml-parser.js';
 import { DeliveryManifestDocument } from '../../../src/persistence/delivery-manifest-document.js';
 import { FlowkitError } from '../../../src/shared/errors.js';
 
@@ -129,6 +130,44 @@ describe('A1 DeliveryManifestDocument Full Test owned blocks', () => {
     assert.match(text, /logicalChecks:\n {8}- id: "quality"/);
     assert.doesNotMatch(text, /command: "npm"|launcherMode:|timeoutMs:/);
     assert.equal((text.match(/execution:/g) ?? []).length, 1);
+  });
+
+  it('round-trips writer-produced legacy command Windows-shaped values through the shared YAML parser exactly', () => {
+    const command = String.raw`C:\nvm4w\nodejs\node.exe`;
+    const args = [String.raw`D:\tools\target.exe`, String.raw`--literal=\n`, String.raw`--tab=\t`, 'quote="ok"', '中文'];
+    const withCommand = fullTestManifest.replace(
+      '    requiresOwnerAuthorization: true\n',
+      [
+        '    requiresOwnerAuthorization: true',
+        '    execution:',
+        '      id: "legacy"',
+        '      kind: command',
+        '      command: "node"',
+        '      args:',
+        '        - "fixture"',
+        '      launcherMode: direct',
+        '      scope: delivery',
+        '      timeoutMs: 120000',
+        '      resultProtocol: flowkit-full-test-result-v1',
+        '      resultAuthority: verification',
+        '      expectedTerminalStatuses:',
+        '        - "passed"',
+        '        - "failed"',
+        '',
+      ].join('\n'),
+    );
+    const doc = DeliveryManifestDocument.parse(withCommand);
+    doc.replaceFullTestExecution({
+      id: 'legacy-windows-shaped', kind: 'command', command, args, launcherMode: 'direct', scope: 'delivery', timeoutMs: 30000,
+      resultProtocol: 'flowkit-full-test-result-v1', resultAuthority: 'verification', expectedTerminalStatuses: ['passed', 'failed'],
+    });
+    const parsed = parseYaml(doc.toString());
+    assert.equal(parsed.ok, true);
+    assert.ok(parsed.ok);
+    if (!parsed.ok) return;
+    const root = parsed.value as { verification: { fullTest: { execution: { command: string; args: string[] } } } };
+    assert.equal(root.verification.fullTest.execution.command, command);
+    assert.deepEqual(root.verification.fullTest.execution.args, args);
   });
 
 });

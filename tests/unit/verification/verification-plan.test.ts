@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { describe, it } from 'node:test';
 
 import {
+  executeProjectStep,
   fullTestEnvironment,
   runVerificationPlan,
   runVerificationPlanDetailed,
@@ -112,6 +113,32 @@ describe('F1 verification plans', () => {
       if (previous === undefined) delete process.env['FLOWKIT_FULL_TEST_RESULT_PATH'];
       else process.env['FLOWKIT_FULL_TEST_RESULT_PATH'] = previous;
       await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('surfaces failing bounded physical diagnostics from the actual verify:full step execution path', async () => {
+    const stderr: string[] = [];
+    const originalWrite = process.stderr.write.bind(process.stderr);
+    (process.stderr.write as unknown as (chunk: string) => boolean) = ((chunk: string) => { stderr.push(String(chunk)); return true; });
+    try {
+      const step = verifyFullPlan().find((candidate) => candidate.name === 'full');
+      assert.ok(step);
+      const result = await executeProjectStep(step, {
+        executeBounded: async () => ({
+          kind: 'execution-error',
+          outcomeKind: 'spawn-failed',
+          summary: 'transport failed',
+          diagnostics: [{
+            logicalCheckId: 'full', physicalTargetId: 'ordinary:tests/unit/example.test.ts', outcome: 'spawn-failed', durationMs: 3, exitCode: 1, stdout: '', stderr: '',
+            spawnError: { code: 'ENOENT', message: 'missing executable' },
+          }],
+        }),
+      });
+      assert.equal(result.exitCode, 2);
+      assert.match(stderr.join(''), /logical=full target=ordinary:tests\/unit\/example\.test\.ts outcome=spawn-failed/);
+      assert.match(stderr.join(''), /spawn-error: code=ENOENT message=missing executable/);
+    } finally {
+      process.stderr.write = originalWrite;
     }
   });
 

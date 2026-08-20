@@ -10,7 +10,7 @@ import { next } from '../policy/next.js';
 import { atomicWriteFile } from '../shared/atomic-write.js';
 import { FlowkitError } from '../shared/errors.js';
 import { runCommand, type ExternalCommandOutcome, type RunCommandOptions } from '../shared/external-command.js';
-import { executeBoundedFullTest } from '../verification/full-test/executor.js';
+import { executeBoundedFullTest, formatBoundedFullTestFailureDiagnostics } from '../verification/full-test/executor.js';
 
 export interface DeliveryFullTestOptions {
   readonly platform?: NodeJS.Platform;
@@ -165,7 +165,12 @@ export async function runDeliveryFullTest(
       return { deliveryId, executionStatus: 'execution-error', outcomeKind: bounded.outcomeKind, summary: bounded.summary };
     }
     try {
-      return await publishTerminal(repoRoot, deliveryId, bounded.payload, execution, atomicWrite);
+      const published = await publishTerminal(repoRoot, deliveryId, bounded.payload, execution, atomicWrite);
+      if (bounded.payload.status === 'failed') {
+        const physical = formatBoundedFullTestFailureDiagnostics(bounded.diagnostics).trim();
+        return physical.length > 0 ? { ...published, summary: `${bounded.payload.summary}; ${physical}` } : published;
+      }
+      return published;
     } catch (error) {
       return { deliveryId, executionStatus: 'execution-error', outcomeKind: 'protocol-error', summary: `Full Test protocol failed closed: ${error instanceof Error ? error.message : String(error)}` };
     }

@@ -8,7 +8,7 @@ import { runCommand as runExternalCommand } from '../src/shared/external-command
 import { resolveAffectedTests, resolveAllTests } from './affected-scopes.js';
 import { runPlatformCommand } from './platform-command.js';
 import type { FullTestProtocolPayload } from '../src/domain/full-test.js';
-import { executeBoundedFullTest } from '../src/verification/full-test/executor.js';
+import { executeBoundedFullTest, formatBoundedFullTestFailureDiagnostics } from '../src/verification/full-test/executor.js';
 import { FULL_TEST_LOGICAL_CHECKS } from '../src/verification/full-test/plan.js';
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
@@ -170,10 +170,11 @@ function writeCapturedOutput(stdout: string, stderr: string): void {
 
 export async function executeProjectStep(
   step: VerificationStep,
+  options: { readonly executeBounded?: typeof executeBoundedFullTest } = {},
 ): Promise<{ exitCode: number; durationMs: number }> {
   const sharedFullCheck = FULL_TEST_LOGICAL_CHECKS.find((candidate) => candidate.id === step.name);
   if (sharedFullCheck !== undefined) {
-    const result = await executeBoundedFullTest(projectRoot, {
+    const result = await (options.executeBounded ?? executeBoundedFullTest)(projectRoot, {
       id: 'technical-full-test-step',
       kind: 'bounded-command-plan',
       logicalChecks: [sharedFullCheck],
@@ -182,8 +183,17 @@ export async function executeProjectStep(
       resultAuthority: 'verification',
       expectedTerminalStatuses: ['passed', 'failed'],
     }, { env: process.env });
-    if (result.kind === 'execution-error') return { exitCode: 2, durationMs: 0 };
+    if (result.kind === 'execution-error') {
+      const physical = formatBoundedFullTestFailureDiagnostics(result.diagnostics);
+      if (physical.length > 0) process.stderr.write(physical);
+      else process.stderr.write(`${result.summary}\n`);
+      return { exitCode: 2, durationMs: 0 };
+    }
     const check = result.payload.checks[0];
+    if (check?.status === 'failed') {
+      const physical = formatBoundedFullTestFailureDiagnostics(result.diagnostics);
+      if (physical.length > 0) process.stderr.write(physical);
+    }
     return { exitCode: check?.status === 'passed' ? 0 : 1, durationMs: check?.durationMs ?? result.payload.totalDurationMs };
   }
   if (step.kind === 'openspec') {

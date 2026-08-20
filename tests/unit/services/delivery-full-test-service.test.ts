@@ -522,6 +522,39 @@ describe('A1 Delivery Full Test service', () => {
     assert.deepEqual(snap.deliveryFullTestResult?.checks.map((check) => check.id), ['quality', 'full']);
   });
 
+  it('surfaces bounded terminal physical failure in operator summary without changing persisted protocol truth', async () => {
+    const f = await fixture({ executionKind: 'bounded-command-plan' });
+    const result = await runDeliveryFullTest(f.root, f.deliveryId, {
+      executeBounded: async () => ({
+        kind: 'terminal',
+        payload: {
+          schemaVersion: 1,
+          status: 'failed',
+          summary: 'full-test check failed: full',
+          totalDurationMs: 20,
+          checks: [
+            { id: 'quality', status: 'passed', durationMs: 5 },
+            { id: 'full', status: 'failed', durationMs: 15 },
+          ],
+        },
+        diagnostics: [{
+          logicalCheckId: 'full',
+          physicalTargetId: 'ordinary:tests/unit/example.test.ts',
+          outcome: 'exited',
+          durationMs: 15,
+          exitCode: 1,
+          stdout: '',
+          stderr: 'assertion failed',
+        }],
+      }),
+    });
+    assert.equal(result.executionStatus, 'failed');
+    assert.match(result.summary, /logical=full target=ordinary:tests\/unit\/example\.test\.ts outcome=exited/);
+    const snap = await readFormalFactSnapshot({ repoRoot: f.root, deliveryId: f.deliveryId, runsPathPrefix: '.flowkit/runs', openspecChangesPath: 'openspec/changes', manifestPathPrefix: 'openspec/delivery-groups' });
+    assert.equal(snap.deliveryFullTestResult?.summary, 'full-test check failed: full');
+    assert.equal(snap.deliveryFullTestResult?.checks.at(-1)?.id, 'full');
+  });
+
   it('rejects a bounded PASS with an incomplete logical plan and preserves authorized with no terminal result', async () => {
     const f = await fixture({ executionKind: 'bounded-command-plan' });
     const result = await runDeliveryFullTest(f.root, f.deliveryId, {

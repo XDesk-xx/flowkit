@@ -1,0 +1,419 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260820-132-apply",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "apply",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "semanticInputFingerprint": "0d24c469270339652de4fe58d72ac8e6bc654a3affc3ad4ce410346f79db3f49",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-cross-platform-compatibility-closure/20260820-132-apply/",
+  "changeKey": "J1",
+  "changeId": "delivery-full-test-cross-platform-compatibility-closure",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-cross-platform-compatibility-closure/20260820-131-review-propose/result.json",
+    "versionFingerprint": "60785fd9e4da5f8e140ec4c91d5d6513bc19efebf0df66e0759c4e0e163ff6c6",
+    "kind": "run-result"
+  },
+  "canonicalBase": "2ee79244128b62ea9ddb0388afc1ea08e746e298",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-cross-platform-compatibility-closure/20260820-131-review-propose/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "60785fd9e4da5f8e140ec4c91d5d6513bc19efebf0df66e0759c4e0e163ff6c6"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "727fc3b35bb3eb09ccede6d08cbc829ea0044b031816d47842ec2573bff99290"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/design.md",
+      "versionFingerprint": "589d5dc4bb5ad74bce1015fcc2f5776798a54987c30e675ac8c5309125509125",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/proposal.md",
+      "versionFingerprint": "615129f57fe68f9ae487c86e8ecce8aed4e99f61d2dc7c7b68b8b36a2ef1a4fa",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+      "versionFingerprint": "e65918ddce176506b501e64dc8f9b7d07bf3e5a617cc0ac4f1b9f1825314a610",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/specs/flowkit-core-model/spec.md",
+      "versionFingerprint": "2f1ebe501f310814031022ce1abf76d79e93007e4ce3405dbfd2441d148a6d63",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "versionFingerprint": "7778946cfbe83f9d0ef895a58336762cf7e32b03f6b176cd110b82d87de81bfa",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/specs/flowkit-runtime-foundation/spec.md",
+      "versionFingerprint": "b8142a89787d228ba3d08425c4497981035a71eb9be184b07f8f63cb4e7efa72",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/tasks.md",
+      "versionFingerprint": "4eb2f7bd42c80cf39db44953a63bed5a009a4c00cf2f9e2ac52e9aa1d0d669d7",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "delivery-full-test-cross-platform-compatibility-closure",
+      "runId": "20260820-132-apply",
+      "action": "apply",
+      "role": "author",
+      "semanticInputFingerprint": "0d24c469270339652de4fe58d72ac8e6bc654a3affc3ad4ce410346f79db3f49"
+    },
+    "definition": {
+      "action": "apply",
+      "version": 1,
+      "role": "author",
+      "goalClass": "implement-approved-contract",
+      "mutationClass": "approved-implementation-and-verification",
+      "outputClass": "implementation-candidate-and-authority-files",
+      "terminalContract": {
+        "kind": "implementation",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "727fc3b35bb3eb09ccede6d08cbc829ea0044b031816d47842ec2573bff99290"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/design.md",
+        "versionFingerprint": "589d5dc4bb5ad74bce1015fcc2f5776798a54987c30e675ac8c5309125509125",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/proposal.md",
+        "versionFingerprint": "615129f57fe68f9ae487c86e8ecce8aed4e99f61d2dc7c7b68b8b36a2ef1a4fa",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+        "versionFingerprint": "e65918ddce176506b501e64dc8f9b7d07bf3e5a617cc0ac4f1b9f1825314a610",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/specs/flowkit-core-model/spec.md",
+        "versionFingerprint": "2f1ebe501f310814031022ce1abf76d79e93007e4ce3405dbfd2441d148a6d63",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "7778946cfbe83f9d0ef895a58336762cf7e32b03f6b176cd110b82d87de81bfa",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/specs/flowkit-runtime-foundation/spec.md",
+        "versionFingerprint": "b8142a89787d228ba3d08425c4497981035a71eb9be184b07f8f63cb4e7efa72",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/tasks.md",
+        "versionFingerprint": "4eb2f7bd42c80cf39db44953a63bed5a009a4c00cf2f9e2ac52e9aa1d0d669d7",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-cross-platform-compatibility-closure/20260820-131-review-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "60785fd9e4da5f8e140ec4c91d5d6513bc19efebf0df66e0759c4e0e163ff6c6"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260820-131-review-propose",
+      "verdict": "approved",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-cross-platform-compatibility-closure/20260820-131-review-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "60785fd9e4da5f8e140ec4c91d5d6513bc19efebf0df66e0759c4e0e163ff6c6"
+      },
+      "blockingAuthorities": [],
+      "findings": []
+    },
+    "ownerAuthorizationRefs": [
+      {
+        "ref": "owner:f037f8675fe154851c4c05ecc942a392092094c695e5d4750ef9bcd0879dff04",
+        "decision": "authorize-apply",
+        "deliveryId": "20260817-01-delivery-execution-loop",
+        "changeId": "delivery-full-test-cross-platform-compatibility-closure",
+        "sourceRef": "owner:chat:20260820T1354+08:00:authorize-apply:J1"
+      }
+    ],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "cf60a3d18c211743e29adcc019a4e93de3e42aee26125c517dac45629c727924",
+    "requiredResultContract": {
+      "kind": "implementation",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    },
+    "compactEntryWorkspaceIdentity": {
+      "canonicalBase": "2ee79244128b62ea9ddb0388afc1ea08e746e298",
+      "workspaceFingerprint": "f70fece81517b4db24bfdec37cb151c9e5e627192c960ddd4655b147a44fe76c",
+      "entries": [
+        {
+          "path": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/.openspec.yaml",
+          "state": "untracked",
+          "contentFingerprint": "727fc3b35bb3eb09ccede6d08cbc829ea0044b031816d47842ec2573bff99290"
+        },
+        {
+          "path": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/design.md",
+          "state": "untracked",
+          "contentFingerprint": "589d5dc4bb5ad74bce1015fcc2f5776798a54987c30e675ac8c5309125509125"
+        },
+        {
+          "path": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/explore.md",
+          "state": "untracked",
+          "contentFingerprint": "609f618c59c137e575295fdffebb8584065981b2a684dada89186a3211e6ef4f"
+        },
+        {
+          "path": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/proposal.md",
+          "state": "untracked",
+          "contentFingerprint": "615129f57fe68f9ae487c86e8ecce8aed4e99f61d2dc7c7b68b8b36a2ef1a4fa"
+        },
+        {
+          "path": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "e65918ddce176506b501e64dc8f9b7d07bf3e5a617cc0ac4f1b9f1825314a610"
+        },
+        {
+          "path": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/specs/flowkit-core-model/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "2f1ebe501f310814031022ce1abf76d79e93007e4ce3405dbfd2441d148a6d63"
+        },
+        {
+          "path": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "7778946cfbe83f9d0ef895a58336762cf7e32b03f6b176cd110b82d87de81bfa"
+        },
+        {
+          "path": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/specs/flowkit-runtime-foundation/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "b8142a89787d228ba3d08425c4497981035a71eb9be184b07f8f63cb4e7efa72"
+        },
+        {
+          "path": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/tasks.md",
+          "state": "untracked",
+          "contentFingerprint": "4eb2f7bd42c80cf39db44953a63bed5a009a4c00cf2f9e2ac52e9aa1d0d669d7"
+        },
+        {
+          "path": "openspec/delivery-groups/20260817-01-delivery-execution-loop.yaml",
+          "state": "modified",
+          "contentFingerprint": "2378dcd814cafd639fd25780cd483a773c115f0e3b725e17c74abf3e7eb7b907"
+        }
+      ]
+    },
+    "mutationDeclaration": {
+      "schemaVersion": 1,
+      "action": "apply",
+      "designRef": {
+        "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/design.md",
+        "kind": "produced-artifact",
+        "versionFingerprint": "589d5dc4bb5ad74bce1015fcc2f5776798a54987c30e675ac8c5309125509125"
+      },
+      "selectors": [
+        {
+          "kind": "exact",
+          "path": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/tasks.md"
+        },
+        {
+          "kind": "exact",
+          "path": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/verification.md"
+        },
+        {
+          "kind": "exact",
+          "path": "scripts/verification.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/facts/yaml-parser.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/services/delivery-full-test-service.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/verification/full-test/executor.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/integration/a1-delivery-readiness-and-full-test-behavior.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/external-command.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/facts/yaml-parser.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/persistence/delivery-manifest-document.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/services/delivery-full-test-service.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/verification/full-test/executor.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/verification/verification-plan.test.ts"
+        }
+      ]
+    }
+  },
+  "compactEntryWorkspaceIdentity": {
+    "canonicalBase": "2ee79244128b62ea9ddb0388afc1ea08e746e298",
+    "workspaceFingerprint": "f70fece81517b4db24bfdec37cb151c9e5e627192c960ddd4655b147a44fe76c",
+    "entries": [
+      {
+        "path": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/.openspec.yaml",
+        "state": "untracked",
+        "contentFingerprint": "727fc3b35bb3eb09ccede6d08cbc829ea0044b031816d47842ec2573bff99290"
+      },
+      {
+        "path": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/design.md",
+        "state": "untracked",
+        "contentFingerprint": "589d5dc4bb5ad74bce1015fcc2f5776798a54987c30e675ac8c5309125509125"
+      },
+      {
+        "path": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/explore.md",
+        "state": "untracked",
+        "contentFingerprint": "609f618c59c137e575295fdffebb8584065981b2a684dada89186a3211e6ef4f"
+      },
+      {
+        "path": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/proposal.md",
+        "state": "untracked",
+        "contentFingerprint": "615129f57fe68f9ae487c86e8ecce8aed4e99f61d2dc7c7b68b8b36a2ef1a4fa"
+      },
+      {
+        "path": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "e65918ddce176506b501e64dc8f9b7d07bf3e5a617cc0ac4f1b9f1825314a610"
+      },
+      {
+        "path": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/specs/flowkit-core-model/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "2f1ebe501f310814031022ce1abf76d79e93007e4ce3405dbfd2441d148a6d63"
+      },
+      {
+        "path": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "7778946cfbe83f9d0ef895a58336762cf7e32b03f6b176cd110b82d87de81bfa"
+      },
+      {
+        "path": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/specs/flowkit-runtime-foundation/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "b8142a89787d228ba3d08425c4497981035a71eb9be184b07f8f63cb4e7efa72"
+      },
+      {
+        "path": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/tasks.md",
+        "state": "untracked",
+        "contentFingerprint": "4eb2f7bd42c80cf39db44953a63bed5a009a4c00cf2f9e2ac52e9aa1d0d669d7"
+      },
+      {
+        "path": "openspec/delivery-groups/20260817-01-delivery-execution-loop.yaml",
+        "state": "modified",
+        "contentFingerprint": "2378dcd814cafd639fd25780cd483a773c115f0e3b725e17c74abf3e7eb7b907"
+      }
+    ]
+  },
+  "mutationDeclaration": {
+    "schemaVersion": 1,
+    "action": "apply",
+    "designRef": {
+      "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/design.md",
+      "kind": "produced-artifact",
+      "versionFingerprint": "589d5dc4bb5ad74bce1015fcc2f5776798a54987c30e675ac8c5309125509125"
+    },
+    "selectors": [
+      {
+        "kind": "exact",
+        "path": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/tasks.md"
+      },
+      {
+        "kind": "exact",
+        "path": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/verification.md"
+      },
+      {
+        "kind": "exact",
+        "path": "scripts/verification.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/facts/yaml-parser.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/services/delivery-full-test-service.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/verification/full-test/executor.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/integration/a1-delivery-readiness-and-full-test-behavior.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/external-command.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/facts/yaml-parser.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/persistence/delivery-manifest-document.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/services/delivery-full-test-service.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/verification/full-test/executor.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/verification/verification-plan.test.ts"
+      }
+    ]
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": true,
+    "mayWriteTestCode": true,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

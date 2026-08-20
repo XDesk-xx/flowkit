@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import type { BoundedCommandPlanFullTestExecution } from '../../../../src/domain/full-test.js';
-import { executeBoundedFullTest } from '../../../../src/verification/full-test/executor.js';
+import { executeBoundedFullTest, formatBoundedFullTestFailureDiagnostics } from '../../../../src/verification/full-test/executor.js';
 import type { ResolvedFullTestLogicalCheck } from '../../../../src/verification/full-test/resolver.js';
 import type { ExternalCommandOutcome } from '../../../../src/shared/external-command.js';
 
@@ -73,6 +73,31 @@ describe('I1 bounded Full Test executor', () => {
       assert.equal(result.kind, 'execution-error');
       if (result.kind === 'execution-error') assert.equal(result.outcomeKind, kind);
     }
+  });
+
+  it('preserves bounded spawn/process diagnostics and formats the failing physical target without changing protocol truth', async () => {
+    const result = await executeBoundedFullTest('/repo', execution, {
+      resolveLogicalCheck: async (_root, check) => resolved(check),
+      runCommand: async () => ({
+        kind: 'spawn-failed',
+        stdout: '',
+        stderr: '',
+        exitCode: 2,
+        spawned: false,
+        timedOut: false,
+        spawnError: { code: 'ENOENT', message: 'missing launcher' },
+        processTreeDiagnostics: ['owned-process-group-cancellation=not-started'],
+      }),
+    });
+    assert.equal(result.kind, 'execution-error');
+    if (result.kind !== 'execution-error') return;
+    assert.equal(result.diagnostics.length, 1);
+    assert.deepEqual(result.diagnostics[0]?.spawnError, { code: 'ENOENT', message: 'missing launcher' });
+    assert.deepEqual(result.diagnostics[0]?.processTreeDiagnostics, ['owned-process-group-cancellation=not-started']);
+    const text = formatBoundedFullTestFailureDiagnostics(result.diagnostics);
+    assert.match(text, /logical=quality target=quality:one outcome=spawn-failed/);
+    assert.match(text, /spawn-error: code=ENOENT message=missing launcher/);
+    assert.match(text, /process-tree: owned-process-group-cancellation=not-started/);
   });
 
   it('fails closed on resolver drift before publishing a terminal result', async () => {

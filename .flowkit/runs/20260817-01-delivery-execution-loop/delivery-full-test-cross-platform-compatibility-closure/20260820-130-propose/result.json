@@ -1,0 +1,49 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "propose",
+    "executionStatus": "completed",
+    "summary": "J1 Proposal freezes a bounded corrective closure without reopening I1: replace chained double-quoted YAML unescape with one writer-compatible semantic decode and require exact round-trip coverage; keep production PowerShell fallback ENOENT-only while making missing-launcher fixtures test-owned/deterministic; propagate bounded spawn/process-tree diagnostics through executor to technical verify:full and authoritative Full Test operator-facing summaries without changing persisted logical protocol authority; require stable-candidate formal Change Verification, complete non-authoritative disposable full physical plan, and fresh real-Windows legacy kind=command write-read-execute evidence before claiming cross-platform closure. Apply/revise-apply mutation declarations both resolve to the same 13 exact selectors; no timeout inflation, scheduler, new durable diagnostic protocol, I1 reopen, or authoritative Full Test during Apply.",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/design.md",
+        "versionFingerprint": "589d5dc4bb5ad74bce1015fcc2f5776798a54987c30e675ac8c5309125509125",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/proposal.md",
+        "versionFingerprint": "615129f57fe68f9ae487c86e8ecce8aed4e99f61d2dc7c7b68b8b36a2ef1a4fa",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+        "versionFingerprint": "e65918ddce176506b501e64dc8f9b7d07bf3e5a617cc0ac4f1b9f1825314a610",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/specs/flowkit-core-model/spec.md",
+        "versionFingerprint": "2f1ebe501f310814031022ce1abf76d79e93007e4ce3405dbfd2441d148a6d63",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "7778946cfbe83f9d0ef895a58336762cf7e32b03f6b176cd110b82d87de81bfa",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/specs/flowkit-runtime-foundation/spec.md",
+        "versionFingerprint": "b8142a89787d228ba3d08425c4497981035a71eb9be184b07f8f63cb4e7efa72",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/tasks.md",
+        "versionFingerprint": "4eb2f7bd42c80cf39db44953a63bed5a009a4c00cf2f9e2ac52e9aa1d0d669d7",
+        "kind": "produced-artifact"
+      }
+    ]
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "72a2f1e54bc478b90d2dc1bbac60457256dc74927d700638e5f9016d685729a0"
+  }
+}

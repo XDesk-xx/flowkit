@@ -1,0 +1,242 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260820-138-review-apply",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "review-apply",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "f8172abf82869c2eeab6771d7d839fb80163274da90715f3874f5d1b587f7d6b",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:c2788a597263cd6084295c4648d7d7af0fd49dad420214d4e41f83423857af8e",
+      "decision": "contract-reset",
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "delivery-full-test-cross-platform-compatibility-closure",
+      "scope": "Supersede 133/134 real-Windows evidence requirement only; preserve J1 production design, three corrective boundaries, 13-selector mutation surface, tasks-freeze sequencing, Gate F, and 128/129 approved Explore lineage. Replace Gate W with deterministic simulated-Windows proof on the exact frozen candidate and narrow the claim so no real Windows OS semantics are asserted.",
+      "requiredOutcomes": [
+        "Abandon current 133 propose / 134 review-propose generation as current authority; retain them as immutable history and preserve 128/129 approved Explore as discovery handoff.",
+        "Disposable Full-Plan Gate F remains required and non-authoritative; all task checkboxes complete and tasks.md freezes before Gate W/F; gates do not mutate candidate; formal Change Verification starts only after both gates PASS.",
+        "No re-Explore, no production-design change, no mutation-surface expansion, no scheduler/timeout/evidence platform, and no I1 redesign.",
+        "Replace fresh real-Windows Gate W with a deterministic simulated-Windows Gate bound to the same exact frozen candidate: prove Windows-shaped legacy kind:command Manifest write→read exact semantic equality, platform=win32 execution-branch/argv/launcher semantics through injected controlled runner seams, and passed/failed protocol cases without relying on ambient PATH or host OS.",
+        "Simulation evidence MUST NOT be described as proof of real Windows filesystem/CreateProcess/PowerShell OS semantics; J1 acceptance claim is narrowed to host-independent serialization plus Flowkit win32 branch/transport semantics."
+      ],
+      "sourceRef": "chat:2026-08-20T15:00+08:00-owner-simulated-windows"
+    },
+    {
+      "ref": "owner:dba5691d42657a8f4a8ac9e54f8e48ff3f04c1a9247d0fe30ed4f5b5ebdaeba4",
+      "decision": "contract-reset",
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "delivery-full-test-cross-platform-compatibility-closure",
+      "scope": "Abandon proposal/apply generation 130/131/132; preserve approved Explore 128/129; keep J1 architecture, three corrective boundaries, 13-selector implementation mutation surface, and fresh real-Windows acceptance unchanged; revise only Proposal/Tasks lifecycle sequencing so every required task is complete before first formal Change Verification.",
+      "requiredOutcomes": [
+        "All required tasks must be truthfully complete before the first formal Change Verification begins.",
+        "Before formal Verification: implementation bytes, tests, real-Windows evidence, disposable full-plan evidence, and tasks.md completion are frozen.",
+        "Disposable full physical plan PASS remains a pre-Verification technical task on the final stable candidate.",
+        "Do not re-Explore, change J1 production design, widen into scheduler/timeout/evidence platform work, or redesign I1.",
+        "Formal Change Verification authority is expressed only by verification.md and terminal binding; it must not require later tasks.md mutation.",
+        "Fresh real-Windows legacy kind:command write-read-execute evidence remains a pre-Verification task on the final stable candidate.",
+        "tasks.md must not require post-Verification mutation for formal Change Verification PASS, verification.md publication, or review-apply handoff/verdict."
+      ],
+      "sourceRef": "owner-input:2026-08-20T14:14+08:00:contract-reset:J1-pre-verification-task-sequencing"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-cross-platform-compatibility-closure/20260820-138-review-apply/",
+  "changeKey": "J1",
+  "changeId": "delivery-full-test-cross-platform-compatibility-closure",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-cross-platform-compatibility-closure/20260820-137-apply/result.json",
+    "versionFingerprint": "57750dbcceb0b0a6a6fd962b4983c90083f22344f686d5ba53a7025f0f8f126e",
+    "kind": "run-result"
+  },
+  "verificationInputRef": {
+    "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/verification.md",
+    "versionFingerprint": "65da088fd41a92547ba7d2b8483351dd200c5745901a2c908b8153086a5455f8",
+    "kind": "verification-summary"
+  },
+  "reviewedRunId": "20260820-137-apply",
+  "canonicalBase": "2ee79244128b62ea9ddb0388afc1ea08e746e298",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-cross-platform-compatibility-closure/20260820-137-apply/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "57750dbcceb0b0a6a6fd962b4983c90083f22344f686d5ba53a7025f0f8f126e"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "727fc3b35bb3eb09ccede6d08cbc829ea0044b031816d47842ec2573bff99290"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/design.md",
+      "versionFingerprint": "5df2e23e7ccd57f3ba00a87c6e56dd2c9e7679142ce33328b15b4e580712207f",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/proposal.md",
+      "versionFingerprint": "8101c0a8710b2485ce3eaf9a0d0e8a091977cde203428796a3b1b393eecc95f7",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+      "versionFingerprint": "e65918ddce176506b501e64dc8f9b7d07bf3e5a617cc0ac4f1b9f1825314a610",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/specs/flowkit-core-model/spec.md",
+      "versionFingerprint": "2f1ebe501f310814031022ce1abf76d79e93007e4ce3405dbfd2441d148a6d63",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "versionFingerprint": "7778946cfbe83f9d0ef895a58336762cf7e32b03f6b176cd110b82d87de81bfa",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/specs/flowkit-runtime-foundation/spec.md",
+      "versionFingerprint": "b8142a89787d228ba3d08425c4497981035a71eb9be184b07f8f63cb4e7efa72",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/tasks.md",
+      "kind": "openspec-contract",
+      "versionFingerprint": "0da7285ba1ae48d4a91f2ab1661d9504b5388c7bfdf8a8112ad095348d2534f9"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "delivery-full-test-cross-platform-compatibility-closure",
+      "runId": "20260820-138-review-apply",
+      "action": "review-apply",
+      "role": "reviewer",
+      "semanticInputFingerprint": "f8172abf82869c2eeab6771d7d839fb80163274da90715f3874f5d1b587f7d6b"
+    },
+    "definition": {
+      "action": "review-apply",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-implementation-and-verification",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings-plus-verification-ref",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "core-derived",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "727fc3b35bb3eb09ccede6d08cbc829ea0044b031816d47842ec2573bff99290"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/design.md",
+        "versionFingerprint": "5df2e23e7ccd57f3ba00a87c6e56dd2c9e7679142ce33328b15b4e580712207f",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/proposal.md",
+        "versionFingerprint": "8101c0a8710b2485ce3eaf9a0d0e8a091977cde203428796a3b1b393eecc95f7",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+        "versionFingerprint": "e65918ddce176506b501e64dc8f9b7d07bf3e5a617cc0ac4f1b9f1825314a610",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/specs/flowkit-core-model/spec.md",
+        "versionFingerprint": "2f1ebe501f310814031022ce1abf76d79e93007e4ce3405dbfd2441d148a6d63",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "7778946cfbe83f9d0ef895a58336762cf7e32b03f6b176cd110b82d87de81bfa",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/specs/flowkit-runtime-foundation/spec.md",
+        "versionFingerprint": "b8142a89787d228ba3d08425c4497981035a71eb9be184b07f8f63cb4e7efa72",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/tasks.md",
+        "kind": "openspec-contract",
+        "versionFingerprint": "0da7285ba1ae48d4a91f2ab1661d9504b5388c7bfdf8a8112ad095348d2534f9"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-cross-platform-compatibility-closure/20260820-137-apply/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "57750dbcceb0b0a6a6fd962b4983c90083f22344f686d5ba53a7025f0f8f126e"
+      }
+    ],
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [
+      {
+        "ref": "owner:c2788a597263cd6084295c4648d7d7af0fd49dad420214d4e41f83423857af8e",
+        "decision": "contract-reset",
+        "deliveryId": "20260817-01-delivery-execution-loop",
+        "changeId": "delivery-full-test-cross-platform-compatibility-closure",
+        "scope": "Supersede 133/134 real-Windows evidence requirement only; preserve J1 production design, three corrective boundaries, 13-selector mutation surface, tasks-freeze sequencing, Gate F, and 128/129 approved Explore lineage. Replace Gate W with deterministic simulated-Windows proof on the exact frozen candidate and narrow the claim so no real Windows OS semantics are asserted.",
+        "requiredOutcomes": [
+          "Abandon current 133 propose / 134 review-propose generation as current authority; retain them as immutable history and preserve 128/129 approved Explore as discovery handoff.",
+          "Disposable Full-Plan Gate F remains required and non-authoritative; all task checkboxes complete and tasks.md freezes before Gate W/F; gates do not mutate candidate; formal Change Verification starts only after both gates PASS.",
+          "No re-Explore, no production-design change, no mutation-surface expansion, no scheduler/timeout/evidence platform, and no I1 redesign.",
+          "Replace fresh real-Windows Gate W with a deterministic simulated-Windows Gate bound to the same exact frozen candidate: prove Windows-shaped legacy kind:command Manifest write→read exact semantic equality, platform=win32 execution-branch/argv/launcher semantics through injected controlled runner seams, and passed/failed protocol cases without relying on ambient PATH or host OS.",
+          "Simulation evidence MUST NOT be described as proof of real Windows filesystem/CreateProcess/PowerShell OS semantics; J1 acceptance claim is narrowed to host-independent serialization plus Flowkit win32 branch/transport semantics."
+        ],
+        "sourceRef": "chat:2026-08-20T15:00+08:00-owner-simulated-windows"
+      },
+      {
+        "ref": "owner:dba5691d42657a8f4a8ac9e54f8e48ff3f04c1a9247d0fe30ed4f5b5ebdaeba4",
+        "decision": "contract-reset",
+        "deliveryId": "20260817-01-delivery-execution-loop",
+        "changeId": "delivery-full-test-cross-platform-compatibility-closure",
+        "scope": "Abandon proposal/apply generation 130/131/132; preserve approved Explore 128/129; keep J1 architecture, three corrective boundaries, 13-selector implementation mutation surface, and fresh real-Windows acceptance unchanged; revise only Proposal/Tasks lifecycle sequencing so every required task is complete before first formal Change Verification.",
+        "requiredOutcomes": [
+          "All required tasks must be truthfully complete before the first formal Change Verification begins.",
+          "Before formal Verification: implementation bytes, tests, real-Windows evidence, disposable full-plan evidence, and tasks.md completion are frozen.",
+          "Disposable full physical plan PASS remains a pre-Verification technical task on the final stable candidate.",
+          "Do not re-Explore, change J1 production design, widen into scheduler/timeout/evidence platform work, or redesign I1.",
+          "Formal Change Verification authority is expressed only by verification.md and terminal binding; it must not require later tasks.md mutation.",
+          "Fresh real-Windows legacy kind:command write-read-execute evidence remains a pre-Verification task on the final stable candidate.",
+          "tasks.md must not require post-Verification mutation for formal Change Verification PASS, verification.md publication, or review-apply handoff/verdict."
+        ],
+        "sourceRef": "owner-input:2026-08-20T14:14+08:00:contract-reset:J1-pre-verification-task-sequencing"
+      }
+    ],
+    "verificationView": {
+      "status": "passed",
+      "resultRef": {
+        "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/verification.md",
+        "kind": "verification-summary",
+        "versionFingerprint": "65da088fd41a92547ba7d2b8483351dd200c5745901a2c908b8153086a5455f8"
+      }
+    },
+    "externalContextFingerprint": "89ebf17dfd79d5bbafc5d397e2eead6ef7e96b52e04cf1e21c354ded80e9bd5f",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "core-derived",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

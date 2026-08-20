@@ -14,6 +14,8 @@ export interface BoundedFullTestExecutionDiagnostics {
   readonly exitCode: number;
   readonly stdout: string;
   readonly stderr: string;
+  readonly spawnError?: { readonly code?: string; readonly message: string };
+  readonly processTreeDiagnostics?: readonly string[];
 }
 
 export type BoundedFullTestExecutionResult =
@@ -38,7 +40,27 @@ function diagnostic(result: BoundedExternalCommandTargetResult): BoundedFullTest
     exitCode: result.exitCode,
     stdout: result.stdout,
     stderr: result.stderr,
+    ...(result.spawnError !== undefined ? { spawnError: result.spawnError } : {}),
+    ...(result.processTreeDiagnostics !== undefined ? { processTreeDiagnostics: result.processTreeDiagnostics } : {}),
   };
+}
+
+
+export function formatBoundedFullTestFailureDiagnostics(
+  diagnostics: readonly BoundedFullTestExecutionDiagnostics[],
+): string {
+  const terminal = diagnostics.at(-1);
+  if (terminal === undefined) return '';
+  const lines = [
+    `full-test physical failure: logical=${terminal.logicalCheckId} target=${terminal.physicalTargetId} outcome=${terminal.outcome} exit=${terminal.exitCode} durationMs=${terminal.durationMs}`,
+  ];
+  if (terminal.spawnError !== undefined) {
+    lines.push(`spawn-error: code=${terminal.spawnError.code ?? 'unknown'} message=${terminal.spawnError.message}`);
+  }
+  for (const item of terminal.processTreeDiagnostics ?? []) lines.push(`process-tree: ${item}`);
+  if (terminal.stdout.length > 0) lines.push(`stdout:\n${terminal.stdout}`);
+  if (terminal.stderr.length > 0) lines.push(`stderr:\n${terminal.stderr}`);
+  return `${lines.join('\n')}\n`;
 }
 
 export async function executeBoundedFullTest(

@@ -7,6 +7,7 @@ import { runCli } from '../../src/cli/main.js';
 import { readFormalFactSnapshot } from '../../src/facts/formal-fact-reader.js';
 import { renderOwnerDecisionRecord } from '../../src/persistence/delivery-manifest-document.js';
 import { buildOwnerDecisionRecord } from '../../src/services/a1-write-service.js';
+import { runDeliveryFullTest } from '../../src/services/delivery-full-test-service.js';
 import { runCommand } from '../../src/shared/external-command.js';
 import { createTempDir } from '../fixtures/helpers.js';
 
@@ -19,7 +20,7 @@ async function git(root: string, args: string[]): Promise<void> {
   assert.equal(result.exitCode, 0, result.stderr);
 }
 
-async function fixture(status: 'passed' | 'failed' = 'passed', ownerAuthorized = true) {
+async function fixture(status: 'passed' | 'failed' = 'passed', ownerAuthorized = true, windowsShaped = false) {
   const root = await createTempDir();
   roots.push(root);
   const deliveryId = `20991231-0${status === 'passed' ? '3' : '4'}-a1-public-cli`;
@@ -52,6 +53,13 @@ async function fixture(status: 'passed' | 'failed' = 'passed', ownerAuthorized =
     "process.exit(status === 'passed' ? 0 : 7);",
     '',
   ].join('\n'), 'utf8');
+  let executionCommand = process.execPath;
+  let executionArg = childPath;
+  if (windowsShaped) {
+    executionCommand = String.raw`C:\nvm4w\nodejs\node.exe`;
+    executionArg = String.raw`D:\tools\target\full-test-child.mjs`;
+  }
+
   await writeFile(manifestPath, [
     `id: ${deliveryId}`,
     'delivery:', '  state: active', `  fullTestStatus: ${ownerAuthorized ? 'authorized' : 'not-ready'}`,
@@ -63,9 +71,9 @@ async function fixture(status: 'passed' | 'failed' = 'passed', ownerAuthorized =
     '    execution:',
     '      id: "future-delivery-full-test"',
     '      kind: command',
-    `      command: ${JSON.stringify(process.execPath)}`,
+    `      command: ${JSON.stringify(executionCommand)}`,
     '      args:',
-    `        - ${JSON.stringify(childPath)}`,
+    `        - ${JSON.stringify(executionArg)}`,
     '      launcherMode: direct',
     '      scope: delivery',
     '      timeoutMs: 30000',
@@ -78,7 +86,7 @@ async function fixture(status: 'passed' | 'failed' = 'passed', ownerAuthorized =
   await git(root, ['commit', '-m', `chore(flowkit): checkpoint ${changeId}`, '-m', [
     `Flowkit-Delivery: ${deliveryId}`, `Flowkit-Change: ${changeId}`, 'Flowkit-Boundary: change-checkpoint', `Owner-Authorization: ${checkpointOwner.ref}`,
   ].join('\n')]);
-  return { root, deliveryId, manifestPath };
+  return { root, deliveryId, manifestPath, executionCommand, executionArg };
 }
 
 async function readSnapshot(root: string, deliveryId: string) {
@@ -116,6 +124,55 @@ describe('A1 public Delivery Full Test behavior', () => {
     assert.equal(after.deliveryFullTestResult?.status, 'failed');
     assert.match(after.deliveryFullTestResult?.resultRef ?? '', /^verification:full-test:[0-9a-f]{64}$/);
     assert.equal(after.runs.length, 0);
+  });
+
+  it('round-trips and executes Windows-shaped legacy command values through the controlled win32 seam without semantic backslash corruption', async () => {
+    for (const status of ['passed', 'failed'] as const) {
+      const f = await fixture(status, true, true);
+      const before = await readSnapshot(f.root, f.deliveryId);
+      assert.equal(before.deliveryFullTestExecution?.kind, 'command');
+      if (before.deliveryFullTestExecution?.kind !== 'command') continue;
+      assert.equal(before.deliveryFullTestExecution.command, f.executionCommand);
+      assert.deepEqual(before.deliveryFullTestExecution.args, [f.executionArg]);
+
+      const calls: Array<{ command: string; args: readonly string[]; platform?: NodeJS.Platform }> = [];
+      const result = await runDeliveryFullTest(f.root, f.deliveryId, {
+        platform: 'win32',
+        comSpec: String.raw`C:\Windows\System32\cmd.exe`,
+        runCommand: async (command, args, options) => {
+          calls.push({ command, args: [...args], platform: options?.platform });
+          assert.equal(command, f.executionCommand);
+          assert.deepEqual(args, [f.executionArg]);
+          assert.equal(options?.platform, 'win32');
+          const resultPath = options?.env?.['FLOWKIT_FULL_TEST_RESULT_PATH'];
+          assert.ok(resultPath);
+          await writeFile(
+            resultPath,
+            JSON.stringify({
+              schemaVersion: 1,
+              status,
+              summary: `simulated Windows legacy command ${status}`,
+              totalDurationMs: 3,
+              checks: [{ id: 'future-full', status, durationMs: 3 }],
+            }),
+            'utf8',
+          );
+          return {
+            kind: 'exited' as const,
+            stdout: '',
+            stderr: '',
+            exitCode: status === 'passed' ? 0 : 7,
+            spawned: true,
+            timedOut: false,
+          };
+        },
+      });
+
+      assert.deepEqual(calls, [{ command: f.executionCommand, args: [f.executionArg], platform: 'win32' }]);
+      assert.equal(result.executionStatus, status);
+      const after = await readSnapshot(f.root, f.deliveryId);
+      assert.equal(after.deliveryFullTestStatus, status);
+    }
   });
 
   it('projects raw not-ready as awaiting read-only, then Owner record atomically publishes authorization + raw authorized', async () => {
