@@ -504,4 +504,20 @@ describe('verification module map', () => {
       /cycle/,
     );
   });
+
+  it('owns new bounded Full Test resolver/executor code and regressions in verification-selection', () => {
+    for (const path of [
+      'src/verification/full-test/plan.ts',
+      'src/verification/full-test/resolver.ts',
+      'src/verification/full-test/executor.ts',
+      'tests/unit/verification/full-test/resolver.test.ts',
+      'tests/unit/verification/full-test/executor.test.ts',
+    ]) {
+      const selected = selectAffectedVerificationModules([path]);
+      assert.deepEqual(selected.seedModuleIds, ['verification-selection'], path);
+      assert.equal(selected.verificationScopes.includes('tests-verification'), true, path);
+      assert.equal(selected.verificationScopes.includes('typecheck'), true, path);
+    }
+  });
+
 });

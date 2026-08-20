@@ -169,6 +169,22 @@ changes:
       - "Bootstrap E2E / self-hosting acceptance"
       - "post-03 SystemArchitectureRef"
 
+
+  - key: "I1"
+    id: "delivery-full-test-bounded-execution-and-protocol-closure"
+    goal: "修复 Delivery Full Test 将一个逻辑 Full Test authority 错误绑定到单一长生命周期物理进程的问题，建立 bounded physical execution、typed transport outcome、protocol semantic closure，并确保 required blocker Change 会使旧 Full Test authorization 正确失效。"
+    required: true
+    dependsOn:
+      - "stable-runner-and-self-hosting-acceptance"
+    state: completed
+    architectureImpact: true
+    outputs:
+      - "bounded Delivery Full Test execution contract"
+      - "Verification-owned logical-check to physical-target execution mapping"
+      - "typed bounded physical command executor"
+      - "coverage-complete bounded full-suite partition"
+      - "Full Test protocol semantic aggregation closure"
+      - "Full Test authorization invalidation and outcome-unknown lifecycle guards"
 ownerDecisions:
   - ref: "owner:0df75861bcca98dd0adf7c821f5bad559d882419521fce780d234fe6c079e680"
     decision: "create-delivery"
@@ -415,6 +431,48 @@ ownerDecisions:
     deliveryId: "20260817-01-delivery-execution-loop"
     changeId: "stable-runner-and-self-hosting-acceptance"
     sourceRef: "ref/flowkit-local-ai-handoff-h1-115-archive.md"
+  - ref: "owner:bcb98e822381bb1090c94ce953719be9d95fef47a4a3f9532f1d55c4147ffe32"
+    decision: "create-change"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-full-test-bounded-execution-and-protocol-closure"
+    sourceRef: "owner-input:2026-08-20T06:33+08:00:create-change:I1"
+  - ref: "owner:77234cb1f41d258f4a9a719c9371519f0a7605c447b414299f96b399001d9aec"
+    decision: "activate-change"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-full-test-bounded-execution-and-protocol-closure"
+    sourceRef: "owner-input:2026-08-20T06:36+08:00:activate:I1"
+  - ref: "owner:43eeec1700500cbf0c695ff6132dd06e70ee2a99bf7c95c3aeb997a31036d2c1"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-full-test-bounded-execution-and-protocol-closure"
+    sourceRef: "owner-input:2026-08-20T08:58+08:00:authorize-apply:I1"
+  - ref: "owner:b9e87723e7e630aea4274b8cb2978679a4f157bfbbdb41e0ee161cfda9778dae"
+    decision: "contract-reset"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-full-test-bounded-execution-and-protocol-closure"
+    scope: "I1/formal-change-verification-physical-execution-closure"
+    requiredOutcomes:
+      - "abandon old 120/121/122 Proposal/Apply generation while retaining 116/117 approved Explore as discovery handoff"
+      - "before Proposal approval prove actualChangeSet -> logical selection -> physical targets -> formal Change Verification end-to-end closure"
+      - "do not expand into generic Verification platform, scheduler, timing platform, or change approved bounded Delivery Full Test authority, H1 1 smoke + 26 phases semantics, Full Test no-Run, or Owner authority"
+      - "tests-cli must freeze I1-required CLI coverage into a proven bounded physical execution closure without timeout inflation; generic Verification timing/timeout granularity remains deferred to 04"
+      - "tests-execution must prove whether selected physical targets are truly affected by exact base plus I1 actualChangeSet; if not affected fix deterministic selection/module ownership, if affected include the minimal mutation surface required to make formal verification valid; base failure alone cannot waive failure"
+    sourceRef: "owner-input:2026-08-20T10:01+08:00:contract-reset:I1-formal-verification-physical-closure"
+  - ref: "owner:0771ccb4444801cea1cddbffaf8261dff78655b245c1169eb13c7d67553bb638"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-full-test-bounded-execution-and-protocol-closure"
+    sourceRef: "owner:2026-08-20T10:52:00+08:00"
+  - ref: "owner:deda1b847266793ed73759a4fefa0448be1cd6392d26bdacc6848bac2b33cf4a"
+    decision: "authorize-archive"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-full-test-bounded-execution-and-protocol-closure"
+    sourceRef: "owner-input:2026-08-20T11:28+08:00:authorize-archive:I1"
+  - ref: "owner:f0926dd5313079c8ebfe8e5a4594f67871acedc7b793476321fc772859a5ede4"
+    decision: "authorize-checkpoint"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-full-test-bounded-execution-and-protocol-closure"
+    sourceRef: "ref/flowkit-local-ai-handoff-after-i1-127-archive.md"
 verification:
   change:
     requireApplicableChecks: true
@@ -422,14 +480,27 @@ verification:
     requiresOwnerAuthorization: true
     execution:
       id: "project-full-verification"
-      kind: command
-      command: "npm"
-      args:
-        - "run"
-        - "verify:full"
-      launcherMode: npm-shim
+      kind: bounded-command-plan
+      logicalChecks:
+        - id: "quality"
+          resolverId: flowkit-quality
+          perTargetTimeoutMs: 120000
+        - id: "typecheck"
+          resolverId: flowkit-typecheck
+          perTargetTimeoutMs: 120000
+        - id: "lint"
+          resolverId: flowkit-lint
+          perTargetTimeoutMs: 120000
+        - id: "build"
+          resolverId: flowkit-build
+          perTargetTimeoutMs: 120000
+        - id: "openspec-all"
+          resolverId: flowkit-openspec-all
+          perTargetTimeoutMs: 120000
+        - id: "full"
+          resolverId: flowkit-full-tests
+          perTargetTimeoutMs: 120000
       scope: delivery
-      timeoutMs: 120000
       resultProtocol: flowkit-full-test-result-v1
       resultAuthority: verification
       expectedTerminalStatuses:

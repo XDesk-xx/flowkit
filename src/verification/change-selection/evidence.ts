@@ -160,14 +160,14 @@ export async function executeVerificationSelection(
       Object.assign(nodeEnv, invocation.propagationEnv);
     }
 
-    if (h1Selected && logicalId === 'tests-cli') {
-      const execution = await executeH1CliPhysicalFanout(input.repoRoot, files, nodeEnv);
-      checksById.set(logicalId, evidenceFromOutcome(input, logicalId, execution.commandOrMethod, execution.outcome, environment, 'bounded H1 tests-cli physical execution'));
+    if (logicalId === 'tests-cli') {
+      const execution = await executeBoundedCliPhysicalFanout(input.repoRoot, files, nodeEnv, h1Selected);
+      checksById.set(logicalId, evidenceFromOutcome(input, logicalId, execution.commandOrMethod, execution.outcome, environment, 'bounded tests-cli physical execution'));
       continue;
     }
-    if (h1Selected && logicalId === 'tests-execution') {
-      const execution = await executeH1ExecutionPhysicalFanout(input.repoRoot, files, nodeEnv);
-      checksById.set(logicalId, evidenceFromOutcome(input, logicalId, execution.commandOrMethod, execution.outcome, environment, 'bounded H1 tests-execution physical execution'));
+    if (logicalId === 'tests-execution') {
+      const execution = await executeBoundedExecutionPhysicalFanout(input.repoRoot, files, nodeEnv);
+      checksById.set(logicalId, evidenceFromOutcome(input, logicalId, execution.commandOrMethod, execution.outcome, environment, 'bounded tests-execution physical execution'));
       continue;
     }
 
@@ -476,10 +476,11 @@ async function executeBoundedNodeCommands(
   return { commandOrMethod: commandParts.join(' && '), outcome: terminal };
 }
 
-async function executeH1CliPhysicalFanout(
+async function executeBoundedCliPhysicalFanout(
   repoRoot: string,
   files: readonly string[],
   nodeEnv: NodeJS.ProcessEnv,
+  deduplicateLegacyInstalledSmoke: boolean,
 ): Promise<{ readonly commandOrMethod: string; readonly outcome: ExternalCommandOutcome }> {
   const diagnosticProcess = 'tests/integration/diagnostic-cli-process.test.ts';
   const g1Change = 'tests/integration/g1-change-cli-end-to-end.test.ts';
@@ -489,14 +490,16 @@ async function executeH1CliPhysicalFanout(
   const commands: BoundedNodeCommand[] = [];
   if (cheapFiles.length > 0) commands.push({ label: 'tests-cli-cheap', files: cheapFiles });
   if (files.includes(diagnosticProcess)) {
-    commands.push({
-      label: 'tests-cli-diagnostic-real-process-lite',
-      files: [diagnosticProcess],
-      testNamePattern: [
-        'executes all four commands without mutating repository files',
-        'rejects unknown commands with exit 2 on stderr',
-      ].map(escapeRegex).join('|'),
-    });
+    commands.push(deduplicateLegacyInstalledSmoke
+      ? {
+          label: 'tests-cli-diagnostic-real-process-lite',
+          files: [diagnosticProcess],
+          testNamePattern: [
+            'executes all four commands without mutating repository files',
+            'rejects unknown commands with exit 2 on stderr',
+          ].map(escapeRegex).join('|'),
+        }
+      : { label: 'tests-cli-diagnostic-real-process', files: [diagnosticProcess] });
   }
   if (files.includes(g1Change)) {
     for (const [index, name] of G1_CHANGE_E2E_CASES.entries()) {
@@ -512,6 +515,11 @@ async function executeH1CliPhysicalFanout(
   const stateRoot = await mkdtemp(join(tmpdir(), 'flowkit-h1-formal-e2e-'));
   try {
     if (files.includes(H1_TARGET)) {
+      commands.push({
+        label: 'tests-cli-h1-installed-runner-smoke',
+        files: [H1_TARGET],
+        testNamePattern: escapeRegex('physically installs the candidate runner and exercises fresh-process diagnostics without source-workspace runtime'),
+      });
       for (let phase = 1; phase <= 26; phase += 1) {
         commands.push({
           label: `tests-cli-h1-phase-${phase}`,
@@ -529,7 +537,7 @@ async function executeH1CliPhysicalFanout(
   }
 }
 
-async function executeH1ExecutionPhysicalFanout(
+async function executeBoundedExecutionPhysicalFanout(
   repoRoot: string,
   files: readonly string[],
   nodeEnv: NodeJS.ProcessEnv,

@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260819-116-explore",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "explore",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "e86d42a7effd5d4498fe4ec53431a73b26727f50b68138c43660fa1ca536a7bf",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-bounded-execution-and-protocol-closure/20260819-116-explore/",
+  "changeKey": "I1",
+  "changeId": "delivery-full-test-bounded-execution-and-protocol-closure",
+  "canonicalBase": "4f3e0f44a3a1254670a99f1428b70fc1e2c6c8f2",
+  "applicableFactRefs": [
+    {
+      "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "ec0accf47d569b8f60d01e96573f6813f1f2b7d5f135a60e3fc07159f84e74c8"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "delivery-full-test-bounded-execution-and-protocol-closure",
+      "runId": "20260819-116-explore",
+      "action": "explore",
+      "role": "author",
+      "semanticInputFingerprint": "e86d42a7effd5d4498fe4ec53431a73b26727f50b68138c43660fa1ca536a7bf"
+    },
+    "definition": {
+      "action": "explore",
+      "version": 1,
+      "role": "author",
+      "goalClass": "investigate-change",
+      "mutationClass": "explore-planning-only",
+      "outputClass": "current-explore-artifact-set",
+      "terminalContract": {
+        "kind": "artifact",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "ec0accf47d569b8f60d01e96573f6813f1f2b7d5f135a60e3fc07159f84e74c8"
+      }
+    ],
+    "handoffRefs": [],
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "544137d6e56baab0d595f89f158c77b6906ca21ae78522fadd7ce0030254482b",
+    "requiredResultContract": {
+      "kind": "artifact",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

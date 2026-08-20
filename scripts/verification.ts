@@ -8,6 +8,8 @@ import { runCommand as runExternalCommand } from '../src/shared/external-command
 import { resolveAffectedTests, resolveAllTests } from './affected-scopes.js';
 import { runPlatformCommand } from './platform-command.js';
 import type { FullTestProtocolPayload } from '../src/domain/full-test.js';
+import { executeBoundedFullTest } from '../src/verification/full-test/executor.js';
+import { FULL_TEST_LOGICAL_CHECKS } from '../src/verification/full-test/plan.js';
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 export const projectRoot = resolve(scriptDir, '..');
@@ -46,14 +48,13 @@ export function verifyChangePlan(scopes: readonly string[]): VerificationStep[] 
 }
 
 export function verifyFullPlan(): VerificationStep[] {
-  return [
-    { name: 'quality', kind: 'npm', args: ['run', 'quality'] },
-    { name: 'typecheck', kind: 'npm', args: ['run', 'typecheck'] },
-    { name: 'lint', kind: 'npm', args: ['run', 'lint'] },
-    { name: 'build', kind: 'npm', args: ['run', 'build'] },
-    { name: 'openspec-all', kind: 'openspec', args: ['validate', '--all', '--strict', '--no-interactive'] },
-    { name: 'full', kind: 'npm', args: ['run', 'test:full'] },
-  ];
+  return FULL_TEST_LOGICAL_CHECKS.map((check) => ({
+    name: check.id,
+    kind: check.id === 'openspec-all' ? 'openspec' as const : 'npm' as const,
+    args: check.id === 'openspec-all'
+      ? ['validate', '--all', '--strict', '--no-interactive']
+      : ['run', check.id === 'full' ? 'test:full' : check.id],
+  }));
 }
 
 function environmentLine(): string {
@@ -167,12 +168,24 @@ function writeCapturedOutput(stdout: string, stderr: string): void {
   if (stderr.length > 0) process.stderr.write(stderr);
 }
 
-export type PlatformCommandRunner = typeof runPlatformCommand;
-
 export async function executeProjectStep(
   step: VerificationStep,
-  runCommand: PlatformCommandRunner = runPlatformCommand,
 ): Promise<{ exitCode: number; durationMs: number }> {
+  const sharedFullCheck = FULL_TEST_LOGICAL_CHECKS.find((candidate) => candidate.id === step.name);
+  if (sharedFullCheck !== undefined) {
+    const result = await executeBoundedFullTest(projectRoot, {
+      id: 'technical-full-test-step',
+      kind: 'bounded-command-plan',
+      logicalChecks: [sharedFullCheck],
+      scope: 'delivery',
+      resultProtocol: 'flowkit-full-test-result-v1',
+      resultAuthority: 'verification',
+      expectedTerminalStatuses: ['passed', 'failed'],
+    }, { env: process.env });
+    if (result.kind === 'execution-error') return { exitCode: 2, durationMs: 0 };
+    const check = result.payload.checks[0];
+    return { exitCode: check?.status === 'passed' ? 0 : 1, durationMs: check?.durationMs ?? result.payload.totalDurationMs };
+  }
   if (step.kind === 'openspec') {
     const args = [...step.args];
     const index = args.indexOf('<active-change>');
@@ -191,56 +204,13 @@ export async function executeProjectStep(
     };
   }
 
-  const nodeEnv = standaloneProjectEnv();
   switch (step.name) {
-    case 'quality':
-      return runCommand(process.execPath, ['--import', 'tsx', 'scripts/quality.ts'], {
-        cwd: projectRoot,
-        env: nodeEnv,
-        stdio: 'inherit',
-      });
     case 'affected': {
       const separator = step.args.indexOf('--');
       const scopes = separator === -1 ? [] : step.args.slice(separator + 1);
       const started = process.hrtime.bigint();
       const exitCode = await runNodeTests(await resolveAffectedTests(projectRoot, scopes), 2, 'affected');
       return { exitCode, durationMs: Number(process.hrtime.bigint() - started) / 1_000_000 };
-    }
-    case 'typecheck': {
-      const started = process.hrtime.bigint();
-      const tsc = resolve(projectRoot, 'node_modules/typescript/bin/tsc');
-      const source = await runCommand(process.execPath, [tsc, '--noEmit'], {
-        cwd: projectRoot,
-        env: nodeEnv,
-        stdio: 'inherit',
-      });
-      if (source.exitCode !== 0) return { exitCode: source.exitCode, durationMs: Number(process.hrtime.bigint() - started) / 1_000_000 };
-      const tests = await runCommand(process.execPath, [tsc, '--noEmit', '-p', 'tsconfig.test.json'], {
-        cwd: projectRoot,
-        env: nodeEnv,
-        stdio: 'inherit',
-      });
-      return { exitCode: tests.exitCode, durationMs: Number(process.hrtime.bigint() - started) / 1_000_000 };
-    }
-    case 'lint':
-      return runCommand(process.execPath, [resolve(projectRoot, 'node_modules/eslint/bin/eslint.js'), '.'], {
-        cwd: projectRoot,
-        env: nodeEnv,
-        stdio: 'inherit',
-      });
-    case 'build':
-      return runCommand(process.execPath, [resolve(projectRoot, 'node_modules/typescript/bin/tsc')], {
-        cwd: projectRoot,
-        env: nodeEnv,
-        stdio: 'inherit',
-      });
-    case 'full': {
-      const npmExecutable = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-      return runCommand(npmExecutable, ['run', 'test:full'], {
-        cwd: projectRoot,
-        env: await fullTestEnvironment(),
-        stdio: 'inherit',
-      });
     }
     default:
       throw new Error(`unsupported verification step: ${step.name}`);

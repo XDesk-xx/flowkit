@@ -53,6 +53,52 @@ async function snapshotFor(fullTestStatus: 'authorized' | 'passed', ownedLines: 
   return readFormalFactSnapshot({ repoRoot: root, deliveryId, runsPathPrefix: '.flowkit/runs', openspecChangesPath: 'openspec/changes', manifestPathPrefix: 'openspec/delivery-groups' });
 }
 
+
+async function boundedSnapshotFor(fullTestStatus: 'authorized' | 'passed', ownedLines: readonly string[]) {
+  const root = await createTempDir();
+  roots.push(root);
+  const deliveryId = '20991231-03-bounded-full-test-reader';
+  await mkdir(join(root, 'openspec', 'delivery-groups'), { recursive: true });
+  await mkdir(join(root, '.flowkit', 'runs'), { recursive: true });
+  await writeFile(join(root, 'openspec', 'delivery-groups', `${deliveryId}.yaml`), [
+    `id: ${deliveryId}`,
+    'delivery:',
+    '  state: active',
+    `  fullTestStatus: ${fullTestStatus}`,
+    'changes:',
+    '  - key: A1',
+    '    id: active-change',
+    '    goal: "active"',
+    '    required: true',
+    '    dependsOn: []',
+    '    state: active',
+    '    architectureImpact: false',
+    '    outputs: []',
+    'verification:',
+    '  fullTest:',
+    '    requiresOwnerAuthorization: true',
+    '    execution:',
+    '      id: "fixture-bounded"',
+    '      kind: bounded-command-plan',
+    '      logicalChecks:',
+    '        - id: "quality"',
+    '          resolverId: "flowkit-quality"',
+    '          perTargetTimeoutMs: 1000',
+    '        - id: "full"',
+    '          resolverId: "flowkit-full-tests"',
+    '          perTargetTimeoutMs: 2000',
+    '      scope: delivery',
+    '      resultProtocol: flowkit-full-test-result-v1',
+    '      resultAuthority: verification',
+    '      expectedTerminalStatuses:',
+    '        - "passed"',
+    '        - "failed"',
+    ...ownedLines,
+    '',
+  ].join('\n'), 'utf8');
+  return readFormalFactSnapshot({ repoRoot: root, deliveryId, runsPathPrefix: '.flowkit/runs', openspecChangesPath: 'openspec/changes', manifestPathPrefix: 'openspec/delivery-groups' });
+}
+
 describe('A1 Full Test formal fact reader', () => {
   it('independently recomputes the canonical terminal resultRef and projects the closed result', async () => {
     const payload = {
@@ -132,4 +178,70 @@ describe('A1 Full Test formal fact reader', () => {
     ]);
     assert.ok(snapshot.conflicts.some((conflict) => conflict.dimension === 'delivery-full-test-result'));
   });
+
+  it('reads the closed bounded execution union without inventing an internal schema version', async () => {
+    const snapshot = await boundedSnapshotFor('authorized', []);
+    assert.equal(snapshot.conflicts.length, 0);
+    assert.equal(snapshot.deliveryFullTestExecution?.kind, 'bounded-command-plan');
+    if (snapshot.deliveryFullTestExecution?.kind !== 'bounded-command-plan') assert.fail('expected bounded plan');
+    assert.deepEqual(snapshot.deliveryFullTestExecution.logicalChecks, [
+      { id: 'quality', resolverId: 'flowkit-quality', perTargetTimeoutMs: 1000 },
+      { id: 'full', resolverId: 'flowkit-full-tests', perTargetTimeoutMs: 2000 },
+    ]);
+  });
+
+  it('accepts bounded PASS only when current result contains the complete exact logical plan', async () => {
+    const payload = {
+      schemaVersion: 1 as const,
+      status: 'passed' as const,
+      summary: 'bounded complete pass',
+      totalDurationMs: 10,
+      checks: [
+        { id: 'quality', status: 'passed' as const, durationMs: 3 },
+        { id: 'full', status: 'passed' as const, durationMs: 7 },
+      ],
+    };
+    const snapshot = await boundedSnapshotFor('passed', [
+      '    result:',
+      '      schemaVersion: 1',
+      '      status: passed',
+      '      summary: "bounded complete pass"',
+      '      totalDurationMs: 10',
+      '      checks:',
+      '        - id: "quality"',
+      '          status: passed',
+      '          durationMs: 3',
+      '        - id: "full"',
+      '          status: passed',
+      '          durationMs: 7',
+      `      resultRef: "${fullTestResultRefFor(payload)}"`,
+    ]);
+    assert.equal(snapshot.conflicts.length, 0);
+    assert.deepEqual(snapshot.deliveryFullTestResult?.checks, payload.checks);
+  });
+
+  it('fails closed when a bounded PASS omits a persisted logical check even with a valid payload hash', async () => {
+    const payload = {
+      schemaVersion: 1 as const,
+      status: 'passed' as const,
+      summary: 'partial pass',
+      totalDurationMs: 3,
+      checks: [{ id: 'quality', status: 'passed' as const, durationMs: 3 }],
+    };
+    const snapshot = await boundedSnapshotFor('passed', [
+      '    result:',
+      '      schemaVersion: 1',
+      '      status: passed',
+      '      summary: "partial pass"',
+      '      totalDurationMs: 3',
+      '      checks:',
+      '        - id: "quality"',
+      '          status: passed',
+      '          durationMs: 3',
+      `      resultRef: "${fullTestResultRefFor(payload)}"`,
+    ]);
+    assert.ok(snapshot.conflicts.some((conflict) => conflict.dimension === 'delivery-full-test-result' && conflict.message.includes('bounded')));
+    assert.equal(snapshot.deliveryFullTestResult, undefined);
+  });
+
 });

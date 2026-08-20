@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { chmod, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createTempDir } from '../fixtures/helpers.js';
-import { resolveCommandForPlatform, resolvePowerShellScriptCommand, runCommand } from '../../src/shared/external-command.js';
+import { resolveCommandForPlatform, resolvePowerShellScriptCommand, runBoundedCommands, runCommand } from '../../src/shared/external-command.js';
 
 const roots: string[] = [];
 afterEach(async () => Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true }))));
@@ -179,5 +179,32 @@ printf "should-not-run"
     assert.deepEqual(resolveCommandForPlatform('openspec.cmd', ['status'], { platform: 'linux' }), {
       command: 'openspec.cmd', args: ['status'], usedWindowsLauncher: false,
     });
+  });
+});
+
+
+describe('I1 bounded external command sequencing', () => {
+  it('executes targets in order and stops at the first nonzero exit without interpreting Verification status', async () => {
+    const calls: string[] = [];
+    const result = await runBoundedCommands([
+      { logicalCheckId: 'full', physicalTargetId: 'a', command: 'node', args: ['a'] },
+      { logicalCheckId: 'full', physicalTargetId: 'b', command: 'node', args: ['b'] },
+      { logicalCheckId: 'full', physicalTargetId: 'c', command: 'node', args: ['c'] },
+    ], async (_command, args) => {
+      calls.push(args[0]!);
+      return { kind: 'exited', stdout: 'x', stderr: '', exitCode: args[0] === 'b' ? 9 : 0, spawned: true, timedOut: false };
+    });
+    assert.deepEqual(calls, ['a', 'b']);
+    assert.deepEqual(result.results.map((item) => [item.physicalTargetId, item.outcome, item.exitCode]), [['a', 'exited', 0], ['b', 'exited', 9]]);
+    assert.equal(result.terminal?.physicalTargetId, 'b');
+  });
+
+  it('preserves transport outcome-unknown and bounds diagnostic text', async () => {
+    const result = await runBoundedCommands([
+      { logicalCheckId: 'full', physicalTargetId: 'uncertain', command: 'node', args: [] },
+    ], async () => ({ kind: 'outcome-unknown', stdout: 'x'.repeat(5000), stderr: 'y'.repeat(5000), exitCode: 1, spawned: true, timedOut: true }));
+    assert.equal(result.terminal?.outcome, 'outcome-unknown');
+    assert.equal(result.terminal?.stdout.length, 4096);
+    assert.equal(result.terminal?.stderr.length, 4096);
   });
 });

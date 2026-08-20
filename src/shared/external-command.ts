@@ -473,3 +473,68 @@ export async function runCommand(
     options,
   );
 }
+
+export interface BoundedExternalCommandTarget {
+  readonly logicalCheckId: string;
+  readonly physicalTargetId: string;
+  readonly command: string;
+  readonly args: readonly string[];
+  readonly options?: RunCommandOptions;
+}
+
+export interface BoundedExternalCommandTargetResult {
+  readonly logicalCheckId: string;
+  readonly physicalTargetId: string;
+  readonly outcome: ExternalCommandOutcome['kind'];
+  readonly exitCode: number;
+  readonly durationMs: number;
+  readonly stdout: string;
+  readonly stderr: string;
+  readonly processTreeDiagnostics?: readonly string[];
+  readonly spawnError?: { readonly code?: string; readonly message: string };
+}
+
+export interface BoundedExternalCommandSequenceResult {
+  readonly results: readonly BoundedExternalCommandTargetResult[];
+  readonly terminal: BoundedExternalCommandTargetResult | undefined;
+}
+
+const BOUNDED_DIAGNOSTIC_TEXT_LIMIT = 4_096;
+
+function boundedDiagnosticText(value: string): string {
+  if (value.length <= BOUNDED_DIAGNOSTIC_TEXT_LIMIT) return value;
+  return value.slice(value.length - BOUNDED_DIAGNOSTIC_TEXT_LIMIT);
+}
+
+/**
+ * Execute already-resolved physical command targets in lexical input order.
+ * The helper owns transport sequencing only: it preserves the raw process
+ * outcome and stops on the first transport failure or non-zero exit without
+ * translating either condition into Verification status.
+ */
+export async function runBoundedCommands(
+  targets: readonly BoundedExternalCommandTarget[],
+  runner: typeof runCommand = runCommand,
+): Promise<BoundedExternalCommandSequenceResult> {
+  const results: BoundedExternalCommandTargetResult[] = [];
+  for (const target of targets) {
+    const started = process.hrtime.bigint();
+    const raw = await runner(target.command, [...target.args], target.options);
+    const result: BoundedExternalCommandTargetResult = {
+      logicalCheckId: target.logicalCheckId,
+      physicalTargetId: target.physicalTargetId,
+      outcome: raw.kind,
+      exitCode: raw.exitCode,
+      durationMs: Math.max(0, Math.round(Number(process.hrtime.bigint() - started) / 1_000_000)),
+      stdout: boundedDiagnosticText(raw.stdout),
+      stderr: boundedDiagnosticText(raw.stderr),
+      ...(raw.processTreeDiagnostics !== undefined ? { processTreeDiagnostics: raw.processTreeDiagnostics } : {}),
+      ...(raw.spawnError !== undefined ? { spawnError: raw.spawnError } : {}),
+    };
+    results.push(result);
+    if (raw.kind !== 'exited' || raw.exitCode !== 0) {
+      return { results, terminal: result };
+    }
+  }
+  return { results, terminal: results.at(-1) };
+}

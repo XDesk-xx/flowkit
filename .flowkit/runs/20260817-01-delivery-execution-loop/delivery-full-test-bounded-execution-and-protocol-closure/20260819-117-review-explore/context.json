@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260819-117-review-explore",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "review-explore",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "5229303bb4bbf91c43051e80b3ec753d5371f82f93fbf66b9dd43c6fbf61be2e",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-bounded-execution-and-protocol-closure/20260819-117-review-explore/",
+  "changeKey": "I1",
+  "changeId": "delivery-full-test-bounded-execution-and-protocol-closure",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-bounded-execution-and-protocol-closure/20260819-116-explore/result.json",
+    "versionFingerprint": "9b4a5a5fda2e354f2143ffa780c03c86ffe8ef75c10f97274781b6574bf8ee67",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260819-116-explore",
+  "canonicalBase": "4f3e0f44a3a1254670a99f1428b70fc1e2c6c8f2",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-bounded-execution-and-protocol-closure/20260819-116-explore/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "9b4a5a5fda2e354f2143ffa780c03c86ffe8ef75c10f97274781b6574bf8ee67"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "ec0accf47d569b8f60d01e96573f6813f1f2b7d5f135a60e3fc07159f84e74c8"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/explore.md",
+      "versionFingerprint": "be37ecc04b887e4a8cef0845bdcaefb4895e680ea056f73bd7c861c80992e8eb",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "delivery-full-test-bounded-execution-and-protocol-closure",
+      "runId": "20260819-117-review-explore",
+      "action": "review-explore",
+      "role": "reviewer",
+      "semanticInputFingerprint": "5229303bb4bbf91c43051e80b3ec753d5371f82f93fbf66b9dd43c6fbf61be2e"
+    },
+    "definition": {
+      "action": "review-explore",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-explore",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "ec0accf47d569b8f60d01e96573f6813f1f2b7d5f135a60e3fc07159f84e74c8"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/explore.md",
+        "versionFingerprint": "be37ecc04b887e4a8cef0845bdcaefb4895e680ea056f73bd7c861c80992e8eb",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-bounded-execution-and-protocol-closure/20260819-116-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "9b4a5a5fda2e354f2143ffa780c03c86ffe8ef75c10f97274781b6574bf8ee67"
+      }
+    ],
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "544137d6e56baab0d595f89f158c77b6906ca21ae78522fadd7ce0030254482b",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

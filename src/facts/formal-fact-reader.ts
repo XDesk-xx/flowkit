@@ -31,6 +31,7 @@ import {
 import { BLOCKING_AUTHORITIES } from '../domain/types.js';
 import {
   deriveFullTestFailureFinding,
+  FULL_TEST_BOUNDED_RESOLVER_IDS,
   fullTestFailureFindingIdFor,
   fullTestResultRefFor,
 } from '../domain/full-test.js';
@@ -264,19 +265,44 @@ function readFullTestExecution(value: unknown, conflicts: FactConflict[], author
     return undefined;
   };
   if (obj === undefined) return conflict('verification.fullTest.execution must be a mapping');
-  const keys = Object.keys(obj).sort();
-  const expected = ['args','command','expectedTerminalStatuses','id','kind','launcherMode','resultAuthority','resultProtocol','scope','timeoutMs'];
-  if (JSON.stringify(keys) !== JSON.stringify(expected)) return conflict('verification.fullTest.execution has unsupported fields');
-  const id = obj['id']; const command = obj['command']; const args = obj['args']; const timeoutMs = obj['timeoutMs'];
-  if (typeof id !== 'string' || id.trim() === '' || typeof command !== 'string' || command.trim() === '') return conflict('verification.fullTest.execution id/command must be non-empty strings');
-  if (!Array.isArray(args) || args.some((item) => typeof item !== 'string' || item.trim() === '')) return conflict('verification.fullTest.execution args must be an array of non-empty strings');
-  if (obj['kind'] !== 'command' || (obj['launcherMode'] !== 'direct' && obj['launcherMode'] !== 'npm-shim') || obj['scope'] !== 'delivery') return conflict('verification.fullTest.execution kind/launcherMode/scope is invalid');
-  if (obj['launcherMode'] === 'npm-shim' && command !== 'npm') return conflict('verification.fullTest.execution npm-shim requires command=npm');
-  if (!Number.isInteger(timeoutMs) || typeof timeoutMs !== 'number' || timeoutMs <= 0) return conflict('verification.fullTest.execution timeoutMs must be a positive integer');
+  const id = obj['id'];
+  if (typeof id !== 'string' || id.trim() === '') return conflict('verification.fullTest.execution id must be a non-empty string');
+  if (obj['scope'] !== 'delivery') return conflict('verification.fullTest.execution scope is invalid');
   if (obj['resultProtocol'] !== 'flowkit-full-test-result-v1' || obj['resultAuthority'] !== 'verification') return conflict('verification.fullTest.execution result protocol/authority is invalid');
   const statuses = obj['expectedTerminalStatuses'];
   if (!Array.isArray(statuses) || statuses.length !== 2 || statuses[0] !== 'passed' || statuses[1] !== 'failed') return conflict('verification.fullTest.execution expectedTerminalStatuses must be [passed, failed]');
-  return { id, kind: 'command', command, args: args as string[], launcherMode: obj['launcherMode'], scope: 'delivery', timeoutMs, resultProtocol: 'flowkit-full-test-result-v1', resultAuthority: 'verification', expectedTerminalStatuses: ['passed','failed'] };
+  if (obj['kind'] === 'command') {
+    const keys = Object.keys(obj).sort();
+    const expected = ['args','command','expectedTerminalStatuses','id','kind','launcherMode','resultAuthority','resultProtocol','scope','timeoutMs'];
+    if (JSON.stringify(keys) !== JSON.stringify(expected)) return conflict('verification.fullTest.execution has unsupported command fields');
+    const command = obj['command']; const args = obj['args']; const timeoutMs = obj['timeoutMs'];
+    if (typeof command !== 'string' || command.trim() === '') return conflict('verification.fullTest.execution command must be a non-empty string');
+    if (!Array.isArray(args) || args.some((item) => typeof item !== 'string' || item.trim() === '')) return conflict('verification.fullTest.execution args must be an array of non-empty strings');
+    if (obj['launcherMode'] !== 'direct' && obj['launcherMode'] !== 'npm-shim') return conflict('verification.fullTest.execution launcherMode is invalid');
+    if (obj['launcherMode'] === 'npm-shim' && command !== 'npm') return conflict('verification.fullTest.execution npm-shim requires command=npm');
+    if (!Number.isInteger(timeoutMs) || typeof timeoutMs !== 'number' || timeoutMs <= 0) return conflict('verification.fullTest.execution timeoutMs must be a positive integer');
+    return { id, kind: 'command', command, args: args as string[], launcherMode: obj['launcherMode'], scope: 'delivery', timeoutMs, resultProtocol: 'flowkit-full-test-result-v1', resultAuthority: 'verification', expectedTerminalStatuses: ['passed','failed'] };
+  }
+  if (obj['kind'] !== 'bounded-command-plan') return conflict('verification.fullTest.execution kind is invalid');
+  const keys = Object.keys(obj).sort();
+  const expected = ['expectedTerminalStatuses','id','kind','logicalChecks','resultAuthority','resultProtocol','scope'];
+  if (JSON.stringify(keys) !== JSON.stringify(expected)) return conflict('verification.fullTest.execution has unsupported bounded fields');
+  const rawChecks = obj['logicalChecks'];
+  if (!Array.isArray(rawChecks) || rawChecks.length === 0) return conflict('verification.fullTest.execution logicalChecks must be a non-empty sequence');
+  const ids = new Set<string>();
+  const allowedResolvers = new Set<string>(FULL_TEST_BOUNDED_RESOLVER_IDS);
+  const logicalChecks: { id: string; resolverId: (typeof FULL_TEST_BOUNDED_RESOLVER_IDS)[number]; perTargetTimeoutMs: number }[] = [];
+  for (const [index, raw] of rawChecks.entries()) {
+    const check = manifestObject(raw);
+    if (check === undefined || JSON.stringify(Object.keys(check).sort()) !== JSON.stringify(['id','perTargetTimeoutMs','resolverId'])) return conflict(`verification.fullTest.execution logicalChecks[${index}] has unsupported shape`);
+    const checkId = check['id']; const resolverId = check['resolverId']; const timeout = check['perTargetTimeoutMs'];
+    if (typeof checkId !== 'string' || checkId.trim() === '' || ids.has(checkId)) return conflict(`verification.fullTest.execution logicalChecks[${index}].id is invalid/duplicate`);
+    if (typeof resolverId !== 'string' || !allowedResolvers.has(resolverId)) return conflict(`verification.fullTest.execution logicalChecks[${index}].resolverId is unknown`);
+    if (!Number.isInteger(timeout) || typeof timeout !== 'number' || timeout <= 0) return conflict(`verification.fullTest.execution logicalChecks[${index}].perTargetTimeoutMs must be a positive integer`);
+    ids.add(checkId);
+    logicalChecks.push({ id: checkId, resolverId: resolverId as (typeof FULL_TEST_BOUNDED_RESOLVER_IDS)[number], perTargetTimeoutMs: timeout });
+  }
+  return { id, kind: 'bounded-command-plan', logicalChecks, scope: 'delivery', resultProtocol: 'flowkit-full-test-result-v1', resultAuthority: 'verification', expectedTerminalStatuses: ['passed','failed'] };
 }
 
 function readFullTestExecutionBlock(value: unknown, conflicts: FactConflict[], authority: string): FullTestExecutionBlock | undefined {
@@ -316,6 +342,26 @@ function readFullTestResult(value: unknown, conflicts: FactConflict[], authority
   const expectedRef = fullTestResultRefFor(payload);
   if (obj['resultRef'] !== expectedRef) return conflict('verification.fullTest.result resultRef does not match canonical payload');
   return { ...payload, resultRef: obj['resultRef'] };
+}
+
+function validateBoundedCurrentFullTestResult(
+  execution: FullTestExecutionContract | undefined,
+  result: FullTestTerminalResult | undefined,
+  conflicts: FactConflict[],
+  authority: string,
+): FullTestTerminalResult | undefined {
+  if (execution?.kind !== 'bounded-command-plan' || result === undefined) return result;
+  const expected = execution.logicalChecks.map((check) => check.id);
+  const ids = result.checks.map((check) => check.id);
+  const exactPrefix = ids.every((id, index) => id === expected[index]);
+  const priorPassed = result.checks.slice(0, -1).every((check) => check.status === 'passed');
+  const validPassed = result.status === 'passed' && ids.length === expected.length && exactPrefix && result.checks.every((check) => check.status === 'passed');
+  const validFailed = result.status === 'failed' && ids.length > 0 && ids.length <= expected.length && exactPrefix && priorPassed && result.checks.at(-1)?.status === 'failed';
+  if (!validPassed && !validFailed) {
+    conflicts.push({ dimension: 'delivery-full-test-result', authority, message: 'bounded Full Test result does not match persisted logical plan semantics' });
+    return undefined;
+  }
+  return result;
 }
 
 function readFullTestFailureHistory(
@@ -634,7 +680,7 @@ async function readDeliveryManifest(input: ReadFormalFactSnapshotInput): Promise
   const fullTestObj = verificationObj === undefined ? undefined : manifestObject(verificationObj['fullTest']);
   const execution = readFullTestExecution(fullTestObj?.['execution'], conflicts, manifestPath);
   const executionBlock = readFullTestExecutionBlock(fullTestObj?.['executionBlock'], conflicts, manifestPath);
-  const result = readFullTestResult(fullTestObj?.['result'], conflicts, manifestPath);
+  const result = validateBoundedCurrentFullTestResult(execution, readFullTestResult(fullTestObj?.['result'], conflicts, manifestPath), conflicts, manifestPath);
   const failureHistory = readFullTestFailureHistory(fullTestObj?.['failureHistory'], conflicts, manifestPath);
   if ((fullTestStatus === 'passed' || fullTestStatus === 'failed')) {
     if (result === undefined) conflicts.push({ dimension: 'delivery-full-test-result', authority: manifestPath, message: `terminal delivery.fullTestStatus=${fullTestStatus} requires verification.fullTest.result` });

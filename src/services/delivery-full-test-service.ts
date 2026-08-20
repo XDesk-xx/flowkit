@@ -2,7 +2,7 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import type { FullTestProtocolPayload, FullTestTerminalResult } from '../domain/full-test.js';
+import type { FullTestExecutionContract, FullTestProtocolPayload, FullTestTerminalResult } from '../domain/full-test.js';
 import { fullTestResultRefFor } from '../domain/full-test.js';
 import { readFormalFactSnapshot } from '../facts/formal-fact-reader.js';
 import { DeliveryManifestDocument } from '../persistence/delivery-manifest-document.js';
@@ -10,12 +10,14 @@ import { next } from '../policy/next.js';
 import { atomicWriteFile } from '../shared/atomic-write.js';
 import { FlowkitError } from '../shared/errors.js';
 import { runCommand, type ExternalCommandOutcome, type RunCommandOptions } from '../shared/external-command.js';
+import { executeBoundedFullTest } from '../verification/full-test/executor.js';
 
 export interface DeliveryFullTestOptions {
   readonly platform?: NodeJS.Platform;
   readonly comSpec?: string;
   readonly env?: NodeJS.ProcessEnv;
   readonly runCommand?: typeof runCommand;
+  readonly executeBounded?: typeof executeBoundedFullTest;
   readonly atomicWrite?: (path: string, data: string) => Promise<void>;
   readonly windowsProcessTreeCanceller?: RunCommandOptions['windowsProcessTreeCanceller'];
 }
@@ -23,7 +25,7 @@ export interface DeliveryFullTestOptions {
 export interface DeliveryFullTestOperationResult {
   readonly deliveryId: string;
   readonly executionStatus: 'passed' | 'failed' | 'execution-error' | 'blocked';
-  readonly outcomeKind?: ExternalCommandOutcome['kind'] | 'protocol-error';
+  readonly outcomeKind?: ExternalCommandOutcome['kind'] | 'protocol-error' | 'resolver-error';
   readonly resultRef?: string;
   readonly summary: string;
 }
@@ -55,6 +57,25 @@ export function parseFullTestProtocol(value: unknown): FullTestProtocolPayload {
     return { id: check['id'], status: check['status'], durationMs: check['durationMs'] } as const;
   });
   return { schemaVersion: 1, status: obj['status'], summary: obj['summary'], totalDurationMs: obj['totalDurationMs'], checks };
+}
+
+export function validateFullTestProtocolAgainstExecution(
+  payload: FullTestProtocolPayload,
+  execution: FullTestExecutionContract,
+): void {
+  if (execution.kind === 'command') return;
+  const expected = execution.logicalChecks.map((check) => check.id);
+  const ids = payload.checks.map((check) => check.id);
+  const exactPrefix = ids.every((id, index) => id === expected[index]);
+  if (payload.status === 'passed') {
+    if (ids.length !== expected.length || !exactPrefix || !payload.checks.every((check) => check.status === 'passed')) {
+      throw new FlowkitError('FULL_TEST_PROTOCOL_INVALID', 'bounded PASS must contain the complete persisted logical plan in exact order');
+    }
+    return;
+  }
+  if (ids.length === 0 || ids.length > expected.length || !exactPrefix || !payload.checks.slice(0, -1).every((check) => check.status === 'passed') || payload.checks.at(-1)?.status !== 'failed') {
+    throw new FlowkitError('FULL_TEST_PROTOCOL_INVALID', 'bounded FAILED must contain an exact non-empty logical prefix with only the last check failed');
+  }
 }
 
 function resolveExecution(command: string, args: readonly string[], launcherMode: 'direct' | 'npm-shim', platform: NodeJS.Platform): { command: string; args: string[] } {
@@ -91,6 +112,19 @@ async function mutateManifest(
   await atomicWrite(path, doc.toString());
 }
 
+async function publishTerminal(
+  repoRoot: string,
+  deliveryId: string,
+  payload: FullTestProtocolPayload,
+  execution: FullTestExecutionContract,
+  atomicWrite: (path: string, data: string) => Promise<void>,
+): Promise<DeliveryFullTestOperationResult> {
+  validateFullTestProtocolAgainstExecution(payload, execution);
+  const terminal: FullTestTerminalResult = { ...payload, resultRef: fullTestResultRefFor(payload) };
+  await mutateManifest(repoRoot, deliveryId, (doc) => doc.publishFullTestResult(terminal), atomicWrite);
+  return { deliveryId, executionStatus: payload.status, outcomeKind: 'exited', resultRef: terminal.resultRef, summary: payload.summary };
+}
+
 export async function runDeliveryFullTest(
   repoRoot: string,
   deliveryId: string,
@@ -106,15 +140,41 @@ export async function runDeliveryFullTest(
   if (before.deliveryFullTestExecutionBlock !== undefined) throw new FlowkitError('FULL_TEST_EXECUTION_BLOCKED', 'Delivery Full Test execution is blocked by outcome-unknown');
 
   const platform = options.platform ?? process.platform;
-  const physical = resolveExecution(execution.command, execution.args, execution.launcherMode, platform);
   const runner = options.runCommand ?? runCommand;
   const env = { ...process.env, ...options.env };
-  const temp = await mkdtemp(join(tmpdir(), 'flowkit-full-test-'));
-  const resultPath = join(temp, 'result.json');
-  env['FLOWKIT_FULL_TEST_RESULT_PATH'] = resultPath;
+  const atomicWrite = options.atomicWrite ?? atomicWriteFile;
   const canceller = platform === 'win32'
     ? options.windowsProcessTreeCanceller ?? ((input) => defaultWindowsTreeCanceller(input, runner, env))
     : undefined;
+
+  if (execution.kind === 'bounded-command-plan') {
+    const bounded = await (options.executeBounded ?? executeBoundedFullTest)(repoRoot, execution, {
+      env,
+      platform,
+      ...(options.comSpec !== undefined ? { comSpec: options.comSpec } : {}),
+      runCommand: runner,
+      ...(canceller !== undefined ? { windowsProcessTreeCanceller: canceller } : {}),
+    });
+    if (bounded.kind === 'execution-error') {
+      if (bounded.outcomeKind === 'outcome-unknown') {
+        const tail = bounded.diagnostics.at(-1);
+        const summary = `Full Test process-tree outcome unknown: ${tail?.logicalCheckId ?? 'unknown'}/${tail?.physicalTargetId ?? 'unknown'}`;
+        await mutateManifest(repoRoot, deliveryId, (doc) => doc.setFullTestExecutionBlock({ schemaVersion: 1, reason: 'outcome-unknown', summary }), atomicWrite);
+        return { deliveryId, executionStatus: 'execution-error', outcomeKind: 'outcome-unknown', summary };
+      }
+      return { deliveryId, executionStatus: 'execution-error', outcomeKind: bounded.outcomeKind, summary: bounded.summary };
+    }
+    try {
+      return await publishTerminal(repoRoot, deliveryId, bounded.payload, execution, atomicWrite);
+    } catch (error) {
+      return { deliveryId, executionStatus: 'execution-error', outcomeKind: 'protocol-error', summary: `Full Test protocol failed closed: ${error instanceof Error ? error.message : String(error)}` };
+    }
+  }
+
+  const physical = resolveExecution(execution.command, execution.args, execution.launcherMode, platform);
+  const temp = await mkdtemp(join(tmpdir(), 'flowkit-full-test-'));
+  const resultPath = join(temp, 'result.json');
+  env['FLOWKIT_FULL_TEST_RESULT_PATH'] = resultPath;
   let outcome: ExternalCommandOutcome;
   try {
     outcome = await runner(physical.command, physical.args, {
@@ -128,7 +188,7 @@ export async function runDeliveryFullTest(
 
     if (outcome.kind === 'outcome-unknown') {
       const summary = `Full Test process-tree outcome unknown: ${(outcome.processTreeDiagnostics ?? []).join('; ') || 'termination not proven'}`;
-      await mutateManifest(repoRoot, deliveryId, (doc) => doc.setFullTestExecutionBlock({ schemaVersion: 1, reason: 'outcome-unknown', summary }), options.atomicWrite ?? atomicWriteFile);
+      await mutateManifest(repoRoot, deliveryId, (doc) => doc.setFullTestExecutionBlock({ schemaVersion: 1, reason: 'outcome-unknown', summary }), atomicWrite);
       return { deliveryId, executionStatus: 'execution-error', outcomeKind: outcome.kind, summary };
     }
     if (outcome.kind === 'spawn-failed' || outcome.kind === 'timed-out-cancelled') {
@@ -138,6 +198,7 @@ export async function runDeliveryFullTest(
     let payload: FullTestProtocolPayload;
     try {
       payload = parseFullTestProtocol(JSON.parse(await readFile(resultPath, 'utf8')) as unknown);
+      validateFullTestProtocolAgainstExecution(payload, execution);
     } catch (error) {
       return { deliveryId, executionStatus: 'execution-error', outcomeKind: 'protocol-error', summary: `Full Test protocol failed closed: ${error instanceof Error ? error.message : String(error)}` };
     }
@@ -145,9 +206,7 @@ export async function runDeliveryFullTest(
     if ((payload.status === 'passed') !== exitPassed) {
       return { deliveryId, executionStatus: 'execution-error', outcomeKind: 'protocol-error', summary: 'Full Test child exit/protocol status mismatch' };
     }
-    const terminal: FullTestTerminalResult = { ...payload, resultRef: fullTestResultRefFor(payload) };
-    await mutateManifest(repoRoot, deliveryId, (doc) => doc.publishFullTestResult(terminal), options.atomicWrite ?? atomicWriteFile);
-    return { deliveryId, executionStatus: payload.status, outcomeKind: outcome.kind, resultRef: terminal.resultRef, summary: payload.summary };
+    return publishTerminal(repoRoot, deliveryId, payload, execution, atomicWrite);
   } finally {
     await rm(temp, { recursive: true, force: true });
   }

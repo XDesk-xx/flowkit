@@ -33,21 +33,38 @@ function renderStringList(values: readonly string[], indent: string): string[] {
 
 function renderFullTestExecution(execution: FullTestExecutionContract, indent = '    '): string[] {
   const child = `${indent}  `;
-  return [
+  const lines = [
     `${indent}execution:`,
     `${child}id: ${quote(execution.id)}`,
     `${child}kind: ${execution.kind}`,
-    `${child}command: ${quote(execution.command)}`,
-    `${child}args:`,
-    ...renderStringList(execution.args, `${child}  `),
-    `${child}launcherMode: ${execution.launcherMode}`,
-    `${child}scope: ${execution.scope}`,
-    `${child}timeoutMs: ${execution.timeoutMs}`,
+  ];
+  if (execution.kind === 'command') {
+    lines.push(
+      `${child}command: ${quote(execution.command)}`,
+      `${child}args:`,
+      ...renderStringList(execution.args, `${child}  `),
+      `${child}launcherMode: ${execution.launcherMode}`,
+      `${child}scope: ${execution.scope}`,
+      `${child}timeoutMs: ${execution.timeoutMs}`,
+    );
+  } else {
+    lines.push(`${child}logicalChecks:`);
+    for (const check of execution.logicalChecks) {
+      lines.push(
+        `${child}  - id: ${quote(check.id)}`,
+        `${child}    resolverId: ${check.resolverId}`,
+        `${child}    perTargetTimeoutMs: ${check.perTargetTimeoutMs}`,
+      );
+    }
+    lines.push(`${child}scope: ${execution.scope}`);
+  }
+  lines.push(
     `${child}resultProtocol: ${execution.resultProtocol}`,
     `${child}resultAuthority: ${execution.resultAuthority}`,
     `${child}expectedTerminalStatuses:`,
     ...renderStringList(execution.expectedTerminalStatuses, `${child}  `),
-  ];
+  );
+  return lines;
 }
 
 function renderFullTestExecutionBlock(block: FullTestExecutionBlock, indent = '    '): string[] {
@@ -370,6 +387,31 @@ export class DeliveryManifestDocument {
     next.splice(changesSpan.end, 0, ...insertion);
     this.content = `${next.join('\n')}\n`;
     return { ref: record.ref, changed: true };
+  }
+
+  replaceFullTestExecution(execution: FullTestExecutionContract): void {
+    const lines = splitLines(this.content);
+    const verification = findTopLevelSection(lines, 'verification');
+    if (verification === null) throw new FlowkitError('MANIFEST_UNSUPPORTED_SHAPE', 'verification section missing');
+    const fullStarts: number[] = [];
+    for (let i = verification.start + 1; i < verification.end; i++) if (/^ {2}fullTest:\s*$/.test(lines[i]!)) fullStarts.push(i);
+    if (fullStarts.length !== 1) throw new FlowkitError('MANIFEST_AMBIGUOUS', 'verification must contain exactly one fullTest section');
+    const fullStart = fullStarts[0]!;
+    let fullEnd = verification.end;
+    for (let i = fullStart + 1; i < verification.end; i++) {
+      if (/^ {2}[A-Za-z_][A-Za-z0-9_-]*:\s*/.test(lines[i]!)) { fullEnd = i; break; }
+    }
+    const starts: number[] = [];
+    for (let i = fullStart + 1; i < fullEnd; i++) if (/^ {4}execution:\s*$/.test(lines[i]!)) starts.push(i);
+    if (starts.length !== 1) throw new FlowkitError('MANIFEST_AMBIGUOUS', 'verification.fullTest must contain exactly one execution');
+    const start = starts[0]!;
+    let end = fullEnd;
+    for (let i = start + 1; i < fullEnd; i++) {
+      if (/^ {4}[A-Za-z_][A-Za-z0-9_-]*:\s*/.test(lines[i]!)) { end = i; break; }
+    }
+    const next = [...lines];
+    next.splice(start, end - start, ...renderFullTestExecution(execution));
+    this.content = `${next.join('\n')}\n`;
   }
 
   updateFullTestStatus(from: string, to: string): void {

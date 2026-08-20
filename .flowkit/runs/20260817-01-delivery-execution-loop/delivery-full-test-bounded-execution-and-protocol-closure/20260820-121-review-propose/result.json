@@ -1,0 +1,29 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "Review 120 Revise-Propose：approved。119 的 3 个 author blockers 均已关闭且未发现新的 blocking finding。I1-RP-001：Design 保持 apply/revise-apply 同一 22-selector closed scope，production deriveMutationDeclaration() 对两种 action 均真实 preflight 成功；I1-RP-002：tasks 6.4/6.5 已把 formal Change Verification 与 review-apply handoff 移回各自 authority，所有 required implementation tasks 可在首次 formal Verification 前完成并冻结 stable candidate；I1-RP-003：full heavy override closure 已提升为 default case/selector semantic closure，H1 明确映射 installed-runner smoke 为独立 bounded target、future-Delivery E2E 为 FLOWKIT_H1_FORMAL_PHASE=1..26，并要求 missing/overlap/title-or-branch drift fail closed。独立复核还确认 base=4f3e0f44a3a1254670a99f1428b70fc1e2c6c8f2、package SHA 与 120 produced refs hashes一致、git diff --check clean、OpenSpec current strict与all strict 23/23、Flowkit doctor=ok、next=review-propose（review admission前），mutation-declaration unit 2/2 PASS。Proposal 保持116/117批准的 bounded Full Test authority分层、legacy command compatibility、per-physical-target 120s、no scheduler/timeout inflation/no H1 reopen边界。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "f7f1d8283f6c18a83fff5b3e118fe9f6ce368a7906a9235683954cefcdec1cc2"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [],
+  "reviewFindingConvergence": [
+    {
+      "findingId": "I1-RP-001",
+      "state": "resolved"
+    },
+    {
+      "findingId": "I1-RP-002",
+      "state": "resolved"
+    },
+    {
+      "findingId": "I1-RP-003",
+      "state": "resolved"
+    }
+  ]
+}

@@ -159,6 +159,70 @@ function verificationOnlySelection(): VerificationSelection {
   };
 }
 
+
+const G1_CHANGE_PHYSICAL_CASES = [
+  'drives the happy lifecycle through real archive, verify projection, completion and checkpoint readiness without a Git checkpoint',
+  'keeps non-author blockers out of revise while explicit review creates direct same-stage re-review; author blockers permit revise',
+  'fails closed for stale review target and missing Owner activation',
+  'exact-resumes the same pending Run after a future-Delivery fresh clone with no chat/provider state',
+  'keeps changed-surface outcome-unknown archive pending and resumes the same generation after explicit recovery admission',
+  'projects not-published Verification from structured authority and fails closed when OpenSpec projection is unavailable',
+  'records Change Verification failure through apply admission instead of fabricating success',
+] as const;
+
+const G1_ADAPTER_PHYSICAL_CASES = [
+  'replays the real F1 retry+archive terminal and fails closed on ambiguous/corrupt archived authority',
+  'keeps historical E1 selection/evidence point-in-time even when the current Catalog fingerprint differs',
+  'fresh-clones a different future Delivery, resumes one exact pending Action, rebuilds context, and does not auto-next',
+] as const;
+
+async function writePassingExecutionExactTargets(root: string): Promise<void> {
+  await mkdir(join(root, 'tests', 'integration'), { recursive: true });
+  for (const name of [
+    'f1-archive-and-checkpoint-boundary.test.ts',
+    'f1-delivery-finalize-and-git-boundary.test.ts',
+  ]) {
+    await writeFile(join(root, 'tests', 'integration', name), "import { test } from 'node:test'; test('ok', () => {});\n", 'utf8');
+  }
+}
+
+async function writePassingCliBoundedTargets(root: string, executable: string): Promise<void> {
+  await mkdir(join(root, 'tests', 'integration'), { recursive: true });
+  await mkdir(join(root, 'tests', 'unit', 'cli'), { recursive: true });
+  await mkdir(join(root, 'tests', 'unit', 'diagnostics'), { recursive: true });
+  for (const name of [
+    'a1-delivery-readiness-and-full-test-behavior.test.ts',
+    'b1-delivery-findings-and-corrective-change.test.ts',
+    'diagnostic-cli.test.ts',
+  ]) {
+    await writeFile(join(root, 'tests', 'integration', name), "import { test } from 'node:test'; test('ok', () => {});\n", 'utf8');
+  }
+  await writeFile(
+    join(root, 'tests', 'integration', 'diagnostic-cli-process.test.ts'),
+    "import { test } from 'node:test'; test('diagnostic process ok', () => {});\n",
+    'utf8',
+  );
+  await writeFile(join(root, 'tests', 'integration', 'g1-change-cli-end-to-end.test.ts'), [
+    "import assert from 'node:assert/strict';",
+    "import { test } from 'node:test';",
+    ...G1_CHANGE_PHYSICAL_CASES.map((name, index) => index === 0
+      ? `test(${JSON.stringify(name)}, () => assert.equal(process.env['FLOWKIT_OPENSPEC_BIN'], ${JSON.stringify(executable)}));`
+      : `test(${JSON.stringify(name)}, () => {});`),
+    '',
+  ].join('\n'), 'utf8');
+  await writeFile(join(root, 'tests', 'integration', 'g1-sync-resume-and-single-action-agent-adapter.test.ts'), [
+    "import { test } from 'node:test';",
+    ...G1_ADAPTER_PHYSICAL_CASES.map((name) => `test(${JSON.stringify(name)}, () => {});`),
+    '',
+  ].join('\n'), 'utf8');
+  await writeFile(join(root, 'tests', 'integration', 'h1-stable-runner-and-self-hosting-acceptance.test.ts'), [
+    "import { test } from 'node:test';",
+    `test(${JSON.stringify('physically installs the candidate runner and exercises fresh-process diagnostics without source-workspace runtime')}, () => {});`,
+    "test('phase body', () => {});",
+    '',
+  ].join('\n'), 'utf8');
+}
+
 function archiveSyncOnlySelection(): VerificationSelection {
   const payload = {
     moduleMapLogicalRef: 'src/verification/change-selection/module-map.ts',
@@ -661,17 +725,7 @@ describe('verification evidence affected Node union', () => {
     try {
       await symlink(join(process.cwd(), 'node_modules'), join(root, 'node_modules'), 'dir');
       await writeFile(join(root, 'package.json'), '{"type":"module"}\n', 'utf8');
-      await mkdir(join(root, 'tests', 'integration'), { recursive: true });
-      await mkdir(join(root, 'tests', 'unit', 'cli'), { recursive: true });
-      await mkdir(join(root, 'tests', 'unit', 'diagnostics'), { recursive: true });
-      await writeFile(join(root, 'tests', 'integration', 'diagnostic-cli-process.test.ts'), "import { test } from 'node:test'; test('ok', () => {});\n", 'utf8');
-      await writeFile(join(root, 'tests', 'integration', 'diagnostic-cli.test.ts'), "import { test } from 'node:test'; test('ok', () => {});\n", 'utf8');
-      await writeFile(join(root, 'tests', 'integration', 'g1-change-cli-end-to-end.test.ts'), [
-        "import assert from 'node:assert/strict';",
-        "import { test } from 'node:test';",
-        `test('g1 env', () => assert.equal(process.env['FLOWKIT_OPENSPEC_BIN'], ${JSON.stringify(executable)}));`,
-        '',
-      ].join('\n'), 'utf8');
+      await writePassingCliBoundedTargets(root, executable);
 
       const previousNodeTestContext = process.env['NODE_TEST_CONTEXT'];
       delete process.env['NODE_TEST_CONTEXT'];
@@ -853,6 +907,7 @@ describe('verification evidence affected Node union', () => {
       await symlink(join(process.cwd(), 'node_modules'), join(root, 'node_modules'), 'dir');
       await writeFile(join(root, 'package.json'), '{"type":"module"}\n', 'utf8');
       await mkdir(join(root, 'tests', 'unit', 'services'), { recursive: true });
+      await writePassingExecutionExactTargets(root);
       await writeFile(join(root, 'tests', 'unit', 'services', 'a1-write-service.test.ts'), [
         "import assert from 'node:assert/strict';",
         "import { test } from 'node:test';",
@@ -892,6 +947,7 @@ describe('verification evidence affected Node union', () => {
       await symlink(join(process.cwd(), 'node_modules'), join(root, 'node_modules'), 'dir');
       await writeFile(join(root, 'package.json'), '{"type":"module"}\n', 'utf8');
       await mkdir(join(root, 'tests', 'unit', 'services'), { recursive: true });
+      await writePassingExecutionExactTargets(root);
       await writeFile(join(root, 'tests', 'unit', 'services', 'b1-openspec-action-context.test.ts'), [
         "import assert from 'node:assert/strict';",
         "import { test } from 'node:test';",
@@ -931,6 +987,7 @@ describe('verification evidence affected Node union', () => {
       await symlink(join(process.cwd(), 'node_modules'), join(root, 'node_modules'), 'dir');
       await writeFile(join(root, 'package.json'), '{"type":"module"}\n', 'utf8');
       await mkdir(join(root, 'tests', 'integration'), { recursive: true });
+      await writeFile(join(root, 'tests', 'integration', 'f1-archive-and-checkpoint-boundary.test.ts'), "import { test } from 'node:test'; test('ok', () => {});\n", 'utf8');
       await writeFile(join(root, 'tests', 'integration', 'f1-delivery-finalize-and-git-boundary.test.ts'), [
         "import assert from 'node:assert/strict';",
         "import { test } from 'node:test';",

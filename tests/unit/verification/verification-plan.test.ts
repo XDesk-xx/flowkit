@@ -5,7 +5,6 @@ import { join } from 'node:path';
 import { describe, it } from 'node:test';
 
 import {
-  executeProjectStep,
   fullTestEnvironment,
   runVerificationPlan,
   runVerificationPlanDetailed,
@@ -28,7 +27,7 @@ describe('F1 verification plans', () => {
     assert.throws(() => verifyChangePlan(['none', 'policy']), /cannot be combined/);
   });
 
-  it('freezes the full verification order and isolates final full behind public test:full', async () => {
+  it('freezes the six logical Full Test checks while keeping test:full only as a compatibility CLI surface', async () => {
     const plan = verifyFullPlan();
     assert.deepEqual(plan.map((step) => step.name), [
       'quality',
@@ -41,24 +40,13 @@ describe('F1 verification plans', () => {
 
     const full = plan.find((step) => step.name === 'full');
     assert.ok(full);
+    assert.deepEqual(full.args, ['run', 'test:full']);
+
     const previousLegacy = process.env['FLOWKIT_OPENSPEC_BIN'];
     const managedHome = process.env['FLOWKIT_HOME'];
     assert.ok(managedHome, 'FLOWKIT_HOME managed fixture is required');
     delete process.env['FLOWKIT_OPENSPEC_BIN'];
-    const calls: Array<{ executable: string; args: readonly string[]; env?: NodeJS.ProcessEnv }> = [];
     try {
-      const result = await executeProjectStep(full, async (executable, args, options) => {
-        calls.push({ executable, args, env: options.env });
-        return { exitCode: 0, durationMs: 321 };
-      });
-
-      assert.equal(result.exitCode, 0);
-      assert.equal(result.durationMs, 321);
-      assert.equal(calls.length, 1);
-      assert.match(calls[0]!.executable, process.platform === 'win32' ? /npm\.cmd$/u : /npm$/u);
-      assert.deepEqual(calls[0]!.args, ['run', 'test:full']);
-      assert.equal(calls[0]!.env?.['FLOWKIT_HOME'], managedHome);
-      assert.equal(calls[0]!.env?.['FLOWKIT_OPENSPEC_BIN'], undefined);
       const projected = await fullTestEnvironment();
       assert.equal(projected['FLOWKIT_HOME'], managedHome);
       assert.equal(projected['FLOWKIT_OPENSPEC_BIN'], undefined);
@@ -69,7 +57,7 @@ describe('F1 verification plans', () => {
   });
 
 
-  it('records failed status and duration for the final full step', async () => {
+  it('records failed status and duration for the final full logical check', async () => {
     const logs: string[] = [];
     const executed: string[] = [];
     const originalLog = console.log;
@@ -78,22 +66,7 @@ describe('F1 verification plans', () => {
       const code = await runVerificationPlan(verifyFullPlan(), async (step) => {
         executed.push(step.name);
         if (step.name !== 'full') return { exitCode: 0, durationMs: 10 };
-        const previousLegacy = process.env['FLOWKIT_OPENSPEC_BIN'];
-        const managedHome = process.env['FLOWKIT_HOME'];
-        assert.ok(managedHome, 'FLOWKIT_HOME managed fixture is required');
-        delete process.env['FLOWKIT_OPENSPEC_BIN'];
-        try {
-          return await executeProjectStep(step, async (executable, args, options) => {
-            assert.match(executable, process.platform === 'win32' ? /npm\.cmd$/u : /npm$/u);
-            assert.deepEqual(args, ['run', 'test:full']);
-            assert.equal(options.env?.['FLOWKIT_HOME'], managedHome);
-            assert.equal(options.env?.['FLOWKIT_OPENSPEC_BIN'], undefined);
-            return { exitCode: 7, durationMs: 1_234 };
-          });
-        } finally {
-          if (previousLegacy === undefined) delete process.env['FLOWKIT_OPENSPEC_BIN'];
-          else process.env['FLOWKIT_OPENSPEC_BIN'] = previousLegacy;
-        }
+        return { exitCode: 7, durationMs: 1_234 };
       });
       assert.equal(code, 7);
       assert.deepEqual(executed, ['quality', 'typecheck', 'lint', 'build', 'openspec-all', 'full']);

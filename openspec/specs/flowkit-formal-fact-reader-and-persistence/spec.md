@@ -481,13 +481,13 @@ Reader MUST 使用 closed current-shape-first + bounded legacy discriminator。P
 
 Reader MUST 从 Delivery Manifest 的嵌套 `delivery:` mapping 读取 `state` 与 persisted raw `fullTestStatus`，并从 `verification.fullTest` 读取 coverage intent、唯一 executable binding、optional current executionBlock 与 optional terminal result projection。MUST NOT 从顶层 `state`/`fullTestStatus` 读取。
 
-`verification.fullTest.execution` MUST 是唯一 typed per-Delivery execution contract，并包含：非空 `id`、`kind=command`、非空 logical `command`、`launcherMode=direct|npm-shim`、string `args[]`、非空 `scope`、正整数 `timeoutMs`、`resultProtocol=flowkit-full-test-result-v1`、`resultAuthority=verification`、以及精确 `expectedTerminalStatuses=[passed, failed]`。`npm-shim` MUST 只接受 logical `command=npm`；non-win32 MUST 解析为 `npm`，win32 MUST 确定性解析为 `npm.cmd` 并进入既有 ComSpec `.cmd/.bat` launcher；该 normalization 属同一 execution contract，不是第二 execution authority。Reader MUST 校验 schema/uniqueness，但 MUST NOT 要求所有 future Delivery 的 command/args/timeout 等于当前 03 instance。`verification.fullTest.plan` MUST 只解释为 Delivery coverage intent，MUST NOT 被 Reader/Policy 编译为第二套 executable step list。
+`verification.fullTest.execution` MUST 是唯一 typed per-Delivery execution contract，并使用 closed `kind=command|bounded-command-plan` 判别联合。两种 kind MUST共享非空 `id`、`scope=delivery`、`resultProtocol=flowkit-full-test-result-v1`、`resultAuthority=verification` 与精确 `expectedTerminalStatuses=[passed, failed]`。`command` MUST继续要求 non-empty logical `command`、`launcherMode=direct|npm-shim`、string `args[]` 与 positive `timeoutMs`；`npm-shim` 只接受 logical `command=npm`，并保留 non-win32 `npm` / win32 `npm.cmd` + ComSpec normalization。`bounded-command-plan` MUST包含 ordered non-empty `logicalChecks[]`，每项精确包含 non-empty unique logical `id`、closed source-controlled `resolverId` 与 positive `perTargetTimeoutMs`；unknown resolver、duplicate id/field或 unsupported shape MUST fail closed。Reader MUST NOT要求所有 future Delivery 使用 current 03 resolver set/timeout；`command` MUST继续是合法 future shape。`verification.fullTest.plan` MUST只解释为 Delivery coverage intent，MUST NOT被 Reader/Policy编译为 executable step list。
 
 当 persisted raw `fullTestStatus=not-ready` 且 all required Changes completed、matching checkpoints present、formal conflicts=0、current Delivery execution contract valid 时，Reader/Policy shared pure projection MUST 将 current effective Full Test status解释为 `awaiting-user-decision`；该 projection MUST NOT写回 Manifest。`authorized|passed|failed` MUST 来自 persisted raw status，不得仅凭 technical command结果推导。若 raw `authorized` 同时存在合法 executionBlock，effective status仍为 `authorized`，但 Policy MUST 投影 execution/recovery blocked boundary，不得返回 executable Full Test behavior。
 
 `verification.fullTest.executionBlock` MAY 只在 raw `fullTestStatus=authorized` 且最后一个 owned execution outcome 为 process-tree `outcome-unknown` 时存在，并 MUST 精确使用 `{schemaVersion:1, reason:outcome-unknown, summary:<non-empty bounded string>}`。它 MUST NOT 包含 `resultRef`、check result、raw logs 或 attempt history；存在时 current Full Test MUST fail closed 且不得开始新 attempt。
 
-Terminal `verification.fullTest.result` 只允许在 persisted `fullTestStatus=passed|failed` 时存在，并 MUST 使用唯一闭合 schema：`schemaVersion=1`、matching `status`、non-empty `summary`、non-negative integer `totalDurationMs`、按 physical execution order 排列的 `checks[]`（每项精确包含 non-empty unique `id`、`status=passed|failed`、non-negative integer `durationMs`）与 `resultRef`。
+Terminal `verification.fullTest.result` 只允许在 persisted `fullTestStatus=passed|failed` 时存在，并 MUST 使用唯一闭合 schema：`schemaVersion=1`、matching `status`、non-empty `summary`、non-negative integer `totalDurationMs`、`checks[]`（每项精确包含 non-empty unique `id`、`status=passed|failed`、non-negative integer `durationMs`）与 `resultRef`。对 `kind=bounded-command-plan`，`checks[]` MUST 按 frozen logical check order：`passed` result必须精确等于完整 logical plan且全部 passed；`failed` result必须是 non-empty exact logical prefix、前项全部 passed且最后一项 failed。对 legacy `kind=command`，Reader继续只做既有 structural result validation/hash/coherence，不得倒推 bounded logical plan。Physical target order/detail MUST NOT进入 terminal `checks[]` authority。
 
 `resultRef` MUST 为 `verification:full-test:<sha256>`。Reader/Writer MUST 重建固定字段顺序 canonical object `{schemaVersion,status,summary,totalDurationMs,checks}`，每个 check 重建固定字段顺序 `{id,status,durationMs}`，保持 `checks` array order，对该 object 的无空白、无 trailing newline UTF-8 `JSON.stringify` bytes 计算 lowercase SHA-256；hash domain MUST 排除 `resultRef` 自身且 MUST NOT 依赖 Manifest/YAML key ordering。Status/result 缺失、不匹配、duplicate check id、unsupported schemaVersion、malformed timing 或 recomputed resultRef mismatch MUST 收集 `FactConflict` 并 fail closed。
 
@@ -513,7 +513,7 @@ The Delivery Manifest `architecture` mapping MAY additionally contain E1 `curren
 
 #### Scenario: Full Test executable contract 不合法 fail-closed
 
-- **WHEN** `verification.fullTest.execution` 缺失、duplicate、字段不完整、`kind/launcherMode/resultProtocol/resultAuthority/expectedTerminalStatuses` 不合法、`npm-shim` 与非 npm command 组合、timeout 非正整数或 command/id/scope 为空
+- **WHEN** `verification.fullTest.execution` 缺失、duplicate、字段不完整、discriminated kind/base fields不合法、command launcher/timeout不合法，或 bounded logical check id/resolver/timeout不合法
 - **THEN** Reader MUST 收集 Full Test plan/binding `FactConflict`
 - **AND** Delivery MUST NOT 进入 Owner Full Test authorization 或 executable behavior boundary
 
@@ -540,7 +540,8 @@ The Delivery Manifest `architecture` mapping MAY additionally contain E1 `curren
 
 - **WHEN** persisted raw `fullTestStatus=passed|failed`
 - **THEN** matching `verification.fullTest.result` MUST 存在且 status 一致
-- **AND** closed result schema/check order/check status/timing MUST structural valid
+- **AND** closed result schema/check status/timing MUST structural valid
+- **AND** bounded kind MUST additionally satisfy complete-PASS / exact-prefix-FAILED logical-plan semantics
 - **AND** Reader MUST 按固定 canonical JSON hash domain 重算 `resultRef`
 - **AND** 不一致、缺失或 hash mismatch MUST fail closed
 
@@ -579,6 +580,22 @@ The Delivery Manifest `architecture` mapping MAY additionally contain E1 `curren
 - **THEN** it MUST bind an accepted Actual/compare source and a valid `accept-architecture` Owner record for the same cycle
 - **AND** that cycle MUST retain coherent Full Test authorization occurrence provenance
 - **AND** mismatched source/cycle/Owner refs MUST fail closed
+
+#### Scenario: bounded execution contract round-trip
+- **WHEN** Manifest持久化合法 `kind=bounded-command-plan` 与 ordered logical checks
+- **THEN** Reader MUST恢复相同 logical id/resolverId/perTargetTimeoutMs order
+- **AND** Writer round-trip MUST NOT materialize resolved machine paths/test file snapshot
+
+#### Scenario: incomplete bounded PASS fail-closed
+- **WHEN** bounded logical plan有多个 checks但 terminal status=`passed` 的 `checks[]`只包含前缀
+- **THEN** Reader MUST collect a Full Test result semantic conflict
+- **AND** MUST NOT expose a qualifying passed Full Test result
+
+#### Scenario: bounded FAILED exact prefix accepted
+- **WHEN** bounded terminal status=`failed`
+- **AND** checks是 frozen logical plan的非空 exact prefix、前项 passed、最后一项 failed
+- **THEN** Reader MAY accept the terminal result after existing hash/schema validation
+- **AND** unexecuted suffix MUST NOT require synthetic `not-run` entries
 
 ### Requirement: Review verdict 重建 + reviewed-Run 连接
 

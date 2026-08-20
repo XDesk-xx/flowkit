@@ -1,0 +1,21 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "Review 125 Apply：approved。125 精确消费 124 Approved Proposal 与 Owner authorize-apply，未继承已 abandon 的 120/121/122 generation authority；已批准 Proposal/Design/spec bytes 保持不变。Implementation mutation 全部位于 123/124 冻结的 25-selector apply surface 内：bounded Delivery Full Test execution contract、Verification-owned six-check resolver/executor、shared bounded transport、A1 write-side invalidation、tests-cli/tests-execution logical-check-owned bounded fanout、F1 historical G1 checkpoint fixture 与 target-reachability sentinels均按合同实现。Reset 两个 formal failure 已关闭：tests-cli 不再依赖 H1 capability 才启用 bounded route且保持 per-target 120000ms/no timeout inflation；tests-execution 保持 selected，F1 fixture从正式 G1 checkpoint Git boundary解析并在 exact candidate 5/5 PASS。旧 122 failed verification.md 以原 SHA256 943df9a0... 原样进入 verification-history，新 125 verification.md SHA256=e71492fe...、selectionFingerprint=092bf835...、status=passed，并与 Apply terminalBinding精确一致。Reviewer独立复核 package SHA、git diff --check、typecheck、lint、build、OpenSpec current strict 与 all strict 23/23；Full Test resolver/executor/verification-plan 15/15；Reset-added B1/F1 tests-execution target reachability 2/2；non-H1 G1 managed OpenSpec propagation physical case PASS；当前 status verification=passed、full-test=not-ready、actual.architecture.json absent、doctor=ok/0。未执行真实 post-I1 Delivery Full Test/Actual/Compare/Finalize；未发现 generic scheduler/timing platform、timeout inflation、Full Test Run 或 Owner authority 越界。完整 review-apply scan 未发现 blocking findings。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/verification.md",
+      "versionFingerprint": "e71492fe110238778ead0088acced36bc7898f0af95d338ae3bc2a2d0408b098",
+      "kind": "verification-summary"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "1c7166b465a9facea1cec27a78b961212c4181c4792572ae031738f9525f642a"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [],
+  "reviewFindingConvergence": []
+}

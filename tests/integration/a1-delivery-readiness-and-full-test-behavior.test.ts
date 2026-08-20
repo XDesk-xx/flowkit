@@ -141,10 +141,71 @@ describe('A1 public Delivery Full Test behavior', () => {
   it('keeps the current 03 bootstrap migration as one bounded instance of the generic execution contract', async () => {
     const manifest = await readFile(join(process.cwd(), 'openspec', 'delivery-groups', '20260817-01-delivery-execution-loop.yaml'), 'utf8');
     assert.match(manifest, /execution:\n {6}id: "project-full-verification"/);
-    assert.match(manifest, /command: "npm"/);
-    assert.match(manifest, /launcherMode: npm-shim/);
-    assert.match(manifest, /timeoutMs: 120000/);
+    assert.match(manifest, /kind: bounded-command-plan/);
+    assert.match(manifest, /logicalChecks:\n {8}- id: "quality"[\s\S]*- id: "full"/);
+    for (const resolverId of ['flowkit-quality', 'flowkit-typecheck', 'flowkit-lint', 'flowkit-build', 'flowkit-openspec-all', 'flowkit-full-tests']) {
+      assert.match(manifest, new RegExp(`resolverId: ${resolverId}`));
+    }
+    assert.equal((manifest.match(/perTargetTimeoutMs: 120000/g) ?? []).length, 6);
+    assert.doesNotMatch(manifest, /command: "npm"|launcherMode: npm-shim/);
     assert.match(manifest, /resultProtocol: flowkit-full-test-result-v1/);
+  });
+
+
+  it('physically executes a persisted bounded typecheck plan through the public CLI without creating Run/NNN state', async () => {
+    const root = await createTempDir();
+    roots.push(root);
+    const deliveryId = '20991231-06-bounded-public-cli';
+    const changeId = 'bounded-ready';
+    const checkpointOwner = buildOwnerDecisionRecord({ decision: 'authorize-checkpoint', deliveryId, changeId, sourceRef: 'owner:test:bounded-checkpoint' });
+    const fullTestOwner = buildOwnerDecisionRecord({ decision: 'authorize-full-test', deliveryId, sourceRef: 'owner:test:bounded-full-test' });
+    await mkdir(join(root, 'openspec', 'delivery-groups'), { recursive: true });
+    await mkdir(join(root, '.flowkit', 'runs'), { recursive: true });
+    await mkdir(join(root, 'src'), { recursive: true });
+    await mkdir(join(root, 'tests'), { recursive: true });
+    await symlink(join(process.cwd(), 'node_modules'), join(root, 'node_modules'), 'dir');
+    await writeFile(join(root, 'src', 'ok.ts'), 'export const ok: number = 1;\n', 'utf8');
+    await writeFile(join(root, 'tests', 'ok.ts'), 'export const testOk: number = 1;\n', 'utf8');
+    const compiler = { compilerOptions: { target: 'ES2022', module: 'NodeNext', moduleResolution: 'NodeNext', strict: true, skipLibCheck: true }, include: ['src/**/*.ts'] };
+    await writeFile(join(root, 'tsconfig.json'), JSON.stringify(compiler), 'utf8');
+    await writeFile(join(root, 'tsconfig.test.json'), JSON.stringify({ ...compiler, include: ['tests/**/*.ts'] }), 'utf8');
+    const manifestPath = join(root, 'openspec', 'delivery-groups', `${deliveryId}.yaml`);
+
+    await git(root, ['init']);
+    await git(root, ['config', 'user.email', 'flowkit@example.test']);
+    await git(root, ['config', 'user.name', 'Flowkit Test']);
+    await writeFile(manifestPath, [
+      `id: ${deliveryId}`, 'delivery:', '  state: active', '  fullTestStatus: not-ready',
+      'changes:', '  - key: X1', `    id: ${changeId}`, '    goal: "bounded fixture"', '    required: true', '    dependsOn: []', '    state: planned', '    architectureImpact: false', '    outputs: []',
+      'verification:', '  fullTest:', '    requiresOwnerAuthorization: true', '',
+    ].join('\n'), 'utf8');
+    await git(root, ['add', '.']);
+    await git(root, ['commit', '-m', `chore(flowkit): start ${deliveryId}`, '-m', `Flowkit-Delivery: ${deliveryId}\nFlowkit-Boundary: delivery-start`]);
+
+    await writeFile(manifestPath, [
+      `id: ${deliveryId}`, 'delivery:', '  state: active', '  fullTestStatus: authorized',
+      'changes:', '  - key: X1', `    id: ${changeId}`, '    goal: "bounded fixture"', '    required: true', '    dependsOn: []', '    state: completed', '    architectureImpact: false', '    outputs: []',
+      'ownerDecisions:', ...renderOwnerDecisionRecord(checkpointOwner), ...renderOwnerDecisionRecord(fullTestOwner),
+      'verification:', '  fullTest:', '    requiresOwnerAuthorization: true',
+      '    execution:', '      id: "bounded-public"', '      kind: bounded-command-plan', '      logicalChecks:',
+      '        - id: "typecheck"', '          resolverId: "flowkit-typecheck"', '          perTargetTimeoutMs: 30000',
+      '      scope: delivery', '      resultProtocol: flowkit-full-test-result-v1', '      resultAuthority: verification',
+      '      expectedTerminalStatuses:', '        - "passed"', '        - "failed"', '',
+    ].join('\n'), 'utf8');
+    await git(root, ['add', '.']);
+    await git(root, ['commit', '-m', `chore(flowkit): checkpoint ${changeId}`, '-m', [
+      `Flowkit-Delivery: ${deliveryId}`, `Flowkit-Change: ${changeId}`, 'Flowkit-Boundary: change-checkpoint', `Owner-Authorization: ${checkpointOwner.ref}`,
+    ].join('\n')]);
+
+    const before = await readSnapshot(root, deliveryId);
+    assert.equal(before.runs.length, 0);
+    const cli = await runCli({ argv: ['delivery', 'full-test'], cwd: root });
+    assert.equal(cli.exitCode, 0, cli.stderr);
+    const after = await readSnapshot(root, deliveryId);
+    assert.equal(after.conflicts.length, 0);
+    assert.equal(after.deliveryFullTestStatus, 'passed');
+    assert.deepEqual(after.deliveryFullTestResult?.checks.map((check) => check.id), ['typecheck']);
+    assert.equal(after.runs.length, 0);
   });
 
 

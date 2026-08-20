@@ -21,8 +21,11 @@ const eofTargets = [
 
 async function g1PreCheckpointFixture(): Promise<{ root: string; base: string }> {
   const sourceRoot = process.cwd();
-  const head = (await exec('git', ['rev-parse', 'HEAD'], { cwd: sourceRoot })).stdout.trim();
-  const base = (await exec('git', ['rev-parse', 'HEAD^'], { cwd: sourceRoot })).stdout.trim();
+  const head = (await exec('git', [
+    'log', '--format=%H', '--fixed-strings', '--grep=chore(flowkit): checkpoint sync-resume-and-single-action-agent-adapter', '-n', '1',
+  ], { cwd: sourceRoot })).stdout.trim();
+  assert.match(head, /^[0-9a-f]{40,64}$/, 'expected exact G1 checkpoint commit in repository history');
+  const base = (await exec('git', ['rev-parse', `${head}^`], { cwd: sourceRoot })).stdout.trim();
   const root = await mkdtemp(join(tmpdir(), 'flowkit-h1-checkpoint-'));
   await exec('git', ['clone', '--quiet', '--no-local', sourceRoot, root]);
   await exec('git', ['reset', '--hard', base], { cwd: root });

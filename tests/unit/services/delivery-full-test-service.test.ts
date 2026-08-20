@@ -35,6 +35,7 @@ async function fixture(
     launcherMode?: 'direct' | 'npm-shim';
     command?: string;
     timeoutMs?: number;
+    executionKind?: 'command' | 'bounded-command-plan';
   } = {},
 ) {
   const root = await createTempDir();
@@ -123,13 +124,26 @@ async function fixture(
       '    requiresOwnerAuthorization: true',
       '    execution:',
       '      id: "fixture-full-test"',
-      '      kind: command',
-      `      command: "${command}"`,
-      '      args:',
-      '        - "verify-full.mjs"',
-      `      launcherMode: ${launcherMode}`,
+      ...(options.executionKind === 'bounded-command-plan'
+        ? [
+            '      kind: bounded-command-plan',
+            '      logicalChecks:',
+            '        - id: "quality"',
+            '          resolverId: "flowkit-quality"',
+            '          perTargetTimeoutMs: 1000',
+            '        - id: "full"',
+            '          resolverId: "flowkit-full-tests"',
+            '          perTargetTimeoutMs: 1000',
+          ]
+        : [
+            '      kind: command',
+            `      command: "${command}"`,
+            '      args:',
+            '        - "verify-full.mjs"',
+            `      launcherMode: ${launcherMode}`,
+          ]),
       '      scope: delivery',
-      `      timeoutMs: ${timeoutMs}`,
+      ...(options.executionKind === 'bounded-command-plan' ? [] : [`      timeoutMs: ${timeoutMs}`]),
       '      resultProtocol: flowkit-full-test-result-v1',
       '      resultAuthority: verification',
       '      expectedTerminalStatuses:',
@@ -476,4 +490,70 @@ describe('A1 Delivery Full Test service', () => {
       assert.equal(snapshot.deliveryFullTestResult, undefined, c.name);
     }
   });
+
+  it('executes a persisted bounded plan without command-protocol IPC and publishes only an exact complete PASS', async () => {
+    const f = await fixture({ executionKind: 'bounded-command-plan' });
+    let sawResultPath = false;
+    const result = await runDeliveryFullTest(f.root, f.deliveryId, {
+      executeBounded: async (_root, execution, options) => {
+        sawResultPath = options?.env?.['FLOWKIT_FULL_TEST_RESULT_PATH'] !== undefined;
+        assert.equal(execution.kind, 'bounded-command-plan');
+        assert.deepEqual(execution.logicalChecks.map((check) => check.id), ['quality', 'full']);
+        return {
+          kind: 'terminal',
+          payload: {
+            schemaVersion: 1,
+            status: 'passed',
+            summary: 'bounded pass',
+            totalDurationMs: 20,
+            checks: [
+              { id: 'quality', status: 'passed', durationMs: 5 },
+              { id: 'full', status: 'passed', durationMs: 15 },
+            ],
+          },
+          diagnostics: [],
+        };
+      },
+    });
+    assert.equal(sawResultPath, false);
+    assert.equal(result.executionStatus, 'passed', result.summary);
+    const snap = await readFormalFactSnapshot({ repoRoot: f.root, deliveryId: f.deliveryId, runsPathPrefix: '.flowkit/runs', openspecChangesPath: 'openspec/changes', manifestPathPrefix: 'openspec/delivery-groups' });
+    assert.equal(snap.deliveryFullTestRawStatus, 'passed');
+    assert.deepEqual(snap.deliveryFullTestResult?.checks.map((check) => check.id), ['quality', 'full']);
+  });
+
+  it('rejects a bounded PASS with an incomplete logical plan and preserves authorized with no terminal result', async () => {
+    const f = await fixture({ executionKind: 'bounded-command-plan' });
+    const result = await runDeliveryFullTest(f.root, f.deliveryId, {
+      executeBounded: async () => ({
+        kind: 'terminal',
+        payload: { schemaVersion: 1, status: 'passed', summary: 'invalid partial pass', totalDurationMs: 5, checks: [{ id: 'quality', status: 'passed', durationMs: 5 }] },
+        diagnostics: [],
+      }),
+    });
+    assert.equal(result.executionStatus, 'execution-error', result.summary);
+    assert.equal(result.outcomeKind, 'protocol-error');
+    const snap = await readFormalFactSnapshot({ repoRoot: f.root, deliveryId: f.deliveryId, runsPathPrefix: '.flowkit/runs', openspecChangesPath: 'openspec/changes', manifestPathPrefix: 'openspec/delivery-groups' });
+    assert.equal(snap.deliveryFullTestRawStatus, 'authorized');
+    assert.equal(snap.deliveryFullTestResult, undefined);
+  });
+
+  it('persists bounded outcome-unknown as the same safety block and never fabricates failed Verification', async () => {
+    const f = await fixture({ executionKind: 'bounded-command-plan' });
+    const result = await runDeliveryFullTest(f.root, f.deliveryId, {
+      executeBounded: async () => ({
+        kind: 'execution-error',
+        outcomeKind: 'outcome-unknown',
+        summary: 'tree uncertain',
+        diagnostics: [{ logicalCheckId: 'full', physicalTargetId: 'h1:e2e-phase-9', outcome: 'outcome-unknown', durationMs: 10, exitCode: 1, stdout: '', stderr: '' }],
+      }),
+    });
+    assert.equal(result.executionStatus, 'execution-error', result.summary);
+    assert.equal(result.outcomeKind, 'outcome-unknown');
+    const snap = await readFormalFactSnapshot({ repoRoot: f.root, deliveryId: f.deliveryId, runsPathPrefix: '.flowkit/runs', openspecChangesPath: 'openspec/changes', manifestPathPrefix: 'openspec/delivery-groups' });
+    assert.equal(snap.deliveryFullTestRawStatus, 'authorized');
+    assert.equal(snap.deliveryFullTestResult, undefined);
+    assert.equal(snap.deliveryFullTestExecutionBlock?.reason, 'outcome-unknown');
+  });
+
 });

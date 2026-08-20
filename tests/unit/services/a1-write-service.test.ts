@@ -6,6 +6,7 @@ import { join } from 'node:path';
 
 import { readFormalFactSnapshot } from '../../../src/facts/formal-fact-reader.js';
 import { next } from '../../../src/policy/next.js';
+import { renderOwnerDecisionRecord } from '../../../src/persistence/delivery-manifest-document.js';
 import { atomicWriteFile } from '../../../src/shared/atomic-write.js';
 import {
   activateChange,
@@ -470,9 +471,12 @@ describe('A1 creation write-side', () => {
       }, `owner:create:${c.id}`, { now: () => new Date('2099-01-02T00:00:00Z') });
       const snap = await snapshot(root, c.id);
       assert.equal(snap.conflicts.length, 0);
-      assert.equal(snap.deliveryFullTestExecution?.command, c.execution.command);
-      assert.equal(snap.deliveryFullTestExecution?.timeoutMs, c.execution.timeoutMs);
-      assert.equal(snap.deliveryFullTestExecution?.launcherMode, c.execution.launcherMode);
+      const actual = snap.deliveryFullTestExecution;
+      assert.equal(actual?.kind, 'command');
+      if (actual?.kind !== 'command') assert.fail('expected command Full Test execution');
+      assert.equal(actual.command, c.execution.command);
+      assert.equal(actual.timeoutMs, c.execution.timeoutMs);
+      assert.equal(actual.launcherMode, c.execution.launcherMode);
     }
   });
 
@@ -661,6 +665,102 @@ describe('A1 creation write-side', () => {
     assert.ok(bytes.endsWith('\n'));
     assert.match(bytes, /decision: "authorize-apply"/);
   });
+
+  it('createDelivery round-trips a bounded Full Test execution plan as a closed discriminated union', async () => {
+    const root = await freshRoot();
+    const deliveryId = '20990102-04-bounded';
+    await createDelivery(root, {
+      id: deliveryId,
+      goal: 'Bounded Full Test execution.',
+      branch: `delivery/${deliveryId}`,
+      scope: { included: ['bounded'], excluded: ['registry'] },
+      acceptance: ['bounded persisted'],
+      architecture: { impact: false, archifyPlan: 'not-required' },
+      fullTestPlan: ['quality', 'full'],
+      fullTestExecution: {
+        id: 'bounded',
+        kind: 'bounded-command-plan',
+        logicalChecks: [
+          { id: 'quality', resolverId: 'flowkit-quality', perTargetTimeoutMs: 1000 },
+          { id: 'full', resolverId: 'flowkit-full-tests', perTargetTimeoutMs: 2000 },
+        ],
+        scope: 'delivery',
+        resultProtocol: 'flowkit-full-test-result-v1',
+        resultAuthority: 'verification',
+        expectedTerminalStatuses: ['passed', 'failed'],
+      },
+      changes: [{ key: 'A1', id: 'future', goal: 'Future.', required: true, dependsOn: [], outputs: [], architectureImpact: false }],
+    }, 'owner:create-bounded');
+    const snap = await snapshot(root, deliveryId);
+    assert.equal(snap.conflicts.length, 0);
+    assert.equal(snap.deliveryFullTestExecution?.kind, 'bounded-command-plan');
+    if (snap.deliveryFullTestExecution?.kind !== 'bounded-command-plan') assert.fail('expected bounded execution');
+    assert.deepEqual(snap.deliveryFullTestExecution.logicalChecks.map((check) => check.id), ['quality', 'full']);
+  });
+
+  it('required Change creation during raw authorized Full Test atomically resets only status to not-ready and preserves authorization provenance', async () => {
+    const root = await freshRoot();
+    const deliveryId = '20990103-04-authorized-create';
+    const authorization = buildOwnerDecisionRecord({ decision: 'authorize-full-test', deliveryId, sourceRef: 'owner:test:authorized-create' });
+    const path = await writeManifest(root, deliveryId, [
+      `id: ${deliveryId}`,
+      'delivery:',
+      '  state: active',
+      '  fullTestStatus: authorized',
+      'changes:',
+      '  - key: A1',
+      '    id: completed',
+      '    goal: "done"',
+      '    required: false',
+      '    dependsOn: []',
+      '    state: completed',
+      '    architectureImpact: false',
+      '    outputs: []',
+      'ownerDecisions:',
+      ...renderOwnerDecisionRecord(authorization),
+      'verification:',
+      '  fullTest:',
+      '    requiresOwnerAuthorization: true',
+    ].join('\n'));
+    const result = await createChange(root, { key: 'I1', id: 'new-required', goal: 'required after authorization', required: true, dependsOn: [], outputs: [], architectureImpact: false }, 'owner:create:new-required');
+    assert.equal(result.state, 'planned');
+    const text = await readFile(path, 'utf8');
+    assert.match(text, /fullTestStatus: not-ready/);
+    assert.equal(text.includes(authorization.ref), true);
+    assert.equal((text.match(/decision: "authorize-full-test"/g) ?? []).length, 1);
+    assert.equal((text.match(/decision: "create-change"/g) ?? []).length, 1);
+  });
+
+  it('outcome-unknown blocks ordinary create with exact manifest bytes preserved', async () => {
+    const root = await freshRoot();
+    const deliveryId = '20990103-05-outcome-unknown-create';
+    const path = await writeManifest(root, deliveryId, [
+      `id: ${deliveryId}`,
+      'delivery:',
+      '  state: active',
+      '  fullTestStatus: authorized',
+      'changes:',
+      '  - key: A1',
+      '    id: completed',
+      '    goal: "done"',
+      '    required: false',
+      '    dependsOn: []',
+      '    state: completed',
+      '    architectureImpact: false',
+      '    outputs: []',
+      'verification:',
+      '  fullTest:',
+      '    requiresOwnerAuthorization: true',
+      '    executionBlock:',
+      '      schemaVersion: 1',
+      '      reason: outcome-unknown',
+      '      summary: "tree uncertain"',
+    ].join('\n'));
+    const before = await readFile(path, 'utf8');
+    await assert.rejects(createChange(root, { key: 'I1', id: 'blocked', goal: 'blocked', required: true, dependsOn: [], outputs: [], architectureImpact: false }, 'owner:create:blocked'), /outcome is unknown/);
+    assert.equal(await readFile(path, 'utf8'), before);
+  });
+
 });
 
 describe('A1 activation', () => {
@@ -693,6 +793,26 @@ describe('A1 activation', () => {
     ].join('\n'));
     return { root, path, deliveryId };
   }
+
+
+  it('outcome-unknown blocks ordinary activation before OpenSpec metadata or manifest mutation', async () => {
+    const { root, path } = await activationRoot();
+    const text = await readFile(path, 'utf8');
+    await writeFile(path, text.replace('  fullTestStatus: not-ready', '  fullTestStatus: authorized') + [
+      'verification:',
+      '  fullTest:',
+      '    requiresOwnerAuthorization: true',
+      '    executionBlock:',
+      '      schemaVersion: 1',
+      '      reason: outcome-unknown',
+      '      summary: "tree uncertain"',
+      '',
+    ].join('\n'), 'utf8');
+    const before = await readFile(path, 'utf8');
+    await assert.rejects(activateChange(root, 'target', 'owner:blocked-activate', { now: () => new Date('2099-01-05T00:00:00Z'), specDeltaMode: 'required' }), /outcome is unknown/);
+    assert.equal(await readFile(path, 'utf8'), before);
+    await assert.rejects(stat(join(root, 'openspec', 'changes', 'target', '.openspec.yaml')));
+  });
 
   it('activates by Change.id, records provenance, initializes only minimal OpenSpec metadata and creates no Run', async () => {
     const { root, path, deliveryId } = await activationRoot();

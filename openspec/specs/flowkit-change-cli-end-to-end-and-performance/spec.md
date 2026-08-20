@@ -27,16 +27,28 @@ The Change operator surface MUST NOT implement `while(next)`、approved-after-re
 
 #### Scenario: Delivery Full Test operator 物理执行 persisted binding
 - **WHEN** `flowkit delivery full-test` 在 authorized boundary 执行
-- **THEN** MUST 使用 current Delivery `verification.fullTest.execution.command + args + launcherMode` 解析唯一 physical launch；current 03 `npm-shim` MUST 在 non-win32 使用 `npm`，在 win32 使用 `npm.cmd` 并通过既有 ComSpec `.cmd/.bat` launcher
-- **AND** MUST 通过 `FLOWKIT_FULL_TEST_RESULT_PATH` 消费同一 child process 产生的 `flowkit-full-test-result-v1`
-- **AND** MUST NOT绕过 persisted binding 直接调用独立 internal Full Test runner 作为第二 authority
-- **AND** breaking persisted route、platform normalization 或 structured protocol MUST 使正式 selected A1 CLI/integration tests fail
+- **THEN** MUST先读取 current Delivery exact `verification.fullTest.execution.kind`
+- **AND** `kind=command` MUST继续使用 persisted command+args+launcherMode+timeout解析 single physical launch，并通过 `FLOWKIT_FULL_TEST_RESULT_PATH` 消费同一 child的 `flowkit-full-test-result-v1`；`npm-shim`平台 normalization保持既有语义
+- **AND** `kind=bounded-command-plan` MUST在 current Flowkit process内调用 Verification-owned executable-plan/aggregator，根据 persisted logical id/resolverId/perTargetTimeoutMs解析 ordered physical targets，每个 child独立 bounded，MUST NOT spawn `npm run verify:full`、`verify:step full` 或其它覆盖完整 logical union的 long wrapper
+- **AND** both kinds MUST remain one Delivery Full Test behavior/no Run/no NNN
+- **AND** breaking persisted route、platform normalization、physical closure or structured/semantic result contract MUST使正式 selected A1 CLI/integration tests fail
 
 #### Scenario: outcome-unknown transport blocker 不创建新 attempt
 
 - **WHEN** `flowkit delivery full-test` 的 prior Windows attempt 已持久化 current `executionBlock.reason=outcome-unknown`
 - **THEN** subsequent operator invocation MUST fail closed before spawning the Full Test binding
 - **AND** MUST NOT创建 Run/NNN、terminal `failed` 或 fabricated resultRef
+
+#### Scenario: bounded target transport error不发布 terminal result
+- **WHEN** bounded operator任一 physical target返回 `spawn-failed|timed-out-cancelled|outcome-unknown` 或 resolver closure error
+- **THEN** operator MUST return execution-error and MUST NOT fabricate `passed|failed` terminal result/ref
+- **AND** `outcome-unknown` MUST retain/persist the existing execution safety block semantics
+
+#### Scenario: heavy override 必须保持默认 case 语义闭合
+- **WHEN** `full` resolver 用 static heavy override 替换某个 discovered test file 的默认执行方式
+- **THEN** resolver MUST 显式证明该文件默认注册的 required test cases/selectors/assertion semantics 全部被 bounded targets消费，而不是仅证明 file path 出现在 partition union
+- **AND** missing、overlap、title drift 或 branch drift MUST fail closed before any partial Full Test execution
+- **AND** current H1 file MUST map its installed-runner diagnostics smoke to an independent bounded target and its future-Delivery E2E case to `FLOWKIT_H1_FORMAL_PHASE=1..26` bounded targets so the FORMAL_PHASE branch cannot silently delete the smoke case
 
 ### Requirement: Author and Reviewer commands MUST compose existing prepare, exact-resume and terminal-admission authority
 

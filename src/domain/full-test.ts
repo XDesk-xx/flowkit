@@ -6,18 +6,46 @@ export type FullTestLauncherMode = (typeof FULL_TEST_LAUNCHER_MODES)[number];
 export const FULL_TEST_TERMINAL_STATUSES = ['passed', 'failed'] as const;
 export type FullTestTerminalStatus = (typeof FULL_TEST_TERMINAL_STATUSES)[number];
 
-export interface FullTestExecutionContract {
+export const FULL_TEST_BOUNDED_RESOLVER_IDS = [
+  'flowkit-build',
+  'flowkit-full-tests',
+  'flowkit-lint',
+  'flowkit-openspec-all',
+  'flowkit-quality',
+  'flowkit-typecheck',
+] as const;
+export type FullTestBoundedResolverId = (typeof FULL_TEST_BOUNDED_RESOLVER_IDS)[number];
+
+export interface FullTestExecutionBase {
   readonly id: string;
-  readonly kind: 'command';
-  readonly command: string;
-  readonly args: readonly string[];
-  readonly launcherMode: FullTestLauncherMode;
   readonly scope: 'delivery';
-  readonly timeoutMs: number;
   readonly resultProtocol: 'flowkit-full-test-result-v1';
   readonly resultAuthority: 'verification';
   readonly expectedTerminalStatuses: readonly ['passed', 'failed'];
 }
+
+export interface CommandFullTestExecution extends FullTestExecutionBase {
+  readonly kind: 'command';
+  readonly command: string;
+  readonly args: readonly string[];
+  readonly launcherMode: FullTestLauncherMode;
+  readonly timeoutMs: number;
+}
+
+export interface BoundedFullTestLogicalCheck {
+  readonly id: string;
+  readonly resolverId: FullTestBoundedResolverId;
+  readonly perTargetTimeoutMs: number;
+}
+
+export interface BoundedCommandPlanFullTestExecution extends FullTestExecutionBase {
+  readonly kind: 'bounded-command-plan';
+  readonly logicalChecks: readonly BoundedFullTestLogicalCheck[];
+}
+
+export type FullTestExecutionContract =
+  | CommandFullTestExecution
+  | BoundedCommandPlanFullTestExecution;
 
 export interface FullTestExecutionBlock {
   readonly schemaVersion: 1;

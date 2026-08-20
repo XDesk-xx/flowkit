@@ -1,0 +1,225 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260820-124-review-propose",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "review-propose",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "6ab4c74cbf74c52e9feadf76c41f9efe3d61fb0e844156aa557f7fbaa37fa7d2",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:b9e87723e7e630aea4274b8cb2978679a4f157bfbbdb41e0ee161cfda9778dae",
+      "decision": "contract-reset",
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "delivery-full-test-bounded-execution-and-protocol-closure",
+      "scope": "I1/formal-change-verification-physical-execution-closure",
+      "requiredOutcomes": [
+        "abandon old 120/121/122 Proposal/Apply generation while retaining 116/117 approved Explore as discovery handoff",
+        "before Proposal approval prove actualChangeSet -> logical selection -> physical targets -> formal Change Verification end-to-end closure",
+        "do not expand into generic Verification platform, scheduler, timing platform, or change approved bounded Delivery Full Test authority, H1 1 smoke + 26 phases semantics, Full Test no-Run, or Owner authority",
+        "tests-cli must freeze I1-required CLI coverage into a proven bounded physical execution closure without timeout inflation; generic Verification timing/timeout granularity remains deferred to 04",
+        "tests-execution must prove whether selected physical targets are truly affected by exact base plus I1 actualChangeSet; if not affected fix deterministic selection/module ownership, if affected include the minimal mutation surface required to make formal verification valid; base failure alone cannot waive failure"
+      ],
+      "sourceRef": "owner-input:2026-08-20T10:01+08:00:contract-reset:I1-formal-verification-physical-closure"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-bounded-execution-and-protocol-closure/20260820-124-review-propose/",
+  "changeKey": "I1",
+  "changeId": "delivery-full-test-bounded-execution-and-protocol-closure",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-bounded-execution-and-protocol-closure/20260820-123-propose/result.json",
+    "versionFingerprint": "f61b61f6110fe3d57c41f1fa77c417925ed7f154b856d3872cea6f372b4beb27",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260820-123-propose",
+  "canonicalBase": "4f3e0f44a3a1254670a99f1428b70fc1e2c6c8f2",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-bounded-execution-and-protocol-closure/20260820-123-propose/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "f61b61f6110fe3d57c41f1fa77c417925ed7f154b856d3872cea6f372b4beb27"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "ec0accf47d569b8f60d01e96573f6813f1f2b7d5f135a60e3fc07159f84e74c8"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/design.md",
+      "versionFingerprint": "ebd4e61a00a539db3ed913f56d5821fc18cd8a1f221f70bd84b97e8d9ff76547",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/proposal.md",
+      "versionFingerprint": "f06bacea0e64aaddf24b45f8d8a2a2d180658f08f0e58663cbe772624259be09",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+      "versionFingerprint": "afaa888d7ff7bb29469a7dd42fba1c115fa79b1ddbe85283a5129a284c634805",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/specs/flowkit-change-verification-selection/spec.md",
+      "versionFingerprint": "ee5826c96b838f24df516d207e8d77c4ef34bf22b8eeab3a3a485c58d9ddbba6",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/specs/flowkit-core-model/spec.md",
+      "versionFingerprint": "e6cec77774baee910e54ccf8d25dceed6095f635e533237fc88e3e77020077b6",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+      "versionFingerprint": "30391ac0215dd2eeb81f96228446c34c489d30008799ad6652c5640b253f6e88",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "versionFingerprint": "750bc0923eed4cdab25ead1fbd2ab5be83d793d4e5ba6006f24f3a3fcd38bca6",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+      "versionFingerprint": "9f6ef85d7b1d702b33d74213ddda22687e66d307d6ab7926d970912e45f5b529",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/specs/flowkit-runtime-foundation/spec.md",
+      "versionFingerprint": "3c8b0c329a272020b8884e6c447496503e1f469ca21263a7d56dc84f6a31ec7a",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/tasks.md",
+      "versionFingerprint": "72a626ee96e037a8bc70e1f3ea9424ddcdf568c27783abc5d8f5a66cde7d0139",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "delivery-full-test-bounded-execution-and-protocol-closure",
+      "runId": "20260820-124-review-propose",
+      "action": "review-propose",
+      "role": "reviewer",
+      "semanticInputFingerprint": "6ab4c74cbf74c52e9feadf76c41f9efe3d61fb0e844156aa557f7fbaa37fa7d2"
+    },
+    "definition": {
+      "action": "review-propose",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-proposal",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "ec0accf47d569b8f60d01e96573f6813f1f2b7d5f135a60e3fc07159f84e74c8"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/design.md",
+        "versionFingerprint": "ebd4e61a00a539db3ed913f56d5821fc18cd8a1f221f70bd84b97e8d9ff76547",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/proposal.md",
+        "versionFingerprint": "f06bacea0e64aaddf24b45f8d8a2a2d180658f08f0e58663cbe772624259be09",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+        "versionFingerprint": "afaa888d7ff7bb29469a7dd42fba1c115fa79b1ddbe85283a5129a284c634805",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "ee5826c96b838f24df516d207e8d77c4ef34bf22b8eeab3a3a485c58d9ddbba6",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/specs/flowkit-core-model/spec.md",
+        "versionFingerprint": "e6cec77774baee910e54ccf8d25dceed6095f635e533237fc88e3e77020077b6",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+        "versionFingerprint": "30391ac0215dd2eeb81f96228446c34c489d30008799ad6652c5640b253f6e88",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "750bc0923eed4cdab25ead1fbd2ab5be83d793d4e5ba6006f24f3a3fcd38bca6",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+        "versionFingerprint": "9f6ef85d7b1d702b33d74213ddda22687e66d307d6ab7926d970912e45f5b529",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/specs/flowkit-runtime-foundation/spec.md",
+        "versionFingerprint": "3c8b0c329a272020b8884e6c447496503e1f469ca21263a7d56dc84f6a31ec7a",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/tasks.md",
+        "versionFingerprint": "72a626ee96e037a8bc70e1f3ea9424ddcdf568c27783abc5d8f5a66cde7d0139",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-bounded-execution-and-protocol-closure/20260820-123-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "f61b61f6110fe3d57c41f1fa77c417925ed7f154b856d3872cea6f372b4beb27"
+      }
+    ],
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [
+      {
+        "ref": "owner:b9e87723e7e630aea4274b8cb2978679a4f157bfbbdb41e0ee161cfda9778dae",
+        "decision": "contract-reset",
+        "deliveryId": "20260817-01-delivery-execution-loop",
+        "changeId": "delivery-full-test-bounded-execution-and-protocol-closure",
+        "scope": "I1/formal-change-verification-physical-execution-closure",
+        "requiredOutcomes": [
+          "abandon old 120/121/122 Proposal/Apply generation while retaining 116/117 approved Explore as discovery handoff",
+          "before Proposal approval prove actualChangeSet -> logical selection -> physical targets -> formal Change Verification end-to-end closure",
+          "do not expand into generic Verification platform, scheduler, timing platform, or change approved bounded Delivery Full Test authority, H1 1 smoke + 26 phases semantics, Full Test no-Run, or Owner authority",
+          "tests-cli must freeze I1-required CLI coverage into a proven bounded physical execution closure without timeout inflation; generic Verification timing/timeout granularity remains deferred to 04",
+          "tests-execution must prove whether selected physical targets are truly affected by exact base plus I1 actualChangeSet; if not affected fix deterministic selection/module ownership, if affected include the minimal mutation surface required to make formal verification valid; base failure alone cannot waive failure"
+        ],
+        "sourceRef": "owner-input:2026-08-20T10:01+08:00:contract-reset:I1-formal-verification-physical-closure"
+      }
+    ],
+    "externalContextFingerprint": "ff60643d1f0f63ab9c84e503d98b3ceff444d73dd0d68976d3a8ae3029b4cdcf",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

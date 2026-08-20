@@ -87,6 +87,50 @@ describe('A1 DeliveryManifestDocument Full Test owned blocks', () => {
     assert.match(text, /executionBlock:\n {6}schemaVersion: 1\n {6}reason: outcome-unknown/);
     assert.doesNotMatch(text, /\n {4}result:/);
   });
+
+  it('replaces command execution with the closed bounded plan shape and no command-only fields', () => {
+    const withCommand = fullTestManifest.replace(
+      '    requiresOwnerAuthorization: true\n',
+      [
+        '    requiresOwnerAuthorization: true',
+        '    execution:',
+        '      id: "legacy"',
+        '      kind: command',
+        '      command: "npm"',
+        '      args:',
+        '        - "run"',
+        '        - "verify:full"',
+        '      launcherMode: npm-shim',
+        '      scope: delivery',
+        '      timeoutMs: 120000',
+        '      resultProtocol: flowkit-full-test-result-v1',
+        '      resultAuthority: verification',
+        '      expectedTerminalStatuses:',
+        '        - "passed"',
+        '        - "failed"',
+        '',
+      ].join('\n'),
+    );
+    const doc = DeliveryManifestDocument.parse(withCommand);
+    doc.replaceFullTestExecution({
+      id: 'bounded',
+      kind: 'bounded-command-plan',
+      logicalChecks: [
+        { id: 'quality', resolverId: 'flowkit-quality', perTargetTimeoutMs: 120000 },
+        { id: 'full', resolverId: 'flowkit-full-tests', perTargetTimeoutMs: 120000 },
+      ],
+      scope: 'delivery',
+      resultProtocol: 'flowkit-full-test-result-v1',
+      resultAuthority: 'verification',
+      expectedTerminalStatuses: ['passed', 'failed'],
+    });
+    const text = doc.toString();
+    assert.match(text, /kind: bounded-command-plan/);
+    assert.match(text, /logicalChecks:\n {8}- id: "quality"/);
+    assert.doesNotMatch(text, /command: "npm"|launcherMode:|timeoutMs:/);
+    assert.equal((text.match(/execution:/g) ?? []).length, 1);
+  });
+
 });
 
 const finalizableManifest = [
