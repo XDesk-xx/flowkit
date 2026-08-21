@@ -1,0 +1,43 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "Review 078 Proposal：F1 总体 contract 已把 077 通过的 post-pass required-Change invalidation、qualification-bound Owner Finalize authorization、active-state preflight、no-Run Finalize publication、crash-safe handoff、strict Delivery Final admission/cutover和 Verification physical closure冻结得较完整；mutation declaration 26 selectors、OpenSpec strict 20/20、prospective Verification selection matched。完整 Proposal scan 仍发现一个 final-candidate freshness blocker：Finalize preflight 只是把“当前 HEAD”捕获进 candidateRef，却没有证明该 HEAD 是 Full Test/Actual qualification 所覆盖的正式 Git base。一个在 Full Test/Architecture acceptance 之后产生的 clean ordinary commit 会留下空 index/clean worktree，078 preflight 会把新的 HEAD 当作 candidate base并继续沿用旧 qualification，从而绕过 fresh Full Test/Actual。需要在 Proposal 中把 candidate base HEAD 与已资格化的正式 Git boundary/revision exact-bind，而不是仅要求 HEAD 稳定。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "d1f5b4fbc344d5b9b41f1d74907429e6989d87337afea8ee4f5f4a11ecb905ad"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "F1-RP-001",
+      "severity": "blocking",
+      "title": "FinalCandidatePreflight 只捕获当前 HEAD，未证明该 HEAD 属于已通过 Full Test/Architecture 的 qualified candidate",
+      "problem": "078 将 finalizationQualificationRef 绑定 Full Test authorization/result 与 architecture disposition，但不绑定 Git revision；Finalize preflight 随后仅要求 index empty、HEAD stable、dirty paths bounded，并把当时的 current HEAD 直接写入 candidateRef。这样如果在 Full Test passed（以及 architectureImpact=true 时 Actual/Compare/Owner acceptance）之后发生一个 clean ordinary Git commit，working tree/index 仍然可以完全干净，preflight 会把这个新 HEAD 当作合法 candidate base。旧 Full Test/architecture qualification 不会自动失效，candidateRef 反而会对未经该 qualification 验证的新 HEAD 重新定锚。",
+      "contractRef": "Flowkit Explore Skill v2 §4.2 Temporal Proof, §4.7 External Mutation Proof, §5 Proof Acceptance Depth; Flowkit Operating Model v8 Git boundary / Delivery Finalize authority; 03 v6 F1 finalization preconditions and exact Delivery Final identity",
+      "invariant": "Delivery Finalize 的 candidate base Git revision 必须属于当前 Full Test/Architecture qualification 覆盖的 exact final repository candidate。Finalize preflight 不能把一个 qualification 之后才出现的普通 clean commit 仅因为 worktree/index clean 就吸收到新的 candidateRef。",
+      "evidence": [
+        "078 spec `Finalize 必须在 completed publication 前执行 bounded read-only candidate preflight` 只要求 index empty、HEAD captured/stable、dirty paths bounded；没有要求 candidate HEAD 是 recognized latest formal pre-final Git boundary，也没有把 HEAD 与 Full Test/accepted Actual qualification exact-match。",
+        "078 `delivery-final-candidate` 规范把 current captured base HEAD 作为 hash 输入；因此 HEAD 改变不会使旧 qualification fail closed，只会产生一个新的 candidateRef。",
+        "Exact Base Full Test resultRef canonical payload只包含 status/summary/duration/checks，不含 Git revision；Owner authorize-full-test ref也不绑定 Git HEAD。",
+        "Exact Base FormalFactReader会校验 accepted Actual JSON SHA256，但不会校验 `actualArchitectureRef.repositoryRevision` 等于当前 Git HEAD。",
+        "因此可构造：qualified HEAD H1 -> Full Test passed -> Architecture accepted -> ordinary clean commit H2 -> empty index/clean bounded worktree -> 078 preflight captures H2 -> old qualification still accepted。"
+      ],
+      "impact": "F1 可能正式完成并提交一个包含 qualification 之后 clean Git mutation 的 Delivery Final，而该 mutation 从未经过 fresh Delivery Full Test；architectureImpact=true 时也可能不属于已接受 Actual 的 repository revision。这样 Delivery Final 与 Full Test/Architecture acceptance 的 final-candidate语义脱节。",
+      "location": "openspec/changes/delivery-finalize-and-git-boundary/design.md Decisions 2,5,7-9; specs/flowkit-delivery-finalize-and-git-boundary/spec.md Finalize qualification / preflight / candidateRef requirements",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Revise Proposal，使 FinalCandidatePreflight 在 active->completed 前 exact-bind candidate base HEAD 到当前 qualification 覆盖的正式 Git revision/boundary，而不是仅捕获任意 current HEAD。Reviewer 不限定唯一实现；可以采用 recognized latest pre-final Git boundary、accepted Actual repositoryRevision（适用时）+ 等价 not-applicable规则、或其他能覆盖两种 architecture applicability 的 deterministic fail-closed机制。",
+      "acceptance": [
+        "增加 disposable/prospective proof：Full Test passed（architectureImpact=true 时再完成 Actual/Compare/acceptance）后创建一个 ordinary clean Git commit，Finalize MUST 在 Manifest mutation 前失败。",
+        "architectureImpact=true 与 false 两个分支都必须证明 clean post-qualification commit 不能被旧 qualification吸收到新的 candidateRef。",
+        "合法 candidate仍应允许 Delivery-level dirty bytes仅限 Manifest + applicable Actual，并保持 index empty；不要错误要求这些未提交 Delivery-level bytes提前存在于 base commit。",
+        "candidate base identity必须来自正式可验证 Git boundary/revision，而不是 caller输入或聊天状态。",
+        "成功 Finalize 后 crash/resume handoff、strict Delivery Final admission和 no-auto-commit authority边界保持不变。"
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}

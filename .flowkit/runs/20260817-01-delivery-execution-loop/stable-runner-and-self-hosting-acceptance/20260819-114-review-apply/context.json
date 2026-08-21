@@ -1,0 +1,223 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260819-114-review-apply",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "review-apply",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "ef8cfea3fa46df9119cd8bf87624f82a1545718ef25aa1d5f84d3fe7083f8a2a",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:b1a8666881c28f23e2f059a85a54e200cd9b79ee0d79842145672a6962149d9d",
+      "decision": "contract-reset",
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "stable-runner-and-self-hosting-acceptance",
+      "scope": "H1/detached-verification-physical-execution-optimization",
+      "requiredOutcomes": [
+        "formal H1 detached tests-cli and tests-execution execute complete selected coverage through bounded physical groups under the existing 120s per-physical-command timeout, with no full-E2E skip",
+        "preserve one logical Verification authority, non-H1 behavior, Owner boundaries, and no timeout inflation or generic 04 verification platform"
+      ],
+      "sourceRef": "owner-input:2026-08-19T20:10+08:00:H1-detached-verification-physical-execution-optimization"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-114-review-apply/",
+  "changeKey": "H1",
+  "changeId": "stable-runner-and-self-hosting-acceptance",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-113-revise-apply/result.json",
+    "versionFingerprint": "a4292fe6ddbd907ac5a9b8f28c42f44d543508dbee61d9fac55a4f0acfc9d13f",
+    "kind": "run-result"
+  },
+  "verificationInputRef": {
+    "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/verification.md",
+    "versionFingerprint": "0883b0da3d03e8e66962a2199c4f9f44211f16d69140c93b25ce432ab8eb8945",
+    "kind": "verification-summary"
+  },
+  "reviewedRunId": "20260819-113-revise-apply",
+  "canonicalBase": "bbb9eff528f1ccd9624e2d20454ecaa2f0b4405c",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-113-revise-apply/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "a4292fe6ddbd907ac5a9b8f28c42f44d543508dbee61d9fac55a4f0acfc9d13f"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "ec0accf47d569b8f60d01e96573f6813f1f2b7d5f135a60e3fc07159f84e74c8"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/design.md",
+      "versionFingerprint": "2927c0400b00e89c2716bc32cb556cd8aa9706ffc8d1d071237cf422e1d50f4f",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/proposal.md",
+      "versionFingerprint": "d65ec406cf553df060a1d0bc812de46927bce888e6c6ab0c87878b831c540a04",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+      "versionFingerprint": "39a419add4a1cff37cf8d24eaaf4e2428f45653c2b900c76937229e5d3745927",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-change-verification-selection/spec.md",
+      "versionFingerprint": "aedbb88f72b2f5a3e0edd1d1fe1fb09974e638e0e626d0787727afd831b7aef8",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-stable-runner-and-self-hosting-acceptance/spec.md",
+      "versionFingerprint": "4a188cad3b4345aebe5d4395e56ca8677b9c454245d00f40cddfe95fa8102cde",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/tasks.md",
+      "kind": "openspec-contract",
+      "versionFingerprint": "80319a5dc022349b59fb6c0e50318cec544561ace6b69065fccf042abcfe54c9"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "stable-runner-and-self-hosting-acceptance",
+      "runId": "20260819-114-review-apply",
+      "action": "review-apply",
+      "role": "reviewer",
+      "semanticInputFingerprint": "ef8cfea3fa46df9119cd8bf87624f82a1545718ef25aa1d5f84d3fe7083f8a2a"
+    },
+    "definition": {
+      "action": "review-apply",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-implementation-and-verification",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings-plus-verification-ref",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "core-derived",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "ec0accf47d569b8f60d01e96573f6813f1f2b7d5f135a60e3fc07159f84e74c8"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/design.md",
+        "versionFingerprint": "2927c0400b00e89c2716bc32cb556cd8aa9706ffc8d1d071237cf422e1d50f4f",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/proposal.md",
+        "versionFingerprint": "d65ec406cf553df060a1d0bc812de46927bce888e6c6ab0c87878b831c540a04",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+        "versionFingerprint": "39a419add4a1cff37cf8d24eaaf4e2428f45653c2b900c76937229e5d3745927",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "aedbb88f72b2f5a3e0edd1d1fe1fb09974e638e0e626d0787727afd831b7aef8",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-stable-runner-and-self-hosting-acceptance/spec.md",
+        "versionFingerprint": "4a188cad3b4345aebe5d4395e56ca8677b9c454245d00f40cddfe95fa8102cde",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/tasks.md",
+        "kind": "openspec-contract",
+        "versionFingerprint": "80319a5dc022349b59fb6c0e50318cec544561ace6b69065fccf042abcfe54c9"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-113-revise-apply/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "a4292fe6ddbd907ac5a9b8f28c42f44d543508dbee61d9fac55a4f0acfc9d13f"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260819-112-review-apply",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-112-review-apply/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "496f1ef313c1c82f696377dec4c5f3f6580ced4a684c1aeeda98e87b83227c08"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "H1-RA-002",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "formal Verification 已 passed，但 canonical tasks.md 仍有 3 个 required task 未完成，Review-Apply Approved 后会被 tasks-incomplete 阻塞",
+          "problem": "111 已形成 current formal Verification status=passed，且 111 result terminalBinding 精确绑定 verification.md fingerprint 05c138f9c...；但 openspec/changes/stable-runner-and-self-hosting-acceptance/tasks.md 仍将 5.4、5.5、6.5 保持为 '- [ ]'。这三个 task 分别要求完成 formal H1 Change Verification、只在 Verification authority satisfied 后 hand off review-apply，以及在 Owner Reset 后重新运行 optimized detached production Verification 并要求 tests-cli/tests-execution PASS。111 当前证据已经声称这些 outcomes 成立，却没有把它们投影回 canonical Tasks fact。Flowkit formal-fact-reader 对所有 '- [ ]' required task 投影 changeTasksComplete=false；Policy 在 review-apply approved + Verification passed 后明确要求 Tasks complete 才能进入 authorize-archive，否则 next=blocked(tasks-incomplete)。因此如果 Reviewer 现在 Approved，H1 会在下一 boundary 确定性卡死，且 Reviewer 自身不能修改 Author-owned tasks.md。",
+          "contractRef": "openspec/changes/stable-runner-and-self-hosting-acceptance/tasks.md 5.4, 5.5, 6.5；src/facts/formal-fact-reader.ts readActiveChangeTasksCompletion()/REQUIRED_TASK_LINE；src/policy/next.ts decideApplyStage() 的 approved + Verification satisfied + Tasks complete archive gate",
+          "invariant": "Apply/revise-apply 的 canonical tasks.md 必须真实反映 required implementation/Verification work的完成状态；Reviewer 不得批准一个已知会在 review approval 后因 tasks-incomplete 而无法进入 archive authority boundary 的 candidate。Tasks bytes 是 exact candidate 的一部分，因此修正 checkbox 后必须由新的 revise-apply producer在修正后的 exact candidate 上重新形成正式 Verification，而不能复用111对旧 tasks bytes 的 passed publication。",
+          "requiredOutcome": "执行一个窄范围 revise-apply：把 5.4、5.5、6.5 在其要求确已满足的前提下标记为 [x]，不要借此改动已批准的 fan-out architecture；随后在包含这些 task-byte 修正的 exact candidate 上重新执行 formal H1 Change Verification，使 tests-cli/tests-execution及其它 selected checks再次正式 PASS，并由新的 revise-apply terminalBinding绑定新的 current verification.md。保留111及更早 Verification publication/history；重新进入 review-apply 前确认 canonical Tasks completion=true。",
+          "acceptance": [
+            "tasks.md 中 5.4、5.5、6.5 不再是 required unchecked checkbox，且没有其它 required '- [ ]' task。",
+            "修正 tasks bytes 后，不复用111旧 candidate 的 passed Verification；新的 revise-apply 对修正后的 exact candidate 重新形成 current formal Verification，并且 status=passed。",
+            "新的 formal Verification 继续执行109/110批准的 deterministic bounded H1 tests-cli/tests-execution fan-out；每个 physical command仍使用现有120s hard timeout，完整H1 26 phases不得skip。",
+            "Reviewer/Author 不执行真实03 Delivery Full Test、Actual/Compare、Finalize或Delivery Final；这些仍属于H1 archive/checkpoint之后的Delivery boundary。",
+            "修正后 status/next 能合法回到 review-apply；review-apply若 Approved，则 Tasks completion不会再造成 tasks-incomplete archive blocker。"
+          ]
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [
+      {
+        "ref": "owner:b1a8666881c28f23e2f059a85a54e200cd9b79ee0d79842145672a6962149d9d",
+        "decision": "contract-reset",
+        "deliveryId": "20260817-01-delivery-execution-loop",
+        "changeId": "stable-runner-and-self-hosting-acceptance",
+        "scope": "H1/detached-verification-physical-execution-optimization",
+        "requiredOutcomes": [
+          "formal H1 detached tests-cli and tests-execution execute complete selected coverage through bounded physical groups under the existing 120s per-physical-command timeout, with no full-E2E skip",
+          "preserve one logical Verification authority, non-H1 behavior, Owner boundaries, and no timeout inflation or generic 04 verification platform"
+        ],
+        "sourceRef": "owner-input:2026-08-19T20:10+08:00:H1-detached-verification-physical-execution-optimization"
+      }
+    ],
+    "verificationView": {
+      "status": "passed",
+      "resultRef": {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/verification.md",
+        "kind": "verification-summary",
+        "versionFingerprint": "0883b0da3d03e8e66962a2199c4f9f44211f16d69140c93b25ce432ab8eb8945"
+      }
+    },
+    "externalContextFingerprint": "265a4f52a2a3661babb907872de7de79066e73328db3f3818e11e3706915c130",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "core-derived",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

@@ -2,6 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { next } from '../../../src/policy/next.js';
+import { buildDeliveryFinalizationQualification } from '../../../src/domain/delivery-finalization.js';
 import {
   buildChange,
   buildRun,
@@ -219,13 +220,44 @@ describe('next — no active Change (task 6.4, 6.5, 10.16)', () => {
 });
 
 describe('next — Q1→03 Delivery behavior bridge', () => {
-  function allCompletedSnapshot(opts: { fullTestStatus?: unknown; auths?: unknown }): FormalFactSnapshot {
-    return buildSnapshot({
-      changes: [buildChange({ state: 'completed', required: true })],
-      gitBoundaries: [buildCheckpointBoundary()],
-      deliveryFullTestStatus: opts.fullTestStatus as never,
-      ownerAuthorizations: (opts.auths as never) ?? [],
-    });
+  const execution = {
+    id: 'future-full-test',
+    kind: 'command',
+    command: 'node',
+    args: ['verify-full.mjs'],
+    launcherMode: 'direct',
+    scope: 'delivery',
+    timeoutMs: 30_000,
+    resultProtocol: 'flowkit-full-test-result-v1',
+    resultAuthority: 'verification',
+    expectedTerminalStatuses: ['passed', 'failed'],
+  } as const;
+
+  const finalizeQualification = buildDeliveryFinalizationQualification({
+    deliveryId: '20260806-01-deterministic-core',
+    fullTestAuthorizationRef: `owner:${'a'.repeat(64)}`,
+    fullTestResultRef: `verification:full-test:${'b'.repeat(64)}`,
+    qualifiedBaseRevision: 'c'.repeat(40),
+    architecture: { kind: 'not-applicable' },
+  });
+
+  function allCompletedSnapshot(opts: { fullTestStatus?: unknown; auths?: unknown; withExecution?: boolean; executionBlock?: boolean }): FormalFactSnapshot {
+    const auths = ((opts.auths as readonly OwnerAuthorizationFact[] | undefined) ?? []).map((fact) =>
+      fact.decision === 'authorize-delivery-finalize'
+        ? { ...fact, finalizationQualificationRef: finalizeQualification.qualificationRef }
+        : fact,
+    );
+    return {
+      ...buildSnapshot({
+        changes: [buildChange({ state: 'completed', required: true })],
+        gitBoundaries: [buildCheckpointBoundary()],
+        deliveryFullTestStatus: opts.fullTestStatus as never,
+        ownerAuthorizations: auths,
+        ...(opts.withExecution ? { deliveryFullTestExecution: execution } : {}),
+        ...(opts.executionBlock ? { deliveryFullTestExecutionBlock: { schemaVersion: 1, reason: 'outcome-unknown', summary: 'prior process tree not proven terminal' } as const } : {}),
+      }),
+      ...(opts.fullTestStatus === 'passed' ? { deliveryFinalizationQualification: finalizeQualification } : {}),
+    };
   }
 
   it('awaiting-user-decision keeps Owner authorize-full-test decision', () => {
@@ -240,16 +272,35 @@ describe('next — Q1→03 Delivery behavior bridge', () => {
     if (r.kind === 'blocked') assert.equal(r.diagnosis.reason, 'delivery-behavior-not-implemented');
   });
 
+  it('authorized with a persisted execution contract exposes the no-Run Full Test Delivery behavior', () => {
+    const r = next(allCompletedSnapshot({ fullTestStatus: 'authorized', auths: [buildAuthorization('full-test')], withExecution: true }));
+    assert.equal(r.kind, 'delivery-behavior');
+    if (r.kind === 'delivery-behavior') assert.equal(r.behavior, 'full-test');
+  });
+
+  it('authorized outcome-unknown blocks re-entry instead of starting a second Full Test attempt', () => {
+    const r = next(allCompletedSnapshot({ fullTestStatus: 'authorized', auths: [buildAuthorization('full-test')], withExecution: true, executionBlock: true }));
+    assert.equal(r.kind, 'blocked');
+    if (r.kind === 'blocked') assert.equal(r.diagnosis.reason, 'full-test-execution-outcome-unknown');
+  });
+
   it('passed without finalize authorization asks Owner', () => {
     const r = next(allCompletedSnapshot({ fullTestStatus: 'passed', auths: [] }));
     assert.equal(r.kind, 'owner-decision');
     if (r.kind === 'owner-decision') assert.equal(r.decision, 'authorize-delivery-finalize');
   });
 
-  it('passed with finalize authorization blocks at Delivery behavior implementation boundary', () => {
+  it('passed with exact finalize authorization exposes Delivery Finalize behavior', () => {
     const r = next(allCompletedSnapshot({ fullTestStatus: 'passed', auths: [buildAuthorization('finalize')] }));
-    assert.equal(r.kind, 'blocked');
-    if (r.kind === 'blocked') assert.equal(r.diagnosis.reason, 'delivery-behavior-not-implemented');
+    assert.equal(r.kind, 'delivery-behavior');
+    if (r.kind === 'delivery-behavior') assert.equal(r.behavior, 'delivery-finalize');
+  });
+
+  it('passed with legacy finalize authorization cannot satisfy a fresh F1 qualification', () => {
+    const snap = allCompletedSnapshot({ fullTestStatus: 'passed', auths: [] });
+    const r = next({ ...snap, ownerAuthorizations: [buildAuthorization('finalize')] });
+    assert.equal(r.kind, 'owner-decision');
+    if (r.kind === 'owner-decision') assert.equal(r.decision, 'authorize-delivery-finalize');
   });
 
   it('failed remains full-test-failed and never auto-runs', () => {
@@ -609,5 +660,92 @@ describe('next — purity (task 6.13, 10.19)', () => {
     const r1 = next(snap);
     const r2 = next(snap);
     assert.deepEqual(r1, r2);
+  });
+});
+
+describe('next — E1 architecture gate after passed Full Test', () => {
+  const completed = buildChange({ key: 'E1', id: 'e1', state: 'completed', required: true });
+  const checkpoint = buildCheckpointBoundary('e1');
+  const awaitingCycle = {
+    schemaVersion: 1 as const,
+    cycleRef: `architecture-cycle:${'1'.repeat(64)}`,
+    fullTestAuthorizationRef: `owner:${'2'.repeat(64)}`,
+    fullTestResultRef: `verification:full-test:${'3'.repeat(64)}`,
+    actualArchitectureRef: {
+      path: 'architecture/test-delivery/json/actual.architecture.json',
+      sha256: '4'.repeat(64),
+      repositoryRevision: '5'.repeat(40),
+    },
+    compareRef: `architecture-compare:${'6'.repeat(64)}`,
+    acceptance: { status: 'awaiting-owner-decision' as const },
+  };
+
+  function passed(overrides: Partial<FormalFactSnapshot> = {}): FormalFactSnapshot {
+    return {
+      ...buildSnapshot({
+        changes: [completed],
+        gitBoundaries: [checkpoint],
+        deliveryFullTestStatus: 'passed',
+        deliveryFullTestRawStatus: 'passed',
+      }),
+      deliveryArchitectureImpact: true,
+      ...overrides,
+    };
+  }
+
+  it('requests Actual/Compare behavior before a current architecture cycle exists', () => {
+    const r = next(passed());
+    assert.equal(r.kind, 'delivery-behavior');
+    if (r.kind === 'delivery-behavior') assert.equal(r.behavior, 'architecture-actual-compare');
+  });
+
+  it('requests explicit Owner acceptance for the exact awaiting cycle', () => {
+    const r = next(passed({ architectureCurrentCycle: awaitingCycle }));
+    assert.equal(r.kind, 'owner-decision');
+    if (r.kind === 'owner-decision') {
+      assert.equal(r.decision, 'accept-architecture');
+      assert.equal(r.context.architectureCycleRef, awaitingCycle.cycleRef);
+    }
+  });
+
+  it('reaches Finalize only after accepted cycle and exact accepted source match', () => {
+    const ownerRef = `owner:${'7'.repeat(64)}`;
+    const acceptedCycle = {
+      ...awaitingCycle,
+      acceptance: { status: 'accepted' as const, ownerDecisionRef: ownerRef },
+    };
+    const qualification = buildDeliveryFinalizationQualification({
+      deliveryId: passed().deliveryId,
+      fullTestAuthorizationRef: `owner:${'8'.repeat(64)}`,
+      fullTestResultRef: `verification:full-test:${'9'.repeat(64)}`,
+      qualifiedBaseRevision: acceptedCycle.actualArchitectureRef.repositoryRevision,
+      architecture: { kind: 'accepted', cycleRef: acceptedCycle.cycleRef, ownerAcceptanceRef: ownerRef },
+    });
+    const r = next(passed({
+      architectureCurrentCycle: acceptedCycle,
+      acceptedSystemSource: {
+        schemaVersion: 1,
+        sourceDeliveryId: 'test-delivery',
+        actualArchitectureRef: acceptedCycle.actualArchitectureRef,
+        compareRef: acceptedCycle.compareRef,
+        ownerAcceptanceRef: ownerRef,
+      },
+      deliveryFinalizationQualification: qualification,
+    }));
+    assert.equal(r.kind, 'owner-decision');
+    if (r.kind === 'owner-decision') assert.equal(r.decision, 'authorize-delivery-finalize');
+  });
+
+  it('preserves the Finalize path when architecture impact is false with an exact F1 qualification', () => {
+    const qualification = buildDeliveryFinalizationQualification({
+      deliveryId: passed().deliveryId,
+      fullTestAuthorizationRef: `owner:${'8'.repeat(64)}`,
+      fullTestResultRef: `verification:full-test:${'9'.repeat(64)}`,
+      qualifiedBaseRevision: 'a'.repeat(40),
+      architecture: { kind: 'not-applicable' },
+    });
+    const r = next({ ...passed(), deliveryArchitectureImpact: false, deliveryFinalizationQualification: qualification });
+    assert.equal(r.kind, 'owner-decision');
+    if (r.kind === 'owner-decision') assert.equal(r.decision, 'authorize-delivery-finalize');
   });
 });

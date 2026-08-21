@@ -1,0 +1,18 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "apply",
+    "executionStatus": "completed",
+    "summary": "实现 D1 Architecture baseline and Delivery plan：新增长期非权威 architecture/reference workflow/lifecycle JSON，可验证可渲染；从 exact pre-03 main 重建 Current、从 original 03 Delivery Start 重建 Planned；新增 generic Delivery architecture path/service 与 thin render/compare CLI；Archify architecture operations 显式传播 repository evidence root；补齐 architecture ownership/capability relation、tests-architecture physical resolver、counterfactual closure 与跨 Delivery regressions；保持 Actual/promotion/E1、HTML authority、Registry/Policy duplication 均在范围外。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "6abff61aa0c917ed5f1dc2bf7cae58a816f4ef0693ca2f30ca00ab2f26b03aaf",
+    "currentVerification": {
+      "logicalRef": "openspec/changes/architecture-baseline-and-delivery-plan/verification.md",
+      "versionFingerprint": "3bffb6208f4acb4c092c76f16f611907cc7ccdda6e491677c40f1d8b01f98194",
+      "selectionFingerprint": "70852c973b4dc1c1be40fe7436615d36987f68a02d55eaf98a7b2a046bf509de",
+      "status": "passed"
+    }
+  }
+}

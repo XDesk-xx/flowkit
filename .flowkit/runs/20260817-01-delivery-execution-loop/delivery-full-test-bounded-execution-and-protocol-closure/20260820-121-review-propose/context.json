@@ -1,0 +1,246 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260820-121-review-propose",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "review-propose",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "e6462020eb7024cb44f1cc3e2b60251ab5d9016f25212b4c6715f2f335e6e478",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-bounded-execution-and-protocol-closure/20260820-121-review-propose/",
+  "changeKey": "I1",
+  "changeId": "delivery-full-test-bounded-execution-and-protocol-closure",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-bounded-execution-and-protocol-closure/20260819-120-revise-propose/result.json",
+    "versionFingerprint": "18858f0d7fdc744e2e0a0c79cbaae7c968a00f9ab3af156b97fc930d0321a60e",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260819-120-revise-propose",
+  "canonicalBase": "4f3e0f44a3a1254670a99f1428b70fc1e2c6c8f2",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-bounded-execution-and-protocol-closure/20260819-120-revise-propose/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "18858f0d7fdc744e2e0a0c79cbaae7c968a00f9ab3af156b97fc930d0321a60e"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "ec0accf47d569b8f60d01e96573f6813f1f2b7d5f135a60e3fc07159f84e74c8"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/design.md",
+      "versionFingerprint": "36bcb36a9a073a6035e8502a8831ea177e2e9a84f4e1627a4b4357f4cb678428",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/proposal.md",
+      "versionFingerprint": "96cd3d07a4d2304c6b50d0211f2cb0251e73ac9598555a313f9ef570ed12e52b",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+      "versionFingerprint": "afaa888d7ff7bb29469a7dd42fba1c115fa79b1ddbe85283a5129a284c634805",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/specs/flowkit-core-model/spec.md",
+      "versionFingerprint": "e6cec77774baee910e54ccf8d25dceed6095f635e533237fc88e3e77020077b6",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+      "versionFingerprint": "30391ac0215dd2eeb81f96228446c34c489d30008799ad6652c5640b253f6e88",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "versionFingerprint": "750bc0923eed4cdab25ead1fbd2ab5be83d793d4e5ba6006f24f3a3fcd38bca6",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+      "versionFingerprint": "9f6ef85d7b1d702b33d74213ddda22687e66d307d6ab7926d970912e45f5b529",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/specs/flowkit-runtime-foundation/spec.md",
+      "versionFingerprint": "3c8b0c329a272020b8884e6c447496503e1f469ca21263a7d56dc84f6a31ec7a",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/tasks.md",
+      "versionFingerprint": "a1b2b6888892f4e0d1fdafaab36c6513ed92c8498cfdda87fccb50b30e22ea9c",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "delivery-full-test-bounded-execution-and-protocol-closure",
+      "runId": "20260820-121-review-propose",
+      "action": "review-propose",
+      "role": "reviewer",
+      "semanticInputFingerprint": "e6462020eb7024cb44f1cc3e2b60251ab5d9016f25212b4c6715f2f335e6e478"
+    },
+    "definition": {
+      "action": "review-propose",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-proposal",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "ec0accf47d569b8f60d01e96573f6813f1f2b7d5f135a60e3fc07159f84e74c8"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/design.md",
+        "versionFingerprint": "36bcb36a9a073a6035e8502a8831ea177e2e9a84f4e1627a4b4357f4cb678428",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/proposal.md",
+        "versionFingerprint": "96cd3d07a4d2304c6b50d0211f2cb0251e73ac9598555a313f9ef570ed12e52b",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+        "versionFingerprint": "afaa888d7ff7bb29469a7dd42fba1c115fa79b1ddbe85283a5129a284c634805",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/specs/flowkit-core-model/spec.md",
+        "versionFingerprint": "e6cec77774baee910e54ccf8d25dceed6095f635e533237fc88e3e77020077b6",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+        "versionFingerprint": "30391ac0215dd2eeb81f96228446c34c489d30008799ad6652c5640b253f6e88",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "750bc0923eed4cdab25ead1fbd2ab5be83d793d4e5ba6006f24f3a3fcd38bca6",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+        "versionFingerprint": "9f6ef85d7b1d702b33d74213ddda22687e66d307d6ab7926d970912e45f5b529",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/specs/flowkit-runtime-foundation/spec.md",
+        "versionFingerprint": "3c8b0c329a272020b8884e6c447496503e1f469ca21263a7d56dc84f6a31ec7a",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/tasks.md",
+        "versionFingerprint": "a1b2b6888892f4e0d1fdafaab36c6513ed92c8498cfdda87fccb50b30e22ea9c",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-bounded-execution-and-protocol-closure/20260819-120-revise-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "18858f0d7fdc744e2e0a0c79cbaae7c968a00f9ab3af156b97fc930d0321a60e"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260819-119-review-propose",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-bounded-execution-and-protocol-closure/20260819-119-review-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "a3e1e98612a3dee292928255849ac2a4f3ac8fb896f30e61761581eabb8487a5"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "I1-RP-001",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "flowkitMutationScope selectors 未按当前 machine contract 排序，Apply preparation 将确定性失败",
+          "problem": "118 Design 已提供 apply/revise-apply 的 22-selector flowkitMutationScope，但 selector 顺序不满足 current validateMutationDeclaration() 的 lexical-sorted invariant。Reviewer 在 exact candidate 上调用 production deriveMutationDeclaration()，apply 在读取 Design 后立即抛出 SCHEMA_VALIDATION_FAILED: mutationDeclaration.selectors must be lexical sorted；revise-apply 使用相同列表，因此同样非法。首个顺序错误是 src/domain/full-test.ts 位于 src/domain/a1-types.ts 之前，另外 prefix selectors 被插在 exact selectors 中间，而 current lexical order要求 exact selectors整体按 path 排序后再进入 prefix selectors。若当前 Proposal被批准，Owner authorize apply 后 Apply preparation会在 mutation declaration derivation 阶段直接失败，尚未进入实现。",
+          "contractRef": "approved G1/E2 mutation declaration contract；current src/verification/change-selection/mutation-declaration.ts + src/persistence/serialization.ts validateMutationDeclaration；118 design.md §flowkitMutationScope",
+          "invariant": "Approved Design 中的 flowkitMutationScope 必须能被 production deriveMutationDeclaration() 原样解析为合法 Apply/revise-apply mutation boundary；Proposal不能冻结一个在正式 Apply preparation 时必然 schema-fail 的 machine contract。",
+          "requiredOutcome": "Revise-Propose 仅按 current lexical ordering rule 重排 apply/revise-apply selectors（除非关闭其他 finding确实需要调整 scope），保持两者 closed scope一致，并用 production deriveMutationDeclaration() 对两种 action做真实 preflight。",
+          "acceptance": [
+            "deriveMutationDeclaration(repoRoot, 'apply', [exact Design ResultRef]) 成功并返回合法 declaration。",
+            "deriveMutationDeclaration(repoRoot, 'revise-apply', [exact Design ResultRef]) 成功并返回合法 declaration。",
+            "selectors 保持 Proposal 所需 mutation surface闭合，不通过删除必要 selector来规避排序校验。",
+            "Design 中不存在第二份 flowkitMutationScope 或 caller fallback。"
+          ]
+        },
+        {
+          "id": "I1-RP-002",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "required Tasks 重复 Verification/review lifecycle facts，会再次制造 exact-candidate re-verification 循环",
+          "problem": "118 tasks.md 6.4 把‘formal I1 Change Verification’列为 required checkbox的一部分，6.5 又要求‘only after formal I1 Verification is passed’才 hand off review-apply。Formal Verification 已由 verification.md/current terminal binding拥有独立 authority，review-apply又由 Reviewer Run拥有独立 authority。若 Apply先完成实现并运行 formal Verification，再把6.4/6.5从[ ]改成[x]，tasks.md bytes会改变 exact candidate，刚刚通过的 Verification立即不再绑定 current candidate，必须重新跑；若在 Verification前先勾选，则 checkbox声明的事实尚未发生。这个结构与 H1 111→112→113 已暴露并刚刚复盘确认的低价值循环完全相同。",
+          "contractRef": "Operating Model v8 One fact, one authority；Change Verification独立 authority；exact-candidate Verification binding；118 tasks.md §6.4-6.5",
+          "invariant": "Required implementation Tasks 必须能在 formal Change Verification开始前真实完成；Verification passed、Reviewer handoff/approval、Archive/Checkpoint等 lifecycle facts不能重复成为 implementation task authority。",
+          "requiredOutcome": "Revise-Propose 重写 Tasks closure：6.4 只保留 Verification 前可完成的 mechanical/targeted preflight工作，移除‘formal I1 Change Verification’作为 required checkbox；删除或改写6.5，使 review-apply handoff/Verification passed不再是 required implementation task。Formal Verification继续只由 verification.md/terminalBinding表达，Reviewer handoff由 Policy/Run表达。",
+          "acceptance": [
+            "所有 required task checkbox 都可以在第一次 formal I1 Change Verification开始前真实置为[x]。",
+            "不存在以 Verification passed、review-apply handoff/approval、archive/checkpoint/finalize发生为完成条件的 required task。",
+            "Apply完成实现任务后可形成 stable exact candidate → formal Verification → review-apply，中间无需再修改 tasks.md。",
+            "不删除真正的 implementation/preflight obligations；只是把 lifecycle authority移回其正式事实。"
+          ]
+        },
+        {
+          "id": "I1-RP-003",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "H1 heavy override 只有 file-level coverage，遗漏默认 installed-runner smoke case，无法证明 full-suite case/semantic closure",
+          "problem": "118 将 full 解析为 current-checkout discovered files，并对 H1 heavy file固定只执行 FLOWKIT_H1_FORMAL_PHASE=1..26。当前 tests/integration/h1-stable-runner-and-self-hosting-acceptance.test.ts 在未设置 FORMAL_PHASE 时实际有两个默认 test：① installed-runner diagnostics smoke；②完整 future-Delivery E2E（内部for phase=1..26调用runSelfHostingPhase）。设置 FORMAL_PHASE 后 describe会提前return，只执行一个对应 formal-phase test，因此118的26 targets只分解了第二个E2E case，没有执行第一个 smoke case。该 smoke还包含独立 assertions（例如 resume-context/next、installed bin位于consumer且不在source project等），不能仅凭‘同一个文件已进入partition union’证明被覆盖。116/118 当前 closure主要证明 discovered file union exact；对H1这种用env切换分支的override，file-level union不足以证明默认 test-case/assertion coverage complete。",
+          "contractRef": "118 Proposal ‘coverage-complete bounded full-suite partition’；design.md Decision 4 Current 03 logical→physical resolver closure；tasks.md §3.1-3.3；Flowkit Explore Skill v2 §4.6 Verification Closure / §5 Evidence Boundary；03 Full Test Plan完整 regression coverage",
+          "invariant": "把现有 test:full 替换为 bounded physical partition 时，static heavy override必须保持被替换文件的 required test semantics；不能因为文件路径出现在coverage union中就静默跳过该文件的其他默认 test cases/assertions。Physical partition是execution mapping，不得成为删减 regression coverage的隐式 authority。",
+          "requiredOutcome": "Revise-Propose 为 H1 heavy file冻结 case/semantic-complete mapping。Reviewer不限定唯一实现：最直接的 bounded closure是把 installed-runner smoke作为独立 bounded case，同时把完整E2E case映射为26 formal phases；也可以提供等价 mapping，但必须明确证明默认两个 cases的全部 required assertions/semantics都被覆盖。相应 coverage closure必须从单纯 file union提升为 overridden-heavy-file 的 case/semantic mapping closure。不要把 H1 capability-specific safe-dedup policy复制进 shared resolver。",
+          "acceptance": [
+            "明确枚举当前H1默认两个 test cases，并说明每一个由哪些 bounded targets消费。",
+            "installed-runner diagnostics smoke不会因 FORMAL_PHASE branch提前return而静默消失；若声称由更强target取代，必须逐项证明其独立 assertions被覆盖，而不是只做file-level等价。",
+            "future-Delivery E2E可继续由phase 1..26分解，且证明这些phases与原E2E内部runSelfHostingPhase loop语义等价。",
+            "coverage closure对5个heavy overrides均能证明 required case/selector semantics complete；missing/overlap/title/branch drift fail closed。",
+            "仍不回退到 npm run test:full/verify:step full长wrapper，也不引入runtime timing classifier/scheduler。"
+          ]
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "5b512d27d6063cbe55ec1c68a059df6efa12c44e6ccef2fab4459b28b868b30f",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

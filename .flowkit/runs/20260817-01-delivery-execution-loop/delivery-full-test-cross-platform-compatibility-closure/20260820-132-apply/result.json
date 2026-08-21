@@ -1,0 +1,8 @@
+{
+  "runStatus": "cancelled",
+  "cancellationReason": "superseded-by-owner-contract-reset",
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "8bb031bd215e379b4e0ccb10a72a5809da8bcd2e1fa194bf49652bb99945db8b"
+  }
+}

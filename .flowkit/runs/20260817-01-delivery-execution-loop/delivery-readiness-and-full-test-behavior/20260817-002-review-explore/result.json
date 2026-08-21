@@ -1,0 +1,67 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-explore",
+    "executionStatus": "completed",
+    "summary": "Review 001 Explore：A1 的总体边界正确，已保持 Full Test 为 Owner-authorized Delivery behavior、非 Standard Action/Run，并覆盖 readiness、authority、persistence、verification closure 与 performance observation。Reviewer 独立复核 exact Base f132db761bd209e6aff72411108b8e3e1c9801f5，candidate status=explore、next=review-explore、doctor=ok，package checksum 与 git diff hygiene 均正常；相关 baseline Policy/Owner/diagnostics/verification tests 74/74 PASS。但 Explore 仍有两个 author blocker：其一把 Full Test 判为 read-only，从而未证明 authorized 崩溃重入的 at-least-once/mutation safety；其二 Genericity proof 的 acceptance 跨 future Delivery，但实际 evidence 只做静态 inspection，并把 future-Delivery fixture 延后到 Proposal/tests，却仍标 PASS，违反 Explore Skill 的 Evidence Boundary 规则。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "76d6a682b2240a8adce2a60d65cdbb51389d370b3811dbc6c199e7bac3a3487b"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "A1-RE-001",
+      "severity": "blocking",
+      "title": "Full Test re-entry is marked PASS without proving the real plan's mutation/idempotence boundary",
+      "problem": "Explore Risk Scan marks External tool performs real mutation = no and Proof 2 concludes that `authorized` is sufficient for crash/resume re-entry because Full Test is Verification behavior. The exact baseline `verifyFullPlan()` is not purely read-only: it includes `build` (`tsc`, which writes `dist/`) and then the full test corpus. Verification ownership does not by itself prove that repeating a partially executed plan after process death is safe, nor that the crash window after successful checks but before terminal result persistence cannot create ambiguous or stale lifecycle truth. The Explore therefore promotes an unproven recovery semantic into the Proposal-ready boundary.",
+      "contractRef": "Flowkit Explore Skill v2 §3 Mandatory Risk Scan; §4.2 Temporal Proof; §4.7 External Mutation Proof; §5 Proof Acceptance Depth; 03 v6 A1 Full Test behavior/resume acceptance",
+      "invariant": "A Proposal-ready Full Test lifecycle must prove the physical mutation and crash/re-entry semantics of the exact executable plan before claiming that `authorized` can be deterministically re-entered without a Run or additional attempt state. Verification classification alone is not evidence of idempotence.",
+      "evidence": [
+        "001 explore.md Risk Scan states `External tool performs real mutation | no | A1 Full Test uses Verification/read-only validation processes`.",
+        "001 Proof 2 states `authorized` is sufficient and a fresh process can deterministically re-enter the same Delivery behavior, with no new running status or Run.",
+        "Exact Base scripts/verification.ts `verifyFullPlan()` runs quality → typecheck → lint → build → openspec-all → full; `build` executes TypeScript compilation with `outDir: dist`, so the physical plan is not literally read-only.",
+        "The current evidence does not enumerate mutation footprints or exercise crash/re-entry at partial-plan and post-success/pre-publication boundaries."
+      ],
+      "impact": "Proposal could freeze at-least-once Full Test retry semantics that appear deterministic at the Policy level but are not proven against the physical executor. A crash may cause repeated build/test work or stale/partial output assumptions, undermining the claimed repository-fact-only resume contract.",
+      "location": "openspec/changes/delivery-readiness-and-full-test-behavior/explore.md Risk Scan; Proof 2; Proof 8; scripts/verification.ts verifyFullPlan()/executeProjectStep()",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Revise Explore to treat Full Test physical mutation/re-entry as an applicable risk and prove the exact plan's bounded at-least-once semantics. The proof may still conclude that no `running` state/Run is needed, but only after enumerating durable vs disposable mutations and proving crash/re-entry safety for the relevant windows. If that cannot be proven, narrow or change the recovery design rather than asserting PASS.",
+      "acceptance": [
+        "Enumerate the physical mutation footprint of every current Full Test step, distinguishing repository/formal durable facts from disposable/generated outputs such as `dist/` and test fixtures.",
+        "Prove whether rerunning from `authorized` after interruption is safe when interruption occurs mid-plan and after all checks succeed but before terminal `passed|failed` publication.",
+        "Show that no previously generated output or partial result can be mistaken for current Verification authority on re-entry.",
+        "Update Risk Scan / Temporal or External Mutation proof so Result=PASS only if its Evidence Boundary covers the declared crash/resume acceptance boundary.",
+        "Do not introduce a Full Test Standard Action/Run merely to close this finding; the required outcome is proof-correct recovery semantics, not a prescribed implementation."
+      ]
+    },
+    {
+      "id": "A1-RE-002",
+      "severity": "blocking",
+      "title": "Genericity proof claims cross-Delivery PASS while explicitly deferring the required future-Delivery consumer proof",
+      "problem": "A1 is declared generic across future Deliveries and the Mandatory Risk Scan marks Generic reusable subsystem and Activation persistence across Change/Delivery boundaries as yes. Proof 6 sets its Acceptance Boundary to current 03 + B1 + a future Delivery with a different id/change graph, but its Method/Evidence are only static inspection of generic helpers. Its Gap then says Proposal/tests must include at least one synthetic future Delivery, while Result remains PASS. Explore Skill v2 requires a future-Delivery consumer when the capability claims cross-Delivery persistence and forbids PASS when evidence stops before the acceptance boundary.",
+      "contractRef": "Flowkit Explore Skill v2 §4.3 Migration/Self-hosting/Activation Persistence; §4.5 Genericity/Next-consumer Proof; §5 Proof Acceptance Depth",
+      "invariant": "When Acceptance Boundary includes a future Delivery, Explore may mark PASS only after evidence reaches a future-Delivery-shaped consumer; a known missing future fixture cannot be deferred to Proposal/tests while the proof is labeled PASS.",
+      "evidence": [
+        "001 Proof 5 Acceptance Boundary extends through `future Delivery Start` and Result is PASS based primarily on persistence/code inspection.",
+        "001 Proof 6 Acceptance Boundary explicitly includes `future Delivery with a different id/change graph`.",
+        "001 Proof 6 Gap explicitly says `Proposal/tests must include at least one synthetic future Delivery with a different id and multi-Change graph`.",
+        "Flowkit Explore Skill v2 requires current/different consumers and, for cross-Delivery claims, a future-Delivery consumer; §5 says unresolved Evidence Boundary gaps must be UNKNOWN/FAIL rather than PASS."
+      ],
+      "impact": "A Proposal could freeze 03-specific or same-Delivery assumptions in readiness/status/Owner-write persistence and only discover them after implementation, repeating the class of self-hosting/activation-persistence defects that the proof discipline is intended to catch before Proposal.",
+      "location": "openspec/changes/delivery-readiness-and-full-test-behavior/explore.md Proof 5 and Proof 6",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Revise Explore with a minimal disposable future-Delivery-shaped proof (or equivalent concrete prototype execution) that exercises a different Delivery id and multi-Change graph through the relevant readiness/authorization/persistence seams. Alternatively downgrade the affected proof to UNKNOWN and do not claim Proposal readiness until the gap is closed.",
+      "acceptance": [
+        "Evidence includes a different/future Delivery-shaped consumer, not only source inspection of generic helper names.",
+        "The fixture/prototype uses a different Delivery id and a non-A1 multi-Change graph and demonstrates no hard-coded 03/A1 identity dependency in the proposed readiness/authorization persistence boundary.",
+        "Fresh-process/re-read behavior is included where the proof claims repository-global activation persistence.",
+        "Proof 5/6 Evidence Boundary and Gap are internally consistent with Result; no known cross-Delivery gap remains under a PASS result.",
+        "The proof remains disposable Explore work and does not add production code, a new formal Action, Run type, Registry, or B1/C1 implementation."
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}

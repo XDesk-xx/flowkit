@@ -1,0 +1,18 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "apply",
+    "executionStatus": "completed",
+    "summary": "实现 B1 Delivery Full Test failure → occurrence-aware Delivery Finding → Owner corrective Change atomic admission：保留 Verification-owned failed result authority、绑定 authorize-full-test occurrence、原子创建普通 corrective Change 并 reset 为 not-ready，保持 fresh Owner re-authorization、historical compatibility 与 physical Verification closure。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "d7d9af31b65a72de36c6f8493d10579d95fc6938b9e62c7ec454c20624023250",
+    "currentVerification": {
+      "logicalRef": "openspec/changes/delivery-findings-and-corrective-change/verification.md",
+      "versionFingerprint": "ce2de948a9ddc811f3a2fd44881dbb40e4054e7cc67f2ca1bfba3f581398bd39",
+      "selectionFingerprint": "08c98b062ca0601c542f53b9bdb0894642f32c937424d536bce119785b89034a",
+      "status": "passed"
+    }
+  }
+}

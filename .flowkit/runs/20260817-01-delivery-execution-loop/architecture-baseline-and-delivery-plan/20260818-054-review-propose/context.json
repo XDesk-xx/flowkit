@@ -1,0 +1,184 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260818-054-review-propose",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "review-propose",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "22288aad0f941286faba2afe8a46ea33639396e4298994480d40f1c44e284a35",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-054-review-propose/",
+  "changeKey": "D1",
+  "changeId": "architecture-baseline-and-delivery-plan",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-053-revise-propose/result.json",
+    "versionFingerprint": "a4dd8e3c4514ed87038039b11a87b28f6d046b09114f34ba52e54ac07f938a40",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260818-053-revise-propose",
+  "canonicalBase": "9d27efef586bcb3204647c78785c9c30a64be4a2",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-053-revise-propose/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "a4dd8e3c4514ed87038039b11a87b28f6d046b09114f34ba52e54ac07f938a40"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/design.md",
+      "versionFingerprint": "feb819aa506ae3c36815e8738108430b7f61a15d55b9ed63cf19682559ebdea5",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/proposal.md",
+      "versionFingerprint": "755cc9a8cb9f05ad360b6492a9ebd2232c8be1643655b6a7b3e486e4d92d701f",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-architecture-assets/spec.md",
+      "versionFingerprint": "461f741222b7605a6e381bed79a938738f26794a58a0b12902d6ef0ef2b05ad4",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-change-verification-selection/spec.md",
+      "versionFingerprint": "0e5b9f99ace4fff1d8e6915739ce9ce435f356ea2288c4008fc695849801327f",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-external-tool-runtime/spec.md",
+      "versionFingerprint": "622f02ca85267172cc2318d64dd89b7016e24edbd401c89c3bb7b5d96d3a8591",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/tasks.md",
+      "versionFingerprint": "52c6cb7158ca017d8c0619ccc3c78fd5932acf5041ffdf5c41384a088114087a",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "architecture-baseline-and-delivery-plan",
+      "runId": "20260818-054-review-propose",
+      "action": "review-propose",
+      "role": "reviewer",
+      "semanticInputFingerprint": "22288aad0f941286faba2afe8a46ea33639396e4298994480d40f1c44e284a35"
+    },
+    "definition": {
+      "action": "review-propose",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-proposal",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/design.md",
+        "versionFingerprint": "feb819aa506ae3c36815e8738108430b7f61a15d55b9ed63cf19682559ebdea5",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/proposal.md",
+        "versionFingerprint": "755cc9a8cb9f05ad360b6492a9ebd2232c8be1643655b6a7b3e486e4d92d701f",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-architecture-assets/spec.md",
+        "versionFingerprint": "461f741222b7605a6e381bed79a938738f26794a58a0b12902d6ef0ef2b05ad4",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "0e5b9f99ace4fff1d8e6915739ce9ce435f356ea2288c4008fc695849801327f",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-external-tool-runtime/spec.md",
+        "versionFingerprint": "622f02ca85267172cc2318d64dd89b7016e24edbd401c89c3bb7b5d96d3a8591",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/tasks.md",
+        "versionFingerprint": "52c6cb7158ca017d8c0619ccc3c78fd5932acf5041ffdf5c41384a088114087a",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-053-revise-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "a4dd8e3c4514ed87038039b11a87b28f6d046b09114f34ba52e54ac07f938a40"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260818-052-review-propose",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-052-review-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "9aa8ff5afa77fb942f490bbbbf6b0ec979988610ff39550dcfd6a226242f7848"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "D1-RP-001",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "CLI-owned D1 mutation paths 缺少可匹配的 OpenSpec delta capability relation",
+          "problem": "051 Apply mutation scope 明确包含 src/cli/architecture.ts、src/cli/main.ts 与 tests/unit/cli/architecture.test.ts，同时 Design 决定 src/cli/** 继续由现有 cli-diagnostics Verification module ownership。Base 上 cli-diagnostics.capabilityIds 仅包含 flowkit-change-cli-end-to-end-and-performance、flowkit-diagnostic-cli、flowkit-openspec-1-7-thin-integration、flowkit-policy-engine、flowkit-runtime-foundation；051 当前 OpenSpec delta capability 只有 flowkit-architecture-assets、flowkit-change-verification-selection、flowkit-external-tool-runtime。两者无交集。当前 buildVerificationSelection() 对每个 seed module 强制要求至少命中一个当前 delta capability，所以按 051 当前 Design 只新增 architecture module/check 后，formal Apply Verification 会在 cli-diagnostics seed 上 fail closed。",
+          "contractRef": "051 design.md Decisions 7-8 / flowkit-change-verification-selection delta spec；Base src/verification/change-selection/selection.ts buildVerificationSelection() seed capability relation；Flowkit Explore Skill v2 Mutation Surface + Verification Closure",
+          "invariant": "Proposal 冻结的 Apply mutation surface 中，每个实际 seed Verification module 必须与当前 OpenSpec delta capability 有合法关系，并能进入 physical selected-check closure；不能只证明 path ownership/selector 唯一而忽略 capability admission。",
+          "requiredOutcome": "最小 revise-propose 冻结 CLI-owned D1 paths 与当前 D1 OpenSpec delta capability 的合法 relation，同时保持 src/cli/** ownership 不重叠。实现选择由 Author 决定；例如可让 cli-diagnostics 明确承认 flowkit-architecture-assets capability，并补对应 module-map contract/tests。Proposal 必须增加一个 read-only next-consumer dry selection：使用预期 D1 actualChangeSet + 三个 D1 delta capability refs，buildVerificationSelection() 成功且所有 seed module 均有 applicable capability relation。",
+          "acceptance": [
+            "src/cli/architecture.ts、src/cli/main.ts、tests/unit/cli/architecture.test.ts 保持唯一 non-overlapping ownership。",
+            "包含这些 CLI paths 的预期 D1 actualChangeSet 与 051 三个 delta capability refs 调用 buildVerificationSelection() 不再抛 VERIFICATION_CAPABILITY_SELECTION_FAILED。",
+            "selection.capabilityRelation = matched，seedModuleIds 中 cli-diagnostics 有明确 applicable D1 capability。",
+            "formal selection 仍能覆盖 tests-cli，并在完整 D1 mutation set 上同时覆盖 tests-architecture 与其他 affected checks。",
+            "不通过扩大为新 Registry/第二 Verification system 解决。"
+          ]
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "f91e3daa9eb2ee4a18a3567f74246ef896a4700dd9c7e109f7079d2682bda58e",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

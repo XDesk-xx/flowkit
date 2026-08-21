@@ -1,0 +1,18 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "apply",
+    "executionStatus": "completed",
+    "summary": "F1 implements qualification-bound no-Run Delivery Finalize and strict Delivery Final Git admission. Finalize qualification binds the current Full Test occurrence, qualified admitted pre-final Git revision, and accepted architecture/not-applicable disposition; post-pass required Change creation atomically invalidates stale qualification. Finalize performs read-only bounded Git preflight before state mutation, publishes a deterministic completed finalization projection without Git mutation, supports crash-safe explicit Delivery Final handoff, and strict post-F1-checkpoint Delivery Final admission. Current 03 Delivery remains active and is not finalized by this Apply."
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "d7f6696bd0365abf02cc38f895c73a8decbf43da95985a735d2dd196e4682b2b",
+    "currentVerification": {
+      "logicalRef": "openspec/changes/delivery-finalize-and-git-boundary/verification.md",
+      "versionFingerprint": "934a3c83502d48d110683446b64d8ec72cee30fae1be65d507c9edbe88111b9a",
+      "selectionFingerprint": "bb176d063b404942467dff735c7ce3b916347872cb3668ece8c5d4000a40af90",
+      "status": "passed"
+    }
+  }
+}

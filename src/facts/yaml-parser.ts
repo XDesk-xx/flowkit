@@ -508,5 +508,5 @@ function parseScalar(raw: string): unknown {
 }
 
 function unescapeDoubleQuoted(s: string): string {
-  return s.replace(/\\"/g, '"').replace(/\\\\/g, '\\').replace(/\\n/g, '\n').replace(/\\t/g, '\t');
+  return JSON.parse(`"${s}"`) as string;
 }

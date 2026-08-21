@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260817-021-review-explore",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "review-explore",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "7d0994e6ffa9786d9fe6fa0b0764ab77dc1a022da955f04a30b3bd4a119962c1",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-findings-and-corrective-change/20260817-021-review-explore/",
+  "changeKey": "B1",
+  "changeId": "delivery-findings-and-corrective-change",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-findings-and-corrective-change/20260817-020-revise-explore/result.json",
+    "versionFingerprint": "5518a9371b1a0fc3e772cadd4f1e21ca43fd2c2dd5b4db56a93d63cdf1c8c794",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260817-020-revise-explore",
+  "canonicalBase": "55622af3c2a62075e3d774d9d33c1ea222795eda",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-findings-and-corrective-change/20260817-020-revise-explore/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "5518a9371b1a0fc3e772cadd4f1e21ca43fd2c2dd5b4db56a93d63cdf1c8c794"
+    },
+    {
+      "ref": "openspec/changes/delivery-findings-and-corrective-change/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "41db595b409c9e6bc00babeabb32990290577eb40245a5bb769e8ec98a1f8d3e"
+    },
+    {
+      "ref": "openspec/changes/delivery-findings-and-corrective-change/explore.md",
+      "versionFingerprint": "ab78507ffba9914b510ba5414029b892d4d6a4372b04d459b5d74627c0f5fb6f",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "delivery-findings-and-corrective-change",
+      "runId": "20260817-021-review-explore",
+      "action": "review-explore",
+      "role": "reviewer",
+      "semanticInputFingerprint": "7d0994e6ffa9786d9fe6fa0b0764ab77dc1a022da955f04a30b3bd4a119962c1"
+    },
+    "definition": {
+      "action": "review-explore",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-explore",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/delivery-findings-and-corrective-change/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "41db595b409c9e6bc00babeabb32990290577eb40245a5bb769e8ec98a1f8d3e"
+      },
+      {
+        "ref": "openspec/changes/delivery-findings-and-corrective-change/explore.md",
+        "versionFingerprint": "ab78507ffba9914b510ba5414029b892d4d6a4372b04d459b5d74627c0f5fb6f",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-findings-and-corrective-change/20260817-020-revise-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "5518a9371b1a0fc3e772cadd4f1e21ca43fd2c2dd5b4db56a93d63cdf1c8c794"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260817-019-review-explore",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-findings-and-corrective-change/20260817-019-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "4d8308950cceca997f0be3f2f05d43c1ea91fb9462e6c68d6ef8b46e22c26c0f"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "B1-RE-001",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "failed→not-ready reset may destroy the only durable Verification-owned Full Test result",
+          "problem": "018 correctly observes that A1 forbids a non-terminal fullTestStatus from retaining verification.fullTest.result, so B1 must clear the current terminal-result slot during failed→not-ready. However, the exact Base stores the Full Test terminal result only in that current Manifest slot and has no Full Test result-history authority. Proof 2 then treats a minimal Delivery Finding/sourceResultRef/corrective provenance encoding as Proposal-ready without proving where the original Verification-owned result remains durably readable after reset. A content hash by itself is not a durable result authority. If B1 clears the only result bytes and keeps only derived Finding fields plus sourceResultRef, the Finding becomes the de-facto historical failure truth, violating one-fact-one-authority and leaving sourceResultRef dangling.",
+          "contractRef": "03 v6 B1 minimal Delivery Finding/sourceResultRef + Flowkit Operating Model v8 §5 Authority Map / one fact, one authority + Explore Skill v2 §4.4 Authority Proof / §5 Proof Acceptance Depth",
+          "invariant": "After corrective admission resets Full Test from failed to not-ready, the exact failed Verification result that the Delivery Finding cites must still exist as a bounded durable Verification authority; the Flowkit Finding may project/reference it but must not silently replace it as the only remaining failure truth.",
+          "requiredOutcome": "Revise Explore to prove a minimal authority-preserving failure-retention strategy before Proposal. The current terminal slot may still be cleared on failed→not-ready, but the exact failed result must survive as a bounded durable Verification-owned fact/ref that the Delivery Finding and corrective provenance can point to. Do not introduce a generic Evidence/Finding database.",
+          "acceptance": [
+            "Identify the current physical authority for the failed Full Test result and show exactly where that authority lives after failed→not-ready reset.",
+            "After reset, a fresh process can resolve/validate the Finding's sourceResultRef against an existing durable failed-result fact rather than only trusting copied Finding fields or an opaque hash.",
+            "The retention mechanism is bounded to Delivery Full Test failure history/provenance and does not become a generic Evidence platform or duplicate raw logs.",
+            "Stale/mismatched sourceResultRef fails closed during corrective admission and fresh read.",
+            "Proof Result is PASS only after the Evidence Boundary includes post-reset fresh-process provenance reconstruction."
+          ]
+        },
+        {
+          "id": "B1-RE-002",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "Migration/self-hosting activation risk is marked yes but the required activation-persistence proof is missing",
+          "problem": "018 Risk Scan marks Schema/persistence migration, Self-hosting/writer changes itself, and Activation persistence across Change/Delivery boundaries as yes. Explore Skill v2 therefore requires an explicit Migration/Self-hosting/Activation Persistence proof answering which implementation starts B1, when the new reader/writer becomes active, how historical data is bounded-read, and which next/future consumers prove the transition persists. The current Proof 3 future-Delivery fixture uses the existing A1 schema and manually simulates only failed→not-ready + current-result removal; because the B1 Finding/provenance physical encoding is intentionally still undecided, it cannot prove that the future B1 reader/writer actually survives B1 Checkpoint, fresh process, later Changes/future Delivery, or reads pre-B1 manifests without the new fields.",
+          "contractRef": "Flowkit Explore Skill v2 §4.3 Migration / Self-hosting / Activation Persistence Proof; §5 Proof Acceptance Depth",
+          "invariant": "A Change that modifies repository-global Delivery persistence/Reader/Policy must prove the activation boundary and bounded historical compatibility before claiming Proposal readiness; same-schema/manual simulation under the old implementation is not evidence that the new schema persists across checkpoint/resume/future consumers.",
+          "requiredOutcome": "Add the applicable migration/self-hosting/activation-persistence proof. It may use a minimal disposable candidate encoding rather than production implementation, but it must prove the chosen B1 persistence concept across the real activation boundary and bounded historical compatibility before Proposal freezes the contract.",
+          "acceptance": [
+            "State the activation timeline: B1 018/Author work starts from Base 55622af current implementation; new B1 repository-global semantics become canonical only at the authorized B1 Change Checkpoint.",
+            "Demonstrate bounded read compatibility for a legitimate pre-B1 manifest with no B1 Finding/provenance fields and a post-B1 manifest carrying the selected minimal fields.",
+            "Demonstrate post-checkpoint/fresh-process reconstruction and at least one later/future-Delivery-shaped consumer without chat/session state.",
+            "Show the transition does not silently fall back to the old createChange-only behavior after checkpoint/resume.",
+            "Keep the proof disposable and bounded; do not create a migration framework, Registry, new Formal Action, or parallel lifecycle."
+          ]
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "c2041d60025474a76346b053508a4c4ee7eea90fd80382e28014f2e2035fc42c",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

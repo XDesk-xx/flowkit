@@ -8,6 +8,8 @@ export function canonicalOwnerDecisionTuple(input: {
   readonly changeId?: string;
   readonly scope?: string;
   readonly requiredOutcomes?: readonly string[];
+  readonly architectureCycleRef?: string;
+  readonly finalizationQualificationRef?: string;
 }): string {
   const requiredOutcomes = input.requiredOutcomes === undefined
     ? undefined
@@ -18,6 +20,8 @@ export function canonicalOwnerDecisionTuple(input: {
     ...(input.changeId !== undefined ? { changeId: input.changeId } : {}),
     ...(input.scope !== undefined ? { scope: input.scope } : {}),
     ...(requiredOutcomes !== undefined ? { requiredOutcomes } : {}),
+    ...(input.architectureCycleRef !== undefined ? { architectureCycleRef: input.architectureCycleRef } : {}),
+    ...(input.finalizationQualificationRef !== undefined ? { finalizationQualificationRef: input.finalizationQualificationRef } : {}),
     sourceRef: input.sourceRef,
   });
 }
@@ -29,6 +33,8 @@ export function ownerDecisionRefFor(input: {
   readonly changeId?: string;
   readonly scope?: string;
   readonly requiredOutcomes?: readonly string[];
+  readonly architectureCycleRef?: string;
+  readonly finalizationQualificationRef?: string;
 }): string {
   return `owner:${createHash('sha256')
     .update(canonicalOwnerDecisionTuple(input), 'utf8')

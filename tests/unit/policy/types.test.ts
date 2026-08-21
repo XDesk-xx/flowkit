@@ -20,13 +20,14 @@ import type {
 
 describe('policy types (task 1.1-1.7, 10.1)', () => {
   describe('OwnerDecision', () => {
-    it('contains the five Action decisions + authorize-checkpoint (task 1.3, 6.10)', () => {
+    it('contains Change/Delivery Owner decisions including E1 architecture acceptance', () => {
       const expected: readonly OwnerDecision[] = [
         'activate-change',
         'authorize-apply',
         'authorize-archive',
         'authorize-full-test',
         'authorize-delivery-finalize',
+        'accept-architecture',
         'authorize-checkpoint',
       ];
       assert.deepEqual([...OWNER_DECISIONS], [...expected]);
@@ -35,6 +36,7 @@ describe('policy types (task 1.1-1.7, 10.1)', () => {
     it('isOwnerDecision guards recognized values', () => {
       assert.equal(isOwnerDecision('authorize-apply'), true);
       assert.equal(isOwnerDecision('authorize-checkpoint'), true);
+      assert.equal(isOwnerDecision('accept-architecture'), true);
       assert.equal(isOwnerDecision('not-a-decision'), false);
       assert.equal(isOwnerDecision(''), false);
     });
@@ -54,6 +56,7 @@ describe('policy types (task 1.1-1.7, 10.1)', () => {
         'ambiguous-state',
         'dependency-incomplete',
         'full-test-failed',
+        'full-test-execution-outcome-unknown',
         'non-author-review-blocker',
         'delivery-behavior-not-implemented',
         'archive-terminal-recovery-required',

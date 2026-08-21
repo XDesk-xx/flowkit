@@ -1,0 +1,44 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "propose",
+    "executionStatus": "completed",
+    "summary": "Owner Contract Reset 后重新冻结 H1 detached Verification physical execution：H1 capability selected 时保持原 tests-cli/tests-execution logical authority，将 process-heavy coverage 分解为 bounded physical commands，每个 command 继续使用既有 120s hard timeout并聚合为一个 logical evidence；H1 tests-cli 仅去重已被完整 installed-distribution self-hosting branch 严格覆盖的 legacy npm-installed diagnostic smoke，非 H1 行为不变。Disposable exact-108 optimization proof：tests-execution overallStatus=passed（约246s total），tests-cli overallStatus=passed（约868s total），完整 A1/B1、7个G1 Change cases、3个G1 Adapter cases、H1 26 phases均实际执行且任一 physical command仍受120s fail-closed约束。未新增 logical check、timeout inflation、scheduler、Registry或04 platform。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/design.md",
+        "versionFingerprint": "2927c0400b00e89c2716bc32cb556cd8aa9706ffc8d1d071237cf422e1d50f4f",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/proposal.md",
+        "versionFingerprint": "d65ec406cf553df060a1d0bc812de46927bce888e6c6ab0c87878b831c540a04",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+        "versionFingerprint": "39a419add4a1cff37cf8d24eaaf4e2428f45653c2b900c76937229e5d3745927",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "aedbb88f72b2f5a3e0edd1d1fe1fb09974e638e0e626d0787727afd831b7aef8",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-stable-runner-and-self-hosting-acceptance/spec.md",
+        "versionFingerprint": "4a188cad3b4345aebe5d4395e56ca8677b9c454245d00f40cddfe95fa8102cde",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/tasks.md",
+        "versionFingerprint": "2e0ce8cbc7c79992b6285d254426b4f8fcb7ce4f8ff546305d95ee2e80352208",
+        "kind": "produced-artifact"
+      }
+    ]
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "bae24d5599e311913c75738e238b8eb2e39c63a95e339ee4098554f0a7c86f76"
+  }
+}

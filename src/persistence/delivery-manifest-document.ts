@@ -5,6 +5,14 @@ import type {
   PersistedChangeInput,
   DeliveryCreateInput,
 } from '../domain/a1-types.js';
+import type {
+  FullTestExecutionBlock,
+  FullTestExecutionContract,
+  FullTestTerminalResult,
+  ResolvedFullTestFailureFinding,
+} from '../domain/full-test.js';
+import type { AcceptedSystemSource, CurrentArchitectureCycle } from '../architecture/architecture-lifecycle.js';
+import type { DeliveryFinalizationProjection } from '../domain/delivery-finalization.js';
 
 function quote(value: string): string {
   return JSON.stringify(value);
@@ -23,6 +31,155 @@ function renderStringList(values: readonly string[], indent: string): string[] {
   return values.map((value) => `${indent}- ${quote(value)}`);
 }
 
+function renderFullTestExecution(execution: FullTestExecutionContract, indent = '    '): string[] {
+  const child = `${indent}  `;
+  const lines = [
+    `${indent}execution:`,
+    `${child}id: ${quote(execution.id)}`,
+    `${child}kind: ${execution.kind}`,
+  ];
+  if (execution.kind === 'command') {
+    lines.push(
+      `${child}command: ${quote(execution.command)}`,
+      `${child}args:`,
+      ...renderStringList(execution.args, `${child}  `),
+      `${child}launcherMode: ${execution.launcherMode}`,
+      `${child}scope: ${execution.scope}`,
+      `${child}timeoutMs: ${execution.timeoutMs}`,
+    );
+  } else {
+    lines.push(`${child}logicalChecks:`);
+    for (const check of execution.logicalChecks) {
+      lines.push(
+        `${child}  - id: ${quote(check.id)}`,
+        `${child}    resolverId: ${check.resolverId}`,
+        `${child}    perTargetTimeoutMs: ${check.perTargetTimeoutMs}`,
+      );
+    }
+    lines.push(`${child}scope: ${execution.scope}`);
+  }
+  lines.push(
+    `${child}resultProtocol: ${execution.resultProtocol}`,
+    `${child}resultAuthority: ${execution.resultAuthority}`,
+    `${child}expectedTerminalStatuses:`,
+    ...renderStringList(execution.expectedTerminalStatuses, `${child}  `),
+  );
+  return lines;
+}
+
+function renderFullTestExecutionBlock(block: FullTestExecutionBlock, indent = '    '): string[] {
+  const child = `${indent}  `;
+  return [
+    `${indent}executionBlock:`,
+    `${child}schemaVersion: ${block.schemaVersion}`,
+    `${child}reason: ${block.reason}`,
+    `${child}summary: ${quote(block.summary)}`,
+  ];
+}
+
+function renderFullTestResult(result: FullTestTerminalResult, indent = '    '): string[] {
+  const child = `${indent}  `;
+  const lines = [
+    `${indent}result:`,
+    `${child}schemaVersion: ${result.schemaVersion}`,
+    `${child}status: ${result.status}`,
+    `${child}summary: ${quote(result.summary)}`,
+    `${child}totalDurationMs: ${result.totalDurationMs}`,
+    `${child}checks:`,
+  ];
+  for (const check of result.checks) {
+    lines.push(
+      `${child}  - id: ${quote(check.id)}`,
+      `${child}    status: ${check.status}`,
+      `${child}    durationMs: ${check.durationMs}`,
+    );
+  }
+  lines.push(`${child}resultRef: ${quote(result.resultRef)}`);
+  return lines;
+}
+
+function renderRetainedFullTestResult(result: FullTestTerminalResult, itemIndent = '      '): string[] {
+  const fieldIndent = `${itemIndent}  `;
+  const lines = [
+    `${itemIndent}- schemaVersion: ${result.schemaVersion}`,
+    `${fieldIndent}status: ${result.status}`,
+    `${fieldIndent}summary: ${quote(result.summary)}`,
+    `${fieldIndent}totalDurationMs: ${result.totalDurationMs}`,
+    `${fieldIndent}checks:`,
+  ];
+  for (const check of result.checks) {
+    lines.push(
+      `${fieldIndent}  - id: ${quote(check.id)}`,
+      `${fieldIndent}    status: ${check.status}`,
+      `${fieldIndent}    durationMs: ${check.durationMs}`,
+    );
+  }
+  lines.push(`${fieldIndent}resultRef: ${quote(result.resultRef)}`);
+  return lines;
+}
+
+function renderResolvedFullTestFinding(
+  finding: ResolvedFullTestFailureFinding,
+  itemIndent = '    ',
+): string[] {
+  const fieldIndent = `${itemIndent}  `;
+  return [
+    `${itemIndent}- schemaVersion: ${finding.schemaVersion}`,
+    `${fieldIndent}findingId: ${quote(finding.findingId)}`,
+    `${fieldIndent}authorizationRef: ${quote(finding.authorizationRef)}`,
+    `${fieldIndent}sourceResultRef: ${quote(finding.sourceResultRef)}`,
+    `${fieldIndent}severity: ${finding.severity}`,
+    `${fieldIndent}summary: ${quote(finding.summary)}`,
+    `${fieldIndent}affectedScope: ${finding.affectedScope}`,
+    `${fieldIndent}requiredOwnerDecision: ${finding.requiredOwnerDecision}`,
+    `${fieldIndent}resolution:`,
+    `${fieldIndent}  kind: ${finding.resolution.kind}`,
+    `${fieldIndent}  changeId: ${quote(finding.resolution.changeId)}`,
+    `${fieldIndent}  ownerDecisionRef: ${quote(finding.resolution.ownerDecisionRef)}`,
+  ];
+}
+
+
+function renderActualArchitectureRef(ref: CurrentArchitectureCycle['actualArchitectureRef'] | AcceptedSystemSource['actualArchitectureRef'], indent: string): string[] {
+  return [
+    `${indent}path: ${quote(ref.path)}`,
+    `${indent}sha256: ${quote(ref.sha256)}`,
+    `${indent}repositoryRevision: ${quote(ref.repositoryRevision)}`,
+  ];
+}
+
+function renderArchitectureCurrentCycle(cycle: CurrentArchitectureCycle, indent = '  '): string[] {
+  const field = `${indent}  `;
+  const lines = [
+    `${indent}currentCycle:`,
+    `${field}schemaVersion: 1`,
+    `${field}cycleRef: ${quote(cycle.cycleRef)}`,
+    `${field}fullTestAuthorizationRef: ${quote(cycle.fullTestAuthorizationRef)}`,
+    `${field}fullTestResultRef: ${quote(cycle.fullTestResultRef)}`,
+    `${field}actualArchitectureRef:`,
+    ...renderActualArchitectureRef(cycle.actualArchitectureRef, `${field}  `),
+    `${field}compareRef: ${quote(cycle.compareRef)}`,
+    `${field}acceptance:`,
+    `${field}  status: ${cycle.acceptance.status}`,
+  ];
+  if (cycle.acceptance.status === 'accepted') {
+    lines.push(`${field}  ownerDecisionRef: ${quote(cycle.acceptance.ownerDecisionRef)}`);
+  }
+  return lines;
+}
+
+function renderAcceptedSystemSource(source: AcceptedSystemSource, indent = '  '): string[] {
+  const field = `${indent}  `;
+  return [
+    `${indent}acceptedSystemSource:`,
+    `${field}schemaVersion: 1`,
+    `${field}sourceDeliveryId: ${quote(source.sourceDeliveryId)}`,
+    `${field}actualArchitectureRef:`,
+    ...renderActualArchitectureRef(source.actualArchitectureRef, `${field}  `),
+    `${field}compareRef: ${quote(source.compareRef)}`,
+    `${field}ownerAcceptanceRef: ${quote(source.ownerAcceptanceRef)}`,
+  ];
+}
 export function renderOwnerDecisionRecord(
   record: OwnerDecisionRecord,
   itemIndent = '  ',
@@ -42,6 +199,12 @@ export function renderOwnerDecisionRecord(
   if (record.requiredOutcomes !== undefined) {
     lines.push(`${fieldIndent}requiredOutcomes:`);
     lines.push(...renderStringList(record.requiredOutcomes, `${fieldIndent}  `));
+  }
+  if (record.architectureCycleRef !== undefined) {
+    lines.push(`${fieldIndent}architectureCycleRef: ${quote(record.architectureCycleRef)}`);
+  }
+  if (record.finalizationQualificationRef !== undefined) {
+    lines.push(`${fieldIndent}finalizationQualificationRef: ${quote(record.finalizationQualificationRef)}`);
   }
   lines.push(`${fieldIndent}sourceRef: ${quote(record.sourceRef)}`);
   return lines;
@@ -164,6 +327,8 @@ export class DeliveryManifestDocument {
     requireCleanScalar(record.sourceRef, 'sourceRef');
     if (record.changeId !== undefined) requireCleanScalar(record.changeId, 'changeId');
     if (record.scope !== undefined) requireCleanScalar(record.scope, 'scope');
+    if (record.architectureCycleRef !== undefined) requireCleanScalar(record.architectureCycleRef, 'architectureCycleRef');
+    if (record.finalizationQualificationRef !== undefined) requireCleanScalar(record.finalizationQualificationRef, 'finalizationQualificationRef');
     if (record.requiredOutcomes !== undefined) {
       if (record.requiredOutcomes.length === 0) throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'requiredOutcomes must not be empty');
       for (const outcome of record.requiredOutcomes) requireCleanScalar(outcome, 'requiredOutcomes');
@@ -187,6 +352,8 @@ export class DeliveryManifestDocument {
           obj['changeId'] === record.changeId &&
           obj['scope'] === record.scope &&
           JSON.stringify(obj['requiredOutcomes']) === JSON.stringify(record.requiredOutcomes) &&
+          obj['architectureCycleRef'] === record.architectureCycleRef &&
+          obj['finalizationQualificationRef'] === record.finalizationQualificationRef &&
           obj['sourceRef'] === record.sourceRef;
         if (!same) {
           throw new FlowkitError('OWNER_DECISION_REF_COLLISION', `Owner decision ref collision: ${record.ref}`);
@@ -220,6 +387,273 @@ export class DeliveryManifestDocument {
     next.splice(changesSpan.end, 0, ...insertion);
     this.content = `${next.join('\n')}\n`;
     return { ref: record.ref, changed: true };
+  }
+
+  replaceFullTestExecution(execution: FullTestExecutionContract): void {
+    const lines = splitLines(this.content);
+    const verification = findTopLevelSection(lines, 'verification');
+    if (verification === null) throw new FlowkitError('MANIFEST_UNSUPPORTED_SHAPE', 'verification section missing');
+    const fullStarts: number[] = [];
+    for (let i = verification.start + 1; i < verification.end; i++) if (/^ {2}fullTest:\s*$/.test(lines[i]!)) fullStarts.push(i);
+    if (fullStarts.length !== 1) throw new FlowkitError('MANIFEST_AMBIGUOUS', 'verification must contain exactly one fullTest section');
+    const fullStart = fullStarts[0]!;
+    let fullEnd = verification.end;
+    for (let i = fullStart + 1; i < verification.end; i++) {
+      if (/^ {2}[A-Za-z_][A-Za-z0-9_-]*:\s*/.test(lines[i]!)) { fullEnd = i; break; }
+    }
+    const starts: number[] = [];
+    for (let i = fullStart + 1; i < fullEnd; i++) if (/^ {4}execution:\s*$/.test(lines[i]!)) starts.push(i);
+    if (starts.length !== 1) throw new FlowkitError('MANIFEST_AMBIGUOUS', 'verification.fullTest must contain exactly one execution');
+    const start = starts[0]!;
+    let end = fullEnd;
+    for (let i = start + 1; i < fullEnd; i++) {
+      if (/^ {4}[A-Za-z_][A-Za-z0-9_-]*:\s*/.test(lines[i]!)) { end = i; break; }
+    }
+    const next = [...lines];
+    next.splice(start, end - start, ...renderFullTestExecution(execution));
+    this.content = `${next.join('\n')}\n`;
+  }
+
+  updateFullTestStatus(from: string, to: string): void {
+    const lines = splitLines(this.content);
+    const span = findTopLevelSection(lines, 'delivery');
+    if (span === null) throw new FlowkitError('MANIFEST_UNSUPPORTED_SHAPE', 'delivery section missing');
+    const indices: number[] = [];
+    for (let i = span.start + 1; i < span.end; i++) if (/^ {2}fullTestStatus:\s+/.test(lines[i]!)) indices.push(i);
+    if (indices.length !== 1) throw new FlowkitError('MANIFEST_AMBIGUOUS', 'delivery must contain exactly one fullTestStatus');
+    const index = indices[0]!;
+    const current = lines[index]!.replace(/^ {2}fullTestStatus:\s+/, '').trim();
+    if (current !== from) throw new FlowkitError('FULL_TEST_STATUS_MISMATCH', `expected Full Test status ${from}, got ${current}`);
+    const next = [...lines];
+    next[index] = `  fullTestStatus: ${to}`;
+    this.content = `${next.join('\n')}\n`;
+  }
+
+  private replaceFullTestOwnedBlock(key: 'executionBlock' | 'result' | 'failureHistory', replacement: readonly string[]): void {
+    const lines = splitLines(this.content);
+    const verification = findTopLevelSection(lines, 'verification');
+    if (verification === null) throw new FlowkitError('MANIFEST_UNSUPPORTED_SHAPE', 'verification section missing');
+    const fullStarts: number[] = [];
+    for (let i = verification.start + 1; i < verification.end; i++) if (/^ {2}fullTest:\s*$/.test(lines[i]!)) fullStarts.push(i);
+    if (fullStarts.length !== 1) throw new FlowkitError('MANIFEST_AMBIGUOUS', 'verification must contain exactly one fullTest section');
+    const fullStart = fullStarts[0]!;
+    let fullEnd = verification.end;
+    for (let i = fullStart + 1; i < verification.end; i++) {
+      if (/^ {2}[A-Za-z_][A-Za-z0-9_-]*:\s*/.test(lines[i]!)) { fullEnd = i; break; }
+    }
+    const keyRe = new RegExp(`^ {4}${key}:\\s*$`);
+    const starts: number[] = [];
+    for (let i = fullStart + 1; i < fullEnd; i++) if (keyRe.test(lines[i]!)) starts.push(i);
+    if (starts.length > 1) throw new FlowkitError('MANIFEST_AMBIGUOUS', `duplicate verification.fullTest.${key}`);
+    const next = [...lines];
+    if (starts.length === 1) {
+      const start = starts[0]!;
+      let end = fullEnd;
+      for (let i = start + 1; i < fullEnd; i++) {
+        if (/^ {4}[A-Za-z_][A-Za-z0-9_-]*:\s*/.test(lines[i]!)) { end = i; break; }
+      }
+      next.splice(start, end - start, ...replacement);
+    } else {
+      next.splice(fullEnd, 0, ...replacement);
+    }
+    this.content = `${next.join('\n')}\n`;
+  }
+
+  setFullTestExecutionBlock(block: FullTestExecutionBlock): void {
+    requireCleanScalar(block.summary, 'executionBlock.summary');
+    this.replaceFullTestOwnedBlock('executionBlock', renderFullTestExecutionBlock(block));
+  }
+
+  publishFullTestResult(result: FullTestTerminalResult): void {
+    requireCleanScalar(result.summary, 'result.summary');
+    this.updateFullTestStatus('authorized', result.status);
+    this.replaceFullTestOwnedBlock('result', renderFullTestResult(result));
+  }
+
+  retainFullTestFailureResult(result: FullTestTerminalResult): void {
+    if (result.status !== 'failed') {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'failureHistory may retain only failed Full Test results');
+    }
+    requireCleanScalar(result.summary, 'failureHistory.summary');
+    const root = parseRoot(this.content);
+    const verification = root['verification'];
+    const verificationObj = typeof verification === 'object' && verification !== null && !Array.isArray(verification)
+      ? verification as Record<string, unknown>
+      : undefined;
+    const fullTest = verificationObj?.['fullTest'];
+    const fullTestObj = typeof fullTest === 'object' && fullTest !== null && !Array.isArray(fullTest)
+      ? fullTest as Record<string, unknown>
+      : undefined;
+    const existing = fullTestObj?.['failureHistory'];
+    if (existing !== undefined && !Array.isArray(existing)) {
+      throw new FlowkitError('MANIFEST_UNSUPPORTED_SHAPE', 'verification.fullTest.failureHistory must be a sequence');
+    }
+    if (Array.isArray(existing)) {
+      for (const item of existing) {
+        if (typeof item !== 'object' || item === null || Array.isArray(item)) {
+          throw new FlowkitError('MANIFEST_UNSUPPORTED_SHAPE', 'failureHistory item must be a mapping');
+        }
+        const obj = item as Record<string, unknown>;
+        if (obj['resultRef'] !== result.resultRef) continue;
+        const same = JSON.stringify(obj) === JSON.stringify({
+          schemaVersion: result.schemaVersion,
+          status: result.status,
+          summary: result.summary,
+          totalDurationMs: result.totalDurationMs,
+          checks: result.checks.map((check) => ({ id: check.id, status: check.status, durationMs: check.durationMs })),
+          resultRef: result.resultRef,
+        });
+        if (!same) throw new FlowkitError('FULL_TEST_RESULT_REF_COLLISION', `retained result ref collision: ${result.resultRef}`);
+        return;
+      }
+    }
+
+    const lines = splitLines(this.content);
+    const verificationSpan = findTopLevelSection(lines, 'verification');
+    if (verificationSpan === null) throw new FlowkitError('MANIFEST_UNSUPPORTED_SHAPE', 'verification section missing');
+    const fullStarts: number[] = [];
+    for (let i = verificationSpan.start + 1; i < verificationSpan.end; i++) if (/^ {2}fullTest:\s*$/.test(lines[i]!)) fullStarts.push(i);
+    if (fullStarts.length !== 1) throw new FlowkitError('MANIFEST_AMBIGUOUS', 'verification must contain exactly one fullTest section');
+    const fullStart = fullStarts[0]!;
+    let fullEnd = verificationSpan.end;
+    for (let i = fullStart + 1; i < verificationSpan.end; i++) if (/^ {2}[A-Za-z_][A-Za-z0-9_-]*:\s*/.test(lines[i]!)) { fullEnd = i; break; }
+    const historyStart = lines.findIndex((line, index) => index > fullStart && index < fullEnd && /^ {4}failureHistory:\s*$/.test(line));
+    const next = [...lines];
+    if (historyStart >= 0) {
+      let historyEnd = fullEnd;
+      for (let i = historyStart + 1; i < fullEnd; i++) if (/^ {4}[A-Za-z_][A-Za-z0-9_-]*:\s*/.test(lines[i]!)) { historyEnd = i; break; }
+      next.splice(historyEnd, 0, ...renderRetainedFullTestResult(result));
+    } else {
+      next.splice(fullEnd, 0, '    failureHistory:', ...renderRetainedFullTestResult(result));
+    }
+    this.content = `${next.join('\n')}\n`;
+  }
+
+  removeFullTestResult(): void {
+    this.replaceFullTestOwnedBlock('result', []);
+  }
+
+  appendResolvedFullTestFinding(finding: ResolvedFullTestFailureFinding): void {
+    requireCleanScalar(finding.findingId, 'finding.findingId');
+    requireCleanScalar(finding.authorizationRef, 'finding.authorizationRef');
+    requireCleanScalar(finding.sourceResultRef, 'finding.sourceResultRef');
+    requireCleanScalar(finding.summary, 'finding.summary');
+    requireCleanScalar(finding.resolution.changeId, 'finding.resolution.changeId');
+    requireCleanScalar(finding.resolution.ownerDecisionRef, 'finding.resolution.ownerDecisionRef');
+    const root = parseRoot(this.content);
+    const delivery = root['delivery'];
+    if (typeof delivery !== 'object' || delivery === null || Array.isArray(delivery)) {
+      throw new FlowkitError('MANIFEST_UNSUPPORTED_SHAPE', 'delivery section missing');
+    }
+    const existing = (delivery as Record<string, unknown>)['fullTestFindings'];
+    if (existing !== undefined && !Array.isArray(existing)) {
+      throw new FlowkitError('MANIFEST_UNSUPPORTED_SHAPE', 'delivery.fullTestFindings must be a sequence');
+    }
+    if (Array.isArray(existing)) {
+      for (const item of existing) {
+        if (typeof item !== 'object' || item === null || Array.isArray(item)) {
+          throw new FlowkitError('MANIFEST_UNSUPPORTED_SHAPE', 'fullTestFindings item must be a mapping');
+        }
+        const obj = item as Record<string, unknown>;
+        if (obj['findingId'] === finding.findingId || obj['authorizationRef'] === finding.authorizationRef) {
+          throw new FlowkitError('FULL_TEST_FINDING_DUPLICATE', `duplicate Full Test failure occurrence ${finding.findingId}`);
+        }
+      }
+    }
+
+    const lines = splitLines(this.content);
+    const deliverySpan = findTopLevelSection(lines, 'delivery');
+    if (deliverySpan === null) throw new FlowkitError('MANIFEST_UNSUPPORTED_SHAPE', 'delivery section missing');
+    const starts: number[] = [];
+    for (let i = deliverySpan.start + 1; i < deliverySpan.end; i++) if (/^ {2}fullTestFindings:\s*$/.test(lines[i]!)) starts.push(i);
+    if (starts.length > 1) throw new FlowkitError('MANIFEST_AMBIGUOUS', 'duplicate delivery.fullTestFindings');
+    const next = [...lines];
+    if (starts.length === 1) {
+      const start = starts[0]!;
+      let end = deliverySpan.end;
+      for (let i = start + 1; i < deliverySpan.end; i++) if (/^ {2}[A-Za-z_][A-Za-z0-9_-]*:\s*/.test(lines[i]!)) { end = i; break; }
+      next.splice(end, 0, ...renderResolvedFullTestFinding(finding));
+    } else {
+      next.splice(deliverySpan.end, 0, '  fullTestFindings:', ...renderResolvedFullTestFinding(finding));
+    }
+    this.content = `${next.join('\n')}\n`;
+  }
+
+  private replaceArchitectureOwnedBlock(key: 'currentCycle' | 'acceptedSystemSource', replacement: readonly string[]): void {
+    const lines = splitLines(this.content);
+    const span = findTopLevelSection(lines, 'architecture');
+    if (span === null) throw new FlowkitError('MANIFEST_UNSUPPORTED_SHAPE', 'architecture section missing');
+    const keyRe = new RegExp(`^ {2}${key}:\\s*$`);
+    const starts: number[] = [];
+    for (let i = span.start + 1; i < span.end; i += 1) if (keyRe.test(lines[i]!)) starts.push(i);
+    if (starts.length > 1) throw new FlowkitError('MANIFEST_AMBIGUOUS', `duplicate architecture.${key}`);
+    const next = [...lines];
+    if (starts.length === 1) {
+      const start = starts[0]!;
+      let end = span.end;
+      for (let i = start + 1; i < span.end; i += 1) {
+        if (/^ {2}[A-Za-z_][A-Za-z0-9_-]*:\s*/.test(lines[i]!)) { end = i; break; }
+      }
+      next.splice(start, end - start, ...replacement);
+    } else {
+      next.splice(span.end, 0, ...replacement);
+    }
+    this.content = `${next.join('\n')}\n`;
+  }
+
+  publishArchitectureCurrentCycle(cycle: CurrentArchitectureCycle): void {
+    this.replaceArchitectureOwnedBlock('currentCycle', renderArchitectureCurrentCycle(cycle));
+  }
+
+  removeArchitectureCurrentCycle(): void {
+    this.replaceArchitectureOwnedBlock('currentCycle', []);
+  }
+
+  removeAcceptedSystemSource(): void {
+    this.replaceArchitectureOwnedBlock('acceptedSystemSource', []);
+  }
+
+  publishArchitectureAcceptance(cycle: CurrentArchitectureCycle, source: AcceptedSystemSource): void {
+    if (cycle.acceptance.status !== 'accepted') {
+      throw new FlowkitError('ARCHITECTURE_ACCEPTANCE_MISMATCH', 'architecture acceptance publication requires accepted cycle');
+    }
+    this.replaceArchitectureOwnedBlock('currentCycle', renderArchitectureCurrentCycle(cycle));
+    this.replaceArchitectureOwnedBlock('acceptedSystemSource', renderAcceptedSystemSource(source));
+  }
+
+
+  publishFinalization(projection: DeliveryFinalizationProjection): void {
+    const lines = splitLines(this.content);
+    const span = findTopLevelSection(lines, 'delivery');
+    if (span === null) throw new FlowkitError('MANIFEST_UNSUPPORTED_SHAPE', 'delivery section missing');
+    const state = lines.map((line, i) => ({line,i})).filter(({line,i}) => i>span.start && i<span.end && /^ {2}state:\s+/.test(line));
+    const finals = lines.map((line, i) => ({line,i})).filter(({line,i}) => i>span.start && i<span.end && /^ {2}finalization:\s*$/.test(line));
+    if (state.length !== 1 || finals.length !== 0) throw new FlowkitError('MANIFEST_AMBIGUOUS', 'delivery state/finalization shape is not uniquely finalizable');
+    if (state[0]!.line.replace(/^ {2}state:\s+/, '').trim() !== 'active') throw new FlowkitError('DELIVERY_STATE_MISMATCH', 'Finalize publication requires delivery.state=active');
+    const next=[...lines];
+    next[state[0]!.i]='  state: completed';
+    const currentSpan=findTopLevelSection(next,'delivery')!;
+    next.splice(currentSpan.end,0,
+      '  finalization:',
+      '    schemaVersion: 1',
+      `    qualificationRef: ${quote(projection.qualificationRef)}`,
+      `    ownerAuthorizationRef: ${quote(projection.ownerAuthorizationRef)}`,
+      `    candidateRef: ${quote(projection.candidateRef)}`,
+    );
+    this.content=`${next.join('\n')}\n`;
+  }
+
+  inverseFinalization(): string {
+    const lines=splitLines(this.content);
+    const span=findTopLevelSection(lines,'delivery');
+    if (span===null) throw new FlowkitError('MANIFEST_UNSUPPORTED_SHAPE','delivery section missing');
+    const stateIdx=[] as number[]; const finalIdx=[] as number[];
+    for(let i=span.start+1;i<span.end;i++){ if(/^ {2}state:\s+/.test(lines[i]!)) stateIdx.push(i); if(/^ {2}finalization:\s*$/.test(lines[i]!)) finalIdx.push(i); }
+    if(stateIdx.length!==1 || finalIdx.length!==1 || lines[stateIdx[0]!]!.replace(/^ {2}state:\s+/,'').trim()!=='completed') throw new FlowkitError('DELIVERY_FINALIZATION_INVALID','completed finalization shape is not uniquely invertible');
+    const start=finalIdx[0]!; let end=span.end;
+    for(let i=start+1;i<span.end;i++){ if(/^ {2}[A-Za-z_][A-Za-z0-9_-]*:\s*/.test(lines[i]!)){ end=i; break; } }
+    const next=[...lines]; next[stateIdx[0]!] = '  state: active'; next.splice(start,end-start);
+    return `${next.join('\n')}\n`;
   }
 
   appendChange(change: PersistedChangeInput): void {
@@ -338,6 +772,7 @@ export function serializeNewDeliveryManifest(
     '    requireApplicableChecks: true',
     '  fullTest:',
     '    requiresOwnerAuthorization: true',
+    ...renderFullTestExecution(input.fullTestExecution),
     '    plan:',
     ...renderStringList(input.fullTestPlan, '      '),
     '',

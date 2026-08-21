@@ -13,6 +13,7 @@
 
 import type { FormalAction } from '../domain/actions.js';
 import type { FullTestStatus } from '../domain/types.js';
+import type { FullTestFailureFinding } from '../domain/full-test.js';
 import type { FactConflict } from '../facts/formal-fact-snapshot.js';
 
 // ---------------------------------------------------------------------------
@@ -39,6 +40,7 @@ export const OWNER_DECISIONS = [
   'authorize-archive',
   'authorize-full-test',
   'authorize-delivery-finalize',
+  'accept-architecture',
   'authorize-checkpoint',
 ] as const;
 
@@ -82,6 +84,7 @@ export const BLOCKED_REASONS = [
   'ambiguous-state',
   'dependency-incomplete',
   'full-test-failed',
+  'full-test-execution-outcome-unknown',
   'non-author-review-blocker',
   'delivery-behavior-not-implemented',
   'archive-terminal-recovery-required',
@@ -136,6 +139,8 @@ export interface OwnerDecisionContext {
   readonly changeKey?: string;
   /** Current Delivery Full Test status (for full-test / finalize decisions). */
   readonly deliveryFullTestStatus?: FullTestStatus;
+  /** E1 exact architecture cycle gate context. */
+  readonly architectureCycleRef?: string;
   /** Eligible planned required change keys (for `activate-change`). */
   readonly eligibleChangeKeys?: readonly string[];
   /** Free-form detail explaining why the decision is requested. */
@@ -163,6 +168,8 @@ export interface BlockedDiagnosis {
   readonly conflicts: readonly FactConflict[];
   /** Owner actions that could relieve the block, if any. */
   readonly suggestedOwnerActions: readonly string[];
+  /** B1 bounded current Full Test failure occurrence handoff. */
+  readonly fullTestFinding?: FullTestFailureFinding;
 }
 
 // ---------------------------------------------------------------------------
@@ -185,6 +192,12 @@ export interface PolicyActionResult {
 export interface PolicyOwnerDecisionResult {
   readonly kind: 'owner-decision';
   readonly decision: OwnerDecision;
+  readonly context: OwnerDecisionContext;
+}
+
+export interface PolicyDeliveryBehaviorResult {
+  readonly kind: 'delivery-behavior';
+  readonly behavior: 'full-test' | 'architecture-actual-compare' | 'delivery-finalize';
   readonly context: OwnerDecisionContext;
 }
 
@@ -211,6 +224,7 @@ export interface PolicyBlockedResult {
 export type PolicyResult =
   | PolicyActionResult
   | PolicyOwnerDecisionResult
+  | PolicyDeliveryBehaviorResult
   | PolicyBlockedResult;
 
 // ---------------------------------------------------------------------------
@@ -232,6 +246,13 @@ export function ownerDecisionResult(
   context: OwnerDecisionContext = {},
 ): PolicyOwnerDecisionResult {
   return { kind: 'owner-decision', decision, context };
+}
+
+export function deliveryBehaviorResult(
+  behavior: 'full-test' | 'architecture-actual-compare' | 'delivery-finalize',
+  context: OwnerDecisionContext = {},
+): PolicyDeliveryBehaviorResult {
+  return { kind: 'delivery-behavior', behavior, context };
 }
 
 /**

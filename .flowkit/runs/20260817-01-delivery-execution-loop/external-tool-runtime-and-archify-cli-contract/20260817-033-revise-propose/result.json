@@ -1,0 +1,54 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-propose",
+    "executionStatus": "completed",
+    "summary": "关闭 032 的两个 author Proposal blocker：C1 Verification ownership 现在冻结为 non-overlapping exact layout——新 Archify/shared-runtime unit tests 固定到 tests/unit/external-tools/** 并由 external-tools 唯一拥有，现有 tests/unit/integrations/** 保持 openspec-runtime 唯一 ownership，retry CLI regression 保持 cli-diagnostics 唯一 ownership；同时冻结 external-tools → openspec-runtime → verification-selection dependency closure、unique-owner positive/negative overlap regressions。flowkitMutationScope 收紧 OpenSpec unit tests 为三个 exact path，并新增 tests/unit/external-tools/** 与 tests/unit/cli/change-action.test.ts。managed verify --retry 现在必须在 FLOWKIT_HOME 有效、FLOWKIT_OPENSPEC_BIN 缺失、ambient OpenSpec 不可用时通过，legacy executable 只作为独立 compatibility coverage；managed test:full 不得合成 legacy env。OpenSpec strict、proposal-time selector closure、real archive-sync 与 post-archive 18/18 strict 均 PASS。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/design.md",
+        "versionFingerprint": "ab96129843aad6a70ed066dcae665aebcbd13f00d087d458a31b8199284c5ea2",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/proposal.md",
+        "versionFingerprint": "7d4f61fb610beb841eb444061e306c5a14cf37ecfc3008605c0381e4db6d83b7",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "b60b8066036e740061f2cdba6ad53e5ecbfaff347ad5949f20e9bf74cb051642",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-external-tool-runtime/spec.md",
+        "versionFingerprint": "685b9b13711f2ae9a5e081e7156eba8fade5a95dd618d08bb835ea8e554f2e66",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-integration-boundaries/spec.md",
+        "versionFingerprint": "1d79f73e89d35ae67306a3ea725bc67d1d268b99ea8b425d8797eeb94e0b1c46",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+        "versionFingerprint": "be0c9328042ffc852eaafbd99836f7306e545e553a8f4bae9732d7b99c74a76e",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/tasks.md",
+        "versionFingerprint": "9d7e344e0ceb8ef16b8f7914ed2a52bb5605b114b6dc9362565265ca252b107b",
+        "kind": "produced-artifact"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/external-tool-runtime-and-archify-cli-contract/20260817-032-review-propose/result.json",
+      "versionFingerprint": "7be4d980088155bacd08b98bfdf972c4319a2f0af00606bdee47793e714b9216",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "dc2130e56c2d9dbbe9222cf8fe35581d3779f64329df212abc14e6e285bb3885"
+  }
+}

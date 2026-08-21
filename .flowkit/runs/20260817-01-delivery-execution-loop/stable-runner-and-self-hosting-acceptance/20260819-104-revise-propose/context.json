@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260819-104-revise-propose",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "revise-propose",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "675656495b4f92aefd5527b6f9aab3a6973bb09c316b7571ada39c461d838927",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-104-revise-propose/",
+  "changeKey": "H1",
+  "changeId": "stable-runner-and-self-hosting-acceptance",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-103-review-propose/result.json",
+    "versionFingerprint": "d6cb5148f5d600716ad8a6a4566f8af80d024c41c5cded0fbc3b1fb7336c5abd",
+    "kind": "run-result"
+  },
+  "sourceReviewRun": "20260819-103-review-propose",
+  "sourceReviewVerdict": "changes-requested",
+  "canonicalBase": "bbb9eff528f1ccd9624e2d20454ecaa2f0b4405c",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-103-review-propose/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "d6cb5148f5d600716ad8a6a4566f8af80d024c41c5cded0fbc3b1fb7336c5abd"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "ec0accf47d569b8f60d01e96573f6813f1f2b7d5f135a60e3fc07159f84e74c8"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/design.md",
+      "versionFingerprint": "74dd2ee1c40d8c3d457f6d9700bc18c69b4ed6db156cfadb8814ba706552642a",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/proposal.md",
+      "versionFingerprint": "c766d2bc1604ffe873c78110dcc58b319508ade9e98f39b17c7c06b45487662e",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+      "versionFingerprint": "39a419add4a1cff37cf8d24eaaf4e2428f45653c2b900c76937229e5d3745927",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-change-verification-selection/spec.md",
+      "versionFingerprint": "534f2fa114cfceaac2952f92f054a90ac0cafe9c76049f337ce367eeba14ea30",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-stable-runner-and-self-hosting-acceptance/spec.md",
+      "versionFingerprint": "e49d63491f61655a6af29aeac9cf2ae717e1e399b0d5ab373b7a69344e82f01a",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/tasks.md",
+      "versionFingerprint": "a67ccc28249963b8d4249097660b6a0f45c7b87388f575ecb0caf2ede260f238",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "stable-runner-and-self-hosting-acceptance",
+      "runId": "20260819-104-revise-propose",
+      "action": "revise-propose",
+      "role": "author",
+      "semanticInputFingerprint": "675656495b4f92aefd5527b6f9aab3a6973bb09c316b7571ada39c461d838927"
+    },
+    "definition": {
+      "action": "revise-propose",
+      "version": 1,
+      "role": "author",
+      "goalClass": "close-proposal-author-findings",
+      "mutationClass": "proposal-bundle-revision-only",
+      "outputClass": "current-proposal-bundle-set",
+      "terminalContract": {
+        "kind": "artifact",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": true,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "ec0accf47d569b8f60d01e96573f6813f1f2b7d5f135a60e3fc07159f84e74c8"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/design.md",
+        "versionFingerprint": "74dd2ee1c40d8c3d457f6d9700bc18c69b4ed6db156cfadb8814ba706552642a",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/proposal.md",
+        "versionFingerprint": "c766d2bc1604ffe873c78110dcc58b319508ade9e98f39b17c7c06b45487662e",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-archive-and-checkpoint-boundary/spec.md",
+        "versionFingerprint": "39a419add4a1cff37cf8d24eaaf4e2428f45653c2b900c76937229e5d3745927",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "534f2fa114cfceaac2952f92f054a90ac0cafe9c76049f337ce367eeba14ea30",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/specs/flowkit-stable-runner-and-self-hosting-acceptance/spec.md",
+        "versionFingerprint": "e49d63491f61655a6af29aeac9cf2ae717e1e399b0d5ab373b7a69344e82f01a",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/tasks.md",
+        "versionFingerprint": "a67ccc28249963b8d4249097660b6a0f45c7b87388f575ecb0caf2ede260f238",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-103-review-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "d6cb5148f5d600716ad8a6a4566f8af80d024c41c5cded0fbc3b1fb7336c5abd"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260819-103-review-propose",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-103-review-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "d6cb5148f5d600716ad8a6a4566f8af80d024c41c5cded0fbc3b1fb7336c5abd"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "H1-RP-001",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "self-hosting E2E 允许 source-workspace service bypass，无法证明 fresh installed stable Runner 能管理完整 Delivery",
+          "problem": "102 同时冻结了 stable local package/fresh consumer proof 与 future-Delivery-shaped E2E，但两者没有形成同一个 execution closure。Design §1 只要求 independent installed runner 执行 --version、status/next/doctor/resume-context 及 H1 所需 public handoff surfaces；Design §2 随后允许至少一个 Change Action 通过 G1 runSingleActionAgent()，而‘其余 steps 可直接调用现有 public/service surfaces’。由于 test harness 位于 source workspace，这允许 Apply 直接 import src/services、src/policy 或其他 source-local implementation 完成 Delivery/Change/Full Test/Architecture/Finalize，再仅用 installed flowkit 做少量 smoke checks。这样的 fixture 即使最终从 Start 跑到 Final，也只证明 source services 可组合，不证明 fresh installed stable distribution 拥有下一条真实 Delivery 所需的完整操作面。更直接地，这与已批准 Explore Proof E 的结论冲突：直接 import internal service 只能证明源码组合，不足以证明 stable runner/operator surface。",
+          "contractRef": "03 Planned Changes v6 H1 stable-runner-and-self-hosting-acceptance；03 Delivery Execution Loop Implementation Reference v6 §16 Stable Runner / Bootstrap E2E / Self-hosting acceptance；Flowkit Explore Skill v2 §4.3 self-hosting/activation、§5 Evidence Boundary；approved H1 explore.md Proof B/E/G/J",
+          "invariant": "H1 的 acceptance subject 是 stable Runner + self-hosting，而不是 source-workspace service composition。fresh-consumer package proof与future-Delivery E2E必须在同一 installed-distribution boundary 上闭合；source workspace不得作为隐藏的第二 runtime。Flowkit-owned lifecycle authority仍由既有 Policy/CLI/services拥有，但 test execution必须从 installed package消费这些能力，不能因为测试方便绕回 src/**。",
+          "requiredOutcome": "Revise-Propose 冻结 installed-distribution execution closure。H1 E2E 建立 independent consumer/local package 后，所有已有 public stable CLI/runner surface 的 Flowkit-owned lifecycle步骤必须由该 installed distribution针对fresh disposable repository执行；不得从 source workspace src/**、source dist/** 或 source node_modules直接执行这些步骤。G1 single-action Agent Adapter 当前若没有 CLI surface，不要求新增 Checkpoint/Agent automation：可以从 independent consumer 中安装后的 built dist service boundary消费 runSingleActionAgent（或冻结一个等价 existing installed-package boundary），但同样不得引用 source workspace实现。外层 test harness可以生成外部角色输入/fixture bytes、断言结果，并作为 Executor执行授权后的机械 Git操作；它不能替代 Flowkit-owned prepare/admit/owner/full-test/finalize/resume等已有边界。",
+          "acceptance": [
+            "在 Design/Spec/Tasks 中明确 H1 self-hosting E2E 的 subject 是 independent consumer 中 installed Flowkit distribution，而不是 source workspace runtime。",
+            "凡现有 stable CLI 已提供的 Flowkit-owned boundary（例如 create/owner record/Change Action prepare-admit/archive/diagnostics/architecture render|compare/delivery full-test/finalize/final-handoff/checkpoint-handoff），E2E 必须通过 installed runner/public installed boundary消费；不得直接 import source workspace src/services 绕过该 surface。",
+            "G1 runSingleActionAgent 若无 CLI，不要求新增 Agent Registry/auto-loop；但至少一次 Adapter consumption 必须来自 installed package 的 built dist artifact/independent consumer，而不是 source workspace src/services。",
+            "source workspace node_modules 不得成为 disposable target或installed runner的运行依赖；source harness仅可用于构造测试、外部 authority输入/assertion和 Executor Git mechanics。",
+            "fresh clone/resume after Delivery Final 必须继续通过同一 installed distribution证明，不依赖聊天/session/source workspace state。",
+            "不扩 H1 为新的 generic public API platform、Provider/Agent Registry、auto-loop或Git automation。"
+          ]
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "4fc6ef0faae95dc30f7cae8dce697e35bc3e3702aead499870ee1cd3034ae9c5",
+    "requiredResultContract": {
+      "kind": "artifact",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": true,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": true,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

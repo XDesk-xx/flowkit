@@ -116,7 +116,7 @@ conflicts
 
 ### Requirement: next 必须完整、确定地呈现 PolicyResult
 
-`flowkit next` MUST 对共享 snapshot 调用现有 Policy `next`，并以确定格式呈现 `action`、`owner-decision` 或 `blocked`。CLI MUST NOT 重写 Policy decision tree，也 MUST NOT 因诊断便利将 `blocked` 自动转换为 Action。
+`flowkit next` MUST 对共享 snapshot 调用现有 Policy `next`，并以确定格式呈现 `action`、`owner-decision`、`delivery-behavior` 或 `blocked`。CLI MUST NOT 重写 Policy decision tree，也 MUST NOT 因诊断便利将 `blocked` 自动转换为 Action。
 
 `kind=action` MUST 只输出：
 
@@ -138,6 +138,17 @@ context-detail: <detail | none>
 
 `context-eligible-changes` MUST 保留 Policy 提供的原顺序。
 
+`kind=delivery-behavior` MUST 按以下固定顺序输出；A1 当前只允许 `behavior=full-test`：
+
+```text
+kind: delivery-behavior
+behavior: full-test
+context-full-test: <deliveryFullTestStatus>
+context-detail: <detail | none>
+```
+
+该输出只呈现 Policy boundary，MUST NOT 执行 Full Test。
+
 `kind=blocked` MUST 按以下固定顺序输出：
 
 ```text
@@ -150,7 +161,7 @@ conflict[0]: dimension=<dimension>; authority=<authority>; message=<message>
 owner-actions: <suggestedOwnerActions | none>
 ```
 
-`unmetPreconditions` 与 `suggestedOwnerActions` MUST 保留 Policy 原顺序。`conflict[i]` MUST 保留 `dimension / authority / message`，并按 `(dimension, authority, message)` 升序排序后编号。CLI MUST NOT 丢弃 owner-decision context 或 blocked conflict diagnosis。Q1 新增的 `non-author-review-blocker` 与 `delivery-behavior-not-implemented` MUST 作为普通 `BlockedReason` 通过同一格式稳定呈现；CLI MUST NOT 为二者新增独立 decision branch，也 MUST NOT 把它们转换为 `review-*`、`full-test` 或 `delivery-finalize` Action。
+`unmetPreconditions` 与 `suggestedOwnerActions` MUST 保留 Policy 原顺序。`conflict[i]` MUST 保留 `dimension / authority / message`，并按 `(dimension, authority, message)` 升序排序后编号。CLI MUST NOT 丢弃 owner-decision context 或 blocked conflict diagnosis。Q1 新增的 `non-author-review-blocker`、`delivery-behavior-not-implemented` 与 A1 `full-test-execution-outcome-unknown` MUST 作为普通 `BlockedReason` 通过同一格式稳定呈现；CLI MUST NOT 为二者新增独立 decision branch，也 MUST NOT 把它们转换为 `review-*`、`full-test` 或 `delivery-finalize` Action。
 
 #### Scenario: next 返回 action
 
@@ -174,6 +185,12 @@ owner-actions: <suggestedOwnerActions | none>
 - **AND** MUST 包含对应 `context-eligible-changes`
 - **AND** 相同 PolicyResult MUST 产生 byte-stable 输出
 
+#### Scenario: next 返回 Delivery behavior
+
+- **WHEN** Policy 返回 `kind=delivery-behavior, behavior=full-test`
+- **THEN** CLI MUST 输出 `kind / behavior / context-full-test / context-detail`
+- **AND** MUST NOT 因 `flowkit next` 执行 `npm run verify:full`、修改 Manifest 或创建 Run
+
 #### Scenario: next 返回带 conflicts 的 blocked
 
 - **WHEN** Policy 返回 `kind=blocked`
@@ -184,10 +201,18 @@ owner-actions: <suggestedOwnerActions | none>
 
 #### Scenario: Q1 新 blocked reason 只做稳定呈现
 
-- **WHEN** Policy 返回 `reason=non-author-review-blocker` 或 `reason=delivery-behavior-not-implemented`
+- **WHEN** Policy 返回 `reason=non-author-review-blocker` 或仍适用于未实现 Delivery behavior（例如 F1 前 Finalize）的 `reason=delivery-behavior-not-implemented`
 - **THEN** `flowkit next` MUST 使用既有 `kind=blocked` 格式原样输出该 reason
 - **AND** MUST 保留 Policy 提供的 unmet/conflicts/owner-actions
 - **AND** CLI MUST NOT 自行选择 direct re-review、Author revise、Delivery Full Test 或 Delivery Finalize
+
+#### Scenario: outcome-unknown execution blocker 只做稳定只读呈现
+
+- **WHEN** Policy 因 current Full Test `executionBlock.reason=outcome-unknown` 返回 `reason=full-test-execution-outcome-unknown`
+- **THEN** `flowkit next` MUST 使用既有 `kind=blocked` 格式原样输出该 reason
+- **AND** `status/doctor/resume-context` MUST 保持同一 fail-closed diagnosis 语义
+- **AND** diagnostics MUST NOT 清除 blocker、重试 Full Test、写 Manifest 或生成 Verification `failed`/`resultRef`
+
 ### Requirement: doctor 只汇总 authority-owned conflicts 与最小恢复检查
 
 `flowkit doctor` MUST 汇总当前 Reader conflicts、Policy blocked diagnosis 与少量 E1 专属只读恢复检查。若某问题属于 Reader admission invariant，doctor MUST 消费 Reader conflict 而不是复制对应 validator。pending Run 本身 MUST NOT 被视为错误；completed historical mutable refs MUST NOT 被重放成永久一致性要求。
@@ -284,35 +309,50 @@ Policy finding code MUST 为 `policy-blocked:<reason>`。`overall` MUST 唯一�
 - **THEN** doctor MUST 输出 `policy-blocked:delivery-behavior-not-implemented`
 - **AND** severity MUST 为 `warning`
 - **AND** doctor MUST NOT 把该 finding 转成 `full-test` 或 `delivery-finalize` Action
+
 ### Requirement: resume-context 生成最小可恢复视图并覆盖 Delivery-level 状态
 
-`flowkit resume-context` MUST 输出当前 Delivery、active Change、current stage、last formal artifact、last relevant Run、latest valid Review、Change Verification 与 Policy next。`last formal artifact` MUST 根据当前 stage 与 active Change canonical OpenSpec paths 派生；MUST NOT 根据 historical ResultRef replay、`.tmp/**`、聊天记录或 Provider session 决定。
+`flowkit resume-context` MUST输出当前 Delivery、active Change、current stage、last formal artifact、last relevant Run、latest valid Review、Change Verification与 Policy next。`last formal artifact` MUST根据当前 stage与 active Change canonical OpenSpec paths派生；MUST NOT根据 historical ResultRef replay、`.tmp/**`、聊天记录或 Provider session决定。
 
-唯一 active Delivery 存在但无 active Change 时，resume-context MUST 输出 `change=none`、`stage=delivery-level`、`last-artifact=none`、`review=none`、`verification=not-applicable`，`last-run` MUST 为 Delivery 内 admitted Run ID 最大者或 `none`，并 MUST 直接呈现现有 Delivery-level Policy next。
+G1后，`resume-context` MUST消费与 single-action Agent Adapter/H1 downstream consumer相同的 underlying typed resume projection或其严格子集，并增加当前 Delivery Architecture `current/planned/actual` 的只读存在状态；存在的 durable JSON MUST绑定 logical path与content fingerprint，缺失 MUST明确为 absent/not-applicable。适用 current execution需要 managed external tool context时，renderer MAY呈现 exact managed OpenSpec/Archify readiness/identity，但该 local-environment view MUST来自 closed managed-tool resolver，MUST NOT使用 ambient PATH fallback或改变 Policy。`resume-context` 仍 MUST保持 read-only，MUST NOT写 resume/session registry/cache、生成 Actual Architecture或持久化第二份 tool/architecture truth。
+
+唯一 active Delivery存在但无 active Change时，resume-context MUST输出 `change=none`、`stage=delivery-level`、`last-artifact=none`、`review=none`、`verification=not-applicable`，`last-run` MUST为 Delivery内 admitted Run ID最大者或 `none`，并 MUST直接呈现现有 Delivery-level Policy next；Architecture projection仍按当前 Delivery repository assets只读派生。
 
 #### Scenario: current Change 可恢复
-- **WHEN** active Change formal facts 可读取
-- **THEN** resume-context MUST 输出 Delivery、Change、stage、last formal artifact、last relevant Run、Review、Verification 与 Policy next
+- **WHEN** active Change formal facts可读取
+- **THEN** resume-context MUST输出 Delivery、Change、stage、last formal artifact、last relevant Run、Review、Verification与 Policy next
+- **AND** MUST与 underlying typed resume projection对相同 authority dimensions保持一致
 
 #### Scenario: last formal artifact 由 stage 与 canonical path 决定
-- **WHEN** 当前 stage 已产生一个或多个正式 OpenSpec artifacts
-- **THEN** resume-context MUST 从 active Change 当前 canonical artifact projection 选择与 stage 对应的最后正式 artifact
-- **AND** MUST NOT 用 historical ResultRef 的旧 fingerprint 锁定 current path
+- **WHEN** 当前 stage已产生一个或多个正式 OpenSpec artifacts
+- **THEN** resume-context MUST从 active Change当前 canonical artifact projection选择与 stage对应的最后正式 artifact
+- **AND** MUST NOT用 historical ResultRef的旧 fingerprint锁定 current path
+
+#### Scenario: Architecture refs/status 只读呈现
+- **WHEN**当前 Delivery存在 Current/Planned JSON且 Actual尚不存在
+- **THEN** resume-context MUST呈现 Current/Planned present + logical path/content fingerprint与 Actual absent
+- **AND** MUST NOT创建或修改任何 Architecture JSON/HTML
+
+#### Scenario: managed tool view 不覆盖 repository/Policy truth
+- **WHEN** underlying projection检查适用 managed OpenSpec/Archify readiness
+- **THEN** resume-context MAY呈现 exact managed identity或 bounded unavailable/mismatch status
+- **AND** MUST NOT使用 ambient executable冒充 managed ready
+- **AND** MUST NOT因 local tool status自行改变 `next`
 
 #### Scenario: no-active-Change resume-context 是正常 Delivery-level view
-- **WHEN** 唯一 active Delivery 存在
+- **WHEN** 唯一 active Delivery存在
 - **AND** 当前没有 active Change
-- **THEN** resume-context MUST 输出 `change: none`
-- **AND** MUST 输出 `stage: delivery-level`
-- **AND** MUST 输出 `last-artifact: none`
-- **AND** MUST 输出 `review: none`
-- **AND** MUST 输出 `verification: not-applicable`
-- **AND** MUST 输出现有 Policy 的 Delivery-level `next-kind / next-detail`
-- **AND** command MUST NOT 因无 active Change 返回 discovery/loading failure
+- **THEN** resume-context MUST输出 `change: none`
+- **AND** MUST输出 `stage: delivery-level`
+- **AND** MUST输出 `last-artifact: none`
+- **AND** MUST输出 `review: none`
+- **AND** MUST输出 `verification: not-applicable`
+- **AND** MUST输出现有 Policy的 Delivery-level `next-kind / next-detail`
+- **AND** command MUST NOT因无 active Change返回 discovery/loading failure
 
 #### Scenario: scratch 与聊天不可作为恢复输入
-- **WHEN** `.tmp/**`、聊天历史或 Provider session 包含额外上下文
-- **THEN** resume-context MUST NOT 依赖这些内容才能生成正式恢复视图
+- **WHEN** `.tmp/**`、聊天历史或 Provider session包含额外上下文
+- **THEN** resume-context MUST NOT依赖这些内容才能生成正式恢复视图
 
 ### Requirement: Diagnostic CLI 输出与 exit code 必须稳定可测试
 
@@ -373,3 +413,28 @@ E1 四个命令 MUST 使用 UTF-8、LF、无时间戳、无随机值、默认无
 - **WHEN**唯一 active Change存在一个合法 B1 prepared pending Run
 - **THEN** resume-context MUST稳定指出同一 runId/action与resume boundary
 - **AND** command MUST保持 repository byte-identical
+
+### Requirement: Diagnostics 必须只读呈现 current Full Test Finding occurrence handoff
+
+当 current Delivery 处于 genuine `full-test-failed` boundary 时，diagnostic CLI MUST 从同一 FormalFactSnapshot/Policy result只读呈现 current derived Full-Test Finding occurrence 的 `findingId`、`authorizationRef` 与 `sourceResultRef`，使 Owner/Executor 在 fresh process 中无需聊天状态即可形成 exact corrective create input。Diagnostics MUST NOT从 historical `fullTestFindings[]` 选择一个旧 Finding冒充 current blocker，也 MUST NOT写回 Manifest。
+
+#### Scenario: next 呈现 failed Finding exact occurrence binding
+- **WHEN** Policy 返回 `blocked: full-test-failed` 且有 current derived Finding
+- **THEN** `flowkit next` MUST 稳定呈现 reason、owner actions、current findingId、authorizationRef 与 sourceResultRef
+- **AND** 输出 MUST来自 Policy/Snapshot，不得重新实现 finding derivation
+
+#### Scenario: status/resume-context fresh process 可恢复 corrective handoff
+- **WHEN** fresh process读取 current failed Delivery
+- **THEN** `status` 与 `resume-context` MUST 至少呈现 current Finding occurrence exact binding所需的稳定 machine-readable lines
+- **AND** MUST NOT要求 chat/session state
+
+#### Scenario: 相同 failure 内容的新 cycle diagnostics 仍可区分
+- **WHEN** historical resolved Finding与 current unresolved Finding拥有相同 `sourceResultRef`
+- **BUT** current occurrence拥有新的 `authorizationRef/findingId`
+- **THEN** diagnostics MUST 只呈现新的 current occurrence
+- **AND** MUST NOT因 sourceResultRef相同显示旧 resolution
+
+#### Scenario: correction consumed 后历史 Finding 不再显示为 current
+- **WHEN**合法 corrective admission 已完成且 raw `fullTestStatus=not-ready`
+- **THEN** diagnostics MUST NOT把 persisted historical `fullTestFindings[]` item显示为 current blocking finding
+- **AND** next MUST 按 ordinary corrective Change/Delivery readiness formal facts呈现

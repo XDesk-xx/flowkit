@@ -1,0 +1,24 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-explore",
+    "executionStatus": "completed",
+    "summary": "Revise Explore H1-RE-001：保留 archive→authorize-checkpoint→Executor mechanics authority placement；新增 real G1 canonical-like pre-checkpoint read-only exact-plan proof，证明 repository/Git/formal facts 可确定 64 个 current candidate paths 与 4 个 exact EOF-only normalization operations，并对 unrelated dirty / trailing-space hygiene fail closed；将 public checkpoint surface 收紧为 deterministic read-only handoff/preflight，明确禁止任何 EOF mutation、stage、commit、push、merge、Checkpoint Run/Adapter。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/stable-runner-and-self-hosting-acceptance/explore.md",
+        "versionFingerprint": "327ae00a1ffab25570856d2cba60c87b34262560cca69aa92ca53b93dab68293",
+        "kind": "produced-artifact"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-099-review-explore/result.json",
+      "versionFingerprint": "60e7c3ff7eb33991f4c75212331cfd41deabca2677864f6c0c024eb53da92ca6",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "76bf38e69389d0dd93dcd64e9118568dde72aaf609f55890e4047273f5a05d28"
+  }
+}

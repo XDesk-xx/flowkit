@@ -27,12 +27,19 @@ export function renderStatus(snapshot: FormalFactSnapshot, pending?: PendingRunI
       line('full-test', snapshot.deliveryFullTestStatus ?? 'unavailable'),
       line('conflicts', snapshot.conflicts.length),
     );
+    if (snapshot.currentDeliveryFullTestFinding !== undefined) {
+      lines.push(
+        line('finding-id', snapshot.currentDeliveryFullTestFinding.findingId),
+        line('authorization-ref', snapshot.currentDeliveryFullTestFinding.authorizationRef),
+        line('source-result-ref', snapshot.currentDeliveryFullTestFinding.sourceResultRef),
+      );
+    }
     return `${lines.join('\n')}\n`;
   }
 
   const stage = currentStage(snapshot, change);
   const lastRun = newestRun(snapshot.runs, change.id);
-  return `${[
+  const lines = [
     line('delivery', snapshot.deliveryId),
     line('delivery-state', snapshot.deliveryState ?? 'unavailable'),
     line('change', `${change.key} ${change.id}`),
@@ -45,5 +52,13 @@ export function renderStatus(snapshot: FormalFactSnapshot, pending?: PendingRunI
     line('verification', snapshot.changeVerificationStatus ?? 'unavailable'),
     line('full-test', snapshot.deliveryFullTestStatus ?? 'unavailable'),
     line('conflicts', snapshot.conflicts.length),
-  ].join('\n')}\n`;
+  ];
+  if (snapshot.currentDeliveryFullTestFinding !== undefined) {
+    lines.push(
+      line('finding-id', snapshot.currentDeliveryFullTestFinding.findingId),
+      line('authorization-ref', snapshot.currentDeliveryFullTestFinding.authorizationRef),
+      line('source-result-ref', snapshot.currentDeliveryFullTestFinding.sourceResultRef),
+    );
+  }
+  return `${lines.join('\n')}\n`;
 }

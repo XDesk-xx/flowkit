@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260818-058-propose",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "propose",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "d31c204f13754ce101f78049c1b01ce96651c2f51d988cdd11c4ce00c8337832",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:517890aabaf47af297deb6b86282ea7c5502372c1945bee89725ba70b24bda89",
+      "decision": "contract-reset",
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "architecture-baseline-and-delivery-plan",
+      "scope": "D1 / architecture reference visualization model correction, retain Workflow + Sequence views, recover failed 057 generation",
+      "requiredOutcomes": [
+        "All architecture/reference JSON remains a human/AI visualization projection downstream of Owner decisions, Flowkit Policy, OpenSpec and canonical code/tests/Git facts; formal facts win conflicts.",
+        "Do not add actual.architecture.json, global system.architecture.json, SystemArchitectureRef promotion, Planned-vs-Actual acceptance, architecture DB/Registry, Archify lifecycle Actions, reference-as-Policy, or HTML freshness authority.",
+        "Do not create a durable Full Test Lifecycle reference in D1; Lifecycle remains suitable only for bounded state-machine views when separately required.",
+        "Fresh Proposal must update proposal/design/specs/tasks/mutation scope/tests/Verification mapping as needed, pass mutation-declaration dry admission, buildVerificationSelection expected-D1 proof, OpenSpec strict/all-strict, staged diff hygiene, and physical Archify validate/deliver for both Workflow and Sequence references plus Current/Planned Architecture.",
+        "HTML remains generated/disposable/default-not-tracked and reproducible from durable JSON plus exact managed Archify 2.14.0.",
+        "Keep four Git-tracked non-authoritative reference JSON sources: Change Workflow, Change Sequence, Delivery Workflow, Delivery Sequence; Workflow is the complete orchestration view and Sequence is the complementary participant-interaction view.",
+        "Preserve Delivery Current at exact pre-03 main 74d46f0920c0dfc6f19b5b264cf9de138f4c2bec and Planned provenance at original 03 Delivery Start f132db761bd209e6aff72411108b8e3e1c9801f5; Actual remains E1.",
+        "Supersede the failed 20260818-057-revise-apply generation without mutating or reinterpreting its historical Run or failed Verification; reopen a fresh Proposal generation."
+      ],
+      "sourceRef": "owner-input:2026-08-18T13:54+08:00:D1-reference-workflow-sequence-reset"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-058-propose/",
+  "changeKey": "D1",
+  "changeId": "architecture-baseline-and-delivery-plan",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-050-review-explore/result.json",
+    "versionFingerprint": "62f4069757b0b6c4704fd2c56d46fed646bc24338a9f7115759b0712fe935b3c",
+    "kind": "run-result"
+  },
+  "canonicalBase": "9d27efef586bcb3204647c78785c9c30a64be4a2",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-050-review-explore/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "62f4069757b0b6c4704fd2c56d46fed646bc24338a9f7115759b0712fe935b3c"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/explore.md",
+      "versionFingerprint": "715736e923688bd5111b4607e951a75a4d02c0c47d49bb7a56f9bc30fe4b6a55",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "architecture-baseline-and-delivery-plan",
+      "runId": "20260818-058-propose",
+      "action": "propose",
+      "role": "author",
+      "semanticInputFingerprint": "d31c204f13754ce101f78049c1b01ce96651c2f51d988cdd11c4ce00c8337832"
+    },
+    "definition": {
+      "action": "propose",
+      "version": 1,
+      "role": "author",
+      "goalClass": "freeze-change-contract",
+      "mutationClass": "proposal-bundle-only",
+      "outputClass": "current-proposal-bundle-set",
+      "terminalContract": {
+        "kind": "artifact",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/explore.md",
+        "versionFingerprint": "715736e923688bd5111b4607e951a75a4d02c0c47d49bb7a56f9bc30fe4b6a55",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-050-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "62f4069757b0b6c4704fd2c56d46fed646bc24338a9f7115759b0712fe935b3c"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260818-050-review-explore",
+      "verdict": "approved",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-050-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "62f4069757b0b6c4704fd2c56d46fed646bc24338a9f7115759b0712fe935b3c"
+      },
+      "blockingAuthorities": [],
+      "findings": [],
+      "convergence": [
+        {
+          "findingId": "D1-RE-002",
+          "state": "resolved"
+        },
+        {
+          "findingId": "D1-RE-003",
+          "state": "resolved"
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [
+      {
+        "ref": "owner:517890aabaf47af297deb6b86282ea7c5502372c1945bee89725ba70b24bda89",
+        "decision": "contract-reset",
+        "deliveryId": "20260817-01-delivery-execution-loop",
+        "changeId": "architecture-baseline-and-delivery-plan",
+        "scope": "D1 / architecture reference visualization model correction, retain Workflow + Sequence views, recover failed 057 generation",
+        "requiredOutcomes": [
+          "All architecture/reference JSON remains a human/AI visualization projection downstream of Owner decisions, Flowkit Policy, OpenSpec and canonical code/tests/Git facts; formal facts win conflicts.",
+          "Do not add actual.architecture.json, global system.architecture.json, SystemArchitectureRef promotion, Planned-vs-Actual acceptance, architecture DB/Registry, Archify lifecycle Actions, reference-as-Policy, or HTML freshness authority.",
+          "Do not create a durable Full Test Lifecycle reference in D1; Lifecycle remains suitable only for bounded state-machine views when separately required.",
+          "Fresh Proposal must update proposal/design/specs/tasks/mutation scope/tests/Verification mapping as needed, pass mutation-declaration dry admission, buildVerificationSelection expected-D1 proof, OpenSpec strict/all-strict, staged diff hygiene, and physical Archify validate/deliver for both Workflow and Sequence references plus Current/Planned Architecture.",
+          "HTML remains generated/disposable/default-not-tracked and reproducible from durable JSON plus exact managed Archify 2.14.0.",
+          "Keep four Git-tracked non-authoritative reference JSON sources: Change Workflow, Change Sequence, Delivery Workflow, Delivery Sequence; Workflow is the complete orchestration view and Sequence is the complementary participant-interaction view.",
+          "Preserve Delivery Current at exact pre-03 main 74d46f0920c0dfc6f19b5b264cf9de138f4c2bec and Planned provenance at original 03 Delivery Start f132db761bd209e6aff72411108b8e3e1c9801f5; Actual remains E1.",
+          "Supersede the failed 20260818-057-revise-apply generation without mutating or reinterpreting its historical Run or failed Verification; reopen a fresh Proposal generation."
+        ],
+        "sourceRef": "owner-input:2026-08-18T13:54+08:00:D1-reference-workflow-sequence-reset"
+      }
+    ],
+    "externalContextFingerprint": "4cc0b97185617d46a4510b34caf7379d68b080f3d5183b4a859f77b5b54b2028",
+    "requiredResultContract": {
+      "kind": "artifact",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": true,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

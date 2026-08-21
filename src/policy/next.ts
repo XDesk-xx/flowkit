@@ -28,6 +28,7 @@ import {
   type PolicyResult,
   actionResult,
   ownerDecisionResult,
+  deliveryBehaviorResult,
   blockedResult,
 } from './types.js';
 import { computeLineage } from './lineage.js';
@@ -43,6 +44,7 @@ import {
   areTasksComplete,
 } from './preconditions.js';
 import { hasOwnerAuthorization } from './owner-decision.js';
+import { acceptedSourceMatchesCycle } from '../architecture/architecture-lifecycle.js';
 import {
   evaluateVerificationGate,
   verificationGateDiagnosis,
@@ -52,6 +54,7 @@ import {
   conflictDiagnosis,
   dependencyIncompleteDiagnosis,
   fullTestFailedDiagnosis,
+  fullTestExecutionOutcomeUnknownDiagnosis,
   nonAuthorReviewBlockerDiagnosis,
   deliveryBehaviorNotImplementedDiagnosis,
   noActionableChangeDiagnosis,
@@ -349,21 +352,58 @@ function decideFullTestLifecycle(snapshot: FormalFactSnapshot): PolicyResult {
     case 'failed':
       // D1-13 / frozen Section 6: keep failed; owner chooses corrective Change
       // or cancel. Policy MUST NOT auto-retry or auto-create corrective Change.
-      return blockedResult(fullTestFailedDiagnosis());
+      return blockedResult(fullTestFailedDiagnosis(snapshot.currentDeliveryFullTestFinding));
 
-    case 'passed':
-      if (hasOwnerAuthorization(snapshot.ownerAuthorizations, 'authorize-delivery-finalize', snapshot.deliveryId)) {
-        return blockedResult(deliveryBehaviorNotImplementedDiagnosis('delivery-finalize'));
+    case 'passed': {
+      if (snapshot.deliveryArchitectureImpact === true) {
+        const cycle = snapshot.architectureCurrentCycle;
+        if (cycle === undefined) {
+          return deliveryBehaviorResult('architecture-actual-compare', {
+            deliveryFullTestStatus: status,
+            detail: 'Full Test passed; Architecture Actual/Compare behavior must publish the current cycle before Finalize',
+          });
+        }
+        if (cycle.acceptance.status === 'awaiting-owner-decision') {
+          return ownerDecisionResult('accept-architecture', {
+            deliveryFullTestStatus: status,
+            architectureCycleRef: cycle.cycleRef,
+            detail: 'Planned-vs-Actual compare evidence is current; explicit Owner architecture acceptance is required',
+          });
+        }
+        if (!acceptedSourceMatchesCycle(snapshot.acceptedSystemSource, cycle)) {
+          return blockedResult(ambiguousStateDiagnosis('accepted architecture cycle is missing an exact acceptedSystemSource binding'));
+        }
+      }
+      const qualification = snapshot.deliveryFinalizationQualification;
+      if (qualification === undefined) {
+        return blockedResult(ambiguousStateDiagnosis('Finalize qualification cannot be derived from the current Full Test/Architecture/Git facts'));
+      }
+      if (hasOwnerAuthorization(snapshot.ownerAuthorizations, 'authorize-delivery-finalize', snapshot.deliveryId, undefined, qualification.qualificationRef)) {
+        return deliveryBehaviorResult('delivery-finalize', {
+          deliveryFullTestStatus: status,
+          detail: 'Fresh exact Finalize qualification is Owner-authorized; Delivery Finalize behavior is ready',
+        });
       }
       return ownerDecisionResult('authorize-delivery-finalize', {
         deliveryFullTestStatus: status,
-        detail: 'Full Test passed; Delivery Finalize awaits owner authorization',
+        detail: `Full Test passed and architecture gate is satisfied; Delivery Finalize awaits Owner authorization for ${qualification.qualificationRef}`,
       });
+    }
 
     case 'authorized':
-      // Q1→03 bridge: authorization remains a legal Owner fact, but the
-      // Delivery behavior executor is deliberately not a Standard Action/Run.
-      return blockedResult(deliveryBehaviorNotImplementedDiagnosis('full-test'));
+      if (snapshot.deliveryFullTestExecution === undefined) {
+        return blockedResult(deliveryBehaviorNotImplementedDiagnosis('full-test'));
+      }
+      if (snapshot.deliveryFullTestExecutionBlock?.reason === 'outcome-unknown') {
+        return blockedResult(fullTestExecutionOutcomeUnknownDiagnosis());
+      }
+      if (!hasOwnerAuthorization(snapshot.ownerAuthorizations, 'authorize-full-test', snapshot.deliveryId)) {
+        return blockedResult(ambiguousStateDiagnosis('authorized Full Test is missing matching delivery-scoped Owner authorization'));
+      }
+      return deliveryBehaviorResult('full-test', {
+        deliveryFullTestStatus: status,
+        detail: 'Owner-authorized Delivery Full Test behavior is ready for one explicit execution',
+      });
 
     case 'awaiting-user-decision':
       // Pre-authorization state: owner must authorize full-test (D1-13).
@@ -374,9 +414,9 @@ function decideFullTestLifecycle(snapshot: FormalFactSnapshot): PolicyResult {
 
     case 'not-ready':
     case undefined:
-      // All required Changes completed but status has not advanced to
-      // awaiting-user-decision — inconsistent snapshot. D1 cannot advance the
-      // status itself; block as ambiguous.
+      if (snapshot.deliveryFullTestExecution === undefined) {
+        return blockedResult(deliveryBehaviorNotImplementedDiagnosis('full-test'));
+      }
       return blockedResult(
         ambiguousStateDiagnosis(
           'all required Changes completed but deliveryFullTestStatus has not advanced to awaiting-user-decision',

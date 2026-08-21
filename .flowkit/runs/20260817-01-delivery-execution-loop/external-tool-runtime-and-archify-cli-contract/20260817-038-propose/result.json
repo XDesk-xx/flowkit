@@ -1,0 +1,49 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "propose",
+    "executionStatus": "completed",
+    "summary": "Owner Contract Reset 后仅 canonicalize 036 已批准 Design 中 apply/revise-apply flowkitMutationScope selectors 的 lexical order；implementation scope、OpenSpec executable precedence 与其余 Proposal artifacts 均保持不变。已使用正式 deriveMutationDeclaration/validateMutationDeclaration consumer 对 apply 与 revise-apply 做 exact dry admission，确认 b1-openspec-action-context 仍在 approved scope，随后重新进入 Proposal Review。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/design.md",
+        "versionFingerprint": "7731be749aa9c65b0aefbdd5aecd7b1460a1adbc9005a73a656114469e87033f",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/proposal.md",
+        "versionFingerprint": "d17b84c7055464565d3b5803377519513421216380d69b7946857d9a7319f134",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "b60b8066036e740061f2cdba6ad53e5ecbfaff347ad5949f20e9bf74cb051642",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-external-tool-runtime/spec.md",
+        "versionFingerprint": "685b9b13711f2ae9a5e081e7156eba8fade5a95dd618d08bb835ea8e554f2e66",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-integration-boundaries/spec.md",
+        "versionFingerprint": "1d79f73e89d35ae67306a3ea725bc67d1d268b99ea8b425d8797eeb94e0b1c46",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+        "versionFingerprint": "5af3d026b90118f157e3d6e37de486c8a6e0d0fa4cb2e2605d39ee0835572ca3",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/tasks.md",
+        "versionFingerprint": "8082de22e946c29d3237105f6c69b2a1eea6b2cbd184793ddb38fabfc0637fb7",
+        "kind": "produced-artifact"
+      }
+    ]
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "1db64cdb5ac61032a66cb31d362682e5db5ab0e11dd76abdb77c755eb4a82548"
+  }
+}

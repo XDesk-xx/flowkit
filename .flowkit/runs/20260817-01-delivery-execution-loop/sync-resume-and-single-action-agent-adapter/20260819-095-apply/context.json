@@ -1,0 +1,457 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260819-095-apply",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "apply",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "semanticInputFingerprint": "ccae6bf51da6aadd8f54d80f294932f27dbb42275913410d3e65198e5a611815",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/sync-resume-and-single-action-agent-adapter/20260819-095-apply/",
+  "changeKey": "G1",
+  "changeId": "sync-resume-and-single-action-agent-adapter",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/sync-resume-and-single-action-agent-adapter/20260819-094-review-propose/result.json",
+    "versionFingerprint": "addff012333e6ba0f8188b00ed7af9146c599702f7ed702faf76c0743635e9a2",
+    "kind": "run-result"
+  },
+  "canonicalBase": "3f4063a3e58fb78b1652e7b29e7c3034a6d968f2",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/sync-resume-and-single-action-agent-adapter/20260819-094-review-propose/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "addff012333e6ba0f8188b00ed7af9146c599702f7ed702faf76c0743635e9a2"
+    },
+    {
+      "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+    },
+    {
+      "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/design.md",
+      "versionFingerprint": "ed9ca24ab0f20e37bd17c56358bbda5958f73517a676016e6ba2f3edb2e9b85d",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/proposal.md",
+      "versionFingerprint": "f68358366fa34d46630b588aea49e1c8dc2dade068e2a50292bc723f2505da2b",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-change-verification-selection/spec.md",
+      "versionFingerprint": "9236a3aeb84375068bbbb888418d1ccdf285cb0a2b983fdaf256d4bac2f294c4",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-diagnostic-cli/spec.md",
+      "versionFingerprint": "649578eb84ad87824dada2e972168f5368b75f25c28c1c8d7c8f1a150fb71129",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-lean-run-and-action-package/spec.md",
+      "versionFingerprint": "442b5ce3bafd15521b9373f152aa832c01e5b2eb1a8ebfe6ebdc18ee5e865b5a",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-sync-resume-and-single-action-agent-adapter/spec.md",
+      "versionFingerprint": "9fedfff36e6980f7827e0e789647e37c183b31512074589157e6f4c0d36d8a0c",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/tasks.md",
+      "versionFingerprint": "5d2aefce7205c6425cedfdab7326db071fc67419dece775011d84dbaf60d1785",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "sync-resume-and-single-action-agent-adapter",
+      "runId": "20260819-095-apply",
+      "action": "apply",
+      "role": "author",
+      "semanticInputFingerprint": "ccae6bf51da6aadd8f54d80f294932f27dbb42275913410d3e65198e5a611815"
+    },
+    "definition": {
+      "action": "apply",
+      "version": 1,
+      "role": "author",
+      "goalClass": "implement-approved-contract",
+      "mutationClass": "approved-implementation-and-verification",
+      "outputClass": "implementation-candidate-and-authority-files",
+      "terminalContract": {
+        "kind": "implementation",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+      },
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/design.md",
+        "versionFingerprint": "ed9ca24ab0f20e37bd17c56358bbda5958f73517a676016e6ba2f3edb2e9b85d",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/proposal.md",
+        "versionFingerprint": "f68358366fa34d46630b588aea49e1c8dc2dade068e2a50292bc723f2505da2b",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "9236a3aeb84375068bbbb888418d1ccdf285cb0a2b983fdaf256d4bac2f294c4",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-diagnostic-cli/spec.md",
+        "versionFingerprint": "649578eb84ad87824dada2e972168f5368b75f25c28c1c8d7c8f1a150fb71129",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-lean-run-and-action-package/spec.md",
+        "versionFingerprint": "442b5ce3bafd15521b9373f152aa832c01e5b2eb1a8ebfe6ebdc18ee5e865b5a",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-sync-resume-and-single-action-agent-adapter/spec.md",
+        "versionFingerprint": "9fedfff36e6980f7827e0e789647e37c183b31512074589157e6f4c0d36d8a0c",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/tasks.md",
+        "versionFingerprint": "5d2aefce7205c6425cedfdab7326db071fc67419dece775011d84dbaf60d1785",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/sync-resume-and-single-action-agent-adapter/20260819-094-review-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "addff012333e6ba0f8188b00ed7af9146c599702f7ed702faf76c0743635e9a2"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260819-094-review-propose",
+      "verdict": "approved",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/sync-resume-and-single-action-agent-adapter/20260819-094-review-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "addff012333e6ba0f8188b00ed7af9146c599702f7ed702faf76c0743635e9a2"
+      },
+      "blockingAuthorities": [],
+      "findings": [],
+      "convergence": [
+        {
+          "findingId": "G1-RP-001",
+          "state": "resolved"
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [
+      {
+        "ref": "owner:3a5e54446af9814f31540e10a56971c74c454b8c74cb15c4c0e3b19178d17483",
+        "decision": "authorize-apply",
+        "deliveryId": "20260817-01-delivery-execution-loop",
+        "changeId": "sync-resume-and-single-action-agent-adapter",
+        "sourceRef": "owner-input:2026-08-19T09:55+08:00:authorize-apply:G1"
+      }
+    ],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "191b0fa394ece71b51bf3ac3d6d3ecc62464e0aea5e74c722561a322659db38d",
+    "requiredResultContract": {
+      "kind": "implementation",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    },
+    "compactEntryWorkspaceIdentity": {
+      "canonicalBase": "3f4063a3e58fb78b1652e7b29e7c3034a6d968f2",
+      "workspaceFingerprint": "a373e8b6b065d7cbfdaba7429f377df873a554a5dcc8289163aef9303b46e160",
+      "entries": [
+        {
+          "path": "openspec/changes/sync-resume-and-single-action-agent-adapter/.openspec.yaml",
+          "state": "untracked",
+          "contentFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+        },
+        {
+          "path": "openspec/changes/sync-resume-and-single-action-agent-adapter/design.md",
+          "state": "untracked",
+          "contentFingerprint": "ed9ca24ab0f20e37bd17c56358bbda5958f73517a676016e6ba2f3edb2e9b85d"
+        },
+        {
+          "path": "openspec/changes/sync-resume-and-single-action-agent-adapter/explore.md",
+          "state": "untracked",
+          "contentFingerprint": "58573270e25deadb485434160f9beb6e8d8d504334904a1b40dde61067e26050"
+        },
+        {
+          "path": "openspec/changes/sync-resume-and-single-action-agent-adapter/proposal.md",
+          "state": "untracked",
+          "contentFingerprint": "f68358366fa34d46630b588aea49e1c8dc2dade068e2a50292bc723f2505da2b"
+        },
+        {
+          "path": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-change-verification-selection/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "9236a3aeb84375068bbbb888418d1ccdf285cb0a2b983fdaf256d4bac2f294c4"
+        },
+        {
+          "path": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-diagnostic-cli/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "649578eb84ad87824dada2e972168f5368b75f25c28c1c8d7c8f1a150fb71129"
+        },
+        {
+          "path": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-lean-run-and-action-package/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "442b5ce3bafd15521b9373f152aa832c01e5b2eb1a8ebfe6ebdc18ee5e865b5a"
+        },
+        {
+          "path": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-sync-resume-and-single-action-agent-adapter/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "9fedfff36e6980f7827e0e789647e37c183b31512074589157e6f4c0d36d8a0c"
+        },
+        {
+          "path": "openspec/changes/sync-resume-and-single-action-agent-adapter/tasks.md",
+          "state": "untracked",
+          "contentFingerprint": "5d2aefce7205c6425cedfdab7326db071fc67419dece775011d84dbaf60d1785"
+        },
+        {
+          "path": "openspec/delivery-groups/20260817-01-delivery-execution-loop.yaml",
+          "state": "modified",
+          "contentFingerprint": "467877777f20c5e0e7709cc4597d8409c6ebc3e41b72eed42517bb1cf5f7f577"
+        }
+      ]
+    },
+    "mutationDeclaration": {
+      "schemaVersion": 1,
+      "action": "apply",
+      "designRef": {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/design.md",
+        "kind": "produced-artifact",
+        "versionFingerprint": "ed9ca24ab0f20e37bd17c56358bbda5958f73517a676016e6ba2f3edb2e9b85d"
+      },
+      "selectors": [
+        {
+          "kind": "exact",
+          "path": "openspec/changes/sync-resume-and-single-action-agent-adapter/tasks.md"
+        },
+        {
+          "kind": "exact",
+          "path": "openspec/changes/sync-resume-and-single-action-agent-adapter/verification.md"
+        },
+        {
+          "kind": "exact",
+          "path": "src/diagnostics/resume-context.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/diagnostics/resume-projection.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/services/b1-run-execution-service.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/services/g1-single-action-agent-adapter.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/verification/change-selection/evidence.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/verification/change-selection/module-map.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/verification/change-selection/publication.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/integration/g1-sync-resume-and-single-action-agent-adapter.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/diagnostics/resume-projection.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/diagnostics/views.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/services/b1-run-execution-service.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/services/g1-single-action-agent-adapter.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/verification/change-selection/evidence.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/verification/change-selection/module-map.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/verification/change-selection/publication.test.ts"
+        }
+      ]
+    }
+  },
+  "compactEntryWorkspaceIdentity": {
+    "canonicalBase": "3f4063a3e58fb78b1652e7b29e7c3034a6d968f2",
+    "workspaceFingerprint": "a373e8b6b065d7cbfdaba7429f377df873a554a5dcc8289163aef9303b46e160",
+    "entries": [
+      {
+        "path": "openspec/changes/sync-resume-and-single-action-agent-adapter/.openspec.yaml",
+        "state": "untracked",
+        "contentFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+      },
+      {
+        "path": "openspec/changes/sync-resume-and-single-action-agent-adapter/design.md",
+        "state": "untracked",
+        "contentFingerprint": "ed9ca24ab0f20e37bd17c56358bbda5958f73517a676016e6ba2f3edb2e9b85d"
+      },
+      {
+        "path": "openspec/changes/sync-resume-and-single-action-agent-adapter/explore.md",
+        "state": "untracked",
+        "contentFingerprint": "58573270e25deadb485434160f9beb6e8d8d504334904a1b40dde61067e26050"
+      },
+      {
+        "path": "openspec/changes/sync-resume-and-single-action-agent-adapter/proposal.md",
+        "state": "untracked",
+        "contentFingerprint": "f68358366fa34d46630b588aea49e1c8dc2dade068e2a50292bc723f2505da2b"
+      },
+      {
+        "path": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-change-verification-selection/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "9236a3aeb84375068bbbb888418d1ccdf285cb0a2b983fdaf256d4bac2f294c4"
+      },
+      {
+        "path": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-diagnostic-cli/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "649578eb84ad87824dada2e972168f5368b75f25c28c1c8d7c8f1a150fb71129"
+      },
+      {
+        "path": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-lean-run-and-action-package/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "442b5ce3bafd15521b9373f152aa832c01e5b2eb1a8ebfe6ebdc18ee5e865b5a"
+      },
+      {
+        "path": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-sync-resume-and-single-action-agent-adapter/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "9fedfff36e6980f7827e0e789647e37c183b31512074589157e6f4c0d36d8a0c"
+      },
+      {
+        "path": "openspec/changes/sync-resume-and-single-action-agent-adapter/tasks.md",
+        "state": "untracked",
+        "contentFingerprint": "5d2aefce7205c6425cedfdab7326db071fc67419dece775011d84dbaf60d1785"
+      },
+      {
+        "path": "openspec/delivery-groups/20260817-01-delivery-execution-loop.yaml",
+        "state": "modified",
+        "contentFingerprint": "467877777f20c5e0e7709cc4597d8409c6ebc3e41b72eed42517bb1cf5f7f577"
+      }
+    ]
+  },
+  "mutationDeclaration": {
+    "schemaVersion": 1,
+    "action": "apply",
+    "designRef": {
+      "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/design.md",
+      "kind": "produced-artifact",
+      "versionFingerprint": "ed9ca24ab0f20e37bd17c56358bbda5958f73517a676016e6ba2f3edb2e9b85d"
+    },
+    "selectors": [
+      {
+        "kind": "exact",
+        "path": "openspec/changes/sync-resume-and-single-action-agent-adapter/tasks.md"
+      },
+      {
+        "kind": "exact",
+        "path": "openspec/changes/sync-resume-and-single-action-agent-adapter/verification.md"
+      },
+      {
+        "kind": "exact",
+        "path": "src/diagnostics/resume-context.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/diagnostics/resume-projection.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/services/b1-run-execution-service.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/services/g1-single-action-agent-adapter.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/verification/change-selection/evidence.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/verification/change-selection/module-map.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/verification/change-selection/publication.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/integration/g1-sync-resume-and-single-action-agent-adapter.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/diagnostics/resume-projection.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/diagnostics/views.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/services/b1-run-execution-service.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/services/g1-single-action-agent-adapter.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/verification/change-selection/evidence.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/verification/change-selection/module-map.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/verification/change-selection/publication.test.ts"
+      }
+    ]
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": true,
+    "mayWriteTestCode": true,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

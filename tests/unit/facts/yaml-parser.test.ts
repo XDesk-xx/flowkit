@@ -1,5 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { readFile } from 'node:fs/promises';
 
 import { parseYaml } from '../../../src/facts/yaml-parser.js';
 
@@ -189,4 +191,44 @@ describe('parseYaml', () => {
     assert.equal(changes[0]?.key, 'C1');
     assert.deepEqual(changes[1]?.dependsOn, ['A1']);
   });
+  it('round-trips JSON-compatible double-quoted scalar semantics exactly across escape boundaries', () => {
+    const values = [
+      'plain',
+      'quote " value',
+      'single backslash \\',
+      String.raw`literal\nsequence`,
+      String.raw`literal\tsequence`,
+      String.raw`C:\nvm4w\nodejs\node.exe`,
+      String.raw`D:\tools\target.exe`,
+      'actual\nnewline',
+      'actual\ttab',
+      'actual\rcarriage',
+      'unicode-中文-✓',
+      String.fromCharCode(0),
+      String.fromCharCode(8),
+      String.fromCharCode(12),
+      String.fromCharCode(31),
+    ];
+    for (const value of values) {
+      const result = parseYaml(`value: ${JSON.stringify(value)}`);
+      assert.equal(result.ok, true, JSON.stringify(value));
+      assert.equal(result.ok ? (result.value as Record<string, unknown>).value : undefined, value, JSON.stringify(value));
+    }
+  });
+
+  it('fails closed for malformed JSON-compatible double-quoted escapes instead of partially decoding them', () => {
+    const result = parseYaml(String.raw`value: "bad\qescape"`);
+    assert.equal(result.ok, false);
+  });
+
+  it('continues to parse every source-controlled repository YAML document', async () => {
+    const files = execFileSync('git', ['ls-files', '*.yaml', '*.yml'], { cwd: process.cwd(), encoding: 'utf8' })
+      .split('\n').map((item) => item.trim()).filter(Boolean);
+    assert.ok(files.length > 0);
+    for (const file of files) {
+      const result = parseYaml(await readFile(file, 'utf8'));
+      assert.equal(result.ok, true, `${file}: ${result.ok ? '' : result.error}`);
+    }
+  });
+
 });

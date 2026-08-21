@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260820-129-review-explore",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "review-explore",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "d28bbc94240d46cc2d84ff0ab3917f001f8be895800bf006a5358c1bb9508870",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-cross-platform-compatibility-closure/20260820-129-review-explore/",
+  "changeKey": "J1",
+  "changeId": "delivery-full-test-cross-platform-compatibility-closure",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-cross-platform-compatibility-closure/20260820-128-explore/result.json",
+    "versionFingerprint": "69c704f8bb8751aadd3be2a479c3d95748998ceef62def7c1562741929ab656a",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260820-128-explore",
+  "canonicalBase": "2ee79244128b62ea9ddb0388afc1ea08e746e298",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-cross-platform-compatibility-closure/20260820-128-explore/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "69c704f8bb8751aadd3be2a479c3d95748998ceef62def7c1562741929ab656a"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "727fc3b35bb3eb09ccede6d08cbc829ea0044b031816d47842ec2573bff99290"
+    },
+    {
+      "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/explore.md",
+      "versionFingerprint": "609f618c59c137e575295fdffebb8584065981b2a684dada89186a3211e6ef4f",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "delivery-full-test-cross-platform-compatibility-closure",
+      "runId": "20260820-129-review-explore",
+      "action": "review-explore",
+      "role": "reviewer",
+      "semanticInputFingerprint": "d28bbc94240d46cc2d84ff0ab3917f001f8be895800bf006a5358c1bb9508870"
+    },
+    "definition": {
+      "action": "review-explore",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-explore",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "727fc3b35bb3eb09ccede6d08cbc829ea0044b031816d47842ec2573bff99290"
+      },
+      {
+        "ref": "openspec/changes/delivery-full-test-cross-platform-compatibility-closure/explore.md",
+        "versionFingerprint": "609f618c59c137e575295fdffebb8584065981b2a684dada89186a3211e6ef4f",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-full-test-cross-platform-compatibility-closure/20260820-128-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "69c704f8bb8751aadd3be2a479c3d95748998ceef62def7c1562741929ab656a"
+      }
+    ],
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "76f06033d6f18985a0f3557e3d445003c8b3dfc49416c0249d000bd197b448a6",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-apply",
+    "executionStatus": "completed",
+    "summary": "关闭 F1-RA-001：F1 strict Delivery Final cutover 现在是单调的一次性 repository migration。Activation 只由 bootstrap 03 Delivery 的正式 F1 checkpoint 候选触发；一旦存在任一 recognized activation，strict semantics 永久 active。legacy Final 仅在其 commit 是所有 recognized bootstrap activation candidates 的共同祖先时保留 bounded read-only compatibility；其他 Final 只能通过 strict point-in-time admission。新增 divergent valid bootstrap checkpoint regression，证明 malformed future Final 不会因 cutover ambiguity 回退到 loose recognition，同时 pre-activation historical Final 与正常 post-cutover exact strict Final 保持可读/可 admit；future Delivery 的同名 F1 checkpoint 不成为新的 activation authority。未引入 Registry、版本体系或历史 Git rewrite。",
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-finalize-and-git-boundary/20260818-083-review-apply/result.json",
+      "versionFingerprint": "78cd45be0d6da0e95653857f88493c80c5537be58c9d022054160fc716e359f2",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "3b1d2abc6884f142eacb8ac5835c55655f9f0e955ecdc00890bf1fdb7b8abd17",
+    "currentVerification": {
+      "logicalRef": "openspec/changes/delivery-finalize-and-git-boundary/verification.md",
+      "versionFingerprint": "d40f87937df88d65ffb5e22bc9a9afc72c61ef9e630092c636894f4df1af56d9",
+      "selectionFingerprint": "bb176d063b404942467dff735c7ce3b916347872cb3668ece8c5d4000a40af90",
+      "status": "failed"
+    }
+  }
+}

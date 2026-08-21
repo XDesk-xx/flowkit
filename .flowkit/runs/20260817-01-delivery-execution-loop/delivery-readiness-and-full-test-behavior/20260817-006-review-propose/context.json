@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260817-006-review-propose",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "review-propose",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "ddcc78574cbeecc17bb6f1d5d0f6fb4f2d08c6312351287622eea4bee8af723c",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-006-review-propose/",
+  "changeKey": "A1",
+  "changeId": "delivery-readiness-and-full-test-behavior",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-005-propose/result.json",
+    "versionFingerprint": "f089457a7af36d547ce59856cbc19bf4081117fe7c805a638f3a15a881b4dd09",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260817-005-propose",
+  "canonicalBase": "f132db761bd209e6aff72411108b8e3e1c9801f5",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-005-propose/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "f089457a7af36d547ce59856cbc19bf4081117fe7c805a638f3a15a881b4dd09"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "41db595b409c9e6bc00babeabb32990290577eb40245a5bb769e8ec98a1f8d3e"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/design.md",
+      "versionFingerprint": "db292c49703a070a7f78fc0d02396efd14d8731c7b857c7f4f29c69adba2210b",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/proposal.md",
+      "versionFingerprint": "8a730571a8984554db4ba8050272190026289e7bf1374dd12df262ef59b1e4e5",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+      "versionFingerprint": "acef10971dbd172abad0d499ffda25581a6addddb38e958812dcd043452a92e5",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-core-model/spec.md",
+      "versionFingerprint": "852b891bbf5de7b0dbcbdbb5e29bebc0f5ab0ddb905dc9cd27b543893a47d95b",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+      "versionFingerprint": "aeff49b76a559258eea217b10c23480977353986e3ffe8b4da747148efbda91e",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-diagnostic-cli/spec.md",
+      "versionFingerprint": "27ef90b758c907761fb214b76111ee52824dad7a826576749249af930710190b",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "versionFingerprint": "d909b7664d2479b0ff4b0da2a4c5c5b0e368fd758b00732aab8ad8da1add1db2",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-policy-engine/spec.md",
+      "versionFingerprint": "729a124939b71d06e77fe8ea7137da9aa1b6b47049cb5956a264e0d9107d53de",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/tasks.md",
+      "versionFingerprint": "7c3d2446f85b587306eea53f4640d02ccf8a33d99a17af5dc1e837127ad0fda7",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "delivery-readiness-and-full-test-behavior",
+      "runId": "20260817-006-review-propose",
+      "action": "review-propose",
+      "role": "reviewer",
+      "semanticInputFingerprint": "ddcc78574cbeecc17bb6f1d5d0f6fb4f2d08c6312351287622eea4bee8af723c"
+    },
+    "definition": {
+      "action": "review-propose",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-proposal",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "41db595b409c9e6bc00babeabb32990290577eb40245a5bb769e8ec98a1f8d3e"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/design.md",
+        "versionFingerprint": "db292c49703a070a7f78fc0d02396efd14d8731c7b857c7f4f29c69adba2210b",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/proposal.md",
+        "versionFingerprint": "8a730571a8984554db4ba8050272190026289e7bf1374dd12df262ef59b1e4e5",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+        "versionFingerprint": "acef10971dbd172abad0d499ffda25581a6addddb38e958812dcd043452a92e5",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-core-model/spec.md",
+        "versionFingerprint": "852b891bbf5de7b0dbcbdbb5e29bebc0f5ab0ddb905dc9cd27b543893a47d95b",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+        "versionFingerprint": "aeff49b76a559258eea217b10c23480977353986e3ffe8b4da747148efbda91e",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-diagnostic-cli/spec.md",
+        "versionFingerprint": "27ef90b758c907761fb214b76111ee52824dad7a826576749249af930710190b",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "d909b7664d2479b0ff4b0da2a4c5c5b0e368fd758b00732aab8ad8da1add1db2",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-policy-engine/spec.md",
+        "versionFingerprint": "729a124939b71d06e77fe8ea7137da9aa1b6b47049cb5956a264e0d9107d53de",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/tasks.md",
+        "versionFingerprint": "7c3d2446f85b587306eea53f4640d02ccf8a33d99a17af5dc1e837127ad0fda7",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-005-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "f089457a7af36d547ce59856cbc19bf4081117fe7c805a638f3a15a881b4dd09"
+      }
+    ],
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "da2127d356a0bfbdc691fee12cdf4daaaacc7fbf2e022732e451155d30724b09",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

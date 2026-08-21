@@ -1,0 +1,59 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "propose",
+    "executionStatus": "completed",
+    "summary": "E1 Proposal freezes delayed post-Full-Test Actual/Compare capability without instantiating formal 03 Actual during E1 Apply; introduces compact current architecture cycle + acceptedSystemSource projection, explicit Owner accept-architecture gate distinct from Finalize, stale-safe post-pass architectureRemediation create-change admission that atomically invalidates old passed Full Test/current architecture cycle, and durable accepted-Actual source consumption by a different future Delivery without global system.architecture.json. Proposal preflight: apply/revise-apply mutation declarations 25 selectors PASS; prospective buildVerificationSelection matched across architecture/change-contract/cli/core/execution/persistence/verification with external-tools+openspec-runtime closure and 11 selected checks; exact managed Archify Actual validate/deliver/Planned-vs-Actual compare PASS; OpenSpec current strict and all 20/20 strict PASS; staged diff check and build PASS.",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/design.md",
+        "versionFingerprint": "3f4edb29fcbbafd39c393404be94047b1b0ff3e8ccf8239932273caf1596819d",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/proposal.md",
+        "versionFingerprint": "412b91c97ba6353dfb95c3d9bb036c762e0512354f769e3ce04927b2c53f67a5",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/specs/flowkit-architecture-assets/spec.md",
+        "versionFingerprint": "22c6ed1d2316b9e42bd3056b6b06e596ebcacdadfebbc60a8ec63d082fba0fa3",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "4c10272778c88135c351b37906468f905048e96bc3618e0a925258077689a2a4",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/specs/flowkit-core-model/spec.md",
+        "versionFingerprint": "7c4b0e3086fe5230f8a7aff427b14d49d88b59fb80aef3bba3f626423da41347",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+        "versionFingerprint": "c008c49cc04027c04205251e92c3a42a4fc2b9fd3ab0092b67b336690a92fc91",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "b6fe34e0a3e886a5057feada93ea09a13868f03d58cdd2d40c5a32129bd5b222",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/specs/flowkit-policy-engine/spec.md",
+        "versionFingerprint": "8dd12a8a8fd73074cd350ed983fd04d8610280e785da5bebece4d619afba8940",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/tasks.md",
+        "versionFingerprint": "ee29ecbcc79329da87433cf430db723234660f8b7e4c8b908dea3be315c1078f",
+        "kind": "produced-artifact"
+      }
+    ]
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "8ecf4c0127ff2eadea673c8a0f238da0dda4ad8408ddfaec653435f9c0ab61fb"
+  }
+}

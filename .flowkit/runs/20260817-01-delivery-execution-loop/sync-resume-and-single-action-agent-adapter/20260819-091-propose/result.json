@@ -1,0 +1,49 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "propose",
+    "executionStatus": "completed",
+    "summary": "冻结 G1 repository-only typed resume projection、archive/reverification-aware historical terminal replay 与 provider-neutral single-action Agent Adapter contract；保持 historical E1 point-in-time sidecar semantics、three-file Run、Policy/Owner/Reviewer authority 与 G1 checkpoint activation boundary不变。Proposal-time disposable expected-selection proof使用 production buildVerificationSelection 得到 capabilityRelation=matched，覆盖 tests-cli/tests-execution/tests-openspec-runtime/tests-verification/typecheck + OpenSpec strict/archive-sync；未引入 Registry、auto-loop、H1 stable Runner、Actual Architecture、Delivery behavior adapter或04 Engineering Health扩张。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/design.md",
+        "versionFingerprint": "c99acbb763888d8c9906b090295a5715fdd528818f7835c5c3d8a47be04dbb0b",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/proposal.md",
+        "versionFingerprint": "f68358366fa34d46630b588aea49e1c8dc2dade068e2a50292bc723f2505da2b",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "9236a3aeb84375068bbbb888418d1ccdf285cb0a2b983fdaf256d4bac2f294c4",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-diagnostic-cli/spec.md",
+        "versionFingerprint": "649578eb84ad87824dada2e972168f5368b75f25c28c1c8d7c8f1a150fb71129",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-lean-run-and-action-package/spec.md",
+        "versionFingerprint": "442b5ce3bafd15521b9373f152aa832c01e5b2eb1a8ebfe6ebdc18ee5e865b5a",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-sync-resume-and-single-action-agent-adapter/spec.md",
+        "versionFingerprint": "9fedfff36e6980f7827e0e789647e37c183b31512074589157e6f4c0d36d8a0c",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/tasks.md",
+        "versionFingerprint": "5d2aefce7205c6425cedfdab7326db071fc67419dece775011d84dbaf60d1785",
+        "kind": "produced-artifact"
+      }
+    ]
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "cca1a948207a52e0c1315bb35991fccdd2381602e808601c2f984e24cdea2419"
+  }
+}

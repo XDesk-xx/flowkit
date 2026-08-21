@@ -1,0 +1,526 @@
+{
+  "schema_version": 1,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Flowkit 完整 Delivery 执行 Workflow",
+    "output": "delivery-lifecycle.workflow.html",
+    "animation": "trace",
+    "visual_preset": "signal-flow",
+    "quality_profile": "standard",
+    "views": [
+      {
+        "id": "start",
+        "label": "Start + Architecture Plan",
+        "focus": [
+          "delivery_start",
+          "current",
+          "planned"
+        ],
+        "note": "Current 冻结 Start 时已有系统；Planned 表达本 Delivery 目标。"
+      },
+      {
+        "id": "changes",
+        "label": "Required Changes",
+        "focus": [
+          "activate",
+          "change",
+          "checkpoint",
+          "changes_done"
+        ],
+        "note": "每个 required Change 走普通完整 lifecycle，并在 completed 后形成独立 Git Checkpoint。"
+      },
+      {
+        "id": "fulltest",
+        "label": "Full Test + Corrective Loop",
+        "focus": [
+          "ready",
+          "full_test_auth",
+          "full_test",
+          "test_result",
+          "finding",
+          "owner_decision",
+          "corrective_change",
+          "corrective_cp",
+          "fresh_ready"
+        ],
+        "note": "failed 不自动修复；corrective Change 后回到 fresh Ready，并再次等待 Owner 授权。"
+      },
+      {
+        "id": "finish",
+        "label": "Actual / Compare / Finalize",
+        "focus": [
+          "actual",
+          "compare",
+          "arch_ok",
+          "finalize_auth",
+          "delivery_final",
+          "merge",
+          "next_current"
+        ],
+        "note": "passed 后才形成 Actual/Compare；Owner finalize 后形成 Delivery Final。"
+      }
+    ]
+  },
+  "lanes": [
+    {
+      "id": "start",
+      "label": "Delivery Start / Current / Planned"
+    },
+    {
+      "id": "changes",
+      "label": "Required Change execution"
+    },
+    {
+      "id": "change_gate",
+      "label": "Required Changes completion gate"
+    },
+    {
+      "id": "ready_test",
+      "label": "Delivery Ready / Owner Full Test authorization"
+    },
+    {
+      "id": "test_result_lane",
+      "label": "Full Test result split"
+    },
+    {
+      "id": "corrective_decision",
+      "label": "Failed: Delivery Finding / Owner decision",
+      "variant": "exception"
+    },
+    {
+      "id": "corrective_exec",
+      "label": "Failed: Corrective Change / Checkpoint / Fresh Ready",
+      "variant": "exception"
+    },
+    {
+      "id": "architecture",
+      "label": "Passed: Actual / Compare / Architecture acceptance"
+    },
+    {
+      "id": "finalize",
+      "label": "Owner Finalize / Delivery Final / Merge"
+    },
+    {
+      "id": "next",
+      "label": "Accepted Actual → next Delivery Current source"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "delivery_start",
+      "lane": "start",
+      "col": 0,
+      "type": "database",
+      "label": "Delivery Start",
+      "sublabel": "Git boundary"
+    },
+    {
+      "id": "current",
+      "lane": "start",
+      "col": 2,
+      "type": "cloud",
+      "label": "Current",
+      "sublabel": "freeze existing"
+    },
+    {
+      "id": "planned",
+      "lane": "start",
+      "col": 4,
+      "type": "cloud",
+      "label": "Planned",
+      "sublabel": "intended outcome"
+    },
+    {
+      "id": "activate",
+      "lane": "changes",
+      "col": 4,
+      "type": "security",
+      "label": "Activate",
+      "sublabel": "required Change"
+    },
+    {
+      "id": "change",
+      "lane": "changes",
+      "col": 2,
+      "type": "backend",
+      "label": "Change",
+      "sublabel": "complete lifecycle"
+    },
+    {
+      "id": "checkpoint",
+      "lane": "changes",
+      "col": 0,
+      "type": "database",
+      "label": "Checkpoint",
+      "sublabel": "Git boundary"
+    },
+    {
+      "id": "changes_done",
+      "lane": "change_gate",
+      "col": 0,
+      "type": "security",
+      "label": "All done?",
+      "sublabel": "completed + CP"
+    },
+    {
+      "id": "ready",
+      "lane": "ready_test",
+      "col": 0,
+      "type": "backend",
+      "label": "Delivery Ready",
+      "sublabel": "await Owner"
+    },
+    {
+      "id": "full_test_auth",
+      "lane": "ready_test",
+      "col": 2,
+      "type": "security",
+      "label": "Owner auth",
+      "sublabel": "Full Test"
+    },
+    {
+      "id": "full_test",
+      "lane": "ready_test",
+      "col": 4,
+      "type": "cloud",
+      "label": "Full Test",
+      "sublabel": "Delivery behavior"
+    },
+    {
+      "id": "test_result",
+      "lane": "test_result_lane",
+      "col": 4,
+      "type": "security",
+      "label": "Pass / Fail",
+      "sublabel": "Verification truth"
+    },
+    {
+      "id": "finding",
+      "lane": "corrective_decision",
+      "col": 4,
+      "type": "security",
+      "label": "Finding",
+      "sublabel": "Delivery-level"
+    },
+    {
+      "id": "owner_decision",
+      "lane": "corrective_decision",
+      "col": 2,
+      "type": "security",
+      "label": "Owner decision",
+      "sublabel": "correct / cancel"
+    },
+    {
+      "id": "cancelled",
+      "lane": "corrective_decision",
+      "col": 0,
+      "type": "external",
+      "label": "STOP",
+      "sublabel": "cancel / allowed"
+    },
+    {
+      "id": "corrective_change",
+      "lane": "corrective_exec",
+      "col": 4,
+      "type": "backend",
+      "label": "Corrective",
+      "sublabel": "ordinary Change"
+    },
+    {
+      "id": "corrective_cp",
+      "lane": "corrective_exec",
+      "col": 2,
+      "type": "database",
+      "label": "Checkpoint",
+      "sublabel": "corrective CP"
+    },
+    {
+      "id": "fresh_ready",
+      "lane": "corrective_exec",
+      "col": 0,
+      "type": "security",
+      "label": "Fresh Ready",
+      "sublabel": "fresh auth required"
+    },
+    {
+      "id": "actual",
+      "lane": "architecture",
+      "col": 4,
+      "type": "cloud",
+      "label": "Actual",
+      "sublabel": "final repo"
+    },
+    {
+      "id": "compare",
+      "lane": "architecture",
+      "col": 2,
+      "type": "external",
+      "label": "Compare",
+      "sublabel": "Planned vs Actual"
+    },
+    {
+      "id": "arch_ok",
+      "lane": "architecture",
+      "col": 0,
+      "type": "security",
+      "label": "Arch OK?",
+      "sublabel": "blockers closed"
+    },
+    {
+      "id": "finalize_auth",
+      "lane": "finalize",
+      "col": 0,
+      "type": "security",
+      "label": "Owner auth",
+      "sublabel": "finalize"
+    },
+    {
+      "id": "delivery_final",
+      "lane": "finalize",
+      "col": 2,
+      "type": "database",
+      "label": "Delivery Final",
+      "sublabel": "Git boundary"
+    },
+    {
+      "id": "merge",
+      "lane": "finalize",
+      "col": 4,
+      "type": "database",
+      "label": "Merge Commit",
+      "sublabel": "main"
+    },
+    {
+      "id": "next_current",
+      "lane": "next",
+      "col": 4,
+      "type": "cloud",
+      "label": "Next Current",
+      "sublabel": "Accepted Actual"
+    }
+  ],
+  "edges": [
+    {
+      "id": "d01",
+      "from": "delivery_start",
+      "to": "current",
+      "variant": "emphasis"
+    },
+    {
+      "id": "d02",
+      "from": "current",
+      "to": "planned",
+      "variant": "emphasis"
+    },
+    {
+      "id": "d03",
+      "from": "planned",
+      "to": "activate",
+      "variant": "emphasis",
+      "route": "drop",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "d04",
+      "from": "activate",
+      "to": "change",
+      "variant": "emphasis"
+    },
+    {
+      "id": "d05",
+      "from": "change",
+      "to": "checkpoint",
+      "variant": "emphasis"
+    },
+    {
+      "id": "d06",
+      "from": "checkpoint",
+      "to": "changes_done",
+      "variant": "emphasis",
+      "route": "drop",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "d07",
+      "from": "changes_done",
+      "to": "activate",
+      "label": "more",
+      "variant": "dashed",
+      "role": "return",
+      "route": "outside-right",
+      "fromSide": "right",
+      "toSide": "right"
+    },
+    {
+      "id": "d08",
+      "from": "changes_done",
+      "to": "ready",
+      "label": "all done",
+      "variant": "emphasis",
+      "route": "drop",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "d09",
+      "from": "ready",
+      "to": "full_test_auth",
+      "variant": "security"
+    },
+    {
+      "id": "d10",
+      "from": "full_test_auth",
+      "to": "full_test",
+      "variant": "security"
+    },
+    {
+      "id": "d11",
+      "from": "full_test",
+      "to": "test_result",
+      "variant": "emphasis",
+      "route": "drop",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "d12",
+      "from": "test_result",
+      "to": "finding",
+      "label": "failed",
+      "variant": "security",
+      "role": "error",
+      "route": "drop",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "d13",
+      "from": "finding",
+      "to": "owner_decision",
+      "variant": "security"
+    },
+    {
+      "id": "d14",
+      "from": "owner_decision",
+      "to": "cancelled",
+      "variant": "security",
+      "role": "error"
+    },
+    {
+      "id": "d15",
+      "from": "owner_decision",
+      "to": "corrective_change",
+      "label": "corrective",
+      "variant": "emphasis",
+      "route": "drop",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "d16",
+      "from": "corrective_change",
+      "to": "corrective_cp",
+      "variant": "emphasis"
+    },
+    {
+      "id": "d17",
+      "from": "corrective_cp",
+      "to": "fresh_ready",
+      "variant": "emphasis"
+    },
+    {
+      "id": "d18",
+      "from": "fresh_ready",
+      "to": "ready",
+      "label": "fresh authorization",
+      "variant": "dashed",
+      "role": "return",
+      "route": "return-left",
+      "fromSide": "left",
+      "toSide": "left"
+    },
+    {
+      "id": "d19",
+      "from": "test_result",
+      "to": "actual",
+      "label": "passed",
+      "variant": "emphasis",
+      "route": "outside-right",
+      "fromSide": "right",
+      "toSide": "right"
+    },
+    {
+      "id": "d20",
+      "from": "actual",
+      "to": "compare",
+      "variant": "emphasis"
+    },
+    {
+      "id": "d21",
+      "from": "compare",
+      "to": "arch_ok",
+      "variant": "security"
+    },
+    {
+      "id": "d22",
+      "from": "arch_ok",
+      "to": "finalize_auth",
+      "variant": "security",
+      "route": "drop",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "d23",
+      "from": "finalize_auth",
+      "to": "delivery_final",
+      "variant": "security"
+    },
+    {
+      "id": "d24",
+      "from": "delivery_final",
+      "to": "merge",
+      "variant": "emphasis"
+    },
+    {
+      "id": "d25",
+      "from": "merge",
+      "to": "next_current",
+      "variant": "emphasis",
+      "route": "drop",
+      "fromSide": "bottom",
+      "toSide": "top"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "完整 Delivery 主闭环",
+      "items": [
+        "Delivery Start → Current / Planned → required Changes + Checkpoints → Ready → Owner Full Test",
+        "passed → Actual / Compare → architecture acceptance → Owner finalize → Delivery Final → Merge → next Current",
+        "Full Test / Finalize 都是 Delivery behavior，不是 Change Action / Standard Run"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Failed / Corrective loop",
+      "items": [
+        "failed → Delivery Finding → Owner decision；Flowkit 不自动创建 corrective Change",
+        "corrective Change 仍走普通 Change lifecycle + Checkpoint",
+        "修正后回到 Fresh Ready，并必须重新获得 Full Test authorization"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Workflow 主视角",
+      "items": [
+        "完整 Delivery 是多 authority 编排与条件回路，不只是一个对象的状态转换",
+        "Workflow 显式表达 required Change loop、Full Test split、corrective loop、Architecture/Finalize gate",
+        "Sequence 作为同源 participant-interaction 补充视角；两者均不决定 lifecycle state 或 next Action"
+      ]
+    }
+  ]
+}

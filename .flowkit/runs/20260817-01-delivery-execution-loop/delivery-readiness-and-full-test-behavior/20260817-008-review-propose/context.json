@@ -1,0 +1,248 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260817-008-review-propose",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "review-propose",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "6107b3e42fd11a00b40aac865e0f130c799ca1a2358e94534d31cdb834b12c51",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-008-review-propose/",
+  "changeKey": "A1",
+  "changeId": "delivery-readiness-and-full-test-behavior",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-007-revise-propose/result.json",
+    "versionFingerprint": "e8c8fc1c129827a08866b9e3034b12135188a6902f2d1a379a3256108b18576d",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260817-007-revise-propose",
+  "canonicalBase": "f132db761bd209e6aff72411108b8e3e1c9801f5",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-007-revise-propose/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "e8c8fc1c129827a08866b9e3034b12135188a6902f2d1a379a3256108b18576d"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "41db595b409c9e6bc00babeabb32990290577eb40245a5bb769e8ec98a1f8d3e"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/design.md",
+      "versionFingerprint": "a7e188739f0fb3818d9a1761ee8bb98cf27adb632855d9e822681d569403f507",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/proposal.md",
+      "versionFingerprint": "76199df64c993ecb3c517eb26b8ed2b48c4aa980f3433d68467b42427cdca5ab",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+      "versionFingerprint": "bdf4c30ff327fd1ffd603bb5d4c1c685f9fb5a3afe6191c84fa94fa2427e539d",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-core-model/spec.md",
+      "versionFingerprint": "ae601c874f521fd0433e951cc2479c096f7e208e1699b09b6bb5a1795c4b46fa",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+      "versionFingerprint": "bdf1ea41f9b877a2a22bf0000601fc0c73600e62399479c62a483f8e9309dffe",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-diagnostic-cli/spec.md",
+      "versionFingerprint": "27ef90b758c907761fb214b76111ee52824dad7a826576749249af930710190b",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "versionFingerprint": "48242d880c7ba93798111d4c104f6b8abbda87cb48d132359d58d6f26f372e97",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-policy-engine/spec.md",
+      "versionFingerprint": "729a124939b71d06e77fe8ea7137da9aa1b6b47049cb5956a264e0d9107d53de",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/tasks.md",
+      "versionFingerprint": "a7c147e1574da74692262f46a1b5dc45e23f6e4c4500ad9d444880899c25d22b",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "delivery-readiness-and-full-test-behavior",
+      "runId": "20260817-008-review-propose",
+      "action": "review-propose",
+      "role": "reviewer",
+      "semanticInputFingerprint": "6107b3e42fd11a00b40aac865e0f130c799ca1a2358e94534d31cdb834b12c51"
+    },
+    "definition": {
+      "action": "review-propose",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-proposal",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "41db595b409c9e6bc00babeabb32990290577eb40245a5bb769e8ec98a1f8d3e"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/design.md",
+        "versionFingerprint": "a7e188739f0fb3818d9a1761ee8bb98cf27adb632855d9e822681d569403f507",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/proposal.md",
+        "versionFingerprint": "76199df64c993ecb3c517eb26b8ed2b48c4aa980f3433d68467b42427cdca5ab",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+        "versionFingerprint": "bdf4c30ff327fd1ffd603bb5d4c1c685f9fb5a3afe6191c84fa94fa2427e539d",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-core-model/spec.md",
+        "versionFingerprint": "ae601c874f521fd0433e951cc2479c096f7e208e1699b09b6bb5a1795c4b46fa",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+        "versionFingerprint": "bdf1ea41f9b877a2a22bf0000601fc0c73600e62399479c62a483f8e9309dffe",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-diagnostic-cli/spec.md",
+        "versionFingerprint": "27ef90b758c907761fb214b76111ee52824dad7a826576749249af930710190b",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "48242d880c7ba93798111d4c104f6b8abbda87cb48d132359d58d6f26f372e97",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-policy-engine/spec.md",
+        "versionFingerprint": "729a124939b71d06e77fe8ea7137da9aa1b6b47049cb5956a264e0d9107d53de",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/tasks.md",
+        "versionFingerprint": "a7c147e1574da74692262f46a1b5dc45e23f6e4c4500ad9d444880899c25d22b",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-007-revise-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "e8c8fc1c129827a08866b9e3034b12135188a6902f2d1a379a3256108b18576d"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260817-006-review-propose",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-006-review-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "02e0a26f585723a5ff456a40e97710204ab8c14a3dd5c34c0a01ecd750bb4226"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "A1-RP-001",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "Future Delivery creation hard-codes the current Flowkit full-test command instead of persisting Delivery contract input",
+          "problem": "005 correctly needs an executable Full Test binding for the active 03 Delivery, but it promotes that instance binding into a repository-global product rule: Design Decision 5 freezes id=project-full-verification, command=npm run verify:full and timeoutMs=120000; Migration step 3 and task 1.3 require future `create delivery` to emit the same exact binding; the formal-fact spec then requires every active Delivery to match those exact values. This conflates the current Flowkit repository's 03 Full Test contract with the generic Delivery writer. The frozen 03 reference states that the Full Test Plan comes from the Delivery contract and includes check/method, scope, timeout, result authority and expected result/ref. Future Delivery creation must persist that per-Delivery contract, not synthesize one Flowkit-specific command for every future consumer.",
+          "contractRef": "03 Delivery Execution Loop v6 §9.3 Full Test Plan; Planned Changes v6 A1 `Full Test Plan contract`; approved Explore §5/§7 generic future-Delivery + executable-plan boundary",
+          "invariant": "A1 may migrate the current 03 Manifest to one exact executable binding, but the product-level `createDelivery` capability must remain generic: executable Full Test identity is Delivery contract input, not a hard-coded repository-global command/timeout.",
+          "requiredOutcome": "Separate the A1 executable-binding schema from the current 03 binding instance. Freeze a typed per-Delivery Full Test execution input/contract that `create delivery` validates and persists. The bounded A1 migration of the already-started 03 Delivery may inject the exact current binding (`npm run verify:full`, measured timeout), but future creation must serialize caller/Delivery-contract supplied binding rather than a global constant.",
+          "acceptance": [
+            "Current 03 migration may still produce exactly one `project-full-verification` binding with the proven command/timeout.",
+            "Future `createDelivery` input has a typed executable Full Test binding (or equivalently typed executable plan) that carries command/method, scope, timeout, result authority and expected terminal outcome.",
+            "Future manifest serialization persists the supplied Delivery contract; it does not hard-code `npm run verify:full` or `120000` as universal product constants.",
+            "Reader validates schema/uniqueness and the binding required by that Delivery, without requiring every future Delivery to equal the 03 instance.",
+            "No Tool/Verification Registry, dynamic command discovery, second plan compiler or C1 scope is introduced."
+          ]
+        },
+        {
+          "id": "A1-RP-002",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "The declared executable binding is not yet the single physical execution authority",
+          "problem": "005 says `verification.fullTest.execution.command = npm run verify:full` is the only Delivery-level executable authority, but the execution design does not freeze how that exact binding produces the structured per-step result needed for terminal persistence. Decision 4 says the Delivery operator validates the binding and executes one Full Test attempt; Decision 8 says the Delivery service should refactor/reuse `verifyFullPlan()` so it can receive per-step status/duration. On the exact Base, `npm run verify:full` physically executes `scripts/verification.ts verify:full`, whose process contract is exit code + console lines; it does not return a typed per-step result object. If Apply calls `verifyFullPlan()`/`runVerificationPlan()` in-process to get structured data, the Manifest command is no longer the actual executable authority. If Apply spawns the bound npm command, the Proposal has not defined a machine-readable result protocol and would have to infer authority from human stdout. Either choice leaves two possible executor truths.",
+          "contractRef": "Approved Explore Proof 8 / Feasible Proposal Boundary 5–6: one executable authority, no unbound Manifest-plan vs code-plan dual truth; 03 v6 §9.3–9.4 frozen Full Test Plan + Verification authority result",
+          "invariant": "The executable binding consumed by Policy/Delivery behavior must identify the same physical route that is actually executed and that produces the structured Verification result. There must not be a manifest command authority plus a separate internal runner authority.",
+          "requiredOutcome": "Freeze one physical execution contract. Either the bound Delivery contract command is actually spawned and exposes a defined machine-readable structured result protocol, or the binding is explicitly a typed method/executor identity whose canonical implementation is the structured runner. Do not leave `command=npm run verify:full` as authority while independently calling internal helpers. Preserve the existing human CLI compatibility as a secondary view, not a second authority.",
+          "acceptance": [
+            "Proposal/Design state exactly what physical executable/method `flowkit delivery full-test` invokes.",
+            "The same bound identity deterministically yields overall status plus per-step result/timing without parsing unspecified human log text.",
+            "A counterfactual test can break the bound physical route and make Delivery Full Test execution tests fail.",
+            "`npm run verify:full` may remain an engineering CLI, but its relationship to the formal Delivery binding is explicit and non-duplicative.",
+            "No second test platform, scheduler, Registry or C1 external-tool migration is introduced."
+          ]
+        },
+        {
+          "id": "A1-RP-003",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "Terminal Full Test result schema and content-addressed resultRef are internally inconsistent",
+          "problem": "The Proposal requires deterministic terminal persistence and a content-addressed resultRef, but the frozen artifacts do not define one unique structured payload. Design Decision 6 shows `timing.quality/typecheck/...` as integer durations only. Decision 8 says the runner returns per-step status/duration. The formal-fact spec requires each executable check to contain duration/status. Tasks 3.3 reduces this again to summary/timing publication. In addition, `resultRef = verification:full-test:<sha256>` is described as hashing the canonical structured terminal result payload, but the Proposal never defines the canonical serialization/hash domain or whether `resultRef` itself is excluded. A Reader therefore cannot deterministically recompute and validate the promised content address.",
+          "contractRef": "Planned Changes v6 A1 `passed/failed persistence deterministic` + `Full Test resultRef + timing`; 03 v6 §9.4 minimal persistence/resultRef/timing; One fact, one authority / fail-closed formal-fact reading",
+          "invariant": "The writer, Reader, B1 next-consumer and resume path must share one closed terminal-result schema and one deterministic resultRef computation rule; equivalent semantic results cannot depend on unspecified YAML key ordering or divergent duration/status shapes.",
+          "requiredOutcome": "Freeze one minimal terminal Full Test result schema and exact resultRef derivation. Define overall status, summary, totalDurationMs, the per-step/check representation (including both status and duration if required), deterministic ordering/keys, and the exact canonical payload that is SHA-256 hashed. Reader must be able to recompute the ref and fail closed on mismatch. Keep raw stdout/stderr and historical attempt logs out of the Manifest.",
+          "acceptance": [
+            "Design example, Specs and Tasks use the same terminal result structure.",
+            "Every persisted check/step has an unambiguous status/duration representation, or the spec explicitly removes status if it is not required.",
+            "The exact hash domain/canonicalization for `verification:full-test:<sha256>` is defined and excludes self-reference unambiguously.",
+            "Reader recomputes/validates resultRef and terminal status/result consistency deterministically.",
+            "B1 can consume failed status + resultRef/timing without interpreting raw logs or an implementation-specific shape."
+          ]
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "da2127d356a0bfbdc691fee12cdf4daaaacc7fbf2e022732e451155d30724b09",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

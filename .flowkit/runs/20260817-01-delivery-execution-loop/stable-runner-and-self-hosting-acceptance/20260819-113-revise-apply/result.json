@@ -1,0 +1,23 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-apply",
+    "executionStatus": "completed",
+    "summary": "关闭 H1-RA-002：仅将已由 111 formal Verification 和 112 Reviewer 证据证明完成的 required tasks 5.4、5.5、6.5 投影为 [x]；不修改已批准的 H1 fan-out architecture。对包含 task-byte 修正的 113 exact candidate 重新执行 formal H1 Change Verification，并要求 tests-cli/tests-execution 继续通过既有 bounded physical fan-out。",
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/stable-runner-and-self-hosting-acceptance/20260819-112-review-apply/result.json",
+      "versionFingerprint": "496f1ef313c1c82f696377dec4c5f3f6580ced4a684c1aeeda98e87b83227c08",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "e061ca6b69ca8365ab03cd4cae4e07f71ce374a470e050fb63eca91025df79e7",
+    "currentVerification": {
+      "logicalRef": "openspec/changes/stable-runner-and-self-hosting-acceptance/verification.md",
+      "versionFingerprint": "0883b0da3d03e8e66962a2199c4f9f44211f16d69140c93b25ce432ab8eb8945",
+      "selectionFingerprint": "aa765cd20f4aa0d04441ff9e3c9174291338b7beb328a1899331e945c5223eee",
+      "status": "passed"
+    }
+  }
+}

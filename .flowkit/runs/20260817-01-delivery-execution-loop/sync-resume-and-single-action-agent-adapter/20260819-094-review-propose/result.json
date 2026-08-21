@@ -1,0 +1,21 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "Review 093 Revise-Propose：G1-RP-001 已关闭。093 仅在 091 Design 中增加唯一 closed schemaVersion=1 flowkitMutationScope，并补充 prospective Verification selection/physical resolver proof，未改变已批准的 G1 architecture/authority boundary。Reviewer在 exact candidate 上用 production deriveMutationDeclaration 独立派生 apply/revise-apply，均得到相同 17 selectors；selector set 覆盖 historical replay/path resolution、typed resume projection、single-action adapter、resume-context diagnostic consumer、Verification module-map/evidence/publication 与对应 targeted/unit/integration tests，同时不授权 H1 stable Runner、Registry/auto-loop、Delivery Full Test/Finalize/Checkpoint adapter、Actual Architecture或04 Engineering Health。现有 physical resolver 位于 evidence.ts，故新 G1 integration target 可在 frozen scope 内纳入 selected Node check，无需扩大 scripts/verification.ts 或新增 logical check。OpenSpec current strict与 all strict 21/21 PASS，package hashes、092 Reviewer bytes、093 ResultRefs、git/text hygiene、Policy next与doctor均一致。完整 blocking scan 未发现新的 Proposal blocker。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "b68baade3d418373ade82fe9da48e4c8929b4a6fdceb7f3ae31df0f743f7f28c"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [],
+  "reviewFindingConvergence": [
+    {
+      "findingId": "G1-RP-001",
+      "state": "resolved"
+    }
+  ]
+}

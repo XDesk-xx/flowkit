@@ -1,0 +1,18 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "apply",
+    "executionStatus": "completed",
+    "summary": "E1 implements reusable post-Full-Test Actual render/compare publication, explicit Owner architecture acceptance, authorization-safe architecture cycle identity, atomic post-pass architecture remediation invalidation, and durable Accepted Actual to future Delivery Current source promotion without instantiating the current 03 final Actual during E1 Apply."
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "8731882ad5caf7b3dee79bfd3fcb6ea222d20b4ac1322a3c7db5b6bbb95945d4",
+    "currentVerification": {
+      "logicalRef": "openspec/changes/architecture-actual-compare-and-system-promotion/verification.md",
+      "versionFingerprint": "3b0787030fbc14c4877f289c1248d7be872c68ca3e7eb0b3b0e3c2c0a62accf2",
+      "selectionFingerprint": "06aa4593306e85976b90975adfd23633f356bda7f03cfe3fc731d4118425ef0c",
+      "status": "passed"
+    }
+  }
+}

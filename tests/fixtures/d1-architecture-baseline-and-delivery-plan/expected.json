@@ -1,0 +1,15 @@
+{
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "currentRevision": "74d46f0920c0dfc6f19b5b264cf9de138f4c2bec",
+  "plannedRevision": "f132db761bd209e6aff72411108b8e3e1c9801f5",
+  "reference": [
+    "architecture/reference/json/change-lifecycle.workflow.json",
+    "architecture/reference/json/change-lifecycle.sequence.json",
+    "architecture/reference/json/delivery-lifecycle.workflow.json",
+    "architecture/reference/json/delivery-lifecycle.sequence.json"
+  ],
+  "deliveryAssets": [
+    "architecture/20260817-01-delivery-execution-loop/json/current.architecture.json",
+    "architecture/20260817-01-delivery-execution-loop/json/planned.architecture.json"
+  ]
+}

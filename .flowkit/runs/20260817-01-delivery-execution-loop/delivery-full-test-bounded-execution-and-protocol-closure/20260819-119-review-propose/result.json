@@ -1,0 +1,88 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "Review 118 Proposal：changes-requested。Base 已精确为 4f3e0f44a3a1254670a99f1428b70fc1e2c6c8f2，无需更新；package SHA、118 produced refs、git diff --check、OpenSpec current/all strict（23/23）、formal status/next/doctor均正常。Proposal 的总体 bounded Full Test authority 分层、legacy command compatibility、per-target 120s、no scheduler/timeout inflation方向成立，但完整 blocking scan发现 3 个 author blocker：flowkitMutationScope selectors 当前不是 lexical sorted，production deriveMutationDeclaration() 对 apply/revise-apply直接 SCHEMA_VALIDATION_FAILED；tasks 6.4/6.5 把 formal Verification/review handoff重复成 required implementation tasks，会与 exact-candidate Verification形成 post-verification task mutation循环；full heavy partition 对 H1 file只执行 26 formal phases，未覆盖默认 installed-runner smoke test，现有 file-level coverage union不足以证明 case/semantic completeness。需 revise-propose 一次性关闭三项后再审。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "5a9d61982a636ffc471d628b1636958c7c83fb9ccd20a28ec75f60cb4a44bdc0"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "I1-RP-001",
+      "severity": "blocking",
+      "blockingAuthority": "author",
+      "title": "flowkitMutationScope selectors 未按当前 machine contract 排序，Apply preparation 将确定性失败",
+      "problem": "118 Design 已提供 apply/revise-apply 的 22-selector flowkitMutationScope，但 selector 顺序不满足 current validateMutationDeclaration() 的 lexical-sorted invariant。Reviewer 在 exact candidate 上调用 production deriveMutationDeclaration()，apply 在读取 Design 后立即抛出 SCHEMA_VALIDATION_FAILED: mutationDeclaration.selectors must be lexical sorted；revise-apply 使用相同列表，因此同样非法。首个顺序错误是 src/domain/full-test.ts 位于 src/domain/a1-types.ts 之前，另外 prefix selectors 被插在 exact selectors 中间，而 current lexical order要求 exact selectors整体按 path 排序后再进入 prefix selectors。若当前 Proposal被批准，Owner authorize apply 后 Apply preparation会在 mutation declaration derivation 阶段直接失败，尚未进入实现。",
+      "contractRef": "approved G1/E2 mutation declaration contract；current src/verification/change-selection/mutation-declaration.ts + src/persistence/serialization.ts validateMutationDeclaration；118 design.md §flowkitMutationScope",
+      "invariant": "Approved Design 中的 flowkitMutationScope 必须能被 production deriveMutationDeclaration() 原样解析为合法 Apply/revise-apply mutation boundary；Proposal不能冻结一个在正式 Apply preparation 时必然 schema-fail 的 machine contract。",
+      "requiredOutcome": "Revise-Propose 仅按 current lexical ordering rule 重排 apply/revise-apply selectors（除非关闭其他 finding确实需要调整 scope），保持两者 closed scope一致，并用 production deriveMutationDeclaration() 对两种 action做真实 preflight。",
+      "acceptance": [
+        "deriveMutationDeclaration(repoRoot, 'apply', [exact Design ResultRef]) 成功并返回合法 declaration。",
+        "deriveMutationDeclaration(repoRoot, 'revise-apply', [exact Design ResultRef]) 成功并返回合法 declaration。",
+        "selectors 保持 Proposal 所需 mutation surface闭合，不通过删除必要 selector来规避排序校验。",
+        "Design 中不存在第二份 flowkitMutationScope 或 caller fallback。"
+      ],
+      "evidence": [
+        "Reviewer exact Base/candidate 上 production helper返回：FlowkitError code=SCHEMA_VALIDATION_FAILED, message='mutationDeclaration.selectors must be lexical sorted'。",
+        "apply/revise-apply 当前均有22 selectors；首个 mismatch：actual exact:src/domain/full-test.ts，expected exact:src/domain/a1-types.ts。",
+        "current list还在 exact:src/shared/external-command.ts 后插入 prefix:src/verification/full-test，再继续 exact:src/verification/change-selection/module-map.ts；current lexical validator要求完整排序。"
+      ],
+      "impact": "Proposal若被批准，I1 Apply不是可能失败，而是会在正式 prepare/admission前置 machine contract解析阶段确定性失败，制造完全可在 Proposal preflight消灭的一轮返工。",
+      "location": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/design.md §flowkitMutationScope"
+    },
+    {
+      "id": "I1-RP-002",
+      "severity": "blocking",
+      "blockingAuthority": "author",
+      "title": "required Tasks 重复 Verification/review lifecycle facts，会再次制造 exact-candidate re-verification 循环",
+      "problem": "118 tasks.md 6.4 把‘formal I1 Change Verification’列为 required checkbox的一部分，6.5 又要求‘only after formal I1 Verification is passed’才 hand off review-apply。Formal Verification 已由 verification.md/current terminal binding拥有独立 authority，review-apply又由 Reviewer Run拥有独立 authority。若 Apply先完成实现并运行 formal Verification，再把6.4/6.5从[ ]改成[x]，tasks.md bytes会改变 exact candidate，刚刚通过的 Verification立即不再绑定 current candidate，必须重新跑；若在 Verification前先勾选，则 checkbox声明的事实尚未发生。这个结构与 H1 111→112→113 已暴露并刚刚复盘确认的低价值循环完全相同。",
+      "contractRef": "Operating Model v8 One fact, one authority；Change Verification独立 authority；exact-candidate Verification binding；118 tasks.md §6.4-6.5",
+      "invariant": "Required implementation Tasks 必须能在 formal Change Verification开始前真实完成；Verification passed、Reviewer handoff/approval、Archive/Checkpoint等 lifecycle facts不能重复成为 implementation task authority。",
+      "requiredOutcome": "Revise-Propose 重写 Tasks closure：6.4 只保留 Verification 前可完成的 mechanical/targeted preflight工作，移除‘formal I1 Change Verification’作为 required checkbox；删除或改写6.5，使 review-apply handoff/Verification passed不再是 required implementation task。Formal Verification继续只由 verification.md/terminalBinding表达，Reviewer handoff由 Policy/Run表达。",
+      "acceptance": [
+        "所有 required task checkbox 都可以在第一次 formal I1 Change Verification开始前真实置为[x]。",
+        "不存在以 Verification passed、review-apply handoff/approval、archive/checkpoint/finalize发生为完成条件的 required task。",
+        "Apply完成实现任务后可形成 stable exact candidate → formal Verification → review-apply，中间无需再修改 tasks.md。",
+        "不删除真正的 implementation/preflight obligations；只是把 lifecycle authority移回其正式事实。"
+      ],
+      "evidence": [
+        "118 tasks.md 6.4 原文包含‘and formal I1 Change Verification’。",
+        "118 tasks.md 6.5 原文要求‘Hand off to review-apply only after formal I1 Verification is passed’。",
+        "当前 Flowkit exact-candidate model把 tasks.md列入 mutation scope；Verification后再勾 required checkbox会改变 candidate bytes。"
+      ],
+      "impact": "如果不在 Proposal阶段修正，I1 很可能在 implementation/Verification已正确完成后，仅为同步重复 lifecycle checkbox再次改变 candidate并重跑一整套 formal Verification，重复 H1 112/113 的可避免返工。",
+      "location": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/tasks.md §6.4-6.5；design.md §flowkitMutationScope（tasks.md属于Apply mutation）"
+    },
+    {
+      "id": "I1-RP-003",
+      "severity": "blocking",
+      "blockingAuthority": "author",
+      "title": "H1 heavy override 只有 file-level coverage，遗漏默认 installed-runner smoke case，无法证明 full-suite case/semantic closure",
+      "problem": "118 将 full 解析为 current-checkout discovered files，并对 H1 heavy file固定只执行 FLOWKIT_H1_FORMAL_PHASE=1..26。当前 tests/integration/h1-stable-runner-and-self-hosting-acceptance.test.ts 在未设置 FORMAL_PHASE 时实际有两个默认 test：① installed-runner diagnostics smoke；②完整 future-Delivery E2E（内部for phase=1..26调用runSelfHostingPhase）。设置 FORMAL_PHASE 后 describe会提前return，只执行一个对应 formal-phase test，因此118的26 targets只分解了第二个E2E case，没有执行第一个 smoke case。该 smoke还包含独立 assertions（例如 resume-context/next、installed bin位于consumer且不在source project等），不能仅凭‘同一个文件已进入partition union’证明被覆盖。116/118 当前 closure主要证明 discovered file union exact；对H1这种用env切换分支的override，file-level union不足以证明默认 test-case/assertion coverage complete。",
+      "contractRef": "118 Proposal ‘coverage-complete bounded full-suite partition’；design.md Decision 4 Current 03 logical→physical resolver closure；tasks.md §3.1-3.3；Flowkit Explore Skill v2 §4.6 Verification Closure / §5 Evidence Boundary；03 Full Test Plan完整 regression coverage",
+      "invariant": "把现有 test:full 替换为 bounded physical partition 时，static heavy override必须保持被替换文件的 required test semantics；不能因为文件路径出现在coverage union中就静默跳过该文件的其他默认 test cases/assertions。Physical partition是execution mapping，不得成为删减 regression coverage的隐式 authority。",
+      "requiredOutcome": "Revise-Propose 为 H1 heavy file冻结 case/semantic-complete mapping。Reviewer不限定唯一实现：最直接的 bounded closure是把 installed-runner smoke作为独立 bounded case，同时把完整E2E case映射为26 formal phases；也可以提供等价 mapping，但必须明确证明默认两个 cases的全部 required assertions/semantics都被覆盖。相应 coverage closure必须从单纯 file union提升为 overridden-heavy-file 的 case/semantic mapping closure。不要把 H1 capability-specific safe-dedup policy复制进 shared resolver。",
+      "acceptance": [
+        "明确枚举当前H1默认两个 test cases，并说明每一个由哪些 bounded targets消费。",
+        "installed-runner diagnostics smoke不会因 FORMAL_PHASE branch提前return而静默消失；若声称由更强target取代，必须逐项证明其独立 assertions被覆盖，而不是只做file-level等价。",
+        "future-Delivery E2E可继续由phase 1..26分解，且证明这些phases与原E2E内部runSelfHostingPhase loop语义等价。",
+        "coverage closure对5个heavy overrides均能证明 required case/selector semantics complete；missing/overlap/title/branch drift fail closed。",
+        "仍不回退到 npm run test:full/verify:step full长wrapper，也不引入runtime timing classifier/scheduler。"
+      ],
+      "evidence": [
+        "current H1 test file：when FLOWKIT_H1_FORMAL_PHASE is integer, it registers one `executes formal future-Delivery self-hosting phase N` test then returns from describe，默认两个tests不注册。",
+        "without FORMAL_PHASE，current file registers `physically installs the candidate runner and exercises fresh-process diagnostics without source-workspace runtime` 与 `uses one independently installed Flowkit distribution to manage a future Delivery end to end and resume it from a fresh checkout` 两个tests。",
+        "第二个default E2E确实内部for phase=1..26调用runSelfHostingPhase，因此26-phase mapping能分解该case；但第一个smoke包含额外resume-context/next/bin-path等断言，118 Design未给出其bounded target或逐项等价证明。",
+        "116 Explore prototype summary用 discovered files=88 / file coverage union exact=true 证明路径覆盖；这不能推出H1 override下的case/assertion coverage complete。"
+      ],
+      "impact": "若按118实现，新的 Delivery Full Test可能报告‘完整 full suite PASS’，实际却从原 test:full 中静默删除H1 installed-runner smoke regression。这样 bounded executor不仅改变process lifetime，还未经authority改变了验证覆盖面，违背I1只修execution/protocol closure的范围。",
+      "location": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/design.md Decision 4；proposal.md full partition bullet；tasks.md §3；tests/integration/h1-stable-runner-and-self-hosting-acceptance.test.ts default/formal branches"
+    }
+  ],
+  "reviewFindingConvergence": []
+}

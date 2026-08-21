@@ -1,7 +1,7 @@
 import { afterEach, describe, it } from 'node:test';
 import { createHash } from 'node:crypto';
 import assert from 'node:assert/strict';
-import { mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -985,6 +985,71 @@ describe('I1 exact-candidate re-verification lifecycle', () => {
     );
     assert.equal((await snapshot(drift.root, drift.deliveryId)).changeVerificationStatus, 'failed');
   });
+
+  it('replays a completed post-E2 Apply after bounded re-verification and OpenSpec archive relocation', async () => {
+    const fixture = await prepareV5ApplyReady({ changeId: 'archive-and-checkpoint-boundary', postE2Writer: true });
+    await writeFile(join(fixture.root, 'src', 'domain', 'types.ts'), 'export const value = 2;\n', 'utf8');
+    await writeFile(join(fixture.changeRoot, 'tasks.md'), '# Tasks\n\n- [x] fixture\n', 'utf8');
+    await admitActionResult({
+      repoRoot: fixture.root,
+      deliveryId: fixture.deliveryId,
+      actionPackage: fixture.apply,
+      result: { executionStatus: 'completed', summary: 'applied' },
+      verificationExecutor: fixtureVerificationExecutor('failed'),
+      openSpecAdapter: fixtureOpenSpecAdapter(fixture.root, fixture.changeId),
+    });
+    await retryFailedChangeVerification({
+      repoRoot: fixture.root,
+      deliveryId: fixture.deliveryId,
+      verificationExecutor: fixtureVerificationExecutor('passed'),
+      openSpecAdapter: fixtureOpenSpecAdapter(fixture.root, fixture.changeId),
+    });
+    const archivedRoot = join(fixture.root, 'openspec', 'changes', 'archive', `2099-02-01-${fixture.changeId}`);
+    await mkdir(join(fixture.root, 'openspec', 'changes', 'archive'), { recursive: true });
+    await rename(fixture.changeRoot, archivedRoot);
+
+    const replay = await resumeRun({ repoRoot: fixture.root, deliveryId: fixture.deliveryId, expectedRunId: fixture.apply.run.runId });
+    assert.equal(replay.kind, 'already-terminal');
+    if (replay.kind !== 'already-terminal') assert.fail('expected exact terminal replay');
+    assert.equal(replay.result.runStatus, 'completed');
+  });
+
+  it('fails closed when multiple archived physical roots could satisfy one historical verification logical ref', async () => {
+    const fixture = await prepareV5ApplyReady({ changeId: 'archive-and-checkpoint-boundary', postE2Writer: true });
+    await writeFile(join(fixture.root, 'src', 'domain', 'types.ts'), 'export const value = 2;\n', 'utf8');
+    await writeFile(join(fixture.changeRoot, 'tasks.md'), '# Tasks\n\n- [x] fixture\n', 'utf8');
+    await admitActionResult({ repoRoot: fixture.root, deliveryId: fixture.deliveryId, actionPackage: fixture.apply, result: { executionStatus: 'completed', summary: 'applied' }, verificationExecutor: fixtureVerificationExecutor('failed'), openSpecAdapter: fixtureOpenSpecAdapter(fixture.root, fixture.changeId) });
+    await retryFailedChangeVerification({ repoRoot: fixture.root, deliveryId: fixture.deliveryId, verificationExecutor: fixtureVerificationExecutor('passed'), openSpecAdapter: fixtureOpenSpecAdapter(fixture.root, fixture.changeId) });
+    const archiveRoot = join(fixture.root, 'openspec', 'changes', 'archive');
+    const first = join(archiveRoot, `2099-02-01-${fixture.changeId}`);
+    const second = join(archiveRoot, `2099-02-02-${fixture.changeId}`);
+    await mkdir(archiveRoot, { recursive: true });
+    await rename(fixture.changeRoot, first);
+    await cp(first, second, { recursive: true });
+
+    await assert.rejects(
+      resumeRun({ repoRoot: fixture.root, deliveryId: fixture.deliveryId, expectedRunId: fixture.apply.run.runId }),
+      (error: unknown) => error instanceof FlowkitError && error.code === 'TERMINAL_REPLAY_CONFLICT',
+    );
+  });
+
+  it('fails closed when an archived re-verification predecessor publication is corrupt', async () => {
+    const fixture = await prepareV5ApplyReady({ changeId: 'archive-and-checkpoint-boundary', postE2Writer: true });
+    await writeFile(join(fixture.root, 'src', 'domain', 'types.ts'), 'export const value = 2;\n', 'utf8');
+    await writeFile(join(fixture.changeRoot, 'tasks.md'), '# Tasks\n\n- [x] fixture\n', 'utf8');
+    await admitActionResult({ repoRoot: fixture.root, deliveryId: fixture.deliveryId, actionPackage: fixture.apply, result: { executionStatus: 'completed', summary: 'applied' }, verificationExecutor: fixtureVerificationExecutor('failed'), openSpecAdapter: fixtureOpenSpecAdapter(fixture.root, fixture.changeId) });
+    const first = await retryFailedChangeVerification({ repoRoot: fixture.root, deliveryId: fixture.deliveryId, verificationExecutor: fixtureVerificationExecutor('passed'), openSpecAdapter: fixtureOpenSpecAdapter(fixture.root, fixture.changeId) });
+    const archiveRoot = join(fixture.root, 'openspec', 'changes', 'archive', `2099-02-01-${fixture.changeId}`);
+    await mkdir(join(fixture.root, 'openspec', 'changes', 'archive'), { recursive: true });
+    await rename(fixture.changeRoot, archiveRoot);
+    await writeFile(join(archiveRoot, 'verification-history', `${first.previousVerificationFingerprint}.md`), 'tampered\n', 'utf8');
+
+    await assert.rejects(
+      resumeRun({ repoRoot: fixture.root, deliveryId: fixture.deliveryId, expectedRunId: fixture.apply.run.runId }),
+      (error: unknown) => error instanceof FlowkitError && error.code === 'TERMINAL_REPLAY_CONFLICT',
+    );
+  });
+
 });
 
 describe('B1 fixed ActionDefinition catalog', () => {

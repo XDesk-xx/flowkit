@@ -5,7 +5,9 @@
 ## Requirements
 ### Requirement: FormalFactSnapshot 只读视图
 
-C1 MUST 提供只读 `FormalFactSnapshot`，用于 Policy 消费 active Delivery/Change、dependencies、OpenSpec artifacts、current Change Runs、Reviewer Verdict 与最小 blocking-authority projection、Change Verification、Tasks completion、Delivery `fullTestStatus`、owner authorization、Archive/Checkpoint/Git boundary 和 conflicts。Snapshot MUST NOT 把完整 Reviewer Finding corpus 复制为第二数据库；Policy 所需 blocking authority MUST 从当前 matching Reviewer result 派生。
+C1 MUST 提供只读 `FormalFactSnapshot`，用于 Policy 消费 active Delivery/Change、dependencies、OpenSpec artifacts、current Change Runs、Reviewer Verdict 与最小 blocking-authority projection、Change Verification、Tasks completion、Delivery raw/effective `fullTestStatus`、Full Test executable binding/minimal terminal result projection、owner authorization、Archive/Checkpoint/Git boundary 和 conflicts。Snapshot MUST NOT 把完整 Reviewer Finding corpus、Full Test raw logs 或 Verification evidence corpus复制为第二数据库；Policy 所需 blocking authority MUST 从 current matching Reviewer result 派生，Full Test technical result MUST 由 Verification-owned structured result projection提供。
+
+E1 MUST project only the bounded architecture facts needed by Policy/Delivery behavior: current architecture cycle, its acceptance state, and accepted system source. It MUST NOT copy Architecture JSON, generated HTML or Archify receipt payloads into the snapshot.
 
 #### Scenario: Reviewer authority 只投影 Policy 所需最小集合
 
@@ -14,11 +16,24 @@ C1 MUST 提供只读 `FormalFactSnapshot`，用于 Policy 消费 active Delivery
 - **AND** MUST 包含从 blocking `reviewFindings` 派生的去重 `blockingAuthorities`
 - **AND** 完整 Finding 正文仍 MUST 由 Reviewer result.json 拥有
 
+#### Scenario: Full Test authority 只投影最小 Delivery facts
+
+- **WHEN** Reader 读取 current Delivery Manifest 的 Full Test facts
+- **THEN** Snapshot MUST 区分 persisted raw Full Test status 与 current effective lifecycle status
+- **AND** MUST 投影 executable binding、terminal summary/resultRef/timing（若存在）
+- **AND** MUST NOT 把 stdout/stderr、generated `dist/**` 或历史 process success 当作 formal Full Test result
+
 #### Scenario: conflicts 保持 fail-closed
 
 - **WHEN** Reader 发现当前 Policy relevant formal fact 自相矛盾或不可解析
 - **THEN** MUST 收集 `FactConflict`
 - **AND** Policy MUST NOT 猜测 authority 或下一 Action
+
+#### Scenario: fresh reader projects current architecture qualification
+- **WHEN** Manifest contains a valid E1 current architecture cycle
+- **THEN** a fresh reader MUST project exact cycleRef/fullTestAuthorizationRef/fullTestResultRef/Actual ref/compareRef/acceptance state
+- **AND** fullTestAuthorizationRef MUST resolve to the delivery-scoped `authorize-full-test` Owner fact that qualifies the current passed result
+- **AND** malformed fingerprint/path/Owner/qualification binding MUST surface a formal conflict
 
 ### Requirement: 正式事实 Reader 遵循 One fact, one authority
 
@@ -464,22 +479,77 @@ Reader MUST 使用 closed current-shape-first + bounded legacy discriminator。P
 
 ### Requirement: Delivery Manifest 嵌套 delivery 状态读取 + fail-closed
 
-Reader MUST 从 Delivery Manifest 的嵌套 `delivery:` mapping 读取 `state` 和 `fullTestStatus`（实际 Manifest 形状见 `openspec/delivery-groups/*.yaml`）。MUST NOT 从顶层 `state`/`fullTestStatus` 读取。Manifest 存在但 `delivery:` mapping 缺失、或 `delivery.state`/`delivery.fullTestStatus` 缺失/无效时 MUST 收集为 `FactConflict`（fail-closed），MUST NOT 静默返回 `undefined`。Manifest 完全不存在时返回 `undefined`（bootstrap-only Delivery，由 Policy 决定是否阻塞）。
+Reader MUST 从 Delivery Manifest 的嵌套 `delivery:` mapping 读取 `state` 与 persisted raw `fullTestStatus`，并从 `verification.fullTest` 读取 coverage intent、唯一 executable binding、optional current executionBlock 与 optional terminal result projection。MUST NOT 从顶层 `state`/`fullTestStatus` 读取。
+
+`verification.fullTest.execution` MUST 是唯一 typed per-Delivery execution contract，并使用 closed `kind=command|bounded-command-plan` 判别联合。两种 kind MUST共享非空 `id`、`scope=delivery`、`resultProtocol=flowkit-full-test-result-v1`、`resultAuthority=verification` 与精确 `expectedTerminalStatuses=[passed, failed]`。`command` MUST继续要求 non-empty logical `command`、`launcherMode=direct|npm-shim`、string `args[]` 与 positive `timeoutMs`；`npm-shim` 只接受 logical `command=npm`，并保留 non-win32 `npm` / win32 `npm.cmd` + ComSpec normalization。`bounded-command-plan` MUST包含 ordered non-empty `logicalChecks[]`，每项精确包含 non-empty unique logical `id`、closed source-controlled `resolverId` 与 positive `perTargetTimeoutMs`；unknown resolver、duplicate id/field或 unsupported shape MUST fail closed。Reader MUST NOT要求所有 future Delivery 使用 current 03 resolver set/timeout；`command` MUST继续是合法 future shape。`verification.fullTest.plan` MUST只解释为 Delivery coverage intent，MUST NOT被 Reader/Policy编译为 executable step list。
+
+当 persisted raw `fullTestStatus=not-ready` 且 all required Changes completed、matching checkpoints present、formal conflicts=0、current Delivery execution contract valid 时，Reader/Policy shared pure projection MUST 将 current effective Full Test status解释为 `awaiting-user-decision`；该 projection MUST NOT写回 Manifest。`authorized|passed|failed` MUST 来自 persisted raw status，不得仅凭 technical command结果推导。若 raw `authorized` 同时存在合法 executionBlock，effective status仍为 `authorized`，但 Policy MUST 投影 execution/recovery blocked boundary，不得返回 executable Full Test behavior。
+
+`verification.fullTest.executionBlock` MAY 只在 raw `fullTestStatus=authorized` 且最后一个 owned execution outcome 为 process-tree `outcome-unknown` 时存在，并 MUST 精确使用 `{schemaVersion:1, reason:outcome-unknown, summary:<non-empty bounded string>}`。它 MUST NOT 包含 `resultRef`、check result、raw logs 或 attempt history；存在时 current Full Test MUST fail closed 且不得开始新 attempt。
+
+Terminal `verification.fullTest.result` 只允许在 persisted `fullTestStatus=passed|failed` 时存在，并 MUST 使用唯一闭合 schema：`schemaVersion=1`、matching `status`、non-empty `summary`、non-negative integer `totalDurationMs`、`checks[]`（每项精确包含 non-empty unique `id`、`status=passed|failed`、non-negative integer `durationMs`）与 `resultRef`。对 `kind=bounded-command-plan`，`checks[]` MUST 按 frozen logical check order：`passed` result必须精确等于完整 logical plan且全部 passed；`failed` result必须是 non-empty exact logical prefix、前项全部 passed且最后一项 failed。对 legacy `kind=command`，Reader继续只做既有 structural result validation/hash/coherence，不得倒推 bounded logical plan。Physical target order/detail MUST NOT进入 terminal `checks[]` authority。
+
+`resultRef` MUST 为 `verification:full-test:<sha256>`。Reader/Writer MUST 重建固定字段顺序 canonical object `{schemaVersion,status,summary,totalDurationMs,checks}`，每个 check 重建固定字段顺序 `{id,status,durationMs}`，保持 `checks` array order，对该 object 的无空白、无 trailing newline UTF-8 `JSON.stringify` bytes 计算 lowercase SHA-256；hash domain MUST 排除 `resultRef` 自身且 MUST NOT 依赖 Manifest/YAML key ordering。Status/result 缺失、不匹配、duplicate check id、unsupported schemaVersion、malformed timing 或 recomputed resultRef mismatch MUST 收集 `FactConflict` 并 fail closed。
+
+The Delivery Manifest `architecture` mapping MAY additionally contain E1 `currentCycle` and `acceptedSystemSource`. Pre-E1 manifests without those optional fields MUST remain readable; present E1 fields MUST use the closed schema and coherent internal bindings. `currentCycle` MUST include both `fullTestAuthorizationRef` and `fullTestResultRef`, and its cycleRef MUST be recomputable from the authorization occurrence plus result/Actual/compare refs.
 
 #### Scenario: 读取嵌套 delivery.state 和 delivery.fullTestStatus
 
 - **WHEN** Reader 读取 Delivery Manifest
 - **AND** Manifest 存在且包含 `delivery:` mapping
 - **THEN** MUST 从 `delivery.state` 读取 DeliveryState
-- **AND** MUST 从 `delivery.fullTestStatus` 读取 FullTestStatus
+- **AND** MUST 从 `delivery.fullTestStatus` 读取 persisted raw FullTestStatus
 - **AND** 两者 MUST 通过 B1 `DeliveryState`/`FullTestStatus` 枚举校验
 - **AND** MUST NOT 从顶层 `state`/`fullTestStatus` 读取
+
+#### Scenario: Ready raw not-ready 投影 awaiting-user-decision
+
+- **WHEN** persisted raw `delivery.fullTestStatus=not-ready`
+- **AND** all required Changes completed/checkpointed
+- **AND** formal conflicts=0
+- **AND** executable binding valid
+- **THEN** current effective Full Test status MUST 为 `awaiting-user-decision`
+- **AND** Manifest bytes MUST 保持不变
+
+#### Scenario: Full Test executable contract 不合法 fail-closed
+
+- **WHEN** `verification.fullTest.execution` 缺失、duplicate、字段不完整、discriminated kind/base fields不合法、command launcher/timeout不合法，或 bounded logical check id/resolver/timeout不合法
+- **THEN** Reader MUST 收集 Full Test plan/binding `FactConflict`
+- **AND** Delivery MUST NOT 进入 Owner Full Test authorization 或 executable behavior boundary
+
+#### Scenario: outcome-unknown executionBlock 只阻塞执行而不伪造 Verification result
+
+- **WHEN** raw `fullTestStatus=authorized` 且持久化合法 `executionBlock.reason=outcome-unknown`
+- **THEN** Reader MUST 投影该 current execution safety blocker
+- **AND** MUST NOT 投影 terminal `verification.fullTest.result` 或 `resultRef`
+- **AND** Policy/Operator MUST NOT 开始新的 Full Test attempt
+
+#### Scenario: executionBlock 与 terminal result 冲突 fail-closed
+
+- **WHEN** executionBlock 与 `passed|failed` terminal result 同时存在，或 block schema/reason 非法
+- **THEN** Reader MUST 收集 `FactConflict`
+- **AND** Delivery MUST fail closed
+
+#### Scenario: Future Delivery binding 按自身 contract 读取
+
+- **WHEN** future Delivery 持久化了与当前 03 不同的合法 command/args/timeout
+- **THEN** Reader MUST 按 typed schema 接受并投影该 Delivery 自己的 execution contract
+- **AND** MUST NOT 因其不等于 `npm run verify:full` 或 `120000` 而产生冲突
+
+#### Scenario: terminal status 与 result projection 必须一致
+
+- **WHEN** persisted raw `fullTestStatus=passed|failed`
+- **THEN** matching `verification.fullTest.result` MUST 存在且 status 一致
+- **AND** closed result schema/check status/timing MUST structural valid
+- **AND** bounded kind MUST additionally satisfy complete-PASS / exact-prefix-FAILED logical-plan semantics
+- **AND** Reader MUST 按固定 canonical JSON hash domain 重算 `resultRef`
+- **AND** 不一致、缺失或 hash mismatch MUST fail closed
 
 #### Scenario: Manifest 缺失 delivery mapping fail-closed
 
 - **WHEN** Manifest 存在但缺少 `delivery:` mapping
 - **THEN** MUST 收集 `FactConflict`（dimension=`delivery-manifest-shape`）
-- **AND** `deliveryState` 和 `deliveryFullTestStatus` MUST 为 `undefined`
+- **AND** `deliveryState` 和 Full Test status projection MUST 为 `undefined`
 - **AND** MUST NOT 静默返回 undefined 而不收集冲突
 
 #### Scenario: delivery.state 缺失或无效 fail-closed
@@ -493,13 +563,39 @@ Reader MUST 从 Delivery Manifest 的嵌套 `delivery:` mapping 读取 `state` �
 
 - **WHEN** `delivery.fullTestStatus` 缺失或值不在 `not-ready|awaiting-user-decision|authorized|passed|failed` 枚举内
 - **THEN** MUST 收集 `FactConflict`（dimension=`delivery-full-test-status`）
-- **AND** `deliveryFullTestStatus` MUST 为 `undefined`
+- **AND** Full Test status projection MUST 为 `undefined`
 
 #### Scenario: Manifest 完全不存在返回 undefined
 
 - **WHEN** Delivery Manifest 文件不存在
-- **THEN** `deliveryState` 和 `deliveryFullTestStatus` MUST 为 `undefined`
+- **THEN** `deliveryState` 和 Full Test status projection MUST 为 `undefined`
 - **AND** MUST NOT 收集 `FactConflict`（bootstrap-only Delivery 由 Policy 决定）
+
+#### Scenario: pre-E1 architecture mapping remains compatible
+- **WHEN** `architecture` contains only `impact` and `archifyPlan`
+- **THEN** Reader MUST accept the Manifest and project no current cycle/accepted source
+
+#### Scenario: accepted source must match accepted current cycle and Owner fact
+- **WHEN** acceptedSystemSource is present
+- **THEN** it MUST bind an accepted Actual/compare source and a valid `accept-architecture` Owner record for the same cycle
+- **AND** that cycle MUST retain coherent Full Test authorization occurrence provenance
+- **AND** mismatched source/cycle/Owner refs MUST fail closed
+
+#### Scenario: bounded execution contract round-trip
+- **WHEN** Manifest持久化合法 `kind=bounded-command-plan` 与 ordered logical checks
+- **THEN** Reader MUST恢复相同 logical id/resolverId/perTargetTimeoutMs order
+- **AND** Writer round-trip MUST NOT materialize resolved machine paths/test file snapshot
+
+#### Scenario: incomplete bounded PASS fail-closed
+- **WHEN** bounded logical plan有多个 checks但 terminal status=`passed` 的 `checks[]`只包含前缀
+- **THEN** Reader MUST collect a Full Test result semantic conflict
+- **AND** MUST NOT expose a qualifying passed Full Test result
+
+#### Scenario: bounded FAILED exact prefix accepted
+- **WHEN** bounded terminal status=`failed`
+- **AND** checks是 frozen logical plan的非空 exact prefix、前项 passed、最后一项 failed
+- **THEN** Reader MAY accept the terminal result after existing hash/schema validation
+- **AND** unexecuted suffix MUST NOT require synthetic `not-run` entries
 
 ### Requirement: Review verdict 重建 + reviewed-Run 连接
 
@@ -1067,12 +1163,29 @@ FormalFactReader MUST 把 active Delivery Manifest 的有效 `ownerDecisions` �
 
 ### Requirement: Manifest persistence 必须支持 bounded structured mutation
 
-A1 persistence MUST 支持：创建 minimal Delivery Manifest、向 existing active Manifest 追加 planned Change、追加 Owner decision record、以及把唯一 target Change state 从 planned 改为 active。Existing Manifest mutation MUST 基于唯一 structured spans/indentation contract，只改 owned bytes并 preserve 其它 section；ambiguous/duplicate/unsupported owned shape MUST fail closed。最终文件 MUST atomic publish。
+A1 persistence MUST 支持：创建 minimal Delivery Manifest（包含 caller-supplied typed `verification.fullTest.execution`）、向 existing active Manifest 追加 planned Change、追加 Owner decision record、把唯一 target Change state 从 planned 改为 active，以及 A1 Delivery Full Test lifecycle 所需的 bounded `delivery.fullTestStatus` / `verification.fullTest.execution` / optional `verification.fullTest.executionBlock` / `verification.fullTest.result` mutation。Existing Manifest mutation MUST 基于唯一 structured spans/indentation contract，只改 owned bytes并 preserve 其它 section；ambiguous/duplicate/unsupported owned shape MUST fail closed。最终文件 MUST atomic publish。
+
+E1 MUST additionally support atomic publication of current architecture cycle creation, Owner acceptance/accepted-source publication, and architecture-remediation invalidation while preserving unrelated fields and exact Full Test semantics.
 
 #### Scenario: existing Manifest round-trip 保留未知 section
 - **WHEN** existing Manifest 含 A1 parser 不消费的合法 top-level section
-- **AND** 只记录 Owner decision 或激活 Change
+- **AND** 只记录 Owner decision、激活 Change 或发布 Full Test lifecycle/result
 - **THEN** unknown section MUST 保持不变
+
+#### Scenario: Full Test terminal publication 原子更新 status 与 result
+- **WHEN** authorized Full Test execution terminal 返回 passed 或 failed
+- **THEN** Manifest writer MUST 在一次 atomic replace 中同时更新 `delivery.fullTestStatus` 与 matching `verification.fullTest.result`
+- **AND** partial status-only 或 result-only durable publication MUST NOT 出现
+
+#### Scenario: compare publication is atomic and bounded
+- **WHEN** post-Full-Test Planned-vs-Actual compare produces a valid current cycle
+- **THEN** persistence MUST publish the complete cycle or leave the prior Manifest unchanged
+- **AND** MUST NOT persist generated HTML/receipt body as authority
+
+#### Scenario: remediation invalidates Full Test and architecture cycle atomically
+- **WHEN** exact architecture remediation admission succeeds
+- **THEN** planned Change append, Owner provenance, Full Test result removal/status reset and currentCycle removal MUST appear in one atomic Manifest publication
+- **AND** partial publication MUST NOT be observable
 
 ### Requirement: Owner decision ref 必须 deterministic 且 idempotent
 
@@ -1451,3 +1564,152 @@ Owner Contract Reset 改变 Change contract generation 时，FormalFact projecti
 - **WHEN** target pending Run 同时存在 undeclared/unowned path 或其他 non-reset semantic drift
 - **THEN** recovery MUST fail closed
 - **AND** MUST 保持 context 与历史 Run 不变
+
+### Requirement: B1 必须以 Full-Test-specific retained result + occurrence-resolved Finding provenance 保留 failure authority
+
+Delivery Manifest MAY 增加两个 bounded optional sections：`verification.fullTest.failureHistory[]` 与 `delivery.fullTestFindings[]`。Pre-B1 Manifest 缺少任一字段 MUST bounded read 为 empty，MUST NOT触发 rewrite/migration。
+
+`failureHistory[]` MUST 是 Full-Test-specific **content-addressed deduplicated retention set**：每项 MUST 是 A1 structured terminal result closed schema、`status=failed`，并按 A1 canonical hash domain独立重算 `resultRef`。同一 `resultRef` MUST 最多出现一次；两个不同 failure occurrence MAY 合法引用同一 retained result entity。它 MUST NOT保存 passed result、raw logs、process output或 attempt history。
+
+`fullTestFindings[]` 每项 MUST closed-schema包含：
+
+```text
+schemaVersion = 1
+findingId
+authorizationRef
+sourceResultRef
+severity = blocking
+summary
+affectedScope = delivery
+requiredOwnerDecision = corrective-change-or-cancel-delivery
+resolution.kind = corrective-change-created
+resolution.changeId
+resolution.ownerDecisionRef
+```
+
+Reader MUST 将 `authorizationRef` 解析到 current Delivery 的合法 delivery-scoped `authorize-full-test` Owner record，将 `sourceResultRef` 解析到 `failureHistory[]` exact retained result，并按 `deliveryId + authorizationRef + sourceResultRef` 的 frozen canonical hash domain独立重算 `findingId`。`findingId` 与 `authorizationRef` 作为 occurrence identity MUST 各自唯一；duplicate occurrence identity、mismatched source binding或 dangling authorization MUST 收集 FactConflict 并 fail closed。不同 Finding occurrence MAY 共用同一 `sourceResultRef`。
+
+Persisted Finding 的 `summary` MUST 是 source Verification result `summary` 的 deterministic projection：Writer MUST 从 verified source result复制，MUST NOT接受 caller-authored summary；Reader MUST 要求 `finding.summary === retainedResult.summary` exact equality。其它 constant/derived projection字段也 MUST 按 frozen contract校验。
+
+`resolution.changeId` MUST resolve 到 current Delivery Change，`resolution.ownerDecisionRef` MUST resolve 到 matching ordinary `create-change` Owner record。Current raw `fullTestStatus=failed` 时，Reader MUST 从 current `verification.fullTest.result` + latest applicable `authorize-full-test` Owner record纯派生 current Finding occurrence；该 current Finding不要求先持久化，并且其 `authorizationRef` MUST NOT已经作为 historical resolved occurrence存在于 `fullTestFindings[]`。Correction consumed 后 historical `fullTestFindings[]` MUST NOT 被重新解释为 current blocking finding。
+
+#### Scenario: pre-B1 Manifest 无新字段仍合法读取
+- **WHEN** legitimate historical/pre-B1 Manifest 没有 `failureHistory` 与 `fullTestFindings`
+- **THEN** Reader MUST 把二者解释为 empty
+- **AND** MUST 按既有 A1 current-result/fullTestStatus contract读取
+- **AND** MUST NOT修改 Manifest bytes
+
+#### Scenario: retained failed result 可由 fresh process 独立重算并去重
+- **WHEN** post-correction Manifest 在 `failureHistory[]` 保存 exact failed structured result
+- **THEN** fresh Reader MUST 按 A1 canonical hash domain重算其 `resultRef`
+- **AND** one-or-more persisted Finding `sourceResultRef` MAY resolve 到同一 exact entity
+- **AND** hash mismatch、duplicate physical resultRef entry 或 non-failed history item MUST fail closed
+
+#### Scenario: 两次相同 failed payload 可保留两个独立 corrective provenance
+- **WHEN** occurrence A 与 occurrence B 有不同合法 `authorizationRef`
+- **AND** 两者 `sourceResultRef` 因 structured failed payload完全相同而相同
+- **THEN** `failureHistory[]` MUST 只需要一份 exact retained result
+- **AND** `fullTestFindings[]` MUST 能保存两个不同 `findingId/authorizationRef` 的 resolved provenance
+- **AND** fresh Reader MUST 分别重算并识别两个 occurrence，不得 overwrite/collide
+
+#### Scenario: stale Finding source 或 authorization binding fail closed
+- **WHEN** persisted `fullTestFindings[]` item 指向不存在/hash 不匹配的 `sourceResultRef`
+- **OR** `authorizationRef` 不存在、不是 matching Delivery-scoped `authorize-full-test` fact
+- **OR** recomputed occurrence `findingId` 与 persisted id不一致
+- **THEN** Reader MUST 收集 bounded Full Test Finding/provenance FactConflict
+- **AND** Policy MUST NOT猜测 historical failure authority或允许 lifecycle advance
+
+#### Scenario: historical Finding summary 漂移 fail closed
+- **WHEN** persisted Finding 的 `sourceResultRef` 可合法解析
+- **BUT** persisted `summary` 不等于 retained failed result `summary`
+- **THEN** Reader MUST 收集 bounded FactConflict before lifecycle advance
+- **AND** MUST NOT把 contradictory human projection视为合法 provenance
+
+#### Scenario: createChange-only old shape 不冒充 correction consumed
+- **WHEN** Manifest 仍为 raw `failed` + current terminal result
+- **AND** 仅存在一个后来创建的 ordinary planned Change
+- **BUT** 没有合法 `failureHistory + fullTestFindings` corrective admission facts
+- **THEN** Reader MUST 继续把 current failure occurrence投影为未消费
+- **AND** MUST NOT 因 Change 的存在推断 correction 已发生
+
+### Requirement: B1 corrective admission 必须以一次 atomic Manifest publication 转移 current failure authority
+
+合法 Owner corrective create MUST 在一次 atomic Manifest replace 中同时完成：append ordinary required planned Change、append existing `create-change` Owner record、**ensure** exact current failed result retained once in `verification.fullTest.failureHistory[]`、append matching current occurrence resolved `delivery.fullTestFindings[]` provenance、移除 current `verification.fullTest.result`、并将 raw `delivery.fullTestStatus` 从 `failed` 改为 `not-ready`。
+
+Writer MUST 从 current verified result + current authorization fact派生 `findingId/authorizationRef/sourceResultRef/summary` 等 provenance字段；caller只提供 frozen corrective binding，不得提供 summary/severity等 projection字段。若 current `sourceResultRef` 已在 `failureHistory[]`，Writer MUST exact validate并 reuse；若不存在才 append。Writer MUST preserve unrelated Delivery/Change/verification fields；任何 input/current finding mismatch、malformed optional B1 section、duplicate occurrence identity、partial mutation 或 publish failure MUST fail closed，MUST NOT留下“status reset 但 authority 未保留”或“Change created 但 failure consumption 不完整”的 durable state。
+
+#### Scenario: corrective admission 原子完成 occurrence-aware mutation
+- **WHEN** current failed result/finding occurrence 与 Owner corrective create input exact match且普通 Change input合法
+- **THEN** writer MUST 用一次 atomic replace发布 new planned Change + create-change Owner record + retained/reused failed result + current occurrence resolved Finding + current result removal + `failed→not-ready`
+- **AND** persisted Finding summary MUST 从 verified source result派生
+- **AND** unrelated Manifest semantics MUST 保持不变
+
+#### Scenario: repeated identical failed result reuse retained entity
+- **WHEN** prior resolved Finding已经保留 `sourceResultRef=R`
+- **AND** later Full Test cycle以不同 `authorizationRef` 再次产生 exact same failed result `R`
+- **THEN** corrective admission MUST NOT append duplicate `failureHistory` entity
+- **AND** MUST append a new distinct occurrence Finding/resolution referencing `R`
+
+#### Scenario: mismatch 时 Manifest 完全不变
+- **WHEN** supplied findingId/authorizationRef/sourceResultRef 与 current derived Finding occurrence不匹配
+- **OR** current Full Test facts/optional B1 sections存在冲突
+- **THEN** corrective admission MUST fail closed before publish
+- **AND** Manifest bytes MUST 保持不变
+
+### Requirement: F1 finalization projection 必须可持久化、可逆验证且不复制外部 authority
+Delivery Manifest persistence MUST support an optional closed `delivery.finalization` projection containing only schemaVersion, qualificationRef, ownerAuthorizationRef, and candidateRef. FormalFactSnapshot/Reader MUST also expose or deterministically derive the unique latest admitted pre-final Git revision needed by the current qualification without persisting a duplicate Git truth in the Manifest. Reader MUST validate format, exact Owner binding, passed Full Test and architecture disposition consistency. The persistence layer MUST support the strict inverse projection required to reconstruct pre-Finalize active Manifest bytes. Pre-F1 manifests without finalization remain readable.
+
+#### Scenario: completed F1 Manifest projects minimal finalization facts
+- **WHEN** Manifest has `delivery.state=completed` and F1 finalization block
+- **THEN** Reader MUST expose only the bounded finalization refs required for handoff/admission
+- **AND** current qualification verification MUST re-derive `qualifiedBaseRevision` from admitted Git boundary facts
+- **AND** MUST NOT copy Full Test logs, Architecture JSON/receipt bytes, or Git history into snapshot state
+
+#### Scenario: malformed or duplicate finalization block fails closed
+- **WHEN** finalization keys are missing/duplicated/malformed or inconsistent with passed/architecture facts
+- **THEN** Reader MUST emit a formal-fact conflict
+
+### Requirement: Owner finalizationQualificationRef 必须作为 bounded provenance 被读取验证
+Owner Manifest records MAY contain optional `finalizationQualificationRef`. Reader MUST validate its typed ref shape and expose it on Owner decision/authorization facts. Field-absent historical records remain readable and retain prior identity semantics.
+
+#### Scenario: malformed Owner qualification binding is rejected
+- **WHEN** Owner record carries an invalid finalizationQualificationRef
+- **THEN** Reader MUST fail closed rather than treating it as authorization
+
+### Requirement: Delivery Final Git reader 必须区分 candidate 与 admitted boundary
+Git reader MUST emit current/future Delivery Final candidates with parsed exact subject/trailer identity rather than directly granting boundary authority. FormalFactReader MUST perform point-in-time Manifest/Owner/finalization/candidateRef admission. Strict mode activates at the recognized F1 Change Checkpoint; ancestor historical finals MAY retain bounded legacy compatibility.
+
+#### Scenario: post-cutover wrong trailers remain candidate/non-boundary
+- **WHEN** a post-F1-checkpoint commit has finalize-like subject but missing/duplicate/wrong trailers
+- **THEN** Git/Reader MUST NOT project a formal `delivery-final` boundary
+
+#### Scenario: point-in-time commit facts bind admitted boundary
+- **WHEN** a strict candidate commit is evaluated
+- **THEN** Reader MUST validate its first parent, exact changed path set, point-in-time completed Manifest, matching qualification-bound Owner record, re-derived `qualifiedBaseRevision`, and reconstructed candidateRef
+- **AND** first parent MUST exact-equal the re-derived qualified revision
+- **AND** only a fully matching candidate MAY become `GitBoundaryFact(kind=delivery-final)`
+
+### Requirement: Double-quoted YAML scalar MUST round-trip with the current writer escape language
+
+Delivery Manifest double-quoted string values written by the current `JSON.stringify()`-compatible writer MUST be decoded by the shared YAML reader exactly once using the same quoted-string escape semantics. The original serialized scalar bytes MUST be the only escape input; decoding MUST NOT use staged/chained replacements that reinterpret backslash sequences created by an earlier replacement.
+
+For every supported string value, `value → writer → reader` MUST restore the exact semantic value. This includes quote/backslash、literal `\\n|\\t|\\r|\\uXXXX` text、actual JSON-compatible control escapes、Unicode/control characters以及 Windows-shaped executable/path/args. Malformed/unsupported quoted scalars MUST continue to fail closed under the existing handwritten YAML-subset contract; J1 MUST NOT add a second YAML runtime dependency or silently migrate repository facts.
+
+#### Scenario: double-quoted scalar exact semantic round-trip
+
+- **WHEN** writer persists a supported string using its current JSON-compatible quoted form
+- **AND** the value contains quote、backslash、literal escape-shaped text、actual control escapes、Unicode or Windows-shaped path text
+- **THEN** Reader MUST restore the exact original semantic string
+- **AND** characters produced by decoding MUST NOT become a second round of escape input
+
+#### Scenario: legacy command Windows-shaped value不得被二次解释
+
+- **WHEN** a legacy `kind=command` Full Test contract persists command/args containing literal backslash + `n`、`t`、`r` or `uXXXX`-shaped text
+- **THEN** Reader MUST restore command/args exactly as written
+- **AND** MUST NOT turn those literal sequences into newline、tab、carriage return or Unicode escape output unless they were escapes in the original serialized scalar bytes
+
+#### Scenario: repository YAML semantics remain compatible
+
+- **WHEN** the J1 reader parses the repository YAML corpus that was valid before J1
+- **THEN** its semantic projections MUST remain identical for supported inputs
+- **AND** J1 MUST NOT require a broad YAML rewrite or migration

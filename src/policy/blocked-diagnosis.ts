@@ -11,6 +11,7 @@
  */
 
 import type { FactConflict } from '../facts/formal-fact-snapshot.js';
+import type { FullTestFailureFinding } from '../domain/full-test.js';
 import type { BlockedDiagnosis, BlockedReason } from './types.js';
 
 // ---------------------------------------------------------------------------
@@ -25,7 +26,7 @@ import type { BlockedDiagnosis, BlockedReason } from './types.js';
  * it only lists the choices for the owner.
  */
 export const FULL_TEST_FAILED_OWNER_ACTIONS: readonly string[] = [
-  'authorize-corrective-change',
+  'create-corrective-change',
   'cancel-delivery',
 ];
 
@@ -148,13 +149,18 @@ export function dependencyIncompleteDiagnosis(
  * Diagnosis for `full-test-failed` (frozen Section 6). Lists the owner's legal
  * choices; Policy MUST NOT auto-create a corrective Change or auto-retry.
  */
-export function fullTestFailedDiagnosis(): BlockedDiagnosis {
-  return blockedDiagnosis(
+export function fullTestExecutionOutcomeUnknownDiagnosis(): BlockedDiagnosis {
+  return blockedDiagnosis('full-test-execution-outcome-unknown', ['full-test-prior-process-tree-not-proven-terminal']);
+}
+
+export function fullTestFailedDiagnosis(finding?: FullTestFailureFinding): BlockedDiagnosis {
+  const diagnosis = blockedDiagnosis(
     'full-test-failed',
     ['full-test-already-failed'],
     [],
     FULL_TEST_FAILED_OWNER_ACTIONS,
   );
+  return finding === undefined ? diagnosis : { ...diagnosis, fullTestFinding: finding };
 }
 
 export function nonAuthorReviewBlockerDiagnosis(

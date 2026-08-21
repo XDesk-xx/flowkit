@@ -1,0 +1,18 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "apply",
+    "executionStatus": "completed",
+    "summary": "Implemented the approved bounded Delivery Full Test execution contract, coverage-complete physical resolver, protocol/write-side closure, managed environment propagation, and regressions inside the frozen I1 mutation surface."
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "6824a1abc2919aaf3afba8ba28dc211fbbc0b6e0ca4cb777ffb97b920ed08d0a",
+    "currentVerification": {
+      "logicalRef": "openspec/changes/delivery-full-test-bounded-execution-and-protocol-closure/verification.md",
+      "versionFingerprint": "943df9a002e64225e330c014b7961ee571907a1f20850a5d64a6fdb266955307",
+      "selectionFingerprint": "e34e0dba724f0b4285fdb66efe58e4abea8652c6541f1cbdc8842e981c05a638",
+      "status": "failed"
+    }
+  }
+}

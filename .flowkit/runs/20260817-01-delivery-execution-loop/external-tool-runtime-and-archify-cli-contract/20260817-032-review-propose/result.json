@@ -1,0 +1,67 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "按 029→030→031 审查链复核 C1 Proposal：031 正确承接 029/030 的 external-tool foundation，exact Archify v2.14.0 prerequisite 已关闭，C1/D1/E1 authority boundary、managed OpenSpec/Archify thin runtime、no Registry、synthetic review ZIP 与 OpenSpec strict 均成立；但 Proposal 尚未把 Proof 8 要求的 exact Verification ownership/mutation closure 冻结完整。现有 module-map 的 tests/unit/integrations prefix 与 Design 所述 external-tools unit ownership 存在重叠风险，且 flowkitMutationScope 漏掉直接依赖 FLOWKIT_OPENSPEC_BIN 的 verify --retry CLI regression consumer tests/unit/cli/change-action.test.ts。两项均为 author-actionable Proposal blocker。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "01b4e14b792bcee3d293b3f1b7c74ed138d7b169d81ca431e60c159a155db598"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "C1-RP-001",
+      "severity": "blocking",
+      "title": "external-tools Verification ownership 尚未冻结为 exact non-overlapping mapping",
+      "problem": "029 Proof 8 明确把 exact selectors/check mapping 留给 Proposal 冻结，但 031 Design §9 仍以 ‘relevant unit integration tests’ 描述 external-tools ownership。Base 的 openspec-runtime 已用 `tests/unit/integrations` 整段 prefix 作为 ownership selector，而现有 `owns()` 对任何该目录下更窄 selector也会同时命中。若 Apply 按当前 Design 将新的 Archify/shared-runtime unit tests 归入 external-tools，就会出现同一路径同时匹配 openspec-runtime 与 external-tools；若不归入，则 Design/Tasks 又没有冻结这些测试的唯一 owner。Proposal 因此尚未满足自己要求的 actualChangeSet → exactly one ownership module → selected check 的闭合。",
+      "contractRef": "029 Explore Proof 8 Acceptance/Gap + 031 design.md Decision 9 + tasks.md 4.1-4.4 + flowkit-change-verification-selection delta requirement",
+      "invariant": "C1 Proposal 必须在进入 Apply 前冻结一个 closed、source-controlled 且 non-overlapping 的 ownership/check mapping；每个允许的 C1 candidate mutation path 必须确定性映射到 exactly one Verification module，并从该 module 闭合到实际 physical target。",
+      "evidence": [
+        "029 Explore Proof 8: Gap 明确写明 ‘Exact selectors/check mapping must be frozen in Proposal after the external release identity prerequisite is closed.’",
+        "031 design.md Decision 9 将 external-tools ownership 描述为 src/integrations/external-tools/**、src/integrations/archify/**、C1 fixture/integration test 和 ‘relevant unit integration tests’，没有给 unit tests 的 exact selector/owner。",
+        "Base src/verification/change-selection/module-map.ts 中 openspec-runtime ownershipSelectors 已包含 `tests/unit/integrations`；owns(selector,path) 的实现是 `path === selector || path.startsWith(selector + '/')`。因此任何 external-tools 对 `tests/unit/integrations/...` 的更窄 ownership 都会与现有 openspec-runtime 同时匹配。",
+        "Base selectAffectedVerificationModules() 对 matches.length !== 1 直接抛 `VERIFICATION_MODULE_SELECTION_FAILED`，因此这不是命名偏好，而是 formal Verification admission blocker。",
+        "031 tasks.md 4.4 同时要求 ‘actual C1 candidate mutations all map to exactly one ownership module’，当前 Design 未提供足以实现该要求的唯一 mapping。"
+      ],
+      "impact": "Apply 可能在新增/修改 Archify 或 shared-runtime unit tests 时触发 module ownership ambiguity，导致 formal Verification selection fail closed；或者 Author 为避免冲突把测试留在错误 module，从而使 C1 的 external-tools physical closure 与 Proposal 声明不一致。",
+      "location": "openspec/changes/external-tool-runtime-and-archify-cli-contract/design.md Decision 9 / flowkitMutationScope；Base src/verification/change-selection/module-map.ts openspec-runtime selector + owns()",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Revise Proposal/Design to freeze the exact non-overlapping ownership selectors for external-tools and existing openspec-runtime unit/integration tests, without introducing a Registry. The chosen mapping may narrow existing selectors or keep specific tests under an existing module, but it must make every authorized C1 mutation path map to exactly one module and still select the intended `tests-external-tools` / existing OpenSpec physical coverage.",
+      "acceptance": [
+        "Design enumerates enough exact/prefix ownership selectors to prove no overlap between external-tools and openspec-runtime for all C1 unit/integration test paths.",
+        "Representative new Archify/shared-runtime unit test paths and existing OpenSpec unit test paths each resolve to exactly one module under current owns() semantics.",
+        "Module-map tests include positive unique ownership and a negative overlap guard/counterexample for the chosen layout.",
+        "Formal selection from shared external-tool production mutations reaches `tests-external-tools` and required existing OpenSpec regressions without duplicate ownership."
+      ]
+    },
+    {
+      "id": "C1-RP-002",
+      "severity": "blocking",
+      "title": "flowkitMutationScope 漏掉现有 verify --retry CLI regression consumer",
+      "problem": "031 freezes managed OpenSpec propagation so managed route carries `FLOWKIT_HOME` rather than reducing identity to `FLOWKIT_OPENSPEC_BIN`, and tasks 2.3/2.4 require verify --retry / real-process regressions to prove the same managed identity. Base `tests/unit/cli/change-action.test.ts` 的 real retry CLI coverage 在测试入口直接要求 `process.env.FLOWKIT_OPENSPEC_BIN` 非空，并用该 executable 构造 OpenSpecCliAdapter。该文件不在 031 apply/revise-apply flowkitMutationScope 中。与此同时 `scripts/verification.ts` 的 full-test environment 正是 C1 要迁移的传播点；按 031 Design 完成 managed route 后，全套 test:full 将不应依赖 legacy env 来证明 canonical managed identity。Apply 因此会在 ‘修改这个直接 consumer’ 与 ‘保持 approved mutation scope’ 之间发生冲突。",
+      "contractRef": "029 Explore Risk Scan + Proof 8; 031 proposal.md OpenSpec managed migration; design.md Decisions 4-5; tasks.md 2.3-2.4 and 5.1; 03 C1 required proof for archive/retry/real-process regressions",
+      "invariant": "Proposal 的 authorized mutation surface 必须覆盖所有因 managed OpenSpec representation/propagation 变化而需要调整的直接 consumer/regression；Apply 不得靠越权修改或保留 legacy-only test assumption 来声称 verify --retry managed identity 已闭合。",
+      "evidence": [
+        "Base tests/unit/cli/change-action.test.ts 的 ‘routes verify --retry through the actual CLI surface...’ 测试读取 `process.env['FLOWKIT_OPENSPEC_BIN']`，缺失即 assert 失败，并把它作为 explicit executable 传入 OpenSpecCliAdapter。",
+        "031 design.md Decision 5 明确 managed route 应传播 `FLOWKIT_HOME`；exact `FLOWKIT_OPENSPEC_BIN` 只属于 explicit/legacy compatibility route。",
+        "031 tasks.md 2.3/2.4 要求 nested verify-retry/full-test technical env 与 real regressions 覆盖 managed identity，而 tasks 5.1 又禁止 Apply 超出 approved flowkitMutationScope。",
+        "031 flowkitMutationScope 包含 tests/integration/g1-change-cli-end-to-end.test.ts、tests/integration/openspec-1-7-real-cli.test.ts、tests/unit/verification/** 与 tests/unit/integrations/**，但没有 `tests/unit/cli/change-action.test.ts`。",
+        "Base scripts/verification.ts 的 `test:full` 会执行全部 tests，并通过 fullTestEnvironment 统一传递 OpenSpec 环境；因此这个 legacy-only test assumption 不是可以长期忽略的孤立 fixture。"
+      ],
+      "impact": "C1 Apply 要么必须越过 Proposal mutation scope 才能让现有 retry CLI regression适配 managed identity，要么留下一个 full-suite/real retry consumer 继续要求 legacy env，从而无法证明 canonical managed propagation 在 verify --retry 与 Full Test 技术路径上闭合。",
+      "location": "openspec/changes/external-tool-runtime-and-archify-cli-contract/design.md flowkitMutationScope; tests/unit/cli/change-action.test.ts retry CLI coverage; scripts/verification.ts fullTestEnvironment",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Expand/freeze the Proposal mutation surface and regression design so the existing retry CLI consumer is explicitly handled. At minimum the authorized scope must cover `tests/unit/cli/change-action.test.ts` if it must change, and the Proposal must distinguish canonical managed retry coverage from intentionally retained legacy compatibility coverage without requiring managed Full Test execution to synthesize `FLOWKIT_OPENSPEC_BIN`.",
+      "acceptance": [
+        "flowkitMutationScope includes every direct test consumer that must change for the chosen managed propagation design, including `tests/unit/cli/change-action.test.ts` when its current assumption is replaced.",
+        "The real `verify --retry` CLI path can be exercised under managed `FLOWKIT_HOME` without requiring a canonical `FLOWKIT_OPENSPEC_BIN` executable string.",
+        "Full `test:full` under managed tool environment does not fail because an existing regression still unconditionally requires legacy `FLOWKIT_OPENSPEC_BIN`.",
+        "Any retained explicit/legacy retry regression is clearly compatibility coverage and does not stand in for the managed canonical-path proof."
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}

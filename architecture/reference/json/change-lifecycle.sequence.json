@@ -1,0 +1,361 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Flowkit 完整 Change 执行 Sequence",
+    "viewBox": [
+      1180,
+      1740
+    ],
+    "animation": "trace",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "explore",
+        "label": "探索与方案",
+        "focus": [
+          "policy",
+          "author",
+          "reviewer"
+        ],
+        "note": "从 explore 到 propose，并显示 review/revise 的合法边界。"
+      },
+      {
+        "id": "apply",
+        "label": "实施与验证",
+        "focus": [
+          "author",
+          "verification",
+          "reviewer"
+        ],
+        "note": "Apply 后先形成 Verification truth，再进入 review-apply。"
+      },
+      {
+        "id": "close",
+        "label": "归档与检查点",
+        "focus": [
+          "owner",
+          "openspec",
+          "policy",
+          "git"
+        ],
+        "note": "archive 与 Git Change Checkpoint 是两个不同边界。"
+      }
+    ],
+    "output": "change-lifecycle.sequence.html"
+  },
+  "participants": [
+    {
+      "id": "owner",
+      "type": "external",
+      "label": "Owner",
+      "sublabel": "授权 / 决策"
+    },
+    {
+      "id": "policy",
+      "type": "backend",
+      "label": "Policy",
+      "sublabel": "唯一合法边界"
+    },
+    {
+      "id": "author",
+      "type": "backend",
+      "label": "Author",
+      "sublabel": "实现角色"
+    },
+    {
+      "id": "reviewer",
+      "type": "security",
+      "label": "Reviewer",
+      "sublabel": "独立审查"
+    },
+    {
+      "id": "verification",
+      "type": "cloud",
+      "label": "Verification",
+      "sublabel": "验证结果权威"
+    },
+    {
+      "id": "openspec",
+      "type": "external",
+      "label": "OpenSpec",
+      "sublabel": "契约 / 归档"
+    },
+    {
+      "id": "git",
+      "type": "database",
+      "label": "Git",
+      "sublabel": "正式历史边界"
+    }
+  ],
+  "segments": [
+    {
+      "from": 150,
+      "to": 505,
+      "label": "探索阶段"
+    },
+    {
+      "from": 525,
+      "to": 875,
+      "label": "方案阶段"
+    },
+    {
+      "from": 895,
+      "to": 1280,
+      "label": "实施阶段"
+    },
+    {
+      "from": 1300,
+      "to": 1585,
+      "label": "归档与检查点"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m1",
+      "from": "policy",
+      "to": "author",
+      "y": 180,
+      "label": "执行探索（explore）",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m2",
+      "from": "author",
+      "to": "policy",
+      "y": 225,
+      "label": "提交 Explore result",
+      "variant": "return"
+    },
+    {
+      "id": "m3",
+      "from": "policy",
+      "to": "reviewer",
+      "y": 270,
+      "label": "审查探索（review-explore）",
+      "variant": "security"
+    },
+    {
+      "id": "m4",
+      "from": "reviewer",
+      "to": "policy",
+      "y": 315,
+      "label": "approved / changes-requested",
+      "variant": "return"
+    },
+    {
+      "id": "m5",
+      "from": "policy",
+      "to": "author",
+      "y": 365,
+      "label": "仅 Author blocker：修订探索（revise-explore）",
+      "variant": "dashed"
+    },
+    {
+      "id": "m6",
+      "from": "author",
+      "to": "reviewer",
+      "y": 415,
+      "label": "修订后重新审查",
+      "variant": "dashed"
+    },
+    {
+      "id": "m7",
+      "from": "policy",
+      "to": "author",
+      "y": 470,
+      "label": "形成方案（propose）",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m8",
+      "from": "author",
+      "to": "policy",
+      "y": 555,
+      "label": "提交 Proposal / Design / Tasks",
+      "variant": "return"
+    },
+    {
+      "id": "m9",
+      "from": "policy",
+      "to": "reviewer",
+      "y": 605,
+      "label": "审查方案（review-propose）",
+      "variant": "security"
+    },
+    {
+      "id": "m10",
+      "from": "reviewer",
+      "to": "policy",
+      "y": 655,
+      "label": "approved / changes-requested",
+      "variant": "return"
+    },
+    {
+      "id": "m11",
+      "from": "policy",
+      "to": "author",
+      "y": 705,
+      "label": "仅 Author blocker：修订方案（revise-propose）",
+      "variant": "dashed"
+    },
+    {
+      "id": "m12",
+      "from": "author",
+      "to": "reviewer",
+      "y": 755,
+      "label": "修订后重新审查",
+      "variant": "dashed"
+    },
+    {
+      "id": "m13",
+      "from": "owner",
+      "to": "policy",
+      "y": 820,
+      "label": "Owner 授权 apply",
+      "variant": "security"
+    },
+    {
+      "id": "m14",
+      "from": "policy",
+      "to": "author",
+      "y": 860,
+      "label": "实施变更（apply）",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m15",
+      "from": "author",
+      "to": "verification",
+      "y": 925,
+      "label": "提交 exact candidate 进行 Change 验证",
+      "variant": "default"
+    },
+    {
+      "id": "m16",
+      "from": "verification",
+      "to": "policy",
+      "y": 975,
+      "label": "Verification result / resultRef",
+      "variant": "return"
+    },
+    {
+      "id": "m17",
+      "from": "policy",
+      "to": "reviewer",
+      "y": 1025,
+      "label": "审查实施结果（review-apply）",
+      "variant": "security"
+    },
+    {
+      "id": "m18",
+      "from": "reviewer",
+      "to": "policy",
+      "y": 1075,
+      "label": "approved / changes-requested + blockingAuthority",
+      "variant": "return"
+    },
+    {
+      "id": "m19",
+      "from": "policy",
+      "to": "author",
+      "y": 1130,
+      "label": "仅 Author blocker：修订实施（revise-apply）",
+      "variant": "dashed"
+    },
+    {
+      "id": "m20",
+      "from": "author",
+      "to": "verification",
+      "y": 1180,
+      "label": "修订后重新验证",
+      "variant": "dashed"
+    },
+    {
+      "id": "m21",
+      "from": "verification",
+      "to": "reviewer",
+      "y": 1230,
+      "label": "新验证事实后重新审查",
+      "variant": "dashed"
+    },
+    {
+      "id": "m22",
+      "from": "owner",
+      "to": "policy",
+      "y": 1335,
+      "label": "Owner 授权 archive",
+      "variant": "security"
+    },
+    {
+      "id": "m23",
+      "from": "policy",
+      "to": "openspec",
+      "y": 1385,
+      "label": "归档 Change（archive）",
+      "variant": "emphasis"
+    },
+    {
+      "id": "m24",
+      "from": "openspec",
+      "to": "policy",
+      "y": 1435,
+      "label": "archive success",
+      "variant": "return"
+    },
+    {
+      "id": "m26",
+      "from": "owner",
+      "to": "git",
+      "y": 1535,
+      "label": "授权 Change Checkpoint",
+      "variant": "security"
+    },
+    {
+      "id": "m27",
+      "from": "policy",
+      "to": "git",
+      "y": 1580,
+      "label": "写入 Git Change Checkpoint",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "完整周期",
+      "items": [
+        "正式 Change Action 从 explore 开始，到 archive 结束",
+        "archive 成功后 Change 才进入 completed",
+        "Git Change Checkpoint 是完成后的持久化边界，不是 Action / Run"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "审查与修订",
+      "items": [
+        "changes-requested 不等于 revise-required",
+        "只有 blockingAuthority=author 才进入 revise-*",
+        "Owner / Verification / External blocker 必须停在对应权威边界"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "验证与权威",
+      "items": [
+        "Verification 产生验证事实，Reviewer 产生 Verdict / Findings",
+        "Owner 授权不能由 Author、Reviewer 或 Run prose 合成",
+        "每个正式 Action 的 Run 保持三文件模型"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Sequence 补充视角",
+      "items": [
+        "展示 Owner / Policy / Author / Reviewer / Verification / OpenSpec / Git 的参与者交互顺序",
+        "完整分支语义仍以同源 Workflow 图表达；Sequence 不决定 Policy、Change contract 或 next Action",
+        "与 canonical formal facts 冲突时 reference stale；formal facts win"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "Review 091 Proposal：G1 的核心 Proposal/Design 方向与已批准 Explore 一致。historical Apply/revise-apply replay 将 immutable producing binding 与 active/unique-archive physical location 分离，并仅接受 exact current publication 或 same-origin/exact-candidate/same-selection bounded re-verification successor；historical E1 sidecars 保持 point-in-time reader；shared resume projection 为 non-persistent derived view；single-action Agent Adapter 仅复用 prepare/resume/admit、caller-supplied executor 最多一次、admission 后 return control；prospective activation 仍等待 G1 canonical Change Checkpoint；Verification 继续使用 closed existing logical checks并要求新的 G1 physical target。OpenSpec current/all strict、package hashes、prior Reviewer bytes、result refs 与 Policy/doctor 均一致。完整 blocking scan 发现一个 author blocker：091 design.md 缺少当前 production Apply preparation 强制要求的唯一 `## flowkitMutationScope` closed JSON section，因此 approved Design 无法由 deriveMutationDeclaration() 机器派生 apply/revise-apply selectors；Reviewer 已用 production helper 复现 MUTATION_DECLARATION_INVALID(count=0)。这会使 Proposal 即使获批并经 Owner authorize-apply，也在 Apply preparation 前 fail closed。需 revise-propose 仅补齐机器可执行 mutation scope，并证明两种 Apply action 均能派生且覆盖已冻结的 G1 mutation/test surface。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "64604f6161b2236bcc0b0ac8565f74ad9d8962b86106c1d2c06bd3aa0e190c06"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "G1-RP-001",
+      "severity": "blocking",
+      "title": "Design 缺少必需的 flowkitMutationScope，当前 Proposal 无法形成可执行 Apply mutation authority",
+      "problem": "091 Design 只以自然语言列出 expected mutation surface（b1-run-execution-service、publication、resume/adapter modules、resume-context、module-map/evidence 与 tests），但没有当前 production `deriveMutationDeclaration()` 强制读取的 `## flowkitMutationScope` section。当前产品要求 approved Design 恰好包含一个 closed schemaVersion=1 JSON block，并同时定义 apply/revise-apply selectors；没有该 section 时 Apply preparation无法形成 persisted MutationDeclaration。Reviewer在 exact 091 candidate 上直接调用 production `deriveMutationDeclaration(..., 'apply', [091 design ref])`，得到 `MUTATION_DECLARATION_INVALID: Design must contain exactly one flowkitMutationScope section { count: 0 }`。因此 Proposal 当前不是可执行 contract，问题不能留到 Apply 才发现。",
+      "contractRef": "Current product mutation-authority contract: src/verification/change-selection/mutation-declaration.ts deriveMutationDeclaration(); AGENTS.md Contract preflight / Apply exact mutation authority；091 Design §6 Expected mutation surface",
+      "invariant": "Approved Proposal/Design 必须能够由当前 Flowkit write-side确定性派生 Apply/revise-apply MutationDeclaration；Author不得在 Apply 时临时扩大或猜测 mutation surface。Proposal冻结的 required implementation changes必须全部落入 machine-readable authorized selectors。",
+      "evidence": [
+        "091 `design.md` 全文没有 `## flowkitMutationScope` heading；仅 §6 用 prose 列出 expected mutation surface。",
+        "Current `src/verification/change-selection/mutation-declaration.ts` 要求 Design 中 `SCOPE_HEADING` 恰好匹配一次，并要求 closed JSON shape `{schemaVersion:1, actions:{apply:{selectors}, revise-apply:{selectors}}}`。",
+        "Reviewer exact-candidate production proof：`deriveMutationDeclaration(repoRoot, 'apply', [091 design ResultRef])` → `MUTATION_DECLARATION_INVALID`, detail `count: 0`。",
+        "091 Proposal-time Verification Selection proof声称 Apply无需扩大 scope，但在缺少 machine mutation declaration 的情况下，该结论尚不能绑定实际 Apply authority。"
+      ],
+      "impact": "若 091 直接 Approved，Owner authorize-apply 后 Flowkit 会在准备 Apply 时 fail closed，G1 无法进入实现；若 Author届时临时补 selectors，又会绕过 review-propose 对 mutation surface/Verification closure 的审查。",
+      "location": "openspec/changes/sync-resume-and-single-action-agent-adapter/design.md（缺失 flowkitMutationScope section）；src/verification/change-selection/mutation-declaration.ts",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Revise Proposal，在 Design 中增加且仅增加一个符合 current closed schema 的 `## flowkitMutationScope` JSON section，冻结 apply 与 revise-apply 的完整 selectors；selectors应覆盖091已冻结的 production/test mutation surface与必要 formal artifacts，但不得借机扩大 G1 scope。随后用 production deriveMutationDeclaration 对 apply/revise-apply 两支实际派生并证明通过，并重新核对 prospective Verification selection 与该 authorized mutation surface闭合。",
+      "acceptance": [
+        "`design.md` 恰好存在一个 `## flowkitMutationScope` section，JSON满足当前 schemaVersion=1 closed shape，只定义 apply/revise-apply，各自仅含 selectors。",
+        "production `deriveMutationDeclaration(repoRoot, 'apply', approvedDesignRef)` PASS，且 `revise-apply` 同样 PASS。",
+        "selectors覆盖 G1 已冻结的 replay/path resolver、typed resume projection、single-action adapter、diagnostic consumer、module-map/evidence 与对应 targeted/unit/integration tests；新增文件使用当前 MutationSelector contract允许的精确 path/prefix表达。",
+        "selectors不授权 H1 stable Runner、Registry/auto-loop、Delivery Full Test/Finalize/Checkpoint adapter、Actual Architecture、04 Engineering Health或其他未批准范围。",
+        "使用冻结 selectors/expected actualChangeSet 重做或核对 production buildVerificationSelection prospective proof，保持 capabilityRelation=matched，并证明新的 G1 integration target有正式 physical resolver closure。"
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}

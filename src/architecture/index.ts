@@ -1,0 +1,27 @@
+export {
+  ArchitectureService,
+  architectureHtmlPath,
+  architectureJsonPath,
+  resolveDeliveryArchitecturePaths,
+  type ArchitectureServiceOptions,
+  type DeliveryArchitectureKind,
+  type DeliveryArchitecturePaths,
+  type RenderableArchitectureKind,
+} from './architecture-service.js';
+export {
+  acceptedSourceMatchesCycle,
+  acceptedSystemSourceFor,
+  actualArchitectureRefFor,
+  architectureCompareRefFor,
+  architectureCycleRefFor,
+  buildCurrentArchitectureCycle,
+  parseAcceptedSystemSource,
+  parseActualArchitectureRef,
+  parseCurrentArchitectureCycle,
+  prepareFutureCurrentArchitectureSource,
+  readAcceptedSystemSource,
+  type AcceptedSystemSource,
+  type ActualArchitectureRef,
+  type CurrentArchitectureCycle,
+  type FutureCurrentArchitectureSource,
+} from './architecture-lifecycle.js';

@@ -1,0 +1,21 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "Review 026 apply: B1 implementation matches the approved 024/025 contract. The current Full Test failed result is projected into an occurrence-aware Delivery Finding using deliveryId + authorize-full-test authorizationRef + Verification sourceResultRef; corrective create reuses the ordinary create-change Owner write-side and atomically retains/reuses the exact failed Verification result, persists resolved Finding provenance with source-derived summary, creates a required ordinary planned Change, clears the current terminal result, and resets failed to not-ready. Repeated byte-identical failures share one retained content-addressed result while receiving distinct occurrence identities from fresh Owner Full Test authorizations. Reader fails closed on dangling/mismatched provenance and summary drift. Corrective admission does not auto-activate, retry Full Test, create a new Action/Run/NNN, reopen historical Changes, or introduce generic Finding/Evidence storage. Independent typecheck/build/lint, focused B1 regressions, OpenSpec/physical Change Verification and exact verification.md reproduction pass. No blocking findings found.",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/delivery-findings-and-corrective-change/verification.md",
+      "versionFingerprint": "ce2de948a9ddc811f3a2fd44881dbb40e4054e7cc67f2ca1bfba3f581398bd39",
+      "kind": "verification-summary"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "eb2000f57dff7baf872ed44d5d1b775abe139e50932c2ac77573c7d730126c84"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [],
+  "reviewFindingConvergence": []
+}

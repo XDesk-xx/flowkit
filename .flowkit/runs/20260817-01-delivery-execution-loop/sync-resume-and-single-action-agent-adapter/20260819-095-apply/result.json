@@ -1,0 +1,18 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "apply",
+    "executionStatus": "completed",
+    "summary": "Implemented G1 repository-only resume projection, retry/archive historical terminal replay closure, provider-neutral single-action Agent Adapter, and closed Verification ownership/physical coverage."
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "2b29482e3164f4d3ba6e419625f60662474e1afae2a68969759c43cbcb31984b",
+    "currentVerification": {
+      "logicalRef": "openspec/changes/sync-resume-and-single-action-agent-adapter/verification.md",
+      "versionFingerprint": "8e415079c4a8b0a9cc08f99e9d7917d225bd25c6b0bc9498edddda828b6ac97a",
+      "selectionFingerprint": "661e6fc63eef0021db65d4cc4bbf96c73fb11e181d784004bb349f129f400878",
+      "status": "failed"
+    }
+  }
+}

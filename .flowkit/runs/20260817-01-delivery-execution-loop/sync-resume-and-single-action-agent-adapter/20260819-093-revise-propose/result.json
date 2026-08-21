@@ -1,0 +1,54 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-propose",
+    "executionStatus": "completed",
+    "summary": "关闭 G1-RP-001：在 Design 中增加唯一 closed schemaVersion=1 flowkitMutationScope，apply/revise-apply 均冻结相同 17 个 selectors，覆盖已批准的 historical replay/path resolution、typed resume projection、single-action adapter、diagnostic consumer、Verification ownership/physical resolver 与对应 tests，且不授权 H1/Registry/auto-loop/Delivery behavior adapter/Actual/04 扩张。production deriveMutationDeclaration 对 apply/revise-apply 两支均 PASS；使用 frozen expected production/test actualChangeSet 重新执行 production buildVerificationSelection 得到 capabilityRelation=matched、seed modules cli-diagnostics/execution/verification-selection 与既有七个 logical checks；disposable prospective tests-cli resolver包含新的 G1 integration target，故意失败 sentinel 被实际执行并以 exitCode=1 证明 physical resolver closure。OpenSpec current/all strict 与 git diff --check PASS。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/design.md",
+        "versionFingerprint": "ed9ca24ab0f20e37bd17c56358bbda5958f73517a676016e6ba2f3edb2e9b85d",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/proposal.md",
+        "versionFingerprint": "f68358366fa34d46630b588aea49e1c8dc2dade068e2a50292bc723f2505da2b",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "9236a3aeb84375068bbbb888418d1ccdf285cb0a2b983fdaf256d4bac2f294c4",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-diagnostic-cli/spec.md",
+        "versionFingerprint": "649578eb84ad87824dada2e972168f5368b75f25c28c1c8d7c8f1a150fb71129",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-lean-run-and-action-package/spec.md",
+        "versionFingerprint": "442b5ce3bafd15521b9373f152aa832c01e5b2eb1a8ebfe6ebdc18ee5e865b5a",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-sync-resume-and-single-action-agent-adapter/spec.md",
+        "versionFingerprint": "9fedfff36e6980f7827e0e789647e37c183b31512074589157e6f4c0d36d8a0c",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/tasks.md",
+        "versionFingerprint": "5d2aefce7205c6425cedfdab7326db071fc67419dece775011d84dbaf60d1785",
+        "kind": "produced-artifact"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/sync-resume-and-single-action-agent-adapter/20260819-092-review-propose/result.json",
+      "versionFingerprint": "57ab7897709d96aad391632c0d9a7e371224f9eabc89b921c441bf8b756e2acf",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "679fa44d88fcd1e85695daa808ecc4f93f3258c27944049d7b7e91ea87707c04"
+  }
+}

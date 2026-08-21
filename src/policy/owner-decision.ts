@@ -47,9 +47,11 @@ export function hasOwnerAuthorization(
   decision: AuthorizationOnlyOwnerDecision,
   deliveryId: string,
   changeId?: string,
+  finalizationQualificationRef?: string,
 ): boolean {
   return ownerAuthorizations.some((fact) => {
     if (fact.decision !== decision || fact.deliveryId !== deliveryId) return false;
+    if (finalizationQualificationRef !== undefined && fact.finalizationQualificationRef !== finalizationQualificationRef) return false;
     if (changeId === undefined) return fact.changeId === undefined;
     return fact.changeId === changeId;
   });

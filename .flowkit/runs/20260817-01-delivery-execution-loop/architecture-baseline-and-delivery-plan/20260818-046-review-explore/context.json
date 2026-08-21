@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260818-046-review-explore",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "review-explore",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "bd8a1a61a08e6acd053e0a43dd8719ae456b2b3e7bb826405a833fa5b0a4c1a1",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-046-review-explore/",
+  "changeKey": "D1",
+  "changeId": "architecture-baseline-and-delivery-plan",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-045-explore/result.json",
+    "versionFingerprint": "9222867d6e896941f1b045d7e2848de797c24e7b69c313ff64f907282330cb54",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260818-045-explore",
+  "canonicalBase": "9d27efef586bcb3204647c78785c9c30a64be4a2",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-045-explore/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "9222867d6e896941f1b045d7e2848de797c24e7b69c313ff64f907282330cb54"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/explore.md",
+      "versionFingerprint": "bc09afdcb6f5df3b5d960f4e9ea86fae68eed67430e7da4ce588cadbf32c765c",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "architecture-baseline-and-delivery-plan",
+      "runId": "20260818-046-review-explore",
+      "action": "review-explore",
+      "role": "reviewer",
+      "semanticInputFingerprint": "bd8a1a61a08e6acd053e0a43dd8719ae456b2b3e7bb826405a833fa5b0a4c1a1"
+    },
+    "definition": {
+      "action": "review-explore",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-explore",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/explore.md",
+        "versionFingerprint": "bc09afdcb6f5df3b5d960f4e9ea86fae68eed67430e7da4ce588cadbf32c765c",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-045-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "9222867d6e896941f1b045d7e2848de797c24e7b69c313ff64f907282330cb54"
+      }
+    ],
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "4fa1adfbef718957c7e32825dbb789ed0b27a409a331d12f2d2b9231f98e5e14",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

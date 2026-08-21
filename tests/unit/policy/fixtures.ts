@@ -7,6 +7,7 @@
  */
 
 import type { ChangeAction } from '../../../src/domain/actions.js';
+import type { FullTestExecutionBlock, FullTestExecutionContract, FullTestTerminalResult } from '../../../src/domain/full-test.js';
 import type { OwnerFactRef } from '../../../src/domain/types.js';
 import type {
   ChangeState,
@@ -163,6 +164,10 @@ export function buildCheckpointBoundary(changeId: string = CHANGE_ID): GitBounda
 export interface SnapshotSpec {
   readonly deliveryState?: DeliveryState | undefined;
   readonly deliveryFullTestStatus?: FullTestStatus | undefined;
+  readonly deliveryFullTestRawStatus?: FullTestStatus | undefined;
+  readonly deliveryFullTestExecution?: FullTestExecutionContract | undefined;
+  readonly deliveryFullTestExecutionBlock?: FullTestExecutionBlock | undefined;
+  readonly deliveryFullTestResult?: FullTestTerminalResult | undefined;
   readonly changeVerificationStatus?: VerificationStatus | undefined;
   readonly changeTasksComplete?: boolean | undefined;
   readonly changes?: readonly ChangeFact[];
@@ -181,6 +186,10 @@ export function buildSnapshot(spec: SnapshotSpec = {}): FormalFactSnapshot {
     deliveryId: DELIVERY_ID,
     deliveryState: spec.deliveryState ?? 'active',
     deliveryFullTestStatus: spec.deliveryFullTestStatus ?? undefined,
+    ...(spec.deliveryFullTestRawStatus !== undefined && { deliveryFullTestRawStatus: spec.deliveryFullTestRawStatus }),
+    ...(spec.deliveryFullTestExecution !== undefined && { deliveryFullTestExecution: spec.deliveryFullTestExecution }),
+    ...(spec.deliveryFullTestExecutionBlock !== undefined && { deliveryFullTestExecutionBlock: spec.deliveryFullTestExecutionBlock }),
+    ...(spec.deliveryFullTestResult !== undefined && { deliveryFullTestResult: spec.deliveryFullTestResult }),
     ...(spec.changeVerificationStatus !== undefined && { changeVerificationStatus: spec.changeVerificationStatus }),
     ...(spec.changeTasksComplete !== undefined && { changeTasksComplete: spec.changeTasksComplete }),
     changes: spec.changes ?? [buildChange()],

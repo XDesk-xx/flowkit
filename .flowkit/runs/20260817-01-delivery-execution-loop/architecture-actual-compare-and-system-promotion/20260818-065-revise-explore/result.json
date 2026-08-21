@@ -1,0 +1,24 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-explore",
+    "executionStatus": "completed",
+    "summary": "Revised E1 Explore closes E1-RE-001 and E1-RE-002 with disposable next-consumer proofs. Post-pass architecture remediation is now explicitly bound to the current non-accepted Actual/Compare cycle and atomically invalidates stale Full Test/current architecture qualification before entering the ordinary required Change lifecycle; after checkpoint it returns only to awaiting-user-decision and requires fresh Owner Full Test authorization before a new Actual cycle. Accepted Actual promotion is now proved through a serializable prior-Delivery source fact, fresh durable read/resume, and a different future Delivery Current derived from the accepted prior Actual plus the future Delivery's own exact Git Start revision; exact managed Archify validates/delivers both prior Actual and future Current, with no global system.architecture.json or 03-specific constants. No Proposal or implementation mutation is performed.",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/explore.md",
+        "versionFingerprint": "fb257c08a7545b4db3bdc2713a17058d7f2843ccc945193466cf5f4fd15992a6",
+        "kind": "produced-artifact"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-actual-compare-and-system-promotion/20260818-064-review-explore/result.json",
+      "versionFingerprint": "b5e94f42f43874df2577951843905eba6051487fd05a7a935b745ec735dab31e",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "c77609ac991f65a9e0d0b80d150b385d3b047310d648b9c06511f5db60aa3d11"
+  }
+}

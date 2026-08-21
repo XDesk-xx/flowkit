@@ -1,0 +1,47 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "Review 082 Apply：F1 主体实现与 080/081 approved Proposal 基本一致。Reviewer 独立确认 package hashes、exact Base、staged diff hygiene、typecheck/lint/build、OpenSpec strict 20/20；F1 focused/policy/persistence 62/62 与 architecture/E1/F1 execution 157/157 通过。qualifiedBaseRevision 已从 admitted pre-final Git boundaries 派生并贯穿 qualification/candidate/Delivery Final parent；clean post-qualification commit、post-pass required Change invalidation、active-state preflight、no-Run Finalize、crash/resume handoff与 strict exact Final admission均有物理回归。但完整 Apply scan 发现 strict cutover activation 不是单调的：resolveRecognizedF1FinalizeCheckpoint() 从 git log --all 收集所有 Delivery 中同名 F1 checkpoints，若后来存在一个从旧基线分叉的合法同名 checkpoint，因不存在唯一 ancestor-of-all candidate会返回 undefined；readAdmittedGitBoundaries() 又把 cutover undefined 解释为继续 legacy loose Delivery Final recognition。Reviewer disposable Git proof 已实际复现：recognized F1 checkpoint 后的 future malformed Final，在另一个 divergent valid F1 checkpoint ref 存在时被重新投影为 formal delivery-final 且 conflicts=0。该行为违反 F1 要求的 recognized checkpoint 后 current/future history MUST strict，因此当前 Apply 不能批准。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/delivery-finalize-and-git-boundary/verification.md",
+      "versionFingerprint": "934a3c83502d48d110683446b64d8ec72cee30fae1be65d507c9edbe88111b9a",
+      "kind": "verification-summary"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "8a1ebbf060b21872606482d7fe8cfc703c4a3cab26f08011ae2caaad383e6fe3"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "F1-RA-001",
+      "severity": "blocking",
+      "title": "strict Delivery Final cutover 可被 divergent 同名 F1 checkpoint 歧义降级回 legacy loose recognition",
+      "problem": "082 的 resolveRecognizedF1FinalizeCheckpoint() 使用 `git log --all` 收集所有 Delivery 中 subject 为 `chore(flowkit): checkpoint delivery-finalize-and-git-boundary` 且 point-in-time Owner authorization 合法的 checkpoints，然后只在恰好存在一个 candidate 是其他所有同名 checkpoint 祖先时返回 cutover SHA。若未来或残留 ref 中出现一个从旧基线分叉的合法同名 F1 checkpoint，两个 candidate 互不为祖先，resolver 返回 undefined。readAdmittedGitBoundaries() 对 cutoverSha===undefined 的语义却是把所有 Delivery Final boundary 继续加入 legacyBoundaries，因此已经由原 F1 checkpoint 激活的 strict semantics 会被重新降级成 legacy loose subject recognition。",
+      "contractRef": "F1 approved design §9-10 strict point-in-time admission / recognized F1 Change Checkpoint cutover; flowkit-delivery-finalize-and-git-boundary spec `strict Delivery Final cutover 必须由 recognized F1 Change Checkpoint 激活`; Flowkit Operating Model v8 Git authority / fail-closed formal facts",
+      "invariant": "一旦 recognized F1 Change Checkpoint 已经激活 strict Delivery Final semantics，任何后续/旁支 Git ref、同名 Change checkpoint 或 topology ambiguity 都不得让 current/future Delivery Final 回退到 legacy loose recognition。无法唯一解析 activation 时必须保持 strict/fail-closed，而不是把 `undefined` 当作尚未激活。",
+      "evidence": [
+        "src/facts/formal-fact-reader.ts resolveRecognizedF1FinalizeCheckpoint()：扫描 `git log --all`，将任意 Delivery 中合法同名 F1 checkpoint 加入 admitted；只有 originals.length===1 才返回 cutover，否则返回 undefined。",
+        "src/facts/formal-fact-reader.ts readAdmittedGitBoundaries()：`boundary.kind !== delivery-final || cutoverSha === undefined || isAncestor(boundary, cutoverSha)` 时把 boundary 加入 legacyBoundaries；因此 resolver ambiguity 会重新开启 loose Final recognition。",
+        "Reviewer disposable Git proof：base 上一条 branch 形成 recognized F1 checkpoint C1=479287e6a2d2bc4d7cf0df381043cd1686251f68，之后 target Delivery 形成只有 finalize subject、无 strict trailers 的 loose Final 8c0f3bcbddb630968eb227cf95cc531d554ae9a5；另一路从 pre-cutover base 分叉并形成合法同名 F1 checkpoint C3=646a99fda7954edee480bf47ea1e9b0f1e795946。FormalFactReader 对 target Delivery 最终输出 deliveryFinals=[8c0f3bcb...] 且 conflicts=[]。",
+        "082 integration 覆盖了正常线性 recognized checkpoint → strict exact Final 路径，但没有覆盖 `git log --all` 中存在 divergent same-named valid F1 checkpoint 后 strict activation 是否仍保持单调。"
+      ],
+      "impact": "在 strict semantics 已正式激活后，只要 repository refs 中出现一个合法但 divergent 的同名 F1 checkpoint，就可能让 future malformed/loose Delivery Final 被当成历史兼容 boundary 接受，绕过 exact subject/trailers、Owner qualification、candidateRef 与 first-parent admission。Git formal boundary authority因此可从 strict 静默退化为 legacy。",
+      "location": "src/facts/formal-fact-reader.ts resolveRecognizedF1FinalizeCheckpoint(), readAdmittedGitBoundaries(); tests/integration/f1-delivery-finalize-and-git-boundary.test.ts strict cutover coverage",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Revise Apply，使 F1 strict cutover activation 对 future repository history 单调且 fail-closed。Reviewer 不限定唯一实现：可以把 activation anchor 精确限定到本 03 F1 formal checkpoint、确定性保留最早已识别 activation、或在多个 recognized candidates 无法唯一解析时产生 formal conflict/保持 strict；但不得在已经存在 recognized activation 的情况下把 ambiguity 映射成 legacy-unactivated。不得引入 Gate/Registry/历史 Git rewrite。",
+      "acceptance": [
+        "新增 disposable regression：存在 original recognized F1 checkpoint，之后 future malformed Delivery Final，再额外保留一个从 pre-cutover base 分叉的合法同名 F1 checkpoint ref；future malformed Final MUST NOT 被投影为 formal delivery-final。",
+        "若 activation candidates 出现歧义，reader MUST fail closed（例如 formal conflict）或仍确定性保持原 strict activation；不得返回到 loose legacy semantics。",
+        "原 recognized F1 checkpoint 之前的 historical Delivery Final 仍保持 bounded read-only compatibility。",
+        "原 checkpoint 之后的 exact strict Delivery Final仍可正常 point-in-time admit。",
+        "future Delivery 或同名 Change checkpoint 的存在不得改变已经激活的 strict/legacy 分界；不建立 version/activation Registry。"
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}

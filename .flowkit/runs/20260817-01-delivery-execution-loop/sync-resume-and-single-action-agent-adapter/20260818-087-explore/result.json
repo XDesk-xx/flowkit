@@ -1,0 +1,19 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "explore",
+    "executionStatus": "completed",
+    "summary": "G1 Explore 完成：证明 fresh-process/fresh-checkout exact pending resume 可行；发现 historical Apply/revise-apply terminal replay 在 exact-candidate Verification retry supersession + OpenSpec archive relocation 后会失败，并证明可复用现有 re-verification chain validator 与 active-or-archived reader bounded 修复；确认 single-action Agent Adapter 应组合现有 prepare/resume/admit seams，并必须保留 bounded OpenSpec structured execution context；Architecture/tool resume facts应作为非持久化派生 projection；不扩展到 auto-loop、H1 stable Runner、Actual Architecture 或 Registry。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/explore.md",
+        "versionFingerprint": "64e396c6c6d6b2be8f5d53a17faa4bc5155e7973580ae424471c779139c5062d",
+        "kind": "produced-artifact"
+      }
+    ]
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "3dad03830b4c2e66aa7aaf504686f524468093921281a06599ae7e89f1263f9b"
+  }
+}

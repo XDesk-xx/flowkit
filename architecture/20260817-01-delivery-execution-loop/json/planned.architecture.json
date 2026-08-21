@@ -1,0 +1,566 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Flowkit 03 — 计划架构",
+    "subtitle": "03 Delivery Start 原始计划的目标系统形态；Bootstrap reconciliation provenance = f132db761bd209e6aff72411108b8e3e1c9801f5。",
+    "output": "planned.html",
+    "visual_preset": "signal-flow",
+    "quality_profile": "standard",
+    "viewBox": [
+      1700,
+      930
+    ],
+    "repository": {
+      "url": "https://github.com/XDesk-xx/flowkit",
+      "revision": "f132db761bd209e6aff72411108b8e3e1c9801f5"
+    },
+    "views": [
+      {
+        "id": "existing",
+        "label": "既有基础",
+        "focus": [
+          "owner",
+          "facts",
+          "policy",
+          "change-execution",
+          "openspec",
+          "verification",
+          "git"
+        ],
+        "note": "这些能力由 01/02 提供；03 以复用和扩展为主，不重新设计 Change lifecycle。"
+      },
+      {
+        "id": "delivery",
+        "label": "03 新增：Delivery 完整闭环",
+        "focus": [
+          "delivery-execution",
+          "architecture-lifecycle",
+          "finalize"
+        ],
+        "note": "Ready / Full Test / Finding / corrective Change / Architecture acceptance / Finalize 构成新的 Delivery execution plane。"
+      },
+      {
+        "id": "tools",
+        "label": "03 新增：外部工具与架构资产",
+        "focus": [
+          "external-runtime",
+          "archify",
+          "architecture-assets",
+          "openspec"
+        ],
+        "note": "OpenSpec 与 Archify 通过 FLOWKIT_HOME/tools 的 exact offline identity 执行；Architecture JSON 成为 Delivery 级 durable source。"
+      },
+      {
+        "id": "selfhost",
+        "label": "03 新增：自托管边界",
+        "focus": [
+          "agent-adapter",
+          "stable-runner",
+          "resume"
+        ],
+        "note": "稳定 Runner + 单 Action Adapter + Delivery resume 使下一条 Delivery 可以正式 self-host。"
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "owner",
+      "type": "external",
+      "label": "Owner 权威",
+      "sublabel": "决策 / 授权",
+      "tag": "既有",
+      "pos": [
+        40,
+        80
+      ],
+      "size": [
+        165,
+        64
+      ]
+    },
+    {
+      "id": "facts",
+      "type": "database",
+      "label": "正式事实",
+      "sublabel": "repository / lifecycle facts",
+      "tag": "既有",
+      "pos": [
+        275,
+        80
+      ],
+      "size": [
+        180,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/facts/formal-fact-reader.ts",
+          "label": "formal facts"
+        }
+      ]
+    },
+    {
+      "id": "policy",
+      "type": "backend",
+      "label": "Flowkit Policy",
+      "sublabel": "Change + Delivery 唯一合法边界",
+      "tag": "03 调整",
+      "pos": [
+        525,
+        80
+      ],
+      "size": [
+        205,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/policy/unified-entry.ts",
+          "label": "policy entry"
+        }
+      ]
+    },
+    {
+      "id": "change-execution",
+      "type": "backend",
+      "label": "Change 执行",
+      "sublabel": "继续沿用完整 02 周期",
+      "tag": "既有",
+      "pos": [
+        800,
+        80
+      ],
+      "size": [
+        190,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/cli/change-action.ts",
+          "label": "change action"
+        }
+      ]
+    },
+    {
+      "id": "openspec",
+      "type": "external",
+      "label": "OpenSpec 1.7.0",
+      "sublabel": "Change contract / archive",
+      "tag": "03 调整：受管离线",
+      "pos": [
+        1060,
+        80
+      ],
+      "size": [
+        205,
+        64
+      ]
+    },
+    {
+      "id": "verification",
+      "type": "cloud",
+      "label": "Verification",
+      "sublabel": "Change Verification + Full Test",
+      "tag": "03 调整",
+      "pos": [
+        1335,
+        80
+      ],
+      "size": [
+        205,
+        64
+      ],
+      "sources": [
+        {
+          "path": "openspec/delivery-groups/20260817-01-delivery-execution-loop.yaml",
+          "label": "03 Delivery Start plan"
+        }
+      ]
+    },
+    {
+      "id": "delivery-execution",
+      "type": "backend",
+      "label": "Delivery 执行闭环",
+      "sublabel": "Ready / Full Test / Finding / corrective Change",
+      "tag": "03 新增",
+      "pos": [
+        300,
+        330
+      ],
+      "size": [
+        250,
+        70
+      ],
+      "sources": [
+        {
+          "path": "openspec/delivery-groups/20260817-01-delivery-execution-loop.yaml",
+          "label": "03 Delivery Start plan"
+        }
+      ]
+    },
+    {
+      "id": "architecture-lifecycle",
+      "type": "cloud",
+      "label": "Architecture 生命周期",
+      "sublabel": "Current / Planned / Actual / Compare",
+      "tag": "03 新增",
+      "pos": [
+        635,
+        330
+      ],
+      "size": [
+        245,
+        70
+      ],
+      "sources": [
+        {
+          "path": "openspec/delivery-groups/20260817-01-delivery-execution-loop.yaml",
+          "label": "03 Delivery Start plan"
+        }
+      ]
+    },
+    {
+      "id": "finalize",
+      "type": "security",
+      "label": "Delivery 最终收口",
+      "sublabel": "Owner authorize-finalize / Delivery Final",
+      "tag": "03 新增",
+      "pos": [
+        965,
+        330
+      ],
+      "size": [
+        245,
+        70
+      ],
+      "sources": [
+        {
+          "path": "openspec/delivery-groups/20260817-01-delivery-execution-loop.yaml",
+          "label": "03 Delivery Start plan"
+        }
+      ]
+    },
+    {
+      "id": "git",
+      "type": "external",
+      "label": "Git",
+      "sublabel": "Start / Checkpoint / Delivery Final / Merge",
+      "tag": "03 调整",
+      "pos": [
+        1295,
+        330
+      ],
+      "size": [
+        235,
+        70
+      ],
+      "sources": [
+        {
+          "path": "openspec/delivery-groups/20260817-01-delivery-execution-loop.yaml",
+          "label": "03 Delivery Start plan"
+        }
+      ]
+    },
+    {
+      "id": "external-runtime",
+      "type": "backend",
+      "label": "外部工具运行时",
+      "sublabel": "FLOWKIT_HOME/tools + exact identity",
+      "tag": "03 新增",
+      "pos": [
+        220,
+        600
+      ],
+      "size": [
+        250,
+        70
+      ],
+      "sources": [
+        {
+          "path": "openspec/delivery-groups/20260817-01-delivery-execution-loop.yaml",
+          "label": "03 Delivery Start plan"
+        }
+      ]
+    },
+    {
+      "id": "archify",
+      "type": "external",
+      "label": "Archify 2.14.0",
+      "sublabel": "validate / deliver / compare",
+      "tag": "03 新增",
+      "pos": [
+        555,
+        600
+      ],
+      "size": [
+        220,
+        70
+      ],
+      "sources": [
+        {
+          "path": "openspec/delivery-groups/20260817-01-delivery-execution-loop.yaml",
+          "label": "03 Delivery Start plan"
+        }
+      ]
+    },
+    {
+      "id": "architecture-assets",
+      "type": "database",
+      "label": "架构资产",
+      "sublabel": "Delivery-scoped durable JSON",
+      "tag": "03 新增",
+      "pos": [
+        860,
+        600
+      ],
+      "size": [
+        230,
+        70
+      ],
+      "sources": [
+        {
+          "path": "openspec/delivery-groups/20260817-01-delivery-execution-loop.yaml",
+          "label": "03 Delivery Start plan"
+        }
+      ]
+    },
+    {
+      "id": "resume",
+      "type": "cloud",
+      "label": "同步 / 恢复",
+      "sublabel": "Delivery + Architecture refs + historical Runs",
+      "tag": "03 调整",
+      "pos": [
+        1175,
+        600
+      ],
+      "size": [
+        245,
+        70
+      ],
+      "sources": [
+        {
+          "path": "openspec/delivery-groups/20260817-01-delivery-execution-loop.yaml",
+          "label": "03 Delivery Start plan"
+        }
+      ]
+    },
+    {
+      "id": "agent-adapter",
+      "type": "frontend",
+      "label": "单 Action Agent Adapter",
+      "sublabel": "一次只执行一个 Change Action",
+      "tag": "03 新增",
+      "pos": [
+        520,
+        785
+      ],
+      "size": [
+        250,
+        70
+      ],
+      "sources": [
+        {
+          "path": "openspec/delivery-groups/20260817-01-delivery-execution-loop.yaml",
+          "label": "03 Delivery Start plan"
+        }
+      ]
+    },
+    {
+      "id": "stable-runner",
+      "type": "frontend",
+      "label": "稳定 Runner",
+      "sublabel": "dist/bin/flowkit.js + self-hosting acceptance",
+      "tag": "03 新增",
+      "pos": [
+        930,
+        785
+      ],
+      "size": [
+        270,
+        70
+      ],
+      "sources": [
+        {
+          "path": "openspec/delivery-groups/20260817-01-delivery-execution-loop.yaml",
+          "label": "03 Delivery Start plan"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "01 / 02 已存在并继续沿用",
+      "wraps": [
+        "facts",
+        "policy",
+        "change-execution"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "03 计划新增的 Delivery / Architecture 能力",
+      "wraps": [
+        "delivery-execution",
+        "architecture-lifecycle",
+        "finalize"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "03 计划新增的 External Tool / Self-hosting 能力",
+      "wraps": [
+        "external-runtime",
+        "archify",
+        "architecture-assets",
+        "agent-adapter",
+        "stable-runner"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "p1",
+      "from": "owner",
+      "to": "facts",
+      "route": "straight",
+      "variant": "security"
+    },
+    {
+      "id": "p2",
+      "from": "facts",
+      "to": "policy",
+      "route": "straight"
+    },
+    {
+      "id": "p3",
+      "from": "policy",
+      "to": "change-execution",
+      "route": "straight",
+      "variant": "emphasis"
+    },
+    {
+      "id": "p4",
+      "from": "change-execution",
+      "to": "openspec",
+      "route": "straight"
+    },
+    {
+      "id": "p5",
+      "from": "openspec",
+      "to": "verification",
+      "route": "straight"
+    },
+    {
+      "id": "p6",
+      "from": "policy",
+      "to": "delivery-execution",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "route": "orthogonal-v",
+      "variant": "emphasis"
+    },
+    {
+      "id": "p7",
+      "from": "delivery-execution",
+      "to": "architecture-lifecycle",
+      "route": "straight",
+      "variant": "emphasis"
+    },
+    {
+      "id": "p8",
+      "from": "architecture-lifecycle",
+      "to": "finalize",
+      "route": "straight",
+      "variant": "emphasis"
+    },
+    {
+      "id": "p9",
+      "from": "finalize",
+      "to": "git",
+      "route": "straight",
+      "variant": "emphasis"
+    },
+    {
+      "id": "p10",
+      "from": "delivery-execution",
+      "to": "verification",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "route": "orthogonal-v"
+    },
+    {
+      "id": "p11",
+      "from": "external-runtime",
+      "to": "archify",
+      "route": "straight",
+      "variant": "emphasis"
+    },
+    {
+      "id": "p12",
+      "from": "archify",
+      "to": "architecture-assets",
+      "route": "straight",
+      "variant": "emphasis"
+    },
+    {
+      "id": "p13",
+      "from": "architecture-assets",
+      "to": "architecture-lifecycle",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "route": "orthogonal-v"
+    },
+    {
+      "id": "p15",
+      "from": "architecture-assets",
+      "to": "resume",
+      "route": "straight"
+    },
+    {
+      "id": "p16",
+      "from": "resume",
+      "to": "stable-runner",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "route": "orthogonal-v"
+    },
+    {
+      "id": "p17",
+      "from": "stable-runner",
+      "to": "agent-adapter",
+      "route": "straight"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "阅读方式",
+      "items": [
+        "“既有”＝03 前已经存在，继续沿用",
+        "“03 调整”＝基于已有能力扩展或迁移，不是全新子系统",
+        "“03 新增”＝本 Delivery 计划新增的核心能力"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "03 最主要新增",
+      "items": [
+        "Delivery Ready / Full Test / Finding / Finalize 完整闭环",
+        "FLOWKIT_HOME/tools + Archify + Current / Planned / Actual Architecture",
+        "单 Action Agent Adapter + Stable Runner + self-hosting acceptance"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "仍保持不变的边界",
+      "items": [
+        "Change Formal Action Catalog 不扩张",
+        "Full Test / Finalize 不创建 Run",
+        "OpenSpec / Git / Verification / Archify 各自保留专业事实 authority"
+      ]
+    }
+  ]
+}

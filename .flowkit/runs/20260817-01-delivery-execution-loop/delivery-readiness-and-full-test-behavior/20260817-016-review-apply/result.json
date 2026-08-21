@@ -1,0 +1,26 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "Review 015 revise-apply: A1-RA-001 is resolved. POSIX timeout commands with a positive timeout now run in an owned detached process group; timeout sends SIGKILL to the whole group and confirms group non-existence within a bounded window before returning re-entry-safe timed-out-cancelled. Missing process-group identity, cancellation error, confirmation error, or unconfirmed termination falls back to outcome-unknown and the existing executionBlock fail-closed path. A real descendant-survival regression passes, Windows taskkill authority remains unchanged, formal Change Verification reproduces the exact published verification fingerprint/selection, and typecheck/build/lint/focused A1 regressions/OpenSpec strict remain green. No new blockers found.",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/verification.md",
+      "versionFingerprint": "53ee7e289128c359ebd753083ccb1d9328416e839f21b1209729135d1f6d2db0",
+      "kind": "verification-summary"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "e13beffd16898ac05c37f05c67cc57d11b974f8a7cee4525ec04fafa69636326"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [],
+  "reviewFindingConvergence": [
+    {
+      "findingId": "A1-RA-001",
+      "state": "resolved"
+    }
+  ]
+}

@@ -1,0 +1,741 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260817-040-apply",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "apply",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "semanticInputFingerprint": "935acd8bb86094bd5a950b7bec0b8abb0e491531709541da5c724db5fc568c9c",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:41153a383030a049e69ceaeb8af6dcd518ce93381a058b51683fe2222b4929eb",
+      "decision": "contract-reset",
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "external-tool-runtime-and-archify-cli-contract",
+      "scope": "C1 / Proposal mutationDeclaration lexical canonicalization only",
+      "requiredOutcomes": [
+        "不改变 036 已批准的任何 implementation scope 或 executable precedence。",
+        "仅将 design.md 中 apply / revise-apply 的 flowkitMutationScope selectors 按既有 lexical-order contract canonicalize。",
+        "保持 tests/unit/services/b1-openspec-action-context.test.ts 在 approved mutation scope 内。",
+        "重新完成 Proposal Review 后再进入 Apply。"
+      ],
+      "sourceRef": "owner-input:2026-08-18T07:21+08:00:contract-reset:C1-proposal-mutation-declaration-lexical-canonicalization"
+    },
+    {
+      "ref": "owner:ec84e4aa0627db5f30c030207105d8f3f915370eb4875f2b682a0e51529b6005",
+      "decision": "contract-reset",
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "external-tool-runtime-and-archify-cli-contract",
+      "scope": "C1 / OpenSpec managed-vs-injected execution identity correction",
+      "requiredOutcomes": [
+        "fake/injected runner tests 必须通过显式 executable/invocation seam 表达 injected authority，不得通过 runner presence 隐式推断。",
+        "observational runner 必须继续消费 canonical managed FLOWKIT_HOME OpenSpec identity。",
+        "runner callback 本身不得被解释为 injected executable authority。",
+        "保持 033 已批准的 precedence：explicit/injected → managed FLOWKIT_HOME → legacy FLOWKIT_OPENSPEC_BIN → ambient compatibility。",
+        "保持现有 OpenSpec real-process、archive、verify --retry、G1、Full Test environment regressions。",
+        "重新完成 formal Change Verification physical closure。"
+      ],
+      "sourceRef": "owner-input:2026-08-18T05:59+08:00:contract-reset:C1-managed-vs-injected-execution-identity-correction"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/external-tool-runtime-and-archify-cli-contract/20260817-040-apply/",
+  "changeKey": "C1",
+  "changeId": "external-tool-runtime-and-archify-cli-contract",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/external-tool-runtime-and-archify-cli-contract/20260817-039-review-propose/result.json",
+    "versionFingerprint": "62c99e0c032ca35222cec1d3d33205e8fe3b66122491abde49e6c927ed3b258b",
+    "kind": "run-result"
+  },
+  "canonicalBase": "104c14cc245c4a6db3609e7e3dd52e356d0bfc19",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/external-tool-runtime-and-archify-cli-contract/20260817-039-review-propose/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "62c99e0c032ca35222cec1d3d33205e8fe3b66122491abde49e6c927ed3b258b"
+    },
+    {
+      "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "41db595b409c9e6bc00babeabb32990290577eb40245a5bb769e8ec98a1f8d3e"
+    },
+    {
+      "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/design.md",
+      "versionFingerprint": "7731be749aa9c65b0aefbdd5aecd7b1460a1adbc9005a73a656114469e87033f",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/proposal.md",
+      "versionFingerprint": "d17b84c7055464565d3b5803377519513421216380d69b7946857d9a7319f134",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-change-verification-selection/spec.md",
+      "versionFingerprint": "b60b8066036e740061f2cdba6ad53e5ecbfaff347ad5949f20e9bf74cb051642",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-external-tool-runtime/spec.md",
+      "versionFingerprint": "685b9b13711f2ae9a5e081e7156eba8fade5a95dd618d08bb835ea8e554f2e66",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-integration-boundaries/spec.md",
+      "versionFingerprint": "1d79f73e89d35ae67306a3ea725bc67d1d268b99ea8b425d8797eeb94e0b1c46",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+      "versionFingerprint": "5af3d026b90118f157e3d6e37de486c8a6e0d0fa4cb2e2605d39ee0835572ca3",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/tasks.md",
+      "versionFingerprint": "8082de22e946c29d3237105f6c69b2a1eea6b2cbd184793ddb38fabfc0637fb7",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "external-tool-runtime-and-archify-cli-contract",
+      "runId": "20260817-040-apply",
+      "action": "apply",
+      "role": "author",
+      "semanticInputFingerprint": "935acd8bb86094bd5a950b7bec0b8abb0e491531709541da5c724db5fc568c9c"
+    },
+    "definition": {
+      "action": "apply",
+      "version": 1,
+      "role": "author",
+      "goalClass": "implement-approved-contract",
+      "mutationClass": "approved-implementation-and-verification",
+      "outputClass": "implementation-candidate-and-authority-files",
+      "terminalContract": {
+        "kind": "implementation",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "41db595b409c9e6bc00babeabb32990290577eb40245a5bb769e8ec98a1f8d3e"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/design.md",
+        "versionFingerprint": "7731be749aa9c65b0aefbdd5aecd7b1460a1adbc9005a73a656114469e87033f",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/proposal.md",
+        "versionFingerprint": "d17b84c7055464565d3b5803377519513421216380d69b7946857d9a7319f134",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "b60b8066036e740061f2cdba6ad53e5ecbfaff347ad5949f20e9bf74cb051642",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-external-tool-runtime/spec.md",
+        "versionFingerprint": "685b9b13711f2ae9a5e081e7156eba8fade5a95dd618d08bb835ea8e554f2e66",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-integration-boundaries/spec.md",
+        "versionFingerprint": "1d79f73e89d35ae67306a3ea725bc67d1d268b99ea8b425d8797eeb94e0b1c46",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+        "versionFingerprint": "5af3d026b90118f157e3d6e37de486c8a6e0d0fa4cb2e2605d39ee0835572ca3",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/tasks.md",
+        "versionFingerprint": "8082de22e946c29d3237105f6c69b2a1eea6b2cbd184793ddb38fabfc0637fb7",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/external-tool-runtime-and-archify-cli-contract/20260817-039-review-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "62c99e0c032ca35222cec1d3d33205e8fe3b66122491abde49e6c927ed3b258b"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260817-039-review-propose",
+      "verdict": "approved",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/external-tool-runtime-and-archify-cli-contract/20260817-039-review-propose/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "62c99e0c032ca35222cec1d3d33205e8fe3b66122491abde49e6c927ed3b258b"
+      },
+      "blockingAuthorities": [],
+      "findings": []
+    },
+    "ownerAuthorizationRefs": [
+      {
+        "ref": "owner:747d53e9b848d3a2f434773a0a36a92a99330e7f24a6f0c508b0fd250bb38b00",
+        "decision": "authorize-apply",
+        "deliveryId": "20260817-01-delivery-execution-loop",
+        "changeId": "external-tool-runtime-and-archify-cli-contract",
+        "sourceRef": "owner-input:2026-08-18T07:32+08:00:authorize-apply:C1-after-039"
+      }
+    ],
+    "ownerFactRefs": [
+      {
+        "ref": "owner:41153a383030a049e69ceaeb8af6dcd518ce93381a058b51683fe2222b4929eb",
+        "decision": "contract-reset",
+        "deliveryId": "20260817-01-delivery-execution-loop",
+        "changeId": "external-tool-runtime-and-archify-cli-contract",
+        "scope": "C1 / Proposal mutationDeclaration lexical canonicalization only",
+        "requiredOutcomes": [
+          "不改变 036 已批准的任何 implementation scope 或 executable precedence。",
+          "仅将 design.md 中 apply / revise-apply 的 flowkitMutationScope selectors 按既有 lexical-order contract canonicalize。",
+          "保持 tests/unit/services/b1-openspec-action-context.test.ts 在 approved mutation scope 内。",
+          "重新完成 Proposal Review 后再进入 Apply。"
+        ],
+        "sourceRef": "owner-input:2026-08-18T07:21+08:00:contract-reset:C1-proposal-mutation-declaration-lexical-canonicalization"
+      },
+      {
+        "ref": "owner:ec84e4aa0627db5f30c030207105d8f3f915370eb4875f2b682a0e51529b6005",
+        "decision": "contract-reset",
+        "deliveryId": "20260817-01-delivery-execution-loop",
+        "changeId": "external-tool-runtime-and-archify-cli-contract",
+        "scope": "C1 / OpenSpec managed-vs-injected execution identity correction",
+        "requiredOutcomes": [
+          "fake/injected runner tests 必须通过显式 executable/invocation seam 表达 injected authority，不得通过 runner presence 隐式推断。",
+          "observational runner 必须继续消费 canonical managed FLOWKIT_HOME OpenSpec identity。",
+          "runner callback 本身不得被解释为 injected executable authority。",
+          "保持 033 已批准的 precedence：explicit/injected → managed FLOWKIT_HOME → legacy FLOWKIT_OPENSPEC_BIN → ambient compatibility。",
+          "保持现有 OpenSpec real-process、archive、verify --retry、G1、Full Test environment regressions。",
+          "重新完成 formal Change Verification physical closure。"
+        ],
+        "sourceRef": "owner-input:2026-08-18T05:59+08:00:contract-reset:C1-managed-vs-injected-execution-identity-correction"
+      }
+    ],
+    "externalContextFingerprint": "18a0d1639dcf1126d9901f00ef8f0f1b002abeab455b292f0cd531811b8b4c30",
+    "requiredResultContract": {
+      "kind": "implementation",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    },
+    "compactEntryWorkspaceIdentity": {
+      "canonicalBase": "104c14cc245c4a6db3609e7e3dd52e356d0bfc19",
+      "workspaceFingerprint": "60af311892575152bb12b4bdabc66a8d4f6391ff8f8df3c593215bf11d628e77",
+      "entries": [
+        {
+          "path": "openspec/changes/external-tool-runtime-and-archify-cli-contract/.openspec.yaml",
+          "state": "untracked",
+          "contentFingerprint": "41db595b409c9e6bc00babeabb32990290577eb40245a5bb769e8ec98a1f8d3e"
+        },
+        {
+          "path": "openspec/changes/external-tool-runtime-and-archify-cli-contract/design.md",
+          "state": "untracked",
+          "contentFingerprint": "7731be749aa9c65b0aefbdd5aecd7b1460a1adbc9005a73a656114469e87033f"
+        },
+        {
+          "path": "openspec/changes/external-tool-runtime-and-archify-cli-contract/explore.md",
+          "state": "untracked",
+          "contentFingerprint": "2003169bd52905af16989637e44f64ac4c1c4c0e1ca807d6bc8ae8064a21de4d"
+        },
+        {
+          "path": "openspec/changes/external-tool-runtime-and-archify-cli-contract/proposal.md",
+          "state": "untracked",
+          "contentFingerprint": "d17b84c7055464565d3b5803377519513421216380d69b7946857d9a7319f134"
+        },
+        {
+          "path": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-change-verification-selection/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "b60b8066036e740061f2cdba6ad53e5ecbfaff347ad5949f20e9bf74cb051642"
+        },
+        {
+          "path": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-external-tool-runtime/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "685b9b13711f2ae9a5e081e7156eba8fade5a95dd618d08bb835ea8e554f2e66"
+        },
+        {
+          "path": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-integration-boundaries/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "1d79f73e89d35ae67306a3ea725bc67d1d268b99ea8b425d8797eeb94e0b1c46"
+        },
+        {
+          "path": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+          "state": "untracked",
+          "contentFingerprint": "5af3d026b90118f157e3d6e37de486c8a6e0d0fa4cb2e2605d39ee0835572ca3"
+        },
+        {
+          "path": "openspec/changes/external-tool-runtime-and-archify-cli-contract/tasks.md",
+          "state": "untracked",
+          "contentFingerprint": "8082de22e946c29d3237105f6c69b2a1eea6b2cbd184793ddb38fabfc0637fb7"
+        },
+        {
+          "path": "openspec/changes/external-tool-runtime-and-archify-cli-contract/verification.md",
+          "state": "untracked",
+          "contentFingerprint": "f3dc59348c214f71685d8ce1ea0f348557948c6f194c4329eb7aa98cacca9218"
+        },
+        {
+          "path": "openspec/delivery-groups/20260817-01-delivery-execution-loop.yaml",
+          "state": "modified",
+          "contentFingerprint": "366ee50306b97da14d6f1ef6a1a055da332ae31b761605fea8972bbf11c1d245"
+        },
+        {
+          "path": "scripts/verification.ts",
+          "state": "modified",
+          "contentFingerprint": "b2bde0a1ac5685801e8e027932627caa8543f847d93fb34b06fa5b8e245e4134"
+        },
+        {
+          "path": "src/integrations/archify/archify-cli-adapter.ts",
+          "state": "untracked",
+          "contentFingerprint": "743cb3f0ae5d27259c8d836df0ffb6559366674449780f49597cfef224acb3b5"
+        },
+        {
+          "path": "src/integrations/external-tools/managed-tool.ts",
+          "state": "untracked",
+          "contentFingerprint": "884a7923c1a17d4a2369ae14f2c4088342e7bca742962cfa7454bbe6024213d3"
+        },
+        {
+          "path": "src/integrations/openspec/openspec-cli-adapter.ts",
+          "state": "modified",
+          "contentFingerprint": "b6a0de8841d3ce5d3461cbe18690d90fbd73f2263dffa7e0f6ed9a9ce6b7ff98"
+        },
+        {
+          "path": "src/integrations/openspec/openspec-executable.ts",
+          "state": "modified",
+          "contentFingerprint": "4c80747c4b4e4651f4d9236e2cef8c08b7c73451523b88bd21451b796b7370b4"
+        },
+        {
+          "path": "src/verification/change-selection/evidence.ts",
+          "state": "modified",
+          "contentFingerprint": "1f98ca56926fd6ac8e2b2693b16f718188a77da777629cca4c73923c16040777"
+        },
+        {
+          "path": "src/verification/change-selection/module-map.ts",
+          "state": "modified",
+          "contentFingerprint": "bfc84aad7a1a5d61d2ed293398a3b766d6047c06b14d736ef1cdfa23a80c7c35"
+        },
+        {
+          "path": "tests/integration/c1-external-tool-runtime-and-archify-cli-contract.test.ts",
+          "state": "untracked",
+          "contentFingerprint": "7cb60154e0b45f6d6216c7524e63215d309557e8bba8bf7b9ad641fe70be20e6"
+        },
+        {
+          "path": "tests/integration/g1-change-cli-end-to-end.test.ts",
+          "state": "modified",
+          "contentFingerprint": "c9b9b146ae4d489b5c2f1cbdb4540ab8908ea9253774fb6d10db705519e37f87"
+        },
+        {
+          "path": "tests/integration/openspec-1-7-real-cli.test.ts",
+          "state": "modified",
+          "contentFingerprint": "d564e36b50045514f0baa8ab928bc75cf2298ec8aa8526a6e92c8af0834ae926"
+        },
+        {
+          "path": "tests/unit/cli/change-action.test.ts",
+          "state": "modified",
+          "contentFingerprint": "c09127ec43cc28e3bb3bdfc4b72252fca3f1f28918ae8ffc3f7e3b152f90f0f4"
+        },
+        {
+          "path": "tests/unit/external-tools/managed-tool.test.ts",
+          "state": "untracked",
+          "contentFingerprint": "2e06b834e34655341a3a754d98f8e9d8dbb6b62ba133a1d6ab5ced98e39fdab6"
+        },
+        {
+          "path": "tests/unit/integrations/openspec-archive-service.test.ts",
+          "state": "modified",
+          "contentFingerprint": "026532fcb559aef51821f8ae20f9590f92afc8a2a48dd2c62e5f883cdae54877"
+        },
+        {
+          "path": "tests/unit/integrations/openspec-cli-adapter.test.ts",
+          "state": "modified",
+          "contentFingerprint": "c05d3e0de2f452139581bbf8c1b5cdf0b50854f920889e8387802aaaeb0a73a5"
+        },
+        {
+          "path": "tests/unit/verification/change-selection/evidence.test.ts",
+          "state": "modified",
+          "contentFingerprint": "3079bf715307e7acdb27f72463c04b25cd40be20471395658cd5a8b4cdbc76c9"
+        },
+        {
+          "path": "tests/unit/verification/change-selection/module-map.test.ts",
+          "state": "modified",
+          "contentFingerprint": "249ccbc537f9047e62e8d5c89cd06ba43999ba74227de8841a998dfbbc5b3a4e"
+        },
+        {
+          "path": "tests/unit/verification/verification-plan.test.ts",
+          "state": "modified",
+          "contentFingerprint": "0fde44098455cad1d90d15a962586ae65441c7070d2db860c094bfbe094740ec"
+        }
+      ]
+    },
+    "mutationDeclaration": {
+      "schemaVersion": 1,
+      "action": "apply",
+      "designRef": {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/design.md",
+        "kind": "produced-artifact",
+        "versionFingerprint": "7731be749aa9c65b0aefbdd5aecd7b1460a1adbc9005a73a656114469e87033f"
+      },
+      "selectors": [
+        {
+          "kind": "exact",
+          "path": "openspec/changes/external-tool-runtime-and-archify-cli-contract/tasks.md"
+        },
+        {
+          "kind": "exact",
+          "path": "openspec/changes/external-tool-runtime-and-archify-cli-contract/verification.md"
+        },
+        {
+          "kind": "exact",
+          "path": "scripts/verification.ts"
+        },
+        {
+          "kind": "prefix",
+          "path": "src/integrations/archify"
+        },
+        {
+          "kind": "prefix",
+          "path": "src/integrations/external-tools"
+        },
+        {
+          "kind": "exact",
+          "path": "src/integrations/openspec/openspec-cli-adapter.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/integrations/openspec/openspec-executable.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/verification/change-selection/evidence.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "src/verification/change-selection/module-map.ts"
+        },
+        {
+          "kind": "prefix",
+          "path": "tests/fixtures/c1-external-tool-runtime-and-archify-cli-contract"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/integration/c1-external-tool-runtime-and-archify-cli-contract.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/integration/g1-change-cli-end-to-end.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/integration/openspec-1-7-real-cli.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/integration/verification-commands.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/cli/change-action.test.ts"
+        },
+        {
+          "kind": "prefix",
+          "path": "tests/unit/external-tools"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/integrations/openspec-archive-service.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/integrations/openspec-cli-adapter.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/integrations/openspec-paths.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/services/b1-openspec-action-context.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/verification/change-selection/evidence.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/verification/change-selection/module-map.test.ts"
+        },
+        {
+          "kind": "exact",
+          "path": "tests/unit/verification/verification-plan.test.ts"
+        }
+      ]
+    }
+  },
+  "compactEntryWorkspaceIdentity": {
+    "canonicalBase": "104c14cc245c4a6db3609e7e3dd52e356d0bfc19",
+    "workspaceFingerprint": "60af311892575152bb12b4bdabc66a8d4f6391ff8f8df3c593215bf11d628e77",
+    "entries": [
+      {
+        "path": "openspec/changes/external-tool-runtime-and-archify-cli-contract/.openspec.yaml",
+        "state": "untracked",
+        "contentFingerprint": "41db595b409c9e6bc00babeabb32990290577eb40245a5bb769e8ec98a1f8d3e"
+      },
+      {
+        "path": "openspec/changes/external-tool-runtime-and-archify-cli-contract/design.md",
+        "state": "untracked",
+        "contentFingerprint": "7731be749aa9c65b0aefbdd5aecd7b1460a1adbc9005a73a656114469e87033f"
+      },
+      {
+        "path": "openspec/changes/external-tool-runtime-and-archify-cli-contract/explore.md",
+        "state": "untracked",
+        "contentFingerprint": "2003169bd52905af16989637e44f64ac4c1c4c0e1ca807d6bc8ae8064a21de4d"
+      },
+      {
+        "path": "openspec/changes/external-tool-runtime-and-archify-cli-contract/proposal.md",
+        "state": "untracked",
+        "contentFingerprint": "d17b84c7055464565d3b5803377519513421216380d69b7946857d9a7319f134"
+      },
+      {
+        "path": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-change-verification-selection/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "b60b8066036e740061f2cdba6ad53e5ecbfaff347ad5949f20e9bf74cb051642"
+      },
+      {
+        "path": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-external-tool-runtime/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "685b9b13711f2ae9a5e081e7156eba8fade5a95dd618d08bb835ea8e554f2e66"
+      },
+      {
+        "path": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-integration-boundaries/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "1d79f73e89d35ae67306a3ea725bc67d1d268b99ea8b425d8797eeb94e0b1c46"
+      },
+      {
+        "path": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+        "state": "untracked",
+        "contentFingerprint": "5af3d026b90118f157e3d6e37de486c8a6e0d0fa4cb2e2605d39ee0835572ca3"
+      },
+      {
+        "path": "openspec/changes/external-tool-runtime-and-archify-cli-contract/tasks.md",
+        "state": "untracked",
+        "contentFingerprint": "8082de22e946c29d3237105f6c69b2a1eea6b2cbd184793ddb38fabfc0637fb7"
+      },
+      {
+        "path": "openspec/changes/external-tool-runtime-and-archify-cli-contract/verification.md",
+        "state": "untracked",
+        "contentFingerprint": "f3dc59348c214f71685d8ce1ea0f348557948c6f194c4329eb7aa98cacca9218"
+      },
+      {
+        "path": "openspec/delivery-groups/20260817-01-delivery-execution-loop.yaml",
+        "state": "modified",
+        "contentFingerprint": "366ee50306b97da14d6f1ef6a1a055da332ae31b761605fea8972bbf11c1d245"
+      },
+      {
+        "path": "scripts/verification.ts",
+        "state": "modified",
+        "contentFingerprint": "b2bde0a1ac5685801e8e027932627caa8543f847d93fb34b06fa5b8e245e4134"
+      },
+      {
+        "path": "src/integrations/archify/archify-cli-adapter.ts",
+        "state": "untracked",
+        "contentFingerprint": "743cb3f0ae5d27259c8d836df0ffb6559366674449780f49597cfef224acb3b5"
+      },
+      {
+        "path": "src/integrations/external-tools/managed-tool.ts",
+        "state": "untracked",
+        "contentFingerprint": "884a7923c1a17d4a2369ae14f2c4088342e7bca742962cfa7454bbe6024213d3"
+      },
+      {
+        "path": "src/integrations/openspec/openspec-cli-adapter.ts",
+        "state": "modified",
+        "contentFingerprint": "b6a0de8841d3ce5d3461cbe18690d90fbd73f2263dffa7e0f6ed9a9ce6b7ff98"
+      },
+      {
+        "path": "src/integrations/openspec/openspec-executable.ts",
+        "state": "modified",
+        "contentFingerprint": "4c80747c4b4e4651f4d9236e2cef8c08b7c73451523b88bd21451b796b7370b4"
+      },
+      {
+        "path": "src/verification/change-selection/evidence.ts",
+        "state": "modified",
+        "contentFingerprint": "1f98ca56926fd6ac8e2b2693b16f718188a77da777629cca4c73923c16040777"
+      },
+      {
+        "path": "src/verification/change-selection/module-map.ts",
+        "state": "modified",
+        "contentFingerprint": "bfc84aad7a1a5d61d2ed293398a3b766d6047c06b14d736ef1cdfa23a80c7c35"
+      },
+      {
+        "path": "tests/integration/c1-external-tool-runtime-and-archify-cli-contract.test.ts",
+        "state": "untracked",
+        "contentFingerprint": "7cb60154e0b45f6d6216c7524e63215d309557e8bba8bf7b9ad641fe70be20e6"
+      },
+      {
+        "path": "tests/integration/g1-change-cli-end-to-end.test.ts",
+        "state": "modified",
+        "contentFingerprint": "c9b9b146ae4d489b5c2f1cbdb4540ab8908ea9253774fb6d10db705519e37f87"
+      },
+      {
+        "path": "tests/integration/openspec-1-7-real-cli.test.ts",
+        "state": "modified",
+        "contentFingerprint": "d564e36b50045514f0baa8ab928bc75cf2298ec8aa8526a6e92c8af0834ae926"
+      },
+      {
+        "path": "tests/unit/cli/change-action.test.ts",
+        "state": "modified",
+        "contentFingerprint": "c09127ec43cc28e3bb3bdfc4b72252fca3f1f28918ae8ffc3f7e3b152f90f0f4"
+      },
+      {
+        "path": "tests/unit/external-tools/managed-tool.test.ts",
+        "state": "untracked",
+        "contentFingerprint": "2e06b834e34655341a3a754d98f8e9d8dbb6b62ba133a1d6ab5ced98e39fdab6"
+      },
+      {
+        "path": "tests/unit/integrations/openspec-archive-service.test.ts",
+        "state": "modified",
+        "contentFingerprint": "026532fcb559aef51821f8ae20f9590f92afc8a2a48dd2c62e5f883cdae54877"
+      },
+      {
+        "path": "tests/unit/integrations/openspec-cli-adapter.test.ts",
+        "state": "modified",
+        "contentFingerprint": "c05d3e0de2f452139581bbf8c1b5cdf0b50854f920889e8387802aaaeb0a73a5"
+      },
+      {
+        "path": "tests/unit/verification/change-selection/evidence.test.ts",
+        "state": "modified",
+        "contentFingerprint": "3079bf715307e7acdb27f72463c04b25cd40be20471395658cd5a8b4cdbc76c9"
+      },
+      {
+        "path": "tests/unit/verification/change-selection/module-map.test.ts",
+        "state": "modified",
+        "contentFingerprint": "249ccbc537f9047e62e8d5c89cd06ba43999ba74227de8841a998dfbbc5b3a4e"
+      },
+      {
+        "path": "tests/unit/verification/verification-plan.test.ts",
+        "state": "modified",
+        "contentFingerprint": "0fde44098455cad1d90d15a962586ae65441c7070d2db860c094bfbe094740ec"
+      }
+    ]
+  },
+  "mutationDeclaration": {
+    "schemaVersion": 1,
+    "action": "apply",
+    "designRef": {
+      "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/design.md",
+      "kind": "produced-artifact",
+      "versionFingerprint": "7731be749aa9c65b0aefbdd5aecd7b1460a1adbc9005a73a656114469e87033f"
+    },
+    "selectors": [
+      {
+        "kind": "exact",
+        "path": "openspec/changes/external-tool-runtime-and-archify-cli-contract/tasks.md"
+      },
+      {
+        "kind": "exact",
+        "path": "openspec/changes/external-tool-runtime-and-archify-cli-contract/verification.md"
+      },
+      {
+        "kind": "exact",
+        "path": "scripts/verification.ts"
+      },
+      {
+        "kind": "prefix",
+        "path": "src/integrations/archify"
+      },
+      {
+        "kind": "prefix",
+        "path": "src/integrations/external-tools"
+      },
+      {
+        "kind": "exact",
+        "path": "src/integrations/openspec/openspec-cli-adapter.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/integrations/openspec/openspec-executable.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/verification/change-selection/evidence.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "src/verification/change-selection/module-map.ts"
+      },
+      {
+        "kind": "prefix",
+        "path": "tests/fixtures/c1-external-tool-runtime-and-archify-cli-contract"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/integration/c1-external-tool-runtime-and-archify-cli-contract.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/integration/g1-change-cli-end-to-end.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/integration/openspec-1-7-real-cli.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/integration/verification-commands.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/cli/change-action.test.ts"
+      },
+      {
+        "kind": "prefix",
+        "path": "tests/unit/external-tools"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/integrations/openspec-archive-service.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/integrations/openspec-cli-adapter.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/integrations/openspec-paths.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/services/b1-openspec-action-context.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/verification/change-selection/evidence.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/verification/change-selection/module-map.test.ts"
+      },
+      {
+        "kind": "exact",
+        "path": "tests/unit/verification/verification-plan.test.ts"
+      }
+    ]
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": true,
+    "mayWriteTestCode": true,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

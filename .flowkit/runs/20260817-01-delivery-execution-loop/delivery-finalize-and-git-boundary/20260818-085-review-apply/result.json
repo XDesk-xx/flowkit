@@ -1,0 +1,26 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "Review 084 Revise Apply：083 唯一 blocker F1-RA-001 已关闭。Reviewer 确认 084 仅修改 strict-cutover FormalFactReader 与对应 F1 integration regression；strict activation 现在只由 bootstrap 03 Delivery 的合法 F1 checkpoint candidates 激活，任一 recognized activation 存在即永久进入 strict mode，legacy Delivery Final 只有在其 commit 是所有 recognized activation candidates 的共同祖先时才保持 bounded read-only compatibility，因此 divergent/retained ref 不再把 future malformed Final 降级回 legacy loose recognition。Reviewer 独立复现 divergent activation、historical legacy compatibility、exact strict Final、clean post-qualification drift、post-pass qualification invalidation 与 crash/resume handoff；focused F1 6/6、related facts/policy/write-side 117/117、typecheck/lint/build、OpenSpec current/all strict 20/20 均通过。新的 current Change Verification authority 为 producing Run 20260818-084-revise-apply、fingerprint 65a9cf276518cb167d1703c96b95f6ffa6e02ef2848282b7629f1851a741c913、selectionFingerprint bb176d063b404942467dff735c7ce3b916347872cb3668ece8c5d4000a40af90、11/11 passed；两次 tests-cli timed-out-cancelled 仍作为 immutable verification-history 保留并已被 exact-candidate re-verification supersede。tests-cli timeout granularity/observability 属 04 Engineering Health 后置项，不构成新的 F1 contract violation。完整 review-apply scan 未发现 blocking findings。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/delivery-finalize-and-git-boundary/verification.md",
+      "versionFingerprint": "65a9cf276518cb167d1703c96b95f6ffa6e02ef2848282b7629f1851a741c913",
+      "kind": "verification-summary"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "6cfc40577dbca4d6cd727882eb07c4614831ed48e746e823270a281289dea93d"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [],
+  "reviewFindingConvergence": [
+    {
+      "findingId": "F1-RA-001",
+      "state": "resolved"
+    }
+  ]
+}

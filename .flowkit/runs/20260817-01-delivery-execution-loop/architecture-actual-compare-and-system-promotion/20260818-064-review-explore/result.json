@@ -1,0 +1,68 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-explore",
+    "executionStatus": "completed",
+    "summary": "Review 063 Explore：E1 对 Actual 延迟到 all required Changes completed+checkpointed 且 Delivery Full Test passed 后再 dogfood 的时间边界、Actual 独立重建、Archify compare 非 acceptance authority、无 global architecture singleton/Registry 等方向正确；package hash 与 staging hygiene clean，Flowkit projection 为 review-explore 且 doctor ok。完整 blocking scan 发现两个必须在 Proposal 前关闭的 author-owned proof gap。第一，Proof E 声称 architecture non-acceptance 后 Owner 可直接 create ordinary required Change 并自然回到 fresh Full Test，但 Base createChange() 仅在 full-test-failed corrective boundary 才把 fullTestStatus reset 为 not-ready/remove current result；Reviewer disposable passed-state proof 显示普通 createChange 后 raw/effective fullTestStatus 仍为 passed 且旧 result 仍 current，形成 stale-pass/stale-architecture-cycle 风险。第二，Proof F 对 Accepted Actual → SystemArchitectureRef → next Delivery Current 的跨 Delivery genericity 只复用 D1 path proof；D1 historical Explore 明确把正式 promotion 留给 E1，063 没有实际执行 E1 producer/persistence → checkout/resume → different future Delivery consumer，却将该长期能力写成 PASS。两项均需 revise-explore 做最小 disposable proof，不需要 Owner scope reset。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "9a3bf6596086eb0800c835ef8a198d3074d938366c6e678a2ef5364dd52392ec"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "E1-RE-001",
+      "severity": "blocking",
+      "title": "architecture non-acceptance 后 ordinary Change 不会失效已 passed Full Test，Proof E 的 re-entry 结论不成立",
+      "problem": "063 Proof E/Feasible Proposal Boundary 假定：Full Test passed 后若 architecture compare/Owner acceptance 不通过，Owner 只需创建一个 ordinary required Change，完成+checkpoint 后即可重新进入 Delivery Ready 与 fresh Full Test authorization。当前 Base 的 createChange() 不是这个语义：只有 Policy 正处于 full-test-failed corrective boundary 且输入携带 exact corrective binding 时，write-side 才 retain failed result/finding、remove current Full Test result 并将 raw fullTestStatus 从 failed 原子更新为 not-ready；普通 createChange 分支只 append planned Change + create-change Owner record，不触碰 fullTestStatus/result。Reviewer 构造 conflict-free synthetic Delivery（raw/effective fullTestStatus=passed + current passed result）后调用 ordinary createChange，得到新 required Change=planned，但 raw/effective fullTestStatus 仍为 passed，旧 Full Test result 仍 current。",
+      "contractRef": "03 E1 acceptance: architecture blocker cannot silently Finalize; accepted Actual/architecture alignment only after post-Full-Test Actual/Compare. Flowkit Explore Skill v2 Temporal + Mutation/next-consumer proof. Base src/services/a1-write-service.ts createChange() failedBoundary vs ordinary branch.",
+      "invariant": "任何在 Delivery Full Test passed 之后改变 required Delivery candidate bytes/required Change set 的 architecture remediation，都必须使旧 passed qualification 和基于旧 candidate 的 Actual/Compare/acceptance cycle 失效，并要求新的 Change checkpoint 后重新经过 fresh Owner Full Test authorization；不能让旧 passed result继续作为 current authority。",
+      "evidence": [
+        "063 explore.md Proof E lines 121-129：认为 Owner 可直接 create normal required Change，normal lifecycle/checkpoint/full-test re-entry applies；Feasible Proposal line 210 同样依赖该结论。",
+        "Base src/services/a1-write-service.ts createChange(): failedBoundary=true 时执行 retainFullTestFailureResult/appendResolvedFullTestFinding/removeFullTestResult/updateFullTestStatus('failed','not-ready')；ordinary else 分支只有 appendChange + appendOwnerDecision。",
+        "Reviewer disposable next-consumer：在 conflict-free Delivery formal facts 中设置 raw/effective fullTestStatus=passed 与 canonical passed result，ordinary createChange(architecture-remediation, required=true) 成功后，new Change=planned，但 raw=passed、effective=passed、deliveryFullTestResult 仍存在。",
+        "B1 integration coverage只证明 full-test-failed corrective admission 会 reset not-ready 并要求 fresh authorization；它不覆盖 post-pass architecture rejection。"
+      ],
+      "impact": "若按 063 直接 Proposal/Apply，03 dogfood 在 Full Test passed 后发现架构不接受时，可以新增 remediation Change，却保留旧 passed Full Test/旧 Actual-Compare cycle。修复 Change 即使完成并 checkpoint，Delivery 仍可能沿 stale qualification 继续 architecture acceptance/Finalize，违反“最终 repository 必须重新 Full Test、重新 Actual/Compare”的核心 E1/F1时序。",
+      "location": "openspec/changes/architecture-actual-compare-and-system-promotion/explore.md Proof E / Feasible Proposal Boundary；src/services/a1-write-service.ts createChange()",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Revise Explore 并用最小 disposable proof冻结一个合法的 post-pass architecture-remediation recovery boundary。实现选择由 Author 决定，但必须有明确 Owner write-side authority，使 architecture non-acceptance 后创建 remediation required Change 时原子失效旧 Full Test qualification，并失效/清除基于旧 candidate 的 current Actual/Compare/acceptance binding；随后普通 Change lifecycle+checkpoint 后只能回到 awaiting-user-decision，必须 fresh authorize Full Test，再重新 author Actual/Compare。不得复用 full-test-failed finding 语义冒充 architecture rejection，也不得引入 generic Finding DB/自动 corrective Change。",
+      "acceptance": [
+        "disposable proof 从 conflict-free fullTestStatus=passed + current passed result + non-accepted architecture cycle 开始。",
+        "Owner-authorized architecture remediation admission 后，新 required Change 为 planned，raw/effective Full Test 不再是 passed，旧 current Full Test result不再可作为当前 qualification；旧 Actual/Compare/acceptance binding也不得继续 current。",
+        "remediation Change 完成+matching checkpoint 后，Delivery 进入 awaiting-user-decision 而不是直接复用旧 passed；必须 fresh Owner authorize-full-test。",
+        "fresh Full Test passed 后才允许重新 author Actual、compare、architecture acceptance。",
+        "不自动创建 Change、不复用 Full-Test-failed Finding DB、不扩大为 generic recovery platform。"
+      ]
+    },
+    {
+      "id": "E1-RE-002",
+      "severity": "blocking",
+      "title": "Accepted Actual promotion 的跨 Delivery genericity 只做了静态推理，没有真实 future-Delivery consumer proof",
+      "problem": "063 Risk Scan 明确标记 self-hosting/activation persistence 与 generic reusable subsystem=yes，E1 required outcome 又要求 Accepted Actual 成为 next Delivery Current 来源。但 Proof F 只说明“D1 path resolution 已 generic”并提出 compact accepted-Actual ref 形状，没有实际执行 E1 新增的 acceptance/promotion persistence，也没有从该 producer fact 经过 checkout/resume 到一个不同 deliveryId 的 future Delivery Start/Current consumer。D1 的历史 future-Delivery proof只能证明 dynamic architecture path/provenance/render 不依赖 03 constants，并明确声明 Accepted Actual → next SystemArchitectureRef 的正式 promotion 仍留给 E1，因此不能替 E1 新能力完成 proof。",
+      "contractRef": "Flowkit Explore Skill v2 §4.3 activation persistence + §4.5 genericity/next-consumer + §5 evidence depth；03 E1 goal: accepted Actual ref becomes next System Architecture baseline / next Delivery Current source；archived D1 Explore Proof G explicitly excludes formal promotion.",
+      "invariant": "声明跨 Delivery 长期有效的 producer/persistence capability，Explore PASS 必须覆盖实际 activation/persistence boundary与不同 future Delivery consumer；不能用 consumer-side path genericity的旧 proof 推导新 producer/promotion semantics 已成立。",
+      "evidence": [
+        "063 explore.md Risk Scan lines 60-62：self-hosting/activation persistence=yes、generic reusable subsystem=yes。",
+        "063 Proof F lines 131-150：Evidence 仅引用 D1 path resolution genericity并描述 compact ref，未执行新 acceptance/promotion writer/reader/checkout/next-Delivery consumer。",
+        "archived D1 explore.md Proof G 已实际构造 different future deliveryId，但其结论明确限定为 generic path/provenance/render，并写明 Accepted Actual → next SystemArchitectureRef 正式 promotion仍由 E1/后续真实 self-hosted Delivery形成。",
+        "当前 Base 尚无 architecture acceptance/SystemArchitectureRef formal projection，正说明 E1 需要对这条新 persistence contract 自己做 feasibility proof，而不是把 D1 proof解释成已覆盖。"
+      ],
+      "impact": "若直接进入 Proposal，E1 可能冻结一个只在同一 Delivery 内看起来合理的 acceptedActual ref，却在 Delivery Final/checkout/resume/next Delivery Start 时丢失、回退或无法确定绑定 exact prior Actual + future Git baseline；该问题会被拖到 H1/self-hosting 才暴露。",
+      "location": "openspec/changes/architecture-actual-compare-and-system-promotion/explore.md Proof F / Feasible Proposal Boundary；openspec/changes/archive/2026-08-18-architecture-baseline-and-delivery-plan/explore.md Proof G",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Revise Explore 增加一个最小 future-Delivery-shaped promotion proof：用 synthetic prior Delivery 的 independently-authored Actual + explicit Owner architecture acceptance 形成 E1 proposed acceptedActual/SystemArchitecture source fact，跨一次 durable read/checkout-resume boundary，再创建不同 deliveryId 的 future Delivery Start，并让 generic Current binding从该 prior accepted Actual与future Delivery自己的 exact Git baseline形成。字段名可留给 Proposal冻结，但 proof 必须实际消费一个可序列化的 candidate shape，而不是只画箭头。",
+      "acceptance": [
+        "synthetic producer 使用不同于03硬编码的 prior Delivery/Actual，并形成可持久化 accepted-Actual/SystemArchitecture source candidate fact。",
+        "fresh read/checkout-resume 后该 source仍可被唯一解析，不依赖聊天状态或 in-memory object。",
+        "different future deliveryId 的 Current binding 使用 prior accepted Actual ref/fingerprint + future Delivery自己的 exact Git baseline/Start facts，不复制成 global system.architecture.json。",
+        "generic derivation不硬编码 03 delivery id、74d46f0、f132db7 或当前 E1 Base SHA。",
+        "必要的 exact managed Archify repository-evidence validate/render 能消费生成的 future Current；若 producer→consumer gap尚未可证明，Proof F 必须标 UNKNOWN 而不是 PASS。",
+        "不提前实现 F1 Finalize/G1 resume/H1 runner，只做足够证明 E1 persistence contract可跨边界消费的 disposable fixture/prototype。"
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}

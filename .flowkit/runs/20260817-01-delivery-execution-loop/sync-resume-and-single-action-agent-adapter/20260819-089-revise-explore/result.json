@@ -1,0 +1,24 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-explore",
+    "executionStatus": "completed",
+    "summary": "关闭 G1-RE-001 / G1-RE-002：补充 different future Delivery-shaped fresh-checkout single-action resume/provider feasibility proof，并明确 G1 canonical checkpoint activation boundary；补充 historical E1 127 legacy sidecar fresh-process replay与 current Verification Catalog counterfactual，证明 persisted historical selection/evidence 不被 current Catalog 重新解释。未修改 production/tests，未扩 H1/Registry/auto-loop scope。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/explore.md",
+        "versionFingerprint": "58573270e25deadb485434160f9beb6e8d8d504334904a1b40dde61067e26050",
+        "kind": "produced-artifact"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/sync-resume-and-single-action-agent-adapter/20260819-088-review-explore/result.json",
+      "versionFingerprint": "aa0d8359bd71cce0cb4f958203cf7541f9b0ea2e9aff83eab3e8e3adb29fa946",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "f5372ccb8331b01224d5d19874b3b675d322e6dd1d1de5ed5f6516704a6b850d"
+  }
+}

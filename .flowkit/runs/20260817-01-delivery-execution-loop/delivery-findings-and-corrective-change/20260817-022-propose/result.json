@@ -1,0 +1,54 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "propose",
+    "executionStatus": "completed",
+    "summary": "冻结 B1 Delivery Full Test failure → deterministic Delivery Finding → Owner corrective create → atomic failed-result retention/reset → ordinary Change lifecycle → fresh Full Test authorization contract；保留 Verification/Owner authority 分离、pre-B1 bounded read、future-Delivery activation persistence，并在 Design 中预先冻结完整 flowkitMutationScope 与 physical Verification closure。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/delivery-findings-and-corrective-change/design.md",
+        "versionFingerprint": "6ad4768ba46d9fdb1278445c33ef0c39b859d1e751c9e3d4c24f81c834b6b57e",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-findings-and-corrective-change/proposal.md",
+        "versionFingerprint": "42dc497a50b4dca5f9f5cc1b0fb7dbeb4ee88d82132673e455e655c7979fada3",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-findings-and-corrective-change/specs/flowkit-core-model/spec.md",
+        "versionFingerprint": "9de3248c90cfdef95d130170f7f10cbc20717177b8d05d26f703cd6aebaddf07",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-findings-and-corrective-change/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+        "versionFingerprint": "fdde18362fa8990a1cd8799a7619a52e054c5e74941e045b5d75343c097df61c",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-findings-and-corrective-change/specs/flowkit-diagnostic-cli/spec.md",
+        "versionFingerprint": "157b6bc0a1ef555919e5a68d125438b32dad17370f31aaf3072976684a4286da",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-findings-and-corrective-change/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "47ce28138e8e53ee36a3017dee4b9435646e1a8d6d4de712d1d3c4b6b469a552",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-findings-and-corrective-change/specs/flowkit-policy-engine/spec.md",
+        "versionFingerprint": "61c5e1dc781df0e1ab6b40e0375dba6f1d318d5018757757426d9140aafeb591",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-findings-and-corrective-change/tasks.md",
+        "versionFingerprint": "ff84148e39ab8891ac3934791f639c028fd5213d273ff5e315b4ff15c5a52a88",
+        "kind": "produced-artifact"
+      }
+    ]
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "7f73c813a76dda609f29f5b0edb3685b391a289ff5043d613c6df363fa02b9d9"
+  }
+}

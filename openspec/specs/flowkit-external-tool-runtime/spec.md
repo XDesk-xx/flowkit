@@ -1,0 +1,127 @@
+# flowkit-external-tool-runtime Specification
+
+## Purpose
+TBD - created by archiving change external-tool-runtime-and-archify-cli-contract. Update Purpose after archive.
+## Requirements
+### Requirement: C1 必须以 closed `FLOWKIT_HOME/tools` model 解析 exact offline external-tool identity
+
+Flowkit MUST resolve a minimal local environment root as `FLOWKIT_HOME`. Default MUST be `<user-home>/.flowkit`; explicit `FLOWKIT_HOME` MUST be a non-empty absolute path. C1 MUST only standardize `FLOWKIT_HOME/tools/**` and MUST NOT introduce Tool Registry, dynamic discovery, online install, provider/plugin marketplace or lifecycle-owned tool database.
+
+The supported managed tool set MUST be closed to exactly:
+
+```text
+openspec@1.7.0
+archify@2.14.0
+```
+
+Each supported identity MUST statically bind tool id, exact version, expected upstream distribution SHA256, package name, package metadata location and JS/MJS entrypoint. Managed resolution MUST verify the configured distribution bytes, package name/version and entrypoint existence before invocation and MUST return a direct Node invocation based on `process.execPath + exact entrypoint`. Missing/mismatched identity MUST fail closed before spawning the tool.
+
+Frozen upstream distribution identities:
+
+```text
+OpenSpec:
+  package = @fission-ai/openspec@1.7.0
+  npm tarball sha256 = 3e0bd044bf1fae1732f201fab7b5c1c8ceb4ef89bed9923f89a33cb4f0750afd
+  entrypoint = node_modules/@fission-ai/openspec/bin/openspec.js
+
+Archify:
+  package = archify@2.14.0
+  official archify.zip sha256 = 1b610a4d8ff5821cccd7a3dfe2d0943d11e64bda1d2fb0511944df190472f175
+  entrypoint = archify/bin/archify.mjs
+```
+
+#### Scenario: managed OpenSpec identity resolves without ambient PATH
+- **WHEN** `FLOWKIT_HOME/tools/openspec/1.7.0` contains the exact configured distribution/runtime and ambient OpenSpec PATH is absent or poisoned
+- **THEN** Flowkit MUST resolve OpenSpec to `process.execPath + exact openspec.js entrypoint`
+- **AND** package name/version/distribution fingerprint MUST match the static descriptor
+- **AND** resolution MUST NOT depend on `openspec`, `.ps1` or `.cmd` PATH discovery
+
+#### Scenario: managed Archify identity resolves without ambient PATH
+- **WHEN** `FLOWKIT_HOME/tools/archify/2.14.0` contains the exact official distribution/runtime and ambient Archify PATH is absent or poisoned
+- **THEN** Flowkit MUST resolve Archify to `process.execPath + exact archify.mjs entrypoint`
+- **AND** package name/version/distribution fingerprint MUST match the static descriptor
+- **AND** C1 MUST NOT introduce `FLOWKIT_ARCHIFY_BIN` as a second canonical identity
+
+#### Scenario: missing or wrong managed tool fails closed
+- **WHEN** expected distribution bytes, package name/version or entrypoint are missing/mismatched
+- **THEN** Flowkit MUST fail before tool invocation with a bounded external-tool identity error
+- **AND** MUST NOT fall through from a malformed managed tool home to an ambient executable and claim managed success
+
+### Requirement: C1 Archify adapter 必须只冻结已物理验证的 thin CLI/renderer contract
+
+The C1 Archify integration MUST invoke the managed exact `archify@2.14.0` entrypoint and MUST remain a thin external CLI adapter. It MUST NOT import Archify internal modules or copy/reimplement Archify schemas/renderers.
+
+C1 supported operation surface MUST include:
+
+```text
+doctor
+validate architecture|workflow|lifecycle
+deliver architecture|workflow|lifecycle
+compare architecture
+```
+
+`validate` / `deliver` / `compare architecture` MUST use machine-readable JSON output where available and MUST require coherent process + structured result semantics. Non-zero exit, malformed JSON, explicit `ok=false`, timeout or unknown process outcome MUST fail closed. `doctor` MUST require successful process completion and the verified ready condition.
+
+#### Scenario: doctor physically checks the managed Archify runtime
+- **WHEN** Flowkit invokes Archify doctor through the managed exact entrypoint
+- **THEN** success MUST require a terminal successful process and the Archify ready condition
+- **AND** missing/mismatched runtime MUST fail before doctor execution
+
+#### Scenario: architecture workflow lifecycle renderer operations are physically executable
+- **WHEN** valid synthetic architecture, workflow or lifecycle JSON is supplied to supported validate/deliver operations
+- **THEN** the exact managed Archify CLI MUST physically execute the requested operation
+- **AND** deliver MUST physically generate its HTML output
+- **AND** Flowkit MUST consume only the bounded structured/process result required for operation success
+
+#### Scenario: architecture compare physically generates structured compare output
+- **WHEN** valid synthetic base/head Architecture JSON is supplied to `compare architecture`
+- **THEN** the exact managed Archify CLI MUST physically execute compare
+- **AND** machine-readable compare result MUST be coherent with process success
+- **AND** requested HTML/receipt outputs MUST be generated by Archify rather than Flowkit reimplementation
+
+### Requirement: Archify JSON / HTML / receipt 必须保持 source-vs-derived authority boundary
+
+C1 MUST treat author-provided JSON as the input to Archify operations and HTML/receipt files as generated tool outputs/review evidence. C1 MUST NOT persist a second Flowkit freshness/status authority for generated HTML or receipts.
+
+For the same JSON and exact managed Archify runtime, deleting and regenerating an HTML artifact MUST be allowed and MUST reproduce the same renderer result according to the physically verified Archify behavior. Failed render/compare MUST NOT be admitted as successful output, and Flowkit MUST NOT intentionally destroy/replace a previously successful output when the external operation failed before successful publication.
+
+#### Scenario: generated HTML can be deleted and rebuilt
+- **WHEN** an HTML artifact generated from unchanged JSON is deleted
+- **THEN** rerunning exact managed `deliver` MUST be sufficient to regenerate it
+- **AND** absence/staleness of the disposable HTML alone MUST NOT create a new Flowkit lifecycle truth
+
+#### Scenario: compare receipt remains generated evidence
+- **WHEN** Archify compare writes a machine-readable receipt sidecar and JSON stdout
+- **THEN** Flowkit MAY expose/package those exact tool outputs for review
+- **BUT** MUST NOT turn the receipt into a generic Evidence/Receipt database or independent architecture acceptance authority
+
+#### Scenario: C1 does not author formal Delivery Architecture assets
+- **WHEN** C1 exercises architecture/workflow/lifecycle renderer behavior
+- **THEN** all proof JSON/HTML/receipt artifacts MUST remain synthetic/disposable test evidence
+- **AND** C1 MUST NOT create formal repository `architecture/<delivery-id>/json/current.architecture.json`, `planned.architecture.json` or `actual.architecture.json`
+- **AND** MUST NOT freeze Flowkit Current/Planned/Actual architecture content
+
+### Requirement: formal Architecture repository evidence 必须通过显式 repo-root seam 进入 exact Archify operation
+The managed Archify adapter MUST support an explicit bounded repository-evidence root for `validate architecture`, `deliver architecture` and `compare architecture`. When supplied, the adapter MUST pass `--repo-root <root>`. The adapter MUST NOT inspect Architecture JSON to infer whether repository evidence exists and MUST NOT copy/reimplement the Archify schema.
+
+Existing calls without repository evidence MUST remain compatible.
+
+#### Scenario: evidence-bearing architecture validates with explicit repo root
+- **WHEN** D1 supplies an Architecture JSON containing repository/source evidence and an explicit repository root
+- **THEN** the adapter MUST invoke exact managed `archify@2.14.0` with `--repo-root <root>`
+- **AND** repository evidence validation MUST be performed by Archify
+
+### Requirement: exact managed Archify renderable type 必须最薄支持 Sequence
+The Archify adapter renderable type MUST support `architecture`, `workflow`, `sequence`, and `lifecycle` for validate/deliver, using only exact managed `archify@2.14.0`. Adding `sequence` MUST NOT introduce ambient PATH authority, Registry/discovery, internal Archify imports or lifecycle authority.
+
+Repository evidence MUST remain architecture-only: workflow/sequence/lifecycle calls supplied with repositoryRoot MUST fail closed.
+
+#### Scenario: sequence validates and delivers with exact managed identity
+- **WHEN** D1 invokes validate/deliver for a valid Sequence reference
+- **THEN** the adapter MUST call exact managed `archify@2.14.0` with type `sequence`
+- **AND** structured command/type/output identity checks MUST remain enforced
+
+#### Scenario: sequence rejects repository evidence
+- **WHEN** a caller supplies repositoryRoot for type `sequence`
+- **THEN** the adapter MUST fail closed before pretending repo-root support
+- **AND** architecture repository-evidence behavior MUST remain unchanged

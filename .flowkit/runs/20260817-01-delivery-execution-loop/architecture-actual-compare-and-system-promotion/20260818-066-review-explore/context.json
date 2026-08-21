@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260818-066-review-explore",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "review-explore",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "a77e5433748cedebdafe37741a451018475e1890bcefef50de4b2a2751e4f24d",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-actual-compare-and-system-promotion/20260818-066-review-explore/",
+  "changeKey": "E1",
+  "changeId": "architecture-actual-compare-and-system-promotion",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-actual-compare-and-system-promotion/20260818-065-revise-explore/result.json",
+    "versionFingerprint": "60298a10851ae8a2ab973217719d58fc5722a8f167f7851164f3856b7dc849a3",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260818-065-revise-explore",
+  "canonicalBase": "8cf17ed0981717227f9b01ffdef94dae6532366a",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-actual-compare-and-system-promotion/20260818-065-revise-explore/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "60298a10851ae8a2ab973217719d58fc5722a8f167f7851164f3856b7dc849a3"
+    },
+    {
+      "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+    },
+    {
+      "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/explore.md",
+      "versionFingerprint": "fb257c08a7545b4db3bdc2713a17058d7f2843ccc945193466cf5f4fd15992a6",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "architecture-actual-compare-and-system-promotion",
+      "runId": "20260818-066-review-explore",
+      "action": "review-explore",
+      "role": "reviewer",
+      "semanticInputFingerprint": "a77e5433748cedebdafe37741a451018475e1890bcefef50de4b2a2751e4f24d"
+    },
+    "definition": {
+      "action": "review-explore",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-explore",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+      },
+      {
+        "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/explore.md",
+        "versionFingerprint": "fb257c08a7545b4db3bdc2713a17058d7f2843ccc945193466cf5f4fd15992a6",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-actual-compare-and-system-promotion/20260818-065-revise-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "60298a10851ae8a2ab973217719d58fc5722a8f167f7851164f3856b7dc849a3"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260818-064-review-explore",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-actual-compare-and-system-promotion/20260818-064-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "b5e94f42f43874df2577951843905eba6051487fd05a7a935b745ec735dab31e"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "E1-RE-001",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "architecture non-acceptance 后 ordinary Change 不会失效已 passed Full Test，Proof E 的 re-entry 结论不成立",
+          "problem": "063 Proof E/Feasible Proposal Boundary 假定：Full Test passed 后若 architecture compare/Owner acceptance 不通过，Owner 只需创建一个 ordinary required Change，完成+checkpoint 后即可重新进入 Delivery Ready 与 fresh Full Test authorization。当前 Base 的 createChange() 不是这个语义：只有 Policy 正处于 full-test-failed corrective boundary 且输入携带 exact corrective binding 时，write-side 才 retain failed result/finding、remove current Full Test result 并将 raw fullTestStatus 从 failed 原子更新为 not-ready；普通 createChange 分支只 append planned Change + create-change Owner record，不触碰 fullTestStatus/result。Reviewer 构造 conflict-free synthetic Delivery（raw/effective fullTestStatus=passed + current passed result）后调用 ordinary createChange，得到新 required Change=planned，但 raw/effective fullTestStatus 仍为 passed，旧 Full Test result 仍 current。",
+          "contractRef": "03 E1 acceptance: architecture blocker cannot silently Finalize; accepted Actual/architecture alignment only after post-Full-Test Actual/Compare. Flowkit Explore Skill v2 Temporal + Mutation/next-consumer proof. Base src/services/a1-write-service.ts createChange() failedBoundary vs ordinary branch.",
+          "invariant": "任何在 Delivery Full Test passed 之后改变 required Delivery candidate bytes/required Change set 的 architecture remediation，都必须使旧 passed qualification 和基于旧 candidate 的 Actual/Compare/acceptance cycle 失效，并要求新的 Change checkpoint 后重新经过 fresh Owner Full Test authorization；不能让旧 passed result继续作为 current authority。",
+          "requiredOutcome": "Revise Explore 并用最小 disposable proof冻结一个合法的 post-pass architecture-remediation recovery boundary。实现选择由 Author 决定，但必须有明确 Owner write-side authority，使 architecture non-acceptance 后创建 remediation required Change 时原子失效旧 Full Test qualification，并失效/清除基于旧 candidate 的 current Actual/Compare/acceptance binding；随后普通 Change lifecycle+checkpoint 后只能回到 awaiting-user-decision，必须 fresh authorize Full Test，再重新 author Actual/Compare。不得复用 full-test-failed finding 语义冒充 architecture rejection，也不得引入 generic Finding DB/自动 corrective Change。",
+          "acceptance": [
+            "disposable proof 从 conflict-free fullTestStatus=passed + current passed result + non-accepted architecture cycle 开始。",
+            "Owner-authorized architecture remediation admission 后，新 required Change 为 planned，raw/effective Full Test 不再是 passed，旧 current Full Test result不再可作为当前 qualification；旧 Actual/Compare/acceptance binding也不得继续 current。",
+            "remediation Change 完成+matching checkpoint 后，Delivery 进入 awaiting-user-decision 而不是直接复用旧 passed；必须 fresh Owner authorize-full-test。",
+            "fresh Full Test passed 后才允许重新 author Actual、compare、architecture acceptance。",
+            "不自动创建 Change、不复用 Full-Test-failed Finding DB、不扩大为 generic recovery platform。"
+          ]
+        },
+        {
+          "id": "E1-RE-002",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "Accepted Actual promotion 的跨 Delivery genericity 只做了静态推理，没有真实 future-Delivery consumer proof",
+          "problem": "063 Risk Scan 明确标记 self-hosting/activation persistence 与 generic reusable subsystem=yes，E1 required outcome 又要求 Accepted Actual 成为 next Delivery Current 来源。但 Proof F 只说明“D1 path resolution 已 generic”并提出 compact accepted-Actual ref 形状，没有实际执行 E1 新增的 acceptance/promotion persistence，也没有从该 producer fact 经过 checkout/resume 到一个不同 deliveryId 的 future Delivery Start/Current consumer。D1 的历史 future-Delivery proof只能证明 dynamic architecture path/provenance/render 不依赖 03 constants，并明确声明 Accepted Actual → next SystemArchitectureRef 的正式 promotion 仍留给 E1，因此不能替 E1 新能力完成 proof。",
+          "contractRef": "Flowkit Explore Skill v2 §4.3 activation persistence + §4.5 genericity/next-consumer + §5 evidence depth；03 E1 goal: accepted Actual ref becomes next System Architecture baseline / next Delivery Current source；archived D1 Explore Proof G explicitly excludes formal promotion.",
+          "invariant": "声明跨 Delivery 长期有效的 producer/persistence capability，Explore PASS 必须覆盖实际 activation/persistence boundary与不同 future Delivery consumer；不能用 consumer-side path genericity的旧 proof 推导新 producer/promotion semantics 已成立。",
+          "requiredOutcome": "Revise Explore 增加一个最小 future-Delivery-shaped promotion proof：用 synthetic prior Delivery 的 independently-authored Actual + explicit Owner architecture acceptance 形成 E1 proposed acceptedActual/SystemArchitecture source fact，跨一次 durable read/checkout-resume boundary，再创建不同 deliveryId 的 future Delivery Start，并让 generic Current binding从该 prior accepted Actual与future Delivery自己的 exact Git baseline形成。字段名可留给 Proposal冻结，但 proof 必须实际消费一个可序列化的 candidate shape，而不是只画箭头。",
+          "acceptance": [
+            "synthetic producer 使用不同于03硬编码的 prior Delivery/Actual，并形成可持久化 accepted-Actual/SystemArchitecture source candidate fact。",
+            "fresh read/checkout-resume 后该 source仍可被唯一解析，不依赖聊天状态或 in-memory object。",
+            "different future deliveryId 的 Current binding 使用 prior accepted Actual ref/fingerprint + future Delivery自己的 exact Git baseline/Start facts，不复制成 global system.architecture.json。",
+            "generic derivation不硬编码 03 delivery id、74d46f0、f132db7 或当前 E1 Base SHA。",
+            "必要的 exact managed Archify repository-evidence validate/render 能消费生成的 future Current；若 producer→consumer gap尚未可证明，Proof F 必须标 UNKNOWN 而不是 PASS。",
+            "不提前实现 F1 Finalize/G1 resume/H1 runner，只做足够证明 E1 persistence contract可跨边界消费的 disposable fixture/prototype。"
+          ]
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "eaebdb6a42aaa3218971e93098f0eb25042fd837b82510f8b200cda7dab0c44f",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

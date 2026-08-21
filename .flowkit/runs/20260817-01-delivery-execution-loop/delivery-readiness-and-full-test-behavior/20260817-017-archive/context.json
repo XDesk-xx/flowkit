@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 4,
+  "runId": "20260817-017-archive",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "archive",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "semanticInputFingerprint": "4d8b6aebf59239d2b43792e8736d414b04fd7024644b0e49fa042a74ee7dec79",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:e675265cbd4ae1a9c838f6026645d798bdc5fa416c9dc6d533421e8c4314679c",
+      "decision": "contract-reset",
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "delivery-readiness-and-full-test-behavior",
+      "scope": "A1/proposal-mutation-scope-only",
+      "requiredOutcomes": [
+        "add exactly one mandatory flowkitMutationScope section covering apply and revise-apply with complete bounded deterministic selectors for production, tests, Verification mapping, current 03 Manifest migration, and A1 tasks/verification publication",
+        "do not reopen Explore or expand A1 scope",
+        "form a fresh Proposal generation for review-propose; old 010 approval applies only to old Proposal bytes",
+        "preserve all 009 Proposal product semantics and design decisions",
+        "preserve approved Explore conclusions"
+      ],
+      "sourceRef": "owner:chat-20260817-a1-minimal-contract-reset-mutation-scope"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-017-archive/",
+  "changeKey": "A1",
+  "changeId": "delivery-readiness-and-full-test-behavior",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-016-review-apply/result.json",
+    "versionFingerprint": "b6142cd0e39c74827489a1e63b4a7de4ad84e6ffec27024a383aac5d5ed80893",
+    "kind": "run-result"
+  },
+  "archiveEntryOpenSpecProjection": {
+    "projectionVersion": 1,
+    "version": "1.7.0",
+    "changeId": "delivery-readiness-and-full-test-behavior",
+    "changeRootLogical": "openspec/changes/delivery-readiness-and-full-test-behavior",
+    "artifactPaths": {
+      "proposal": [
+        "openspec/changes/delivery-readiness-and-full-test-behavior/proposal.md"
+      ],
+      "specs": [
+        "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+        "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-core-model/spec.md",
+        "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+        "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-diagnostic-cli/spec.md",
+        "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-policy-engine/spec.md"
+      ],
+      "design": [
+        "openspec/changes/delivery-readiness-and-full-test-behavior/design.md"
+      ],
+      "tasks": [
+        "openspec/changes/delivery-readiness-and-full-test-behavior/tasks.md"
+      ]
+    }
+  },
+  "archiveMutationGuard": {
+    "state": "armed",
+    "surfaceVersion": "openspec-archive-mutation-v1",
+    "changeRoot": "openspec/changes/delivery-readiness-and-full-test-behavior",
+    "canonicalSpecsRoot": "openspec/specs",
+    "archiveNamespaceRoot": "openspec/changes/archive",
+    "preArchiveGenerationFingerprint": "7a88cd08f451a0472d3a489b4f77db568721327167b234ccdcaae14683d0e048",
+    "terminalObservation": {
+      "kind": "success",
+      "resultFingerprint": "8a13464c1c66e4dd51039afea13994e89d01a925e0043fb20a3b5606d1461ce8",
+      "normalized": {
+        "kind": "success",
+        "change": "delivery-readiness-and-full-test-behavior",
+        "archivedAs": "2026-08-17-delivery-readiness-and-full-test-behavior",
+        "path": "openspec/changes/archive/2026-08-17-delivery-readiness-and-full-test-behavior",
+        "specsUpdated": true,
+        "totals": {
+          "added": 0,
+          "modified": 11,
+          "removed": 0,
+          "renamed": 0
+        }
+      }
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

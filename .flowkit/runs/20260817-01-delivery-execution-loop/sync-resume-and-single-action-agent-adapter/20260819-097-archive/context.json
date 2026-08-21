@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 4,
+  "runId": "20260819-097-archive",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "archive",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "semanticInputFingerprint": "39ef19b8ba59566f3d615515ac12562a6df732ce3a69e01a9ad783c8e3480c95",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/sync-resume-and-single-action-agent-adapter/20260819-097-archive/",
+  "changeKey": "G1",
+  "changeId": "sync-resume-and-single-action-agent-adapter",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/sync-resume-and-single-action-agent-adapter/20260819-096-review-apply/result.json",
+    "versionFingerprint": "b923d34c817bba14a1e63606729639a3262fedc64db1c54db88a32e7aec763ea",
+    "kind": "run-result"
+  },
+  "archiveEntryOpenSpecProjection": {
+    "projectionVersion": 1,
+    "version": "1.7.0",
+    "changeId": "sync-resume-and-single-action-agent-adapter",
+    "changeRootLogical": "openspec/changes/sync-resume-and-single-action-agent-adapter",
+    "artifactPaths": {
+      "proposal": [
+        "openspec/changes/sync-resume-and-single-action-agent-adapter/proposal.md"
+      ],
+      "specs": [
+        "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-change-verification-selection/spec.md",
+        "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-diagnostic-cli/spec.md",
+        "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-lean-run-and-action-package/spec.md",
+        "openspec/changes/sync-resume-and-single-action-agent-adapter/specs/flowkit-sync-resume-and-single-action-agent-adapter/spec.md"
+      ],
+      "design": [
+        "openspec/changes/sync-resume-and-single-action-agent-adapter/design.md"
+      ],
+      "tasks": [
+        "openspec/changes/sync-resume-and-single-action-agent-adapter/tasks.md"
+      ]
+    }
+  },
+  "archiveMutationGuard": {
+    "state": "armed",
+    "surfaceVersion": "openspec-archive-mutation-v1",
+    "changeRoot": "openspec/changes/sync-resume-and-single-action-agent-adapter",
+    "canonicalSpecsRoot": "openspec/specs",
+    "archiveNamespaceRoot": "openspec/changes/archive",
+    "preArchiveGenerationFingerprint": "52b8c35bfdea41f233883b3cfc6af5f802313e01356b44702b436d71c1edfbac",
+    "terminalObservation": {
+      "kind": "success",
+      "resultFingerprint": "0eca29ac5e175109704c55e1a6ef7abf4286b05bec816c830257ec87e9619bb7",
+      "normalized": {
+        "kind": "success",
+        "change": "sync-resume-and-single-action-agent-adapter",
+        "archivedAs": "2026-08-19-sync-resume-and-single-action-agent-adapter",
+        "path": "openspec/changes/archive/2026-08-19-sync-resume-and-single-action-agent-adapter",
+        "specsUpdated": true,
+        "totals": {
+          "added": 5,
+          "modified": 2,
+          "removed": 0,
+          "renamed": 0
+        }
+      }
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

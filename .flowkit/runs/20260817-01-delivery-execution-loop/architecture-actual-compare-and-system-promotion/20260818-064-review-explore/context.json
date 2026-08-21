@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260818-064-review-explore",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "review-explore",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "b729f09a57277ff886e2d5d6b416e17a1d7623119c1ddbb795c9873e0c127203",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-actual-compare-and-system-promotion/20260818-064-review-explore/",
+  "changeKey": "E1",
+  "changeId": "architecture-actual-compare-and-system-promotion",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-actual-compare-and-system-promotion/20260818-063-explore/result.json",
+    "versionFingerprint": "13f4f1bd52244930d83d9fbcec3a88db84e5a0e772b0ddd650d272560aadc8c6",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260818-063-explore",
+  "canonicalBase": "8cf17ed0981717227f9b01ffdef94dae6532366a",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-actual-compare-and-system-promotion/20260818-063-explore/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "13f4f1bd52244930d83d9fbcec3a88db84e5a0e772b0ddd650d272560aadc8c6"
+    },
+    {
+      "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+    },
+    {
+      "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/explore.md",
+      "versionFingerprint": "50a70660a90939f48196a6afcc3626f8655e8810df114a941c0487dab9a04d98",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "architecture-actual-compare-and-system-promotion",
+      "runId": "20260818-064-review-explore",
+      "action": "review-explore",
+      "role": "reviewer",
+      "semanticInputFingerprint": "b729f09a57277ff886e2d5d6b416e17a1d7623119c1ddbb795c9873e0c127203"
+    },
+    "definition": {
+      "action": "review-explore",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-explore",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+      },
+      {
+        "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/explore.md",
+        "versionFingerprint": "50a70660a90939f48196a6afcc3626f8655e8810df114a941c0487dab9a04d98",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-actual-compare-and-system-promotion/20260818-063-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "13f4f1bd52244930d83d9fbcec3a88db84e5a0e772b0ddd650d272560aadc8c6"
+      }
+    ],
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "eaebdb6a42aaa3218971e93098f0eb25042fd837b82510f8b200cda7dab0c44f",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

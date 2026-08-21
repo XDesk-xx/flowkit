@@ -1,0 +1,21 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "Review 095 Apply：G1 implementation 与 093/094 approved Proposal contract 一致。Reviewer确认 historical Apply/revise-apply terminal replay 现在接受 exact current Verification 或同 origin Run/exact candidate/same selection 的 bounded re-verification successor，并在 OpenSpec active→unique archive relocation 后保持 producing logicalRef/terminal result immutable，missing/ambiguous/corrupt lineage fail closed；095 自身 first failed Verification→current passed retry lineage可由 fresh resume exact replay。Historical E1 persisted selection/evidence 保持 point-in-time，不依赖 current Catalog。Typed resume projection 为 non-persistent derived view，resume-context 使用 repository-stable Architecture refs/status；managed tool readiness 仅按需通过 closed managed resolver。Single-action Agent Adapter只使用 Policy-owned prepare/exact resume，provider最多调用一次，结果经 existing admission，provider failure保持 pending，terminal后只返回 post Policy并不创建 second Run/auto-next/role switch。Actual production/test mutations均落在 approved 17-selector scope；Verification ownership与 physical resolver包含 G1 integration target。Current Change Verification authority producing Run=20260819-095-apply，fingerprint=842237a7284b8c06ee4aad0b29b5c2a35c195a02146b8c5b125af0a4d6bde852，selectionFingerprint=661e6fc63eef0021db65d4cc4bbf96c73fb11e181d784004bb349f129f400878，7/7 passed；首次 failed publication 8e415079... 作为 immutable verification-history 保留并已被 exact-candidate retry supersede。Reviewer独立复现 G1/B1/adapter/replay targeted 64/64 PASS、broader changed-surface 105/105 assertions PASS（初次容器缺 TERM/managed tool 为环境差异，配置 exact offline tools 后 exit 0）、typecheck PASS、OpenSpec current/all strict 21/21 PASS、095 terminal replay PASS、resume-context/Policy next/doctor PASS。完整 blocking scan未发现 findings。",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/sync-resume-and-single-action-agent-adapter/verification.md",
+      "versionFingerprint": "842237a7284b8c06ee4aad0b29b5c2a35c195a02146b8c5b125af0a4d6bde852",
+      "kind": "verification-summary"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "ee79d60f1f536df127e2f83425e5d9e8cfe57341e459a3a83168c0c8e10ad5d2"
+  },
+  "reviewVerdict": "approved",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [],
+  "reviewFindingConvergence": []
+}

@@ -1,0 +1,18 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "apply",
+    "executionStatus": "completed",
+    "summary": "C1 Apply completed: implemented exact FLOWKIT_HOME managed OpenSpec/Archify runtime, bounded OpenSpec compatibility migration, thin Archify doctor/validate/deliver/compare adapter, non-overlapping formal verification ownership, managed/legacy retry propagation, physical renderer/receipt/review-ZIP proofs, and completed all approved tasks without creating formal architecture assets."
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "1434a1041c3ecaa0fe8e79443afa8e8b6f75b62ba419898970054c2665a0f012",
+    "currentVerification": {
+      "logicalRef": "openspec/changes/external-tool-runtime-and-archify-cli-contract/verification.md",
+      "versionFingerprint": "f3dc59348c214f71685d8ce1ea0f348557948c6f194c4329eb7aa98cacca9218",
+      "selectionFingerprint": "1b77d71e4c8e6cecff32fa3f8003cb2855f88e8c9a6de4c3271b35bbb247b5b2",
+      "status": "failed"
+    }
+  }
+}

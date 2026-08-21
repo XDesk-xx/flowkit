@@ -287,22 +287,101 @@ Change Verification 状态 MUST 为 `not-run | passed | failed | not-applicable`
 
 `fullTestStatus` MUST 为 `not-ready | awaiting-user-decision | authorized | passed | failed`。
 
-它 MUST 属于 Flowkit 拥有的 Delivery 验证子状态，MUST NOT 成为 Delivery 主状态。项目验证工具 MUST 继续拥有完整 Full Test 结果。Delivery Full Test MUST 是 Owner-authorized Delivery verification behavior，MUST NOT 是 Standard Formal Action 或 Standard Run。Bootstrap 阶段 Delivery YAML MUST 作为人工投影；03 完成后 Flowkit Delivery 状态/behavior model 才成为完整 machine authority。
+它 MUST 属于 Flowkit 拥有的 Delivery 验证子状态，MUST NOT 成为 Delivery 主状态。项目 Verification capability MUST 继续拥有 logical check解释、physical target resolver/aggregation与技术检查结果；Flowkit Delivery lifecycle 只拥有 readiness/effective projection、Owner authorization binding、execution safety block 与 minimal terminal result projection。Delivery Full Test MUST 是 Owner-authorized Delivery verification behavior，MUST NOT 是 Standard Formal Action、Standard Run、Action Package 或 Delivery-wide NNN consumer。
+
+`awaiting-user-decision` MAY 是由 current repository formal facts 纯推导出的 effective projection：当 persisted `delivery.fullTestStatus=not-ready`，但所有 required Changes 已 completed、matching Change Checkpoints 已存在、formal conflicts=0 且 current Delivery 的 typed executable Full Test contract 合法可用时，current effective Full Test status MUST 为 `awaiting-user-decision`。该 projection MUST NOT 通过 `status`、`next`、`doctor` 或 `resume-context` 写回 Manifest。
+
+For architecture-impacting Deliveries after E1, a passed Full Test qualifies only the exact current architecture cycle derived from the delivery-scoped Owner authorization occurrence plus that passed technical result. A legal post-pass architecture remediation MUST invalidate the old passed qualification before new required work proceeds.
+
+For `kind=bounded-command-plan`, one logical Full Test MAY execute multiple physical targets without creating additional Full Test authority/Run/attempt identity. Each actual spawned child MUST own an independent bounded timeout/process-tree outcome; the in-process orchestrator MUST NOT itself be wrapped in another global 120s child budget. `checks[]` remains logical check authority; physical target diagnostics are execution detail.
+
+Physical target duration means one child wall duration；logical check duration means first target start through logical terminal/fail-fast；`totalDurationMs` means whole logical orchestration wall duration and need not equal the sum of logical durations.
+
+When a new `required=true` Change is lawfully created while raw Full Test status is `authorized` and no outcome-unknown block exists, the old authorization MUST lose qualification in the same atomic write and raw status MUST become `not-ready`; historical Owner authorization remains immutable provenance. An `outcome-unknown` executionBlock MUST prevent ordinary Change create/activate until credibly resolved.
 
 #### Scenario: Owner 授权 Full Test
 
-- **WHEN** `fullTestStatus=awaiting-user-decision`
-- **AND** owner 明确授权
-- **THEN** `fullTestStatus` MUST 进入 `authorized`
-- **AND** Delivery Full Test behavior MAY 在其正式 executor 可用时执行
-- **AND** MUST NOT 因授权创建 `full-test` Standard Run
+- **WHEN** current effective `fullTestStatus=awaiting-user-decision`
+- **AND** owner 明确授权 exact current Delivery 的 `authorize-full-test`
+- **THEN** Owner authority record 与 persisted `delivery.fullTestStatus=authorized` MUST 在同一次 atomic Manifest publication 中形成
+- **AND** MUST NOT 因授权本身执行 Full Test
+- **AND** MUST NOT 创建 `full-test` Standard Run
+
+#### Scenario: Delivery Ready 纯投影 awaiting-user-decision
+
+- **WHEN** persisted `delivery.fullTestStatus=not-ready`
+- **AND** 所有 required Changes 已 completed
+- **AND** 所有 required Change Checkpoints 已由 Git authority 接纳
+- **AND** current formal conflicts=0
+- **AND** current Delivery 的 typed executable Full Test contract 合法可用
+- **THEN** current effective `fullTestStatus` MUST 投影为 `awaiting-user-decision`
+- **AND** diagnostic/Policy read path MUST NOT 修改 Manifest bytes
+
+#### Scenario: authorized 返回非 Action Delivery behavior
+
+- **WHEN** current persisted/effective `fullTestStatus=authorized`
+- **AND** matching delivery-scoped Owner authorization 已存在
+- **THEN** Policy MUST 暴露唯一 `delivery-behavior: full-test` boundary
+- **AND** MUST NOT 返回 `action: full-test`
+- **AND** Standard `canRun` MUST NOT 接受 `full-test`
 
 #### Scenario: Q1 后 03 前 authorized 状态 fail-closed
 
-- **WHEN** `fullTestStatus=authorized`
-- **AND** Delivery Full Test behavior executor 尚未由 03 实现
-- **THEN** Policy MUST 保持 deterministic/fail-closed
-- **AND** MUST NOT 返回 `action: full-test`
+- **WHEN** bounded historical/pre-A1 repository facts显示 `fullTestStatus=authorized`
+- **AND** current readable snapshot缺少 A1 executable Full Test binding或对应 Delivery behavior executor尚不可用
+- **THEN** Policy MUST保持 deterministic/fail-closed
+- **AND** MUST NOT把该 historical gap 解释为 `action: full-test`、Standard Run 或 fabricated terminal result
+
+#### Scenario: authorized crash 可 bounded re-entry
+
+- **WHEN** Full Test 从 `authorized` 开始执行
+- **AND** child checks 期间进程中断，或 checks 已完成但 terminal result 尚未 atomic publish
+- **THEN** durable lifecycle authority MUST 保持 `authorized`
+- **AND** 只有 prior child/process tree 已被证明 terminal 时 fresh process 才 MAY 从同一 persisted executable Full Test contract 起点重新执行
+- **AND** ignored/generated `dist/**`、stdout/stderr、partial timing 或 previous successful child process MUST NOT 被解释为 current terminal Full Test authority
+
+#### Scenario: Windows outcome-unknown 禁止重入
+
+- **WHEN** authorized Full Test timeout
+- **AND** owned Windows whole-process-tree cancellation 无法证明 prior tree terminal
+- **THEN** raw `fullTestStatus` MUST 保持 `authorized`
+- **AND** Flowkit MUST 持久化 current `executionBlock.reason=outcome-unknown`
+- **AND** MUST NOT 发布 Verification `failed`/`resultRef`
+- **AND** 在 block 被显式、可信地关闭前 MUST NOT 开始新的 Full Test attempt
+
+#### Scenario: transport failure 不冒充 Verification failed
+
+- **WHEN** Full Test 发生 spawn failure、proven timed-out-cancelled、bounded resolver/coverage closure error、missing/malformed/stale/mismatched legacy protocol、bounded aggregation semantic error或 child/protocol disagreement
+- **THEN** Flowkit MUST NOT 生成 `verification:full-test:<hash>`
+- **AND** MUST NOT 把 lifecycle status 改成 `failed`
+- **AND** process 已证明 terminal 的 failure MAY 保持 `authorized` 供后续显式重入
+
+#### Scenario: Full Test terminal result 原子发布
+
+- **WHEN** current persisted Full Test execution contract完成其合法 execution shape
+- **AND** `kind=command` 已满足 existing child/protocol coherence，或 `kind=bounded-command-plan` 已由 Verification aggregator产生相对 frozen logical plan合法的 PASS/FAILED payload
+- **THEN** Flowkit MUST 将 effective/persisted `fullTestStatus` 原子更新为 `passed` 或 `failed`
+- **AND** MUST 同步持久化 `schemaVersion/status/summary/totalDurationMs/checks[{id,status,durationMs}]/resultRef`
+- **AND** `resultRef` MUST 由排除自身后的固定字段顺序 canonical JSON payload 做 SHA-256 得出
+- **AND** raw stdout/stderr MUST NOT 被复制进 Standard Run 或 Manifest evidence corpus
+
+#### Scenario: post-pass architecture remediation invalidates qualification
+- **WHEN** a required architecture-remediation Change is admitted against the exact current non-accepted architecture cycle
+- **THEN** raw Full Test status MUST leave `passed`
+- **AND** the old current Full Test result MUST cease to qualify the Delivery
+- **AND** a fresh Full Test authorization/result MUST be required after remediation checkpoint
+
+#### Scenario: bounded logical authority can outlive a single child budget
+- **WHEN** one bounded Full Test logical check resolves multiple physical targets
+- **THEN** each spawned target MUST have its own persisted per-target timeout semantics
+- **AND** total logical/Full Test wall time MAY exceed one target timeout without timeout inflation
+- **AND** no extra Full Test Run/attempt authority is created
+
+#### Scenario: required work invalidates authorized candidate
+- **WHEN** raw Full Test status is `authorized` without outcome-unknown block
+- **AND** Owner lawfully creates a new required Change
+- **THEN** raw status MUST atomically become `not-ready` with that create publication
+- **AND** a fresh authorization MUST be required after the new Change checkpoint
 
 ### Requirement: Full Test 失败必须进入 owner 决策边界
 
@@ -432,3 +511,106 @@ Standard Action entry contract MUST 只包含当时可知的 immutable inputs。
 - **WHEN** Core 仅拥有 persisted snapshots 与 content fingerprints
 - **THEN** Core MUST NOT 声称 hash 能证明 mutation 来源
 - **AND** contract MUST 保留 single-writer bootstrap requirement 或明确的 authority limitation
+
+### Requirement: Delivery Full Test failure correction 必须分离 Verification 内容身份与 Finding occurrence 身份
+
+B1 MUST 把 genuine Verification-owned Delivery Full Test `failed` terminal result 投影为一个 deterministic current Full-Test Delivery Finding，并停在 Owner 决策边界。Finding MUST 只引用/投影 failed result，不得取代 Verification result authority；Owner corrective decision MUST 继续由显式 `create-change` Owner write-side 拥有。
+
+`sourceResultRef=verification:full-test:<sha256>` MUST 继续作为 A1 Verification content identity。Current failure occurrence MUST 绑定该轮最新、合法、delivery-scoped `authorize-full-test` Owner decision `authorizationRef=owner:<sha256>`。Flowkit MUST 按以下 frozen canonical domain 派生 Finding occurrence identity：
+
+```text
+payload fields/order:
+{"schemaVersion":1,"deliveryId":<delivery-id>,"authorizationRef":<owner-ref>,"sourceResultRef":<verification-ref>}
+
+encoding:
+JSON.stringify 等价的单行 UTF-8 JSON
+→ no whitespace
+→ no trailing newline
+→ SHA-256 lowercase hex
+
+findingId:
+full-test-failure:<sha256>
+```
+
+Finding MUST 投影 `findingId`、`authorizationRef`、`sourceResultRef`、`severity=blocking`、`summary=currentResult.summary`、`affectedScope=delivery`、`requiredOwnerDecision=corrective-change-or-cancel-delivery`。Flowkit MUST NOT 把 raw stdout/stderr、process logs 或 generic evidence复制进 Finding。
+
+#### Scenario: genuine failed result 产生唯一 current failure occurrence Finding
+- **WHEN** current Delivery raw/effective `fullTestStatus=failed`
+- **AND** current `verification.fullTest.result` 是合法、hash 可重算的 failed terminal result
+- **AND** latest applicable Delivery-scoped `authorize-full-test` Owner record 可合法解析
+- **THEN** Flowkit MUST 从 `deliveryId + authorizationRef + sourceResultRef` 投影唯一 current Finding occurrence
+- **AND** Finding `sourceResultRef` MUST 等于该 current Verification resultRef
+- **AND** Finding `authorizationRef` MUST 等于该轮 Full Test authorization fact ref
+- **AND** MUST NOT 创建 Standard Action、Run、corrective Change 或新的 Verification truth
+
+#### Scenario: 两轮相同 failed payload 仍形成不同 Finding occurrence
+- **WHEN** 两轮独立 Full Test cycle 各自有不同 `authorize-full-test` Owner record
+- **AND** 两轮 Verification structured failed payload byte-identical，因此 `sourceResultRef` 相同
+- **THEN** 两轮 `findingId` MUST 因不同 `authorizationRef` 而不同
+- **AND** 第一轮 historical resolution MUST NOT 使第二轮 current Finding 被视为已解决
+- **AND** MUST NOT引入 attempt counter、attempt ledger 或新的 Full Test authority
+
+#### Scenario: completed historical Change 不因 failure/correction 被重开
+- **WHEN** Full Test failure 来源于已经 completed/checkpointed 的 Delivery candidate
+- **AND** Owner 后续创建 corrective Change
+- **THEN** 所有既有 completed/archived Changes MUST 保持 immutable/completed
+- **AND** correction MUST 通过一个新的 ordinary planned Change 表达
+
+#### Scenario: correction 后重新等待独立 Full Test authorization
+- **WHEN** corrective Change 已按 ordinary Change lifecycle completed + checkpointed
+- **AND** Delivery 再次满足 A1 readiness 条件
+- **THEN** effective Full Test status MUST 回到 `awaiting-user-decision`
+- **AND** prior Full Test Owner authorization MUST NOT 自动授权新的 Delivery candidate
+- **AND** Owner MUST 再次显式 `authorize-full-test`
+
+### Requirement: Owner decision identity 必须显式覆盖 architecture acceptance
+The closed Owner decision model MUST include Delivery-scoped `accept-architecture`. An architecture acceptance Owner record MUST bind the exact current architecture cycle and MUST remain distinct from `authorize-delivery-finalize`.
+
+#### Scenario: architecture acceptance and Finalize authorization remain separate
+- **WHEN** current Actual/Compare cycle awaits Owner decision
+- **THEN** Owner MAY record `accept-architecture` only at that exact Policy gate
+- **AND** `authorize-delivery-finalize` MUST remain a later independent Owner decision
+
+### Requirement: E1 Owner canonical provenance extension 必须 bounded 且向后兼容
+For Owner records that carry the E1-only optional `architectureCycleRef`, the existing canonical Owner provenance authority (`canonicalOwnerDecisionTuple` / `ownerDecisionRefFor`) MUST include that cycle identity in the hash domain. Records without `architectureCycleRef` MUST preserve the exact pre-E1 canonical tuple and ref. Flowkit MUST NOT introduce a second Owner ref generator.
+
+#### Scenario: architecture cycle changes relevant Owner ref
+- **WHEN** two otherwise identical relevant Owner records differ only in `architectureCycleRef`
+- **THEN** their canonical Owner refs MUST differ
+- **AND** reader recomputation and writer generation MUST use the same canonical tuple
+
+#### Scenario: legacy Owner ref remains stable when architecture cycle is absent
+- **WHEN** a pre-E1 or non-architecture Owner record has no `architectureCycleRef`
+- **THEN** its canonical tuple/ref MUST remain exactly compatible with the pre-E1 algorithm
+- **AND** the optional E1 field MUST NOT silently rehash unrelated historical Owner facts
+
+### Requirement: F1 finalization identity/projection 必须是 closed deterministic domain model
+Core domain MUST define bounded typed identities for finalization qualification, final candidate, and minimal finalization projection. Finalization qualification MUST include an exact `qualifiedBaseRevision` derived from formal Git boundary facts rather than caller input, and final candidate identity MUST reuse that revision rather than recapturing arbitrary current HEAD. Owner decision records/facts MAY carry optional `finalizationQualificationRef` only as an applicability binding; arbitrary metadata bags are forbidden. Canonical Owner ref generation MUST include the field only when present so historical records without it preserve their prior refs.
+
+#### Scenario: qualification/candidate refs use closed typed prefixes
+- **WHEN** F1 derives a finalization qualification or final candidate identity
+- **THEN** the result MUST use a closed typed `<prefix>:<sha256>` shape
+- **AND** parsing MUST reject malformed/unexpected fields
+- **AND** qualification/candidate canonicalization MUST bind the same exact `qualifiedBaseRevision`
+
+#### Scenario: legacy Owner ref is stable when F1 field is absent
+- **WHEN** a pre-F1 Owner record is canonicalized without `finalizationQualificationRef`
+- **THEN** canonical tuple/ref MUST remain byte-for-byte compatible with the pre-F1 algorithm
+
+### Requirement: Bounded Full Test physical failure diagnostics MUST remain visible execution detail without becoming durable authority
+
+When `kind=bounded-command-plan` executes physical targets, the current execution result MUST preserve enough bounded terminal context to identify the failing logical check、physical target、typed process outcome、duration、bounded stdout/stderr以及 any `spawnError` / process-tree diagnostics already produced by the low-level command transport.
+
+These physical diagnostics are point-in-time execution detail. Verification or Delivery operator surfaces MAY render them for diagnosis, but MUST NOT promote them into persisted logical `checks[]`、a new Full Test result schema/hash domain、a new Run/attempt identity、or a second Verification authority. Existing `outcome-unknown` executionBlock semantics remain the only durable process-safety block added by bounded execution.
+
+#### Scenario: bounded failure retains physical identity
+
+- **WHEN** a bounded logical check terminates because one physical target exits nonzero or returns a transport failure
+- **THEN** the current execution result MUST identify the failing `logicalCheckId` and `physicalTargetId`
+- **AND** MUST retain applicable typed outcome、spawn/process-tree diagnostic and bounded output context
+
+#### Scenario: rendered physical diagnostics do not alter logical result authority
+
+- **WHEN** a technical or authoritative operator displays the physical failure context
+- **THEN** the persisted Full Test result MUST continue to use the existing logical-only protocol and resultRef rules
+- **AND** the display MUST NOT create another durable physical-target ledger or Verification result

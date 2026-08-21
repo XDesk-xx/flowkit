@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260818-077-review-explore",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "review-explore",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "03c86417284c47e64ec48e9e3a2b0dd4053a7d44dcec04855da8dd6d0fe24736",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-finalize-and-git-boundary/20260818-077-review-explore/",
+  "changeKey": "F1",
+  "changeId": "delivery-finalize-and-git-boundary",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-finalize-and-git-boundary/20260818-076-revise-explore/result.json",
+    "versionFingerprint": "3f2bec9ec3719e23af3d58b60081547ac2e5ca6cd0fa9c7ca4b5b4240e23799c",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260818-076-revise-explore",
+  "canonicalBase": "b9a9e8108348b130cd5a30c6e57f8336abfe958b",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-finalize-and-git-boundary/20260818-076-revise-explore/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "3f2bec9ec3719e23af3d58b60081547ac2e5ca6cd0fa9c7ca4b5b4240e23799c"
+    },
+    {
+      "ref": "openspec/changes/delivery-finalize-and-git-boundary/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+    },
+    {
+      "ref": "openspec/changes/delivery-finalize-and-git-boundary/explore.md",
+      "versionFingerprint": "5e871798aa1cc9fb0810b042b69f58667d18002689e225b5583c7e126ad43f81",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "delivery-finalize-and-git-boundary",
+      "runId": "20260818-077-review-explore",
+      "action": "review-explore",
+      "role": "reviewer",
+      "semanticInputFingerprint": "03c86417284c47e64ec48e9e3a2b0dd4053a7d44dcec04855da8dd6d0fe24736"
+    },
+    "definition": {
+      "action": "review-explore",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-explore",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+      },
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/explore.md",
+        "versionFingerprint": "5e871798aa1cc9fb0810b042b69f58667d18002689e225b5583c7e126ad43f81",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-finalize-and-git-boundary/20260818-076-revise-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "3f2bec9ec3719e23af3d58b60081547ac2e5ca6cd0fa9c7ca4b5b4240e23799c"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260818-075-review-explore",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-finalize-and-git-boundary/20260818-075-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "f1a0bca9d0a477c8f1e3c48c0f5188186d6d014aaa02c0ba8bc6f98a490277f1"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "F1-RE-001",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "Finalize qualification 未证明覆盖 post-pass 新增 required Change，旧 Full Test/Architecture qualification 可变陈旧",
+          "problem": "074 将 Finalize qualification 冻结为 deliveryId + current Full Test authorization/result + accepted architecture disposition，并证明 fresh Full Test/architecture cycle 会改变 qualification。但 exact Base 的 production createChange() 在 Full Test passed 且 Architecture 已 accepted 后仍允许 ordinary create-change；该普通分支只 append Change/Owner decision，不移除旧 Full Test result、不把 passed 重置为 not-ready，也不移除已接受的 architecture currentCycle/acceptedSystemSource。新 required Change 完成并 checkpoint 后，074 所列 qualification inputs 可以完全不变，因此旧 Finalize authorization 仍可能重新适用于一个并未经过 fresh Full Test/Actual/Compare 的 candidate。",
+          "contractRef": "Flowkit Explore Skill v2 §4.2 Temporal Proof, §4.3 Activation Persistence, §4.6 Mutation Surface + Verification Closure, §5 Proof Acceptance Depth; 03 v6 F1 finalization preconditions; A1/B1/E1 fresh qualification invariants",
+          "invariant": "Delivery Finalize 的 Full Test passed 与 architecture acceptance 必须覆盖当前全部 required Changes/checkpoints 对应的最终 candidate；任何 post-pass required Change mutation 都不得继承旧 Full Test/architecture qualification 并直接进入 Finalize。",
+          "requiredOutcome": "Revise Explore，补一个最小 post-pass required-Change mutation proof，并冻结能保证 fresh qualification 的可行边界。允许的实现方向包括：在该边界禁止普通 required Change、或创建时原子失效旧 Full Test/architecture qualification、或其他等价 fail-closed 机制；Reviewer 不预设唯一实现。",
+          "acceptance": [
+            "使用 production createChange()/Policy 或等价 disposable next-consumer，覆盖 Full Test passed + accepted architecture 后新增 ordinary required Change 的路径。",
+            "证明新 required Change 一旦被合法加入，旧 Full Test passed / old architecture acceptance 不可能继续作为新 final candidate 的资格；在 Finalize 前必须重新达到 fresh Full Test，并在 architectureImpact=true 时形成 fresh Actual/Compare/acceptance。",
+            "如果选择 qualification 额外绑定 Change/checkpoint identity，必须同时证明这不仅让旧 Finalize authorization stale，而且不会允许在未重新 Full Test 的情况下仅靠 fresh authorize-delivery-finalize 越过资格门。",
+            "architectureImpact=false 分支也要保持同样的 post-pass required-Change freshness 语义。",
+            "不要引入 generic Finding DB、自动 Change 创建或新的 Delivery Action/Run。"
+          ]
+        },
+        {
+          "id": "F1-RE-002",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "Finalize 先发布 completed、后做 repository drift preflight，失败会留下半关闭 Delivery",
+          "problem": "074 Proof H 的明确顺序是 T1 先原子发布 delivery.state=completed + finalization，T2 才派生 Git handoff，T3 Executor 执行 git diff/staged preflight；Proof I 同时承认 Owner Finalize authorization 后 repository 可能发生 unrelated drift，并把该 drift 的 fail-closed 检测放在 Delivery Final handoff/preflight。如果 drift 在 Finalize 前已经存在，T1 仍可能先把 Delivery 正式关闭，随后 T3 才失败。此时正常 discoverActiveDelivery() 已看不到该 Delivery，且 074 没有定义一个合法的 reopen/rollback lifecycle。",
+          "contractRef": "Flowkit Explore Skill v2 §4.2 Temporal Proof, §4.7 External Mutation Proof, §5 Proof Acceptance Depth; Flowkit Operating Model v8 Delivery Finalize/Git hygiene; 03 v6 F1 finalization precondition and Delivery Final tree consistency acceptance",
+          "invariant": "Delivery state active -> completed 只能发生在 exact current final candidate 已通过所有可在 commit 前验证的 read-only preconditions 之后。Repository/worktree/index 的 unrelated drift 必须在 Finalize publication 之前 fail closed；后续 Git handoff preflight 不能成为首次发现 candidate 已失真的地方。",
+          "requiredOutcome": "Revise Explore 的 temporal/external-mutation proof，使 exact candidate drift 检查在 active -> completed mutation 之前完成，或证明一个等价的 qualification/candidate identity 能在 T1 前 fail closed。Delivery Final commit SHA 仍然不应在 commit 前被要求，且 Finalize 不应自动 commit。",
+          "acceptance": [
+            "给出 revised T0..Tn ordering，明确哪一个 read-only precondition 在 finalization publication 前验证 current HEAD/index/worktree 与已接受 final candidate 的关系。",
+            "disposable proof 覆盖：Owner Finalize authorization 已存在后引入 unrelated source/index drift，Finalize MUST 在 Manifest state mutation 前失败，delivery.state 保持 active。",
+            "同时证明 expected final-boundary mutations（例如 durable Actual/accepted architecture artifacts、Owner/finalization Manifest publication及明确冻结的 metadata）不会被错误当成 unrelated drift。",
+            "Finalize publication 成功后，Git handoff仍可从 durable completed facts 重建并由 Executor机械 commit；不要求 chat/stdout，也不把 commit 自动化塞进 Finalize service。",
+            "不引入 rollback engine、transaction platform 或新的 Finalize Run。"
+          ]
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "0eff3bf5af349b36553258cb7f5a569ef47b9b60f441b823cc4a6fac414fa6ec",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

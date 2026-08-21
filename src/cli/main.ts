@@ -11,6 +11,11 @@ import { renderResumeContext } from '../diagnostics/resume-context.js';
 import { renderStatus } from '../diagnostics/status.js';
 import { inspectPreparedRun, recoverArchiveTerminalRun, recoverContractResetPendingRun } from '../services/b1-run-execution-service.js';
 import { getVersion } from './version.js';
+import { runDeliveryFullTest } from '../services/delivery-full-test-service.js';
+import { finalizeDelivery } from '../services/delivery-finalize-service.js';
+import { buildDeliveryFinalHandoff } from '../services/delivery-final-boundary-service.js';
+import { prepareCheckpointBoundaryHandoff } from '../services/f1-checkpoint-boundary-service.js';
+import { runArchitectureCli } from './architecture.js';
 import { projectChangeVerification, retryChangeVerification, runArchiveOperator, runChangeOperator, type ChangeOperatorIntent } from './change-action.js';
 import {
   activateChange,
@@ -34,7 +39,7 @@ const DIAGNOSTIC_COMMANDS = new Set(['status', 'next', 'doctor', 'resume-context
 const CHANGE_OPERATOR_COMMANDS = new Set<ChangeOperatorIntent>(['explore', 'review', 'revise', 'propose', 'apply']);
 
 const USAGE =
-  'usage: flowkit <status|next|doctor|resume-context|explore|review|revise|propose|apply|verify|archive|create delivery|create change|owner record|recover contract-reset-pending|recover archive-terminal|activate|--version> [--result <path>] [verify option: --retry]\n';
+  'usage: flowkit <status|next|doctor|resume-context|explore|review|revise|propose|apply|verify|archive|architecture render <current|planned|actual>|architecture compare <base-kind> <head-kind>|delivery full-test|delivery finalize --delivery <id>|delivery final-handoff --delivery <id>|checkpoint-handoff --delivery <id>|create delivery|create change|owner record|recover contract-reset-pending|recover archive-terminal|activate|--version> [--result <path>] [verify option: --retry]\n';
 
 function optionValue(args: readonly string[], name: string): string | undefined {
   const index = args.indexOf(name);
@@ -114,6 +119,12 @@ export async function runCli(invocation: CliInvocation): Promise<CliResult> {
       return { exitCode: result.exitCode, stdout: renderWriteResult(result.value), stderr: '' };
     }
 
+    if (args[0] === 'architecture') {
+      const value = await runArchitectureCli(repoRoot, args);
+      if (value === undefined) return { exitCode: 2, stdout: '', stderr: USAGE };
+      return { exitCode: 0, stdout: renderWriteResult(value), stderr: '' };
+    }
+
     if (args[0] === 'verify' && (args.length === 1 || (args.length === 2 && args[1] === '--retry'))) {
       const { deliveryId } = await loadDiagnosticContext(invocation.cwd);
       const result = args[1] === '--retry'
@@ -126,6 +137,32 @@ export async function runCli(invocation: CliInvocation): Promise<CliResult> {
       const deliveryId = await discoverActiveDelivery(repoRoot);
       const result = await runArchiveOperator(repoRoot, deliveryId);
       return { exitCode: result.exitCode, stdout: renderWriteResult(result.value), stderr: '' };
+    }
+
+    if (args.length === 2 && args[0] === 'delivery' && args[1] === 'full-test') {
+      const deliveryId = await discoverActiveDelivery(repoRoot);
+      const result = await runDeliveryFullTest(repoRoot, deliveryId);
+      const exitCode: 0 | 1 | 2 = result.executionStatus === 'passed' ? 0 : result.executionStatus === 'failed' ? 1 : 2;
+      return { exitCode, stdout: renderWriteResult(result), stderr: '' };
+    }
+
+    if (args[0] === 'delivery' && args[1] === 'finalize') {
+      const deliveryId = requiredOption(args, '--delivery');
+      const result = await finalizeDelivery(repoRoot, deliveryId);
+      return { exitCode: 0, stdout: renderWriteResult(result), stderr: '' };
+    }
+
+    if (args[0] === 'delivery' && args[1] === 'final-handoff') {
+      const deliveryId = requiredOption(args, '--delivery');
+      const result = await buildDeliveryFinalHandoff(repoRoot, deliveryId);
+      return { exitCode: 0, stdout: renderWriteResult(result), stderr: '' };
+    }
+
+    if (args[0] === 'checkpoint-handoff') {
+      if (args.length !== 3 || args[1] !== '--delivery') return { exitCode: 2, stdout: '', stderr: USAGE };
+      const deliveryId = requiredOption(args, '--delivery');
+      const result = await prepareCheckpointBoundaryHandoff(repoRoot, deliveryId);
+      return { exitCode: 0, stdout: renderWriteResult(result), stderr: '' };
     }
 
     if (args[0] === 'recover' && args[1] === 'contract-reset-pending') {

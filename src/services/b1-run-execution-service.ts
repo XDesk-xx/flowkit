@@ -88,6 +88,7 @@ import {
   publishReverificationMarkdown,
   validatePendingVerificationSelection,
   validateTerminalVerificationSelectionBinding,
+  validateCurrentReverificationChain,
   type VerificationSelectionBinding,
 } from '../verification/change-selection/publication.js';
 import {
@@ -164,7 +165,7 @@ export async function resumeRun(input: ResumeRunInput): Promise<ExactResumeOutco
     if (result.runStatus === 'completed' && (context.action === 'apply' || context.action === 'revise-apply')) {
       if ('compactEntryWorkspaceIdentity' in context && context.compactEntryWorkspaceIdentity !== undefined) {
         if (result.terminalBinding.currentVerification === undefined) throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'completed post-E2 Apply terminal is missing current verification binding', { expectedRunId: input.expectedRunId });
-        await validateCurrentVerificationTerminalBinding(input.repoRoot, context.changeId, result.terminalBinding.currentVerification);
+        await validateCurrentVerificationTerminalBinding(input.repoRoot, context.changeId, context.runId, result.terminalBinding.currentVerification);
       } else {
         if (result.terminalBinding.verificationSelection === undefined) throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'completed legacy v5 Apply terminal is missing verification-selection binding', { expectedRunId: input.expectedRunId });
         await validateTerminalVerificationSelectionBinding({ runDir, binding: result.terminalBinding.verificationSelection, producingRunId: context.runId, producingSemanticInputFingerprint: context.semanticInputFingerprint ?? '', logicalDescriptorDigest: result.terminalBinding.logicalDescriptorDigest });
@@ -391,8 +392,9 @@ export async function inspectPendingArchiveRecoveryBeforeOpenSpec(
 export async function inspectPreparedRun(
   repoRoot: string,
   deliveryId: string,
+  openSpecAdapter?: OpenSpecCliAdapter,
 ): Promise<PreparedRunInspection> {
-  const snapshot = await readSnapshot(repoRoot, deliveryId);
+  const snapshot = (await readSnapshotOperation(repoRoot, deliveryId, openSpecAdapter)).snapshot;
   const change = getActiveChange(snapshot);
   if (change === null) {
     const persistedArchive = await findPersistedPendingArchive(repoRoot, deliveryId, snapshot);
@@ -413,7 +415,7 @@ export async function inspectPreparedRun(
     const context = await readContextFile(runDir);
     if (context.schemaVersion === 5) {
       try {
-        const resumed = await resumeRun({ repoRoot, deliveryId, expectedRunId: run.runId });
+        const resumed = await resumeRun({ repoRoot, deliveryId, expectedRunId: run.runId, ...(openSpecAdapter !== undefined && { openSpecAdapter }) });
         return { ...base, status: resumed.kind === 'pending' ? 'resumable' : 'not-resumable' };
       } catch {
         if (await isContractResetOnlyPendingDrift(repoRoot, deliveryId, snapshot, change.id, context)) {
@@ -1365,7 +1367,7 @@ export async function admitActionResult(input: AdmitActionResultInput): Promise<
       if ('compactEntryWorkspaceIdentity' in context && context.compactEntryWorkspaceIdentity !== undefined) {
         const binding = persisted.terminalBinding.currentVerification;
         if (binding === undefined) throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'completed post-E2 Apply terminal is missing current verification binding', { runId: context.runId });
-        await validateCurrentVerificationTerminalBinding(input.repoRoot, context.changeId, binding);
+        await validateCurrentVerificationTerminalBinding(input.repoRoot, context.changeId, context.runId, binding);
       } else {
         const binding = persisted.terminalBinding.verificationSelection;
         if (binding === undefined) throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'completed legacy v5 Apply terminal is missing verification-selection binding', { runId: context.runId });
@@ -1375,7 +1377,7 @@ export async function admitActionResult(input: AdmitActionResultInput): Promise<
     return;
   }
 
-  const snapshot = await readSnapshot(input.repoRoot, input.deliveryId);
+  const snapshot = (await readSnapshotOperation(input.repoRoot, input.deliveryId, openSpecAdapter)).snapshot;
   assertConflictFree(snapshot);
 
   // Owner authority remains Manifest.ownerDecisions. Run context and the Action
@@ -1492,18 +1494,40 @@ async function publishCompactApplyVerification(input: {
 }
 
 async function validateCurrentVerificationTerminalBinding(
-  repoRoot: string, changeId: string, binding: NonNullable<RunTerminalBinding['currentVerification']>,
+  repoRoot: string, changeId: string, producingRunId: string, binding: NonNullable<RunTerminalBinding['currentVerification']>,
 ): Promise<void> {
   const logicalRef = `openspec/changes/${changeId}/verification.md`;
-  if (binding.logicalRef !== logicalRef) throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'current verification binding targets wrong logical path', { expected: logicalRef, actual: binding.logicalRef });
-  let bytes: string;
-  try { bytes = await readFile(join(repoRoot, logicalRef), 'utf8'); }
-  catch (error) { throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'current verification binding target is unavailable', { logicalRef, detail: error instanceof Error ? error.message : String(error) }); }
-  if (sha256(bytes) !== binding.versionFingerprint) throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'current verification binding fingerprint does not match persisted verification.md');
+  if (binding.logicalRef !== logicalRef) {
+    throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'current verification binding targets wrong logical path', { expected: logicalRef, actual: binding.logicalRef });
+  }
+  const resolved = await resolveActiveOrUniqueArchivedChangeFile(repoRoot, changeId, logicalRef);
+  if (resolved === undefined) {
+    throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'current verification binding target is unavailable', { logicalRef });
+  }
+  const bytes = resolved.bytes.toString('utf8');
+  const fingerprint = sha256(bytes);
   const statusMatch = /<!--\s*flowkit-change-verification-status:\s*([^\s>]+)\s*-->/.exec(bytes)?.[1];
-  if (statusMatch !== binding.status) throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'current verification status marker does not match terminal binding', { statusMatch, bindingStatus: binding.status });
   const selectionMatch = /- selectionFingerprint: `([0-9a-f]{64})`/.exec(bytes)?.[1];
-  if (selectionMatch !== binding.selectionFingerprint) throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'current verification selection fingerprint does not match terminal binding');
+  if (fingerprint === binding.versionFingerprint && statusMatch === binding.status && selectionMatch === binding.selectionFingerprint) return;
+  try {
+    await validateCurrentReverificationChain({
+      canonicalVerificationPath: resolved.physicalPath,
+      logicalVerificationRef: logicalRef,
+      currentMarkdown: bytes,
+      originRunId: producingRunId,
+      originBinding: {
+        versionFingerprint: binding.versionFingerprint,
+        selectionFingerprint: binding.selectionFingerprint,
+        status: binding.status,
+      },
+    });
+  } catch (error) {
+    throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'current verification authority is neither the producing binding nor a valid bounded re-verification successor', {
+      logicalRef,
+      physicalPath: normalizeSeparators(resolved.physicalPath.slice(repoRoot.length).replace(/^[/\\]+/, '')),
+      detail: error instanceof Error ? error.message : String(error),
+    });
+  }
 }
 
 async function publishV5ApplyVerificationSelection(input: {
@@ -2985,6 +3009,40 @@ async function assertVersionedChangeRefCurrentOrArchived(
       { expected: ref.versionFingerprint, current },
     );
   }
+}
+
+async function resolveActiveOrUniqueArchivedChangeFile(
+  repoRoot: string,
+  changeId: string,
+  activeRelative: string,
+): Promise<{ readonly physicalPath: string; readonly bytes: Buffer } | undefined> {
+  const activePath = join(repoRoot, activeRelative);
+  const active = await readFileIfPresent(activePath);
+  if (active !== undefined) return { physicalPath: activePath, bytes: Buffer.from(active) };
+
+  const root = `${OPEN_SPEC_CHANGE_PREFIX}/${changeId}/`;
+  const normalized = normalizeSeparators(activeRelative);
+  if (!normalized.startsWith(root)) return undefined;
+  const suffix = normalized.slice(root.length);
+  const archiveRoot = join(repoRoot, OPEN_SPEC_CHANGE_PREFIX, 'archive');
+  let entries;
+  try { entries = await readdir(archiveRoot, { withFileTypes: true }); }
+  catch { return undefined; }
+  const matchingRoots = entries
+    .filter((entry) => entry.isDirectory() && entry.name.endsWith(`-${changeId}`))
+    .map((entry) => join(archiveRoot, entry.name));
+  const existing: { readonly physicalPath: string; readonly bytes: Buffer }[] = [];
+  for (const rootPath of matchingRoots) {
+    const physicalPath = join(rootPath, suffix);
+    const content = await readFileIfPresent(physicalPath);
+    if (content !== undefined) existing.push({ physicalPath, bytes: Buffer.from(content) });
+  }
+  if (existing.length > 1) {
+    throw new FlowkitError('TERMINAL_REPLAY_CONFLICT', 'Verification authority resolves to multiple archived Change roots', {
+      changeId, logicalRef: normalized, matches: existing.map((candidate) => normalizeSeparators(candidate.physicalPath)),
+    });
+  }
+  return existing[0];
 }
 
 async function readActiveOrArchivedChangeFile(

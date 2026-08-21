@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
-import { readdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import type { FullTestStatus, VerificationStatus } from '../../domain/types.js';
@@ -52,9 +53,73 @@ export type VerificationSelectionExecutor = (
   input: ExecuteVerificationSelectionInput,
 ) => Promise<VerificationEvidenceRecord>;
 
+const H1_CAPABILITY_ID = 'flowkit-stable-runner-and-self-hosting-acceptance';
+const H1_TARGET = 'tests/integration/h1-stable-runner-and-self-hosting-acceptance.test.ts';
+const NODE_TEST_TIMEOUT_MS = 120_000;
+
+interface BoundedNodeCommand {
+  readonly label: string;
+  readonly files: readonly string[];
+  readonly testNamePattern?: string;
+  readonly env?: Readonly<NodeJS.ProcessEnv>;
+}
+
+const G1_CHANGE_E2E_CASES = [
+  'drives the happy lifecycle through real archive, verify projection, completion and checkpoint readiness without a Git checkpoint',
+  'keeps non-author blockers out of revise while explicit review creates direct same-stage re-review; author blockers permit revise',
+  'fails closed for stale review target and missing Owner activation',
+  'exact-resumes the same pending Run after a future-Delivery fresh clone with no chat/provider state',
+  'keeps changed-surface outcome-unknown archive pending and resumes the same generation after explicit recovery admission',
+  'projects not-published Verification from structured authority and fails closed when OpenSpec projection is unavailable',
+  'records Change Verification failure through apply admission instead of fabricating success',
+] as const;
+
+const G1_ADAPTER_E2E_CASES = [
+  'replays the real F1 retry+archive terminal and fails closed on ambiguous/corrupt archived authority',
+  'keeps historical E1 selection/evidence point-in-time even when the current Catalog fingerprint differs',
+  'fresh-clones a different future Delivery, resumes one exact pending Action, rebuilds context, and does not auto-next',
+] as const;
+
+const B1_RUN_EXECUTION_SUITE_PATTERNS = [
+  'I1 Proposal archive-sync admission wiring',
+  'E1 new preparation boundary',
+  'E2 post-checkpoint three-file writer',
+  'I1 exact-candidate re-verification lifecycle',
+  'B1 fixed ActionDefinition catalog',
+  'D2 archive terminal continuation regressions',
+  'D1 structured Owner facts and reset-aware lineage',
+] as const;
+
+const B1_PREPARATION_ADMISSION_CASES = [
+  'creates one Delivery-wide Run then resumes the same pending semantic input',
+  'fails closed on contractRef version drift without publishing a second pending Run',
+  'admits logical result after legitimate Action output mutation and Core derives artifact refs',
+  'keeps blocked next while explicit review creates a new same-stage Reviewer generation',
+  'failed execution retries as a new Run/NNN without provider-session identity',
+  'Apply package carries exact Owner ref and remains Change-only/minimal',
+  'rejects a tampered contractRef even when caller preserves the old fingerprint',
+  'rejects tampered authority identity outside contractRefs before terminal publication',
+  'still fails closed when immutable approved proposal content drifts during pending Apply',
+  'resumes the same pending Apply after Action-owned tasks and verification progress',
+  'resumes the same pending revise-apply after its own tasks and verification mutations',
+  'fails closed when pending review-explore target bytes drift outside Reviewer mutation boundary',
+  'fails closed when pending review-propose target bytes drift outside Reviewer mutation boundary',
+  'resumes the exact pending archive after Action-owned OpenSpec relocation',
+  'resumes the exact pending archive after Action-owned Change completed progress',
+  'does not create a new archive Run after completion when no pending archive identity exists',
+  'keeps current C1 self-archive resumable after canonical spec merge and active root relocation',
+  'admits terminal result for the exact persisted pending archive after Change completed progress',
+  'rejects fabricated completed archive admission when the persisted pending identity is gone',
+  'keeps non-archive terminal admission bound to the active Change',
+  'projects the same persisted pending archive through inspect/status/doctor/resume-context after completion',
+  'keeps completed diagnostics at none when no pending archive exists',
+] as const;
+
 const NODE_TEST_CHECKS = new Set([
+  'tests-architecture',
   'tests-cli',
   'tests-execution',
+  'tests-external-tools',
   'tests-openspec-runtime',
   'tests-persistence',
   'tests-serialization',
@@ -81,24 +146,38 @@ export async function executeVerificationSelection(
 
   const checksById = new Map<string, VerificationCheckEvidence>();
   const nodeIds = selection.verificationScopes.filter((scope) => NODE_TEST_CHECKS.has(scope));
-  if (nodeIds.length > 0) {
-    const files = await resolveLogicalNodeTests(input.repoRoot, nodeIds);
+  const h1Selected = selection.capabilityIds.includes(H1_CAPABILITY_ID);
+  for (const logicalId of nodeIds) {
+    const files = await resolveLogicalNodeTests(input.repoRoot, [logicalId]);
     const nodeEnv: NodeJS.ProcessEnv = { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' };
     const requiresOpenSpecExecutable =
-      nodeIds.includes('tests-openspec-runtime') ||
+      logicalId === 'tests-openspec-runtime' ||
       files.includes('tests/integration/g1-change-cli-end-to-end.test.ts');
     if (requiresOpenSpecExecutable) {
-      nodeEnv['FLOWKIT_OPENSPEC_BIN'] = await input.openSpecAdapter.resolveExecutable();
+      const invocation = await input.openSpecAdapter.resolveInvocation();
+      delete nodeEnv['FLOWKIT_OPENSPEC_BIN'];
+      delete nodeEnv['FLOWKIT_HOME'];
+      Object.assign(nodeEnv, invocation.propagationEnv);
     }
-    const outcome = await runCommand(process.execPath, ['--import', 'tsx', '--test', ...files], {
+
+    if (logicalId === 'tests-cli') {
+      const execution = await executeBoundedCliPhysicalFanout(input.repoRoot, files, nodeEnv, h1Selected);
+      checksById.set(logicalId, evidenceFromOutcome(input, logicalId, execution.commandOrMethod, execution.outcome, environment, 'bounded tests-cli physical execution'));
+      continue;
+    }
+    if (logicalId === 'tests-execution') {
+      const execution = await executeBoundedExecutionPhysicalFanout(input.repoRoot, files, nodeEnv);
+      checksById.set(logicalId, evidenceFromOutcome(input, logicalId, execution.commandOrMethod, execution.outcome, environment, 'bounded tests-execution physical execution'));
+      continue;
+    }
+
+    const outcome = await runCommand(process.execPath, ['--import', 'tsx', '--test', '--test-concurrency=1', ...files], {
       cwd: input.repoRoot,
       env: nodeEnv,
-      timeout: 120_000,
+      timeout: NODE_TEST_TIMEOUT_MS,
     });
-    const command = `${process.execPath} --import tsx --test ${files.join(' ')}`;
-    for (const logicalId of nodeIds) {
-      checksById.set(logicalId, evidenceFromOutcome(input, logicalId, command, outcome, environment, 'compatible Node test union/dedupe execution'));
-    }
+    const command = `${process.execPath} --import tsx --test --test-concurrency=1 ${files.join(' ')}`;
+    checksById.set(logicalId, evidenceFromOutcome(input, logicalId, command, outcome, environment, 'logical Node test execution'));
   }
 
   if (selection.verificationScopes.includes('typecheck')) {
@@ -343,6 +422,142 @@ async function executeOpenSpecArchiveSync(
   }
 }
 
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+}
+
+function nodeCommandArgs(command: BoundedNodeCommand): string[] {
+  return [
+    '--import',
+    'tsx',
+    '--test',
+    '--test-concurrency=1',
+    ...(command.testNamePattern !== undefined ? [`--test-name-pattern=${command.testNamePattern}`] : []),
+    ...command.files,
+  ];
+}
+
+function renderBoundedNodeCommand(command: BoundedNodeCommand): string {
+  const env = command.env === undefined
+    ? ''
+    : Object.entries(command.env)
+        .filter(([key]) => key.startsWith('FLOWKIT_H1_'))
+        .map(([key, value]) => `${key}=${String(value)}`)
+        .join(' ');
+  const prefix = env === '' ? '' : `${env} `;
+  return `${prefix}${process.execPath} ${nodeCommandArgs(command).join(' ')}`;
+}
+
+async function executeBoundedNodeCommands(
+  repoRoot: string,
+  commands: readonly BoundedNodeCommand[],
+  baseEnv: NodeJS.ProcessEnv,
+): Promise<{ readonly commandOrMethod: string; readonly outcome: ExternalCommandOutcome }> {
+  const commandParts: string[] = [];
+  const stdoutParts: string[] = [];
+  const stderrParts: string[] = [];
+  let terminal: ExternalCommandOutcome | undefined;
+  for (const command of commands) {
+    const commandEnv = { ...baseEnv, ...(command.env ?? {}) };
+    const outcome = await runCommand(process.execPath, nodeCommandArgs(command), {
+      cwd: repoRoot,
+      env: commandEnv,
+      timeout: NODE_TEST_TIMEOUT_MS,
+    });
+    commandParts.push(renderBoundedNodeCommand(command));
+    stdoutParts.push(`--- ${command.label} ---\n${outcome.stdout}`);
+    stderrParts.push(`--- ${command.label} ---\n${outcome.stderr}`);
+    terminal = { ...outcome, stdout: stdoutParts.join('\n'), stderr: stderrParts.join('\n') };
+    if (outcome.kind !== 'exited' || outcome.exitCode !== 0) break;
+  }
+  if (terminal === undefined) {
+    throw new FlowkitError('VERIFICATION_SCOPE_EXECUTION_UNSUPPORTED', 'Bounded physical verification plan resolved no commands');
+  }
+  return { commandOrMethod: commandParts.join(' && '), outcome: terminal };
+}
+
+async function executeBoundedCliPhysicalFanout(
+  repoRoot: string,
+  files: readonly string[],
+  nodeEnv: NodeJS.ProcessEnv,
+  deduplicateLegacyInstalledSmoke: boolean,
+): Promise<{ readonly commandOrMethod: string; readonly outcome: ExternalCommandOutcome }> {
+  const diagnosticProcess = 'tests/integration/diagnostic-cli-process.test.ts';
+  const g1Change = 'tests/integration/g1-change-cli-end-to-end.test.ts';
+  const g1Adapter = 'tests/integration/g1-sync-resume-and-single-action-agent-adapter.test.ts';
+  const heavy = new Set([diagnosticProcess, g1Change, g1Adapter, H1_TARGET]);
+  const cheapFiles = files.filter((file) => !heavy.has(file));
+  const commands: BoundedNodeCommand[] = [];
+  if (cheapFiles.length > 0) commands.push({ label: 'tests-cli-cheap', files: cheapFiles });
+  if (files.includes(diagnosticProcess)) {
+    commands.push(deduplicateLegacyInstalledSmoke
+      ? {
+          label: 'tests-cli-diagnostic-real-process-lite',
+          files: [diagnosticProcess],
+          testNamePattern: [
+            'executes all four commands without mutating repository files',
+            'rejects unknown commands with exit 2 on stderr',
+          ].map(escapeRegex).join('|'),
+        }
+      : { label: 'tests-cli-diagnostic-real-process', files: [diagnosticProcess] });
+  }
+  if (files.includes(g1Change)) {
+    for (const [index, name] of G1_CHANGE_E2E_CASES.entries()) {
+      commands.push({ label: `tests-cli-g1-change-case-${index + 1}`, files: [g1Change], testNamePattern: escapeRegex(name) });
+    }
+  }
+  if (files.includes(g1Adapter)) {
+    for (const [index, name] of G1_ADAPTER_E2E_CASES.entries()) {
+      commands.push({ label: `tests-cli-g1-adapter-case-${index + 1}`, files: [g1Adapter], testNamePattern: escapeRegex(name) });
+    }
+  }
+
+  const stateRoot = await mkdtemp(join(tmpdir(), 'flowkit-h1-formal-e2e-'));
+  try {
+    if (files.includes(H1_TARGET)) {
+      commands.push({
+        label: 'tests-cli-h1-installed-runner-smoke',
+        files: [H1_TARGET],
+        testNamePattern: escapeRegex('physically installs the candidate runner and exercises fresh-process diagnostics without source-workspace runtime'),
+      });
+      for (let phase = 1; phase <= 26; phase += 1) {
+        commands.push({
+          label: `tests-cli-h1-phase-${phase}`,
+          files: [H1_TARGET],
+          env: {
+            FLOWKIT_H1_FORMAL_PHASE: String(phase),
+            FLOWKIT_H1_FORMAL_STATE_ROOT: stateRoot,
+          },
+        });
+      }
+    }
+    return await executeBoundedNodeCommands(repoRoot, commands, nodeEnv);
+  } finally {
+    await rm(stateRoot, { recursive: true, force: true });
+  }
+}
+
+async function executeBoundedExecutionPhysicalFanout(
+  repoRoot: string,
+  files: readonly string[],
+  nodeEnv: NodeJS.ProcessEnv,
+): Promise<{ readonly commandOrMethod: string; readonly outcome: ExternalCommandOutcome }> {
+  const b1Heavy = 'tests/unit/services/b1-run-execution-service.test.ts';
+  const commands: BoundedNodeCommand[] = [];
+  for (const file of files.filter((file) => file !== b1Heavy)) {
+    commands.push({ label: `tests-execution-file-${file.replaceAll('/', '-')}`, files: [file] });
+  }
+  if (files.includes(b1Heavy)) {
+    for (const [index, suite] of B1_RUN_EXECUTION_SUITE_PATTERNS.entries()) {
+      commands.push({ label: `tests-execution-b1-suite-${index + 1}`, files: [b1Heavy], testNamePattern: escapeRegex(suite) });
+    }
+    for (const [index, name] of B1_PREPARATION_ADMISSION_CASES.entries()) {
+      commands.push({ label: `tests-execution-b1-preparation-case-${index + 1}`, files: [b1Heavy], testNamePattern: escapeRegex(name) });
+    }
+  }
+  return executeBoundedNodeCommands(repoRoot, commands, nodeEnv);
+}
+
 function evidenceFromOutcome(
   _input: ExecuteVerificationSelectionInput,
   logicalId: string,
@@ -389,16 +604,20 @@ async function resolveLogicalNodeTests(repoRoot: string, logicalIds: readonly st
 
 function logicalNodeSelectors(logicalId: string): readonly string[] {
   switch (logicalId) {
+    case 'tests-architecture':
+      return ['tests/integration/d1-architecture-baseline-and-delivery-plan.test.ts', 'tests/integration/e1-architecture-actual-compare-and-system-promotion.test.ts', 'tests/unit/architecture/*.test.ts'];
     case 'tests-cli':
-      return ['tests/integration/diagnostic-cli-process.test.ts', 'tests/integration/diagnostic-cli.test.ts', 'tests/integration/g1-change-cli-end-to-end.test.ts', 'tests/unit/cli/*.test.ts', 'tests/unit/diagnostics/*.test.ts'];
+      return ['tests/integration/a1-delivery-readiness-and-full-test-behavior.test.ts', 'tests/integration/b1-delivery-findings-and-corrective-change.test.ts', 'tests/integration/diagnostic-cli-process.test.ts', 'tests/integration/diagnostic-cli.test.ts', 'tests/integration/g1-change-cli-end-to-end.test.ts', 'tests/integration/g1-sync-resume-and-single-action-agent-adapter.test.ts', 'tests/integration/h1-stable-runner-and-self-hosting-acceptance.test.ts', 'tests/unit/cli/*.test.ts', 'tests/unit/diagnostics/*.test.ts'];
     case 'tests-execution':
-      return ['tests/integration/f1-archive-and-checkpoint-boundary.test.ts', 'tests/unit/facts/*.test.ts', 'tests/unit/policy/*.test.ts', 'tests/unit/services/*.test.ts'];
+      return ['tests/integration/f1-archive-and-checkpoint-boundary.test.ts', 'tests/integration/f1-delivery-finalize-and-git-boundary.test.ts', 'tests/unit/facts/*.test.ts', 'tests/unit/policy/*.test.ts', 'tests/unit/services/*.test.ts'];
+    case 'tests-external-tools':
+      return ['tests/integration/c1-external-tool-runtime-and-archify-cli-contract.test.ts', 'tests/unit/external-tools/*.test.ts'];
     case 'tests-openspec-runtime':
       return ['tests/integration/openspec-1-7-real-cli.test.ts', 'tests/unit/external-command.test.ts', 'tests/unit/integrations/openspec-cli-adapter.test.ts'];
     case 'tests-persistence':
-      return ['tests/unit/persistence/legacy-recognizer.test.ts', 'tests/unit/persistence/run-persistence.test.ts'];
+      return ['tests/unit/persistence/delivery-manifest-document.test.ts', 'tests/unit/persistence/legacy-recognizer.test.ts', 'tests/unit/persistence/run-persistence.test.ts'];
     case 'tests-serialization':
-      return ['tests/unit/persistence/serialization.test.ts'];
+      return ['tests/unit/domain/*.test.ts', 'tests/unit/persistence/serialization.test.ts'];
     case 'tests-verification':
       return ['tests/integration/e1-change-verification-selection.test.ts', 'tests/integration/e2-change-verification-generalization.test.ts', 'tests/unit/verification/affected-scopes.test.ts', 'tests/unit/verification/change-selection/*.test.ts', 'tests/unit/verification/verification-plan.test.ts'];
     default:

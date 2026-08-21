@@ -1,0 +1,380 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Flowkit 当前系统架构 — 03 Delivery Start",
+    "subtitle": "03 Delivery Start 时已经存在的系统能力；System baseline = main @ 74d46f0920c0dfc6f19b5b264cf9de138f4c2bec。",
+    "output": "current.html",
+    "visual_preset": "signal-flow",
+    "quality_profile": "standard",
+    "viewBox": [
+      1460,
+      720
+    ],
+    "repository": {
+      "url": "https://github.com/XDesk-xx/flowkit",
+      "revision": "74d46f0920c0dfc6f19b5b264cf9de138f4c2bec"
+    },
+    "views": [
+      {
+        "id": "control",
+        "label": "控制主线",
+        "focus": [
+          "owner",
+          "facts",
+          "policy",
+          "change-execution",
+          "git"
+        ],
+        "note": "03 开始前，Flowkit 已能读取正式事实、由 Policy 推导 Change 合法边界并形成 Change Checkpoint。"
+      },
+      {
+        "id": "change",
+        "label": "Change 执行基础",
+        "focus": [
+          "change-execution",
+          "openspec",
+          "verification",
+          "run"
+        ],
+        "note": "02 已完成完整 Change lifecycle、OpenSpec、Change Verification 与三文件 Lean Run。"
+      },
+      {
+        "id": "resume",
+        "label": "诊断与恢复",
+        "focus": [
+          "diagnostics",
+          "facts",
+          "persistence",
+          "policy"
+        ],
+        "note": "status / next / doctor / resume-context 已存在，但尚未扩展为完整 Delivery resume。"
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "owner",
+      "type": "external",
+      "label": "Owner 权威",
+      "sublabel": "决策 / 授权",
+      "tag": "既有",
+      "pos": [
+        45,
+        100
+      ],
+      "size": [
+        165,
+        64
+      ]
+    },
+    {
+      "id": "facts",
+      "type": "database",
+      "label": "正式事实读取",
+      "sublabel": "Git / OpenSpec / repository facts",
+      "tag": "既有",
+      "pos": [
+        285,
+        100
+      ],
+      "size": [
+        190,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/facts/formal-fact-reader.ts",
+          "label": "formal fact reader"
+        }
+      ]
+    },
+    {
+      "id": "policy",
+      "type": "backend",
+      "label": "Flowkit Policy",
+      "sublabel": "唯一合法 Change 边界",
+      "tag": "既有",
+      "pos": [
+        560,
+        100
+      ],
+      "size": [
+        190,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/policy/unified-entry.ts",
+          "label": "policy entry"
+        }
+      ]
+    },
+    {
+      "id": "change-execution",
+      "type": "backend",
+      "label": "Change 执行",
+      "sublabel": "完整 02 Change 周期",
+      "tag": "既有",
+      "pos": [
+        835,
+        100
+      ],
+      "size": [
+        195,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/cli/change-action.ts",
+          "label": "change action"
+        }
+      ]
+    },
+    {
+      "id": "git",
+      "type": "external",
+      "label": "Git",
+      "sublabel": "代码字节 / 历史 / Checkpoint",
+      "tag": "既有",
+      "pos": [
+        1120,
+        100
+      ],
+      "size": [
+        200,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/facts/git-boundary-reader.ts",
+          "label": "git boundary reader"
+        }
+      ]
+    },
+    {
+      "id": "diagnostics",
+      "type": "frontend",
+      "label": "诊断与恢复",
+      "sublabel": "status / next / doctor / resume-context",
+      "tag": "既有",
+      "pos": [
+        45,
+        330
+      ],
+      "size": [
+        205,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/diagnostics/resume-context.ts",
+          "label": "resume context"
+        }
+      ]
+    },
+    {
+      "id": "persistence",
+      "type": "database",
+      "label": "持久化",
+      "sublabel": "Manifest / Run / resultRef",
+      "tag": "既有",
+      "pos": [
+        330,
+        330
+      ],
+      "size": [
+        190,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/persistence/run-persistence.ts",
+          "label": "run persistence"
+        }
+      ]
+    },
+    {
+      "id": "run",
+      "type": "database",
+      "label": "Lean Run",
+      "sublabel": "action.md / context.json / result.json",
+      "tag": "既有",
+      "pos": [
+        600,
+        330
+      ],
+      "size": [
+        220,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/persistence/serialization.ts",
+          "label": "run serialization"
+        }
+      ]
+    },
+    {
+      "id": "openspec",
+      "type": "external",
+      "label": "OpenSpec 1.7",
+      "sublabel": "Change contract / archive",
+      "tag": "既有",
+      "pos": [
+        900,
+        330
+      ],
+      "size": [
+        185,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/integrations/openspec/openspec-cli-adapter.ts",
+          "label": "OpenSpec adapter"
+        }
+      ]
+    },
+    {
+      "id": "verification",
+      "type": "cloud",
+      "label": "Change Verification",
+      "sublabel": "选择 / 执行 / 结果权威",
+      "tag": "既有",
+      "pos": [
+        1165,
+        330
+      ],
+      "size": [
+        205,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/verification/change-selection/selection.ts",
+          "label": "verification selection"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "03 开始前已经存在的 Flowkit 基础能力",
+      "wraps": [
+        "facts",
+        "policy",
+        "change-execution",
+        "diagnostics",
+        "persistence",
+        "run"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "c1",
+      "from": "owner",
+      "to": "facts",
+      "label": "Owner facts",
+      "route": "straight",
+      "variant": "security",
+      "labelDy": -18
+    },
+    {
+      "id": "c2",
+      "from": "facts",
+      "to": "policy",
+      "label": "formal facts",
+      "route": "straight",
+      "labelDy": -18
+    },
+    {
+      "id": "c3",
+      "from": "policy",
+      "to": "change-execution",
+      "label": "合法 Action",
+      "route": "straight",
+      "variant": "emphasis",
+      "labelDy": -18
+    },
+    {
+      "id": "c4",
+      "from": "change-execution",
+      "to": "git",
+      "label": "archive 后 Checkpoint",
+      "route": "straight",
+      "labelAt": [
+        1075,
+        178
+      ]
+    },
+    {
+      "id": "c5",
+      "from": "diagnostics",
+      "to": "facts",
+      "route": "orthogonal-v",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "c6",
+      "from": "persistence",
+      "to": "facts",
+      "route": "orthogonal-v",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "c7",
+      "from": "change-execution",
+      "to": "run",
+      "route": "orthogonal-v",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "c8",
+      "from": "change-execution",
+      "to": "openspec",
+      "route": "orthogonal-v",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "c9",
+      "from": "change-execution",
+      "to": "verification",
+      "route": "orthogonal-v",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "c10",
+      "from": "persistence",
+      "to": "run",
+      "route": "straight"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "03 开始时已经具备",
+      "items": [
+        "确定性 Formal Facts + Policy",
+        "完整 Change lifecycle + Reviewer / blockingAuthority",
+        "OpenSpec + Change Verification + Lean Run + Git Change Checkpoint"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "03 尚未具备",
+      "items": [
+        "Delivery Ready / Full Test / Delivery Finding / Finalize",
+        "受管离线 External Tool Runtime + Archify",
+        "Current / Planned / Actual 架构生命周期、稳定 Runner 与单 Action Agent Adapter"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-explore",
+    "executionStatus": "completed",
+    "summary": "Review 047 revise-explore：046 的 D1-RE-001 已由真实 future-Delivery-shaped next-consumer proof 关闭；047 使用不同 deliveryId 的 synthetic prior accepted Actual + future Delivery Start facts 派生自身 Current/Planned 路径与 provenance，并以 exact managed Archify repository-evidence validate/deliver 实际消费，03-specific delivery id / 74d46f0 / f132db7 均未进入 generic derivation。046 的 HTML default-not-committed 工程边界也已收敛为最薄 .gitignore 方案。但本轮发现两个新的 author blocker：其一，047 多处将 .gitignore 方案写成“Owner 已明确授权”，而 formal context 的 ownerFactRefs/ownerAuthorizationRefs 均为空，Delivery Manifest 对 D1 唯一 Owner fact 只是 activate-change；Reviewer 的 046 non-blocking 建议不能被 Author 转写为 Owner authority。其二，047 explore.md 仍含 36 处 trailing whitespace；将 cumulative candidate 暂存后 git diff --cached --check 明确失败，违反 repository 文本卫生与 canonical staging preflight。两个问题均可由 Author 最小 revise-explore 关闭，不需要 Owner decision 或 contract reset。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "67a3c965c5ce7ff193bb187326a946180935f146fca91aa5bb498d9f2243fd3c"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "D1-RE-002",
+      "severity": "blocking",
+      "title": "Author 将 Reviewer 建议写成不存在的 Owner .gitignore 授权",
+      "problem": "047 在 Current Facts、Scope Boundary、Feasible Proposal Boundary、Open Decisions 和 revise result summary 中反复声明“Owner 已明确授权 D1 修改 repository .gitignore”。但 047 context.json 的 ownerFactRefs=[]、ownerAuthorizationRefs=[]；当前 Delivery Manifest 新增的 D1 Owner fact 仅为 activate-change，sourceRef=owner-input:2026-08-18T10:15+08:00:activate-change:D1-and-explore，没有任何 .gitignore scope/authorization fact。046 Reviewer 只给出了 non-blocking implementation guidance：Proposal 应明确一种最薄的 HTML default-not-committed hygiene mechanism，可为 .gitignore 或等价方式。Reviewer prose 不能创造 Owner authority。",
+      "contractRef": "Flowkit Operating Model v8 / AGENTS.md Owner Authority: 新 Owner authority 只能来自 Owner 独立明确输入；Author/Reviewer prose、解释或建议不能创造 Owner decision；Flowkit Explore Skill v2 Authority Proof",
+      "invariant": "Formal Explore 不得声称不存在的 Owner authorization。已有 D1 scope 可以允许 Author 在 Proposal 中提出最薄 .gitignore implementation choice，但除非存在独立 Owner fact/ref，不得表述为 Owner 已明确授权。",
+      "evidence": [
+        "047 context.json: ownerAuthorization=not-required, ownerFactRefs=[], ownerAuthorizationRefs=[]。",
+        "Delivery Manifest 对 D1 的新增 Owner fact 仅为 activate-change；未发现任何 owner sourceRef 指向 .gitignore modification authorization。",
+        "046 D1-RE-NB-001 只要求 Proposal 明确 .gitignore 或等价最薄机制，并未产生 Owner authority。",
+        "047 explore.md line 28/92/716/756 与 047 result summary 均出现 Owner 已明确授权 .gitignore 的陈述。"
+      ],
+      "impact": "若批准，Author prose 将成为伪造 Owner authority 的 precedent，破坏 One fact, one authority 和 Owner provenance；后续 Proposal/Apply 可能错误地把并不存在的授权当作 scope fact。",
+      "location": "openspec/changes/architecture-baseline-and-delivery-plan/explore.md — Current Facts / Scope Boundary / Feasible Proposal Boundary / Open Decisions；20260818-047-revise-explore/result.json summary",
+      "blockingAuthority": "author",
+      "requiredOutcome": "最小 revise-explore 删除所有“Owner 已明确授权 .gitignore”或等价无来源 authority 陈述。若 .gitignore 仍作为推荐实现，应明确它是 D1 已冻结 JSON/HTML contract 下由 Proposal 待冻结的最薄 implementation choice；只有 Owner 后续独立提供正式 authorization fact 时才能记录为 Owner decision。不要修改 Delivery Manifest 去伪造补写 authorization。",
+      "acceptance": [
+        "explore.md 与 047 后续修订结果不再声称存在未引用的 Owner .gitignore authorization。",
+        ".gitignore 可以继续作为 Proposal 的候选/推荐最薄实现，并保持 architecture/*/html/ default-not-committed、JSON 不被忽略的边界。",
+        "不通过手工 Manifest patch、Run prose 或 Author-created owner ref 补造 Owner authority。",
+        "D1 activation 的真实 Owner fact保持不变。"
+      ]
+    },
+    {
+      "id": "D1-RE-003",
+      "severity": "blocking",
+      "title": "047 explore.md 仍含 trailing whitespace，canonical staging preflight 会失败",
+      "problem": "046 已明确提醒 045 explore.md 的 Markdown 行尾双空格违反仓库文本卫生，047 revise-explore 后这些尾随空格仍存在。Reviewer 将 047 cumulative candidate 叠加到 exact Base 9d27efef 后执行 git add -A + git diff --cached --check，得到 36 个 trailing whitespace findings，exit code=2。普通 git diff --check 对 untracked new files不会覆盖这一问题，但 canonical staging preflight 会必然失败。",
+      "contractRef": "Flowkit Operating Model v8 / AGENTS.md 跨平台与文本卫生：新增或生成文本使用 LF、无 trailing whitespace、EOF 恰好一个 newline；Checkpoint 前 git diff --check，staging 后 git diff --cached --check",
+      "invariant": "Detached cumulative candidate 必须能够通过 canonical materialization/staging hygiene；不能把已知的纯格式 defect 留到 Executor/Checkpoint 再发现。",
+      "evidence": [
+        "047 explore.md 在 Question / Acceptance Boundary / Evidence Boundary / Gap / Implication 等标签行仍使用 Markdown 双空格硬换行。",
+        "Reviewer staging simulation: git add -A && git diff --cached --check => 36 trailing whitespace findings, exit code 2。",
+        "package SHA256SUMS 全部通过，因此这是 payload content defect，不是 transport corruption。"
+      ],
+      "impact": "当前 candidate 即使语义正确也无法通过 mandatory canonical staging preflight，会把确定性可前移的格式失败留到 materialization/checkpoint 阶段。",
+      "location": "openspec/changes/architecture-baseline-and-delivery-plan/explore.md lines 129,132,157,160,165,...,606 (36 occurrences)",
+      "blockingAuthority": "author",
+      "requiredOutcome": "在同一次最小 revise-explore 中移除 explore.md 全部 trailing spaces，保持语义不变，并确认 staging-aware git diff --cached --check 对 cumulative candidate 为 clean。",
+      "acceptance": [
+        "explore.md 不再有行尾空格或 tab。",
+        "文本仍为 LF 且 EOF 恰好一个 newline。",
+        "将 cumulative candidate staged 后 git diff --cached --check 返回 0。",
+        "只做格式 normalization，不借机改变已通过的 future-Delivery proof 或扩大 D1 scope。"
+      ]
+    }
+  ],
+  "reviewFindingConvergence": [
+    {
+      "findingId": "D1-RE-001",
+      "state": "resolved"
+    },
+    {
+      "findingId": "D1-RE-NB-001",
+      "state": "resolved"
+    },
+    {
+      "findingId": "D1-RE-002",
+      "state": "new"
+    },
+    {
+      "findingId": "D1-RE-003",
+      "state": "new"
+    }
+  ]
+}

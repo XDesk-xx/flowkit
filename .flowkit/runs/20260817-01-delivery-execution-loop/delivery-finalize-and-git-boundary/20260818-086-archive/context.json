@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 4,
+  "runId": "20260818-086-archive",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "archive",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "semanticInputFingerprint": "60a44d85ce5d7586ba5eaa751b3c4078fa63146dd9efc658e41c7e7880825ea8",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-finalize-and-git-boundary/20260818-086-archive/",
+  "changeKey": "F1",
+  "changeId": "delivery-finalize-and-git-boundary",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-finalize-and-git-boundary/20260818-085-review-apply/result.json",
+    "versionFingerprint": "2449f75e245677d537bf0956d2ef225ed2de68a53b974e6914114c7e9e10fa8d",
+    "kind": "run-result"
+  },
+  "archiveEntryOpenSpecProjection": {
+    "projectionVersion": 1,
+    "version": "1.7.0",
+    "changeId": "delivery-finalize-and-git-boundary",
+    "changeRootLogical": "openspec/changes/delivery-finalize-and-git-boundary",
+    "artifactPaths": {
+      "proposal": [
+        "openspec/changes/delivery-finalize-and-git-boundary/proposal.md"
+      ],
+      "specs": [
+        "openspec/changes/delivery-finalize-and-git-boundary/specs/flowkit-change-verification-selection/spec.md",
+        "openspec/changes/delivery-finalize-and-git-boundary/specs/flowkit-core-model/spec.md",
+        "openspec/changes/delivery-finalize-and-git-boundary/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+        "openspec/changes/delivery-finalize-and-git-boundary/specs/flowkit-delivery-finalize-and-git-boundary/spec.md",
+        "openspec/changes/delivery-finalize-and-git-boundary/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "openspec/changes/delivery-finalize-and-git-boundary/specs/flowkit-policy-engine/spec.md"
+      ],
+      "design": [
+        "openspec/changes/delivery-finalize-and-git-boundary/design.md"
+      ],
+      "tasks": [
+        "openspec/changes/delivery-finalize-and-git-boundary/tasks.md"
+      ]
+    }
+  },
+  "archiveMutationGuard": {
+    "state": "armed",
+    "surfaceVersion": "openspec-archive-mutation-v1",
+    "changeRoot": "openspec/changes/delivery-finalize-and-git-boundary",
+    "canonicalSpecsRoot": "openspec/specs",
+    "archiveNamespaceRoot": "openspec/changes/archive",
+    "preArchiveGenerationFingerprint": "6c4e2183884f36362bbb3adcfd479cce37da7400f87d2d54e132eebb82d12ead",
+    "terminalObservation": {
+      "kind": "success",
+      "resultFingerprint": "c14084349c1d7b0759b3752b552b9d5535ef666b85f9ed7ee469dcaf20b2d0e3",
+      "normalized": {
+        "kind": "success",
+        "change": "delivery-finalize-and-git-boundary",
+        "archivedAs": "2026-08-18-delivery-finalize-and-git-boundary",
+        "path": "openspec/changes/archive/2026-08-18-delivery-finalize-and-git-boundary",
+        "specsUpdated": true,
+        "totals": {
+          "added": 19,
+          "modified": 2,
+          "removed": 0,
+          "renamed": 0
+        }
+      }
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

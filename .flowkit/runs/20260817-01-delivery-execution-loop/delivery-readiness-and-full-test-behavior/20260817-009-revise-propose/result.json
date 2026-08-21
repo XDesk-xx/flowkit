@@ -1,0 +1,64 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-propose",
+    "executionStatus": "completed",
+    "summary": "Revise Proposal 完成：关闭 A1-RP-004/005/006。为 per-Delivery Full Test execution contract 冻结 bounded launcherMode（current 03 npm-shim 在 non-win32→npm、win32→npm.cmd→ComSpec），复用 existing owned Windows whole-process-tree cancellation seam；只有 proven terminal execution 才允许 authorized re-entry，unproven outcome-unknown 原子持久化 current executionBlock 并禁止新 attempt；仅 valid flowkit-full-test-result-v1 protocol 可发布 passed/failed/resultRef，spawn/timeout/protocol transport failures 不再伪造 Verification failed，B1 只消费 genuine failed terminal projection。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/design.md",
+        "versionFingerprint": "323a8953a7a28c6072d25af141cba5615ec15fe68c13a06aa2150ab4a36bc0c9",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/proposal.md",
+        "versionFingerprint": "711305a04ced4d660f816cead45aed08ca93d8cce4926cea7d978d251c08dc14",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-change-cli-end-to-end-and-performance/spec.md",
+        "versionFingerprint": "ee74175015bf62d0e833dda59dd79dc1e4e84379a5b57cda4ee738f1f9d8def8",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-core-model/spec.md",
+        "versionFingerprint": "391e0265340a6a774b8e3ed6fc9a3e0a7ce385d5cb0079874ee371740e68efc5",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+        "versionFingerprint": "8f0f0e005a644bc348f0eb364d43aa156e323702803d9b477eca963a85951e91",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-diagnostic-cli/spec.md",
+        "versionFingerprint": "c398e058f410555dd58c85164c276ad93da76ab9affaacb0e35269941a50febb",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "15b692968b60e1444f742bc42df8695c59ae7f57a472c6ae310925d83262f7b7",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-policy-engine/spec.md",
+        "versionFingerprint": "937ffe2bcd05f380931b03ea2c8268e08889b7e3f7a9ff31b673472cc3df0a92",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/tasks.md",
+        "versionFingerprint": "e203203afcf09477a0fa07b6e19553d094af7763785da89c2aa75e0d0b1cd92a",
+        "kind": "produced-artifact"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-008-review-propose/result.json",
+      "versionFingerprint": "ee2bb0abe7dc301bef66fd3105e63543b281a7fb072ca2025dfe78406aeee9a6",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "9bdb3d1a286916ab2f88314029213572cb3cf81121e36b528b741f5d703bef86"
+  }
+}

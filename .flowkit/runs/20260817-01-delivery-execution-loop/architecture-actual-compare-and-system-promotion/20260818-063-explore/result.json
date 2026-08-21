@@ -1,0 +1,19 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "explore",
+    "executionStatus": "completed",
+    "summary": "E1 proof-based Explore completed: D1 checkpoint makes E1 the legal next Change; E1 must implement post-Full-Test Actual/Compare/Owner-acceptance/promotion behavior now but MUST NOT create formal 03 actual.architecture.json during E1 Apply because F1/G1/H1 are still planned and fullTestStatus is not-ready. Exact managed Archify 2.14.0 physically validates/delivers a disposable final-shaped Actual and produces deterministic revision-pinned Planned-vs-Actual compare evidence, but compare cannot decide acceptance. Proposal must add a bounded explicit Owner architecture-acceptance fact, minimal architecture lifecycle refs/projection, pre-Finalize Policy gate, next-Delivery accepted-Actual source semantics, and close E1 Verification ownership/physical selection without Registry/HTML authority or automatic corrective Change.",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/architecture-actual-compare-and-system-promotion/explore.md",
+        "versionFingerprint": "50a70660a90939f48196a6afcc3626f8655e8810df114a941c0487dab9a04d98",
+        "kind": "produced-artifact"
+      }
+    ]
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "bad0f3af22607ccfb2b97141ce13e3eb3e8433845dfa9436b8c569f517898b4e"
+  }
+}

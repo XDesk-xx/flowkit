@@ -1,7 +1,7 @@
 import { afterEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
-import { delimiter, dirname, join } from 'node:path';
+import { join } from 'node:path';
 
 import { ACTION_DEFINITIONS } from '../../src/domain/actions.js';
 import type { ActionPackage } from '../../src/domain/types.js';
@@ -15,10 +15,6 @@ import { admitActionResult, prepareActionExecution, prepareNewExecution } from '
 import { runCommand } from '../../src/shared/external-command.js';
 import { createTempDir } from '../fixtures/helpers.js';
 
-const openspecBin = process.env['FLOWKIT_OPENSPEC_BIN'];
-if (openspecBin === undefined || openspecBin.trim() === '') {
-  throw new Error('FLOWKIT_OPENSPEC_BIN is required for real OpenSpec 1.7 conformance');
-}
 const roots: string[] = [];
 afterEach(async () => Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true }))));
 
@@ -310,26 +306,33 @@ describe('OpenSpec 1.7 real CLI conformance', () => {
     await git(repoRoot, ['add', '.']);
     await git(repoRoot, ['-c', 'user.name=Flowkit Test', '-c', 'user.email=flowkit@example.invalid', 'commit', '-m', 'base']);
 
-    const invocations: string[][] = [];
+    const managedHome = process.env['FLOWKIT_HOME'];
+    assert.ok(managedHome, 'FLOWKIT_HOME exact managed fixture is required');
+    const invocations: Array<{ command: string; args: string[]; flowkitHome?: string }> = [];
     const adapter = new OpenSpecCliAdapter({
       repoRoot,
-      executable: openspecBin,
+      env: { FLOWKIT_HOME: managedHome, PATH: '/poisoned' },
       runner: async (command, args, options) => {
-        invocations.push([...args]);
+        invocations.push({ command, args: [...args], flowkitHome: options.env['FLOWKIT_HOME'] });
         return runCommand(command, args, options);
       },
     });
+    const managedInvocation = await adapter.resolveInvocation();
+    assert.equal(managedInvocation.source, 'managed');
+    assert.equal(managedInvocation.command, process.execPath);
+    assert.match(managedInvocation.argsPrefix[0] ?? '', /FLOWKIT_HOME|tools\/openspec\/1\.7\.0\/runtime\/node_modules\/@fission-ai\/openspec\/bin\/openspec\.js/u);
     const prepared = await prepareNewExecution({
       repoRoot, deliveryId, entry: 'next', now: () => new Date('2099-04-01T00:00:00Z'), openSpecAdapter: adapter,
     });
     assert.equal(prepared.kind, 'prepared');
-    assert.equal(invocations.filter((args) => args.includes('--version')).length, 1, JSON.stringify(invocations));
-    assert.equal(invocations.filter((args) => args.includes('status') && args.includes(changeId)).length, 1, JSON.stringify(invocations));
+    assert.equal(invocations.filter((entry) => entry.args.includes('--version')).length, 1, JSON.stringify(invocations));
+    assert.equal(invocations.filter((entry) => entry.args.includes('status') && entry.args.includes(changeId)).length, 1, JSON.stringify(invocations));
+    assert.equal(invocations.every((entry) => entry.command === process.execPath && entry.flowkitHome === managedHome), true, JSON.stringify(invocations));
   });
 
   it('consumes status/instructions/apply/strict and accepts delta + zero-delta archive shapes', async () => {
     const delta = await newCapabilityFixture();
-    const adapter = new OpenSpecCliAdapter({ repoRoot: delta.repoRoot, executable: openspecBin });
+    const adapter = new OpenSpecCliAdapter({ repoRoot: delta.repoRoot });
     assert.equal(await adapter.getVersion(), '1.7.0');
     const status = await adapter.getChangeStatus(delta.changeId);
     assert.equal(status.artifactPaths.specs.logicalPaths.length, 1);
@@ -341,7 +344,7 @@ describe('OpenSpec 1.7 real CLI conformance', () => {
     assert.ok(deltaArchive.observation?.kind === 'success' && deltaArchive.observation.totals !== undefined);
 
     const skip = await skipFixture();
-    const skipAdapter = new OpenSpecCliAdapter({ repoRoot: skip.repoRoot, executable: openspecBin });
+    const skipAdapter = new OpenSpecCliAdapter({ repoRoot: skip.repoRoot });
     assert.equal((await skipAdapter.validateChange(skip.changeId, true)).valid, true);
     const skipStatus = await skipAdapter.getChangeStatus(skip.changeId);
     const skipArchive = await skipAdapter.archiveChange(skip.changeId, skipStatus);
@@ -352,7 +355,7 @@ describe('OpenSpec 1.7 real CLI conformance', () => {
 
   it('self-contained MODIFIED Requirements preserve point-in-time scenario identities through real OpenSpec 1.7 archive sync', async () => {
     const f = await modifiedScenarioPreservingArchiveFixture();
-    const adapter = new OpenSpecCliAdapter({ repoRoot: f.repoRoot, executable: openspecBin });
+    const adapter = new OpenSpecCliAdapter({ repoRoot: f.repoRoot });
     const canonicalPath = join(f.repoRoot, 'openspec', 'specs', f.capability, 'spec.md');
     const deltaPath = join(f.repoRoot, 'openspec', 'changes', f.changeId, 'specs', f.capability, 'spec.md');
     const canonical = parseRequirementScenarios(await readFile(canonicalPath, 'utf8'));
@@ -387,7 +390,7 @@ describe('OpenSpec 1.7 real CLI conformance', () => {
 
   it('archive-sync preflight fails before canonical mutation when strict validation passes but a MODIFIED Requirement omits a canonical Scenario', async () => {
     const f = await modifiedScenarioMissingArchiveFixture();
-    const adapter = new OpenSpecCliAdapter({ repoRoot: f.repoRoot, executable: openspecBin });
+    const adapter = new OpenSpecCliAdapter({ repoRoot: f.repoRoot });
     const beforeCanonical = await readFile(f.canonicalPath, 'utf8');
     const validation = await adapter.validateChange(f.changeId, true);
     assert.equal(validation.valid, true);
@@ -404,7 +407,7 @@ describe('OpenSpec 1.7 real CLI conformance', () => {
 
   it('real archive_target_exists can mutate canonical specs before failure; durable guard requires exact restore then terminal failure without retry', async () => {
     const f = await collisionFixture();
-    const adapter = new OpenSpecCliAdapter({ repoRoot: f.repoRoot, executable: openspecBin });
+    const adapter = new OpenSpecCliAdapter({ repoRoot: f.repoRoot });
     assert.equal((await adapter.validateChange(f.changeId, true)).valid, true);
     const first = await invokeOpenSpecArchive(f.repoRoot, f.pkg, { adapter });
     assert.deepEqual(first, { status: 'recovery-required', spawned: true, code: 'OPENSPEC_ARCHIVE_RECOVERY_REQUIRED' });
@@ -419,8 +422,6 @@ describe('OpenSpec 1.7 real CLI conformance', () => {
 
   it('normal future Flowkit archive uses real OpenSpec relocation and terminalizes the same schema-v4 Run before checkpoint readiness', async () => {
     const f = await flowkitArchiveFixture();
-    const priorPath = process.env['PATH'];
-    process.env['PATH'] = `${dirname(openspecBin)}${delimiter}${priorPath ?? ''}`;
     try {
       const explore = await prepareActionExecution({ repoRoot: f.repoRoot, deliveryId: f.deliveryId, entry: 'next', now: f.now });
       assert.equal(explore.package.run.action, 'explore');
@@ -484,7 +485,7 @@ describe('OpenSpec 1.7 real CLI conformance', () => {
         result: { executionStatus: 'completed', summary: 'approved apply', reviewVerdict: 'approved', reviewFindings: [] },
       });
       await activateStructuredOpenSpecIntegration(f.repoRoot);
-      const realAdapter = new OpenSpecCliAdapter({ repoRoot: f.repoRoot, executable: openspecBin });
+      const realAdapter = new OpenSpecCliAdapter({ repoRoot: f.repoRoot });
       assert.equal((await realAdapter.validateChange(f.changeId, true)).valid, true);
       await recordOwnerDecision(f.repoRoot, {
         decision: 'authorize-archive',
@@ -531,8 +532,7 @@ describe('OpenSpec 1.7 real CLI conformance', () => {
         assert.equal(afterAdmission.context.changeKey, 'R1');
       }
     } finally {
-      if (priorPath === undefined) delete process.env['PATH'];
-      else process.env['PATH'] = priorPath;
+      // Managed FLOWKIT_HOME is the canonical route; ambient PATH is irrelevant here.
     }
   });
 });

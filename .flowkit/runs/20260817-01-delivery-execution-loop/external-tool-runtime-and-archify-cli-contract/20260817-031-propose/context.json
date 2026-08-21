@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260817-031-propose",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "propose",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "a3d25df7bdcea86f141a678ccd2ddef8ae0eeeea91ad3cd73adf528c233bde72",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/external-tool-runtime-and-archify-cli-contract/20260817-031-propose/",
+  "changeKey": "C1",
+  "changeId": "external-tool-runtime-and-archify-cli-contract",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/external-tool-runtime-and-archify-cli-contract/20260817-030-review-explore/result.json",
+    "versionFingerprint": "76fd7632c1cec20bdb348d1a45ad355de23378a1e7f3712c01f56afaf38b8656",
+    "kind": "run-result"
+  },
+  "canonicalBase": "104c14cc245c4a6db3609e7e3dd52e356d0bfc19",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/external-tool-runtime-and-archify-cli-contract/20260817-030-review-explore/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "76fd7632c1cec20bdb348d1a45ad355de23378a1e7f3712c01f56afaf38b8656"
+    },
+    {
+      "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "41db595b409c9e6bc00babeabb32990290577eb40245a5bb769e8ec98a1f8d3e"
+    },
+    {
+      "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/explore.md",
+      "versionFingerprint": "2003169bd52905af16989637e44f64ac4c1c4c0e1ca807d6bc8ae8064a21de4d",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "external-tool-runtime-and-archify-cli-contract",
+      "runId": "20260817-031-propose",
+      "action": "propose",
+      "role": "author",
+      "semanticInputFingerprint": "a3d25df7bdcea86f141a678ccd2ddef8ae0eeeea91ad3cd73adf528c233bde72"
+    },
+    "definition": {
+      "action": "propose",
+      "version": 1,
+      "role": "author",
+      "goalClass": "freeze-change-contract",
+      "mutationClass": "proposal-bundle-only",
+      "outputClass": "current-proposal-bundle-set",
+      "terminalContract": {
+        "kind": "artifact",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "41db595b409c9e6bc00babeabb32990290577eb40245a5bb769e8ec98a1f8d3e"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/explore.md",
+        "versionFingerprint": "2003169bd52905af16989637e44f64ac4c1c4c0e1ca807d6bc8ae8064a21de4d",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/external-tool-runtime-and-archify-cli-contract/20260817-030-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "76fd7632c1cec20bdb348d1a45ad355de23378a1e7f3712c01f56afaf38b8656"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260817-030-review-explore",
+      "verdict": "approved",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/external-tool-runtime-and-archify-cli-contract/20260817-030-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "76fd7632c1cec20bdb348d1a45ad355de23378a1e7f3712c01f56afaf38b8656"
+      },
+      "blockingAuthorities": [],
+      "findings": []
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "77e1999aa85287f33d641fcf87241f8fedf6d556c013d98453460c621a61c28c",
+    "requiredResultContract": {
+      "kind": "artifact",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": true,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

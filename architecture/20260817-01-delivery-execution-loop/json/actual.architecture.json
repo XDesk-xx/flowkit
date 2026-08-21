@@ -1,0 +1,811 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Flowkit 03 — Actual Architecture",
+    "subtitle": "03 Delivery final candidate 的真实系统架构；repository = delivery/20260817-01-delivery-execution-loop @ 677f8dd9549c。",
+    "output": "actual.html",
+    "visual_preset": "signal-flow",
+    "quality_profile": "standard",
+    "viewBox": [
+      1840,
+      1080
+    ],
+    "repository": {
+      "url": "https://github.com/XDesk-xx/flowkit",
+      "revision": "677f8dd9549c2112f9d9be8279b6de2e05b663cf"
+    },
+    "views": [
+      {
+        "id": "control-plane",
+        "label": "Control Plane",
+        "focus": [
+          "owner",
+          "facts",
+          "policy",
+          "persistence",
+          "run",
+          "diagnostics",
+          "change-execution",
+          "verification",
+          "git"
+        ],
+        "note": "Owner authority、formal facts、deterministic Policy、Lean Run 与 Git/Verification authority 共同构成最终控制平面。"
+      },
+      {
+        "id": "delivery-plane",
+        "label": "Delivery Execution Plane",
+        "focus": [
+          "delivery-execution",
+          "full-test-execution",
+          "architecture-lifecycle",
+          "finalize"
+        ],
+        "note": "Delivery Ready → Owner Full Test → bounded physical execution → Architecture Actual/Compare → Owner Finalize 构成 03 的 Delivery 闭环。"
+      },
+      {
+        "id": "tools-architecture",
+        "label": "Managed Tools & Architecture",
+        "focus": [
+          "openspec",
+          "external-runtime",
+          "archify",
+          "architecture-assets"
+        ],
+        "note": "OpenSpec 与 Archify 通过 FLOWKIT_HOME/tools 的 exact managed identity 运行；Architecture JSON 是 durable source，HTML 是 derived view。"
+      },
+      {
+        "id": "self-hosting",
+        "label": "Self-hosting Boundary",
+        "focus": [
+          "resume",
+          "stable-runner",
+          "agent-adapter"
+        ],
+        "note": "Repository-only resume、stable Runner 与 single-action Agent Adapter 形成下一条真实 Delivery 的 self-hosting execution boundary。"
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "owner",
+      "type": "external",
+      "label": "Owner 权威",
+      "sublabel": "决策 / 授权 / 最终接受",
+      "tag": "authority",
+      "pos": [
+        40,
+        70
+      ],
+      "size": [
+        175,
+        66
+      ]
+    },
+    {
+      "id": "facts",
+      "type": "database",
+      "label": "正式事实",
+      "sublabel": "repository / Change / Delivery facts",
+      "tag": "formal facts",
+      "pos": [
+        270,
+        70
+      ],
+      "size": [
+        205,
+        66
+      ],
+      "sources": [
+        {
+          "path": "src/facts/formal-fact-reader.ts",
+          "label": "formal fact reader"
+        }
+      ]
+    },
+    {
+      "id": "policy",
+      "type": "backend",
+      "label": "Flowkit Policy",
+      "sublabel": "Change + Delivery 唯一合法边界",
+      "tag": "control plane",
+      "pos": [
+        530,
+        70
+      ],
+      "size": [
+        215,
+        66
+      ],
+      "sources": [
+        {
+          "path": "src/policy/unified-entry.ts",
+          "label": "unified policy entry"
+        }
+      ]
+    },
+    {
+      "id": "change-execution",
+      "type": "backend",
+      "label": "Change 执行",
+      "sublabel": "完整 Standard Change Action lifecycle",
+      "tag": "change execution",
+      "pos": [
+        800,
+        70
+      ],
+      "size": [
+        225,
+        66
+      ],
+      "sources": [
+        {
+          "path": "src/cli/change-action.ts",
+          "label": "Change Action CLI"
+        }
+      ]
+    },
+    {
+      "id": "openspec",
+      "type": "external",
+      "label": "OpenSpec 1.7.0",
+      "sublabel": "managed Change contract / archive authority",
+      "tag": "external authority",
+      "pos": [
+        1080,
+        70
+      ],
+      "size": [
+        225,
+        66
+      ],
+      "sources": [
+        {
+          "path": "src/integrations/openspec/openspec-cli-adapter.ts",
+          "label": "OpenSpec adapter"
+        },
+        {
+          "path": "src/integrations/external-tools/managed-tool.ts",
+          "label": "managed tool identity"
+        }
+      ]
+    },
+    {
+      "id": "verification",
+      "type": "cloud",
+      "label": "Verification Authority",
+      "sublabel": "Change Verification + logical Full Test truth",
+      "tag": "verification authority",
+      "pos": [
+        1360,
+        70
+      ],
+      "size": [
+        245,
+        66
+      ],
+      "sources": [
+        {
+          "path": "scripts/verification.ts",
+          "label": "verification orchestration"
+        },
+        {
+          "path": "src/verification/change-selection/publication.ts",
+          "label": "verification publication"
+        }
+      ]
+    },
+    {
+      "id": "git",
+      "type": "external",
+      "label": "Git",
+      "sublabel": "repository bytes / Checkpoint / Delivery Final / history",
+      "tag": "history authority",
+      "pos": [
+        520,
+        910
+      ],
+      "size": [
+        245,
+        70
+      ],
+      "sources": [
+        {
+          "path": "src/facts/git-boundary-reader.ts",
+          "label": "Git boundary reader"
+        },
+        {
+          "path": "src/services/delivery-final-boundary-service.ts",
+          "label": "Delivery Final handoff"
+        }
+      ]
+    },
+    {
+      "id": "persistence",
+      "type": "database",
+      "label": "Persistence",
+      "sublabel": "Delivery Manifest / Runs / ResultRef / exact bytes",
+      "tag": "persistence",
+      "pos": [
+        270,
+        210
+      ],
+      "size": [
+        225,
+        66
+      ],
+      "sources": [
+        {
+          "path": "src/persistence/delivery-manifest-document.ts",
+          "label": "Delivery Manifest"
+        },
+        {
+          "path": "src/persistence/run-persistence.ts",
+          "label": "Run persistence"
+        }
+      ]
+    },
+    {
+      "id": "run",
+      "type": "database",
+      "label": "Lean Run",
+      "sublabel": "one Standard Change Action execution envelope",
+      "tag": "execution envelope",
+      "pos": [
+        800,
+        210
+      ],
+      "size": [
+        225,
+        66
+      ],
+      "sources": [
+        {
+          "path": "src/services/b1-run-execution-service.ts",
+          "label": "Run execution/admission"
+        }
+      ]
+    },
+    {
+      "id": "diagnostics",
+      "type": "frontend",
+      "label": "Diagnostics",
+      "sublabel": "status / next / doctor / resume context",
+      "tag": "diagnostics",
+      "pos": [
+        1360,
+        210
+      ],
+      "size": [
+        215,
+        66
+      ],
+      "sources": [
+        {
+          "path": "src/diagnostics/status.ts",
+          "label": "status"
+        },
+        {
+          "path": "src/diagnostics/doctor.ts",
+          "label": "doctor"
+        }
+      ]
+    },
+    {
+      "id": "delivery-execution",
+      "type": "backend",
+      "label": "Delivery 执行闭环",
+      "sublabel": "Ready / Owner Full Test / Finding / corrective Change",
+      "tag": "delivery behavior",
+      "pos": [
+        500,
+        390
+      ],
+      "size": [
+        280,
+        74
+      ],
+      "sources": [
+        {
+          "path": "src/services/delivery-full-test-service.ts",
+          "label": "Delivery Full Test behavior"
+        },
+        {
+          "path": "src/services/a1-write-service.ts",
+          "label": "Owner write-side"
+        }
+      ]
+    },
+    {
+      "id": "full-test-execution",
+      "type": "backend",
+      "label": "Bounded Full Test Execution",
+      "sublabel": "logical checks → bounded physical targets → typed outcomes",
+      "tag": "bounded execution",
+      "pos": [
+        500,
+        520
+      ],
+      "size": [
+        300,
+        74
+      ],
+      "sources": [
+        {
+          "path": "src/verification/full-test/resolver.ts",
+          "label": "logical→physical resolver"
+        },
+        {
+          "path": "src/verification/full-test/executor.ts",
+          "label": "bounded executor"
+        },
+        {
+          "path": "src/verification/full-test/plan.ts",
+          "label": "Full Test plan"
+        }
+      ]
+    },
+    {
+      "id": "architecture-lifecycle",
+      "type": "cloud",
+      "label": "Architecture 生命周期",
+      "sublabel": "Current / Planned / Actual / Compare / accepted promotion",
+      "tag": "architecture lifecycle",
+      "pos": [
+        500,
+        650
+      ],
+      "size": [
+        285,
+        74
+      ],
+      "sources": [
+        {
+          "path": "src/architecture/architecture-service.ts",
+          "label": "render/compare service"
+        },
+        {
+          "path": "src/architecture/architecture-lifecycle.ts",
+          "label": "cycle/promotion"
+        }
+      ]
+    },
+    {
+      "id": "finalize",
+      "type": "security",
+      "label": "Delivery 最终收口",
+      "sublabel": "Owner authorize-finalize / final handoff / completed",
+      "tag": "finalization",
+      "pos": [
+        500,
+        780
+      ],
+      "size": [
+        280,
+        74
+      ],
+      "sources": [
+        {
+          "path": "src/services/delivery-finalize-service.ts",
+          "label": "Finalize service"
+        },
+        {
+          "path": "src/services/delivery-final-boundary-service.ts",
+          "label": "Final Git handoff"
+        }
+      ]
+    },
+    {
+      "id": "external-runtime",
+      "type": "backend",
+      "label": "外部工具运行时",
+      "sublabel": "FLOWKIT_HOME/tools + exact offline identity",
+      "tag": "managed tools",
+      "pos": [
+        930,
+        390
+      ],
+      "size": [
+        285,
+        72
+      ],
+      "sources": [
+        {
+          "path": "src/integrations/external-tools/managed-tool.ts",
+          "label": "managed tool runtime"
+        }
+      ]
+    },
+    {
+      "id": "archify",
+      "type": "external",
+      "label": "Archify 2.14.0",
+      "sublabel": "validate / render / compare",
+      "tag": "architecture tool",
+      "pos": [
+        950,
+        520
+      ],
+      "size": [
+        245,
+        72
+      ],
+      "sources": [
+        {
+          "path": "src/integrations/archify/archify-cli-adapter.ts",
+          "label": "Archify adapter"
+        }
+      ]
+    },
+    {
+      "id": "architecture-assets",
+      "type": "database",
+      "label": "架构资产",
+      "sublabel": "Delivery-scoped durable JSON / derived HTML",
+      "tag": "architecture assets",
+      "pos": [
+        930,
+        650
+      ],
+      "size": [
+        300,
+        72
+      ],
+      "sources": [
+        {
+          "path": "src/architecture/architecture-service.ts",
+          "label": "architecture paths/publication"
+        }
+      ]
+    },
+    {
+      "id": "resume",
+      "type": "cloud",
+      "label": "Repository-only Resume",
+      "sublabel": "Delivery / Change / Architecture / verification lineage",
+      "tag": "resume",
+      "pos": [
+        1330,
+        650
+      ],
+      "size": [
+        300,
+        72
+      ],
+      "sources": [
+        {
+          "path": "src/diagnostics/resume-projection.ts",
+          "label": "resume projection"
+        },
+        {
+          "path": "src/diagnostics/resume-context.ts",
+          "label": "resume context"
+        }
+      ]
+    },
+    {
+      "id": "stable-runner",
+      "type": "frontend",
+      "label": "稳定 Runner",
+      "sublabel": "built dist/bin/flowkit.js + installed-consumer acceptance",
+      "tag": "runner",
+      "pos": [
+        1330,
+        780
+      ],
+      "size": [
+        310,
+        72
+      ],
+      "sources": [
+        {
+          "path": "src/bin/flowkit.ts",
+          "label": "stable CLI entry"
+        },
+        {
+          "path": "tests/integration/h1-stable-runner-and-self-hosting-acceptance.test.ts",
+          "label": "self-hosting acceptance"
+        }
+      ]
+    },
+    {
+      "id": "agent-adapter",
+      "type": "frontend",
+      "label": "Single-Action Agent Adapter",
+      "sublabel": "exactly one already-decided Change Action",
+      "tag": "agent adapter",
+      "pos": [
+        1330,
+        910
+      ],
+      "size": [
+        300,
+        72
+      ],
+      "sources": [
+        {
+          "path": "src/services/g1-single-action-agent-adapter.ts",
+          "label": "single-action adapter"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "a1",
+      "from": "owner",
+      "to": "facts",
+      "route": "straight",
+      "variant": "security"
+    },
+    {
+      "id": "a2",
+      "from": "facts",
+      "to": "policy",
+      "route": "straight"
+    },
+    {
+      "id": "a3",
+      "from": "policy",
+      "to": "change-execution",
+      "route": "straight",
+      "variant": "emphasis"
+    },
+    {
+      "id": "a4",
+      "from": "change-execution",
+      "to": "openspec",
+      "route": "straight"
+    },
+    {
+      "id": "a5",
+      "from": "openspec",
+      "to": "verification",
+      "route": "straight"
+    },
+    {
+      "id": "a6",
+      "from": "persistence",
+      "to": "facts",
+      "route": "orthogonal-v",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "a7",
+      "from": "change-execution",
+      "to": "run",
+      "route": "orthogonal-v",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "a8",
+      "from": "diagnostics",
+      "to": "verification",
+      "route": "orthogonal-v",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "d1",
+      "from": "policy",
+      "to": "delivery-execution",
+      "route": "orthogonal-v",
+      "label": "Delivery behavior",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        640,
+        330
+      ]
+    },
+    {
+      "id": "d2",
+      "from": "delivery-execution",
+      "to": "full-test-execution",
+      "route": "orthogonal-v",
+      "label": "Owner Full Test",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        645,
+        495
+      ]
+    },
+    {
+      "id": "d3",
+      "from": "full-test-execution",
+      "to": "architecture-lifecycle",
+      "route": "orthogonal-v",
+      "label": "Full Test PASS",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        645,
+        625
+      ]
+    },
+    {
+      "id": "d4",
+      "from": "architecture-lifecycle",
+      "to": "finalize",
+      "route": "orthogonal-v",
+      "label": "Owner accept",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        645,
+        755
+      ]
+    },
+    {
+      "id": "d5",
+      "from": "finalize",
+      "to": "git",
+      "route": "orthogonal-v",
+      "label": "Delivery Final",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        645,
+        885
+      ]
+    },
+    {
+      "id": "t1",
+      "from": "external-runtime",
+      "to": "archify",
+      "route": "orthogonal-v",
+      "label": "managed runtime",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        1070,
+        495
+      ]
+    },
+    {
+      "id": "t2",
+      "from": "archify",
+      "to": "architecture-assets",
+      "route": "orthogonal-v",
+      "label": "validate / render / compare",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        1070,
+        625
+      ]
+    },
+    {
+      "id": "t3",
+      "from": "architecture-assets",
+      "to": "architecture-lifecycle",
+      "route": "orthogonal-h",
+      "label": "Actual / Compare refs",
+      "variant": "emphasis",
+      "labelAt": [
+        855,
+        675
+      ],
+      "fromSide": "left",
+      "toSide": "right"
+    },
+    {
+      "id": "s1",
+      "from": "architecture-assets",
+      "to": "resume",
+      "route": "straight",
+      "label": "architecture refs",
+      "labelAt": [
+        1280,
+        676
+      ]
+    },
+    {
+      "id": "s2",
+      "from": "resume",
+      "to": "stable-runner",
+      "route": "orthogonal-v",
+      "label": "repository-only restart",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        1485,
+        755
+      ]
+    },
+    {
+      "id": "s3",
+      "from": "stable-runner",
+      "to": "agent-adapter",
+      "route": "orthogonal-v",
+      "label": "one Action",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        1485,
+        885
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Control Plane / retained foundation",
+      "wraps": [
+        "facts",
+        "policy",
+        "change-execution",
+        "persistence",
+        "run",
+        "diagnostics",
+        "verification"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Delivery Execution Plane",
+      "wraps": [
+        "delivery-execution",
+        "full-test-execution",
+        "architecture-lifecycle",
+        "finalize"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Managed Tools / Architecture",
+      "wraps": [
+        "external-runtime",
+        "archify",
+        "architecture-assets"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Self-hosting Boundary",
+      "wraps": [
+        "resume",
+        "stable-runner",
+        "agent-adapter"
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "最终控制平面",
+      "items": [
+        "Formal Facts → deterministic Policy → unique lifecycle boundary",
+        "Run 仍是轻量 Standard Change Action execution envelope，不成为第二套 authority",
+        "Git / Verification / OpenSpec / Archify 分别保留各自专业事实权威"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "最终 Delivery 闭环",
+      "items": [
+        "Delivery Ready → Owner-authorized Full Test → Finding / corrective Change",
+        "Logical Full Test authority 与 bounded physical execution 已分离",
+        "Actual / Compare / accepted promotion → Owner Finalize → Delivery Final boundary"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "最终 Self-hosting 边界",
+      "items": [
+        "OpenSpec / Archify 使用 FLOWKIT_HOME/tools exact managed runtime",
+        "Repository-only resume + stable installed Runner + single-action Agent Adapter",
+        "没有引入 generic Workflow Engine / registry platform / evidence platform / parallel scheduler"
+      ]
+    }
+  ]
+}

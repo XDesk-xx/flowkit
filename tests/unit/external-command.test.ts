@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { chmod, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createTempDir } from '../fixtures/helpers.js';
-import { resolveCommandForPlatform, resolvePowerShellScriptCommand, runCommand } from '../../src/shared/external-command.js';
+import { resolveCommandForPlatform, resolvePowerShellScriptCommand, runBoundedCommands, runCommand } from '../../src/shared/external-command.js';
 
 const roots: string[] = [];
 afterEach(async () => Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true }))));
@@ -146,7 +146,7 @@ printf "should-not-run"
 
     const fallback = await runCommand(okCommand, ['status'], {
       platform: 'win32',
-      powerShellCandidates: ['__missing_pwsh__', okLauncher],
+      powerShellCandidates: [join(root, 'missing-owned', 'pwsh'), okLauncher],
     });
     assert.equal(fallback.spawned, true);
     assert.equal(fallback.exitCode, 0);
@@ -162,12 +162,44 @@ printf "should-not-run"
   });
 
   it('reports a machine-distinguishable failure when no PowerShell launcher exists', async () => {
+    const root = await createTempDir();
+    roots.push(root);
     const result = await runCommand('openspec.ps1', [], {
       platform: 'win32',
-      powerShellCandidates: ['__missing_pwsh_a__', '__missing_pwsh_b__'],
+      powerShellCandidates: [join(root, 'missing-owned', 'pwsh-a'), join(root, 'missing-owned', 'pwsh-b')],
     });
     assert.equal(result.spawned, false);
     assert.equal(result.spawnError?.code, 'POWERSHELL_NOT_FOUND');
+  });
+
+  it('keeps missing-launcher absence test-owned under hostile PATH and treats EACCES as terminal', async () => {
+    const root = await createTempDir();
+    roots.push(root);
+    const hostile = join(root, 'hostile-path');
+    const blocked = join(root, 'blocked-pwsh');
+    const fallback = join(root, 'fallback-pwsh');
+    await writeFile(hostile, 'not-a-directory');
+    await writeFile(blocked, '#!/bin/sh\nexit 0\n');
+    await writeFile(fallback, '#!/bin/sh\nprintf "fallback"\n');
+    await chmod(blocked, 0o644);
+    await chmod(fallback, 0o755);
+
+    const absent = await runCommand('openspec.ps1', [], {
+      platform: 'win32',
+      env: { ...process.env, PATH: hostile },
+      powerShellCandidates: [join(root, 'missing-owned', 'pwsh-a'), join(root, 'missing-owned', 'pwsh-b')],
+    });
+    assert.equal(absent.spawned, false);
+    assert.equal(absent.spawnError?.code, 'POWERSHELL_NOT_FOUND');
+
+    const denied = await runCommand('openspec.ps1', [], {
+      platform: 'win32',
+      env: { ...process.env, PATH: hostile },
+      powerShellCandidates: [blocked, fallback],
+    });
+    assert.equal(denied.spawned, false);
+    assert.equal(denied.spawnError?.code, 'EACCES');
+    assert.equal(denied.stdout, '');
   });
 
   it('routes Windows command shims through explicit ComSpec but leaves non-Windows direct', () => {
@@ -179,5 +211,32 @@ printf "should-not-run"
     assert.deepEqual(resolveCommandForPlatform('openspec.cmd', ['status'], { platform: 'linux' }), {
       command: 'openspec.cmd', args: ['status'], usedWindowsLauncher: false,
     });
+  });
+});
+
+
+describe('I1 bounded external command sequencing', () => {
+  it('executes targets in order and stops at the first nonzero exit without interpreting Verification status', async () => {
+    const calls: string[] = [];
+    const result = await runBoundedCommands([
+      { logicalCheckId: 'full', physicalTargetId: 'a', command: 'node', args: ['a'] },
+      { logicalCheckId: 'full', physicalTargetId: 'b', command: 'node', args: ['b'] },
+      { logicalCheckId: 'full', physicalTargetId: 'c', command: 'node', args: ['c'] },
+    ], async (_command, args) => {
+      calls.push(args[0]!);
+      return { kind: 'exited', stdout: 'x', stderr: '', exitCode: args[0] === 'b' ? 9 : 0, spawned: true, timedOut: false };
+    });
+    assert.deepEqual(calls, ['a', 'b']);
+    assert.deepEqual(result.results.map((item) => [item.physicalTargetId, item.outcome, item.exitCode]), [['a', 'exited', 0], ['b', 'exited', 9]]);
+    assert.equal(result.terminal?.physicalTargetId, 'b');
+  });
+
+  it('preserves transport outcome-unknown and bounds diagnostic text', async () => {
+    const result = await runBoundedCommands([
+      { logicalCheckId: 'full', physicalTargetId: 'uncertain', command: 'node', args: [] },
+    ], async () => ({ kind: 'outcome-unknown', stdout: 'x'.repeat(5000), stderr: 'y'.repeat(5000), exitCode: 1, spawned: true, timedOut: true }));
+    assert.equal(result.terminal?.outcome, 'outcome-unknown');
+    assert.equal(result.terminal?.stdout.length, 4096);
+    assert.equal(result.terminal?.stderr.length, 4096);
   });
 });

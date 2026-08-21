@@ -1,0 +1,121 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-propose",
+    "executionStatus": "completed",
+    "summary": "Review 007 Revise Proposal：006 的 A1-RP-001/002/003 均已语义关闭：future create-delivery 已改为 caller-supplied per-Delivery execution contract；formal operator 只消费 persisted binding 并通过 FLOWKIT_FULL_TEST_RESULT_PATH 从同一 child route 获取 structured protocol；terminal schema/resultRef hash domain 已统一且 Reader 可重算。Reviewer 在 exact Base f132db761bd209e6aff72411108b8e3e1c9801f5 累计 materialize 007，package SHA256 PASS，build PASS，OpenSpec strict PASS，status=propose、next=review-propose、doctor=ok/0。仍有三个 author blocker：current 03 bare `npm` binding 没有闭合 Windows launcher semantics；120000ms timeout 在 Windows 未冻结 whole-process-tree termination authority，破坏 bounded re-entry；spawn/timeout/protocol transport failure 与 Verification-owned terminal failed 的 durable semantics 仍存在歧义。"
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "3366c1927e334dca6df109c9d61c601a553446d509259ec009e23fd811aba71a"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "A1-RP-004",
+      "severity": "blocking",
+      "title": "Current 03 command binding is not a cross-platform physical execution identity",
+      "problem": "007 freezes the current 03 instance as `kind=command, command=npm, args=[run, verify:full]` and simultaneously requires `flowkit delivery full-test` to spawn exactly the persisted command/args. On the exact Base, Windows npm execution is already explicitly platform-qualified as `npm.cmd`: `scripts/verification.ts` uses `process.platform === 'win32' ? 'npm.cmd' : 'npm'`, Change Verification uses the same rule, and `resolveCommandForPlatform()` only routes commands that already end in `.cmd/.bat` through ComSpec; it does not translate bare `npm` into `npm.cmd`. Therefore the same durable 03 Manifest binding is proven on Linux but has no frozen Windows launch semantics.",
+      "contractRef": "03 v6 Full Test Plan + Windows compatibility regression; approved Explore physical execution/genericity boundary; 007 Design Decisions 4–6; exact Base src/shared/external-command.ts, scripts/verification.ts, src/verification/change-selection/evidence.ts",
+      "invariant": "A per-Delivery Full Test execution contract must identify one deterministic physical route across the repository's supported execution platforms. Platform launcher mechanics may be a bounded runtime adapter, but they must be part of the frozen contract semantics rather than an ambient-shell assumption.",
+      "evidence": [
+        "007 proposal.md/current-03 migration persists `command=npm`, `args=[run, verify:full]` and says formal execution actually spawns persisted command/args.",
+        "007 design.md Decision 6 says the persisted command is the single physical execution authority and MUST be spawned as persisted.",
+        "Exact Base `scripts/verification.ts` selects `npm.cmd` on win32 and `npm` elsewhere for its real npm child process.",
+        "Exact Base `src/verification/change-selection/evidence.ts` independently selects `npm.cmd` on win32 for formal typecheck execution.",
+        "Exact Base `src/shared/external-command.ts#resolveCommandForPlatform` only applies ComSpec when the supplied command already ends in `.cmd/.bat`; bare `npm` is left unchanged.",
+        "Existing unit tests explicitly prove `.cmd` → ComSpec handling and do not establish bare `npm` as a Windows physical launcher."
+      ],
+      "impact": "A1 could pass detached/Linux tests and still fail at the canonical Windows Full Test boundary, or Apply could secretly add an uncontracted `npm -> npm.cmd` translation, contradicting the claim that persisted command/args are the exact physical authority.",
+      "location": "proposal.md What Changes; design.md Decisions 4–6 / Migration Plan; tasks.md 3.2/5.3; current 03 migration binding",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Freeze bounded cross-platform launch semantics for the typed execution contract and the current 03 instance. The durable identity must remain one authority, while runtime platform resolution (if needed) is deterministic and explicitly specified/tested. Do not solve this by introducing a Tool Registry, ambient shell discovery, or separate Windows/Linux Full Test truths.",
+      "acceptance": [
+        "The same persisted current-03 execution contract has a specified physical launch on both win32 and non-win32.",
+        "If launcher normalization is used, Proposal/Design state exactly how logical persisted identity maps to the platform launcher and why this is not a second execution authority.",
+        "Windows `.cmd`/ComSpec mechanics are covered by physical/unit regression; bare `npm` is not assumed to work merely because it works on Linux.",
+        "Future caller-supplied contracts remain generic and do not hard-code the current Flowkit npm binding.",
+        "No C1 external-tool runtime or Registry scope is pulled into A1."
+      ]
+    },
+    {
+      "id": "A1-RP-005",
+      "severity": "blocking",
+      "title": "Windows timeout does not yet prove process-tree termination before authorized re-entry",
+      "problem": "007 gives the per-Delivery command a bounded timeout and relies on raw `authorized` as the only pre-terminal resumable state. However the exact Base `runCommand()` deliberately returns `outcome-unknown` for a Windows timeout unless an owned `windowsProcessTreeCanceller` proves whole-tree termination. The current 03 physical route is `npm -> scripts/verification.ts -> multiple Node/OpenSpec/npm children`, including `build` which writes generated `dist/**`. 007 says timeout fails closed and fresh process may re-enter from `authorized`, but it does not freeze any whole-tree cancellation/termination contract. A timed-out old process tree can therefore remain alive while a fresh authorized attempt starts.",
+      "contractRef": "Approved Explore A1-RE-001 bounded at-least-once re-entry / physical mutation proof; 007 Design Decisions 4, 9 and Risks; exact Base src/shared/external-command.ts Windows timeout semantics",
+      "invariant": "Without a persisted `running`/attempt state, the operator may return to the resumable `authorized` boundary after timeout only when the prior owned process tree is known terminal. Otherwise bounded at-least-once re-entry is not proven and concurrent stale execution can continue mutating generated outputs or consuming resources.",
+      "evidence": [
+        "007 design.md Decision 4 requires one spawned command with bounded timeout; Decision 9 allows fresh-process re-entry while durable state stays `authorized`.",
+        "Exact Base `runCommand()` marks Windows timeout `outcome-unknown` when no `windowsProcessTreeCanceller` is provided and documents `owned-process-tree-cancellation=unavailable`.",
+        "Exact Base unit tests explicitly assert that Windows timeout is `timed-out-cancelled` only when the injected process-tree authority confirms termination; otherwise it remains `outcome-unknown`.",
+        "Current `verify:full` recursively launches multiple child processes and `build` writes ignored/generated `dist/**`, so killing only the top-level launcher is not equivalent to terminating the attempt.",
+        "007 tasks.md 3.2/3.3 specify timeout handling but no process-tree ownership/cancellation requirement or regression."
+      ],
+      "impact": "On Windows a timeout can return control while descendants continue running. Because repository facts still say `authorized`, a new operator process can start a second Full Test concurrently, invalidating the Explore proof's bounded re-entry model and making timeout behavior non-deterministic.",
+      "location": "design.md Decisions 4/9 and Risks; tasks.md 3.2–3.3, 5.3/5.5; Delivery Full Test service timeout mechanics",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Freeze timeout ownership so a Full Test attempt cannot return to a re-enterable `authorized` boundary until its spawned process tree is proven terminal. Reuse or extend the existing bounded process mechanics as appropriate; if termination cannot be proven, define a fail-closed behavior that does not silently permit overlapping re-entry. Keep no-Run/no-attempt-ledger/no-running-state unless the frozen contract truly requires otherwise.",
+      "acceptance": [
+        "Windows timeout path has an explicit owned process-tree cancellation/termination contract.",
+        "Operator distinguishes proven `timed-out-cancelled` from `outcome-unknown`; the latter cannot silently be treated as safe re-entry.",
+        "Regression covers a descendant process surviving the launcher and proves Flowkit does not start/accept a new attempt while the prior tree is unproven.",
+        "Linux/non-Windows timeout semantics remain bounded and compatible.",
+        "No general scheduler, background supervisor, attempt ledger or auto-retry system is introduced."
+      ]
+    },
+    {
+      "id": "A1-RP-006",
+      "severity": "blocking",
+      "title": "Transport/execution failure is not uniquely separated from Verification-owned terminal failed",
+      "problem": "007 correctly requires a valid `flowkit-full-test-result-v1` for terminal Verification result publication, but Design Decision 7 also says timeout/spawn/protocol failure `may publish a bounded failed lifecycle diagnosis only under the closed A1 terminal schema`. The formal-fact/core specs, by contrast, only allow terminal `passed|failed` with a matching valid terminal result/resultRef produced by the physical command. The Proposal therefore leaves two possible implementations for spawn/timeout/missing/malformed protocol: leave durable state `authorized` and return an operator error, or synthesize/publish `failed` despite there being no Verification-owned protocol result.",
+      "contractRef": "One fact, one authority; 03 v6 §9.4 Verification authority result; 007 Design Decisions 7–8; 007 flowkit-core-model terminal publication scenario; formal-fact-reader terminal result consistency requirement",
+      "invariant": "`fullTestStatus=failed` plus `resultRef` is a Verification-owned terminal fact consumed by B1. Infrastructure/transport inability to obtain a valid Verification result must not be silently converted into a fabricated Verification failure, and A1 must define one deterministic durable state transition for each failure class.",
+      "evidence": [
+        "007 design.md Decision 7 says spawn/timeout/protocol failure fails closed but also says the behavior `may publish` a bounded failed lifecycle diagnosis under the terminal schema.",
+        "007 core-model spec says terminal `passed|failed` publication occurs when the physical command terminally completes and produces a valid `flowkit-full-test-result-v1`.",
+        "007 formal-fact-reader spec permits terminal result only when persisted status is passed/failed and requires a valid closed result/resultRef.",
+        "007 tasks.md 3.3 says timeout/spawn/missing/malformed protocol fail closed but does not state whether Manifest remains authorized or becomes failed.",
+        "B1 is explicitly defined to consume A1 `failed status + resultRef + timing/check projection`; a transport failure has no authoritative check projection."
+      ],
+      "impact": "Apply can choose incompatible failure semantics while still satisfying parts of the Proposal. One implementation may generate a false B1 Delivery Finding from a launcher/protocol failure; another may leave `authorized`, producing different resume/Policy behavior for the same class of event.",
+      "location": "design.md Decision 7 / Decision 10; tasks.md 1.5, 3.3; specs/flowkit-core-model/spec.md; specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Classify and freeze terminal semantics: a valid Verification protocol `status=failed` may publish durable Full Test `failed`; spawn/timeout/protocol-integrity failures must have one explicit fail-closed lifecycle behavior that does not fabricate a Verification resultRef. Align Design, Tasks, Reader and B1 handoff wording to that single rule.",
+      "acceptance": [
+        "Proposal/Design define exactly which outcomes may transition `authorized -> failed`.",
+        "No `verification:full-test:<hash>` is created without a valid closed Verification protocol payload.",
+        "Spawn failure, timeout/outcome-unknown, missing result and malformed/mismatched protocol each have deterministic durable-state behavior.",
+        "B1 receives only genuine terminal Verification failure (`failed + valid resultRef/check projection`), not transport diagnostics.",
+        "Writer/Reader/Policy/resume tests cover the frozen distinction."
+      ]
+    }
+  ],
+  "reviewFindingConvergence": [
+    {
+      "findingId": "A1-RP-001",
+      "state": "resolved"
+    },
+    {
+      "findingId": "A1-RP-002",
+      "state": "resolved"
+    },
+    {
+      "findingId": "A1-RP-003",
+      "state": "resolved"
+    },
+    {
+      "findingId": "A1-RP-004",
+      "state": "new"
+    },
+    {
+      "findingId": "A1-RP-005",
+      "state": "new"
+    },
+    {
+      "findingId": "A1-RP-006",
+      "state": "new"
+    }
+  ]
+}

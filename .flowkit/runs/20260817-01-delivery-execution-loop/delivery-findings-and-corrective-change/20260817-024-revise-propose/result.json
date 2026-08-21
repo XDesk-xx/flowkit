@@ -1,0 +1,59 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-propose",
+    "executionStatus": "completed",
+    "summary": "Revise Proposal closes B1-RP-001/B1-RP-002: separate content-addressed Verification sourceResultRef from failure occurrence identity by deriving findingId from deliveryId + current authorize-full-test authorizationRef + sourceResultRef; make failureHistory content-addressed deduplicated retention so repeated identical failed payloads can share one retained result while keeping distinct occurrence resolutions; require persisted Finding summary to be writer-derived from the verified source result and reader-validated for exact equality. Preserve existing Owner create-change authority, ordinary corrective lifecycle, no attempt ledger/generic Finding platform, and unchanged bounded mutation scope.",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/delivery-findings-and-corrective-change/design.md",
+        "versionFingerprint": "c2f87dac5a51975f4436db6f41519f61528ce5c433ac35f58a2c7f19c5ba39cc",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-findings-and-corrective-change/proposal.md",
+        "versionFingerprint": "d6a4a80eeef71f322390248818c69a5299de14461880a8b02df90ed3b329ac0e",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-findings-and-corrective-change/specs/flowkit-core-model/spec.md",
+        "versionFingerprint": "a1222659dab76681ef66e1802cc597a7931c74cb4e3599fe32bca052e27e2e40",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-findings-and-corrective-change/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+        "versionFingerprint": "e6b45111cdaf9e6dd1323f6d19dc5f40b78cd706284f697c5d12000df9287b6e",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-findings-and-corrective-change/specs/flowkit-diagnostic-cli/spec.md",
+        "versionFingerprint": "df88e51f0413168aa165960a0e676c03e617288cedf62c356fc9e0b7ef59823c",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-findings-and-corrective-change/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "versionFingerprint": "cc0e57f44c87f759141fc749e525f4ec775100740bdf06c965eb56a85aa068a0",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-findings-and-corrective-change/specs/flowkit-policy-engine/spec.md",
+        "versionFingerprint": "5dd519ff67aee47fe29cfb367aed511141d308f57f7a6173ec6c20941db6a831",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/delivery-findings-and-corrective-change/tasks.md",
+        "versionFingerprint": "e31a42febebaf70204771971b249d70818d79e503ebda9e624125abf4877e51a",
+        "kind": "produced-artifact"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-findings-and-corrective-change/20260817-023-review-propose/result.json",
+      "versionFingerprint": "7bf6b9c6f741f801a79db880f73862449b42da3fcca03270dfc935705804e7e1",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "0416bb5b37ef5e71fbe530ba88cff2e327fd4e8668c011e053cba7b51933687c"
+  }
+}

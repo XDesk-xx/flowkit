@@ -221,3 +221,233 @@ Re-verification admission MUST exact-check producing Apply persisted compact ent
 - **THEN** `FormalFactSnapshot.changeVerificationStatus` MUST投影 `passed`
 - **AND** existing verification gate/Policy MAY按既有规则解析 `review-apply`
 - **AND** retry behavior本身 MUST NOT直接创建 Reviewer Run或决定 next
+
+### Requirement: C1 external-tool mutations 必须闭合到独立 physical Verification target
+
+C1 MUST extend the source-controlled Verification module/capability relation so production changes under the shared external-tool runtime and Archify adapter are owned by a bounded module and select a stable logical physical check for managed external-tool behavior. Formal Verification MUST physically execute the C1 managed OpenSpec/Archify integration tests; manual Explore proof alone MUST NOT satisfy Apply verification.
+
+The mapping MUST remain closed/source-controlled and MUST NOT become a dynamic tool/test registry. Changes to shared external-tool code MUST propagate to existing OpenSpec-runtime consumers and verification-selection consumers as dependency closure requires.
+
+#### Scenario: external-tool runtime change selects physical managed-tool tests
+- **WHEN** `actualChangeSet` includes a path owned by the C1 shared external-tool/Archify module
+- **THEN** selection MUST include the C1 external-tool capability and logical physical check
+- **AND** the resolver MUST map that check to the actual C1 unit/integration test files
+- **AND** formal Verification result MUST bind the physical process outcome
+
+#### Scenario: breaking managed Archify route makes formal selected check fail
+- **WHEN** a disposable counterfactual breaks the managed Archify identity/invocation route used by the C1 physical target
+- **THEN** the formal selected external-tool check MUST fail
+- **AND** a passing unrelated full repository test or manually-run proof MUST NOT be accepted as selection closure
+
+#### Scenario: OpenSpec migration remains covered by existing physical consumers
+- **WHEN** C1 changes canonical OpenSpec managed resolution or propagation
+- **THEN** Verification closure MUST also include existing real OpenSpec/archive/retry/launcher regressions selected through dependency/capability mapping
+- **AND** MUST prove nested consumers execute the same managed identity where applicable
+
+#### Scenario: C1 unit-test ownership remains non-overlapping
+- **WHEN** C1 adds Archify/shared-runtime unit tests
+- **THEN** those tests MUST live under `tests/unit/external-tools/**` and resolve only to `external-tools`
+- **AND** existing `tests/unit/integrations/**` OpenSpec regressions MUST continue to resolve only to `openspec-runtime`
+- **AND** any source-controlled selector layout that makes one path match both modules MUST fail module-map validation
+
+#### Scenario: shared runtime mutation reaches both new and existing physical coverage
+- **WHEN** `actualChangeSet` contains shared external-tool production code
+- **THEN** the seed module MUST be `external-tools`
+- **AND** selection MUST include `tests-external-tools`
+- **AND** reverse dependency closure MUST also include the existing OpenSpec runtime physical check
+
+### Requirement: Architecture mutation family 必须拥有 closed Verification ownership 与 physical check
+The source-controlled Change Verification relation MUST keep bounded `architecture` ownership for `architecture/**`, `src/architecture/**` and dedicated D1 fixtures/tests, with stable logical `tests-architecture` and `typecheck`. The `architecture` module MUST relate to `flowkit-architecture-assets` and MUST NOT overlap existing CLI/external-tool/verification ownership.
+
+The physical `tests-architecture` resolver MUST execute D1 targets that cover four reference visualization JSON files (Change/Delivery Workflow + Sequence), Delivery Current/Planned provenance, repository-evidence Architecture rendering, dynamic Delivery paths and JSON-vs-HTML authority boundary.
+
+E1 MUST additionally give `architecture` unique ownership of `tests/integration/e1-architecture-actual-compare-and-system-promotion.test.ts`, and the `tests-architecture` physical resolver MUST execute both D1 and E1 Architecture integration targets plus architecture unit tests.
+
+#### Scenario: all architecture asset classes are uniquely owned
+- **WHEN** `actualChangeSet` includes `architecture/reference/json/*.json` or `architecture/<delivery-id>/json/current.architecture.json` / `planned.architecture.json`
+- **THEN** each path MUST map uniquely to the `architecture` verification module
+- **AND** formal selection MUST include `tests-architecture`
+
+#### Scenario: E1 integration test is physically selected by architecture mutations
+- **WHEN** E1 actualChangeSet contains `src/architecture/**`, Architecture CLI paths or E1 architecture integration test changes
+- **THEN** selection MUST include `tests-architecture`
+- **AND** physical resolver MUST execute `tests/integration/e1-architecture-actual-compare-and-system-promotion.test.ts`
+- **AND** the path MUST have exactly one verification module owner
+
+### Requirement: CLI-owned D1 paths 必须保持 cli-diagnostics ownership 并具有 D1 capability relation
+`src/cli/architecture.ts`, `src/cli/main.ts`, and `tests/unit/cli/architecture.test.ts` MUST remain uniquely owned by existing `cli-diagnostics`. `cli-diagnostics.capabilityIds` MUST include `flowkit-architecture-assets` while preserving existing ownership selectors/capabilities.
+
+#### Scenario: D1 CLI paths satisfy capability admission without artificial ownership movement
+- **WHEN** expected D1 `actualChangeSet` includes Architecture CLI paths and current delta capability refs include `flowkit-architecture-assets`, `flowkit-change-verification-selection`, and `flowkit-external-tool-runtime`
+- **THEN** `buildVerificationSelection()` MUST NOT throw `VERIFICATION_CAPABILITY_SELECTION_FAILED`
+- **AND** `selection.capabilityRelation.kind` MUST be `matched`
+- **AND** CLI paths MUST still have exactly one owner: `cli-diagnostics`
+
+### Requirement: expected D1 actualChangeSet 必须形成完整 physical selected-check closure
+A read-only Proposal preflight using the prospective D1 module map and expected D1 actualChangeSet MUST include all four final reference paths plus cleanup of superseded `delivery-lifecycle.lifecycle.json`, Current/Planned, Architecture service, CLI, Archify adapter, Verification mapping and D1 tests. It MUST select `architecture`, `cli-diagnostics`, `external-tools`, and `verification-selection` as seed modules, include `openspec-runtime` through reverse dependency closure, and select all applicable physical checks.
+
+#### Scenario: next-consumer dry selection reaches all relevant D1 checks
+- **WHEN** the expected D1 actualChangeSet is evaluated against D1 capability refs
+- **THEN** formal selection MUST include `tests-architecture`, `tests-cli`, `tests-external-tools`, `tests-openspec-runtime`, `tests-verification`, and `typecheck`
+- **AND** MUST include current OpenSpec strict/archive-sync checks
+- **AND** capability relation MUST be `matched`
+
+### Requirement: reference completeness 必须由结构回归与 physical renderer 双重证明
+Formal D1 verification MUST NOT treat renderer success alone as complete-lifecycle acceptance. Tests MUST assert required Workflow graph steps/loops and Sequence participants/messages/authority ordering for both Change and Delivery, and exact managed Archify MUST validate/deliver all four native reference files.
+
+#### Scenario: structural simplification fails selected verification
+- **WHEN** a disposable counterfactual removes a required Change review/revise/STOP edge, Delivery corrective/fresh-authorization edge, or required Sequence participant/message
+- **THEN** formally selected `tests-architecture` MUST fail even if Archify can still render the JSON
+
+#### Scenario: breaking native Sequence or repository-evidence route fails physical verification
+- **WHEN** a disposable counterfactual breaks Sequence validate/deliver support or the Architecture `--repo-root` route
+- **THEN** the selected architecture/external-tool physical checks MUST fail
+- **AND** unrelated full-suite PASS MUST NOT substitute for physical closure
+
+### Requirement: expected E1 actualChangeSet 必须形成完整 physical selected-check closure
+A read-only Proposal preflight using expected E1 actualChangeSet and current E1 delta capability refs MUST produce a matched capability relation across architecture, CLI, core-model, execution, persistence and verification-selection mutations and MUST reach every affected physical test family.
+
+#### Scenario: next-consumer dry selection reaches E1 checks
+- **WHEN** expected E1 production/test paths are evaluated by `buildVerificationSelection()`
+- **THEN** capability relation MUST be `matched`
+- **AND** selection MUST include current OpenSpec strict/archive-sync checks
+- **AND** MUST include `tests-architecture`, `tests-cli`, `tests-execution`, `tests-external-tools`, `tests-openspec-runtime`, `tests-persistence`, `tests-serialization`, `tests-verification`, and `typecheck` as dependency closure requires
+
+### Requirement: E1 architecture lifecycle correctness 必须由结构回归与 external physical proof 双重证明
+Formal E1 verification MUST test more than Archify process success. Structural regressions MUST cover delayed Actual instantiation, exact Full Test authorization-occurrence-to-cycle binding, explicit Owner acceptance, stale remediation rejection, fresh Full Test requirement, canonical Owner ref cycle binding/legacy compatibility and accepted-source future Delivery consumer.
+
+#### Scenario: stale Full Test or remediation binding fails selected verification
+- **WHEN** a disposable counterfactual allows old passed Full Test qualification or stale architecture cycle binding to survive remediation, including two fresh authorizations with identical technical result/Actual/compare bytes
+- **THEN** formally selected E1 architecture/execution/persistence tests MUST fail
+- **AND** unrelated renderer PASS MUST NOT substitute for lifecycle closure
+
+### Requirement: F1 Finalize integration 必须拥有 closed ownership 与 physical tests-execution coverage
+Source-controlled Verification Catalog MUST give `tests/integration/f1-delivery-finalize-and-git-boundary.test.ts` exactly one owner under the execution module. The execution module and CLI relation MUST recognize `flowkit-delivery-finalize-and-git-boundary`, and `tests-execution` physical resolver MUST execute both the existing F1 archive/checkpoint integration and the new F1 Delivery Finalize integration plus relevant facts/policy/services unit tests.
+
+#### Scenario: new F1 integration is physically executed
+- **WHEN** F1 actualChangeSet includes finalization/Policy/Git boundary/CLI mutations
+- **THEN** formal selection MUST include `tests-execution`
+- **AND** the physical resolver MUST execute `tests/integration/f1-delivery-finalize-and-git-boundary.test.ts`
+- **AND** that path MUST have exactly one verification module owner
+
+#### Scenario: sentinel failure propagates through tests-execution
+- **WHEN** a disposable copy makes the new F1 integration target fail
+- **THEN** the formally resolved `tests-execution` command MUST fail
+- **AND** unrelated unit/full-suite PASS MUST NOT substitute for physical closure
+
+### Requirement: expected F1 actualChangeSet 必须形成 matched next-consumer selection
+Before Review-Propose, a read-only prospective Catalog proof using expected F1 production/test paths and F1 delta capability refs MUST pass production `buildVerificationSelection()`. Every seed module MUST have an applicable delta capability and every delta capability MUST relate to the selected module closure.
+
+#### Scenario: expected F1 selection reaches all affected check families
+- **WHEN** expected F1 actualChangeSet spans CLI, domain, facts, persistence, policy, services, verification catalog and F1 integration/unit tests
+- **THEN** capability relation MUST be `matched`
+- **AND** selected checks MUST include OpenSpec current strict/archive-sync, `tests-cli`, `tests-execution`, `tests-openspec-runtime`, `tests-persistence`, `tests-serialization`, `tests-verification`, and `typecheck` as dependency closure requires
+
+### Requirement: G1 resume/Agent Adapter mutation family 必须形成 closed Verification ownership 与 physical target closure
+
+G1 对 typed resume projection、historical terminal replay、single-action Agent Adapter、diagnostic projection、Verification resolver/ownership mapping 与对应 regressions的 expected actualChangeSet MUST由 closed module ownership/capability relation覆盖。正式 Change Verification MUST选中能物理执行 G1 targeted integration target的 logical check；仅运行已有 unrelated CLI/unit tests、full repository suite或静态 logical selection不得替代 G1 physical closure。
+
+G1 integration target MUST至少验证：fresh-process/fresh-checkout exact pending resume、different future Delivery-shaped IDs、historical F1 retry+archive terminal replay、corrupt/missing/ambiguous archive/reverification lineage fail closed、historical E1 sidecar no-current-Catalog reinterpretation、Architecture/tool derived resume view、provider收到 bounded OpenSpec structured context、exactly one provider invocation、existing result admission与no-auto-next/no-second-Run invariant。
+
+#### Scenario: expected G1 change set 选择完整 logical checks
+- **WHEN** expected G1 production/test paths覆盖 `src/services` resume/adapter、`src/diagnostics` resume projection与 `src/verification/change-selection` ownership/resolver更新
+- **THEN** production `buildVerificationSelection()` MUST得到 matched capability relation
+- **AND** selected checks MUST包含这些 module dependency closure要求的 `tests-execution`、`tests-cli`、`tests-verification`与 `typecheck`（以及由真实 paths/relations确定的其他现有 checks）
+
+#### Scenario: G1 targeted integration target 被正式 resolver 物理执行
+- **WHEN** selected G1 logical Node test check执行
+- **THEN** physical resolver MUST包含 G1 `sync-resume-and-single-action-agent-adapter` integration target
+- **AND**该 target MUST有唯一 verification module owner
+
+#### Scenario: G1 sentinel failure 不能被 unrelated PASS 掩盖
+- **WHEN** disposable copy让新的 G1 integration target deterministic fail
+- **THEN**对应 formally selected logical check MUST fail
+- **AND** unrelated unit/full-suite PASS MUST NOT被视为 physical closure
+
+### Requirement: H1 stable-runner/self-hosting mutation family MUST have closed physical Verification coverage
+
+H1 production/test mutations for the stable CLI checkpoint handoff, checkpoint exact-plan projection, H1 self-hosting fixture and Verification ownership/resolver wiring MUST be covered by the closed module/capability map. Formal H1 Change Verification MUST select an existing logical Node check whose physical resolver includes the H1 self-hosting integration target; running isolated A→G regressions or a repository-wide test command outside formal selection MUST NOT substitute for this physical closure.
+
+#### Scenario: expected H1 change set has matched capability ownership
+- **WHEN** expected H1 production/test paths are evaluated by the production Verification selection builder
+- **THEN** capability relation MUST be `matched`
+- **AND** every changed path MUST have one closed module owner
+- **AND** selected checks MUST include the existing logical checks required by the actual dependency closure, including the H1 physical Node test route and `typecheck`
+
+#### Scenario: H1 E2E target is physically executed
+- **WHEN** formal H1 selected Node verification executes
+- **THEN** its physical resolver MUST include `tests/integration/h1-stable-runner-and-self-hosting-acceptance.test.ts` or an equivalently frozen H1-owned target
+- **AND** the target MUST exercise stable-package/fresh-checkout and future-Delivery-shaped self-hosting acceptance rather than only unit stubs
+
+#### Scenario: H1 sentinel failure propagates through formal selection
+- **WHEN** a disposable copy makes the H1-owned integration target deterministically fail
+- **THEN** the formally selected logical check MUST fail
+- **AND** unrelated A→G/unit/full-suite PASS results MUST NOT be accepted as H1 physical closure
+
+### Requirement: H1 detached formal Verification MUST bound process-heavy physical execution without weakening logical coverage
+
+When `flowkit-stable-runner-and-self-hosting-acceptance` is part of the current selected capability set, Flowkit MUST keep the existing logical `tests-cli` and `tests-execution` authorities while executing their process-heavy physical targets as deterministic bounded command groups. Every physical command MUST keep the existing 120,000ms hard timeout and any timeout/non-zero/spawn failure MUST fail the owning logical check. The aggregate logical evidence MUST represent all executed groups and MUST NOT silently omit a required target merely to fit one shared process timeout.
+
+#### Scenario: H1 tests-cli uses bounded physical groups and still executes full self-hosting
+- **WHEN** formal H1 Change Verification selects `tests-cli`
+- **THEN** A1/B1 diagnostics, existing G1 Change CLI cases, existing G1 Adapter cases, and all H1 formal self-hosting phases MUST be physically executed through bounded commands
+- **AND** all results MUST aggregate into the single existing `tests-cli` logical evidence
+- **AND** no H1 full-E2E branch MAY be skipped
+
+#### Scenario: H1 safely deduplicates the weaker legacy installed-bin smoke
+- **WHEN** H1 formal `tests-cli` already executes the candidate package through the independent installed-distribution full self-hosting branch
+- **THEN** the legacy `diagnostic-cli-process` npm-installed-bin smoke MAY be omitted from that H1-specific physical union
+- **AND** the remaining diagnostic real-process cases MUST still execute
+- **AND** non-H1 `tests-cli` selection MUST retain its pre-H1 execution behavior
+
+#### Scenario: H1 tests-execution preserves complete case coverage while bounding worker lifetime
+- **WHEN** formal H1 Change Verification selects `tests-execution`
+- **THEN** all existing selected execution files/cases MUST execute
+- **AND** heavy suites MAY be partitioned into bounded file/suite/case commands
+- **AND** no source test/assertion MAY be skipped or weakened as a substitute for the partition
+- **AND** all physical outcomes MUST aggregate into one existing `tests-execution` logical evidence
+
+#### Scenario: physical-group failure propagates to the original logical authority
+- **WHEN** any bounded H1 `tests-cli` or `tests-execution` physical group deterministically fails, times out, or cannot be spawned
+- **THEN** the owning logical check MUST be `failed`
+- **AND** formal Change Verification MUST NOT publish `passed`
+
+### Requirement: selected heavy Change Verification checks MUST use deterministic bounded physical execution
+
+When formal Change Verification selects logical `tests-cli` or `tests-execution`, the executor MUST resolve and execute the source-controlled bounded physical mapping owned by that logical check. Whether the current Change itself carries the H1 self-hosting capability MUST NOT decide whether the same selected heavy physical targets receive bounded execution. Physical fanout remains execution representation and MUST NOT alter persisted logical selection identity.
+
+Each physical Node target MUST retain the existing independent `120000ms` timeout/process ownership. This requirement MUST NOT introduce timeout inflation, runtime timing classification, dynamic scheduling, a Verification platform, or a second selection authority.
+
+For `tests-cli`, bounded execution MUST preserve the same selected test semantics as the logical check: ordinary compatible files, diagnostic real-process coverage, G1 Change named cases, G1 Adapter named cases, and H1 coverage. Non-H1 selection MUST retain the legacy npm-installed diagnostic smoke; H1 selection MAY retain the existing dedup of that legacy smoke only because H1 separately executes its own installed-runner diagnostics smoke. H1 physical coverage MUST include one installed-runner smoke target plus the future-Delivery E2E decomposition `FLOWKIT_H1_FORMAL_PHASE=1..26`.
+
+For `tests-execution`, bounded execution MUST preserve existing per-file coverage plus the existing B1 suite/case fanout. A selected historical regression fixture MUST resolve the formal historical boundary it claims to exercise; later repository HEAD MUST NOT silently substitute for that boundary.
+
+#### Scenario: I1 selects tests-cli without carrying H1 capability
+
+- **WHEN** an I1-shaped actualChangeSet deterministically selects logical `tests-cli`
+- **AND** the current Change capability set does not include `flowkit-stable-runner-and-self-hosting-acceptance`
+- **THEN** the executor MUST still use the bounded `tests-cli` physical mapping
+- **AND** MUST NOT fall back to one monolithic Node process merely because H1 capability is absent
+- **AND** non-H1 diagnostic real-process coverage MUST remain present
+
+#### Scenario: H1 semantics remain complete under bounded tests-cli
+
+- **WHEN** selected `tests-cli` resolves the H1 integration file
+- **THEN** physical mapping MUST execute the installed-runner diagnostics smoke as an independent bounded target
+- **AND** MUST execute the future-Delivery E2E semantics through phases 1 through 26 using one shared state root
+- **AND** missing smoke, missing phase, overlap, title drift or branch drift MUST fail closed rather than silently reduce coverage
+
+#### Scenario: selected tests-execution remains affected while historical fixture is repaired
+
+- **WHEN** the actualChangeSet changes formal-fact/execution consumers so `tests-execution` is selected
+- **AND** a historical checkpoint fixture requires the G1 checkpoint tree
+- **THEN** the fixture MUST locate the formal G1 Git checkpoint boundary rather than assume current `HEAD` is G1
+- **AND** the executor MUST keep the logical `tests-execution` check selected
+- **AND** base failure alone MUST NOT be used to waive or delete the selected target
+
+#### Scenario: physical sentinel proves target reachability
+
+- **WHEN** a disposable Verification regression claims a selected target is physically executed
+- **THEN** all mandatory bounded predecessors before that target MUST be executable/passing in the fixture
+- **AND** the intended sentinel or environment assertion MUST actually be reached
+- **AND** merely observing the target path in a planned command string MUST NOT satisfy physical execution closure

@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260818-075-review-explore",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "review-explore",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "cb89bd27eeae60a511f2afe0dd4f065f188497b793ada5373e5ba8c143206aa1",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-finalize-and-git-boundary/20260818-075-review-explore/",
+  "changeKey": "F1",
+  "changeId": "delivery-finalize-and-git-boundary",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-finalize-and-git-boundary/20260818-074-explore/result.json",
+    "versionFingerprint": "c5506f88849cef14ff6f876033fc47e8c1161bb8f71d7bb8e1981bd3babcc9f4",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260818-074-explore",
+  "canonicalBase": "b9a9e8108348b130cd5a30c6e57f8336abfe958b",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-finalize-and-git-boundary/20260818-074-explore/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "c5506f88849cef14ff6f876033fc47e8c1161bb8f71d7bb8e1981bd3babcc9f4"
+    },
+    {
+      "ref": "openspec/changes/delivery-finalize-and-git-boundary/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+    },
+    {
+      "ref": "openspec/changes/delivery-finalize-and-git-boundary/explore.md",
+      "versionFingerprint": "fb74db6ee7300167e6180e2e92b3049eaa0559ee9dd71b1bfa8c92b548ee6837",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "delivery-finalize-and-git-boundary",
+      "runId": "20260818-075-review-explore",
+      "action": "review-explore",
+      "role": "reviewer",
+      "semanticInputFingerprint": "cb89bd27eeae60a511f2afe0dd4f065f188497b793ada5373e5ba8c143206aa1"
+    },
+    "definition": {
+      "action": "review-explore",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-explore",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+      },
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/explore.md",
+        "versionFingerprint": "fb74db6ee7300167e6180e2e92b3049eaa0559ee9dd71b1bfa8c92b548ee6837",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-finalize-and-git-boundary/20260818-074-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "c5506f88849cef14ff6f876033fc47e8c1161bb8f71d7bb8e1981bd3babcc9f4"
+      }
+    ],
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "0eff3bf5af349b36553258cb7f5a569ef47b9b60f441b823cc4a6fac414fa6ec",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

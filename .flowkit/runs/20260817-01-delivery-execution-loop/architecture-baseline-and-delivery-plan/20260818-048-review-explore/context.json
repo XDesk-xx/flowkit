@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260818-048-review-explore",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "review-explore",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "6909248a0cf30a064ab9df49b8bf9a6aa8b15300632b6a6c364da8398b807d43",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-048-review-explore/",
+  "changeKey": "D1",
+  "changeId": "architecture-baseline-and-delivery-plan",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-047-revise-explore/result.json",
+    "versionFingerprint": "67eeb7c87c184f5925d2879897b4a021e6fd9d5204ab12149cfe3bf96a8a4147",
+    "kind": "run-result"
+  },
+  "reviewedRunId": "20260818-047-revise-explore",
+  "canonicalBase": "9d27efef586bcb3204647c78785c9c30a64be4a2",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-047-revise-explore/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "67eeb7c87c184f5925d2879897b4a021e6fd9d5204ab12149cfe3bf96a8a4147"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/explore.md",
+      "versionFingerprint": "34f5277460e0085f52469c2e36efe7578f5f11fb32edc0b33c0a37d3a0b7e07b",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "architecture-baseline-and-delivery-plan",
+      "runId": "20260818-048-review-explore",
+      "action": "review-explore",
+      "role": "reviewer",
+      "semanticInputFingerprint": "6909248a0cf30a064ab9df49b8bf9a6aa8b15300632b6a6c364da8398b807d43"
+    },
+    "definition": {
+      "action": "review-explore",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-explore",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/explore.md",
+        "versionFingerprint": "34f5277460e0085f52469c2e36efe7578f5f11fb32edc0b33c0a37d3a0b7e07b",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-047-revise-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "67eeb7c87c184f5925d2879897b4a021e6fd9d5204ab12149cfe3bf96a8a4147"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260818-046-review-explore",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-046-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "71b62124953c6d48966a0d23960d1567e1d5387df2359ddcc1c4b1a2e6afcdbd"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "D1-RE-001",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "future-Delivery genericity proof 只有静态模型，没有真实 next-consumer",
+          "problem": "045 在 Risk Scan 中把 Generic reusable subsystem 与跨 Change/Delivery activation persistence 都标为 yes，且 D1 v6 acceptance 明确要求 future Delivery can form Planned without Bootstrap exception；但 Proof G 的 Method 只区分 03-specific SHA 与 dynamic <delivery-id> path、读取现有 persisted facts，没有创建/执行任何 different future-Delivery-shaped fixture、prototype 或 consumer。Evidence Boundary 却直接声明覆盖 future Delivery，Result=PASS。这把“设计上看起来可泛化”当成了“跨 Delivery 已证明可泛化”。",
+          "contractRef": "03 Delivery Execution Loop Planned Changes v6 D1 Required proofs / acceptance: future Delivery can form Planned without Bootstrap exception；Flowkit Explore Skill v2 §4.5 Genericity / Next-consumer Proof 与 §5 Proof Acceptance Depth",
+          "invariant": "当 Change 声明 generic reusable subsystem 且 required outcome 跨 Delivery 长期生效时，Explore 必须至少增加一个 future-Delivery-shaped consumer；same-Delivery facts、dynamic path 文案或静态常量分离不能单独证明 future-Delivery PASS。Evidence Boundary 必须实际覆盖 Acceptance Boundary。",
+          "requiredOutcome": "Revise Explore with one minimal future-Delivery-shaped next-consumer proof. Use a delivery identity distinct from 20260817-01, prove the proposed generic path/provenance/render boundary derives that Delivery's own Current/Planned locations and planning provenance from formal future-Delivery facts (not 74d46f0/f132db7 constants), and exercise the relevant prototype/fixture far enough to show the same managed Archify repository-evidence route can consume it. Keep Accepted Actual -> SystemArchitectureRef promotion in E1 and do not introduce Registry/DB/automatic architecture inference.",
+          "acceptance": [
+            "A disposable/synthetic future Delivery with a different deliveryId is exercised, not merely described.",
+            "The demonstrated architecture paths are derived as architecture/<future-delivery-id>/json/current.architecture.json and planned.architecture.json with no hardcoded 03 deliveryId or 74d46f0/f132db7 in generic resolver/service behavior.",
+            "Future Current/Planned provenance is sourced from future-shaped formal facts (prior accepted architecture/Git baseline and that Delivery's own Start facts) rather than the 03 Bootstrap exception.",
+            "The proof reaches an actual next-consumer/prototype boundary sufficient to show managed Archify repository-evidence validate/render remains feasible for the future-shaped asset, or records any remaining gap as UNKNOWN instead of PASS.",
+            "E1-only Actual acceptance/promotion, Architecture Registry/DB, per-Change regeneration and new Formal Actions remain out of scope."
+          ]
+        },
+        {
+          "id": "D1-RE-NB-001",
+          "severity": "non-blocking",
+          "title": "Proposal 应冻结 HTML 默认不进入 Git boundary 的工程机制",
+          "problem": "045 正确冻结 `architecture/<delivery-id>/html/**` 为 local generated / default not committed，但当前 Base `.gitignore` 没有 architecture HTML 规则，045 的 required mutation surface 也没有说明采用 `.gitignore`、checkpoint staging exclusion 或其他等价机制。Explore 阶段这不阻塞 feasibility，但 Proposal 应明确一种最小机制，避免 derived HTML 在正常 render 后成为容易误带入 checkpoint 的普通 untracked output。",
+          "contractRef": "03 Delivery Execution Loop v6 Repository Architecture Assets / D1 HTML lifecycle: html/** local disposable generated view, default not committed, non-authoritative",
+          "invariant": "Derived HTML 不得成为 durable architecture authority，正常 render 后应有明确、可审查的默认 Git-boundary hygiene；实现方式可以是 .gitignore 或其他等价的最薄机制，不应建立 freshness ledger。"
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "4fa1adfbef718957c7e32825dbb789ed0b27a409a331d12f2d2b9231f98e5e14",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

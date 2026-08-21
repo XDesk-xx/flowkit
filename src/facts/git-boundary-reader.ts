@@ -33,9 +33,22 @@ export interface GitCheckpointBoundaryCandidate {
   readonly legacyCheckpointSubject: boolean;
 }
 
+export interface GitDeliveryFinalBoundaryCandidate {
+  readonly commitSha: string;
+  readonly parents: readonly string[];
+  readonly summary: string;
+  readonly owningDeliveryId: string;
+  readonly deliveryTrailer?: string;
+  readonly boundaryTrailer?: string;
+  readonly ownerAuthorizationTrailer?: string;
+  readonly formalIdentityValid: boolean;
+  readonly legacyFinalSubject: boolean;
+}
+
 export interface GitBoundaryReadProjection {
   readonly boundaries: readonly GitBoundaryFact[];
   readonly checkpointCandidates: readonly GitCheckpointBoundaryCandidate[];
+  readonly deliveryFinalCandidates: readonly GitDeliveryFinalBoundaryCandidate[];
 }
 
 /**
@@ -55,18 +68,19 @@ export async function readGitBoundaryProjection(
   );
 
   if (result.exitCode !== 0) {
-    return { boundaries: [], checkpointCandidates: [] };
+    return { boundaries: [], checkpointCandidates: [], deliveryFinalCandidates: [] };
   }
 
   const records = parseCommitRecords(result.stdout);
   const starts = records.filter((record) => record.deliveryStartId !== undefined);
   if (!starts.some((record) => record.deliveryStartId === deliveryId)) {
-    return { boundaries: [], checkpointCandidates: [] };
+    return { boundaries: [], checkpointCandidates: [], deliveryFinalCandidates: [] };
   }
 
   const bySha = new Map(records.map((record) => [record.sha, record] as const));
   const boundaries: GitBoundaryFact[] = [];
   const checkpointCandidates: GitCheckpointBoundaryCandidate[] = [];
+  const deliveryFinalCandidates: GitDeliveryFinalBoundaryCandidate[] = [];
 
   for (const record of records) {
     if (record.deliveryStartId === deliveryId) {
@@ -81,15 +95,28 @@ export async function readGitBoundaryProjection(
     const owner = owningDeliveryId(record.sha, starts, bySha);
     if (owner !== deliveryId) continue;
 
-    if (
-      (record.subject.includes('delivery-final') || record.subject.includes('finalize')) &&
-      record.subject.includes(deliveryId)
-    ) {
-      boundaries.push({
-        kind: 'delivery-final',
-        commitSha: record.sha,
-        summary: record.subject,
+    if ((record.subject.includes('delivery-final') || record.subject.includes('finalize')) && record.subject.includes(deliveryId)) {
+      const deliveryValues = trailerValues(record.body, 'Flowkit-Delivery');
+      const boundaryValues = trailerValues(record.body, 'Flowkit-Boundary');
+      const ownerValues = trailerValues(record.body, 'Owner-Authorization');
+      const deliveryTrailer = singleValue(deliveryValues);
+      const boundaryTrailer = singleValue(boundaryValues);
+      const ownerAuthorizationTrailer = singleValue(ownerValues);
+      const formalIdentityValid =
+        record.parents.length === 1 &&
+        record.subject === `chore(flowkit): finalize ${deliveryId}` &&
+        deliveryValues.length === 1 && deliveryTrailer === deliveryId &&
+        boundaryValues.length === 1 && boundaryTrailer === 'delivery-final' &&
+        ownerValues.length === 1 && ownerAuthorizationTrailer !== undefined && /^owner:[0-9a-f]{64}$/.test(ownerAuthorizationTrailer);
+      deliveryFinalCandidates.push({
+        commitSha: record.sha, parents: record.parents, summary: record.subject, owningDeliveryId: owner,
+        ...(deliveryTrailer !== undefined ? { deliveryTrailer } : {}),
+        ...(boundaryTrailer !== undefined ? { boundaryTrailer } : {}),
+        ...(ownerAuthorizationTrailer !== undefined ? { ownerAuthorizationTrailer } : {}),
+        formalIdentityValid, legacyFinalSubject: true,
       });
+      // Bounded legacy projection remains here; FormalFactReader applies the F1 cutover and strict admission.
+      boundaries.push({ kind: 'delivery-final', commitSha: record.sha, summary: record.subject });
       continue;
     }
 
@@ -129,7 +156,7 @@ export async function readGitBoundaryProjection(
     });
   }
 
-  return { boundaries, checkpointCandidates };
+  return { boundaries, checkpointCandidates, deliveryFinalCandidates };
 }
 
 /**

@@ -1,0 +1,749 @@
+id: "20260817-01-delivery-execution-loop"
+createdAt: "2026-08-17"
+branch: "delivery/20260817-01-delivery-execution-loop"
+
+goal: "在已完成的 Deterministic Core 与 Change Execution Loop 基础上交付完整 Delivery Execution Loop：让 Flowkit 能够从 Delivery Start 开始，经过 Current System Architecture 冻结、Planned Architecture、Change 生命周期、Delivery Ready、Owner 授权 Full Test、Actual Architecture 与 Planned-vs-Actual Compare、Owner Finalize 与 Delivery Final Git boundary，确定性关闭整条 Delivery。本 Delivery 是最后一条 Bootstrap Delivery；不实现自动 Author/Reviewer 循环、bounded auto-continue、Tool Registry、Skill Registry、Evidence platform 或自动 Commit/Push/Merge。"
+
+delivery:
+  state: completed
+  fullTestStatus: passed
+
+  fullTestFindings:
+    - schemaVersion: 1
+      findingId: "full-test-failure:674b292ab9012894a5d1ea63d9e7d31dda319a0753e0362fde6ef7f23fc25562"
+      authorizationRef: "owner:9b18910b4bd5c7af3cea466e46f1739818d1a8f04c6516fe7f096f8eabab6785"
+      sourceResultRef: "verification:full-test:f250af14a7de3789d522c8cd9548c746e60a8655b29500105c9b2c2002de11eb"
+      severity: blocking
+      summary: "full-test check failed: full"
+      affectedScope: delivery
+      requiredOwnerDecision: corrective-change-or-cancel-delivery
+      resolution:
+        kind: corrective-change-created
+        changeId: "delivery-full-test-cross-platform-compatibility-closure"
+        ownerDecisionRef: "owner:1e0bb9574e4438886be395d3c94ff3a2dce93ffbffebbd330a7df5101c86268c"
+  finalization:
+    schemaVersion: 1
+    qualificationRef: "delivery-finalization-qualification:dda8416f12b5829010fc5f96c1cde62ad594abaf77f14b1ec6437a0d9d783a8d"
+    ownerAuthorizationRef: "owner:83ba1644e728c38a9a7874731938394abef2f179e7dc3dcb02945ff50755c31e"
+    candidateRef: "delivery-final-candidate:5ba121e0cdf6d26b53d2eb8092ab9e28f4f36259f60242a45c1be399d6474a0a"
+scope:
+  included:
+    - "Delivery readiness projection"
+    - "Delivery behavior Policy representation (Full Test / Finalize no-Run)"
+    - "Owner-authorized Full Test behavior"
+    - "fullTestStatus persistence/projection"
+    - "Delivery Finding + corrective Change owner boundary"
+    - "FLOWKIT_HOME minimal local-environment contract"
+    - "shared external-tool home resolution (FLOWKIT_HOME/tools)"
+    - "OpenSpec 1.7 managed offline distribution"
+    - "Archify v2.14.0 official offline distribution"
+    - "exact external-tool identity / doctor / fail-closed semantics"
+    - "repository-level architecture/<delivery-id>/json durable source layout"
+    - "architecture/<delivery-id>/html disposable derived view layout"
+    - "initial post-02 System Architecture baseline (exact main @ 74d46f0)"
+    - "03 bootstrap Planned Architecture reconciliation"
+    - "Actual Architecture from final repository"
+    - "Planned vs Actual compare (thin Archify wrapper)"
+    - "accepted Actual -> next SystemArchitectureRef"
+    - "Delivery Finalize behavior + Delivery Final Git boundary"
+    - "sync / resume (no chat dependency)"
+    - "consume 02 generic Change Verification / three-file Run baseline"
+    - "consume exact-candidate Verification retry/history baseline"
+    - "thin single-Change-Action Agent Adapter"
+    - "stable Runner"
+    - "Bootstrap E2E fixture"
+    - "self-hosting acceptance"
+    - "Delivery-level performance observation"
+  excluded:
+    - "automatic Author/Reviewer loop"
+    - "bounded auto-continue"
+    - "background autonomous multi-action execution"
+    - "automatic Full Test / Finalize authorization"
+    - "automatic corrective Change"
+    - "automatic Merge"
+    - "Tool Registry / marketplace / auto installer"
+    - "Plugin / Provider / Agent / Gate Registry"
+    - "Skill Registry / Skill installer"
+    - "Evidence / Receipt platform"
+    - "Archify source vendoring"
+    - "reimplement Archify renderer/schema"
+    - "OpenSpec source vendoring"
+    - "CodeGraph platform"
+    - "per-Change architecture regeneration"
+    - "architecture JSON inferred from chat memory"
+
+architecture:
+  impact: true
+  archifyPlan: "deferred-to-03"
+
+  currentCycle:
+    schemaVersion: 1
+    cycleRef: "architecture-cycle:b542de556190415ef73ef2e2d3b7309ac69e626534dc958ff7103e1d334665f0"
+    fullTestAuthorizationRef: "owner:16e7851456b0a04c060ab7db11f6b65b94a133794af1cf56266d318e232cb282"
+    fullTestResultRef: "verification:full-test:0fa75049a4e72a979f6b14a649396c917f0d6bcd4b95b23e411a87cd461f771e"
+    actualArchitectureRef:
+      path: "architecture/20260817-01-delivery-execution-loop/json/actual.architecture.json"
+      sha256: "0cdecf8e681b5f69f7ca6c1b98630ad563b2b2441343c8ea545786da01ea63ef"
+      repositoryRevision: "677f8dd9549c2112f9d9be8279b6de2e05b663cf"
+    compareRef: "architecture-compare:37cb8f25ff830bb9a037e404207869dda8e9a0f49dafcd55baa3493f5e180a81"
+    acceptance:
+      status: accepted
+      ownerDecisionRef: "owner:09cc5f9a52a68f96b3baba65fafde88a520f73e2fa82bf4173840ffcdf139e11"
+  acceptedSystemSource:
+    schemaVersion: 1
+    sourceDeliveryId: "20260817-01-delivery-execution-loop"
+    actualArchitectureRef:
+      path: "architecture/20260817-01-delivery-execution-loop/json/actual.architecture.json"
+      sha256: "0cdecf8e681b5f69f7ca6c1b98630ad563b2b2441343c8ea545786da01ea63ef"
+      repositoryRevision: "677f8dd9549c2112f9d9be8279b6de2e05b663cf"
+    compareRef: "architecture-compare:37cb8f25ff830bb9a037e404207869dda8e9a0f49dafcd55baa3493f5e180a81"
+    ownerAcceptanceRef: "owner:09cc5f9a52a68f96b3baba65fafde88a520f73e2fa82bf4173840ffcdf139e11"
+changes:
+  - key: "A1"
+    id: "delivery-readiness-and-full-test-behavior"
+    goal: "让 Flowkit 确定性判断 Delivery Ready，并在 Owner 授权后执行 Delivery Full Test；Full Test 是 Delivery behavior，不是 Change Action/Run。"
+    required: true
+    dependsOn:
+      []
+    state: completed
+    architectureImpact: true
+    outputs:
+      - "Delivery readiness projection"
+      - "Full Test Plan contract"
+      - "Owner authorize-full-test boundary"
+      - "fullTestStatus lifecycle"
+
+  - key: "B1"
+    id: "delivery-findings-and-corrective-change"
+    goal: "把 Delivery Full Test failure 变成 Delivery-level Finding + Owner decision，而不是重开 completed Change 或自动修复。"
+    required: true
+    dependsOn:
+      - "delivery-readiness-and-full-test-behavior"
+    state: completed
+    architectureImpact: true
+    outputs:
+      - "failed Full Test projection"
+      - "minimal Delivery Finding"
+      - "Owner corrective-Change decision boundary"
+      - "fullTestStatus reset to not-ready"
+
+  - key: "C1"
+    id: "external-tool-runtime-and-archify-cli-contract"
+    goal: "建立一个最薄的 shared External Tool Runtime，使 OpenSpec 与 Archify 都能通过 FLOWKIT_HOME/tools 使用 exact offline distribution，消除 canonical ambient PATH ambiguity。"
+    required: true
+    dependsOn:
+      - "delivery-findings-and-corrective-change"
+    state: completed
+    architectureImpact: true
+    outputs:
+      - "FLOWKIT_HOME/tools layout"
+      - "OpenSpec 1.7.0 managed offline distribution"
+      - "Archify v2.14.0 official offline distribution"
+      - "exact tool identity / doctor / fail-closed semantics"
+
+  - key: "D1"
+    id: "architecture-baseline-and-delivery-plan"
+    goal: "建立 Flowkit 第一个可信 System Architecture baseline，并把 03 的计划能力表达成 Planned Architecture；Architecture assets 位于 repository 顶层 architecture/。"
+    required: true
+    dependsOn:
+      - "external-tool-runtime-and-archify-cli-contract"
+    state: completed
+    architectureImpact: true
+    outputs:
+      - "architecture/<delivery-id>/json/** durable source layout"
+      - "post-02 Current/System baseline"
+      - "03 bootstrap Planned reconciliation"
+      - "Archify validate binding"
+
+  - key: "E1"
+    id: "architecture-actual-compare-and-system-promotion"
+    goal: "Delivery final candidate 形成 Actual Architecture，与 Planned 做 Archify compare；Owner 接受后，Accepted Actual ref 成为下一 Delivery 的 System Architecture baseline。"
+    required: true
+    dependsOn:
+      - "architecture-baseline-and-delivery-plan"
+    state: completed
+    architectureImpact: true
+    outputs:
+      - "Actual Architecture from final repository"
+      - "Planned vs Actual compare"
+      - "accepted ActualArchitectureRef -> SystemArchitectureRef promotion"
+
+  - key: "F1"
+    id: "delivery-finalize-and-git-boundary"
+    goal: "在所有 Delivery completion preconditions 与 Owner Finalize authorization 满足后，正式关闭 Delivery，并形成 Delivery Final Git boundary。"
+    required: true
+    dependsOn:
+      - "architecture-actual-compare-and-system-promotion"
+    state: completed
+    architectureImpact: true
+    outputs:
+      - "finalization precondition projection"
+      - "Owner authorize-finalize boundary"
+      - "Delivery state -> completed"
+      - "Delivery Final Git boundary"
+
+  - key: "G1"
+    id: "sync-resume-and-single-action-agent-adapter"
+    goal: "让 Delivery/Change 状态可以只依赖 repository/formal facts resume；提供稳定的、一次一个 Change Action 的薄 Agent Adapter。"
+    required: true
+    dependsOn:
+      - "delivery-finalize-and-git-boundary"
+    state: completed
+    architectureImpact: true
+    outputs:
+      - "Delivery resume projection"
+      - "Verification.md + verification-history lineage read"
+      - "single-action Agent Adapter"
+
+  - key: "H1"
+    id: "stable-runner-and-self-hosting-acceptance"
+    goal: "发布 stable Runner，并通过 disposable end-to-end fixture 证明 01+02+03 已形成可以管理下一条真实 Delivery 的 MVP。"
+    required: true
+    dependsOn:
+      - "sync-resume-and-single-action-agent-adapter"
+    state: completed
+    architectureImpact: true
+    outputs:
+      - "stable dist/bin/flowkit.js"
+      - "full Bootstrap fixture"
+      - "Bootstrap E2E / self-hosting acceptance"
+      - "post-03 SystemArchitectureRef"
+
+
+  - key: "I1"
+    id: "delivery-full-test-bounded-execution-and-protocol-closure"
+    goal: "修复 Delivery Full Test 将一个逻辑 Full Test authority 错误绑定到单一长生命周期物理进程的问题，建立 bounded physical execution、typed transport outcome、protocol semantic closure，并确保 required blocker Change 会使旧 Full Test authorization 正确失效。"
+    required: true
+    dependsOn:
+      - "stable-runner-and-self-hosting-acceptance"
+    state: completed
+    architectureImpact: true
+    outputs:
+      - "bounded Delivery Full Test execution contract"
+      - "Verification-owned logical-check to physical-target execution mapping"
+      - "typed bounded physical command executor"
+      - "coverage-complete bounded full-suite partition"
+      - "Full Test protocol semantic aggregation closure"
+      - "Full Test authorization invalidation and outcome-unknown lifecycle guards"
+
+  - key: "J1"
+    id: "delivery-full-test-cross-platform-compatibility-closure"
+    goal: "关闭 Delivery Full Test 暴露的跨平台兼容性缺口：修复 legacy kind: command Windows YAML round-trip、稳定 Windows PowerShell launcher fallback 的跨环境验证，并上浮 bounded physical failure diagnostics。"
+    required: true
+    dependsOn:
+      - "delivery-full-test-bounded-execution-and-protocol-closure"
+    state: completed
+    architectureImpact: false
+    outputs:
+      - "legacy command Windows path YAML write-read-execute round-trip closure"
+      - "deterministic cross-platform PowerShell launcher fallback regression"
+      - "bounded Full Test physical failure diagnostics surfaced by verify:full"
+ownerDecisions:
+  - ref: "owner:0df75861bcca98dd0adf7c821f5bad559d882419521fce780d234fe6c079e680"
+    decision: "create-delivery"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    sourceRef: "ref/03-delivery-start-local-ai-handoff.md"
+
+  - ref: "owner:3cbeef44b31bc1e6e1f8f10590bf4b4dfb74911ebcf35448dc2feefe48ff5cbe"
+    decision: "activate-change"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-readiness-and-full-test-behavior"
+    sourceRef: "owner:chat-20260817-a1-activation-explore"
+  - ref: "owner:775cad782bab218382b2fbeee3d7810c47c32f87ba44cc8417acee36fa464b86"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-readiness-and-full-test-behavior"
+    sourceRef: "owner:chat-20260817-a1-authorize-apply-010"
+  - ref: "owner:e675265cbd4ae1a9c838f6026645d798bdc5fa416c9dc6d533421e8c4314679c"
+    decision: "contract-reset"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-readiness-and-full-test-behavior"
+    scope: "A1/proposal-mutation-scope-only"
+    requiredOutcomes:
+      - "add exactly one mandatory flowkitMutationScope section covering apply and revise-apply with complete bounded deterministic selectors for production, tests, Verification mapping, current 03 Manifest migration, and A1 tasks/verification publication"
+      - "do not reopen Explore or expand A1 scope"
+      - "form a fresh Proposal generation for review-propose; old 010 approval applies only to old Proposal bytes"
+      - "preserve all 009 Proposal product semantics and design decisions"
+      - "preserve approved Explore conclusions"
+    sourceRef: "owner:chat-20260817-a1-minimal-contract-reset-mutation-scope"
+  - ref: "owner:33d3e9eb52e6ca05f4b246f14570f018a3abf4e9503b6f726f853b658e2e628c"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-readiness-and-full-test-behavior"
+    sourceRef: "owner:chat:20260817T1349+08:A1-011-apply"
+  - ref: "owner:71dd5ba143bdfcee6064b5aca8f7b1f9d8539e0e661c668183c0c820a3a1025d"
+    decision: "authorize-archive"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-readiness-and-full-test-behavior"
+    sourceRef: "owner:chat-20260817-a1-authorize-archive-016"
+  - ref: "owner:7b5db1763c5a2c664a4de9dcdbf82a094739a8bccde9f25daa68428adb1855d1"
+    decision: "authorize-checkpoint"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-readiness-and-full-test-behavior"
+    sourceRef: "ref/a1-post-archive-eof-hygiene-local-ai-handoff.md"
+  - ref: "owner:f2d3a5654f89308f9811291b515fead1bb0ceb7159e2b70544037e73a57d9a0c"
+    decision: "activate-change"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-findings-and-corrective-change"
+    sourceRef: "chat-owner-authorization:a78ef326ede3dc7215678b1969fd6f3be7ad573ae54a83f7d500d91811f3e901"
+  - ref: "owner:0f7aaab4528b24a4ff5b5901ece23d83843154353efae19d8c1d602c75283ed0"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-findings-and-corrective-change"
+    sourceRef: "owner:chat-20260817-b1-authorize-apply-025"
+  - ref: "owner:dab1ca89d8982d9ffd9003e6a06a9b1a3004e46742003efda7ddd28f800bd2e0"
+    decision: "authorize-archive"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-findings-and-corrective-change"
+    sourceRef: "owner:chat-20260817-b1-authorize-archive-027"
+  - ref: "owner:9774dab72e7a6dcaab1412f1d2cd6f9c68b5fe8c833c4913cf1bd254a54fd084"
+    decision: "authorize-checkpoint"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-findings-and-corrective-change"
+    sourceRef: "ref/b1-post-archive-eof-hygiene-local-ai-handoff.md"
+  - ref: "owner:1c987731006b6a95d9cf4894c92c8dc651640936aea42c4cbca15c98efebcaca"
+    decision: "activate-change"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "external-tool-runtime-and-archify-cli-contract"
+    sourceRef: "chat-owner-authorization:c1-activate-explore-20260817"
+  - ref: "owner:606d8c81b7f990c366cb874cb649b7a1517d2d0e669b57626e4130c738af66e4"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "external-tool-runtime-and-archify-cli-contract"
+    sourceRef: "chat-owner-authorization:84c720fc855b69f4600dc7e23c8660166dce9a6ee7432db3d912798976599d1f"
+  - ref: "owner:ec84e4aa0627db5f30c030207105d8f3f915370eb4875f2b682a0e51529b6005"
+    decision: "contract-reset"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "external-tool-runtime-and-archify-cli-contract"
+    scope: "C1 / OpenSpec managed-vs-injected execution identity correction"
+    requiredOutcomes:
+      - "fake/injected runner tests 必须通过显式 executable/invocation seam 表达 injected authority，不得通过 runner presence 隐式推断。"
+      - "observational runner 必须继续消费 canonical managed FLOWKIT_HOME OpenSpec identity。"
+      - "runner callback 本身不得被解释为 injected executable authority。"
+      - "保持 033 已批准的 precedence：explicit/injected → managed FLOWKIT_HOME → legacy FLOWKIT_OPENSPEC_BIN → ambient compatibility。"
+      - "保持现有 OpenSpec real-process、archive、verify --retry、G1、Full Test environment regressions。"
+      - "重新完成 formal Change Verification physical closure。"
+    sourceRef: "owner-input:2026-08-18T05:59+08:00:contract-reset:C1-managed-vs-injected-execution-identity-correction"
+  - ref: "owner:41153a383030a049e69ceaeb8af6dcd518ce93381a058b51683fe2222b4929eb"
+    decision: "contract-reset"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "external-tool-runtime-and-archify-cli-contract"
+    scope: "C1 / Proposal mutationDeclaration lexical canonicalization only"
+    requiredOutcomes:
+      - "不改变 036 已批准的任何 implementation scope 或 executable precedence。"
+      - "仅将 design.md 中 apply / revise-apply 的 flowkitMutationScope selectors 按既有 lexical-order contract canonicalize。"
+      - "保持 tests/unit/services/b1-openspec-action-context.test.ts 在 approved mutation scope 内。"
+      - "重新完成 Proposal Review 后再进入 Apply。"
+    sourceRef: "owner-input:2026-08-18T07:21+08:00:contract-reset:C1-proposal-mutation-declaration-lexical-canonicalization"
+  - ref: "owner:747d53e9b848d3a2f434773a0a36a92a99330e7f24a6f0c508b0fd250bb38b00"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "external-tool-runtime-and-archify-cli-contract"
+    sourceRef: "owner-input:2026-08-18T07:32+08:00:authorize-apply:C1-after-039"
+  - ref: "owner:fcbb673b17df8a4ed0db1b64c93ab3c7238534f24087856a352313d257732992"
+    decision: "authorize-archive"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "external-tool-runtime-and-archify-cli-contract"
+    sourceRef: "owner-input:2026-08-18T08:42+08:00:authorize-archive:C1"
+  - ref: "owner:9cdeaef3158dcd6721062880de0d51f83c8eb3b511f6ebf9a8570779cea07190"
+    decision: "authorize-checkpoint"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "external-tool-runtime-and-archify-cli-contract"
+    sourceRef: "ref/flowkit-local-ai-handoff-c1-044-archive.md"
+  - ref: "owner:ebecb176e5ab8a64b703e9a7b83b8452a6ad86e390f80ca2be12a871bec1898e"
+    decision: "activate-change"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "architecture-baseline-and-delivery-plan"
+    sourceRef: "owner-input:2026-08-18T10:15+08:00:activate-change:D1-and-explore"
+  - ref: "owner:b84469ab6ee11fca4a9c87dd1dbbd698d10b03979dab742f1cd01c24cf771b00"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "architecture-baseline-and-delivery-plan"
+    sourceRef: "owner:user-message:2026-08-18T12:03+08:00:d1-apply-054"
+  - ref: "owner:517890aabaf47af297deb6b86282ea7c5502372c1945bee89725ba70b24bda89"
+    decision: "contract-reset"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "architecture-baseline-and-delivery-plan"
+    scope: "D1 / architecture reference visualization model correction, retain Workflow + Sequence views, recover failed 057 generation"
+    requiredOutcomes:
+      - "All architecture/reference JSON remains a human/AI visualization projection downstream of Owner decisions, Flowkit Policy, OpenSpec and canonical code/tests/Git facts; formal facts win conflicts."
+      - "Do not add actual.architecture.json, global system.architecture.json, SystemArchitectureRef promotion, Planned-vs-Actual acceptance, architecture DB/Registry, Archify lifecycle Actions, reference-as-Policy, or HTML freshness authority."
+      - "Do not create a durable Full Test Lifecycle reference in D1; Lifecycle remains suitable only for bounded state-machine views when separately required."
+      - "Fresh Proposal must update proposal/design/specs/tasks/mutation scope/tests/Verification mapping as needed, pass mutation-declaration dry admission, buildVerificationSelection expected-D1 proof, OpenSpec strict/all-strict, staged diff hygiene, and physical Archify validate/deliver for both Workflow and Sequence references plus Current/Planned Architecture."
+      - "HTML remains generated/disposable/default-not-tracked and reproducible from durable JSON plus exact managed Archify 2.14.0."
+      - "Keep four Git-tracked non-authoritative reference JSON sources: Change Workflow, Change Sequence, Delivery Workflow, Delivery Sequence; Workflow is the complete orchestration view and Sequence is the complementary participant-interaction view."
+      - "Preserve Delivery Current at exact pre-03 main 74d46f0920c0dfc6f19b5b264cf9de138f4c2bec and Planned provenance at original 03 Delivery Start f132db761bd209e6aff72411108b8e3e1c9801f5; Actual remains E1."
+      - "Supersede the failed 20260818-057-revise-apply generation without mutating or reinterpreting its historical Run or failed Verification; reopen a fresh Proposal generation."
+    sourceRef: "owner-input:2026-08-18T13:54+08:00:D1-reference-workflow-sequence-reset"
+  - ref: "owner:1306e81b8f80d964759b6b7eec7e6020903d981650bc1fb226183046e5a19ffd"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "architecture-baseline-and-delivery-plan"
+    sourceRef: "owner-input:2026-08-18T14:20+08:00:D1-059-authorize-apply"
+  - ref: "owner:c2e1a3d6c880496cba337a415cbd4d4fd85e14c15131c1ffc53868e2b89f2d98"
+    decision: "authorize-archive"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "architecture-baseline-and-delivery-plan"
+    sourceRef: "owner-input:2026-08-18T14:56+08:00:D1-authorize-archive"
+  - ref: "owner:c33ff15bf19fb53e57d4e4336e70eb41221d354ea6d292c492e5a4b7995928c4"
+    decision: "authorize-checkpoint"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "architecture-baseline-and-delivery-plan"
+    sourceRef: "ref/flowkit-local-ai-handoff-d1-062-archive.md"
+  - ref: "owner:25f59b20ba8106aeb40834fd9d87e4b191b56a2a4ff6352ecdc0f43c780d5fb1"
+    decision: "activate-change"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "architecture-actual-compare-and-system-promotion"
+    sourceRef: "owner-input:2026-08-18T16:12+08:00:E1-activate-and-explore"
+  - ref: "owner:e1ddd03d42328c988dc8a3ba732707f7cbd56d1fa6a207b7dcee594186b25fd7"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "architecture-actual-compare-and-system-promotion"
+    sourceRef: "owner-input:2026-08-18T18:06+08:00:authorize-apply:E1"
+  - ref: "owner:05deca7b4014d46c3d3c665ebe3fbf16a34d5dbe1a950457b08d479d03e625b7"
+    decision: "authorize-archive"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "architecture-actual-compare-and-system-promotion"
+    sourceRef: "owner-input:2026-08-18T19:37+08:00:authorize-archive:E1"
+  - ref: "owner:e2bf484fa59d7a2e556a31ec8f169ce5da5eeaa286658e2b236ea243fa31f5e2"
+    decision: "authorize-checkpoint"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "architecture-actual-compare-and-system-promotion"
+    sourceRef: "ref/flowkit-local-ai-handoff-e1-073-archive.md"
+  - ref: "owner:aedd9bb750cc3718eb6c0de386485714f8ae7d38dd489d08462aaa995edfdb52"
+    decision: "activate-change"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-finalize-and-git-boundary"
+    sourceRef: "owner:chat-20260818-f1-activation-explore"
+  - ref: "owner:06e6ada82524f4cbbaf6b3342fe656e5b0f9e6601bab09338089539b3ef90872"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-finalize-and-git-boundary"
+    sourceRef: "owner-input:2026-08-18T22:38+08:00:authorize-apply:F1"
+  - ref: "owner:28d44ec0f13232d35ef55ca79ff100aaea983302aa4e66ce1b728beac9a80e98"
+    decision: "authorize-archive"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-finalize-and-git-boundary"
+    sourceRef: "owner-input:2026-08-19T07:04+08:00:authorize-archive:F1"
+  - ref: "owner:96fa4954bde966760c06fcb79755fe1faf71c12b90bcca32ec2c84a9a2dda191"
+    decision: "authorize-checkpoint"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-finalize-and-git-boundary"
+    sourceRef: "ref/flowkit-local-ai-handoff-f1-086-archive.md"
+  - ref: "owner:7a8908f8110029f599aefb88892296cf359d240d7263ecb779707a4d073e16ad"
+    decision: "activate-change"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "sync-resume-and-single-action-agent-adapter"
+    sourceRef: "owner-input:2026-08-19T07:32+08:00:activate:G1"
+  - ref: "owner:3a5e54446af9814f31540e10a56971c74c454b8c74cb15c4c0e3b19178d17483"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "sync-resume-and-single-action-agent-adapter"
+    sourceRef: "owner-input:2026-08-19T09:55+08:00:authorize-apply:G1"
+  - ref: "owner:bf19e25d75a62839a971a5080e6be28d04c9bfa5b874e359b2919ddac0229f5f"
+    decision: "authorize-archive"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "sync-resume-and-single-action-agent-adapter"
+    sourceRef: "owner-input:2026-08-19T10:39+08:00:authorize-archive:G1"
+  - ref: "owner:0c1e44f8f15467b4fe05c7c1a81ee3e7970abe36b3b4595d1ea9c2fc08351636"
+    decision: "authorize-checkpoint"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "sync-resume-and-single-action-agent-adapter"
+    sourceRef: "ref/flowkit-local-ai-handoff-g1-097-archive.md"
+  - ref: "owner:fd605d9f496475fc686684dab92f78ff595df039faf2920eccd15ccaccfc5169"
+    decision: "activate-change"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "stable-runner-and-self-hosting-acceptance"
+    sourceRef: "owner-input:2026-08-19T11:06+08:00:activate-change:H1"
+  - ref: "owner:f0f16b99ac5bb9288ec82107924ba3a92ae5e9a80652141b095fdaa7be6a3c1b"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "stable-runner-and-self-hosting-acceptance"
+    sourceRef: "owner-input:chat:authorize-apply:H1"
+  - ref: "owner:b1a8666881c28f23e2f059a85a54e200cd9b79ee0d79842145672a6962149d9d"
+    decision: "contract-reset"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "stable-runner-and-self-hosting-acceptance"
+    scope: "H1/detached-verification-physical-execution-optimization"
+    requiredOutcomes:
+      - "formal H1 detached tests-cli and tests-execution execute complete selected coverage through bounded physical groups under the existing 120s per-physical-command timeout, with no full-E2E skip"
+      - "preserve one logical Verification authority, non-H1 behavior, Owner boundaries, and no timeout inflation or generic 04 verification platform"
+    sourceRef: "owner-input:2026-08-19T20:10+08:00:H1-detached-verification-physical-execution-optimization"
+  - ref: "owner:21788a98a748a581ddffd24710cc7330e2df8524de82cfed6f8674a3e1ff3df8"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "stable-runner-and-self-hosting-acceptance"
+    sourceRef: "owner-input:2026-08-20T01:57+08:00:H1-authorize-apply-after-110"
+  - ref: "owner:80f2e65610fbee17dc95155e86573f51cf39bd7d6d42e118565ef1f7829cc6c2"
+    decision: "authorize-archive"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "stable-runner-and-self-hosting-acceptance"
+    sourceRef: "owner-input:2026-08-20T05:24+08:00:authorize-archive:H1"
+  - ref: "owner:80df6669605ad9b11bb9bab8ce0fc40f6b12fdf4dd444d109fccaa23fc25b1b7"
+    decision: "authorize-checkpoint"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "stable-runner-and-self-hosting-acceptance"
+    sourceRef: "ref/flowkit-local-ai-handoff-h1-115-archive.md"
+  - ref: "owner:bcb98e822381bb1090c94ce953719be9d95fef47a4a3f9532f1d55c4147ffe32"
+    decision: "create-change"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-full-test-bounded-execution-and-protocol-closure"
+    sourceRef: "owner-input:2026-08-20T06:33+08:00:create-change:I1"
+  - ref: "owner:77234cb1f41d258f4a9a719c9371519f0a7605c447b414299f96b399001d9aec"
+    decision: "activate-change"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-full-test-bounded-execution-and-protocol-closure"
+    sourceRef: "owner-input:2026-08-20T06:36+08:00:activate:I1"
+  - ref: "owner:43eeec1700500cbf0c695ff6132dd06e70ee2a99bf7c95c3aeb997a31036d2c1"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-full-test-bounded-execution-and-protocol-closure"
+    sourceRef: "owner-input:2026-08-20T08:58+08:00:authorize-apply:I1"
+  - ref: "owner:b9e87723e7e630aea4274b8cb2978679a4f157bfbbdb41e0ee161cfda9778dae"
+    decision: "contract-reset"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-full-test-bounded-execution-and-protocol-closure"
+    scope: "I1/formal-change-verification-physical-execution-closure"
+    requiredOutcomes:
+      - "abandon old 120/121/122 Proposal/Apply generation while retaining 116/117 approved Explore as discovery handoff"
+      - "before Proposal approval prove actualChangeSet -> logical selection -> physical targets -> formal Change Verification end-to-end closure"
+      - "do not expand into generic Verification platform, scheduler, timing platform, or change approved bounded Delivery Full Test authority, H1 1 smoke + 26 phases semantics, Full Test no-Run, or Owner authority"
+      - "tests-cli must freeze I1-required CLI coverage into a proven bounded physical execution closure without timeout inflation; generic Verification timing/timeout granularity remains deferred to 04"
+      - "tests-execution must prove whether selected physical targets are truly affected by exact base plus I1 actualChangeSet; if not affected fix deterministic selection/module ownership, if affected include the minimal mutation surface required to make formal verification valid; base failure alone cannot waive failure"
+    sourceRef: "owner-input:2026-08-20T10:01+08:00:contract-reset:I1-formal-verification-physical-closure"
+  - ref: "owner:0771ccb4444801cea1cddbffaf8261dff78655b245c1169eb13c7d67553bb638"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-full-test-bounded-execution-and-protocol-closure"
+    sourceRef: "owner:2026-08-20T10:52:00+08:00"
+  - ref: "owner:deda1b847266793ed73759a4fefa0448be1cd6392d26bdacc6848bac2b33cf4a"
+    decision: "authorize-archive"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-full-test-bounded-execution-and-protocol-closure"
+    sourceRef: "owner-input:2026-08-20T11:28+08:00:authorize-archive:I1"
+  - ref: "owner:f0926dd5313079c8ebfe8e5a4594f67871acedc7b793476321fc772859a5ede4"
+    decision: "authorize-checkpoint"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-full-test-bounded-execution-and-protocol-closure"
+    sourceRef: "ref/flowkit-local-ai-handoff-after-i1-127-archive.md"
+  - ref: "owner:9b18910b4bd5c7af3cea466e46f1739818d1a8f04c6516fe7f096f8eabab6785"
+    decision: "authorize-full-test"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    sourceRef: "owner:chat:2026-08-20:authorize-full-test:2ee79244128b62ea9ddb0388afc1ea08e746e298"
+  - ref: "owner:1e0bb9574e4438886be395d3c94ff3a2dce93ffbffebbd330a7df5101c86268c"
+    decision: "create-change"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-full-test-cross-platform-compatibility-closure"
+    sourceRef: "owner:chat:2026-08-20:create-corrective-after-detached-full-test-failure"
+  - ref: "owner:353eab6c5f1263a373268983f7c29ca45ba2fd9ff52474b1294c8415926c37c4"
+    decision: "activate-change"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-full-test-cross-platform-compatibility-closure"
+    sourceRef: "owner:chat:2026-08-20:J1-activate-clean-closure"
+  - ref: "owner:f037f8675fe154851c4c05ecc942a392092094c695e5d4750ef9bcd0879dff04"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-full-test-cross-platform-compatibility-closure"
+    sourceRef: "owner:chat:20260820T1354+08:00:authorize-apply:J1"
+  - ref: "owner:dba5691d42657a8f4a8ac9e54f8e48ff3f04c1a9247d0fe30ed4f5b5ebdaeba4"
+    decision: "contract-reset"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-full-test-cross-platform-compatibility-closure"
+    scope: "Abandon proposal/apply generation 130/131/132; preserve approved Explore 128/129; keep J1 architecture, three corrective boundaries, 13-selector implementation mutation surface, and fresh real-Windows acceptance unchanged; revise only Proposal/Tasks lifecycle sequencing so every required task is complete before first formal Change Verification."
+    requiredOutcomes:
+      - "All required tasks must be truthfully complete before the first formal Change Verification begins."
+      - "Before formal Verification: implementation bytes, tests, real-Windows evidence, disposable full-plan evidence, and tasks.md completion are frozen."
+      - "Disposable full physical plan PASS remains a pre-Verification technical task on the final stable candidate."
+      - "Do not re-Explore, change J1 production design, widen into scheduler/timeout/evidence platform work, or redesign I1."
+      - "Formal Change Verification authority is expressed only by verification.md and terminal binding; it must not require later tasks.md mutation."
+      - "Fresh real-Windows legacy kind:command write-read-execute evidence remains a pre-Verification task on the final stable candidate."
+      - "tasks.md must not require post-Verification mutation for formal Change Verification PASS, verification.md publication, or review-apply handoff/verdict."
+    sourceRef: "owner-input:2026-08-20T14:14+08:00:contract-reset:J1-pre-verification-task-sequencing"
+  - ref: "owner:c2788a597263cd6084295c4648d7d7af0fd49dad420214d4e41f83423857af8e"
+    decision: "contract-reset"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-full-test-cross-platform-compatibility-closure"
+    scope: "Supersede 133/134 real-Windows evidence requirement only; preserve J1 production design, three corrective boundaries, 13-selector mutation surface, tasks-freeze sequencing, Gate F, and 128/129 approved Explore lineage. Replace Gate W with deterministic simulated-Windows proof on the exact frozen candidate and narrow the claim so no real Windows OS semantics are asserted."
+    requiredOutcomes:
+      - "Abandon current 133 propose / 134 review-propose generation as current authority; retain them as immutable history and preserve 128/129 approved Explore as discovery handoff."
+      - "Disposable Full-Plan Gate F remains required and non-authoritative; all task checkboxes complete and tasks.md freezes before Gate W/F; gates do not mutate candidate; formal Change Verification starts only after both gates PASS."
+      - "No re-Explore, no production-design change, no mutation-surface expansion, no scheduler/timeout/evidence platform, and no I1 redesign."
+      - "Replace fresh real-Windows Gate W with a deterministic simulated-Windows Gate bound to the same exact frozen candidate: prove Windows-shaped legacy kind:command Manifest write→read exact semantic equality, platform=win32 execution-branch/argv/launcher semantics through injected controlled runner seams, and passed/failed protocol cases without relying on ambient PATH or host OS."
+      - "Simulation evidence MUST NOT be described as proof of real Windows filesystem/CreateProcess/PowerShell OS semantics; J1 acceptance claim is narrowed to host-independent serialization plus Flowkit win32 branch/transport semantics."
+    sourceRef: "chat:2026-08-20T15:00+08:00-owner-simulated-windows"
+  - ref: "owner:e9dd95555829d2059bb4ac671bdc37c1b7aaa512e6db3c8dcfdfa457eaeb1d98"
+    decision: "authorize-apply"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-full-test-cross-platform-compatibility-closure"
+    sourceRef: "chat:2026-08-20T15:19+08:00-owner-authorize-apply:J1-136"
+  - ref: "owner:03477ca4468532d1f3dd990d78dd18e1c0f1b924ededebdc2cf4c6a0e3e79ec4"
+    decision: "authorize-archive"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-full-test-cross-platform-compatibility-closure"
+    sourceRef: "owner:chat:20260820T1843+0800:j1-authorize-archive"
+  - ref: "owner:010f0ed040a7597262c9860eec2e7402d2473254934e441a55a45371dc6fe9c4"
+    decision: "authorize-checkpoint"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    changeId: "delivery-full-test-cross-platform-compatibility-closure"
+    sourceRef: "ref/flowkit-local-ai-handoff-after-j1-139-archive.md"
+  - ref: "owner:16e7851456b0a04c060ab7db11f6b65b94a133794af1cf56266d318e232cb282"
+    decision: "authorize-full-test"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    sourceRef: "owner:chat:2026-08-20:authorize-full-test:677f8dd9549c2112f9d9be8279b6de2e05b663cf"
+  - ref: "owner:09cc5f9a52a68f96b3baba65fafde88a520f73e2fa82bf4173840ffcdf139e11"
+    decision: "accept-architecture"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    architectureCycleRef: "architecture-cycle:b542de556190415ef73ef2e2d3b7309ac69e626534dc958ff7103e1d334665f0"
+    sourceRef: "owner:d88eb9e690558eb08f73145dc2f8093affbe4f7b78f3c30fba47d55e5885b319"
+  - ref: "owner:83ba1644e728c38a9a7874731938394abef2f179e7dc3dcb02945ff50755c31e"
+    decision: "authorize-delivery-finalize"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    finalizationQualificationRef: "delivery-finalization-qualification:dda8416f12b5829010fc5f96c1cde62ad594abaf77f14b1ec6437a0d9d783a8d"
+    sourceRef: "owner:chat:2026-08-21T04:46+08:00:authorize-delivery-finalize"
+verification:
+  change:
+    requireApplicableChecks: true
+  fullTest:
+    requiresOwnerAuthorization: true
+    execution:
+      id: "project-full-verification"
+      kind: bounded-command-plan
+      logicalChecks:
+        - id: "quality"
+          resolverId: flowkit-quality
+          perTargetTimeoutMs: 120000
+        - id: "typecheck"
+          resolverId: flowkit-typecheck
+          perTargetTimeoutMs: 120000
+        - id: "lint"
+          resolverId: flowkit-lint
+          perTargetTimeoutMs: 120000
+        - id: "build"
+          resolverId: flowkit-build
+          perTargetTimeoutMs: 120000
+        - id: "openspec-all"
+          resolverId: flowkit-openspec-all
+          perTargetTimeoutMs: 120000
+        - id: "full"
+          resolverId: flowkit-full-tests
+          perTargetTimeoutMs: 120000
+      scope: delivery
+      resultProtocol: flowkit-full-test-result-v1
+      resultAuthority: verification
+      expectedTerminalStatuses:
+        - "passed"
+        - "failed"
+    plan:
+      - "Deterministic Core suite"
+      - "Change Execution Loop suite"
+      - "Delivery readiness projection"
+      - "Delivery behavior Policy result (Full Test no-Run / Finalize no-Run)"
+      - "Full Test authorization boundary"
+      - "Full Test failure / corrective Change lifecycle"
+      - "02 Final verification retry/history regressions"
+      - "OpenSpec archive-sync completeness regression"
+      - "FLOWKIT_HOME resolution"
+      - "OpenSpec managed offline tool"
+      - "OpenSpec legacy migration compatibility"
+      - "Archify exact release identity"
+      - "offline Archify doctor"
+      - "Archify validate architecture"
+      - "Archify deliver architecture"
+      - "Archify compare architecture"
+      - "no ambient PATH canonical dependency"
+      - "architecture/<delivery-id>/json durable-source layout"
+      - "architecture/<delivery-id>/html local derived-view layout"
+      - "flowkit architecture render current/planned/actual thin wrapper"
+      - "flowkit architecture compare thin wrapper"
+      - "initial post-02 System baseline"
+      - "03 bootstrap Planned reconciliation"
+      - "normal future Planned lifecycle"
+      - "Actual / Compare / Promotion"
+      - "HTML absence/staleness does not create second authority"
+      - "Delivery Finalize no-Run invariant"
+      - "Git Delivery Final boundary"
+      - "sync/resume"
+      - "three-file new Run / historical legacy Run compatibility"
+      - "single-action Agent Adapter"
+      - "Bootstrap fixture E2E"
+      - "quality hard guards"
+      - "typecheck"
+      - "lint"
+      - "build"
+      - "OpenSpec strict"
+      - "Windows compatibility regression"
+      - "performance/timing"
+
+    failureHistory:
+      - schemaVersion: 1
+        status: failed
+        summary: "full-test check failed: full"
+        totalDurationMs: 59799
+        checks:
+          - id: "quality"
+            status: passed
+            durationMs: 1478
+          - id: "typecheck"
+            status: passed
+            durationMs: 5856
+          - id: "lint"
+            status: passed
+            durationMs: 3914
+          - id: "build"
+            status: passed
+            durationMs: 2606
+          - id: "openspec-all"
+            status: passed
+            durationMs: 307
+          - id: "full"
+            status: failed
+            durationMs: 45638
+        resultRef: "verification:full-test:f250af14a7de3789d522c8cd9548c746e60a8655b29500105c9b2c2002de11eb"
+    result:
+      schemaVersion: 1
+      status: passed
+      summary: "all full-test checks passed"
+      totalDurationMs: 338935
+      checks:
+        - id: "quality"
+          status: passed
+          durationMs: 1489
+        - id: "typecheck"
+          status: passed
+          durationMs: 5781
+        - id: "lint"
+          status: passed
+          durationMs: 4432
+        - id: "build"
+          status: passed
+          durationMs: 2955
+        - id: "openspec-all"
+          status: passed
+          durationMs: 326
+        - id: "full"
+          status: passed
+          durationMs: 323863
+      resultRef: "verification:full-test:0fa75049a4e72a979f6b14a649396c917f0d6bcd4b95b23e411a87cd461f771e"
+acceptance:
+  - "Delivery Ready 可确定性计算（required Changes completed + checkpoints present + Blocking Findings = 0 + formal facts consistent + Full Test Plan available）"
+  - "Policy 可表达 Delivery behavior 而不伪造 Formal Action / Run"
+  - "Full Test 必须 Owner 独立明确授权，不创建 Run"
+  - "Full Test failure -> Delivery Finding + Owner decision，不自动 corrective Change；corrective Change 使用普通 Change lifecycle"
+  - "FLOWKIT_HOME/tools 最小 external-tool model 可用，canonical 执行不依赖 ambient PATH"
+  - "OpenSpec canonical 执行可使用 exact managed offline distribution"
+  - "Archify canonical 执行可使用 exact managed offline distribution"
+  - "legacy OpenSpec launcher/override compatibility 有明确 bounded migration"
+  - "repository 顶层 architecture/ layout 可用；JSON 是 durable source；HTML 是派生视图、默认不提交、可删除重建、非 authority"
+  - "initial post-02 System Architecture baseline 来自 exact pre-03 baseline，03 working tree 不污染 Current"
+  - "03 Bootstrap Planned reconciliation provenance 明确"
+  - "Actual 必须从 final repository 重新观察，不得复制 Planned 冒充"
+  - "flowkit architecture render current|planned|actual / compare 是薄 Archify CLI wrapper"
+  - "Planned vs Actual compare 提供结构证据，不构成 Review verdict / Owner decision"
+  - "Accepted Actual 以 ref promotion 成为下一 Delivery Current 来源"
+  - "Finalize 必须 Owner 授权，不创建 Run，Delivery Final Git boundary 正确"
+  - "PR Merge Commit workflow 保留 Delivery topology，不 squash/rebase"
+  - "sync/resume 无聊天依赖；thin Agent Adapter 一次只执行一个 Change Action"
+  - "new Change Run 保持 action.md/context.json/result.json 三文件；historical E1 legacy Run 可读"
+  - "generic Change Verification 与 exact-candidate retry/history baseline 不回归"
+  - "stable Runner 可用；Bootstrap E2E 通过；self-hosting acceptance passed"
+  - "不存在 auto review/revise、bounded auto-continue、Registry / Evidence platform"

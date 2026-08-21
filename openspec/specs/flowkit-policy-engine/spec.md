@@ -67,14 +67,14 @@ D1 MUST 实现 `canRun`、`next`、`diagnose` 三个公开纯函数。三个函�
 
 ### Requirement: next 计算唯一合法下一 Action
 
-`next(snapshot)` MUST 返回 `PolicyResult` 互斥联合类型：`action`（唯一合法 Action）、`owner-decision`（需 owner 授权）、`blocked`（无法推进）。`snapshot.conflicts` 非空时 MUST 返回 `blocked`。无 active Delivery 时 MUST 返回 `blocked`。有 active Change 时按 Change 生命周期决策树计算；**无 active Change 时 MUST 先判断是否存在已 completed 但尚未形成 Change Checkpoint 的 Change。只有该 Change 的 matching archive Run 已合法 terminal completed 时，才可进入 `owner-decision: authorize-checkpoint`；若 archive Run仍 pending/non-terminal，则 MUST保持 archive recovery/blocked boundary。Checkpoint 完成后才继续下一 Change 激活或 Delivery-level 流程。** 多解或歧义时 MUST 返回 `blocked`。
+`next(snapshot)` MUST 返回 `PolicyResult` 互斥联合类型：`action`（唯一合法 Standard Change Action）、`owner-decision`（需 owner 授权）、`delivery-behavior`（唯一合法非 Action Delivery behavior）或 `blocked`（无法推进）。A1 只新增 `delivery-behavior: full-test`；Delivery Finalize 继续由 F1 实现。`snapshot.conflicts` 非空时 MUST 返回 `blocked`。无 active Delivery 时 MUST 返回 `blocked`。有 active Change 时按 Change 生命周期决策树计算；**无 active Change 时 MUST 先判断是否存在已 completed 但尚未形成 Change Checkpoint 的 Change。只有该 Change 的 matching archive Run 已合法 terminal completed 时，才可进入 `owner-decision: authorize-checkpoint`；若 archive Run仍 pending/non-terminal，则 MUST保持 archive recovery/blocked boundary。Checkpoint 完成后才继续下一 Change 激活或 Delivery-level 流程。** 多解或歧义时 MUST 返回 `blocked`。
 
 当 active Change存在current Contract Reset时，Policy MUST把该reset解释为新的proposal contract generation boundary：最近合法approved Explore可继续作为handoff；旧 `propose/revise-propose/review-propose/apply/revise-apply/review-apply/archive` Runs若不匹配current reset identity，MUST不参与current stage/currentArtifactRun/current review/lineage。若尚无current propose producer，`next(snapshot)` MUST返回`action: propose`。stage detection、`next`与`canRun` MUST使用同一reset-aware projection，MUST NOT通过all-historical stage fallback重新激活旧approval。
 
 #### Scenario: PolicyResult 为互斥联合类型
 
 - **WHEN** 调用 `next(snapshot)`
-- **THEN** 返回值 MUST 恰好为以下之一：`{ kind: 'action', action }`、`{ kind: 'owner-decision', decision, context }`、`{ kind: 'blocked', diagnosis }`
+- **THEN** 返回值 MUST 恰好为以下之一：`{ kind: 'action', action }`、`{ kind: 'owner-decision', decision, context }`、`{ kind: 'delivery-behavior', behavior: 'full-test', context }`、`{ kind: 'blocked', diagnosis }`
 - **AND** MUST NOT 同时返回多种 kind
 
 #### Scenario: conflicts 非空时 blocked
@@ -115,6 +115,15 @@ D1 MUST 实现 `canRun`、`next`、`diagnose` 三个公开纯函数。三个函�
 - **BUT** matching archive Run仍pending或其它non-terminal状态
 - **THEN** `next(snapshot)` MUST NOT返回 `authorize-checkpoint`
 - **AND** MUST返回bounded blocked/recovery diagnosis，使同一archive continuation先合法terminalize
+
+#### Scenario: authorized Full Test 返回 Delivery behavior
+
+- **WHEN** 当前无 active Change
+- **AND** 所有 required Changes completed/checkpointed
+- **AND** current effective `deliveryFullTestStatus=authorized`
+- **AND** matching delivery-scoped `authorize-full-test` Owner fact 已存在
+- **THEN** `next(snapshot)` MUST 返回 `kind=delivery-behavior, behavior=full-test`
+- **AND** MUST NOT 返回 `action: full-test`、创建 Standard Run 或自动执行该 behavior
 
 #### Scenario: Checkpoint 完成后才继续下一流程
 
@@ -255,7 +264,9 @@ Policy MUST 为全部 10 个 Change-level Action 定义语义前置条件。`rev
 
 ### Requirement: Delivery-level Action 前置条件
 
-Standard `canRun` MUST NOT 接受 `full-test` 或 `delivery-finalize`，因为二者不再是 Standard Formal Action。Delivery Full Test / Finalize 的完整 machine behavior contract 后置到 03。Q1→03 期间 Policy 的 no-active-change 分支 MUST 继续消费 `fullTestStatus` 与 Owner authorization 做 deterministic/fail-closed transition，但不得把 Delivery behavior 伪装为 Action/Run。
+Standard `canRun` MUST NOT 接受 `full-test` 或 `delivery-finalize`，因为二者都不是 Standard Formal Action。A1 MUST实现 Owner-authorized Delivery Full Test machine behavior；F1 MUST实现 qualification-bound Delivery Finalize machine behavior。Policy 的 no-active-change 分支 MUST消费 current effective `fullTestStatus`、Architecture disposition、exact finalization qualification 与 Owner authorization 做 deterministic transition，但不得把 Delivery behavior 伪装为 Action/Run。
+
+After E1, architecture finalization remains Delivery behavior/Owner decisions outside the Standard Change Action catalog. For `architecture.impact=true`, Full Test passed MUST NOT directly qualify Finalize until a current Actual/Compare cycle exists and explicit Owner architecture acceptance is current. After F1, only an Owner Finalize authorization bound to the exact current finalization qualification MAY expose `delivery-behavior: delivery-finalize`.
 
 #### Scenario: Standard canRun 不接受 full-test
 
@@ -271,19 +282,66 @@ Standard `canRun` MUST NOT 接受 `full-test` 或 `delivery-finalize`，因为�
 
 #### Scenario: authorized Full Test 在 03 前 blocked
 
-- **WHEN** 无 active Change且所有 required Changes completed/checkpointed
+- **WHEN** bounded historical/pre-A1 snapshot 中无 active Change且所有 required Changes completed/checkpointed
 - **AND** `deliveryFullTestStatus=authorized`
+- **AND** A1 executable binding或 Delivery behavior executor在该 historical snapshot 中不可用
 - **THEN** `next` MUST 返回 deterministic blocked diagnosis
-- **AND** blocked reason MUST 表达 Delivery behavior 尚未由当前 Change 实现
-- **AND** MUST NOT 返回 `action: full-test`
+- **AND** MUST NOT 返回 `action: full-test`、Standard Run 或 fabricated terminal result
+
+#### Scenario: authorized Full Test 在 A1 后可执行
+
+- **WHEN** current A1+ snapshot 中无 active Change且所有 required Changes completed/checkpointed
+- **AND** `deliveryFullTestStatus=authorized`
+- **AND** matching Owner Full Test authorization 与 executable binding 均存在
+- **AND** current `verification.fullTest.executionBlock` 不存在
+- **THEN** `next` MUST 返回 `delivery-behavior: full-test`
+- **AND** MUST NOT 返回 `action: full-test` 或创建 Standard Run
+
+#### Scenario: authorized + outcome-unknown block 不允许 Full Test 重入
+
+- **WHEN** no active Change
+- **AND** current effective `deliveryFullTestStatus=authorized`
+- **AND** current `verification.fullTest.executionBlock.reason=outcome-unknown`
+- **THEN** Policy MUST 返回 deterministic blocked boundary（例如 `full-test-execution-outcome-unknown`）
+- **AND** MUST NOT 返回 `delivery-behavior: full-test`
+- **AND** MUST NOT返回 Standard Action/Run
 
 #### Scenario: passed + finalize authorized 在 03 前 blocked
 
-- **WHEN** 无 active Change且所有 required Changes completed/checkpointed
+- **WHEN** bounded historical/pre-F1 snapshot 中无 active Change且所有 required Changes completed/checkpointed
 - **AND** `deliveryFullTestStatus=passed`
 - **AND** Owner finalize authorization 已存在
+- **AND** F1 Finalize behavior/qualification facts在该snapshot中不可用
 - **THEN** `next` MUST 返回 deterministic blocked diagnosis
 - **AND** MUST NOT 返回 `action: delivery-finalize`
+
+#### Scenario: passed Full Test requests architecture behavior before Finalize
+- **WHEN** all required Changes are completed/checkpointed
+- **AND** Delivery Full Test status is `passed`
+- **AND** architecture impact is true
+- **AND** no current architecture cycle exists
+- **THEN** Policy MUST return a Delivery architecture actual/compare behavior boundary
+- **AND** MUST NOT request Finalize authorization
+
+#### Scenario: compare cycle requests Owner architecture acceptance
+- **WHEN** current architecture cycle exists with acceptance `awaiting-owner-decision`
+- **THEN** Policy MUST return Owner decision `accept-architecture` bound to that Delivery/cycle context
+- **AND** MUST NOT infer acceptance from compare success
+
+#### Scenario: accepted architecture unlocks later Finalize authorization
+- **WHEN** Full Test remains passed
+- **AND** current architecture cycle is accepted
+- **AND** acceptedSystemSource exactly matches that cycle
+- **THEN** Policy MUST derive the exact current finalization qualification
+- **AND** if no matching qualification-bound Owner record exists, MUST return `owner-decision: authorize-delivery-finalize`
+
+#### Scenario: exact F1 Finalize authorization exposes Delivery behavior
+- **WHEN** all required Changes are completed/checkpointed
+- **AND** Full Test is passed and architecture gate is accepted/not-applicable
+- **AND** exact current finalization qualification Q is available
+- **AND** Owner authorization record binds exactly Q
+- **THEN** `next` MUST return `delivery-behavior: delivery-finalize` with Q context
+- **AND** MUST NOT return `action: delivery-finalize` or create a Standard Run
 
 ### Requirement: fail-closed 冲突优先于一切决策
 
@@ -337,7 +395,7 @@ Standard `canRun` MUST NOT 接受 `full-test` 或 `delivery-finalize`，因为�
 
 ### Requirement: ownerAuthorizations 空数组时 owner-decision
 
-`snapshot.ownerAuthorizations` 为空数组时，既有 apply/archive 与 `awaiting-user-decision` / passed 的 Owner authorization gate MUST 继续返回对应 owner-decision；空数组本身 MUST NOT 产生 blocked。对于已经进入 `authorized` 的 Delivery Full Test 或已经有 finalize authorization 的 passed Delivery，由于 03 behavior 尚未实现，Q1→03 过渡 MUST 返回 Delivery-behavior blocked，而不是 Action。
+`snapshot.ownerAuthorizations` 为空数组时，既有 apply/archive 与 `awaiting-user-decision` / passed 的 Owner authorization gate MUST 继续返回对应 owner-decision；空数组本身 MUST NOT 产生 blocked。对于已经进入 `authorized` 的 Delivery Full Test，如果 executable binding不可用则保持bounded historical blocked，否则使用A1 behavior。对于 passed Delivery，pre-F1 bounded snapshot在Finalize executor不可用时 MAY blocked；F1+ snapshot则必须先派生 exact qualification并根据 matching Owner record返回 fresh `authorize-delivery-finalize` 或 `delivery-behavior: delivery-finalize`。
 
 #### Scenario: apply/archive 缺授权仍返回 owner-decision
 
@@ -348,10 +406,18 @@ Standard `canRun` MUST NOT 接受 `full-test` 或 `delivery-finalize`，因为�
 
 #### Scenario: Delivery behavior 已授权但 executor 未实现时 blocked
 
-- **WHEN** Full Test/Finalize 所需 Owner authorization 已存在
-- **AND** 03 Delivery behavior machine model/executor 尚未实现
+- **WHEN** bounded historical Full Test/Finalize snapshot已有所需 Owner authorization
+- **AND** 对应 Delivery behavior machine model/executor在该 historical snapshot 尚未实现
 - **THEN** `next` MUST 返回 Delivery-behavior blocked
 - **AND** MUST NOT 把 authorization presence 转成 `full-test` / `delivery-finalize` Action
+
+#### Scenario: F1+ passed Delivery 空 authorization requests exact Finalize decision
+
+- **WHEN** F1+ snapshot 已满足 passed + architecture accepted/not-applicable
+- **AND** current finalization qualification可确定
+- **AND** `snapshot.ownerAuthorizations` 不含matching finalize record
+- **THEN** `next` MUST 返回 `owner-decision: authorize-delivery-finalize`
+- **AND** context MUST expose exact current qualification for write-side binding
 
 ### Requirement: Verification 事实不可用时 blocked
 
@@ -708,3 +774,66 @@ Policy MUST 先从 formal facts 决定唯一 legal Action；仅在选择 `apply`
 - **WHEN** approved `flowkitMutationScope` 缺失 Policy-selected Action entry，或该 entry 与 persisted context v5 / ActionPackage v2 identity 不匹配
 - **THEN** preparation 或 resume MUST 产生 deterministic fail-closed diagnostic
 - **AND** MUST NOT 接受 caller/terminal declaration 作为修复
+
+### Requirement: full-test-failed Policy boundary 必须携带 exact current Finding occurrence 并在 corrective admission 后退出
+
+当 current Delivery 有合法 failed Full Test result 时，Policy MUST 保持 `blocked: full-test-failed`，同时携带由 current result + current Full Test authorization fact确定性派生的 minimal Delivery Finding occurrence context，使 fresh process 能知道 exact `findingId/authorizationRef/sourceResultRef` 以供 Owner corrective create。Policy MUST NOT 自动创建 Change、自动 retry Full Test、自动 Finalize 或把 Finding prose解释成授权。
+
+合法 corrective admission 原子完成后，raw `fullTestStatus=not-ready`、current terminal result 已退出 current authority且一个 ordinary required planned corrective Change 已存在；Policy MUST 因这些新 formal facts 退出 `full-test-failed` boundary，并继续使用既有 ordinary Change activation/lifecycle 与 A1 readiness/full-test authorization规则。Historical resolved occurrence—even with the same `sourceResultRef`—MUST NOT suppress or replace a later current occurrence with a different `authorizationRef`。
+
+E1 architecture non-acceptance MUST remain separate from this failed boundary. A passed Full Test with an awaiting architecture cycle MUST NOT be projected as `full-test-failed` or consume Full-Test-failure Finding authority.
+
+#### Scenario: failed boundary 暴露 current Finding occurrence context
+- **WHEN** snapshot 有唯一合法 current failed Full Test result与 current authorization fact
+- **THEN** `next/diagnose` MUST 返回 `blocked: full-test-failed`
+- **AND** blocked context MUST 包含 exact derived `findingId`、`authorizationRef` 与 `sourceResultRef`
+- **AND** owner actions MUST 继续只表示 corrective Change 或 cancel Delivery 的合法选择
+- **AND** MUST NOT 自动执行任一 Owner choice
+
+#### Scenario: 相同 sourceResultRef 的新 occurrence 不被历史 resolution 吞掉
+- **WHEN** historical resolved Finding引用 `sourceResultRef=R`
+- **AND** current failed result仍为 `R` 但 current `authorizationRef` 是新的 Owner fact
+- **THEN** Policy MUST 暴露一个新的 current `findingId`
+- **AND** MUST NOT把历史 occurrence的 resolution解释为 current failure已消费
+
+#### Scenario: corrective admission 后不再停留 full-test-failed
+- **WHEN** exact current failed result occurrence已通过合法 Owner corrective create 被消费
+- **AND** raw `fullTestStatus=not-ready`
+- **AND** current `verification.fullTest.result` 不存在
+- **AND** new required corrective Change 为 `planned`
+- **THEN** Policy MUST NOT 再返回 `blocked: full-test-failed`
+- **AND** MUST 按既有 dependency/activation规则推进 ordinary corrective Change
+
+#### Scenario: correction checkpoint 后 fresh authorization gate 恢复
+- **WHEN** corrective Change completed + matching checkpointed
+- **AND** 所有 required Changes completed/checkpointed且 formal conflicts=0
+- **THEN** A1 readiness projection MUST 得到 `awaiting-user-decision`
+- **AND** Policy MUST 请求新的 `authorize-full-test`
+- **AND** MUST NOT 因历史 `authorize-full-test` record 自动返回 executable Full Test behavior
+
+#### Scenario: architecture non-acceptance uses architecture gate not failure Finding
+- **WHEN** Full Test is passed and current architecture cycle awaits Owner acceptance
+- **THEN** Policy MUST NOT return `full-test-failed`
+- **AND** any remediation create-change handoff MUST bind the architecture cycle rather than a Full Test Finding occurrence
+
+### Requirement: Finalize Owner authorization applicability 必须 exact-match current qualification
+Policy MUST compare `authorize-delivery-finalize` Owner records against the exact current finalization qualification, not merely decision + deliveryId. A field-absent historical finalize record or a record bound to a prior qualification MUST NOT authorize a fresh F1+ qualification.
+
+#### Scenario: prior qualification authorization is stale
+- **WHEN** current qualification is Q2
+- **AND** Owner history contains only finalize record for Q1 where Q1 != Q2
+- **THEN** Policy MUST request fresh `authorize-delivery-finalize`
+- **AND** MUST NOT expose Finalize behavior
+
+#### Scenario: matching qualification authorization is current
+- **WHEN** current qualification is Q
+- **AND** exactly applicable Owner finalize record binds Q
+- **THEN** Policy MAY expose `delivery-behavior: delivery-finalize`
+
+### Requirement: completed Delivery 必须退出 normal active lifecycle Policy
+After F1 Finalize atomically publishes `delivery.state=completed`, standard `next`/`canRun` active-Delivery orchestration MUST NOT continue Full Test, Architecture, Change activation, or Finalize behavior. Git Delivery Final handoff is an explicit completed-Delivery read-only service, not a Policy Action.
+
+#### Scenario: completed Delivery does not re-enter Finalize
+- **WHEN** persisted Delivery state is `completed`
+- **THEN** normal active lifecycle Policy MUST NOT return `delivery-finalize` behavior or Owner Finalize decision
+- **AND** Delivery Final handoff MUST be obtained through its explicit read-only boundary

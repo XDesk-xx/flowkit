@@ -1,0 +1,44 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "propose",
+    "executionStatus": "completed",
+    "summary": "D1 Proposal 冻结真实 Current/Planned Architecture JSON、03 Bootstrap provenance、Delivery-scoped JSON/HTML authority、scoped architecture/.gitignore hygiene、exact Archify repository-evidence --repo-root seam、thin render/compare binding，以及 non-overlapping tests-architecture physical Verification closure；Actual/promotion 继续留给 E1。Proposal closure 已通过 OpenSpec strict、lexical mutationDeclaration dry admission 与 staging-aware diff hygiene。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/design.md",
+        "versionFingerprint": "0953587bc322a52f46befc96e36f9e10fea7a9a19381851c790ce0889b8891a9",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/proposal.md",
+        "versionFingerprint": "8d9aa276ab4505a82f989a23167ee76363d546feb65f7fdc3fa07bc7a5d39b33",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-architecture-assets/spec.md",
+        "versionFingerprint": "6045388c211441aa709442f37aa986dead180dd8aa7d47e4cb39f55c2572500e",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "abf826a1f61b6255230c47b727fbc2125c9bdcac16cc60811303875c34f8ceaa",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-external-tool-runtime/spec.md",
+        "versionFingerprint": "622f02ca85267172cc2318d64dd89b7016e24edbd401c89c3bb7b5d96d3a8591",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/tasks.md",
+        "versionFingerprint": "bf8fd35a420c1ce41ab340859d467c2e6a7d2bf764d430ffceee4b433e230356",
+        "kind": "produced-artifact"
+      }
+    ]
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "e6ab593d3459247ad7aa5cc3e4c7b9966c8a6059719ee66ae77ff4d1d48967a5"
+  }
+}

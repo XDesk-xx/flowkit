@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260818-056-review-apply",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "review-apply",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "e070ba77d7cf4250dd6960e7a39e4f5e7571c1843c3dd08529db7ff21153be2b",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-056-review-apply/",
+  "changeKey": "D1",
+  "changeId": "architecture-baseline-and-delivery-plan",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-055-apply/result.json",
+    "versionFingerprint": "2466e8e3d60b45a8d52a12f834786a8a93d590952343e4f7762ebea1a06caf27",
+    "kind": "run-result"
+  },
+  "verificationInputRef": {
+    "ref": "openspec/changes/architecture-baseline-and-delivery-plan/verification.md",
+    "versionFingerprint": "3bffb6208f4acb4c092c76f16f611907cc7ccdda6e491677c40f1d8b01f98194",
+    "kind": "verification-summary"
+  },
+  "reviewedRunId": "20260818-055-apply",
+  "canonicalBase": "9d27efef586bcb3204647c78785c9c30a64be4a2",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-055-apply/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "2466e8e3d60b45a8d52a12f834786a8a93d590952343e4f7762ebea1a06caf27"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/design.md",
+      "versionFingerprint": "feb819aa506ae3c36815e8738108430b7f61a15d55b9ed63cf19682559ebdea5",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/proposal.md",
+      "versionFingerprint": "755cc9a8cb9f05ad360b6492a9ebd2232c8be1643655b6a7b3e486e4d92d701f",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-architecture-assets/spec.md",
+      "versionFingerprint": "461f741222b7605a6e381bed79a938738f26794a58a0b12902d6ef0ef2b05ad4",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-change-verification-selection/spec.md",
+      "versionFingerprint": "0e5b9f99ace4fff1d8e6915739ce9ce435f356ea2288c4008fc695849801327f",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-external-tool-runtime/spec.md",
+      "versionFingerprint": "622f02ca85267172cc2318d64dd89b7016e24edbd401c89c3bb7b5d96d3a8591",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/architecture-baseline-and-delivery-plan/tasks.md",
+      "kind": "openspec-contract",
+      "versionFingerprint": "f86da87727197839a45d62c4f345b4d52bfdd0ac4751acbadfff58730da22abb"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "architecture-baseline-and-delivery-plan",
+      "runId": "20260818-056-review-apply",
+      "action": "review-apply",
+      "role": "reviewer",
+      "semanticInputFingerprint": "e070ba77d7cf4250dd6960e7a39e4f5e7571c1843c3dd08529db7ff21153be2b"
+    },
+    "definition": {
+      "action": "review-apply",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-implementation-and-verification",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings-plus-verification-ref",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "core-derived",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "3179d101285ef2d071f85bc0a4e4681e2d7f8c74c5a4a3366233a0b9181d5f1e"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/design.md",
+        "versionFingerprint": "feb819aa506ae3c36815e8738108430b7f61a15d55b9ed63cf19682559ebdea5",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/proposal.md",
+        "versionFingerprint": "755cc9a8cb9f05ad360b6492a9ebd2232c8be1643655b6a7b3e486e4d92d701f",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-architecture-assets/spec.md",
+        "versionFingerprint": "461f741222b7605a6e381bed79a938738f26794a58a0b12902d6ef0ef2b05ad4",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "0e5b9f99ace4fff1d8e6915739ce9ce435f356ea2288c4008fc695849801327f",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/specs/flowkit-external-tool-runtime/spec.md",
+        "versionFingerprint": "622f02ca85267172cc2318d64dd89b7016e24edbd401c89c3bb7b5d96d3a8591",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/tasks.md",
+        "kind": "openspec-contract",
+        "versionFingerprint": "f86da87727197839a45d62c4f345b4d52bfdd0ac4751acbadfff58730da22abb"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/architecture-baseline-and-delivery-plan/20260818-055-apply/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "2466e8e3d60b45a8d52a12f834786a8a93d590952343e4f7762ebea1a06caf27"
+      }
+    ],
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "verificationView": {
+      "status": "passed",
+      "resultRef": {
+        "ref": "openspec/changes/architecture-baseline-and-delivery-plan/verification.md",
+        "kind": "verification-summary",
+        "versionFingerprint": "3bffb6208f4acb4c092c76f16f611907cc7ccdda6e491677c40f1d8b01f98194"
+      }
+    },
+    "externalContextFingerprint": "f91e3daa9eb2ee4a18a3567f74246ef896a4700dd9c7e109f7079d2682bda58e",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "core-derived",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

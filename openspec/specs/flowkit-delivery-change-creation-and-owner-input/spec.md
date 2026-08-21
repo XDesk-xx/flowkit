@@ -6,15 +6,16 @@
 ## Requirements
 ### Requirement: Delivery creation 必须由显式 Owner 输入创建最小 active Manifest
 
-Flowkit MUST 提供 Delivery creation operation。创建输入 MUST 至少包含 Delivery id、goal、scope、branch、planned Changes、acceptance、architectureImpact、Full Test Plan declaration/status 与 Owner `sourceRef`。新 Delivery 主状态 MUST 直接为 `active`；创建前 MUST fail-closed 验证 repository 中不存在其它 active Delivery、Delivery id 唯一、planned Change key/id 唯一且 dependency graph 合法。创建 MUST 同时在新 Manifest 中记录对应 `create-delivery` Owner decision provenance。
+Flowkit MUST 提供 Delivery creation operation。创建输入 MUST 至少包含 Delivery id、goal、scope、branch、planned Changes、acceptance、architectureImpact、Full Test coverage plan、**typed per-Delivery Full Test execution contract** 与 Owner `sourceRef`。Execution contract MUST 使用 closed `kind=command|bounded-command-plan` 判别联合并共享 `id/scope/resultProtocol/resultAuthority/expectedTerminalStatuses` base。`command` MUST carry logical command、args、bounded `launcherMode=direct|npm-shim` 与 positive timeout；`bounded-command-plan` MUST carry ordered non-empty logical checks，每项至少含 unique logical `id`、closed `resolverId` 与 positive `perTargetTimeoutMs`。Writer MUST 校验并语义持久化调用方/Delivery contract supplied values，MUST NOT hard-code 当前 Flowkit repository 的 `npm run verify:full`、six-check resolver set 或 `120000` 作为所有 future Delivery 的 universal values；`command` MUST remain a legal future execution shape rather than historical-only。新 Delivery 主状态 MUST 直接为 `active`；创建前 MUST fail-closed 验证 repository 中不存在其它 active Delivery、Delivery id 唯一、planned Change key/id 唯一且 dependency graph 合法。创建 MUST 同时在新 Manifest 中记录对应 `create-delivery` Owner decision provenance。
 
 Delivery creation MUST NOT 创建 Git branch、Commit、Push、PR、Run、Full Test 或 Archify asset。
 
 #### Scenario: 成功创建 Delivery
 - **WHEN** repository 中不存在 active Delivery
-- **AND** create input 与 planned Change graph 全部有效
+- **AND** create input、caller-supplied Full Test execution contract 与 planned Change graph 全部有效
 - **AND** Owner 提供非空 `sourceRef`
 - **THEN** Flowkit MUST 原子创建一个 `delivery.state=active` 的 Delivery Manifest
+- **AND** Manifest MUST 原样语义持久化该 Delivery 自己的 Full Test execution contract
 - **AND** Manifest MUST 包含 `create-delivery` Owner decision record
 - **AND** MUST NOT 创建 Git boundary、Run、Full Test 或 Archify asset
 
@@ -23,9 +24,24 @@ Delivery creation MUST NOT 创建 Git branch、Commit、Push、PR、Run、Full T
 - **THEN** Delivery creation MUST fail closed
 - **AND** MUST NOT 写入第二个 active Delivery Manifest
 
+#### Scenario: 不同 Delivery 可以持久化不同 execution contract
+- **WHEN** 两个独立 disposable repository 分别创建合法 Delivery
+- **AND** 两次 create input 提供不同的合法 Full Test execution shape/fields（包括 `command` 与 `bounded-command-plan`）
+- **THEN** 各自 Manifest MUST 持久化其调用方提供的 execution contract
+- **AND** Flowkit MUST NOT 将任一 current-repository instance 改写成 repository-global default
+
+#### Scenario: bounded plan 不编译 human coverage prose
+- **WHEN** create input 同时提供 human `verification.fullTest.plan` prose 与 `kind=bounded-command-plan` execution contract
+- **THEN** Writer MUST 只把 typed execution contract作为 executable binding
+- **AND** MUST NOT从 human plan字符串推导 logical check/resolver/timeout
+
 ### Requirement: Change creation 必须只追加 planned Change 并验证 canonical dependency
 
 Flowkit MUST 提供 Change creation operation。输入 MUST 至少包含 `key`、`id`、`goal`、`dependsOn`、`outputs`、`architectureImpact`、`required` 与 Owner `sourceRef`。`architectureImpact` MUST 作为 Change-level canonical persisted fact 与其它 Change fields 一起写入 Delivery Manifest；Delivery creation 的 initial planned Changes 与后续 `createChange` MUST 使用同一 persisted/read 语义，Reader/checkout/resume 后不得丢失。新 Change MUST 以 `state=planned` 加入唯一 active Delivery，且 MUST 在同一次 Manifest atomic publish 中记录 `create-change` Owner decision provenance。
+
+当 current Full Test raw status=`authorized`、current executionBlock不存在且 Owner 创建 `required=true` Change 时，write-side MUST在同一次 atomic Manifest publication中追加 planned Change、追加 `create-change` Owner provenance并把 raw `fullTestStatus` 从 `authorized` 失效为 `not-ready`。历史 `authorize-full-test` Owner record MUST保留为 history，MUST NOT继续授权新 required candidate。
+
+当 current `verification.fullTest.executionBlock.reason=outcome-unknown` 时，ordinary Change creation MUST fail closed before any Manifest mutation；MUST NOT清除 block、追加 Change或借 create-change 绕过未知 process-tree safety boundary。
 
 `dependsOn` MUST 使用被依赖 Change 的 canonical `Change.id`；unknown、self、duplicate dependency 与 Delivery creation graph cycle MUST 被确定性拒绝。Change creation MUST NOT 自动创建 OpenSpec Change root、Run、Git boundary 或执行 activation。
 
@@ -41,6 +57,20 @@ Flowkit MUST 提供 Change creation operation。输入 MUST 至少包含 `key`�
 - **WHEN** create Change 的 `dependsOn` 包含当前 Delivery 中不存在的 Change.id
 - **THEN** operation MUST fail closed
 - **AND** Manifest MUST 保持不变
+
+#### Scenario: authorized required Change 原子失效旧 Full Test authorization
+- **WHEN** raw `fullTestStatus=authorized`
+- **AND** current executionBlock不存在
+- **AND** Owner创建合法 `required=true` Change
+- **THEN** same atomic publish MUST append the planned Change and `create-change` record
+- **AND** MUST set raw `fullTestStatus=not-ready`
+- **AND** prior `authorize-full-test` records MUST remain immutable history
+
+#### Scenario: outcome-unknown 阻止 Change creation
+- **WHEN** current `executionBlock.reason=outcome-unknown`
+- **AND** Owner尝试创建 ordinary Change
+- **THEN** create MUST fail closed before mutation
+- **AND** Manifest bytes and executionBlock MUST remain unchanged
 
 ### Requirement: pre-A1 architectureImpact missing compatibility 必须 exact-bounded 且 non-inferential
 
@@ -87,7 +117,11 @@ Flowkit MUST 只把显式 write operation 收到的 Owner input 记录为 Owner 
 
 `flowkit owner record` 对 `authorize-apply`、`authorize-archive`、`authorize-checkpoint`、`authorize-full-test`、`authorize-delivery-finalize` 的持久化，MUST 在任何 Manifest mutation 前重新读取 current formal facts 并执行 current Policy。只有当 current Policy 正在请求完全相同的 Owner decision，且 canonical target 与 record target 完全一致时，record 才 MAY 被写入；否则 operation MUST fail closed 且 Manifest MUST 保持不变。
 
+对于 exact current Delivery 的 `authorize-full-test`，当 Policy gate 基于 pure readiness projection 请求该 decision 时，write-side MUST 在同一次 atomic Manifest publication 中追加 deterministic Owner record 并把 persisted raw `delivery.fullTestStatus` 从 `not-ready|awaiting-user-decision` 更新为 `authorized`。该 publication 只关闭 authorization gate，MUST NOT 执行 Full Test。其它 authorization-only decision 继续只持久化其既有 bounded authority facts。
+
 A1 MUST NOT 把“未来可能需要该 authorization”当作 admission 条件，也 MUST NOT 建立 generic authority-resolution tracking。create/activate provenance 仍由对应 mutation command 在其自身合法 boundary 内原子记录，不通过 standalone `owner record` 预写。
+
+E1 MUST add `accept-architecture` to the bounded current-gate Owner record surface. The write-side MUST derive and bind the current architecture cycle and atomically publish acceptance plus accepted system source; callers MUST NOT inject arbitrary/stale cycle identity as acceptance authority.
 
 #### Scenario: 提前 authorize-archive 被拒绝
 - **WHEN** current Policy 尚未返回 `owner-decision: authorize-archive` for target Change.id
@@ -101,9 +135,26 @@ A1 MUST NOT 把“未来可能需要该 authorization”当作 admission 条件�
 - **THEN** persistence MAY 写入该 deterministic Owner record
 - **AND** MUST NOT 自动执行后续 Action、Git boundary 或 Delivery behavior
 
+#### Scenario: authorize-full-test 原子进入 authorized
+- **WHEN** current Policy 正在请求 exact current Delivery 的 `authorize-full-test`
+- **AND** persisted raw Full Test status 仍为 readiness-compatible `not-ready|awaiting-user-decision`
+- **THEN** write-side MUST atomic publish matching Owner record 与 `delivery.fullTestStatus=authorized`
+- **AND** MUST NOT执行当前 Delivery 的 Full Test execution contract 或创建 Standard Run
+
+#### Scenario: accept-architecture binds current cycle
+- **WHEN** current Policy requests `accept-architecture` for a non-accepted current architecture cycle
+- **AND** Owner explicitly records the decision with a sourceRef
+- **THEN** the Owner record MUST bind that exact cycleRef through canonical `architectureCycleRef` provenance
+- **AND** current cycle MUST become accepted
+- **AND** acceptedSystemSource MUST be published from the same exact Actual/Compare evidence
+
+#### Scenario: early or stale acceptance is rejected
+- **WHEN** there is no current non-accepted architecture cycle or Policy is not requesting `accept-architecture`
+- **THEN** Owner acceptance admission MUST fail closed without mutating Manifest bytes
+
 ### Requirement: Activation 必须消费 Policy 合法边界与本次 Owner 明确输入
 
-Flowkit MUST 提供 Change activation operation。Activation 前 MUST 重新加载 formal facts，并验证：Delivery active、目标 Change planned、无其它 active Change、dependencies completed、formal conflicts 为空，且 current Policy 的 `activate-change` boundary 包含所选目标。Operation MUST 使用本次显式 Owner `sourceRef` 生成 `activate-change` record；不得由 Agent 自行选择或伪造 Owner authority。
+Flowkit MUST 提供 Change activation operation。Activation 前 MUST 重新加载 formal facts，并验证：Delivery active、目标 Change planned、无其它 active Change、dependencies completed、formal conflicts 为空、current Full Test不存在 `executionBlock.reason=outcome-unknown`，且 current Policy 的 `activate-change` boundary 包含所选目标。Operation MUST 使用本次显式 Owner `sourceRef` 生成 `activate-change` record；不得由 Agent 自行选择或伪造 Owner authority。
 
 成功 activation MUST 只完成目标 Change `planned → active` 与 minimal OpenSpec metadata initialization；MUST NOT 自动创建 `explore` Run、Commit、Checkpoint、Push、Full Test 或下一 Action。
 
@@ -118,6 +169,12 @@ Flowkit MUST 提供 Change activation operation。Activation 前 MUST 重新加�
 - **WHEN** target Change 任一 dependency id 对应 Change 未 completed
 - **THEN** activation MUST fail closed
 - **AND** Manifest 与 OpenSpec metadata MUST 不被错误推进为 active lifecycle
+
+#### Scenario: outcome-unknown 阻止 Change activation
+- **WHEN** current `verification.fullTest.executionBlock.reason=outcome-unknown`
+- **AND** 一个 planned Change否则满足 activation 条件
+- **THEN** activation MUST fail closed before Change/OpenSpec mutation
+- **AND** executionBlock MUST remain unchanged
 
 ### Requirement: Activation partial failure 必须有界且可幂等恢复
 
@@ -138,12 +195,24 @@ A1 MUST NOT 为此建立通用 transaction journal、rollback engine 或 event l
 
 ### Requirement: Existing Manifest mutation 必须 preserve unrelated semantics
 
-A1 对现有 Delivery Manifest 的写入 MUST 使用 bounded structured mutation：只允许定位并修改 A1-owned `changes` item/state 与 `ownerDecisions` section，所有未拥有的 top-level/Change fields MUST 原样保留。Duplicate/ambiguous owned key、unsupported owned-section shape、malformed supported YAML subset MUST fail closed；MUST NOT silent repair。最终 publish MUST 使用 atomic replace、LF、无 trailing whitespace、exactly one EOF newline。
+A1 对现有 Delivery Manifest 的写入 MUST 使用 bounded structured mutation：只允许定位并修改 owned `changes` item/state、`ownerDecisions`、A1 Full Test 的 `delivery.fullTestStatus`、`verification.fullTest.execution`、exceptional current `verification.fullTest.executionBlock` 与 `verification.fullTest.result`；所有其它 top-level/Change/verification fields MUST 原样保留。Duplicate/ambiguous owned key、unsupported owned-section shape、malformed supported YAML subset MUST fail closed；MUST NOT silent repair。最终 publish MUST 使用 atomic replace、LF、无 trailing whitespace、exactly one EOF newline。
 
 #### Scenario: activation 不重写无关 Manifest section
-- **WHEN** Manifest 包含 goal、technicalBaseline、scope、architecture、verification、acceptance 等 A1 不拥有的 section
+- **WHEN** Manifest 包含 goal、technicalBaseline、scope、architecture、verification、acceptance 等 activation 不拥有的 section
 - **AND** activation 成功
 - **THEN** 这些 section 的 bytes/语义 MUST 保持不变
+
+#### Scenario: outcome-unknown 只允许发布 current executionBlock
+
+- **WHEN** authorized Full Test 的 Windows timeout 未能证明 owned process tree 已终止
+- **THEN** write-side MAY 在保持 raw `fullTestStatus=authorized` 的同时原子发布唯一 current `verification.fullTest.executionBlock`
+- **AND** MUST NOT 发布 `failed`、terminal result 或 `resultRef`
+- **AND** MUST NOT把该 block 扩张成 attempt history / generic execution ledger
+
+#### Scenario: Full Test publication 只改 bounded owned fields
+- **WHEN** authorization 或 Full Test terminal publication 修改 current Delivery Manifest
+- **THEN** unrelated scope/architecture/changes/acceptance 与 Full Test coverage intent MUST 保持原语义
+- **AND** writer MUST NOT broad reserialize 或格式化整个 Manifest
 
 ### Requirement: A1 必须提供 bounded write CLI 且保持 diagnostics read-only
 
@@ -287,3 +356,97 @@ Standalone Contract Reset admission MUST重新读取 current formal facts并确�
 - **THEN** Manifest MUST追加/选择新的 current structured Owner fact
 - **AND** earlier Run/result bytes与terminal status MUST保持不变
 - **AND** Flowkit MUST NOT创建 generic generation event record来“关闭”旧 Run
+
+### Requirement: Owner corrective Change 必须复用 existing create change surface 并绑定 exact failed Finding occurrence
+
+B1 MUST 复用现有 `flowkit create change --input <json> --source-ref <owner-ref>` Owner write-side，不新增 `authorize-corrective-change` decision、corrective-specific Formal Action/Run 或自动创建机制。
+
+普通 Change create input 保持现有字段；新增可选 closed `corrective` object，精确包含 `findingId`、`authorizationRef` 与 `sourceResultRef`。当 current Policy 为 `blocked: full-test-failed` 时，create input MUST 携带 `corrective`，其三字段 MUST exact match current derived Full-Test Finding occurrence，且 new Change MUST `required=true`。当 current Delivery 不在 `full-test-failed` boundary 时，携带 `corrective` MUST fail closed，避免把普通 Change伪装成 corrective provenance。
+
+`corrective` input MUST NOT接受 `summary`、severity、resolution或其它 Finding projection字段。Writer MUST 从 verified current result与 current authorization fact派生这些 persisted fields。成功 corrective create MUST 继续产生 ordinary `decision=create-change` Owner record；Finding historical projection只引用该 `ownerDecisionRef`、new `changeId`、current `authorizationRef` 与 Verification `sourceResultRef`，Owner record仍是 corrective decision authority。Operation MUST NOT自动 activate new Change、自动 retry Full Test、重开 historical Change、执行 Git boundary或创建 Run。
+
+E1 post-pass architecture remediation MAY reuse the same create-change operator only as a separate mutually-exclusive binding. It MUST NOT reinterpret B1 Full-Test-failed Finding/corrective authority.
+
+#### Scenario: Owner 用现有 create change 创建 bounded corrective Change
+- **WHEN** current Policy 为 `blocked: full-test-failed`
+- **AND** Owner 提供合法 ordinary required Change input、non-empty sourceRef 与 exact current `corrective.findingId/authorizationRef/sourceResultRef`
+- **THEN** Flowkit MUST 原子创建该 `state=planned` Change并记录 ordinary `create-change` Owner record
+- **AND** MUST 同步完成 B1 occurrence-aware failure consumption/reset contract
+- **AND** MUST NOT自动 activate 或执行新 Change
+
+#### Scenario: failed boundary 缺少 corrective binding 拒绝普通 create
+- **WHEN** current Policy 为 `blocked: full-test-failed`
+- **AND** Owner 调用 `create change` 但 input 缺少 `corrective`
+- **THEN** operation MUST fail closed
+- **AND** MUST NOT创建 Change、Owner record或修改 Full Test facts
+
+#### Scenario: stale 或伪造 corrective occurrence binding 拒绝
+- **WHEN** supplied `corrective.findingId`、`authorizationRef` 或 `sourceResultRef` 任一不等于 current derived Finding occurrence
+- **THEN** operation MUST fail closed
+- **AND** Manifest MUST保持不变
+
+#### Scenario: caller 不能注入 Finding summary
+- **WHEN** corrective create input试图携带 `summary` 或其它未冻结 projection字段
+- **THEN** closed input schema MUST reject该 input
+- **AND** any persisted historical summary MUST only be derived from verified source result
+
+#### Scenario: 非 failed boundary 不接受 corrective marker
+- **WHEN** current Delivery 不在 `full-test-failed` boundary
+- **AND** create input 携带 `corrective`
+- **THEN** operation MUST fail closed
+- **AND** ordinary create semantics MUST 继续要求无 corrective marker
+
+#### Scenario: architecture remediation does not impersonate Full-Test-failed correction
+- **WHEN** raw Full Test is `passed` and current architecture cycle awaits Owner acceptance
+- **THEN** `change.corrective` MUST NOT be accepted as architecture remediation
+- **AND** no Full-Test-failed Finding MUST be created or consumed
+
+### Requirement: post-pass architecture remediation 必须 exact-bind current cycle 并原子失效 stale qualification
+At a passed Full Test + non-accepted current architecture cycle boundary, a required new Change MUST carry `architectureRemediation.cycleRef` matching the exact current cycle. That cycle MUST bind the current delivery-scoped `authorize-full-test` Owner ref plus current technical Full Test resultRef; callers MUST NOT inject or override the authorization occurrence. Missing/stale/mismatched binding MUST fail closed before mutation. Successful admission MUST atomically append the planned Change and Owner provenance, remove current Full Test result, set raw Full Test `passed → not-ready`, and remove current architecture cycle.
+
+#### Scenario: exact remediation binding re-enters fresh Full Test lifecycle
+- **WHEN** Owner creates a required Change with the exact current architecture remediation cycleRef
+- **THEN** the new Change MUST be planned
+- **AND** old current Full Test result/current architecture cycle MUST no longer be current
+- **AND** after normal Change completion+checkpoint readiness MUST project `awaiting-user-decision`
+- **AND** fresh Owner `authorize-full-test` MUST be required before another Actual/Compare cycle
+
+#### Scenario: stale remediation binding cannot mutate repository facts
+- **WHEN** architectureRemediation cycleRef does not equal the current non-accepted cycle, including when it names a prior cycle from an earlier Full Test authorization occurrence
+- **THEN** create-change MUST fail closed before any Manifest mutation
+
+### Requirement: F1 Finalize Owner authorization 必须由 write-side exact-bind current qualification
+`flowkit owner record --decision authorize-delivery-finalize` MUST derive the current finalization qualification from fresh formal facts/Policy. Caller input MUST remain sourceRef/delivery context only and MUST NOT supply `finalizationQualificationRef`. The persisted Owner record MUST bind the exact derived qualification; stale/missing qualification or a Policy gate that is no longer requesting Finalize authorization MUST fail closed before Manifest mutation.
+
+#### Scenario: current qualification is bound automatically
+- **WHEN** Policy requests `authorize-delivery-finalize` for qualification Q
+- **AND** Owner explicitly records the decision
+- **THEN** write-side MUST persist an Owner record whose `finalizationQualificationRef=Q`
+- **AND** MUST NOT execute Finalize behavior
+
+#### Scenario: stale Finalize record does not close a fresh gate
+- **WHEN** a historical/current Owner record binds Q1
+- **AND** current qualification is Q2 where Q1 != Q2
+- **THEN** record presence MUST NOT authorize Q2
+- **AND** a fresh Owner record MUST be required
+
+### Requirement: post-pass required Change creation 必须原子失效 current Delivery qualification
+When persisted raw `fullTestStatus=passed`, any newly admitted `required=true` Change MUST atomically invalidate the current passed qualification in the same Manifest publication as the new planned Change/Owner provenance. The operation MUST remove current Full Test result and set raw status to `not-ready`. If architecture is applicable and current cycle/source exists, it MUST also remove current architecture cycle and acceptedSystemSource. B1 failed corrective and E1 awaiting-architecture remediation remain separate exact-binding contracts.
+
+#### Scenario: accepted architecture + new required Change requires fresh qualification
+- **WHEN** Full Test is passed and current architecture cycle/source are accepted
+- **AND** Owner creates a new required Change
+- **THEN** create-change publication MUST remove current Full Test result/cycle/source and set raw status to `not-ready`
+- **AND** after ordinary Change completion+checkpoint, fresh Owner Full Test authorization MUST be required
+- **AND** architecture-applicable Delivery MUST produce fresh Actual/Compare/Owner acceptance before Finalize eligibility returns
+
+#### Scenario: architecture-not-applicable still requires fresh Full Test
+- **WHEN** Full Test is passed for architectureImpact=false
+- **AND** Owner creates a new required Change
+- **THEN** current Full Test result/status qualification MUST be invalidated
+- **AND** fresh Full Test authorization/result MUST be required after checkpoint
+
+#### Scenario: E1 awaiting architecture remediation keeps exact cycle binding
+- **WHEN** passed Delivery has a current architecture cycle awaiting Owner acceptance
+- **THEN** E1 `architectureRemediation.cycleRef` exact-match requirement MUST remain in force
+- **AND** F1 general post-pass reset MUST NOT weaken or reinterpret B1 corrective/E1 remediation authority

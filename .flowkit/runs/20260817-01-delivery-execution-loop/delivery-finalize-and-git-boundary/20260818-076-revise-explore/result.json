@@ -1,0 +1,24 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "revise-explore",
+    "executionStatus": "completed",
+    "summary": "F1 revise-explore closes 075 F1-RE-001 and F1-RE-002. Production createChange()/Policy proof reproduces the post-pass required-Change freshness gap, then a disposable prospective atomic publication proves both architecture-impact branches must invalidate the old Full Test qualification and, when applicable, current accepted architecture qualification so a new checkpoint returns only to fresh Full Test and fresh Actual/Compare/acceptance before Finalize. A disposable Git proof supersedes the old Finalize-before-preflight ordering: exact bounded HEAD/index/worktree candidate preflight now occurs while Delivery is active; unrelated drift fails before Manifest mutation, while successful preflight can be bound into completed finalization facts and later crash/resume handoff mechanically commits without a rollback engine or Finalize Run.",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/delivery-finalize-and-git-boundary/explore.md",
+        "versionFingerprint": "5e871798aa1cc9fb0810b042b69f58667d18002689e225b5583c7e126ad43f81",
+        "kind": "produced-artifact"
+      }
+    ],
+    "reviewVerdictRef": {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-finalize-and-git-boundary/20260818-075-review-explore/result.json",
+      "versionFingerprint": "f1a0bca9d0a477c8f1e3c48c0f5188186d6d014aaa02c0ba8bc6f98a490277f1",
+      "kind": "run-result"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "7bd37cfe4f900ee3f69cc0f69fb174154522ac334a8298d36438a0f45fc46598"
+  }
+}

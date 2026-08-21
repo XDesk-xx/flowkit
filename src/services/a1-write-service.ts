@@ -8,10 +8,13 @@ import type {
   OwnerDecisionRecord,
   OwnerDecisionRecordKind,
 } from '../domain/a1-types.js';
+import type { FullTestExecutionContract } from '../domain/full-test.js';
+import type { ResolvedFullTestFailureFinding } from '../domain/full-test.js';
 import {
   AUTHORIZATION_ONLY_OWNER_DECISIONS,
 } from '../domain/a1-types.js';
 import { ownerDecisionRefFor } from '../domain/owner-provenance.js';
+import { acceptedSystemSourceFor } from '../architecture/architecture-lifecycle.js';
 import { parseYaml } from '../facts/yaml-parser.js';
 import { readFormalFactSnapshot } from '../facts/formal-fact-reader.js';
 import type { FormalFactSnapshot } from '../facts/formal-fact-snapshot.js';
@@ -70,11 +73,114 @@ function stringArray(value: unknown, field: string): readonly string[] {
   return value as string[];
 }
 
+
+function positiveInteger(value: unknown, field: string): number {
+  if (!Number.isInteger(value) || typeof value !== 'number' || value <= 0) {
+    throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field} must be a positive integer`, { field });
+  }
+  return value;
+}
+
+function normalizeFullTestExecution(value: unknown, field = 'fullTestExecution'): FullTestExecutionContract {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field} must be an object`);
+  }
+  const obj = value as Record<string, unknown>;
+  if (obj['scope'] !== 'delivery') throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field}.scope must be delivery`);
+  if (obj['resultProtocol'] !== 'flowkit-full-test-result-v1') throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field}.resultProtocol is invalid`);
+  if (obj['resultAuthority'] !== 'verification') throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field}.resultAuthority must be verification`);
+  const statuses = obj['expectedTerminalStatuses'];
+  if (!Array.isArray(statuses) || statuses.length !== 2 || statuses[0] !== 'passed' || statuses[1] !== 'failed') {
+    throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field}.expectedTerminalStatuses must be [passed, failed]`);
+  }
+  const base = {
+    id: nonEmpty(obj['id'], `${field}.id`),
+    scope: 'delivery' as const,
+    resultProtocol: 'flowkit-full-test-result-v1' as const,
+    resultAuthority: 'verification' as const,
+    expectedTerminalStatuses: ['passed', 'failed'] as const,
+  };
+  if (obj['kind'] === 'command') {
+    if (obj['launcherMode'] !== 'direct' && obj['launcherMode'] !== 'npm-shim') {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field}.launcherMode must be direct|npm-shim`);
+    }
+    const command = nonEmpty(obj['command'], `${field}.command`);
+    if (obj['launcherMode'] === 'npm-shim' && command !== 'npm') {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field}.command must be npm when launcherMode=npm-shim`);
+    }
+    return {
+      ...base,
+      kind: 'command',
+      command,
+      args: stringArray(obj['args'], `${field}.args`),
+      launcherMode: obj['launcherMode'],
+      timeoutMs: positiveInteger(obj['timeoutMs'], `${field}.timeoutMs`),
+    };
+  }
+  if (obj['kind'] !== 'bounded-command-plan') {
+    throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field}.kind must be command|bounded-command-plan`);
+  }
+  if (!Array.isArray(obj['logicalChecks']) || obj['logicalChecks'].length === 0) {
+    throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field}.logicalChecks must be a non-empty array`);
+  }
+  const resolverIds = new Set(['flowkit-build','flowkit-full-tests','flowkit-lint','flowkit-openspec-all','flowkit-quality','flowkit-typecheck']);
+  const ids = new Set<string>();
+  const logicalChecks = obj['logicalChecks'].map((raw, index) => {
+    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field}.logicalChecks[${index}] must be an object`);
+    const item = raw as Record<string, unknown>;
+    if (JSON.stringify(Object.keys(item).sort()) !== JSON.stringify(['id','perTargetTimeoutMs','resolverId'])) throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field}.logicalChecks[${index}] has unsupported fields`);
+    const id = nonEmpty(item['id'], `${field}.logicalChecks[${index}].id`);
+    if (ids.has(id)) throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field}.logicalChecks contains duplicate id ${id}`);
+    ids.add(id);
+    const resolverId = nonEmpty(item['resolverId'], `${field}.logicalChecks[${index}].resolverId`);
+    if (!resolverIds.has(resolverId)) throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field}.logicalChecks[${index}].resolverId is unknown`);
+    return { id, resolverId: resolverId as 'flowkit-build'|'flowkit-full-tests'|'flowkit-lint'|'flowkit-openspec-all'|'flowkit-quality'|'flowkit-typecheck', perTargetTimeoutMs: positiveInteger(item['perTargetTimeoutMs'], `${field}.logicalChecks[${index}].perTargetTimeoutMs`) };
+  });
+  return { ...base, kind: 'bounded-command-plan', logicalChecks };
+}
+
 function normalizeChangeInput(value: unknown, field = 'change'): ChangeCreateInput {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field} must be an object`);
   }
   const obj = value as Record<string, unknown>;
+  let corrective: ChangeCreateInput['corrective'];
+  if (obj['corrective'] !== undefined) {
+    const raw = obj['corrective'];
+    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field}.corrective must be an object`);
+    }
+    const correctiveObj = raw as Record<string, unknown>;
+    const keys = Object.keys(correctiveObj).sort();
+    const expected = ['authorizationRef', 'findingId', 'sourceResultRef'];
+    if (JSON.stringify(keys) !== JSON.stringify(expected)) {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field}.corrective has unsupported fields`);
+    }
+    corrective = {
+      findingId: nonEmpty(correctiveObj['findingId'], `${field}.corrective.findingId`),
+      authorizationRef: nonEmpty(correctiveObj['authorizationRef'], `${field}.corrective.authorizationRef`),
+      sourceResultRef: nonEmpty(correctiveObj['sourceResultRef'], `${field}.corrective.sourceResultRef`),
+    };
+  }
+  let architectureRemediation: ChangeCreateInput['architectureRemediation'];
+  if (obj['architectureRemediation'] !== undefined) {
+    const raw = obj['architectureRemediation'];
+    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field}.architectureRemediation must be an object`);
+    }
+    const remediationObj = raw as Record<string, unknown>;
+    if (JSON.stringify(Object.keys(remediationObj).sort()) !== JSON.stringify(['cycleRef'])) {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field}.architectureRemediation has unsupported fields`);
+    }
+    const cycleRef = nonEmpty(remediationObj['cycleRef'], `${field}.architectureRemediation.cycleRef`);
+    if (!/^architecture-cycle:[0-9a-f]{64}$/.test(cycleRef)) {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field}.architectureRemediation.cycleRef is invalid`);
+    }
+    architectureRemediation = { cycleRef };
+  }
+  if (corrective !== undefined && architectureRemediation !== undefined) {
+    throw new FlowkitError('SCHEMA_VALIDATION_FAILED', `${field}.corrective and architectureRemediation are mutually exclusive`);
+  }
   return {
     key: nonEmpty(obj['key'], `${field}.key`),
     id: nonEmpty(obj['id'], `${field}.id`),
@@ -83,6 +189,8 @@ function normalizeChangeInput(value: unknown, field = 'change'): ChangeCreateInp
     dependsOn: stringArray(obj['dependsOn'], `${field}.dependsOn`),
     outputs: stringArray(obj['outputs'], `${field}.outputs`),
     architectureImpact: requireBoolean(obj['architectureImpact'], `${field}.architectureImpact`),
+    ...(corrective !== undefined && { corrective }),
+    ...(architectureRemediation !== undefined && { architectureRemediation }),
   };
 }
 
@@ -139,6 +247,7 @@ export function validateDeliveryCreateInput(value: unknown): DeliveryCreateInput
       archifyPlan,
     },
     fullTestPlan: stringArray(obj['fullTestPlan'], 'fullTestPlan'),
+    fullTestExecution: normalizeFullTestExecution(obj['fullTestExecution']),
     changes,
   };
   validateDeliveryChangeGraph(input.changes);
@@ -195,11 +304,21 @@ export function buildOwnerDecisionRecord(input: {
   readonly changeId?: string;
   readonly scope?: string;
   readonly requiredOutcomes?: readonly string[];
+  readonly architectureCycleRef?: string;
+  readonly finalizationQualificationRef?: string;
 }): OwnerDecisionRecord {
   const deliveryId = nonEmpty(input.deliveryId, 'deliveryId');
   const sourceRef = nonEmpty(input.sourceRef, 'sourceRef');
   const changeId = input.changeId === undefined ? undefined : nonEmpty(input.changeId, 'changeId');
   const scope = input.scope === undefined ? undefined : nonEmpty(input.scope, 'scope');
+  const architectureCycleRef = input.architectureCycleRef === undefined ? undefined : nonEmpty(input.architectureCycleRef, 'architectureCycleRef');
+  const finalizationQualificationRef = input.finalizationQualificationRef === undefined ? undefined : nonEmpty(input.finalizationQualificationRef, 'finalizationQualificationRef');
+  if (architectureCycleRef !== undefined && !/^architecture-cycle:[0-9a-f]{64}$/.test(architectureCycleRef)) {
+    throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'architectureCycleRef is invalid');
+  }
+  if (finalizationQualificationRef !== undefined && !/^delivery-finalization-qualification:[0-9a-f]{64}$/.test(finalizationQualificationRef)) {
+    throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'finalizationQualificationRef is invalid');
+  }
   const requiredOutcomes = input.requiredOutcomes === undefined
     ? undefined
     : [...new Set(input.requiredOutcomes.map((value, index) => nonEmpty(value, `requiredOutcomes[${index}]`)))].sort();
@@ -213,6 +332,8 @@ export function buildOwnerDecisionRecord(input: {
     ...(changeId !== undefined ? { changeId } : {}),
     ...(scope !== undefined ? { scope } : {}),
     ...(requiredOutcomes !== undefined ? { requiredOutcomes } : {}),
+    ...(architectureCycleRef !== undefined ? { architectureCycleRef } : {}),
+    ...(finalizationQualificationRef !== undefined ? { finalizationQualificationRef } : {}),
   });
   return {
     ref,
@@ -221,6 +342,8 @@ export function buildOwnerDecisionRecord(input: {
     ...(changeId !== undefined ? { changeId } : {}),
     ...(scope !== undefined ? { scope } : {}),
     ...(requiredOutcomes !== undefined ? { requiredOutcomes } : {}),
+    ...(architectureCycleRef !== undefined ? { architectureCycleRef } : {}),
+    ...(finalizationQualificationRef !== undefined ? { finalizationQualificationRef } : {}),
     sourceRef,
   };
 }
@@ -332,6 +455,53 @@ export async function createChange(
   if (snapshot.deliveryState !== 'active') {
     throw new FlowkitError('DELIVERY_NOT_ACTIVE', `Delivery ${deliveryId} is not active`);
   }
+  if (snapshot.deliveryFullTestExecutionBlock?.reason === 'outcome-unknown') {
+    throw new FlowkitError('FULL_TEST_EXECUTION_BLOCKED', 'ordinary Change creation is blocked while Full Test process-tree outcome is unknown');
+  }
+
+  const policyResult = next(snapshot);
+  const failedBoundary = policyResult.kind === 'blocked' && policyResult.diagnosis.reason === 'full-test-failed';
+  const architectureRemediationBoundary =
+    snapshot.deliveryFullTestRawStatus === 'passed'
+    && snapshot.deliveryFullTestStatus === 'passed'
+    && snapshot.architectureCurrentCycle?.acceptance.status === 'awaiting-owner-decision';
+  const postPassRequiredBoundary = snapshot.deliveryFullTestRawStatus === 'passed' && input.required;
+  const authorizedRequiredBoundary = snapshot.deliveryFullTestRawStatus === 'authorized' && input.required;
+  if (failedBoundary) {
+    if (input.corrective === undefined) {
+      throw new FlowkitError('CORRECTIVE_BINDING_REQUIRED', 'full-test-failed boundary requires change.corrective binding');
+    }
+    if (!input.required) {
+      throw new FlowkitError('CORRECTIVE_CHANGE_MUST_BE_REQUIRED', 'corrective Change must be required=true');
+    }
+    const current = snapshot.currentDeliveryFullTestFinding;
+    if (current === undefined || snapshot.deliveryFullTestResult === undefined) {
+      throw new FlowkitError('CORRECTIVE_FINDING_UNAVAILABLE', 'current Full Test failure occurrence is unavailable');
+    }
+    if (
+      input.corrective.findingId !== current.findingId
+      || input.corrective.authorizationRef !== current.authorizationRef
+      || input.corrective.sourceResultRef !== current.sourceResultRef
+    ) {
+      throw new FlowkitError('CORRECTIVE_BINDING_MISMATCH', 'corrective binding does not match current Full Test failure occurrence');
+    }
+  } else if (input.corrective !== undefined) {
+    throw new FlowkitError('CORRECTIVE_BINDING_NOT_ALLOWED', 'change.corrective is allowed only at the full-test-failed boundary');
+  }
+
+  if (architectureRemediationBoundary) {
+    if (input.architectureRemediation === undefined) {
+      throw new FlowkitError('ARCHITECTURE_REMEDIATION_BINDING_REQUIRED', 'passed architecture gate requires change.architectureRemediation binding');
+    }
+    if (!input.required) {
+      throw new FlowkitError('ARCHITECTURE_REMEDIATION_CHANGE_MUST_BE_REQUIRED', 'architecture remediation Change must be required=true');
+    }
+    if (input.architectureRemediation.cycleRef !== snapshot.architectureCurrentCycle!.cycleRef) {
+      throw new FlowkitError('ARCHITECTURE_REMEDIATION_BINDING_MISMATCH', 'architecture remediation binding does not match current cycle');
+    }
+  } else if (input.architectureRemediation !== undefined) {
+    throw new FlowkitError('ARCHITECTURE_REMEDIATION_BINDING_NOT_ALLOWED', 'change.architectureRemediation is allowed only at passed + awaiting architecture acceptance boundary');
+  }
 
   const ids = new Set(snapshot.changes.map((change) => change.id));
   const keys = new Set(snapshot.changes.map((change) => change.key));
@@ -350,12 +520,44 @@ export async function createChange(
     deliveryId,
     changeId: input.id,
     sourceRef: nonEmpty(sourceRef, 'sourceRef'),
+    ...((architectureRemediationBoundary || postPassRequiredBoundary) && snapshot.architectureCurrentCycle !== undefined ? { architectureCycleRef: snapshot.architectureCurrentCycle.cycleRef } : {}),
   });
   const path = manifestPath(repoRoot, deliveryId);
   const original = await readFile(path, 'utf8');
   const doc = DeliveryManifestDocument.parse(original);
-  doc.appendChange({ ...input, state: 'planned' });
-  doc.appendOwnerDecision(record);
+  if (failedBoundary) {
+    const current = snapshot.currentDeliveryFullTestFinding!;
+    const failedResult = snapshot.deliveryFullTestResult!;
+    const resolved: ResolvedFullTestFailureFinding = {
+      ...current,
+      summary: failedResult.summary,
+      resolution: {
+        kind: 'corrective-change-created',
+        changeId: input.id,
+        ownerDecisionRef: record.ref,
+      },
+    };
+    doc.retainFullTestFailureResult(failedResult);
+    doc.appendResolvedFullTestFinding(resolved);
+    doc.appendChange({ ...input, state: 'planned' });
+    doc.appendOwnerDecision(record);
+    doc.removeFullTestResult();
+    doc.updateFullTestStatus('failed', 'not-ready');
+  } else if (authorizedRequiredBoundary) {
+    doc.appendChange({ ...input, state: 'planned' });
+    doc.appendOwnerDecision(record);
+    doc.updateFullTestStatus('authorized', 'not-ready');
+  } else if (architectureRemediationBoundary || postPassRequiredBoundary) {
+    doc.appendChange({ ...input, state: 'planned' });
+    doc.appendOwnerDecision(record);
+    doc.removeFullTestResult();
+    doc.updateFullTestStatus('passed', 'not-ready');
+    if (snapshot.architectureCurrentCycle !== undefined) doc.removeArchitectureCurrentCycle();
+    if (snapshot.acceptedSystemSource !== undefined) doc.removeAcceptedSystemSource();
+  } else {
+    doc.appendChange({ ...input, state: 'planned' });
+    doc.appendOwnerDecision(record);
+  }
   await (options.atomicWrite ?? atomicWriteFile)(path, doc.toString());
   return { deliveryId, changeId: input.id, ownerDecisionRef: record.ref, state: 'planned' };
 }
@@ -397,11 +599,89 @@ export async function recordOwnerDecision(
 ): Promise<WriteOperationResult> {
   const isAuthorization = (AUTHORIZATION_ONLY_OWNER_DECISIONS as readonly string[]).includes(input.decision);
   const isContractReset = input.decision === 'contract-reset';
-  if (!isAuthorization && !isContractReset) {
+  const isArchitectureAcceptance = input.decision === 'accept-architecture';
+  if (!isAuthorization && !isContractReset && !isArchitectureAcceptance) {
     throw new FlowkitError('OWNER_DECISION_NOT_RECORDABLE', `owner record does not support ${input.decision}`);
   }
   const decision = input.decision as OwnerDecisionRecordKind;
   const deliveryId = await discoverActiveDelivery(repoRoot);
+  const sourceRef = nonEmpty(input.sourceRef, 'sourceRef');
+  const path = manifestPath(repoRoot, deliveryId);
+
+  if (isArchitectureAcceptance) {
+    if (input.changeId !== undefined || input.scope !== undefined || input.requiredOutcomes !== undefined) {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'accept-architecture is delivery-scoped and accepts only sourceRef');
+    }
+    const snapshot = await readSnapshot(repoRoot, deliveryId);
+    assertConflictFree(snapshot);
+    const cycle = snapshot.architectureCurrentCycle;
+    if (cycle === undefined) {
+      throw new FlowkitError('ARCHITECTURE_CYCLE_UNAVAILABLE', 'accept-architecture requires a current architecture cycle');
+    }
+    const record = buildOwnerDecisionRecord({
+      decision: 'accept-architecture',
+      deliveryId,
+      sourceRef,
+      architectureCycleRef: cycle.cycleRef,
+    });
+    if (
+      cycle.acceptance.status === 'accepted'
+      && cycle.acceptance.ownerDecisionRef === record.ref
+      && snapshot.acceptedSystemSource?.ownerAcceptanceRef === record.ref
+    ) {
+      return { deliveryId, ownerDecisionRef: record.ref, idempotent: true };
+    }
+    const current = next(snapshot);
+    if (
+      current.kind !== 'owner-decision'
+      || current.decision !== 'accept-architecture'
+      || current.context.architectureCycleRef !== cycle.cycleRef
+      || cycle.acceptance.status !== 'awaiting-owner-decision'
+    ) {
+      throw new FlowkitError('OWNER_DECISION_GATE_MISMATCH', 'current Policy is not requesting accept-architecture for the current cycle');
+    }
+    const acceptedCycle = {
+      ...cycle,
+      acceptance: { status: 'accepted' as const, ownerDecisionRef: record.ref },
+    };
+    const acceptedSource = acceptedSystemSourceFor({
+      sourceDeliveryId: deliveryId,
+      cycle: acceptedCycle,
+      ownerAcceptanceRef: record.ref,
+    });
+    const original = await readFile(path, 'utf8');
+    const doc = DeliveryManifestDocument.parse(original);
+    doc.appendOwnerDecision(record);
+    doc.publishArchitectureAcceptance(acceptedCycle, acceptedSource);
+    await (options.atomicWrite ?? atomicWriteFile)(path, doc.toString());
+    return { deliveryId, ownerDecisionRef: record.ref };
+  }
+
+  if (decision === 'authorize-delivery-finalize') {
+    if (input.changeId !== undefined || input.scope !== undefined || input.requiredOutcomes !== undefined) {
+      throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'authorize-delivery-finalize is delivery-scoped and accepts only sourceRef');
+    }
+    const snapshot = await readSnapshot(repoRoot, deliveryId);
+    assertConflictFree(snapshot);
+    const qualification = snapshot.deliveryFinalizationQualification;
+    if (qualification === undefined) throw new FlowkitError('FINALIZATION_QUALIFICATION_UNAVAILABLE', 'current exact Finalize qualification is unavailable');
+    const record = buildOwnerDecisionRecord({
+      decision: 'authorize-delivery-finalize', deliveryId, sourceRef, finalizationQualificationRef: qualification.qualificationRef,
+    });
+    if (snapshot.ownerAuthorizations.some((fact) => fact.ref === record.ref && fact.decision === 'authorize-delivery-finalize' && fact.finalizationQualificationRef === qualification.qualificationRef)) {
+      return { deliveryId, ownerDecisionRef: record.ref, idempotent: true };
+    }
+    const current = next(snapshot);
+    if (current.kind !== 'owner-decision' || current.decision !== 'authorize-delivery-finalize') {
+      throw new FlowkitError('OWNER_DECISION_GATE_MISMATCH', 'current Policy is not requesting authorize-delivery-finalize');
+    }
+    const doc = DeliveryManifestDocument.parse(await readFile(path, 'utf8'));
+    const insertion = doc.appendOwnerDecision(record);
+    if (!insertion.changed) return { deliveryId, ownerDecisionRef: record.ref, idempotent: true };
+    await (options.atomicWrite ?? atomicWriteFile)(path, doc.toString());
+    return { deliveryId, ownerDecisionRef: record.ref };
+  }
+
   if (isContractReset) {
     if (input.changeId === undefined || input.scope === undefined || input.requiredOutcomes === undefined) {
       throw new FlowkitError('SCHEMA_VALIDATION_FAILED', 'contract-reset requires --change, scope and requiredOutcomes');
@@ -410,12 +690,11 @@ export async function recordOwnerDecision(
   const record = buildOwnerDecisionRecord({
     decision,
     deliveryId,
-    sourceRef: nonEmpty(input.sourceRef, 'sourceRef'),
+    sourceRef,
     ...(input.changeId !== undefined ? { changeId: input.changeId } : {}),
     ...(input.scope !== undefined ? { scope: input.scope } : {}),
     ...(input.requiredOutcomes !== undefined ? { requiredOutcomes: input.requiredOutcomes } : {}),
   });
-  const path = manifestPath(repoRoot, deliveryId);
 
   const retryProbe = DeliveryManifestDocument.parse(await readFile(path, 'utf8'));
   const retryProbeResult = retryProbe.appendOwnerDecision(record);
@@ -457,6 +736,13 @@ export async function recordOwnerDecision(
   const original = await readFile(path, 'utf8');
   const doc = DeliveryManifestDocument.parse(original);
   const insertion = doc.appendOwnerDecision(record);
+  if (insertion.changed && decision === 'authorize-full-test') {
+    const raw = snapshot.deliveryFullTestRawStatus;
+    if (raw !== 'not-ready' && raw !== 'awaiting-user-decision') {
+      throw new FlowkitError('FULL_TEST_STATUS_MISMATCH', `authorize-full-test requires raw not-ready|awaiting-user-decision, got ${String(raw)}`);
+    }
+    doc.updateFullTestStatus(raw, 'authorized');
+  }
   if (insertion.changed) {
     await (options.atomicWrite ?? atomicWriteFile)(path, doc.toString());
   }
@@ -528,6 +814,9 @@ export async function activateChange(
   assertConflictFree(snapshot);
   if (snapshot.deliveryState !== 'active') {
     throw new FlowkitError('DELIVERY_NOT_ACTIVE', `Delivery ${deliveryId} is not active`);
+  }
+  if (snapshot.deliveryFullTestExecutionBlock?.reason === 'outcome-unknown') {
+    throw new FlowkitError('FULL_TEST_EXECUTION_BLOCKED', 'ordinary Change activation is blocked while Full Test process-tree outcome is unknown');
   }
   const active = snapshot.changes.filter((change) => change.state === 'active');
   if (active.length !== 0) {

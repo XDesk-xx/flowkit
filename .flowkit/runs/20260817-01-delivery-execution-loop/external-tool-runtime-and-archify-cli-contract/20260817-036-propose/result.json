@@ -1,0 +1,49 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "propose",
+    "executionStatus": "completed",
+    "summary": "Owner Contract Reset 后形成 fresh C1 Proposal generation：冻结 runner 仅为 transport/observation seam、fake/injected executable authority 必须显式经 executable/invocation 注入、observational runner 保持 canonical managed FLOWKIT_HOME identity；保持 033 precedence 与 OpenSpec/archive/retry/G1/Full Test regressions，并扩展受影响 execution-owned fake-runner test mutation scope，要求新 Apply 重新完成 formal Change Verification physical closure。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/design.md",
+        "versionFingerprint": "473b11a4bce1595424496bad81fef67c6595b5a860a63aa02c0115efbbc5344c",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/proposal.md",
+        "versionFingerprint": "d17b84c7055464565d3b5803377519513421216380d69b7946857d9a7319f134",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "b60b8066036e740061f2cdba6ad53e5ecbfaff347ad5949f20e9bf74cb051642",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-external-tool-runtime/spec.md",
+        "versionFingerprint": "685b9b13711f2ae9a5e081e7156eba8fade5a95dd618d08bb835ea8e554f2e66",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-integration-boundaries/spec.md",
+        "versionFingerprint": "1d79f73e89d35ae67306a3ea725bc67d1d268b99ea8b425d8797eeb94e0b1c46",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+        "versionFingerprint": "5af3d026b90118f157e3d6e37de486c8a6e0d0fa4cb2e2605d39ee0835572ca3",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/tasks.md",
+        "versionFingerprint": "8082de22e946c29d3237105f6c69b2a1eea6b2cbd184793ddb38fabfc0637fb7",
+        "kind": "produced-artifact"
+      }
+    ]
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "25ad91be28bc696d52602496490a3d0a6c54343494624b558e47498107b49a5a"
+  }
+}

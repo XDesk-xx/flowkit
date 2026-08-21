@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 4,
+  "runId": "20260817-028-archive",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "archive",
+  "role": "author",
+  "ownerAuthorization": "explicit",
+  "semanticInputFingerprint": "3933780b736c5002d5a9c31a2d1bdffef046e0af3eab3f0d84cf8dbae9518b07",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-findings-and-corrective-change/20260817-028-archive/",
+  "changeKey": "B1",
+  "changeId": "delivery-findings-and-corrective-change",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-findings-and-corrective-change/20260817-027-review-apply/result.json",
+    "versionFingerprint": "8906e80a10b35b9fe7889421b48624c3e8c94f3b33955b4c8a2d4dd80df49343",
+    "kind": "run-result"
+  },
+  "archiveEntryOpenSpecProjection": {
+    "projectionVersion": 1,
+    "version": "1.7.0",
+    "changeId": "delivery-findings-and-corrective-change",
+    "changeRootLogical": "openspec/changes/delivery-findings-and-corrective-change",
+    "artifactPaths": {
+      "proposal": [
+        "openspec/changes/delivery-findings-and-corrective-change/proposal.md"
+      ],
+      "specs": [
+        "openspec/changes/delivery-findings-and-corrective-change/specs/flowkit-core-model/spec.md",
+        "openspec/changes/delivery-findings-and-corrective-change/specs/flowkit-delivery-change-creation-and-owner-input/spec.md",
+        "openspec/changes/delivery-findings-and-corrective-change/specs/flowkit-diagnostic-cli/spec.md",
+        "openspec/changes/delivery-findings-and-corrective-change/specs/flowkit-formal-fact-reader-and-persistence/spec.md",
+        "openspec/changes/delivery-findings-and-corrective-change/specs/flowkit-policy-engine/spec.md"
+      ],
+      "design": [
+        "openspec/changes/delivery-findings-and-corrective-change/design.md"
+      ],
+      "tasks": [
+        "openspec/changes/delivery-findings-and-corrective-change/tasks.md"
+      ]
+    }
+  },
+  "archiveMutationGuard": {
+    "state": "armed",
+    "surfaceVersion": "openspec-archive-mutation-v1",
+    "changeRoot": "openspec/changes/delivery-findings-and-corrective-change",
+    "canonicalSpecsRoot": "openspec/specs",
+    "archiveNamespaceRoot": "openspec/changes/archive",
+    "preArchiveGenerationFingerprint": "4bd715d3266ea2b9f12626dd5a70ddc85115347d3a731802eb2c723e45b1ffab",
+    "terminalObservation": {
+      "kind": "success",
+      "resultFingerprint": "4559ccdc7f878a0a12ca2d926311fb9fc1b48f04ac8877dfe8b3f13f16c98102",
+      "normalized": {
+        "kind": "success",
+        "change": "delivery-findings-and-corrective-change",
+        "archivedAs": "2026-08-17-delivery-findings-and-corrective-change",
+        "path": "openspec/changes/archive/2026-08-17-delivery-findings-and-corrective-change",
+        "specsUpdated": true,
+        "totals": {
+          "added": 6,
+          "modified": 0,
+          "removed": 0,
+          "renamed": 0
+        }
+      }
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

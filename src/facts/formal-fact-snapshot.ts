@@ -34,7 +34,16 @@ import type {
   OwnerFactRef,
 } from '../domain/types.js';
 import type { ArchitectureImpactFact, AuthorizationOnlyOwnerDecision, OwnerDecisionRecordKind } from '../domain/a1-types.js';
+import type {
+  FullTestExecutionBlock,
+  FullTestExecutionContract,
+  FullTestFailureFinding,
+  FullTestTerminalResult,
+  ResolvedFullTestFailureFinding,
+} from '../domain/full-test.js';
 import type { FormalAction } from '../domain/actions.js';
+import type { AcceptedSystemSource, CurrentArchitectureCycle } from '../architecture/architecture-lifecycle.js';
+import type { DeliveryFinalizationProjection, DeliveryFinalizationQualification } from '../domain/delivery-finalization.js';
 
 /**
  * A single conflict detected while reading formal facts.
@@ -156,6 +165,7 @@ export interface OwnerAuthorizationFact {
   readonly decision: AuthorizationOnlyOwnerDecision;
   readonly deliveryId: string;
   readonly changeId?: string;
+  readonly finalizationQualificationRef?: string;
   readonly sourceRef: string;
 }
 
@@ -172,6 +182,8 @@ export interface OwnerDecisionFact {
   readonly changeId?: string;
   readonly scope?: string;
   readonly requiredOutcomes?: readonly string[];
+  readonly architectureCycleRef?: string;
+  readonly finalizationQualificationRef?: string;
   readonly sourceRef: string;
 }
 
@@ -198,7 +210,24 @@ export interface FormalFactSnapshot {
   /** Delivery id of the active Delivery (empty string when none active). */
   readonly deliveryId: string;
   readonly deliveryState: DeliveryState | undefined;
+  /** Effective Full Test lifecycle projection used by Policy/diagnostics. */
   readonly deliveryFullTestStatus: FullTestStatus | undefined;
+  /** Raw persisted delivery.fullTestStatus from the Manifest. */
+  readonly deliveryFullTestRawStatus?: FullTestStatus;
+  readonly deliveryFullTestExecution?: FullTestExecutionContract;
+  readonly deliveryFullTestExecutionBlock?: FullTestExecutionBlock;
+  readonly deliveryFullTestResult?: FullTestTerminalResult;
+  readonly deliveryFullTestFailureHistory?: readonly FullTestTerminalResult[];
+  readonly deliveryFullTestFindings?: readonly ResolvedFullTestFailureFinding[];
+  /** Delivery-level Architecture lifecycle projection (E1). */
+  readonly deliveryArchitectureImpact?: boolean;
+  readonly architectureCurrentCycle?: CurrentArchitectureCycle;
+  readonly acceptedSystemSource?: AcceptedSystemSource;
+  /** F1: current exact Finalize qualification derived from formal facts. */
+  readonly deliveryFinalizationQualification?: DeliveryFinalizationQualification;
+  /** F1: persisted completed Finalize projection, when present. */
+  readonly deliveryFinalization?: DeliveryFinalizationProjection;
+  readonly currentDeliveryFullTestFinding?: FullTestFailureFinding;
   /** Current active Change Verification status projected from verification.md. */
   readonly changeVerificationStatus?: VerificationStatus;
   /**

@@ -22,6 +22,14 @@ export function formatPolicyResult(result: PolicyResult): string {
     case 'action':
       lines.push(line('kind', 'action'), line('action', result.action));
       break;
+    case 'delivery-behavior':
+      lines.push(
+        line('kind', 'delivery-behavior'),
+        line('behavior', result.behavior),
+        line('context-full-test', result.context.deliveryFullTestStatus ?? 'none'),
+        line('context-detail', result.context.detail ?? 'none'),
+      );
+      break;
     case 'owner-decision':
       lines.push(
         line('kind', 'owner-decision'),
@@ -46,6 +54,13 @@ export function formatPolicyResult(result: PolicyResult): string {
         );
       });
       lines.push(line('owner-actions', listOrNone(result.diagnosis.suggestedOwnerActions)));
+      if (result.diagnosis.fullTestFinding !== undefined) {
+        lines.push(
+          line('finding-id', result.diagnosis.fullTestFinding.findingId),
+          line('authorization-ref', result.diagnosis.fullTestFinding.authorizationRef),
+          line('source-result-ref', result.diagnosis.fullTestFinding.sourceResultRef),
+        );
+      }
       break;
     }
   }

@@ -1,0 +1,19 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "explore",
+    "executionStatus": "completed",
+    "summary": "C1 proof-based Explore 完成：在不生成正式 Current/Planned/Actual Architecture 的边界内，真实证明 managed OpenSpec offline execution、最薄静态 two-tool runtime、Archify doctor/validate/deliver/compare、architecture/workflow/lifecycle renderer、JSON/HTML/receipt/atomic-failure 行为、synthetic review ZIP 可生成，以及 mutation-surface/physical Verification closure 可行。唯一未闭合项是 exact official Archify v2.14.0 release asset identity：当前上传包来自 post-release commit cffdd42，功能可用但不能冒充 official v2.14.0 release asset；Proposal 在获得 exact official asset evidence 或 Owner explicit contract reset 前不得冻结该 identity。",
+    "producedResultRefs": [
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/explore.md",
+        "versionFingerprint": "2003169bd52905af16989637e44f64ac4c1c4c0e1ca807d6bc8ae8064a21de4d",
+        "kind": "produced-artifact"
+      }
+    ]
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "dd71dfbfd2cb8893efac0cb74374411764411f50f886b13b3e026cccfd095cb5"
+  }
+}

@@ -1,4 +1,5 @@
 import type { ChangeState } from './types.js';
+import type { FullTestExecutionContract } from './full-test.js';
 
 export type ArchitectureImpactFact = boolean | 'pre-a1-legacy-missing';
 
@@ -12,6 +13,7 @@ export const OWNER_DECISION_RECORD_KINDS = [
   'authorize-checkpoint',
   'authorize-full-test',
   'authorize-delivery-finalize',
+  'accept-architecture',
 ] as const;
 
 export type OwnerDecisionRecordKind = (typeof OWNER_DECISION_RECORD_KINDS)[number];
@@ -22,6 +24,7 @@ export const AUTHORIZATION_ONLY_OWNER_DECISIONS = [
   'authorize-checkpoint',
   'authorize-full-test',
   'authorize-delivery-finalize',
+  'accept-architecture',
 ] as const;
 
 export type AuthorizationOnlyOwnerDecision =
@@ -36,6 +39,10 @@ export interface OwnerDecisionRecord {
   readonly scope?: string;
   /** Bootstrap/D1: bounded semantic value; sourceRef remains provenance only. */
   readonly requiredOutcomes?: readonly string[];
+  /** E1: exact architecture cycle occurrence for architecture Owner facts. */
+  readonly architectureCycleRef?: string;
+  /** F1: exact Finalize qualification occurrence for fresh authorize-delivery-finalize. */
+  readonly finalizationQualificationRef?: string;
   readonly sourceRef: string;
 }
 
@@ -55,6 +62,14 @@ export interface ChangeCreateInput {
   readonly dependsOn: readonly string[];
   readonly outputs: readonly string[];
   readonly architectureImpact: boolean;
+  readonly corrective?: {
+    readonly findingId: string;
+    readonly authorizationRef: string;
+    readonly sourceResultRef: string;
+  };
+  readonly architectureRemediation?: {
+    readonly cycleRef: string;
+  };
 }
 
 export interface DeliveryScopeInput {
@@ -75,6 +90,7 @@ export interface DeliveryCreateInput {
   readonly acceptance: readonly string[];
   readonly architecture: DeliveryArchitectureInput;
   readonly fullTestPlan: readonly string[];
+  readonly fullTestExecution: FullTestExecutionContract;
   readonly changes: readonly ChangeCreateInput[];
 }
 

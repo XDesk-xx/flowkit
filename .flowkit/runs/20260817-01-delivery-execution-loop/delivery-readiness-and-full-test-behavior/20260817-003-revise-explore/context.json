@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260817-003-revise-explore",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "revise-explore",
+  "role": "author",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "59e5592a31919a545dbb0ecad1ea8993f8ea968ff24ef5301fcd057ec692356c",
+  "ownerFactRefs": [],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-003-revise-explore/",
+  "changeKey": "A1",
+  "changeId": "delivery-readiness-and-full-test-behavior",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-002-review-explore/result.json",
+    "versionFingerprint": "c19b45a544e01e1fd7c1f1904310b5fd5e01fb0a4276cc97cd8042145172d38f",
+    "kind": "run-result"
+  },
+  "sourceReviewRun": "20260817-002-review-explore",
+  "sourceReviewVerdict": "changes-requested",
+  "canonicalBase": "f132db761bd209e6aff72411108b8e3e1c9801f5",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-002-review-explore/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "c19b45a544e01e1fd7c1f1904310b5fd5e01fb0a4276cc97cd8042145172d38f"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "41db595b409c9e6bc00babeabb32990290577eb40245a5bb769e8ec98a1f8d3e"
+    },
+    {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/explore.md",
+      "versionFingerprint": "f5f641c51bad75376038d6ca2a0fc268fc087f026905012b58f8577eeaefa77a",
+      "kind": "produced-artifact"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "delivery-readiness-and-full-test-behavior",
+      "runId": "20260817-003-revise-explore",
+      "action": "revise-explore",
+      "role": "author",
+      "semanticInputFingerprint": "59e5592a31919a545dbb0ecad1ea8993f8ea968ff24ef5301fcd057ec692356c"
+    },
+    "definition": {
+      "action": "revise-explore",
+      "version": 1,
+      "role": "author",
+      "goalClass": "close-explore-author-findings",
+      "mutationClass": "explore-planning-revision-only",
+      "outputClass": "current-explore-artifact-set",
+      "terminalContract": {
+        "kind": "artifact",
+        "verdictRequired": false,
+        "bindsReviewedRun": false,
+        "bindsSourceReview": true,
+        "verificationSummaryRef": "none",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "41db595b409c9e6bc00babeabb32990290577eb40245a5bb769e8ec98a1f8d3e"
+      },
+      {
+        "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/explore.md",
+        "versionFingerprint": "f5f641c51bad75376038d6ca2a0fc268fc087f026905012b58f8577eeaefa77a",
+        "kind": "produced-artifact"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-002-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "c19b45a544e01e1fd7c1f1904310b5fd5e01fb0a4276cc97cd8042145172d38f"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260817-002-review-explore",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/delivery-readiness-and-full-test-behavior/20260817-002-review-explore/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "c19b45a544e01e1fd7c1f1904310b5fd5e01fb0a4276cc97cd8042145172d38f"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "A1-RE-001",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "Full Test re-entry is marked PASS without proving the real plan's mutation/idempotence boundary",
+          "problem": "Explore Risk Scan marks External tool performs real mutation = no and Proof 2 concludes that `authorized` is sufficient for crash/resume re-entry because Full Test is Verification behavior. The exact baseline `verifyFullPlan()` is not purely read-only: it includes `build` (`tsc`, which writes `dist/`) and then the full test corpus. Verification ownership does not by itself prove that repeating a partially executed plan after process death is safe, nor that the crash window after successful checks but before terminal result persistence cannot create ambiguous or stale lifecycle truth. The Explore therefore promotes an unproven recovery semantic into the Proposal-ready boundary.",
+          "contractRef": "Flowkit Explore Skill v2 §3 Mandatory Risk Scan; §4.2 Temporal Proof; §4.7 External Mutation Proof; §5 Proof Acceptance Depth; 03 v6 A1 Full Test behavior/resume acceptance",
+          "invariant": "A Proposal-ready Full Test lifecycle must prove the physical mutation and crash/re-entry semantics of the exact executable plan before claiming that `authorized` can be deterministically re-entered without a Run or additional attempt state. Verification classification alone is not evidence of idempotence.",
+          "requiredOutcome": "Revise Explore to treat Full Test physical mutation/re-entry as an applicable risk and prove the exact plan's bounded at-least-once semantics. The proof may still conclude that no `running` state/Run is needed, but only after enumerating durable vs disposable mutations and proving crash/re-entry safety for the relevant windows. If that cannot be proven, narrow or change the recovery design rather than asserting PASS.",
+          "acceptance": [
+            "Enumerate the physical mutation footprint of every current Full Test step, distinguishing repository/formal durable facts from disposable/generated outputs such as `dist/` and test fixtures.",
+            "Prove whether rerunning from `authorized` after interruption is safe when interruption occurs mid-plan and after all checks succeed but before terminal `passed|failed` publication.",
+            "Show that no previously generated output or partial result can be mistaken for current Verification authority on re-entry.",
+            "Update Risk Scan / Temporal or External Mutation proof so Result=PASS only if its Evidence Boundary covers the declared crash/resume acceptance boundary.",
+            "Do not introduce a Full Test Standard Action/Run merely to close this finding; the required outcome is proof-correct recovery semantics, not a prescribed implementation."
+          ]
+        },
+        {
+          "id": "A1-RE-002",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "Genericity proof claims cross-Delivery PASS while explicitly deferring the required future-Delivery consumer proof",
+          "problem": "A1 is declared generic across future Deliveries and the Mandatory Risk Scan marks Generic reusable subsystem and Activation persistence across Change/Delivery boundaries as yes. Proof 6 sets its Acceptance Boundary to current 03 + B1 + a future Delivery with a different id/change graph, but its Method/Evidence are only static inspection of generic helpers. Its Gap then says Proposal/tests must include at least one synthetic future Delivery, while Result remains PASS. Explore Skill v2 requires a future-Delivery consumer when the capability claims cross-Delivery persistence and forbids PASS when evidence stops before the acceptance boundary.",
+          "contractRef": "Flowkit Explore Skill v2 §4.3 Migration/Self-hosting/Activation Persistence; §4.5 Genericity/Next-consumer Proof; §5 Proof Acceptance Depth",
+          "invariant": "When Acceptance Boundary includes a future Delivery, Explore may mark PASS only after evidence reaches a future-Delivery-shaped consumer; a known missing future fixture cannot be deferred to Proposal/tests while the proof is labeled PASS.",
+          "requiredOutcome": "Revise Explore with a minimal disposable future-Delivery-shaped proof (or equivalent concrete prototype execution) that exercises a different Delivery id and multi-Change graph through the relevant readiness/authorization/persistence seams. Alternatively downgrade the affected proof to UNKNOWN and do not claim Proposal readiness until the gap is closed.",
+          "acceptance": [
+            "Evidence includes a different/future Delivery-shaped consumer, not only source inspection of generic helper names.",
+            "The fixture/prototype uses a different Delivery id and a non-A1 multi-Change graph and demonstrates no hard-coded 03/A1 identity dependency in the proposed readiness/authorization persistence boundary.",
+            "Fresh-process/re-read behavior is included where the proof claims repository-global activation persistence.",
+            "Proof 5/6 Evidence Boundary and Gap are internally consistent with Result; no known cross-Delivery gap remains under a PASS result.",
+            "The proof remains disposable Explore work and does not add production code, a new formal Action, Run type, Registry, or B1/C1 implementation."
+          ]
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [],
+    "externalContextFingerprint": "53bd9b5d6304972c70fbb552efd00a04459431dd6ef25ff9f67a1e39b639a0e3",
+    "requiredResultContract": {
+      "kind": "artifact",
+      "verdictRequired": false,
+      "bindsReviewedRun": false,
+      "bindsSourceReview": true,
+      "verificationSummaryRef": "none",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

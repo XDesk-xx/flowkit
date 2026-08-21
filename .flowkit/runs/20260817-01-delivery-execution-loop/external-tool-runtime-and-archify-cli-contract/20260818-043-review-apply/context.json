@@ -1,0 +1,269 @@
+{
+  "schemaVersion": 5,
+  "runId": "20260818-043-review-apply",
+  "deliveryId": "20260817-01-delivery-execution-loop",
+  "action": "review-apply",
+  "role": "reviewer",
+  "ownerAuthorization": "not-required",
+  "semanticInputFingerprint": "0ae33ed29de7308f188a6c62d12bda395366219a339273b6678c0acb434dc042",
+  "ownerFactRefs": [
+    {
+      "ref": "owner:41153a383030a049e69ceaeb8af6dcd518ce93381a058b51683fe2222b4929eb",
+      "decision": "contract-reset",
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "external-tool-runtime-and-archify-cli-contract",
+      "scope": "C1 / Proposal mutationDeclaration lexical canonicalization only",
+      "requiredOutcomes": [
+        "不改变 036 已批准的任何 implementation scope 或 executable precedence。",
+        "仅将 design.md 中 apply / revise-apply 的 flowkitMutationScope selectors 按既有 lexical-order contract canonicalize。",
+        "保持 tests/unit/services/b1-openspec-action-context.test.ts 在 approved mutation scope 内。",
+        "重新完成 Proposal Review 后再进入 Apply。"
+      ],
+      "sourceRef": "owner-input:2026-08-18T07:21+08:00:contract-reset:C1-proposal-mutation-declaration-lexical-canonicalization"
+    },
+    {
+      "ref": "owner:ec84e4aa0627db5f30c030207105d8f3f915370eb4875f2b682a0e51529b6005",
+      "decision": "contract-reset",
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "external-tool-runtime-and-archify-cli-contract",
+      "scope": "C1 / OpenSpec managed-vs-injected execution identity correction",
+      "requiredOutcomes": [
+        "fake/injected runner tests 必须通过显式 executable/invocation seam 表达 injected authority，不得通过 runner presence 隐式推断。",
+        "observational runner 必须继续消费 canonical managed FLOWKIT_HOME OpenSpec identity。",
+        "runner callback 本身不得被解释为 injected executable authority。",
+        "保持 033 已批准的 precedence：explicit/injected → managed FLOWKIT_HOME → legacy FLOWKIT_OPENSPEC_BIN → ambient compatibility。",
+        "保持现有 OpenSpec real-process、archive、verify --retry、G1、Full Test environment regressions。",
+        "重新完成 formal Change Verification physical closure。"
+      ],
+      "sourceRef": "owner-input:2026-08-18T05:59+08:00:contract-reset:C1-managed-vs-injected-execution-identity-correction"
+    }
+  ],
+  "runPath": ".flowkit/runs/20260817-01-delivery-execution-loop/external-tool-runtime-and-archify-cli-contract/20260818-043-review-apply/",
+  "changeKey": "C1",
+  "changeId": "external-tool-runtime-and-archify-cli-contract",
+  "inputRef": {
+    "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/external-tool-runtime-and-archify-cli-contract/20260818-042-revise-apply/result.json",
+    "versionFingerprint": "f48e744138b255d6f4e5f384d6ebaea171593027b3fbab26d6de88a8375a0439",
+    "kind": "run-result"
+  },
+  "verificationInputRef": {
+    "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/verification.md",
+    "versionFingerprint": "a3bece2c051c46975e2c58746a8b4bae78b731959aae7a32ac51fa712a022d41",
+    "kind": "verification-summary"
+  },
+  "reviewedRunId": "20260818-042-revise-apply",
+  "canonicalBase": "104c14cc245c4a6db3609e7e3dd52e356d0bfc19",
+  "applicableFactRefs": [
+    {
+      "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/external-tool-runtime-and-archify-cli-contract/20260818-042-revise-apply/result.json",
+      "kind": "run-result",
+      "versionFingerprint": "f48e744138b255d6f4e5f384d6ebaea171593027b3fbab26d6de88a8375a0439"
+    },
+    {
+      "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/.openspec.yaml",
+      "kind": "openspec-metadata",
+      "versionFingerprint": "41db595b409c9e6bc00babeabb32990290577eb40245a5bb769e8ec98a1f8d3e"
+    },
+    {
+      "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/design.md",
+      "versionFingerprint": "7731be749aa9c65b0aefbdd5aecd7b1460a1adbc9005a73a656114469e87033f",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/proposal.md",
+      "versionFingerprint": "d17b84c7055464565d3b5803377519513421216380d69b7946857d9a7319f134",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-change-verification-selection/spec.md",
+      "versionFingerprint": "b60b8066036e740061f2cdba6ad53e5ecbfaff347ad5949f20e9bf74cb051642",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-external-tool-runtime/spec.md",
+      "versionFingerprint": "685b9b13711f2ae9a5e081e7156eba8fade5a95dd618d08bb835ea8e554f2e66",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-integration-boundaries/spec.md",
+      "versionFingerprint": "1d79f73e89d35ae67306a3ea725bc67d1d268b99ea8b425d8797eeb94e0b1c46",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+      "versionFingerprint": "5af3d026b90118f157e3d6e37de486c8a6e0d0fa4cb2e2605d39ee0835572ca3",
+      "kind": "produced-artifact"
+    },
+    {
+      "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/tasks.md",
+      "kind": "openspec-contract",
+      "versionFingerprint": "fc26a339ba8a470be630defc436403c27a6d968aa7f1b0197caba0037cf408ab"
+    }
+  ],
+  "actionPackage": {
+    "schemaVersion": 2,
+    "run": {
+      "deliveryId": "20260817-01-delivery-execution-loop",
+      "changeId": "external-tool-runtime-and-archify-cli-contract",
+      "runId": "20260818-043-review-apply",
+      "action": "review-apply",
+      "role": "reviewer",
+      "semanticInputFingerprint": "0ae33ed29de7308f188a6c62d12bda395366219a339273b6678c0acb434dc042"
+    },
+    "definition": {
+      "action": "review-apply",
+      "version": 1,
+      "role": "reviewer",
+      "goalClass": "judge-implementation-and-verification",
+      "mutationClass": "reviewer-result-only",
+      "outputClass": "review-verdict-findings-plus-verification-ref",
+      "terminalContract": {
+        "kind": "review",
+        "verdictRequired": true,
+        "bindsReviewedRun": true,
+        "bindsSourceReview": false,
+        "verificationSummaryRef": "core-derived",
+        "gitCheckpointOutputAllowed": false
+      }
+    },
+    "contractRefs": [
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/.openspec.yaml",
+        "kind": "openspec-metadata",
+        "versionFingerprint": "41db595b409c9e6bc00babeabb32990290577eb40245a5bb769e8ec98a1f8d3e"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/design.md",
+        "versionFingerprint": "7731be749aa9c65b0aefbdd5aecd7b1460a1adbc9005a73a656114469e87033f",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/proposal.md",
+        "versionFingerprint": "d17b84c7055464565d3b5803377519513421216380d69b7946857d9a7319f134",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-change-verification-selection/spec.md",
+        "versionFingerprint": "b60b8066036e740061f2cdba6ad53e5ecbfaff347ad5949f20e9bf74cb051642",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-external-tool-runtime/spec.md",
+        "versionFingerprint": "685b9b13711f2ae9a5e081e7156eba8fade5a95dd618d08bb835ea8e554f2e66",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-integration-boundaries/spec.md",
+        "versionFingerprint": "1d79f73e89d35ae67306a3ea725bc67d1d268b99ea8b425d8797eeb94e0b1c46",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/specs/flowkit-openspec-1-7-thin-integration/spec.md",
+        "versionFingerprint": "5af3d026b90118f157e3d6e37de486c8a6e0d0fa4cb2e2605d39ee0835572ca3",
+        "kind": "produced-artifact"
+      },
+      {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/tasks.md",
+        "kind": "openspec-contract",
+        "versionFingerprint": "fc26a339ba8a470be630defc436403c27a6d968aa7f1b0197caba0037cf408ab"
+      }
+    ],
+    "handoffRefs": [
+      {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/external-tool-runtime-and-archify-cli-contract/20260818-042-revise-apply/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "f48e744138b255d6f4e5f384d6ebaea171593027b3fbab26d6de88a8375a0439"
+      }
+    ],
+    "reviewView": {
+      "reviewRunId": "20260818-041-review-apply",
+      "verdict": "changes-requested",
+      "resultRef": {
+        "ref": ".flowkit/runs/20260817-01-delivery-execution-loop/external-tool-runtime-and-archify-cli-contract/20260818-041-review-apply/result.json",
+        "kind": "run-result",
+        "versionFingerprint": "a27b89348e68d77b47dea9c52f42e52e9c659c8cbdadb52c079f093ae7dbfaa0"
+      },
+      "blockingAuthorities": [
+        "author"
+      ],
+      "findings": [
+        {
+          "id": "C1-RA-001",
+          "severity": "blocking",
+          "blockingAuthority": "author",
+          "title": "tests-external-tools formal regression 引入 POSIX-only path 与 ambient zip/unzip prerequisite",
+          "problem": "040 将 C1 exact managed external-tool proof 纳入 formal `tests-external-tools`，但该 selected regression 自身不是 platform/detached deterministic。`tests/unit/external-tools/managed-tool.test.ts` 的 `requiredFlowkitHome()` 以 `value.startsWith('/')` 作为 managed fixture 条件，这只接受 POSIX path，合法 Windows absolute `FLOWKIT_HOME` 会在进入 production resolver 前被测试直接拒绝。`tests/integration/c1-external-tool-runtime-and-archify-cli-contract.test.ts` 的 synthetic review ZIP 场景又直接 `spawnSync('zip')` / `spawnSync('unzip')`，依赖未冻结、未归一化的 ambient host commands。040 formal Verification 在当前 Linux host 上因为 `/usr/bin/zip`/`unzip` 恰好存在而 passed，但这不是 C1 exact managed runtime identity 的一部分。",
+          "contractRef": "038 approved Proposal/Design tasks 1.3, 2.2-2.4, 3.5, 4.2-4.4, 5.5; 029 Explore Risk Scan/Proof 6; 03 C1 detached-offline + Windows compatibility boundary; repository platform-launcher operating contract",
+          "invariant": "C1 的 formal physical regression 必须证明 exact managed OpenSpec/Archify 能在受控 detached/offline 环境工作，并保持项目支持的 Windows path/launcher semantics；selected test 本身不得因 POSIX-only path assertion 或未声明 ambient POSIX utility 而把 host coincidence 变成隐藏 verification prerequisite。",
+          "requiredOutcome": "Revise Apply so the C1 formal external-tool regressions are platform-safe and do not depend on undeclared ambient POSIX zip/unzip availability. Remove the POSIX-only `startsWith('/')` fixture assumption in favor of the same cross-platform absolute-path contract used by production. Rework the synthetic ZIP physical proof so it has a deterministic cross-platform execution contract (or otherwise a formally declared/normalized test prerequisite) without changing C1 product scope, Tool Registry policy, or D1/E1 authority boundary.",
+          "acceptance": [
+            "A valid Windows-shaped `FLOWKIT_HOME` is not rejected by test-only POSIX path logic; the test validates the production cross-platform absolute-path contract rather than `/` prefix semantics.",
+            "The synthetic review ZIP regression no longer assumes ambient `zip`/`unzip` binaries with no platform contract; its create + integrity proof is deterministic for supported execution environments.",
+            "Re-running `tests-external-tools` with exact managed OpenSpec/Archify and without accidental POSIX ZIP utilities does not fail solely because of host PATH contents.",
+            "Existing managed OpenSpec/Archify doctor/validate/deliver/compare, last-good preservation, no formal `architecture/**` authority, Windows OpenSpec shim compatibility, managed/legacy retry and formal Verification selection regressions remain green.",
+            "A new formal Change Verification publication is generated from the revised exact candidate; 035 failed and 040 passed publications remain immutable historical point-in-time facts according to current verification-history rules."
+          ]
+        }
+      ]
+    },
+    "ownerAuthorizationRefs": [],
+    "ownerFactRefs": [
+      {
+        "ref": "owner:41153a383030a049e69ceaeb8af6dcd518ce93381a058b51683fe2222b4929eb",
+        "decision": "contract-reset",
+        "deliveryId": "20260817-01-delivery-execution-loop",
+        "changeId": "external-tool-runtime-and-archify-cli-contract",
+        "scope": "C1 / Proposal mutationDeclaration lexical canonicalization only",
+        "requiredOutcomes": [
+          "不改变 036 已批准的任何 implementation scope 或 executable precedence。",
+          "仅将 design.md 中 apply / revise-apply 的 flowkitMutationScope selectors 按既有 lexical-order contract canonicalize。",
+          "保持 tests/unit/services/b1-openspec-action-context.test.ts 在 approved mutation scope 内。",
+          "重新完成 Proposal Review 后再进入 Apply。"
+        ],
+        "sourceRef": "owner-input:2026-08-18T07:21+08:00:contract-reset:C1-proposal-mutation-declaration-lexical-canonicalization"
+      },
+      {
+        "ref": "owner:ec84e4aa0627db5f30c030207105d8f3f915370eb4875f2b682a0e51529b6005",
+        "decision": "contract-reset",
+        "deliveryId": "20260817-01-delivery-execution-loop",
+        "changeId": "external-tool-runtime-and-archify-cli-contract",
+        "scope": "C1 / OpenSpec managed-vs-injected execution identity correction",
+        "requiredOutcomes": [
+          "fake/injected runner tests 必须通过显式 executable/invocation seam 表达 injected authority，不得通过 runner presence 隐式推断。",
+          "observational runner 必须继续消费 canonical managed FLOWKIT_HOME OpenSpec identity。",
+          "runner callback 本身不得被解释为 injected executable authority。",
+          "保持 033 已批准的 precedence：explicit/injected → managed FLOWKIT_HOME → legacy FLOWKIT_OPENSPEC_BIN → ambient compatibility。",
+          "保持现有 OpenSpec real-process、archive、verify --retry、G1、Full Test environment regressions。",
+          "重新完成 formal Change Verification physical closure。"
+        ],
+        "sourceRef": "owner-input:2026-08-18T05:59+08:00:contract-reset:C1-managed-vs-injected-execution-identity-correction"
+      }
+    ],
+    "verificationView": {
+      "status": "passed",
+      "resultRef": {
+        "ref": "openspec/changes/external-tool-runtime-and-archify-cli-contract/verification.md",
+        "kind": "verification-summary",
+        "versionFingerprint": "a3bece2c051c46975e2c58746a8b4bae78b731959aae7a32ac51fa712a022d41"
+      }
+    },
+    "externalContextFingerprint": "745011bdd6c84fbcea5ea73c20dbb21e6df78e3f3b95e70071a151864bb69176",
+    "requiredResultContract": {
+      "kind": "review",
+      "verdictRequired": true,
+      "bindsReviewedRun": true,
+      "bindsSourceReview": false,
+      "verificationSummaryRef": "core-derived",
+      "gitCheckpointOutputAllowed": false
+    }
+  },
+  "constraints": {
+    "mayCreateProposalArtifacts": false,
+    "mayWriteProductionCode": false,
+    "mayWriteTestCode": false,
+    "mayModifyProposalArtifacts": false,
+    "mayCheckpoint": false,
+    "mayFullTest": false,
+    "commitAllowed": false
+  }
+}

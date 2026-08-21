@@ -1,0 +1,48 @@
+{
+  "runStatus": "completed",
+  "actionResult": {
+    "action": "review-apply",
+    "executionStatus": "completed",
+    "summary": "Review 013 Apply: implementation materially satisfies A1 readiness/Owner-authorized Full Test/no-Run/result-authority contract, package payload hashes pass, mutation surface stays within approved flowkitMutationScope, typecheck/build/lint/OpenSpec strict and 108 focused tests pass, and formal `flowkit verify` reproduces the exact published verification fingerprint/selection. One author blocker remains: non-Windows timeout is classified as re-entry-safe `timed-out-cancelled` after SIGKILL of only the direct child, while the approved A1 spec permits re-entry only after the prior child/process tree is proven terminal. A disposable Linux proof observed `timed-out-cancelled` while a spawned descendant survived and continued mutation, so bounded at-least-once re-entry is not physically closed across supported platforms.",
+    "verificationSummaryRef": {
+      "ref": "openspec/changes/delivery-readiness-and-full-test-behavior/verification.md",
+      "versionFingerprint": "23447d8d3a8e9a80429a2360f7e42bea540002aae6190dcc447ff6b9513411c1",
+      "kind": "verification-summary"
+    }
+  },
+  "terminalBinding": {
+    "schemaVersion": 1,
+    "logicalDescriptorDigest": "6199cf386c95e8661e18e44d5fc3fee2e213bd7f1de39c917ce68ecb98aa45d8"
+  },
+  "reviewVerdict": "changes-requested",
+  "reviewFindingSchemaVersion": 2,
+  "reviewFindings": [
+    {
+      "id": "A1-RA-001",
+      "severity": "blocking",
+      "title": "Non-Windows timeout is marked re-entry-safe without proving descendant process-tree termination",
+      "problem": "The approved A1 core-model spec requires that a fresh Full Test attempt MAY re-enter from `authorized` only when the prior child/process tree has been proven terminal. 013 implements owned whole-tree cancellation for Windows, but the unchanged non-Windows `runCommand()` timeout path sends SIGKILL only to the direct child PID and then returns `timed-out-cancelled` when that launcher closes. `runDeliveryFullTest()` treats `timed-out-cancelled` as a safe terminal transport failure, leaves raw status `authorized`, writes no executionBlock, and therefore permits an explicit later attempt. This proves only launcher termination, not descendant process-tree termination.",
+      "contractRef": "openspec/changes/delivery-readiness-and-full-test-behavior/specs/flowkit-core-model/spec.md — `authorized crash 可 bounded re-entry`: only when prior child/process tree is proven terminal; transport-failure scenario: only process-proven-terminal failure MAY remain authorized for re-entry",
+      "invariant": "Without a running/attempt ledger, every timeout path that leaves Full Test re-enterable at raw `authorized` must prove the entire owned prior process tree terminal. If whole-tree termination is not proven, Policy must fail closed and prohibit overlap rather than label the attempt safely cancelled.",
+      "evidence": [
+        "013 `src/services/delivery-full-test-service.ts` treats outcome.kind=`timed-out-cancelled` as execution-error with no executionBlock; raw status remains authorized and can later re-enter.",
+        "Exact current `src/shared/external-command.ts` non-win32 timeout path calls only `child.kill('SIGKILL')`; once the direct child closes it returns `kind=timed-out-cancelled`. No POSIX process-group/tree cancellation or descendant termination proof exists.",
+        "Disposable Linux physical proof: a parent Node process spawned a descendant that wrote a marker after 500ms; `runCommand(..., timeout=100, platform=linux)` returned `{kind:\"timed-out-cancelled\"}`, yet the descendant later wrote `descendant-survived`, proving the old process tree was still executing after Flowkit had classified the timeout as safe terminal cancellation.",
+        "The current 03 Full Test route is itself multi-process (`npm -> verification.ts -> Node/OpenSpec/npm children`), so this is applicable to the actual A1 execution shape, not merely a synthetic single-process edge case.",
+        "013 Windows tests correctly prove whole-tree taskkill semantics; there is no equivalent non-Windows descendant-survival regression."
+      ],
+      "impact": "After a Linux/macOS timeout, Flowkit can return control with raw status still `authorized` while descendants from the old Full Test continue running. A later explicit Full Test can then overlap with the stale tree, invalidating the approved bounded at-least-once/re-entry invariant and allowing concurrent generated-file/process mutation despite the lifecycle claiming the prior attempt was safely cancelled.",
+      "location": "src/shared/external-command.ts non-win32 timeout branch; src/services/delivery-full-test-service.ts timed-out-cancelled classification; tests/unit/services/delivery-full-test-service.test.ts timeout coverage",
+      "blockingAuthority": "author",
+      "requiredOutcome": "Close non-Windows timeout ownership to the same invariant as Windows: either prove the owned descendant process tree terminal before returning a re-entry-safe cancellation outcome, or conservatively classify unproven termination as outcome-unknown and persist/block through the existing A1 executionBlock semantics. Keep the solution bounded; do not add a scheduler, running state, attempt ledger or background supervisor.",
+      "acceptance": [
+        "A real non-Windows descendant-survival fixture cannot produce re-entry-safe `timed-out-cancelled` while any descendant remains alive.",
+        "Every timeout that leaves raw Full Test status `authorized` and permits later re-entry has a demonstrated whole-process-tree terminal proof.",
+        "If non-Windows whole-tree termination cannot be proven, the attempt becomes fail-closed/non-reenterable through the existing outcome-unknown/executionBlock boundary rather than fabricated Verification failed.",
+        "Windows taskkill whole-tree semantics remain green and unchanged in authority.",
+        "Formal Change Verification selects and physically executes the new/updated timeout regression and remains passed on the revised exact candidate."
+      ]
+    }
+  ],
+  "reviewFindingConvergence": []
+}
