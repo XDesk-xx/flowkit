@@ -1,0 +1,128 @@
+id: "20260821-01-stable-execution-and-engineering-health"
+createdAt: "2026-08-21"
+branch: "delivery/20260821-01-stable-execution-and-engineering-health"
+
+goal: "由 exact Stable Flowkit 03 外部管理完整 04 Delivery，产品化 stable execution/promotion contract，迁移 managed OpenSpec 1.9.0，冻结 Flowkit-specific Action Skills 与 Author mechanical preflight，建立 Architecture Description continuity + thin compare，并以增量、证据驱动方式改善 engineering health，最终形成可在 Delivery Final 后 promotion 的 Stable Flowkit 04 candidate。"
+
+delivery:
+  state: active
+  fullTestStatus: not-ready
+
+scope:
+  included:
+    - "Stable N manages Candidate N+1 execution/promotion contract"
+    - "exact stable runtime/tool/skill identity and tamper detection"
+    - "managed OpenSpec 1.9.0 offline migration and compatibility proof"
+    - "Flowkit-specific Action Skills and independent Review contract"
+    - "Simplified Chinese as default human-readable Agent output while preserving exact machine literals"
+    - "Author mechanical preflight without Author self-review"
+    - "Architecture Description continuity across Reference and Current/Planned/Actual"
+    - "thin Current-vs-Actual and Planned-vs-Actual compare using Archify-native presentation"
+    - "CodeGraph as optional on-demand code context integration with deterministic fallback"
+    - "incremental quality admission for new/changed code"
+    - "one or more proof-backed bounded responsibility refactors"
+    - "explicit CRLF/exact-byte fingerprint correctness closure"
+    - "zero-active-Delivery diagnostics only when a real gap is proven"
+    - "Verification engineering follow-up only when reproducible evidence remains"
+    - "Stable 04 candidate acceptance without mid-Delivery promotion"
+  excluded:
+    - "candidate package transport protocol"
+    - "Project Create / Bootstrap"
+    - "project-level Flowkit Upgrade / Adoption platform"
+    - "Skill Registry / dynamic Skill discovery / Skill DAG / marketplace"
+    - "Agent / Provider / Tool / Release / Gate Registry"
+    - "CodeGraph mandatory integration or lifecycle authority"
+    - "Evidence / Receipt platform"
+    - "automatic Author/Reviewer loop or role alternation"
+    - "automatic Owner decision"
+    - "automatic corrective Change"
+    - "automatic Full Test / Finalize / Commit / Push / Merge"
+    - "generic rollback engine"
+    - "dynamic Verification scheduler or auto timeout tuning"
+    - "Flowkit custom architecture renderer / Viewer engine / generic projection engine"
+    - "large-scale architecture rewrite"
+    - "new internal V1/V2 generation families"
+
+architecture:
+  impact: true
+  archifyPlan: "required"
+
+changes:
+  - key: "A1"
+    id: "stable-execution-environment-and-promotion-contract"
+    goal: "产品化 Stable N 管理 Candidate N+1 的 exact execution identity、stable entrypoint、tamper detection、offline/fresh-process materialization 与 post-Final promotion input，并证明 candidate 在当前 Delivery 中不能替换 Stable authority。"
+    required: true
+    dependsOn:
+      []
+    state: planned
+    architectureImpact: true
+    outputs:
+      - "stable execution identity contract"
+      - "stable entrypoint and candidate isolation invariant"
+      - "runtime/tool/skill exact identity and tamper checks"
+      - "deterministic post-Final promotion input contract"
+
+ownerDecisions:
+  - ref: "owner:179d34f990a02b65211f4f23e12dfe133ed9ca76e9aa9c06920ed1e9951dedbe"
+    decision: "create-delivery"
+    deliveryId: "20260821-01-stable-execution-and-engineering-health"
+    sourceRef: "owner-input:2026-08-21T13:55+08:00:authorize-delivery-start-04:v6"
+
+verification:
+  change:
+    requireApplicableChecks: true
+  fullTest:
+    requiresOwnerAuthorization: true
+    execution:
+      id: "project-full-verification"
+      kind: bounded-command-plan
+      logicalChecks:
+        - id: "quality"
+          resolverId: flowkit-quality
+          perTargetTimeoutMs: 120000
+        - id: "typecheck"
+          resolverId: flowkit-typecheck
+          perTargetTimeoutMs: 120000
+        - id: "lint"
+          resolverId: flowkit-lint
+          perTargetTimeoutMs: 120000
+        - id: "build"
+          resolverId: flowkit-build
+          perTargetTimeoutMs: 120000
+        - id: "openspec-all"
+          resolverId: flowkit-openspec-all
+          perTargetTimeoutMs: 120000
+        - id: "full"
+          resolverId: flowkit-full-tests
+          perTargetTimeoutMs: 120000
+      scope: delivery
+      resultProtocol: flowkit-full-test-result-v1
+      resultAuthority: verification
+      expectedTerminalStatuses:
+        - "passed"
+        - "failed"
+    plan:
+      - "quality"
+      - "typecheck"
+      - "lint"
+      - "build"
+      - "OpenSpec strict/all-strict"
+      - "full repository test suite"
+      - "stable-manager versus candidate authority isolation"
+      - "managed OpenSpec 1.9.0 offline/fresh-process coverage"
+      - "Action Skills / Review / preflight regressions"
+      - "Architecture Description continuity and thin compare regressions"
+      - "CodeGraph-unavailable deterministic fallback"
+      - "cross-platform exact-byte / CRLF fingerprint regression"
+      - "incremental quality admission and selected structural boundary regressions"
+
+acceptance:
+  - "Exact Stable 03 manages the complete 04 lifecycle and the candidate never becomes current authority before Delivery Final."
+  - "Managed OpenSpec 1.9.0 works from exact offline identity through required create/status/instructions/validate/apply/archive/retry/historical-read boundaries."
+  - "Flowkit-specific Skills preserve Policy/Owner/Reviewer authority boundaries and human-facing narrative defaults to Simplified Chinese."
+  - "Author mechanical preflight catches mechanically decidable defects without producing Reviewer verdicts or lifecycle authority."
+  - "Architecture Reference and Delivery Description identities remain continuous without ungrounded AI redraw; Compare remains thin and ref-based; Archify remains non-authoritative."
+  - "CodeGraph remains optional and a deterministic fallback path is sufficient for legal execution and impact proof."
+  - "CRLF/exact-byte fingerprint behavior is explicitly proven closed or corrected across the supported checkout boundary."
+  - "New/changed code does not materially worsen quality without explicit justification and at least one proven hotspot obtains a clearer responsibility boundary."
+  - "Stable 04 candidate can be accepted in an independent consumer and is exact, offline-capable and tamper-evident; promotion waits until the real 04 Delivery Final."
