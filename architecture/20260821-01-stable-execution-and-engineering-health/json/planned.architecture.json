@@ -1,0 +1,932 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Flowkit 04 — Planned Architecture",
+    "subtitle": "04 Delivery Start 的目标 Architecture Description；基于 Current + 04 formal Delivery intent，repository baseline = 326654a64379。",
+    "output": "planned.html",
+    "visual_preset": "signal-flow",
+    "quality_profile": "standard",
+    "viewBox": [
+      2200,
+      1220
+    ],
+    "repository": {
+      "url": "https://github.com/XDesk-xx/flowkit",
+      "revision": "326654a643797e67922549ea148d33b96d2e6cf9"
+    },
+    "views": [
+      {
+        "id": "stable",
+        "label": "Stable execution / promotion",
+        "focus": [
+          "external-runtime",
+          "stable-runner",
+          "git",
+          "finalize"
+        ],
+        "note": "Stable N exact identity 管理 Candidate N+1；candidate 不得中途替换 authority；promotion 只发生在真实 Delivery Final 之后。"
+      },
+      {
+        "id": "agent-quality",
+        "label": "Agent execution quality",
+        "focus": [
+          "agent-adapter",
+          "action-skills",
+          "author-preflight",
+          "change-execution",
+          "policy"
+        ],
+        "note": "Policy 决定 WHAT；Flowkit-specific Skills 改善 HOW；Author mechanical preflight 前移机械错误但不产生 Reviewer verdict。"
+      },
+      {
+        "id": "architecture",
+        "label": "Architecture continuity",
+        "focus": [
+          "architecture-lifecycle",
+          "architecture-assets",
+          "archify"
+        ],
+        "note": "Reference 与 Current/Planned/Actual identity 连续；Compare 保持 thin/ref-based；Archify 只 validate/render/compare，不成为 authority。"
+      },
+      {
+        "id": "engineering",
+        "label": "Engineering health / code context",
+        "focus": [
+          "quality-admission",
+          "verification",
+          "code-context",
+          "facts",
+          "persistence"
+        ],
+        "note": "changed/new code 使用 incremental quality admission；high-impact work 需要 impact proof；CodeGraph 可选且必须存在 deterministic fallback。"
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "owner",
+      "type": "external",
+      "label": "Owner 权威",
+      "sublabel": "决策 / 授权 / 最终接受",
+      "tag": "authority",
+      "pos": [
+        40,
+        70
+      ],
+      "size": [
+        175,
+        66
+      ]
+    },
+    {
+      "id": "facts",
+      "type": "database",
+      "label": "正式事实",
+      "sublabel": "repository / Change / Delivery facts",
+      "tag": "formal facts",
+      "pos": [
+        270,
+        70
+      ],
+      "size": [
+        205,
+        66
+      ],
+      "sources": [
+        {
+          "path": "src/facts/formal-fact-reader.ts",
+          "label": "formal fact reader"
+        }
+      ]
+    },
+    {
+      "id": "policy",
+      "type": "backend",
+      "label": "Flowkit Policy",
+      "sublabel": "Change + Delivery 唯一合法边界",
+      "tag": "control plane",
+      "pos": [
+        530,
+        70
+      ],
+      "size": [
+        215,
+        66
+      ],
+      "sources": [
+        {
+          "path": "src/policy/unified-entry.ts",
+          "label": "unified policy entry"
+        }
+      ]
+    },
+    {
+      "id": "change-execution",
+      "type": "backend",
+      "label": "Change 执行",
+      "sublabel": "完整 Standard Change Action lifecycle",
+      "tag": "change execution",
+      "pos": [
+        800,
+        70
+      ],
+      "size": [
+        225,
+        66
+      ],
+      "sources": [
+        {
+          "path": "src/cli/change-action.ts",
+          "label": "Change Action CLI"
+        }
+      ]
+    },
+    {
+      "id": "openspec",
+      "type": "external",
+      "label": "OpenSpec 1.9.0",
+      "sublabel": "managed offline Change contract / archive authority",
+      "tag": "04 managed migration",
+      "pos": [
+        1080,
+        70
+      ],
+      "size": [
+        225,
+        66
+      ],
+      "sources": [
+        {
+          "path": "src/integrations/openspec/openspec-cli-adapter.ts",
+          "label": "OpenSpec adapter"
+        },
+        {
+          "path": "src/integrations/external-tools/managed-tool.ts",
+          "label": "managed tool identity"
+        }
+      ]
+    },
+    {
+      "id": "verification",
+      "type": "cloud",
+      "label": "Verification Authority",
+      "sublabel": "Change Verification + logical Full Test truth",
+      "tag": "verification authority",
+      "pos": [
+        1360,
+        70
+      ],
+      "size": [
+        245,
+        66
+      ],
+      "sources": [
+        {
+          "path": "scripts/verification.ts",
+          "label": "verification orchestration"
+        },
+        {
+          "path": "src/verification/change-selection/publication.ts",
+          "label": "verification publication"
+        }
+      ]
+    },
+    {
+      "id": "git",
+      "type": "external",
+      "label": "Git",
+      "sublabel": "repository bytes / Checkpoint / Delivery Final / history",
+      "tag": "history authority",
+      "pos": [
+        520,
+        910
+      ],
+      "size": [
+        245,
+        70
+      ],
+      "sources": [
+        {
+          "path": "src/facts/git-boundary-reader.ts",
+          "label": "Git boundary reader"
+        },
+        {
+          "path": "src/services/delivery-final-boundary-service.ts",
+          "label": "Delivery Final handoff"
+        }
+      ]
+    },
+    {
+      "id": "persistence",
+      "type": "database",
+      "label": "Persistence",
+      "sublabel": "formal facts / exact bytes / fingerprint boundaries",
+      "tag": "04 exact-byte closure",
+      "pos": [
+        270,
+        210
+      ],
+      "size": [
+        225,
+        66
+      ],
+      "sources": [
+        {
+          "path": "src/persistence/delivery-manifest-document.ts",
+          "label": "Delivery Manifest"
+        },
+        {
+          "path": "src/persistence/run-persistence.ts",
+          "label": "Run persistence"
+        }
+      ]
+    },
+    {
+      "id": "run",
+      "type": "database",
+      "label": "Lean Run",
+      "sublabel": "one Standard Change Action execution envelope",
+      "tag": "execution envelope",
+      "pos": [
+        800,
+        210
+      ],
+      "size": [
+        225,
+        66
+      ],
+      "sources": [
+        {
+          "path": "src/services/b1-run-execution-service.ts",
+          "label": "Run execution/admission"
+        }
+      ]
+    },
+    {
+      "id": "diagnostics",
+      "type": "frontend",
+      "label": "Diagnostics",
+      "sublabel": "status / next / doctor / resume context",
+      "tag": "diagnostics",
+      "pos": [
+        1360,
+        210
+      ],
+      "size": [
+        215,
+        66
+      ],
+      "sources": [
+        {
+          "path": "src/diagnostics/status.ts",
+          "label": "status"
+        },
+        {
+          "path": "src/diagnostics/doctor.ts",
+          "label": "doctor"
+        }
+      ]
+    },
+    {
+      "id": "delivery-execution",
+      "type": "backend",
+      "label": "Delivery 执行闭环",
+      "sublabel": "Ready / Owner Full Test / Finding / corrective Change",
+      "tag": "delivery behavior",
+      "pos": [
+        500,
+        390
+      ],
+      "size": [
+        280,
+        74
+      ],
+      "sources": [
+        {
+          "path": "src/services/delivery-full-test-service.ts",
+          "label": "Delivery Full Test behavior"
+        },
+        {
+          "path": "src/services/a1-write-service.ts",
+          "label": "Owner write-side"
+        }
+      ]
+    },
+    {
+      "id": "full-test-execution",
+      "type": "backend",
+      "label": "Bounded Full Test Execution",
+      "sublabel": "logical checks → bounded physical targets → typed outcomes",
+      "tag": "bounded execution",
+      "pos": [
+        500,
+        520
+      ],
+      "size": [
+        300,
+        74
+      ],
+      "sources": [
+        {
+          "path": "src/verification/full-test/resolver.ts",
+          "label": "logical→physical resolver"
+        },
+        {
+          "path": "src/verification/full-test/executor.ts",
+          "label": "bounded executor"
+        },
+        {
+          "path": "src/verification/full-test/plan.ts",
+          "label": "Full Test plan"
+        }
+      ]
+    },
+    {
+      "id": "architecture-lifecycle",
+      "type": "cloud",
+      "label": "Architecture Description Lifecycle",
+      "sublabel": "continuity + Current/Planned/Actual + thin Compare",
+      "tag": "04 continuity contract",
+      "pos": [
+        500,
+        650
+      ],
+      "size": [
+        285,
+        74
+      ],
+      "sources": [
+        {
+          "path": "src/architecture/architecture-service.ts",
+          "label": "render/compare service"
+        },
+        {
+          "path": "src/architecture/architecture-lifecycle.ts",
+          "label": "cycle/promotion"
+        }
+      ]
+    },
+    {
+      "id": "finalize",
+      "type": "security",
+      "label": "Delivery 最终收口",
+      "sublabel": "Owner finalize / Delivery Final / promotion input",
+      "tag": "post-Final boundary",
+      "pos": [
+        500,
+        780
+      ],
+      "size": [
+        280,
+        74
+      ],
+      "sources": [
+        {
+          "path": "src/services/delivery-finalize-service.ts",
+          "label": "Finalize service"
+        },
+        {
+          "path": "src/services/delivery-final-boundary-service.ts",
+          "label": "Final Git handoff"
+        }
+      ]
+    },
+    {
+      "id": "external-runtime",
+      "type": "backend",
+      "label": "Stable Execution Environment",
+      "sublabel": "exact Flowkit runtime + tools + accepted Skills / hashes",
+      "tag": "04 exact release identity",
+      "pos": [
+        930,
+        390
+      ],
+      "size": [
+        285,
+        72
+      ],
+      "sources": [
+        {
+          "path": "src/integrations/external-tools/managed-tool.ts",
+          "label": "managed tool runtime"
+        }
+      ]
+    },
+    {
+      "id": "archify",
+      "type": "external",
+      "label": "Archify 2.14.0",
+      "sublabel": "native validate / render / compare; never authority",
+      "tag": "architecture tool",
+      "pos": [
+        950,
+        520
+      ],
+      "size": [
+        245,
+        72
+      ],
+      "sources": [
+        {
+          "path": "src/integrations/archify/archify-cli-adapter.ts",
+          "label": "Archify adapter"
+        }
+      ]
+    },
+    {
+      "id": "architecture-assets",
+      "type": "database",
+      "label": "Architecture Description Assets",
+      "sublabel": "durable JSON + ref/hash Compare + derived HTML",
+      "tag": "04 stable description",
+      "pos": [
+        930,
+        650
+      ],
+      "size": [
+        300,
+        72
+      ],
+      "sources": [
+        {
+          "path": "src/architecture/architecture-service.ts",
+          "label": "architecture paths/publication"
+        }
+      ]
+    },
+    {
+      "id": "resume",
+      "type": "cloud",
+      "label": "Repository-only Resume",
+      "sublabel": "Delivery / Change / Architecture / verification lineage",
+      "tag": "resume",
+      "pos": [
+        1330,
+        650
+      ],
+      "size": [
+        300,
+        72
+      ],
+      "sources": [
+        {
+          "path": "src/diagnostics/resume-projection.ts",
+          "label": "resume projection"
+        },
+        {
+          "path": "src/diagnostics/resume-context.ts",
+          "label": "resume context"
+        }
+      ]
+    },
+    {
+      "id": "stable-runner",
+      "type": "frontend",
+      "label": "External Stable Manager",
+      "sublabel": "Stable N → Candidate N+1; no mid-Delivery switch",
+      "tag": "stable authority contract",
+      "pos": [
+        1330,
+        780
+      ],
+      "size": [
+        310,
+        72
+      ],
+      "sources": [
+        {
+          "path": "src/bin/flowkit.ts",
+          "label": "stable CLI implementation"
+        },
+        {
+          "path": "AGENTS.md",
+          "label": "repository Agent boundary"
+        }
+      ]
+    },
+    {
+      "id": "agent-adapter",
+      "type": "frontend",
+      "label": "Single-Action Agent Adapter",
+      "sublabel": "executes exactly one Policy-decided Action",
+      "tag": "retained execution boundary",
+      "pos": [
+        1330,
+        910
+      ],
+      "size": [
+        300,
+        72
+      ],
+      "sources": [
+        {
+          "path": "src/services/g1-single-action-agent-adapter.ts",
+          "label": "single-action adapter"
+        }
+      ]
+    },
+    {
+      "id": "action-skills",
+      "type": "frontend",
+      "label": "Flowkit Action Skills",
+      "sublabel": "Explore / Review / Propose / Apply / Archive HOW guidance",
+      "tag": "04 planned",
+      "pos": [
+        1700,
+        780
+      ],
+      "size": [
+        310,
+        72
+      ],
+      "sources": [
+        {
+          "path": "openspec/delivery-groups/20260821-01-stable-execution-and-engineering-health.yaml",
+          "label": "04 Delivery intent"
+        }
+      ]
+    },
+    {
+      "id": "author-preflight",
+      "type": "security",
+      "label": "Author Mechanical Preflight",
+      "sublabel": "mechanical checks before independent Review; no verdict",
+      "tag": "04 planned",
+      "pos": [
+        1700,
+        910
+      ],
+      "size": [
+        320,
+        72
+      ],
+      "sources": [
+        {
+          "path": "openspec/delivery-groups/20260821-01-stable-execution-and-engineering-health.yaml",
+          "label": "04 Delivery intent"
+        }
+      ]
+    },
+    {
+      "id": "code-context",
+      "type": "external",
+      "label": "Optional Code Context",
+      "sublabel": "CodeGraph when useful; Git / rg / source / tests fallback",
+      "tag": "optional integration",
+      "pos": [
+        1700,
+        650
+      ],
+      "size": [
+        330,
+        72
+      ],
+      "sources": [
+        {
+          "path": "openspec/specs/flowkit-integration-boundaries/spec.md",
+          "label": "integration authority boundary"
+        }
+      ]
+    },
+    {
+      "id": "quality-admission",
+      "type": "cloud",
+      "label": "Incremental Quality Admission",
+      "sublabel": "new/changed non-regression; historical debt does not block unrelated work",
+      "tag": "04 engineering health",
+      "pos": [
+        1660,
+        70
+      ],
+      "size": [
+        350,
+        72
+      ],
+      "sources": [
+        {
+          "path": "openspec/delivery-groups/20260821-01-stable-execution-and-engineering-health.yaml",
+          "label": "04 Delivery intent"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "a1",
+      "from": "owner",
+      "to": "facts",
+      "route": "straight",
+      "variant": "security"
+    },
+    {
+      "id": "a2",
+      "from": "facts",
+      "to": "policy",
+      "route": "straight"
+    },
+    {
+      "id": "a3",
+      "from": "policy",
+      "to": "change-execution",
+      "route": "straight",
+      "variant": "emphasis"
+    },
+    {
+      "id": "a4",
+      "from": "change-execution",
+      "to": "openspec",
+      "route": "straight"
+    },
+    {
+      "id": "a5",
+      "from": "openspec",
+      "to": "verification",
+      "route": "straight"
+    },
+    {
+      "id": "a6",
+      "from": "persistence",
+      "to": "facts",
+      "route": "orthogonal-v",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "a7",
+      "from": "change-execution",
+      "to": "run",
+      "route": "orthogonal-v",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "a8",
+      "from": "diagnostics",
+      "to": "verification",
+      "route": "orthogonal-v",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "d1",
+      "from": "policy",
+      "to": "delivery-execution",
+      "route": "orthogonal-v",
+      "label": "Delivery behavior",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        640,
+        330
+      ]
+    },
+    {
+      "id": "d2",
+      "from": "delivery-execution",
+      "to": "full-test-execution",
+      "route": "orthogonal-v",
+      "label": "Owner Full Test",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        645,
+        495
+      ]
+    },
+    {
+      "id": "d3",
+      "from": "full-test-execution",
+      "to": "architecture-lifecycle",
+      "route": "orthogonal-v",
+      "label": "Full Test PASS",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        645,
+        625
+      ]
+    },
+    {
+      "id": "d4",
+      "from": "architecture-lifecycle",
+      "to": "finalize",
+      "route": "orthogonal-v",
+      "label": "Owner accept",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        645,
+        755
+      ]
+    },
+    {
+      "id": "d5",
+      "from": "finalize",
+      "to": "git",
+      "route": "orthogonal-v",
+      "label": "Delivery Final",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        645,
+        885
+      ]
+    },
+    {
+      "id": "t1",
+      "from": "external-runtime",
+      "to": "archify",
+      "route": "orthogonal-v",
+      "label": "managed runtime",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        1070,
+        495
+      ]
+    },
+    {
+      "id": "t2",
+      "from": "archify",
+      "to": "architecture-assets",
+      "route": "orthogonal-v",
+      "label": "validate / render / compare",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        1070,
+        625
+      ]
+    },
+    {
+      "id": "t3",
+      "from": "architecture-assets",
+      "to": "architecture-lifecycle",
+      "route": "orthogonal-h",
+      "label": "Actual / Compare refs",
+      "variant": "emphasis",
+      "labelAt": [
+        855,
+        675
+      ],
+      "fromSide": "left",
+      "toSide": "right"
+    },
+    {
+      "id": "s1",
+      "from": "architecture-assets",
+      "to": "resume",
+      "route": "straight",
+      "label": "architecture refs",
+      "labelAt": [
+        1280,
+        676
+      ]
+    },
+    {
+      "id": "s2",
+      "from": "resume",
+      "to": "stable-runner",
+      "route": "orthogonal-v",
+      "label": "repository-only restart",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        1485,
+        755
+      ]
+    },
+    {
+      "id": "s3",
+      "from": "stable-runner",
+      "to": "agent-adapter",
+      "route": "orthogonal-v",
+      "label": "one Action",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        1485,
+        885
+      ]
+    },
+    {
+      "id": "q1",
+      "from": "verification",
+      "to": "quality-admission",
+      "route": "orthogonal-h",
+      "variant": "dashed"
+    },
+    {
+      "id": "g1",
+      "from": "code-context",
+      "to": "action-skills",
+      "route": "orthogonal-v",
+      "variant": "dashed"
+    },
+    {
+      "id": "g2",
+      "from": "action-skills",
+      "to": "author-preflight",
+      "route": "orthogonal-v",
+      "variant": "dashed"
+    },
+    {
+      "id": "g3",
+      "from": "agent-adapter",
+      "to": "author-preflight",
+      "route": "orthogonal-h",
+      "variant": "dashed"
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Control Plane / retained authority",
+      "wraps": [
+        "facts",
+        "policy",
+        "change-execution",
+        "persistence",
+        "run",
+        "diagnostics",
+        "verification",
+        "quality-admission"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Delivery Execution Plane",
+      "wraps": [
+        "delivery-execution",
+        "full-test-execution",
+        "architecture-lifecycle",
+        "finalize"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Managed Stable Environment / Architecture",
+      "wraps": [
+        "external-runtime",
+        "archify",
+        "architecture-assets",
+        "stable-runner"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Agent Quality / Optional Code Context",
+      "wraps": [
+        "agent-adapter",
+        "action-skills",
+        "author-preflight",
+        "code-context"
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Stable authority / promotion",
+      "items": [
+        "external Stable N 管理 Candidate N+1；candidate build 不得替换当前 Policy/Writer authority",
+        "Stable identity 绑定 runtime / managed tools / accepted Skills / exact hashes",
+        "真实 Delivery Final 后才 materialize/promote 下一 Stable；不建立 Release Registry 或自动切换"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Agent execution quality",
+      "items": [
+        "Flowkit-specific Skills 只指导 HOW；Policy / Owner / Reviewer / Verification 保留 WHAT 与 authority",
+        "Author mechanical preflight 不产生 Reviewer Verdict、不创建 next authority",
+        "人类可读 Agent narrative 默认简体中文；machine literals 保持 exact"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Architecture Description continuity",
+      "items": [
+        "Accepted Actual(n) 连续确认 Current(n+1)；Planned 基于 Current + formal Delivery intent",
+        "Actual 服从 final OpenSpec / repository / Verification facts；Compare 只引用左右 Description",
+        "Archify 保持 native validate/render/compare；HTML 是 derived local presentation"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Engineering health / cross-platform",
+      "items": [
+        "new/changed code 建立 incremental quality admission；历史 unchanged debt 不阻塞无关 Change",
+        "只对 proven responsibility hotspot 做 bounded refactor；high-impact work 需要 impact proof",
+        "CodeGraph 可选且无 authority；CRLF/exact-byte fingerprint correctness 必须显式证明 closed 或 correction"
+      ]
+    }
+  ]
+}
