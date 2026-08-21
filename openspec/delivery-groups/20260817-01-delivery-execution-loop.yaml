@@ -5,8 +5,8 @@ branch: "delivery/20260817-01-delivery-execution-loop"
 goal: "在已完成的 Deterministic Core 与 Change Execution Loop 基础上交付完整 Delivery Execution Loop：让 Flowkit 能够从 Delivery Start 开始，经过 Current System Architecture 冻结、Planned Architecture、Change 生命周期、Delivery Ready、Owner 授权 Full Test、Actual Architecture 与 Planned-vs-Actual Compare、Owner Finalize 与 Delivery Final Git boundary，确定性关闭整条 Delivery。本 Delivery 是最后一条 Bootstrap Delivery；不实现自动 Author/Reviewer 循环、bounded auto-continue、Tool Registry、Skill Registry、Evidence platform 或自动 Commit/Push/Merge。"
 
 delivery:
-  state: active
-  fullTestStatus: not-ready
+  state: completed
+  fullTestStatus: passed
 
   fullTestFindings:
     - schemaVersion: 1
@@ -21,6 +21,11 @@ delivery:
         kind: corrective-change-created
         changeId: "delivery-full-test-cross-platform-compatibility-closure"
         ownerDecisionRef: "owner:1e0bb9574e4438886be395d3c94ff3a2dce93ffbffebbd330a7df5101c86268c"
+  finalization:
+    schemaVersion: 1
+    qualificationRef: "delivery-finalization-qualification:dda8416f12b5829010fc5f96c1cde62ad594abaf77f14b1ec6437a0d9d783a8d"
+    ownerAuthorizationRef: "owner:83ba1644e728c38a9a7874731938394abef2f179e7dc3dcb02945ff50755c31e"
+    candidateRef: "delivery-final-candidate:5ba121e0cdf6d26b53d2eb8092ab9e28f4f36259f60242a45c1be399d6474a0a"
 scope:
   included:
     - "Delivery readiness projection"
@@ -71,6 +76,28 @@ architecture:
   impact: true
   archifyPlan: "deferred-to-03"
 
+  currentCycle:
+    schemaVersion: 1
+    cycleRef: "architecture-cycle:b542de556190415ef73ef2e2d3b7309ac69e626534dc958ff7103e1d334665f0"
+    fullTestAuthorizationRef: "owner:16e7851456b0a04c060ab7db11f6b65b94a133794af1cf56266d318e232cb282"
+    fullTestResultRef: "verification:full-test:0fa75049a4e72a979f6b14a649396c917f0d6bcd4b95b23e411a87cd461f771e"
+    actualArchitectureRef:
+      path: "architecture/20260817-01-delivery-execution-loop/json/actual.architecture.json"
+      sha256: "0cdecf8e681b5f69f7ca6c1b98630ad563b2b2441343c8ea545786da01ea63ef"
+      repositoryRevision: "677f8dd9549c2112f9d9be8279b6de2e05b663cf"
+    compareRef: "architecture-compare:37cb8f25ff830bb9a037e404207869dda8e9a0f49dafcd55baa3493f5e180a81"
+    acceptance:
+      status: accepted
+      ownerDecisionRef: "owner:09cc5f9a52a68f96b3baba65fafde88a520f73e2fa82bf4173840ffcdf139e11"
+  acceptedSystemSource:
+    schemaVersion: 1
+    sourceDeliveryId: "20260817-01-delivery-execution-loop"
+    actualArchitectureRef:
+      path: "architecture/20260817-01-delivery-execution-loop/json/actual.architecture.json"
+      sha256: "0cdecf8e681b5f69f7ca6c1b98630ad563b2b2441343c8ea545786da01ea63ef"
+      repositoryRevision: "677f8dd9549c2112f9d9be8279b6de2e05b663cf"
+    compareRef: "architecture-compare:37cb8f25ff830bb9a037e404207869dda8e9a0f49dafcd55baa3493f5e180a81"
+    ownerAcceptanceRef: "owner:09cc5f9a52a68f96b3baba65fafde88a520f73e2fa82bf4173840ffcdf139e11"
 changes:
   - key: "A1"
     id: "delivery-readiness-and-full-test-behavior"
@@ -559,6 +586,20 @@ ownerDecisions:
     deliveryId: "20260817-01-delivery-execution-loop"
     changeId: "delivery-full-test-cross-platform-compatibility-closure"
     sourceRef: "ref/flowkit-local-ai-handoff-after-j1-139-archive.md"
+  - ref: "owner:16e7851456b0a04c060ab7db11f6b65b94a133794af1cf56266d318e232cb282"
+    decision: "authorize-full-test"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    sourceRef: "owner:chat:2026-08-20:authorize-full-test:677f8dd9549c2112f9d9be8279b6de2e05b663cf"
+  - ref: "owner:09cc5f9a52a68f96b3baba65fafde88a520f73e2fa82bf4173840ffcdf139e11"
+    decision: "accept-architecture"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    architectureCycleRef: "architecture-cycle:b542de556190415ef73ef2e2d3b7309ac69e626534dc958ff7103e1d334665f0"
+    sourceRef: "owner:d88eb9e690558eb08f73145dc2f8093affbe4f7b78f3c30fba47d55e5885b319"
+  - ref: "owner:83ba1644e728c38a9a7874731938394abef2f179e7dc3dcb02945ff50755c31e"
+    decision: "authorize-delivery-finalize"
+    deliveryId: "20260817-01-delivery-execution-loop"
+    finalizationQualificationRef: "delivery-finalization-qualification:dda8416f12b5829010fc5f96c1cde62ad594abaf77f14b1ec6437a0d9d783a8d"
+    sourceRef: "owner:chat:2026-08-21T04:46+08:00:authorize-delivery-finalize"
 verification:
   change:
     requireApplicableChecks: true
@@ -658,6 +699,31 @@ verification:
             status: failed
             durationMs: 45638
         resultRef: "verification:full-test:f250af14a7de3789d522c8cd9548c746e60a8655b29500105c9b2c2002de11eb"
+    result:
+      schemaVersion: 1
+      status: passed
+      summary: "all full-test checks passed"
+      totalDurationMs: 338935
+      checks:
+        - id: "quality"
+          status: passed
+          durationMs: 1489
+        - id: "typecheck"
+          status: passed
+          durationMs: 5781
+        - id: "lint"
+          status: passed
+          durationMs: 4432
+        - id: "build"
+          status: passed
+          durationMs: 2955
+        - id: "openspec-all"
+          status: passed
+          durationMs: 326
+        - id: "full"
+          status: passed
+          durationMs: 323863
+      resultRef: "verification:full-test:0fa75049a4e72a979f6b14a649396c917f0d6bcd4b95b23e411a87cd461f771e"
 acceptance:
   - "Delivery Ready 可确定性计算（required Changes completed + checkpoints present + Blocking Findings = 0 + formal facts consistent + Full Test Plan available）"
   - "Policy 可表达 Delivery behavior 而不伪造 Formal Action / Run"
