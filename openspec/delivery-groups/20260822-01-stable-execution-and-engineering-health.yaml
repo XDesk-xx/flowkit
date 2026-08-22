@@ -1,0 +1,277 @@
+id: "20260822-01-stable-execution-and-engineering-health"
+createdAt: "2026-08-22"
+branch: "delivery/20260822-01-stable-execution-and-engineering-health"
+
+goal: "由 exact Stable Flowkit 03 外部管理完整 04 Delivery；首先建立 ChatGPT interactive Agent 的单 Action 执行闭环，然后按依赖完成 cross-platform exact-byte correctness、Stable execution/promotion、managed OpenSpec migration、Flowkit Action Skills、Author preflight、Architecture Description continuity与same-source side-by-side Pair Views、incremental quality、bounded responsibility improvement 与 Stable 04 candidate acceptance；candidate 在真实 Delivery Final 前不得替换 current Stable authority。"
+
+delivery:
+  state: active
+  fullTestStatus: not-ready
+
+scope:
+  included:
+    - "Interactive single-Action execution completion in local canonical and real ChatGPT web detached Linux environments"
+    - "prepared/resumed continuation, existing result admission, exact pending recovery, terminal stop, and no automatic second Action"
+    - "cross-platform CRLF/exact-byte fingerprint correctness closure"
+    - "Stable N exact execution environment identity, deterministic materialization/verification, Candidate N+1 isolation, and post-Final promotion input"
+    - "managed OpenSpec 1.9.0 offline migration with bounded compatibility proof"
+    - "Flowkit-specific Action Skills, independent Review contract, Simplified Chinese narrative default, and exact machine literals"
+    - "Author mechanical preflight without Author self-review"
+    - "Architecture Description continuity across Reference and Current/Planned/Actual with same-source Current→Planned, Current→Actual, and Planned→Actual side-by-side Pair Views"
+    - "CodeGraph as optional on-demand code context with deterministic Git/rg/source/tests fallback"
+    - "incremental quality admission for new/changed code"
+    - "one proof-selected bounded responsibility improvement"
+    - "proof-gated zero-active-Delivery diagnostics and Verification engineering follow-up"
+    - "independent Stable 04 candidate acceptance without mid-Delivery promotion"
+  excluded:
+    - "Flowkit Core lifecycle redesign or second Policy/execution state machine"
+    - "Provider Registry, Agent Registry, Skill Registry, Tool Registry, Release Registry, Gate Registry, scheduler, daemon, or background worker"
+    - "automatic next, automatic Author/Reviewer role alternation, or while(next) workflow"
+    - "automatic Owner decision, corrective Change, Full Test, Finalize, Commit, Push, Merge, or promotion"
+    - "generic candidate ZIP transport protocol, online installer, project Bootstrap, or project Upgrade platform"
+    - "CodeGraph mandatory integration or lifecycle authority"
+    - "Evidence/Receipt platform, generic Issue Tracker, or backlog platform"
+    - "Flowkit custom architecture renderer/viewer or generic projection engine"
+    - "large-scale architecture rewrite, broad repository refactor, or new internal V1/V2 generation families"
+    - "generic rollback engine, Verification telemetry platform, dynamic scheduler, or automatic timeout tuning"
+
+architecture:
+  impact: true
+  archifyPlan: "required"
+
+changes:
+  - key: "A1"
+    id: "interactive-single-action-execution-contract"
+    goal: "冻结并验证当前 ChatGPT interactive Agent 在同一会话中完整执行一个由 Policy 决定的 Standard Action，经 existing admission 形成 terminal Run，并在报告 next boundary 后停止。"
+    required: true
+    dependsOn:
+      []
+    state: planned
+    architectureImpact: true
+    outputs:
+      - "interactive single-Action completion contract"
+      - "prepared/resumed continuation and terminal-stop instructions"
+      - "real ChatGPT web detached conformance"
+      - "exact pending resume and no-auto-next regressions"
+
+  - key: "B1"
+    id: "close-cross-platform-exact-byte-fingerprint-correctness"
+    goal: "证明并关闭 supported checkout/launcher boundary 上的 CRLF 与 exact-byte fingerprint correctness，使 immutable formal identity 不依赖未声明的 host text drift。"
+    required: true
+    dependsOn:
+      - "interactive-single-action-execution-contract"
+    state: planned
+    architectureImpact: true
+    outputs:
+      - "cross-platform exact-byte contract"
+      - "CRLF/fingerprint proof or minimal correction"
+      - "Windows and applicable Linux regressions"
+
+  - key: "C1"
+    id: "stable-execution-environment-and-promotion-contract"
+    goal: "产品化 Stable N 管理 Candidate N+1 的 exact runtime/tool/instruction identity、deterministic materialization/full verification、candidate isolation 与 post-Final promotion input。"
+    required: true
+    dependsOn:
+      - "interactive-single-action-execution-contract"
+      - "close-cross-platform-exact-byte-fingerprint-correctness"
+    state: planned
+    architectureImpact: true
+    outputs:
+      - "stable environment identity and content contract"
+      - "deterministic materializer and verifier"
+      - "candidate isolation invariant"
+      - "post-Final promotion input"
+
+  - key: "D1"
+    id: "migrate-managed-openspec-1-9-0"
+    goal: "将 managed OpenSpec 从 1.7.0 迁移到 exact offline 1.9.0，并证明现有 typed integration、archive/retry/historical-read 与 fresh-process compatibility。"
+    required: true
+    dependsOn:
+      - "stable-execution-environment-and-promotion-contract"
+    state: planned
+    architectureImpact: true
+    outputs:
+      - "managed OpenSpec 1.9.0 identity"
+      - "bounded adapter compatibility"
+      - "offline/fresh-process migration regressions"
+
+  - key: "E1"
+    id: "establish-flowkit-action-skills-and-review-contract"
+    goal: "从真实 01至03 execution/review history 收敛 Flowkit-specific Action Skills 与独立 Review contract，固定简体中文 narrative 默认值并保持 machine literals exact。"
+    required: true
+    dependsOn:
+      - "interactive-single-action-execution-contract"
+      - "migrate-managed-openspec-1-9-0"
+    state: planned
+    architectureImpact: true
+    outputs:
+      - "Flowkit Action Skill mapping"
+      - "independent Review contract"
+      - "Simplified Chinese narrative convention"
+      - "accepted instruction identity"
+
+  - key: "F1"
+    id: "establish-author-mechanical-preflight"
+    goal: "在独立 Review 前组合既有 Policy/OpenSpec/Verification/Git read-side，发现 mechanically decidable Author mistakes而不产生Reviewer verdict或新authority。"
+    required: true
+    dependsOn:
+      - "establish-flowkit-action-skills-and-review-contract"
+    state: planned
+    architectureImpact: true
+    outputs:
+      - "Author mechanical preflight contract"
+      - "read-only preflight composition"
+      - "no-self-review regressions"
+
+  - key: "G1"
+    id: "establish-architecture-description-continuity-and-pair-view"
+    goal: "冻结 Reference 与 Delivery Current/Planned/Actual Description continuity，并建立同源双栏 Pair View：Current→Planned、Current→Actual、Planned→Actual 均只把两份 independently rendered Archify HTML 按左旧右新等尺寸对齐；不增加 delta 第三栏、semantic comparator 或第二套 truth source。"
+    required: true
+    dependsOn:
+      - "stable-execution-environment-and-promotion-contract"
+    state: planned
+    architectureImpact: true
+    outputs:
+      - "Architecture Description continuity contract"
+      - "Current/Planned/Actual lifecycle"
+      - "same-source Current→Planned / Current→Actual / Planned→Actual side-by-side Pair View contract"
+      - "durable left/right Pair descriptor identities and no-overwrite paths"
+      - "equal-size derived HTML composition without a delta column"
+
+  - key: "H1"
+    id: "establish-incremental-quality-admission"
+    goal: "建立new/changed code的incremental quality non-regression规则，使historical unchanged debt不阻塞无关Change且例外保持显式。"
+    required: true
+    dependsOn:
+      - "establish-flowkit-action-skills-and-review-contract"
+    state: planned
+    architectureImpact: true
+    outputs:
+      - "incremental quality admission contract"
+      - "changed/new baseline comparison"
+      - "bounded quality regressions"
+
+  - key: "I1"
+    id: "improve-one-proven-responsibility-boundary"
+    goal: "基于fresh responsibility/caller/impact proof选择并改善一个bounded hotspot责任边界，不进行跨Reader/Persistence/Run service的大规模重构。"
+    required: true
+    dependsOn:
+      - "establish-incremental-quality-admission"
+    state: planned
+    architectureImpact: true
+    outputs:
+      - "one proof-selected responsibility boundary"
+      - "caller/consumer impact proof"
+      - "semantic-preservation regressions"
+
+  - key: "J1"
+    id: "accept-stable-04-candidate"
+    goal: "在independent consumer中验证完整Stable04 candidate的exact/offline/tamper-evident identity、managed tools/instructions、interactive execution与self-hosting acceptance。"
+    required: true
+    dependsOn:
+      - "close-cross-platform-exact-byte-fingerprint-correctness"
+      - "stable-execution-environment-and-promotion-contract"
+      - "migrate-managed-openspec-1-9-0"
+      - "establish-flowkit-action-skills-and-review-contract"
+      - "establish-author-mechanical-preflight"
+      - "establish-architecture-description-continuity-and-pair-view"
+      - "establish-incremental-quality-admission"
+      - "improve-one-proven-responsibility-boundary"
+    state: planned
+    architectureImpact: true
+    outputs:
+      - "independent Stable 04 candidate acceptance"
+      - "offline/fresh-consumer evidence"
+      - "no-mid-Delivery-promotion proof"
+      - "post-Final release readiness"
+
+  - key: "K1"
+    id: "correct-zero-active-delivery-diagnostics"
+    goal: "仅在fresh proof显示真实gap时，最小修正healthy idle、missing environment与invalid lifecycle diagnostics的区分。"
+    required: false
+    dependsOn:
+      - "interactive-single-action-execution-contract"
+    state: planned
+    architectureImpact: false
+    outputs:
+      - "proof-gated idle diagnostics correction"
+
+  - key: "L1"
+    id: "optimize-verification-engineering-bottleneck"
+    goal: "仅在reproducible evidence证明现有bounded Verification仍有真实bottleneck时实施一个最小优化，不建设telemetry或scheduler平台。"
+    required: false
+    dependsOn:
+      - "establish-incremental-quality-admission"
+    state: planned
+    architectureImpact: false
+    outputs:
+      - "proof-gated bounded Verification optimization"
+
+ownerDecisions:
+  - ref: "owner:bd9c86479b663416c676bad79f06dd9ef28276aa2f5ffaa04f4845ed7e7ca335"
+    decision: "create-delivery"
+    deliveryId: "20260822-01-stable-execution-and-engineering-health"
+    sourceRef: "chat-owner-input:2026-08-22:simplify-architecture-pair-view:v7"
+
+verification:
+  change:
+    requireApplicableChecks: true
+  fullTest:
+    requiresOwnerAuthorization: true
+    execution:
+      id: "project-full-verification"
+      kind: bounded-command-plan
+      logicalChecks:
+        - id: "quality"
+          resolverId: flowkit-quality
+          perTargetTimeoutMs: 120000
+        - id: "typecheck"
+          resolverId: flowkit-typecheck
+          perTargetTimeoutMs: 120000
+        - id: "lint"
+          resolverId: flowkit-lint
+          perTargetTimeoutMs: 120000
+        - id: "build"
+          resolverId: flowkit-build
+          perTargetTimeoutMs: 120000
+        - id: "openspec-all"
+          resolverId: flowkit-openspec-all
+          perTargetTimeoutMs: 120000
+        - id: "full"
+          resolverId: flowkit-full-tests
+          perTargetTimeoutMs: 120000
+      scope: delivery
+      resultProtocol: flowkit-full-test-result-v1
+      resultAuthority: verification
+      expectedTerminalStatuses:
+        - "passed"
+        - "failed"
+    plan:
+      - "quality"
+      - "typecheck"
+      - "lint"
+      - "build"
+      - "OpenSpec strict/all-strict"
+      - "full repository test suite"
+      - "interactive single-Action local and detached conformance"
+      - "stable-manager versus candidate authority isolation"
+      - "cross-platform exact-byte/fingerprint regression"
+      - "managed OpenSpec 1.9.0 offline/fresh-process coverage"
+      - "Action Skills, Review, and Author preflight regressions"
+      - "Architecture Description continuity plus three same-source side-by-side Pair Views, equal-frame layout, pair isolation, and no-overwrite regressions"
+      - "CodeGraph-unavailable deterministic fallback"
+      - "incremental quality and bounded responsibility regressions"
+      - "independent Stable 04 candidate acceptance"
+
+acceptance:
+  - "A real ChatGPT web detached Linux session completes one legal Standard Action from prepare/exact resume through existing admission to a terminal Run with result.json, reports the exact next boundary, and stops without a second Action."
+  - "An interruption before admission exact-resumes the same pending runId without chat/provider session authority or replacement Run; local canonical AI follows the same contract without extra manual steps."
+  - "Exact Stable Flowkit 03 manages the complete 04 lifecycle and Candidate 04 never becomes current authority before real Delivery Final."
+  - "Cross-platform exact-byte/fingerprint behavior is explicitly proven closed or corrected before Stable environment identity is accepted."
+  - "Stable environment materialization and verification bind exact Flowkit runtime, managed tools, accepted repo instructions, launchers, content identity, and deterministic post-Final promotion input while preserving the previous Stable."
+  - "Managed OpenSpec 1.9.0 works from exact offline identity through required create/status/instructions/validate/apply/archive/retry/historical-read boundaries without an adapter generation family."
+  - "Flowkit Action Skills and Author preflight improve execution quality while preserving Policy, Owner, Reviewer, Verification, OpenSpec, and Git authority boundaries."
+  - "Architecture Reference and Delivery Description identities remain continuous; Current→Planned, Current→Actual, and Planned→Actual each compose the two independently rendered Archify HTML artifacts into an equal-size left-before/right-after Pair View with pair-scoped refs and no delta column, semantic comparator, output overwrite, or authority."
+  - "CodeGraph remains optional, the deterministic fallback path works, and no code-context output becomes lifecycle authority."
+  - "New/changed code does not materially worsen quality without explicit justification, and one proof-selected hotspot obtains a clearer bounded responsibility without broad refactoring."
+  - "Stable 04 candidate is exact, offline-capable, independently consumable, and tamper-evident; promotion occurs only after real 04 Delivery Final."

@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "deliveryId": "20260822-01-stable-execution-and-engineering-health",
+  "pairId": "current-to-planned",
+  "mode": "side-by-side",
+  "left": {
+    "kind": "current",
+    "label": "之前 · Current",
+    "descriptionRef": "architecture/20260822-01-stable-execution-and-engineering-health/json/current.architecture.json",
+    "descriptionSha256": "0d74a5f0db1f5ca088fc8349b0320402b8b3db5b1024bc933f95abcb07ba84ac",
+    "htmlRef": "architecture/20260822-01-stable-execution-and-engineering-health/html/current.html"
+  },
+  "right": {
+    "kind": "planned",
+    "label": "之后 · Planned",
+    "descriptionRef": "architecture/20260822-01-stable-execution-and-engineering-health/json/planned.architecture.json",
+    "descriptionSha256": "ea14c49980ad8783de632beb50d670e601c658ff3d429fde433426206be91a7e",
+    "htmlRef": "architecture/20260822-01-stable-execution-and-engineering-health/html/planned.html"
+  },
+  "layout": {
+    "direction": "left-to-right",
+    "columns": 2,
+    "equalWidth": true,
+    "equalHeight": true,
+    "deltaColumn": false
+  },
+  "authority": "none"
+}
